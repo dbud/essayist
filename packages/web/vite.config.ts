@@ -4,4 +4,9 @@ import { fresh } from "@fresh/plugin-vite";
 
 export default defineConfig({
   plugins: [fresh(), tailwindcss()],
+  server: {
+    fs: {
+      allow: ["../.."],
+    },
+  },
 });
