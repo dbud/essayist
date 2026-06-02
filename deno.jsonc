@@ -4,5 +4,10 @@
     "./packages/core"
   ],
   "nodeModulesDir": "manual",
-  "vendor": true
+  "vendor": true,
+  "deploy": {
+    "org": "dbud",
+    "app": "essayist"
+  }
 }
+
