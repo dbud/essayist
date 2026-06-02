@@ -1,0 +1,28 @@
+{
+  "name": "@essayist/core",
+  "version": "0.1.0",
+  "exports": "./mod.ts",
+  "publish": {
+    "include": [
+      "mod.ts",
+      "src/**/*.ts",
+      "deno.json"
+    ],
+    "exclude": [
+      "**/*_test.ts",
+      "**/*.spec.ts"
+    ]
+  },
+  "tasks": {
+    "check": "deno fmt --check . && deno lint . && deno check",
+    "test": "deno test -A",
+    "test:watch": "deno test -A --watch"
+  },
+  "lint": {
+    "rules": {
+      "tags": [
+        "recommended"
+      ]
+    }
+  }
+}

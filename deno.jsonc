@@ -1,0 +1,8 @@
+{
+  "workspace": [
+    "./packages/web",
+    "./packages/core"
+  ],
+  "nodeModulesDir": "manual",
+  "vendor": true
+}
