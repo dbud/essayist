@@ -1,32 +1,50 @@
 import { assertEquals } from "jsr:@std/assert@^1";
 import { getCapital } from "./lib.ts";
-import type { Agent } from "./agent.ts";
+import type { Agent, ModelResponse } from "./agent.ts";
 
 function createMockClient(
-  response: string,
+  response: ModelResponse,
   onCall?: (input: string) => void,
 ): Agent {
   return {
-    callModel: (input) => {
+    callModel: (input: string) => {
       onCall?.(input);
-      return { getText: () => Promise.resolve(response) } as ReturnType<
-        Agent["callModel"]
-      >;
+      return Promise.resolve(response);
     },
-  } as Agent;
+  } as unknown as Agent;
 }
 
 Deno.test("getCapital sends the correct prompt", async () => {
   let capturedInput = "";
-  const client = createMockClient("Paris", (input) => {
-    capturedInput = input;
-  });
+  const client = createMockClient(
+    { success: true, result: "Paris", diagnostic: "Found capital" },
+    (input) => {
+      capturedInput = input;
+    },
+  );
 
   const result = await getCapital("France", client);
 
   assertEquals(result, "Paris");
-  assertEquals(
-    capturedInput,
-    "What is the capital of France? Respond with only the city name.",
-  );
+  assertEquals(capturedInput, "What is the capital of France?");
+});
+
+Deno.test("getCapital throws on unsuccessful response", async () => {
+  const client = createMockClient({
+    success: false,
+    result: "",
+    diagnostic: "Could not determine capital",
+  });
+
+  let threw = false;
+  try {
+    await getCapital("UnknownCountry", client);
+  } catch (err) {
+    threw = true;
+    assertEquals(
+      (err as Error).message,
+      "Model returned failure: Could not determine capital",
+    );
+  }
+  assertEquals(threw, true);
 });

@@ -1,11 +1,16 @@
-import type { Agent } from "./agent.ts";
+import type { Agent, ModelResponse } from "./agent.ts";
 
 export async function getCapital(
   country: string,
   client: Agent,
 ): Promise<string> {
-  const result = client.callModel(
-    `What is the capital of ${country}? Respond with only the city name.`,
+  const response: ModelResponse = await client.callModel(
+    `What is the capital of ${country}?`,
   );
-  return await result.getText();
+
+  if (!response.success) {
+    throw new Error(`Model returned failure: ${response.diagnostic}`);
+  }
+
+  return response.result ?? "unknown";
 }

@@ -1,6 +1,20 @@
 import { OpenRouter } from "@openrouter/sdk";
+import { z } from "zod";
+import { generateInstructions, stripMarkdownFences } from "./schema.ts";
 
 const MODEL = "openrouter/owl-alpha";
+
+const modelResponseSchema = z.object({
+  success: z.boolean().describe(
+    "true if the request was successful, false otherwise",
+  ),
+  result: z.string().nullable().describe(
+    "the answer, or null if success is false",
+  ),
+  diagnostic: z.string().describe("a short explanation of the result or error"),
+});
+
+export type ModelResponse = z.infer<typeof modelResponseSchema>;
 
 export class Agent {
   #client: OpenRouter;
@@ -9,7 +23,18 @@ export class Agent {
     this.#client = new OpenRouter({ apiKey });
   }
 
-  callModel(input: string) {
-    return this.#client.callModel({ model: MODEL, input });
+  async callModel(input: string): Promise<ModelResponse> {
+    const fullInput = `${input}\n\n${
+      generateInstructions(modelResponseSchema)
+    }`;
+
+    console.log(fullInput);
+    const result = this.#client.callModel({
+      model: MODEL,
+      input: fullInput,
+    });
+    const text = await result.getText();
+    console.log(text);
+    return modelResponseSchema.parse(JSON.parse(stripMarkdownFences(text)));
   }
 }
