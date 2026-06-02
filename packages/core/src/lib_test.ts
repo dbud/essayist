@@ -9,9 +9,11 @@ function createMockClient(
   return {
     callModel: (input) => {
       onCall?.(input);
-      return { getText: () => Promise.resolve(response) };
+      return { getText: () => Promise.resolve(response) } as ReturnType<
+        Agent["callModel"]
+      >;
     },
-  };
+  } as Agent;
 }
 
 Deno.test("getCapital sends the correct prompt", async () => {

@@ -1,5 +1,5 @@
 import { define } from "../utils.ts";
-import { createAgent } from "@essayist/core";
+import { Agent } from "@essayist/core";
 
 export const agentMiddleware = define.middleware(async (ctx) => {
   const apiKey = Deno.env.get("OPENROUTER_API_KEY");
@@ -9,6 +9,6 @@ export const agentMiddleware = define.middleware(async (ctx) => {
     });
   }
 
-  ctx.state.agent = createAgent(apiKey);
+  ctx.state.agent = new Agent(apiKey);
   return await ctx.next();
 });
