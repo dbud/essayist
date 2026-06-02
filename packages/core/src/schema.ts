@@ -1,41 +1,84 @@
 import { z } from "zod";
 
-type JsonSchema = {
-  type?: string;
-  properties?: Record<string, JsonSchema>;
-  required?: string[];
-  description?: string;
-  enum?: string[];
-  const?: string;
-  default?: string;
-  items?: JsonSchema | JsonSchema[];
-  additionalProperties?: JsonSchema | boolean;
-  propertyNames?: JsonSchema;
-  anyOf?: JsonSchema[];
-  oneOf?: JsonSchema[];
-  allOf?: JsonSchema[];
-  $ref?: string;
-  $defs?: Record<string, JsonSchema>;
-};
+type JsonValue =
+  | string
+  | number
+  | boolean
+  | null
+  | JsonValue[]
+  | { [key: string]: JsonValue };
 
-function resolve(schema: JsonSchema): JsonSchema {
+type JsonSchema =
+  | boolean
+  | {
+    type?: string | string[];
+    properties?: Record<string, JsonSchema>;
+    required?: string[];
+    description?: string;
+    enum?: JsonValue[];
+    const?: JsonValue;
+    default?: JsonValue;
+    items?: JsonSchema | JsonSchema[];
+    additionalProperties?: JsonSchema | boolean;
+    propertyNames?: JsonSchema | boolean;
+    anyOf?: JsonSchema[];
+    oneOf?: JsonSchema[];
+    allOf?: JsonSchema[];
+    $ref?: string;
+    $defs?: Record<string, JsonSchema>;
+  };
+
+function resolveRef(
+  schema: JsonSchema,
+  defs?: Record<string, JsonSchema>,
+): JsonSchema {
+  if (typeof schema === "boolean") return schema;
   if (!schema.$ref) return schema;
+
   const name = schema.$ref.replace("#/$defs/", "");
-  return schema.$defs?.[name] ?? schema;
+  const target = defs?.[name];
+  if (!target) return schema;
+
+  return resolveRef(target, defs);
+}
+
+function resolve(
+  schema: JsonSchema,
+  defs?: Record<string, JsonSchema>,
+): JsonSchema {
+  schema = resolveRef(schema, defs);
+
+  if (typeof schema === "boolean") return schema;
+
+  if (schema.properties) {
+    for (const [key, prop] of Object.entries(schema.properties)) {
+      schema.properties[key] = resolve(prop, defs);
+    }
+  }
+
+  return schema;
 }
 
 function isNullable(prop: JsonSchema): boolean {
+  if (typeof prop === "boolean") return false;
+
   const variants = prop.anyOf ?? prop.oneOf;
   if (variants) {
-    return variants.some((s) => s.type === "null");
+    return variants.some(
+      (s) => typeof s !== "boolean" && s.type === "null",
+    );
   }
   return false;
 }
 
 function getTypeName(prop: JsonSchema): string {
+  if (typeof prop === "boolean") return prop ? "any" : "never";
+
   const variants = prop.anyOf ?? prop.oneOf;
   if (variants) {
-    const nonNull = variants.filter((s) => s.type !== "null");
+    const nonNull = variants.filter(
+      (s) => typeof s !== "boolean" && s.type !== "null",
+    );
     if (nonNull.length === 1) {
       return describeType(nonNull[0]);
     }
@@ -43,19 +86,21 @@ function getTypeName(prop: JsonSchema): string {
   }
 
   if (prop.allOf) {
-    return "object";
+    return "intersection";
   }
 
   return describeType(prop);
 }
 
 function describeType(prop: JsonSchema): string {
+  if (typeof prop === "boolean") return prop ? "any" : "never";
+
   if (prop.type === "array") {
     if (Array.isArray(prop.items)) {
-      const types = prop.items.map((i) => i.type ?? "any");
+      const types = prop.items.map((i) => describeType(i));
       return `(${types.join(", ")}) tuple`;
     }
-    const itemType = prop.items?.type ?? "any";
+    const itemType = prop.items ? describeType(prop.items) : "any";
     return `${itemType} array`;
   }
 
@@ -65,49 +110,68 @@ function describeType(prop: JsonSchema): string {
       (typeof prop.additionalProperties === "object" &&
         prop.additionalProperties !== null)
     ) {
-      const valueType = (prop.additionalProperties as JsonSchema)?.type ??
-        "any";
+      const valueType = prop.additionalProperties
+        ? describeType(prop.additionalProperties)
+        : "any";
       return `${valueType} record`;
     }
     return "object";
   }
 
+  if (Array.isArray(prop.type)) return prop.type.join(" | ");
   return prop.type ?? "any";
+}
+
+function formatValue(value: JsonValue): string {
+  if (value === null) return "null";
+  if (typeof value === "string") return JSON.stringify(value);
+  if (typeof value === "number" || typeof value === "boolean") {
+    return String(value);
+  }
+  return JSON.stringify(value);
 }
 
 export function generateInstructions(
   schema: z.ZodObject<z.ZodRawShape>,
 ): string {
-  const jsonSchema = z.toJSONSchema(schema, { target: "draft-07" });
-  const resolved = resolve(jsonSchema as JsonSchema);
+  const jsonSchema = z.toJSONSchema(schema, {
+    target: "draft-07",
+  }) as JsonSchema;
+  const defs = typeof jsonSchema !== "boolean" ? jsonSchema.$defs : undefined;
+  const resolved = resolve(jsonSchema, defs);
+
+  if (typeof resolved === "boolean") {
+    return "Respond with valid JSON.";
+  }
 
   const required = new Set(resolved.required ?? []);
   const lines = ["Return JSON matching this shape:", ""];
 
   if (resolved.properties) {
     for (const [key, prop] of Object.entries(resolved.properties)) {
+      if (typeof prop === "boolean") {
+        lines.push(`- ${key}: ${prop ? "any" : "never"}`);
+        continue;
+      }
+
       const parts: string[] = [];
 
       if (prop.description) parts.push(prop.description);
 
       if (prop.enum) {
         parts.push(
-          `one of ${
-            prop.enum.map((v: string) => JSON.stringify(v)).join(", ")
-          }`,
+          `one of ${prop.enum.map((v) => formatValue(v)).join(", ")}`,
         );
       } else if (prop.const !== undefined) {
-        parts.push(`literal ${JSON.stringify(prop.const)}`);
+        parts.push(`literal ${formatValue(prop.const)}`);
       }
 
       parts.push(getTypeName(prop));
 
-      const optional = !required.has(key) || isNullable(prop) ||
-        prop.default !== undefined;
-      parts.push(optional ? "optional" : "required");
-
+      if (!required.has(key)) parts.push("optional");
+      if (isNullable(prop)) parts.push("nullable");
       if (prop.default !== undefined) {
-        parts.push(`default: ${JSON.stringify(prop.default)}`);
+        parts.push(`default: ${formatValue(prop.default)}`);
       }
 
       lines.push(`- ${key}: ${parts.join(", ")}`);

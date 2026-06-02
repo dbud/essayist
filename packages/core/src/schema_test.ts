@@ -13,13 +13,13 @@ Deno.test("generateInstructions produces correct output for modelResponseSchema"
     generateInstructions(schema),
     `Return JSON matching this shape:
 
-- success: true if successful, false otherwise, boolean, required
-- result: the answer, string, optional
-- diagnostic: explanation of the result, string, required`,
+- success: true if successful, false otherwise, boolean
+- result: the answer, string, nullable
+- diagnostic: explanation of the result, string`,
   );
 });
 
-Deno.test("generateInstructions marks nullable fields as optional", () => {
+Deno.test("generateInstructions marks nullable fields as nullable", () => {
   const schema = z.object({
     value: z.string().nullable(),
   });
@@ -28,33 +28,7 @@ Deno.test("generateInstructions marks nullable fields as optional", () => {
     generateInstructions(schema),
     `Return JSON matching this shape:
 
-- value: string, optional`,
-  );
-});
-
-Deno.test("generateInstructions handles enum fields", () => {
-  const schema = z.object({
-    status: z.enum(["active", "inactive"]),
-  });
-
-  assertEquals(
-    generateInstructions(schema),
-    `Return JSON matching this shape:
-
-- status: one of "active", "inactive", string, required`,
-  );
-});
-
-Deno.test("generateInstructions handles array fields", () => {
-  const schema = z.object({
-    tags: z.array(z.string()),
-  });
-
-  assertEquals(
-    generateInstructions(schema),
-    `Return JSON matching this shape:
-
-- tags: string array, required`,
+- value: string, nullable`,
   );
 });
 
@@ -68,8 +42,34 @@ Deno.test("generateInstructions handles optional fields", () => {
     generateInstructions(schema),
     `Return JSON matching this shape:
 
-- name: string, required
+- name: string
 - nickname: string, optional`,
+  );
+});
+
+Deno.test("generateInstructions handles enum fields", () => {
+  const schema = z.object({
+    status: z.enum(["active", "inactive"]),
+  });
+
+  assertEquals(
+    generateInstructions(schema),
+    `Return JSON matching this shape:
+
+- status: one of "active", "inactive", string`,
+  );
+});
+
+Deno.test("generateInstructions handles array fields", () => {
+  const schema = z.object({
+    tags: z.array(z.string()),
+  });
+
+  assertEquals(
+    generateInstructions(schema),
+    `Return JSON matching this shape:
+
+- tags: string array`,
   );
 });
 
@@ -82,7 +82,7 @@ Deno.test("generateInstructions handles union types", () => {
     generateInstructions(schema),
     `Return JSON matching this shape:
 
-- value: string | number, required`,
+- value: string | number`,
   );
 });
 
@@ -95,7 +95,7 @@ Deno.test("generateInstructions handles nullable arrays", () => {
     generateInstructions(schema),
     `Return JSON matching this shape:
 
-- items: string array, optional`,
+- items: string array, nullable`,
   );
 });
 
@@ -121,7 +121,7 @@ Deno.test("generateInstructions handles record types", () => {
     generateInstructions(schema),
     `Return JSON matching this shape:
 
-- metadata: string record, required`,
+- metadata: string record`,
   );
 });
 
@@ -134,7 +134,7 @@ Deno.test("generateInstructions handles literal types", () => {
     generateInstructions(schema),
     `Return JSON matching this shape:
 
-- type: literal "article", string, required`,
+- type: literal "article", string`,
   );
 });
 
@@ -148,8 +148,8 @@ Deno.test("generateInstructions handles default values", () => {
     generateInstructions(schema),
     `Return JSON matching this shape:
 
-- name: string, required
-- status: string, optional, default: "active"`,
+- name: string
+- status: string, default: "active"`,
   );
 });
 
@@ -164,7 +164,62 @@ Deno.test("generateInstructions handles nullable objects", () => {
     generateInstructions(schema),
     `Return JSON matching this shape:
 
-- user: object, optional`,
+- user: object, nullable`,
+  );
+});
+
+Deno.test("generateInstructions handles intersection types", () => {
+  const schema = z.object({
+    value: z.intersection(
+      z.object({ name: z.string() }),
+      z.object({ age: z.number() }),
+    ),
+  });
+
+  assertEquals(
+    generateInstructions(schema),
+    `Return JSON matching this shape:
+
+- value: intersection`,
+  );
+});
+
+Deno.test("generateInstructions handles tuple types", () => {
+  const schema = z.object({
+    coords: z.tuple([z.number(), z.number()]),
+  });
+
+  assertEquals(
+    generateInstructions(schema),
+    `Return JSON matching this shape:
+
+- coords: (number, number) tuple`,
+  );
+});
+
+Deno.test("generateInstructions handles boolean fields", () => {
+  const schema = z.object({
+    active: z.boolean(),
+  });
+
+  assertEquals(
+    generateInstructions(schema),
+    `Return JSON matching this shape:
+
+- active: boolean`,
+  );
+});
+
+Deno.test("generateInstructions handles number fields", () => {
+  const schema = z.object({
+    count: z.number(),
+  });
+
+  assertEquals(
+    generateInstructions(schema),
+    `Return JSON matching this shape:
+
+- count: number`,
   );
 });
 
