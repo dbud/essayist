@@ -1,8 +1,9 @@
-import { createClient, getCapital } from "@essayist/core";
+import { define } from "../../utils.ts";
+import { getCapital } from "@essayist/core";
 
 export const handler = {
-  async GET(req: Request) {
-    const url = new URL(req.url);
+  GET: define.handlers(async (ctx) => {
+    const url = new URL(ctx.req.url);
     const country = url.searchParams.get("country");
 
     if (!country) {
@@ -12,26 +13,14 @@ export const handler = {
       );
     }
 
-    const apiKey = Deno.env.get("OPENROUTER_API_KEY");
-    if (!apiKey) {
-      return new Response(
-        JSON.stringify({ error: "OPENROUTER_API_KEY not configured" }),
-        { status: 500, headers: { "Content-Type": "application/json" } },
-      );
-    }
-
     try {
-      const client = createClient(apiKey);
-      const capital = await getCapital(country, client);
-      return new Response(
-        JSON.stringify({ country, capital }),
-        { headers: { "Content-Type": "application/json" } },
-      );
+      const capital = await getCapital(country, ctx.state.agent);
+      return Response.json({ country, capital });
     } catch (err) {
       return new Response(
         JSON.stringify({ error: String(err) }),
         { status: 500, headers: { "Content-Type": "application/json" } },
       );
     }
-  },
+  }),
 };
