@@ -1,8 +1,8 @@
-import type { AgentClient } from "./agent.ts";
+import type { Agent } from "./agent.ts";
 
 export async function getCapital(
   country: string,
-  client: AgentClient,
+  client: Agent,
 ): Promise<string> {
   const result = client.callModel(
     `What is the capital of ${country}? Respond with only the city name.`,

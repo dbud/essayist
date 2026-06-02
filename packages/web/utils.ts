@@ -1,8 +1,8 @@
 import { createDefine } from "fresh";
-import type { AgentClient } from "@essayist/core";
+import type { Agent } from "@essayist/core";
 
 export interface State {
-  agent: AgentClient;
+  agent: Agent;
 }
 
 export const define = createDefine<State>();

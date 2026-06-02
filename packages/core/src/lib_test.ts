@@ -1,11 +1,11 @@
 import { assertEquals } from "jsr:@std/assert@^1";
 import { getCapital } from "./lib.ts";
-import type { AgentClient } from "./agent.ts";
+import type { Agent } from "./agent.ts";
 
 function createMockClient(
   response: string,
   onCall?: (input: string) => void,
-): AgentClient {
+): Agent {
   return {
     callModel: (input) => {
       onCall?.(input);
