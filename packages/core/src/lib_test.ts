@@ -1,14 +1,30 @@
 import { assertEquals } from "jsr:@std/assert@^1";
-import { add } from "./lib.ts";
+import { getCapital } from "./lib.ts";
+import type { AgentClient } from "./agent.ts";
 
-Deno.test("add returns the sum of two numbers", () => {
-  assertEquals(add(2, 3), 5);
-});
+function createMockClient(
+  response: string,
+  onCall?: (input: string) => void,
+): AgentClient {
+  return {
+    callModel: (input) => {
+      onCall?.(input);
+      return { getText: () => Promise.resolve(response) };
+    },
+  };
+}
 
-Deno.test("add handles negative numbers", () => {
-  assertEquals(add(-1, 1), 0);
-});
+Deno.test("getCapital sends the correct prompt", async () => {
+  let capturedInput = "";
+  const client = createMockClient("Paris", (input) => {
+    capturedInput = input;
+  });
 
-Deno.test("add handles zero", () => {
-  assertEquals(add(0, 0), 0);
+  const result = await getCapital("France", client);
+
+  assertEquals(result, "Paris");
+  assertEquals(
+    capturedInput,
+    "What is the capital of France? Respond with only the city name.",
+  );
 });

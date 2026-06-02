@@ -1,12 +1,10 @@
-import { add } from "@essayist/core";
+import CapitalLookup from "@/islands/CapitalLookup.tsx";
 
 export default function HomePage() {
-  const result = add(2, 3);
-
   return (
     <main>
       <h1>@essayist/web</h1>
-      <p>add(2, 3) = {result}</p>
+      <CapitalLookup />
     </main>
   );
 }
