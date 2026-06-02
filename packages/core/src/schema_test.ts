@@ -114,7 +114,7 @@ Deno.test("generateInstructions handles optional arrays", () => {
 
 Deno.test("generateInstructions handles record types", () => {
   const schema = z.object({
-    metadata: z.record(z.string()),
+    metadata: z.record(z.string(), z.string()),
   });
 
   assertEquals(
@@ -127,7 +127,7 @@ Deno.test("generateInstructions handles record types", () => {
 
 Deno.test("generateInstructions handles literal types", () => {
   const schema = z.object({
-    type: z.literal("article"),
+    type: z.literal("article", { error: "must be article" }),
   });
 
   assertEquals(

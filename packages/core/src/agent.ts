@@ -14,7 +14,7 @@ const modelResponseSchema = z.object({
   diagnostic: z.string().describe("a short explanation of the result or error"),
 });
 
-export type ModelResponse = z.infer<typeof modelResponseSchema>;
+export type ModelResponse = z.output<typeof modelResponseSchema>;
 
 export class Agent {
   #client: OpenRouter;

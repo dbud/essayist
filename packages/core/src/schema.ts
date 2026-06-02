@@ -1,97 +1,84 @@
 import { z } from "zod";
-import { zodToJsonSchema } from "zod-to-json-schema";
 
 type JsonSchema = {
-  type?: string | string[];
+  type?: string;
   properties?: Record<string, JsonSchema>;
   required?: string[];
   description?: string;
   enum?: string[];
   const?: string;
   default?: string;
-  items?: JsonSchema;
+  items?: JsonSchema | JsonSchema[];
   additionalProperties?: JsonSchema | boolean;
-  $ref?: string;
-  definitions?: Record<string, JsonSchema>;
+  propertyNames?: JsonSchema;
   anyOf?: JsonSchema[];
+  oneOf?: JsonSchema[];
+  allOf?: JsonSchema[];
+  $ref?: string;
+  $defs?: Record<string, JsonSchema>;
 };
 
 function resolve(schema: JsonSchema): JsonSchema {
-  if (schema.$ref && schema.definitions) {
-    const name = schema.$ref.replace("#/definitions/", "");
-    return schema.definitions[name] ?? schema;
-  }
-  return schema;
+  if (!schema.$ref) return schema;
+  const name = schema.$ref.replace("#/$defs/", "");
+  return schema.$defs?.[name] ?? schema;
 }
 
 function isNullable(prop: JsonSchema): boolean {
-  if (prop.anyOf) {
-    return prop.anyOf.some((s) => s.type === "null");
-  }
-  if (Array.isArray(prop.type)) {
-    return prop.type.includes("null");
-  }
-  if (typeof prop.type === "string") {
-    return prop.type.includes("null");
+  const variants = prop.anyOf ?? prop.oneOf;
+  if (variants) {
+    return variants.some((s) => s.type === "null");
   }
   return false;
 }
 
 function getTypeName(prop: JsonSchema): string {
-  // anyOf (e.g. nullable array, nullable object)
-  if (prop.anyOf) {
-    const nonNull = prop.anyOf.find((s) => s.type !== "null");
-    if (!nonNull) return "any";
-    if (nonNull.type === "array") {
-      const itemType = nonNull.items?.type ?? "any";
-      return `${itemType} array`;
+  const variants = prop.anyOf ?? prop.oneOf;
+  if (variants) {
+    const nonNull = variants.filter((s) => s.type !== "null");
+    if (nonNull.length === 1) {
+      return describeType(nonNull[0]);
     }
-    if (nonNull.type === "object") {
-      return nonNull.additionalProperties ? "object (record)" : "object";
-    }
-    if (Array.isArray(nonNull.type)) {
-      return nonNull.type.filter((t) => t !== "null").join(" | ");
-    }
-    return nonNull.type ?? "any";
+    return nonNull.map((s) => describeType(s)).join(" | ");
   }
 
-  const type = prop.type;
+  if (prop.allOf) {
+    return "object";
+  }
 
-  // Array type: string[]
-  if (type === "array") return `${prop.items?.type ?? "any"} array`;
+  return describeType(prop);
+}
 
-  // Object type: check if it's a record (has additionalProperties)
-  if (type === "object") {
+function describeType(prop: JsonSchema): string {
+  if (prop.type === "array") {
+    if (Array.isArray(prop.items)) {
+      const types = prop.items.map((i) => i.type ?? "any");
+      return `(${types.join(", ")}) tuple`;
+    }
+    const itemType = prop.items?.type ?? "any";
+    return `${itemType} array`;
+  }
+
+  if (prop.type === "object") {
     if (
-      prop.additionalProperties && typeof prop.additionalProperties === "object"
+      prop.propertyNames ||
+      (typeof prop.additionalProperties === "object" &&
+        prop.additionalProperties !== null)
     ) {
-      const valueType = prop.additionalProperties.type ?? "any";
+      const valueType = (prop.additionalProperties as JsonSchema)?.type ??
+        "any";
       return `${valueType} record`;
     }
     return "object";
   }
 
-  // Array of types: ["string", "number"] or ["string", "null"]
-  if (Array.isArray(type)) {
-    const types = type.filter((t) => t !== "null");
-    if (types.length === 1 && types[0] === "array") {
-      return `${prop.items?.type ?? "any"} array`;
-    }
-    return types.join(" | ");
-  }
-
-  // Comma-separated types: "string,null"
-  if (typeof type === "string") {
-    return type.split(",").filter((t) => t !== "null").join(" | ");
-  }
-
-  return "any";
+  return prop.type ?? "any";
 }
 
 export function generateInstructions(
   schema: z.ZodObject<z.ZodRawShape>,
 ): string {
-  const jsonSchema = zodToJsonSchema(schema, { name: "Response" });
+  const jsonSchema = z.toJSONSchema(schema, { target: "draft-07" });
   const resolved = resolve(jsonSchema as JsonSchema);
 
   const required = new Set(resolved.required ?? []);
@@ -115,7 +102,8 @@ export function generateInstructions(
 
       parts.push(getTypeName(prop));
 
-      const optional = !required.has(key) || isNullable(prop);
+      const optional = !required.has(key) || isNullable(prop) ||
+        prop.default !== undefined;
       parts.push(optional ? "optional" : "required");
 
       if (prop.default !== undefined) {
