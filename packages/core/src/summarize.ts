@@ -1,5 +1,5 @@
 import type { Agent } from "./agent.ts";
-import { createReadFileTool } from "./tools.ts";
+import { createReadFileTool } from "./tools/read_file.ts";
 
 export async function summarizeFile(
   fileName: string,

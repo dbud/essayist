@@ -1,5 +1,5 @@
 import { assertEquals } from "@std/assert";
-import { createReadFileTool } from "./tools.ts";
+import { createReadFileTool } from "./tools/read_file.ts";
 import type { ToolWithExecute } from "@openrouter/agent";
 
 const sampleFiles = new Map<string, string>([

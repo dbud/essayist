@@ -1,23 +1,17 @@
 import { tool } from "@openrouter/agent";
-import type { Tool } from "@openrouter/agent";
 import { z } from "zod";
+import type { ToolPrompt } from "./index.ts";
 
-const readFileInput = z.object({
+const input = z.object({
   path: z.string().describe("The name or path of the file to read"),
 });
 
-const readFileOutput = z.object({
+const output = z.object({
   content: z.string().describe("The full text content of the file"),
 });
 
-export type ReadFileInput = z.infer<typeof readFileInput>;
-export type ReadFileOutput = z.infer<typeof readFileOutput>;
-
-/** A tool paired with an instruction that tells the model how/when to use it. */
-export interface ToolPrompt {
-  tool: Tool;
-  instruction: string;
-}
+export type ReadFileInput = z.infer<typeof input>;
+export type ReadFileOutput = z.infer<typeof output>;
 
 /** Creates a read_file ToolPrompt backed by an in-memory file map. */
 export function createReadFileTool(
@@ -31,8 +25,8 @@ export function createReadFileTool(
       description:
         "Read the contents of a file by name. Returns the full text content, " +
         "or an error message if the file is not found.",
-      inputSchema: readFileInput,
-      outputSchema: readFileOutput,
+      inputSchema: input,
+      outputSchema: output,
       execute: ({ path }): ReadFileOutput => {
         const content = files.get(path);
         if (content === undefined) {

@@ -1,7 +1,7 @@
 import { assertEquals } from "@std/assert";
 import { summarizeFile } from "./summarize.ts";
 import type { Agent } from "./agent.ts";
-import type { ToolPrompt } from "./tools.ts";
+import type { ToolPrompt } from "./tools/index.ts";
 import type { ToolWithExecute } from "@openrouter/agent";
 
 function createMockAgentWithTools(

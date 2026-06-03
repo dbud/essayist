@@ -1,7 +1,7 @@
 import { OpenRouter, stepCountIs } from "@openrouter/agent";
 import { z } from "zod";
 import { generateInstructions, stripMarkdownFences } from "./schema.ts";
-import type { ToolPrompt } from "./tools.ts";
+import type { ToolPrompt } from "./tools/index.ts";
 
 const MODEL = "openrouter/owl-alpha";
 
