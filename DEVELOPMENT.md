@@ -35,6 +35,17 @@ deno test -A
 deno test -A --watch
 ```
 
+### Integration Tests
+
+Integration tests in `packages/core/integration/` use the real OpenRouter API.
+Requires `OPENROUTER_API_KEY` in a `.env` file at the project root:
+
+```
+deno task -f core test:integration
+```
+
+Without the key the tests skip gracefully.
+
 ### Web Development
 
 ```

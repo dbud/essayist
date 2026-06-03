@@ -5,6 +5,7 @@
   "imports": {
     "@openrouter/agent": "npm:@openrouter/agent@^0.7.0",
     "@openrouter/sdk": "npm:@openrouter/sdk@^0.12.79",
+    "@std/assert": "jsr:@std/assert@^1",
     "zod": "npm:zod@^4"
   },
   "publish": {
@@ -21,7 +22,8 @@
   "tasks": {
     "check": "deno fmt --check . && deno lint . && deno check",
     "test": "deno test -A",
-    "test:watch": "deno test -A --watch"
+    "test:watch": "deno test -A --watch",
+    "test:integration": "deno test -A --env integration/"
   },
   "lint": {
     "rules": {

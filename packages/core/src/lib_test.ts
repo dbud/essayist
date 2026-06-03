@@ -1,4 +1,4 @@
-import { assertEquals } from "jsr:@std/assert@^1";
+import { assertEquals } from "@std/assert";
 import { getCapital } from "./lib.ts";
 import type { Agent, ModelResponse } from "./agent.ts";
 
