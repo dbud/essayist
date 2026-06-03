@@ -1,5 +1,5 @@
 import { assertEquals } from "@std/assert";
-import { getCapital } from "./lib.ts";
+import { getCapital } from "./capital.ts";
 import type { Agent, ModelResponse } from "./agent.ts";
 
 function createMockClient(
