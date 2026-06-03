@@ -1,4 +1,5 @@
 import { tool } from "@openrouter/agent";
+import type { Tool } from "@openrouter/agent";
 import { z } from "zod";
 
 const readFileInput = z.object({
@@ -12,33 +13,33 @@ const readFileOutput = z.object({
 export type ReadFileInput = z.infer<typeof readFileInput>;
 export type ReadFileOutput = z.infer<typeof readFileOutput>;
 
-/**
- * Creates a read_file tool that returns file contents from an in-memory map.
- *
- * Uses the `tool()` helper from `@openrouter/agent` for full type inference.
- * The `execute` function receives typed params (`{ path: string }`) and the
- * SDK handles argument validation, execution, and feeding results back to the
- * model automatically.
- *
- * @param files - A map of file names to their text contents
- */
+/** A tool paired with an instruction that tells the model how/when to use it. */
+export interface ToolPrompt {
+  tool: Tool;
+  instruction: string;
+}
+
+/** Creates a read_file ToolPrompt backed by an in-memory file map. */
 export function createReadFileTool(
   files: Map<string, string>,
-) {
-  return tool({
-    name: "read_file",
-    description:
-      "Read the contents of a file by name. Returns the full text content, " +
-      "or an error message if the file is not found.",
-    inputSchema: readFileInput,
-    outputSchema: readFileOutput,
-    execute: ({ path }): ReadFileOutput => {
-      console.log("TOOL CALLED", path);
-      const content = files.get(path);
-      if (content === undefined) {
-        return { content: `Error: file "${path}" not found` };
-      }
-      return { content };
-    },
-  });
+): ToolPrompt {
+  return {
+    instruction:
+      "Use the read_file tool to read file contents before answering.",
+    tool: tool({
+      name: "read_file",
+      description:
+        "Read the contents of a file by name. Returns the full text content, " +
+        "or an error message if the file is not found.",
+      inputSchema: readFileInput,
+      outputSchema: readFileOutput,
+      execute: ({ path }): ReadFileOutput => {
+        const content = files.get(path);
+        if (content === undefined) {
+          return { content: `Error: file "${path}" not found` };
+        }
+        return { content };
+      },
+    }),
+  };
 }

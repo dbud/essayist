@@ -1,14 +1,16 @@
 import { assertEquals } from "@std/assert";
 import { summarizeFile } from "./summarize.ts";
 import type { Agent } from "./agent.ts";
+import type { ToolPrompt } from "./tools.ts";
+import type { ToolWithExecute } from "@openrouter/agent";
 
 function createMockAgentWithTools(
   responseText: string,
-  onCall?: (input: string, tools: unknown) => void,
+  onCall?: (input: string, toolPrompts: readonly ToolPrompt[]) => void,
 ): Agent {
   return {
-    callModelWithTools: (input: string, tools: unknown) => {
-      onCall?.(input, tools);
+    callModelWithTools: (input: string, toolPrompts: readonly ToolPrompt[]) => {
+      onCall?.(input, toolPrompts);
       return Promise.resolve(responseText);
     },
   } as unknown as Agent;
@@ -22,12 +24,14 @@ const sampleFiles = new Map<string, string>([
   ],
 ]);
 
-Deno.test("summarizeFile sends correct prompt and tools", async () => {
+Deno.test("summarizeFile sends user prompt and tool prompts", async () => {
   let capturedInput = "";
+  let capturedPrompts: readonly ToolPrompt[] = [];
   const agent = createMockAgentWithTools(
     "This is a pangram containing every letter.",
-    (input) => {
+    (input, toolPrompts) => {
       capturedInput = input;
+      capturedPrompts = toolPrompts;
     },
   );
 
@@ -36,24 +40,28 @@ Deno.test("summarizeFile sends correct prompt and tools", async () => {
   assertEquals(result, "This is a pangram containing every letter.");
   assertEquals(
     capturedInput,
-    'Summarize the file "essay.txt" in 2-3 sentences. ' +
-      "Use the read_file tool to get the file contents first, then provide your summary.",
+    'Summarize the file "essay.txt" in 2-3 sentences.',
   );
+  assertEquals(capturedPrompts.length, 1);
 });
 
-Deno.test("summarizeFile passes a read_file tool", async () => {
-  let capturedTools: unknown;
+Deno.test("summarizeFile passes a read_file tool with instruction", async () => {
+  let capturedPrompts: readonly ToolPrompt[] = [];
   const agent = createMockAgentWithTools(
     "Summary here.",
-    (_input, tools) => {
-      capturedTools = tools;
+    (_input, toolPrompts) => {
+      capturedPrompts = toolPrompts;
     },
   );
 
   await summarizeFile("essay.txt", agent, sampleFiles);
 
-  const tools = capturedTools as { type: string; function: { name: string } }[];
-  assertEquals(tools.length, 1);
-  assertEquals(tools[0].type, "function");
-  assertEquals(tools[0].function.name, "read_file");
+  assertEquals(capturedPrompts.length, 1);
+  const fn = capturedPrompts[0].tool as ToolWithExecute;
+  assertEquals(fn.type, "function");
+  assertEquals(fn.function.name, "read_file");
+  assertEquals(
+    capturedPrompts[0].instruction,
+    "Use the read_file tool to read file contents before answering.",
+  );
 });
