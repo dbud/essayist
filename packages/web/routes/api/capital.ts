@@ -7,9 +7,9 @@ export const handler = {
     const country = url.searchParams.get("country");
 
     if (!country) {
-      return new Response(
-        JSON.stringify({ error: "Missing 'country' query parameter" }),
-        { status: 400, headers: { "Content-Type": "application/json" } },
+      return Response.json(
+        { error: "Missing 'country' query parameter" },
+        { status: 400 },
       );
     }
 
@@ -17,9 +17,9 @@ export const handler = {
       const capital = await getCapital(country, ctx.state.agent);
       return Response.json({ country, capital });
     } catch (err) {
-      return new Response(
-        JSON.stringify({ error: String(err) }),
-        { status: 500, headers: { "Content-Type": "application/json" } },
+      return Response.json(
+        { error: String(err) },
+        { status: 500 },
       );
     }
   }),
