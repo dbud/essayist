@@ -1,4 +1,5 @@
-import { OpenRouter } from "@openrouter/sdk";
+import { OpenRouter, stepCountIs } from "@openrouter/agent";
+import type { Tool } from "@openrouter/agent";
 import { z } from "zod";
 import { generateInstructions, stripMarkdownFences } from "./schema.ts";
 
@@ -36,5 +37,28 @@ export class Agent {
     const text = await result.getText();
     console.log(text);
     return modelResponseSchema.parse(JSON.parse(stripMarkdownFences(text)));
+  }
+
+  /**
+   * Call the model with tools. The SDK handles the full tool loop:
+   * sends tool definitions to the model, executes tools when called,
+   * feeds results back, and repeats until the model produces a final response.
+   *
+   * @param input - The user prompt
+   * @param tools - Array of tools created with `tool()` from `@openrouter/agent`
+   * @param maxRounds - Max execution rounds (default: 5). Set to 0 for manual handling.
+   */
+  async callModelWithTools<TTools extends readonly Tool[]>(
+    input: string,
+    tools: TTools,
+    maxRounds = 5,
+  ): Promise<string> {
+    const result = this.#client.callModel({
+      model: MODEL,
+      input,
+      tools,
+      stopWhen: stepCountIs(maxRounds),
+    });
+    return await result.getText();
   }
 }
