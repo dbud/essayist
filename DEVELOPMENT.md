@@ -8,9 +8,9 @@ file current over leaving stale notes elsewhere.
 ## What This Is
 
 Essayist is a Deno monorepo that wraps the OpenRouter API to build AI-powered
-applications. The current feature is a country-capital lookup that demonstrates
-the pattern: a typed core library calls an LLM via OpenRouter, and a Fresh web
-app exposes it through a simple UI and API.
+applications. The current features are a country-capital lookup and a file
+summarizer that demonstrates the pattern: a typed core library calls an LLM via
+OpenRouter, and a Fresh web app exposes it through a simple UI and API.
 
 ## Monorepo Structure
 
@@ -32,17 +32,24 @@ essayist/
 ├── packages/
 │   ├── core/               # @essayist/core — shared library
 │   │   ├── deno.json       # Package config, exports, tasks
-│   │   ├── mod.ts          # Public API: getCapital, Agent, z
+│   │   ├── mod.ts          # Public API: getCapital, summarizeFile, Agent
 │   │   ├── src/
-│   │   │   ├── agent.ts    # Agent class — OpenRouter client wrapper
-│   │   │   ├── lib.ts      # getCapital() — example domain function
-│   │   │   ├── lib_test.ts # Unit tests for getCapital
-│   │   │   ├── schema.ts   # Zod→JSON-schema instruction generator + markdown fence stripper
-│   │   │   └── schema_test.ts
+│   │   │   ├── agent.ts         # Agent class — OpenRouter client wrapper
+│   │   │   ├── capital.ts       # getCapital() + capitalResponseSchema
+│   │   │   ├── capital_test.ts  # Unit tests for getCapital
+│   │   │   ├── schema.ts        # Zod→JSON-schema instruction generator + example builder
+│   │   │   ├── schema_test.ts
+│   │   │   ├── summarize.ts     # summarizeFile() — file summarizer via tool calls
+│   │   │   ├── summarize_test.ts
+│   │   │   ├── tools/
+│   │   │   │   ├── index.ts     # ToolPrompt interface
+│   │   │   │   └── read_file.ts # createReadFileTool()
+│   │   │   └── tools_test.ts
 │   │   └── integration/    # @essayist/core/integration — live API tests
 │   │       ├── deno.json
-│   │       ├── agent_test.ts   # Hits real OpenRouter API
-│   │       └── utils.ts        # Reads OPENROUTER_API_KEY from env
+│   │       ├── agent_test.ts       # Hits real OpenRouter API (getCapital)
+│   │       ├── summarize_test.ts   # Hits real OpenRouter API (summarizeFile)
+│   │       └── utils.ts            # Reads OPENROUTER_API_KEY from env
 │   │
 │   └── web/                # @essayist/web — Fresh web app
 │       ├── deno.json       # Package config, tasks, compiler options
@@ -68,17 +75,17 @@ essayist/
 
 ### Key Packages
 
-| Package          | Path             | Purpose                                                                                                |
-| ---------------- | ---------------- | ------------------------------------------------------------------------------------------------------ |
-| `@essayist/core` | `packages/core/` | Shared library: `Agent` class (OpenRouter wrapper), `getCapital` domain function, Zod schema utilities |
-| `@essayist/web`  | `packages/web/`  | Fresh 2.x web app (Preact + Tailwind CSS) deployed to Deno Deploy                                      |
+| Package          | Path             | Purpose                                                                                                 |
+| ---------------- | ---------------- | ------------------------------------------------------------------------------------------------------- |
+| `@essayist/core` | `packages/core/` | Shared library: `Agent` class (OpenRouter wrapper), `getCapital`, `summarizeFile`, Zod schema utilities |
+| `@essayist/web`  | `packages/web/`  | Fresh 2.x web app (Preact + Tailwind CSS) deployed to Deno Deploy                                       |
 
 ### Important Entry Points
 
 - **`packages/web/main.ts`** — Web app boot. Creates `App`, attaches
   `agentMiddleware`, calls `fsRoutes()`.
 - **`packages/core/mod.ts`** — Core library public API. Exports `getCapital`,
-  `Agent`, and `z`.
+  `summarizeFile`, and `Agent`.
 - **`packages/web/routes/api/capital.ts`** — API route. Calls `getCapital` with
   the agent from state.
 - **`packages/web/middleware/agent.ts`** — Middleware. Instantiates `Agent` with
@@ -86,10 +93,10 @@ essayist/
 
 ### Key Dependencies
 
-- **OpenRouter** — `@openrouter/sdk` (v0.12.79) for API calls,
-  `@openrouter/agent` (v^0.7.0) available but not yet used directly.
-- **Zod** (v4) — Schema validation and JSON Schema generation for structured LLM
-  output.
+- **OpenRouter** — `@openrouter/agent` (v^0.7.0) for `callModel`, `tool()`,
+  `stepCountIs`, and the `OpenRouter` client class.
+- **Zod** (v4) — Schema validation, JSON Schema generation, and metadata for
+  structured LLM output.
 - **Fresh** (v2.3.3) — Web framework (file-system routing, islands architecture,
   middleware).
 - **Preact** (v10.29.1) — UI library (JSX precompiled, not client-side rendered
@@ -159,9 +166,19 @@ Production builds and serving are handled by Deno Deploy.
   `routes/api/`. Islands (interactive Preact components) live in `islands/`.
 - **State management** — `createDefine` pattern from Fresh: `utils.ts` exports a
   typed `define` helper; middleware populates `ctx.state.agent`.
-- **Structured LLM output** — `Agent.callModel()` sends a Zod schema-derived
-  instruction prompt, expects JSON back, parses it with `stripMarkdownFences`,
-  and validates with Zod.
+- **Structured LLM output** — `Agent.callModel(input, schema)` sends a Zod
+  schema-derived instruction prompt with an example JSON object, expects JSON
+  back, parses it with `stripMarkdownFences`, and validates with Zod. The schema
+  is passed by the caller (e.g. `capital.ts` owns `capitalResponseSchema`).
+- **Schema instructions** —
+  `generateInstructions(schema, { includeExample: true })` produces a field
+  listing from the Zod schema's JSON Schema representation. Example values are
+  sourced from `.meta({ example: value })` on individual fields via
+  `z.globalRegistry`.
+- **Tool calling** — `Agent.callModelWithTools(input, toolPrompts)` passes tools
+  to the SDK's `callModel`, which handles the full tool loop (send definitions,
+  execute calls, feed results back). Tools are defined with `tool()` from
+  `@openrouter/agent` and wrapped in a `ToolPrompt` (tool + instruction string).
 - **Vite watches core** — `vite.config.ts` includes a custom `watchCore` plugin
   that adds `packages/core/` to Vite's file watcher so changes to core trigger
   web app reloads.
@@ -190,3 +207,5 @@ Production builds and serving are handled by Deno Deploy.
 - **JSX precompilation** — Fresh precompiles JSX at build time. Only island
   components hydrate on the client. The `jsxPrecompileSkipElements` list in
   `deno.json` prevents precompilation of standard HTML elements.
+- **`z` no longer re-exported** — `@essayist/core` no longer exports `z`. Import
+  Zod directly (`import { z } from "zod"`) in consumer code.
