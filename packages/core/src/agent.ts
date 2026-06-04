@@ -5,18 +5,6 @@ import type { ToolPrompt } from "./tools/index.ts";
 
 const MODEL = "openrouter/owl-alpha";
 
-const modelResponseSchema = z.object({
-  success: z.boolean().describe(
-    "true if the request was successful, false otherwise",
-  ),
-  result: z.string().nullable().describe(
-    "the answer, or null if success is false",
-  ),
-  diagnostic: z.string().describe("a short explanation of the result or error"),
-});
-
-export type ModelResponse = z.output<typeof modelResponseSchema>;
-
 export class Agent {
   #client: OpenRouter;
 
@@ -24,10 +12,12 @@ export class Agent {
     this.#client = new OpenRouter({ apiKey });
   }
 
-  async callModel(input: string): Promise<ModelResponse> {
-    const fullInput = `${input}\n\n${
-      generateInstructions(modelResponseSchema, { includeExample: true })
-    }`;
+  async callModel<T extends z.ZodObject<z.ZodRawShape>>(
+    input: string,
+    schema: T,
+    options?: { includeExample?: boolean },
+  ): Promise<z.output<T>> {
+    const fullInput = `${input}\n\n${generateInstructions(schema, options)}`;
 
     console.log(fullInput);
     const result = this.#client.callModel({
@@ -36,7 +26,7 @@ export class Agent {
     });
     const text = await result.getText();
     console.log(text);
-    return modelResponseSchema.parse(JSON.parse(stripMarkdownFences(text)));
+    return schema.parse(JSON.parse(stripMarkdownFences(text)));
   }
 
   async callModelWithTools(

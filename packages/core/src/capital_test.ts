@@ -1,13 +1,22 @@
 import { assertEquals } from "@std/assert";
 import { getCapital } from "./capital.ts";
-import type { Agent, ModelResponse } from "./agent.ts";
+import type { Agent } from "./agent.ts";
+import { z } from "zod";
+
+const testSchema = z.object({
+  success: z.boolean(),
+  result: z.string().nullable(),
+  diagnostic: z.string(),
+});
+
+type TestResponse = z.output<typeof testSchema>;
 
 function createMockClient(
-  response: ModelResponse,
+  response: TestResponse,
   onCall?: (input: string) => void,
 ): Agent {
   return {
-    callModel: (input: string) => {
+    callModel: (input: string, _schema: z.ZodObject<z.ZodRawShape>) => {
       onCall?.(input);
       return Promise.resolve(response);
     },
