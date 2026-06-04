@@ -21,6 +21,7 @@ export async function getCapital(
   const response: CapitalResponse = await client.callModel(
     `What is the capital of ${country}?`,
     capitalResponseSchema,
+    { includeExample: true },
   );
 
   if (!response.success) {
