@@ -26,7 +26,7 @@ export class Agent {
 
   async callModel(input: string): Promise<ModelResponse> {
     const fullInput = `${input}\n\n${
-      generateInstructions(modelResponseSchema)
+      generateInstructions(modelResponseSchema, { includeExample: true })
     }`;
 
     console.log(fullInput);

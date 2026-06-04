@@ -131,8 +131,32 @@ function formatValue(value: JsonValue): string {
   return JSON.stringify(value);
 }
 
+function getExampleValue(prop: z.core.$ZodType): JsonValue | undefined {
+  const meta = z.globalRegistry.get(prop);
+  if (meta && typeof meta === "object" && "example" in meta) {
+    return meta.example as JsonValue;
+  }
+  return undefined;
+}
+
+function buildExample(
+  schema: z.ZodObject<z.ZodRawShape>,
+): Record<string, JsonValue> {
+  const example: Record<string, JsonValue> = {};
+  const shape = schema.shape;
+  for (const key of Object.keys(shape)) {
+    const field = shape[key];
+    const val = getExampleValue(field);
+    if (val !== undefined) {
+      example[key] = val;
+    }
+  }
+  return example;
+}
+
 export function generateInstructions(
   schema: z.ZodObject<z.ZodRawShape>,
+  options?: { includeExample?: boolean },
 ): string {
   const jsonSchema = z.toJSONSchema(schema, {
     target: "draft-07",
@@ -145,7 +169,10 @@ export function generateInstructions(
   }
 
   const required = new Set(resolved.required ?? []);
-  const lines = ["Return JSON matching this shape:", ""];
+  const lines = [
+    "Return only one valid JSON object matching this shape. Do not use markdown fences, code blocks, comments, or any extra text:",
+    "",
+  ];
 
   if (resolved.properties) {
     for (const [key, prop] of Object.entries(resolved.properties)) {
@@ -175,6 +202,13 @@ export function generateInstructions(
       }
 
       lines.push(`- ${key}: ${parts.join(", ")}`);
+    }
+  }
+
+  if (options?.includeExample) {
+    const example = buildExample(schema);
+    if (Object.keys(example).length > 0) {
+      lines.push("", "Example:", JSON.stringify(example, null, 2));
     }
   }
 

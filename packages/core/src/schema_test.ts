@@ -11,11 +11,35 @@ Deno.test("generateInstructions produces correct output for modelResponseSchema"
 
   assertEquals(
     generateInstructions(schema),
-    `Return JSON matching this shape:
+    `Return only one valid JSON object matching this shape. Do not use markdown fences, code blocks, comments, or any extra text:
 
 - success: true if successful, false otherwise, boolean
 - result: the answer, string, nullable
 - diagnostic: explanation of the result, string`,
+  );
+});
+
+Deno.test("generateInstructions includes example when includeExample is true", () => {
+  const schema = z.object({
+    success: z.boolean().describe("ok").meta({ example: true }),
+    result: z.string().nullable().describe("answer").meta({ example: "Paris" }),
+    diagnostic: z.string().describe("info").meta({ example: "Found capital" }),
+  });
+
+  assertEquals(
+    generateInstructions(schema, { includeExample: true }),
+    `Return only one valid JSON object matching this shape. Do not use markdown fences, code blocks, comments, or any extra text:
+
+- success: ok, boolean
+- result: answer, string, nullable
+- diagnostic: info, string
+
+Example:
+{
+  "success": true,
+  "result": "Paris",
+  "diagnostic": "Found capital"
+}`,
   );
 });
 
@@ -26,7 +50,7 @@ Deno.test("generateInstructions marks nullable fields as nullable", () => {
 
   assertEquals(
     generateInstructions(schema),
-    `Return JSON matching this shape:
+    `Return only one valid JSON object matching this shape. Do not use markdown fences, code blocks, comments, or any extra text:
 
 - value: string, nullable`,
   );
@@ -40,7 +64,7 @@ Deno.test("generateInstructions handles optional fields", () => {
 
   assertEquals(
     generateInstructions(schema),
-    `Return JSON matching this shape:
+    `Return only one valid JSON object matching this shape. Do not use markdown fences, code blocks, comments, or any extra text:
 
 - name: string
 - nickname: string, optional`,
@@ -54,7 +78,7 @@ Deno.test("generateInstructions handles enum fields", () => {
 
   assertEquals(
     generateInstructions(schema),
-    `Return JSON matching this shape:
+    `Return only one valid JSON object matching this shape. Do not use markdown fences, code blocks, comments, or any extra text:
 
 - status: one of "active", "inactive", string`,
   );
@@ -67,7 +91,7 @@ Deno.test("generateInstructions handles array fields", () => {
 
   assertEquals(
     generateInstructions(schema),
-    `Return JSON matching this shape:
+    `Return only one valid JSON object matching this shape. Do not use markdown fences, code blocks, comments, or any extra text:
 
 - tags: string array`,
   );
@@ -80,7 +104,7 @@ Deno.test("generateInstructions handles union types", () => {
 
   assertEquals(
     generateInstructions(schema),
-    `Return JSON matching this shape:
+    `Return only one valid JSON object matching this shape. Do not use markdown fences, code blocks, comments, or any extra text:
 
 - value: string | number`,
   );
@@ -93,7 +117,7 @@ Deno.test("generateInstructions handles nullable arrays", () => {
 
   assertEquals(
     generateInstructions(schema),
-    `Return JSON matching this shape:
+    `Return only one valid JSON object matching this shape. Do not use markdown fences, code blocks, comments, or any extra text:
 
 - items: string array, nullable`,
   );
@@ -106,7 +130,7 @@ Deno.test("generateInstructions handles optional arrays", () => {
 
   assertEquals(
     generateInstructions(schema),
-    `Return JSON matching this shape:
+    `Return only one valid JSON object matching this shape. Do not use markdown fences, code blocks, comments, or any extra text:
 
 - items: string array, optional`,
   );
@@ -119,7 +143,7 @@ Deno.test("generateInstructions handles record types", () => {
 
   assertEquals(
     generateInstructions(schema),
-    `Return JSON matching this shape:
+    `Return only one valid JSON object matching this shape. Do not use markdown fences, code blocks, comments, or any extra text:
 
 - metadata: string record`,
   );
@@ -132,7 +156,7 @@ Deno.test("generateInstructions handles literal types", () => {
 
   assertEquals(
     generateInstructions(schema),
-    `Return JSON matching this shape:
+    `Return only one valid JSON object matching this shape. Do not use markdown fences, code blocks, comments, or any extra text:
 
 - type: literal "article", string`,
   );
@@ -146,7 +170,7 @@ Deno.test("generateInstructions handles default values", () => {
 
   assertEquals(
     generateInstructions(schema),
-    `Return JSON matching this shape:
+    `Return only one valid JSON object matching this shape. Do not use markdown fences, code blocks, comments, or any extra text:
 
 - name: string
 - status: string, default: "active"`,
@@ -162,7 +186,7 @@ Deno.test("generateInstructions handles nullable objects", () => {
 
   assertEquals(
     generateInstructions(schema),
-    `Return JSON matching this shape:
+    `Return only one valid JSON object matching this shape. Do not use markdown fences, code blocks, comments, or any extra text:
 
 - user: object, nullable`,
   );
@@ -178,7 +202,7 @@ Deno.test("generateInstructions handles intersection types", () => {
 
   assertEquals(
     generateInstructions(schema),
-    `Return JSON matching this shape:
+    `Return only one valid JSON object matching this shape. Do not use markdown fences, code blocks, comments, or any extra text:
 
 - value: intersection`,
   );
@@ -191,7 +215,7 @@ Deno.test("generateInstructions handles tuple types", () => {
 
   assertEquals(
     generateInstructions(schema),
-    `Return JSON matching this shape:
+    `Return only one valid JSON object matching this shape. Do not use markdown fences, code blocks, comments, or any extra text:
 
 - coords: (number, number) tuple`,
   );
@@ -204,7 +228,7 @@ Deno.test("generateInstructions handles boolean fields", () => {
 
   assertEquals(
     generateInstructions(schema),
-    `Return JSON matching this shape:
+    `Return only one valid JSON object matching this shape. Do not use markdown fences, code blocks, comments, or any extra text:
 
 - active: boolean`,
   );
@@ -217,7 +241,7 @@ Deno.test("generateInstructions handles number fields", () => {
 
   assertEquals(
     generateInstructions(schema),
-    `Return JSON matching this shape:
+    `Return only one valid JSON object matching this shape. Do not use markdown fences, code blocks, comments, or any extra text:
 
 - count: number`,
   );
