@@ -31,7 +31,8 @@
     "@types/babel__core": "npm:@types/babel__core@^7.20.5",
     "@types/node": "npm:@types/node@^24.0.0",
     "tailwindcss": "npm:tailwindcss@^4.1.10",
-    "@tailwindcss/vite": "npm:@tailwindcss/vite@^4.1.12"
+    "@tailwindcss/vite": "npm:@tailwindcss/vite@^4.1.12",
+    "daisyui": "npm:daisyui@^5.5.20"
   },
   "compilerOptions": {
     "lib": [

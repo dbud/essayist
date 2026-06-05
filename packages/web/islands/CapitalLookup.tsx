@@ -30,30 +30,44 @@ export default function CapitalLookup() {
   }
 
   return (
-    <div>
-      <h2>Country Capital Lookup</h2>
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          lookup();
-        }}
-      >
-        <input
-          type="text"
-          value={country}
-          onInput={(e) => setCountry(e.currentTarget.value)}
-          placeholder="Enter a country..."
-        />
-        <button type="submit" disabled={loading}>
-          {loading ? "Looking up…" : "Look up"}
-        </button>
-      </form>
-      {capital && (
-        <p>
-          <strong>Capital:</strong> {capital}
-        </p>
-      )}
-      {error && <p style="color: red;">Error: {error}</p>}
+    <div class="card bg-base-200 shadow-xl max-w-md mx-auto">
+      <div class="card-body">
+        <h2 class="card-title">Country Capital Lookup</h2>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            lookup();
+          }}
+          class="flex flex-col gap-4"
+        >
+          <input
+            type="text"
+            value={country}
+            onInput={(e) => setCountry(e.currentTarget.value)}
+            placeholder="Enter a country..."
+            class="input input-bordered w-full"
+          />
+          <button type="submit" class="btn btn-primary" disabled={loading}>
+            {loading && (
+              <span class="loading loading-spinner loading-sm">
+              </span>
+            )}
+            {loading ? "Looking up…" : "Look up"}
+          </button>
+        </form>
+        {capital && (
+          <div class="alert alert-success mt-4">
+            <span>
+              <strong>Capital:</strong> {capital}
+            </span>
+          </div>
+        )}
+        {error && (
+          <div class="alert alert-error mt-4">
+            <span>Error: {error}</span>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

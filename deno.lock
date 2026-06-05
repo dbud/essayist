@@ -42,6 +42,7 @@
     "npm:@tailwindcss/vite@^4.1.12": "4.3.0_vite@7.3.5__@types+node@24.12.4_@types+node@24.12.4",
     "npm:@types/babel__core@^7.20.5": "7.20.5",
     "npm:@types/node@24": "24.12.4",
+    "npm:daisyui@^5.5.20": "5.5.20",
     "npm:esbuild-wasm@~0.25.11": "0.25.12",
     "npm:esbuild@0.25.7": "0.25.7",
     "npm:esbuild@~0.25.5": "0.25.12",
@@ -1127,6 +1128,9 @@
     "convert-source-map@2.0.0": {
       "integrity": "sha512-Kvp459HrV2FEJ1CAsi1Ku+MY3kasH19TFykTz2xWmMeq6bk2NU3XXvfJ+Q61m0xktWwt+1HSYf3JZsTms3aRJg=="
     },
+    "daisyui@5.5.20": {
+      "integrity": "sha512-HemJcjl0Gk9rQ8BcgofN6p+EURrqftQG9wK1Hkxs98i49xe68+QxpNvry+PyxwkIUgrbMpNmZ5ZWjmtffAjfhQ=="
+    },
     "debug@4.4.3": {
       "integrity": "sha512-RGwwWnwQvkVfavKVt22FGLw+xYSdzARwm0ru6DhTVA3umU5hZc28V3kO4stgYryrTlLpuvgI9GiijltAjNbcqA==",
       "dependencies": [
@@ -1528,6 +1532,7 @@
           "npm:@tailwindcss/vite@^4.1.12",
           "npm:@types/babel__core@^7.20.5",
           "npm:@types/node@24",
+          "npm:daisyui@^5.5.20",
           "npm:preact@^10.29.1",
           "npm:tailwindcss@^4.1.10",
           "npm:vite@^7.1.3"
