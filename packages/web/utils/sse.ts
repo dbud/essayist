@@ -1,5 +1,19 @@
 import type { ModelResult, Tool } from "@openrouter/agent";
 
+async function* chunks(stream: ReadableStream<Uint8Array>) {
+  const reader = stream.getReader();
+  const decoder = new TextDecoder();
+  try {
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      if (value) yield decoder.decode(value, { stream: true });
+    }
+  } finally {
+    reader.releaseLock();
+  }
+}
+
 /**
  * Parse a ReadableStream of SSE (Server-Sent Events) chunks into
  * typed { event, data } objects.
@@ -12,11 +26,10 @@ import type { ModelResult, Tool } from "@openrouter/agent";
 export async function* parseSSE(
   stream: ReadableStream<Uint8Array>,
 ): AsyncGenerator<{ event: string; data: unknown }> {
-  const decoder = new TextDecoder();
   let buffer = "";
 
-  for await (const chunk of stream) {
-    buffer += decoder.decode(chunk, { stream: true });
+  for await (const chunk of chunks(stream)) {
+    buffer += chunk;
 
     const events = buffer.split("\n\n");
     buffer = events.pop() ?? "";
