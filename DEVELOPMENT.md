@@ -61,7 +61,8 @@ essayist/
 │       ├── assets/
 │       │   └── styles.css  # Tailwind import
 │       ├── islands/
-│       │   └── CapitalLookup.tsx  # Interactive Preact island
+│       │   ├── CapitalLookup.tsx  # Interactive Preact island (capital lookup)
+│       │   └── Chat.tsx  # Interactive Preact island (streaming chat)
 │       ├── middleware/
 │       │   └── agent.ts    # Creates Agent from OPENROUTER_API_KEY, attaches to state
 │       ├── routes/
@@ -88,8 +89,14 @@ essayist/
   `summarizeFile`, and `Agent`.
 - **`packages/web/routes/api/capital.ts`** — API route. Calls `getCapital` with
   the agent from state.
+- **`packages/web/routes/api/chat.ts`** — SSE streaming chat endpoint. Uses
+  `Agent` to forward user messages to the LLM and streams tool results.
+- **`packages/web/islands/Chat.tsx`** — Interactive Preact island that consumes
+  the SSE stream via `useChat`.
 - **`packages/web/middleware/agent.ts`** — Middleware. Instantiates `Agent` with
   `OPENROUTER_API_KEY` and attaches it to `ctx.state.agent`.
+- **`packages/web/utils/useChat.ts`** and **`packages/web/utils/sse.ts`** —
+  Helper utilities for managing the SSE connection and client‑side state.
 
 ### Key Dependencies
 
@@ -198,8 +205,9 @@ Production builds and serving are handled by Deno Deploy.
 - **`OPENROUTER_API_KEY` required** — Both the web app and integration tests
   need this env var. The web middleware returns 500 if it's missing; integration
   tests print a warning and exit 0.
-- **`client.ts` is unused** — `packages/web/client.ts` exists but is not
-  imported anywhere. It may be a placeholder.
+- **`client.ts`** — Imports global CSS (`styles.css`) for client‑side rendering.
+  It is required by Fresh to inject the stylesheet into the generated HTML, even
+  though it isn’t imported directly in other modules.
 - **Model is hardcoded** — `Agent` uses `openrouter/owl-alpha` as the model.
   This is not configurable via constructor or env var.
 - **Fresh build output** — `_fresh/` is gitignored. Production builds are
