@@ -11,7 +11,7 @@ function createMockAgentWithTools(
   return {
     callModelWithTools: (input: string, toolPrompts: readonly ToolPrompt[]) => {
       onCall?.(input, toolPrompts);
-      return Promise.resolve(responseText);
+      return { getText: () => Promise.resolve(responseText) };
     },
   } as unknown as Agent;
 }

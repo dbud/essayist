@@ -8,8 +8,9 @@ export async function summarizeFile(
 ): Promise<string> {
   const readToolPrompt = createReadFileTool(files);
 
-  return await client.callModelWithTools(
+  const result = client.callModelWithTools(
     `Summarize the file "${fileName}" in 2-3 sentences.`,
     [readToolPrompt],
   );
+  return await result.getText();
 }

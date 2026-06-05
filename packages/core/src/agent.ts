@@ -1,5 +1,4 @@
 import { OpenRouter, stepCountIs } from "@openrouter/agent";
-import type { StreamableOutputItem } from "@openrouter/agent";
 import { z } from "zod";
 import { generateInstructions, stripMarkdownFences } from "./schema.ts";
 import type { ToolPrompt } from "./tools/index.ts";
@@ -28,96 +27,25 @@ export class Agent {
     return schema.parse(JSON.parse(stripMarkdownFences(text)));
   }
 
-  async callModelWithTools(
-    input: string,
-    toolPrompts: readonly ToolPrompt[],
-    maxRounds = 5,
-  ): Promise<string> {
-    const tools = toolPrompts.map((tp) => tp.tool);
-    const instructions = toolPrompts.map((tp) => tp.instruction).join("\n");
-    const fullInput = `${instructions}\n\n${input}`;
-
-    const result = this.#client.callModel({
-      model: MODEL,
-      input: fullInput,
-      tools,
-      stopWhen: stepCountIs(maxRounds),
-    });
-    return await result.getText();
-  }
-
   /**
-   * Stream a chat response, printing text deltas, tool calls, and tool results
-   * to the terminal in real time. Returns the final assistant text.
+   * Call the model with tools. Returns the ModelResult for streaming,
+   * or await .getText() for the final text.
    */
-  async streamChat(
+  callModelWithTools(
     input: string,
     toolPrompts: readonly ToolPrompt[],
     maxRounds = 5,
-  ): Promise<string> {
+  ) {
     const tools = toolPrompts.map((tp) => tp.tool);
     const instructions = toolPrompts.map((tp) => tp.instruction).join("\n");
     const fullInput = `${instructions}\n\n${input}`;
 
-    console.log(`[streamChat] input:\n${fullInput}\n`);
-
-    const result = this.#client.callModel({
+    return this.#client.callModel({
       model: MODEL,
       input: fullInput,
       tools,
       stopWhen: stepCountIs(maxRounds),
     });
-
-    const items = result.getItemsStream();
-    const textStream = result.getTextStream();
-
-    let finalText = "";
-
-    // Consume text stream for the final result
-    const textPromise = (async () => {
-      for await (const delta of textStream) {
-        process.stdout.write(delta);
-        finalText += delta;
-      }
-    })();
-
-    // Consume items stream for tool call / result annotations
-    const itemsPromise = (async () => {
-      for await (const item of items) {
-        this.#printItem(item);
-      }
-    })();
-
-    await Promise.all([textPromise, itemsPromise]);
-    return finalText;
-  }
-
-  #printItem(item: StreamableOutputItem): void {
-    console.log(JSON.stringify(item));
-    switch (item.type) {
-      case "function_call": {
-        const args = item.arguments ? JSON.stringify(item.arguments) : "{}";
-        console.log(`\n  🔧 ${item.name}(${args})`);
-        break;
-      }
-      case "function_call_output": {
-        const output = typeof item.output === "string"
-          ? item.output
-          : JSON.stringify(item.output);
-        // Truncate long outputs for readability
-        const display = output.length > 200
-          ? output.slice(0, 200) + "…"
-          : output;
-        console.log(`  ✅ → ${display}`);
-        break;
-      }
-      case "reasoning": {
-        if (item.summary) {
-          console.log(`  💭 ${item.summary}`);
-        }
-        break;
-      }
-    }
   }
 
   /**
@@ -130,17 +58,7 @@ export class Agent {
     toolPrompts: readonly ToolPrompt[],
     maxRounds = 5,
   ): ReadableStream<Uint8Array> {
-    const tools = toolPrompts.map((tp) => tp.tool);
-    const instructions = toolPrompts.map((tp) => tp.instruction).join("\n");
-    const fullInput = `${instructions}\n\n${input}`;
-
-    const result = this.#client.callModel({
-      model: MODEL,
-      input: fullInput,
-      tools,
-      stopWhen: stepCountIs(maxRounds),
-    });
-
+    const result = this.callModelWithTools(input, toolPrompts, maxRounds);
     const encoder = new TextEncoder();
 
     return new ReadableStream<Uint8Array>({
@@ -153,14 +71,12 @@ export class Agent {
           );
         };
 
-        // Consume text stream
         const textPromise = (async () => {
           for await (const delta of result.getTextStream()) {
             send("delta", { delta });
           }
         })();
 
-        // Consume items stream
         const itemsPromise = (async () => {
           for await (const item of result.getItemsStream()) {
             send("item", item);
