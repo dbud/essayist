@@ -3,6 +3,11 @@ import type { StreamableOutputItem } from "@openrouter/agent";
 import { useChat } from "@/utils/useChat.ts";
 
 function renderItem(item: StreamableOutputItem) {
+  return (
+    <pre class="flex items-start gap-2 my-2 text-sm whitespace-pre-wrap">
+      {JSON.stringify(item, null, 2)}
+    </pre>
+  );
   switch (item.type) {
     case "function_call":
       return (
@@ -43,6 +48,8 @@ function renderItem(item: StreamableOutputItem) {
 export default function Chat() {
   const { messages, streaming, send } = useChat("/api/chat");
   const input = useSignal("");
+
+  console.log(">>", messages.value);
 
   return (
     <div class="card bg-base-200 shadow-xl max-w-2xl mx-auto h-[70vh] flex flex-col">
