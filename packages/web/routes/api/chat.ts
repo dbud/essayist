@@ -1,5 +1,6 @@
 import { define } from "../../utils.ts";
 import { createReadFileTool } from "@essayist/core";
+import { streamModelResultSSE } from "@/utils/sse.ts";
 
 const sampleFiles = new Map<string, string>([
   [
@@ -28,7 +29,8 @@ export const handler = {
       );
     }
 
-    const stream = ctx.state.agent.streamChatSSE(message, tools);
+    const result = ctx.state.agent.callModelWithTools(message, tools);
+    const stream = streamModelResultSSE(result);
 
     return new Response(stream, {
       headers: {

@@ -1,3 +1,5 @@
+import type { ModelResult, Tool } from "@openrouter/agent";
+
 /**
  * Parse a ReadableStream of SSE (Server-Sent Events) chunks into
  * typed { event, data } objects.
@@ -32,4 +34,46 @@ export async function* parseSSE(
       };
     }
   }
+}
+
+/**
+ * Stream a ModelResult as a ReadableStream of SSE events.
+ * Yields text deltas, item updates (tool calls, results, reasoning),
+ * and a final done event.
+ */
+export function streamModelResultSSE<TTools extends readonly Tool[]>(
+  result: ModelResult<TTools>,
+): ReadableStream<Uint8Array> {
+  const encoder = new TextEncoder();
+
+  return new ReadableStream<Uint8Array>({
+    async start(controller) {
+      const send = (event: string, data: unknown) => {
+        controller.enqueue(
+          encoder.encode(
+            `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`,
+          ),
+        );
+      };
+
+      const textPromise = (async () => {
+        for await (const delta of result.getTextStream()) {
+          send("delta", { delta });
+        }
+      })();
+
+      const itemsPromise = (async () => {
+        for await (const item of result.getItemsStream()) {
+          send("item", item);
+        }
+      })();
+
+      await Promise.all([textPromise, itemsPromise]);
+      send("done", {});
+      controller.close();
+    },
+    async cancel() {
+      await result.cancel();
+    },
+  });
 }
