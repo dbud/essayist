@@ -3,7 +3,7 @@ import { z } from "zod";
 import { generateInstructions, stripMarkdownFences } from "./schema.ts";
 import type { ToolPrompt } from "./tools/index.ts";
 
-const MODEL = "openrouter/owl-alpha";
+const MODELS = ["openai/gpt-oss-120b:free", "openrouter/owl-alpha"];
 
 export class Agent {
   #client: OpenRouter;
@@ -20,7 +20,7 @@ export class Agent {
     const fullInput = `${input}\n\n${generateInstructions(schema, options)}`;
 
     const result = this.#client.callModel({
-      model: MODEL,
+      models: MODELS,
       input: fullInput,
     });
     const text = await result.getText();
@@ -41,7 +41,7 @@ export class Agent {
     const fullInput = `${instructions}\n\n${input}`;
 
     return this.#client.callModel({
-      model: MODEL,
+      models: MODELS,
       input: fullInput,
       tools,
       stopWhen: stepCountIs(maxRounds),
