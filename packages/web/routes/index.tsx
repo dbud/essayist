@@ -1,4 +1,6 @@
-import CapitalLookup from "@/islands/CapitalLookup.tsx";
+import Chat from "@/islands/Chat.tsx";
+
+const sampleFiles = ["essay.txt", "report.txt"];
 
 export default function HomePage() {
   return (
@@ -8,12 +10,20 @@ export default function HomePage() {
           <div>
             <h1 class="text-4xl font-bold">Essayist</h1>
             <p class="py-4 text-base-content/70">
-              AI-powered tools built on OpenRouter
+              AI-powered tools for writing
             </p>
           </div>
         </div>
       </div>
-      <CapitalLookup />
+
+      <div class="flex flex-wrap gap-1 text-xs justify-center mb-4">
+        <span class="text-base-content/50">Available files:</span>
+        {sampleFiles.map((f) => (
+          <span key={f} class="badge badge-ghost badge-sm">{f}</span>
+        ))}
+      </div>
+
+      <Chat />
     </main>
   );
 }
