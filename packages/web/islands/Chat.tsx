@@ -30,10 +30,16 @@ function renderItem(item: StreamableOutputItem) {
         </div>
       );
     case "reasoning": {
-      const text = item.content
-        ?.filter((c) => c.type === "reasoning_text")
-        .map((c) => c.text)
-        .join("\n");
+      // In-progress: text is in summary[].text
+      // Completed: text is in content[].text
+      const text = item.summary
+        ?.filter((s) => s.type === "summary_text")
+        .map((s) => s.text)
+        .join("\n") ||
+        item.content
+          ?.filter((c) => c.type === "reasoning_text")
+          .map((c) => c.text)
+          .join("\n");
       if (!text) return null;
       return (
         <div class="my-2 text-sm opacity-60 italic border-l-2 border-base-300">
