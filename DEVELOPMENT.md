@@ -221,8 +221,10 @@ Production builds and serving are handled by Deno Deploy.
   configurable via constructor or env var.
 - **Fresh build output** — `_fresh/` is gitignored. Production builds are
   handled by Deno Deploy (`deno deploy` org: `dbud`, app: `essayist`).
-- **JSX precompilation** — Fresh precompiles JSX at build time. Only island
-  components hydrate on the client. The `jsxPrecompileSkipElements` list in
-  `deno.json` prevents precompilation of standard HTML elements.
+- **JSX runtime** — `jsx: "react-jsx"` with `jsxImportSource: "preact"` uses the
+  automatic JSX runtime. This is required for `@prefresh/vite` HMR to work in
+  dev. Do **not** use `jsx: "precompile"` — it transforms JSX before Vite sees
+  the code, breaking client-side hot reload for islands. Only island components
+  hydrate on the client.
 - **`z` no longer re-exported** — `@essayist/core` no longer exports `z`. Import
   Zod directly (`import { z } from "zod"`) in consumer code.
