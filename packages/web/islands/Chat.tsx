@@ -1,6 +1,7 @@
-import { useSignal } from "@preact/signals";
+import { useComputed, useSignal } from "@preact/signals";
 import type { StreamableOutputItem } from "@openrouter/agent";
 import { useChat } from "@/utils/useChat.ts";
+import { useEffect, useRef } from "preact/hooks";
 
 function pprint<T>(a: string | T) {
   const object = typeof a === "string" ? JSON.parse(a) : a;
@@ -48,15 +49,30 @@ function renderItem(item: StreamableOutputItem) {
 export default function Chat() {
   const { messages, streaming, send } = useChat("/api/chat");
   const input = useSignal("");
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const messageCount = useComputed(() => messages.value.length);
+  const lastText = useComputed(() => {
+    const last = messages.value[messages.value.length - 1];
+    return last?.value.text ?? "";
+  });
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  }, [messageCount.value, lastText.value, streaming.value]);
 
   return (
-    <div class="card bg-base-100 card-border border-base-300 max-w-2xl max-h-[70vh] flex flex-col overflow-hidden">
+    <div class="card bg-base-100 card-border border-base-300 max-w-2xl h-full max-h-[70vh] flex flex-col overflow-hidden">
       <div class="card-body flex-1 flex flex-col p-0 min-h-0">
         {/* Messages area */}
-        <div class="flex-1 overflow-y-auto px-6 py-4 space-y-4 min-h-0">
+        <div
+          ref={scrollRef}
+          class="flex-1 overflow-y-auto m-4 space-y-4 min-h-0"
+        >
           {messages.value.length === 0 && (
-            <div class="flex flex-col items-center justify-center h-full text-base-content/50">
-              <p class="text-center">Send a message to start chatting</p>
+            <div class="text-base-content/50">
+              Send a message to start chatting
             </div>
           )}
           {messages.value.map((msgSig, i) => {
