@@ -32,7 +32,7 @@ essayist/
 ├── packages/
 │   ├── core/               # @essayist/core — shared library
 │   │   ├── deno.json       # Package config, exports, tasks
-│   │   ├── mod.ts          # Public API: getCapital, summarizeFile, Agent
+│   │   ├── mod.ts          # Public API: getCapital, summarizeFile, Agent, createReadFileTool
 │   │   ├── src/
 │   │   │   ├── agent.ts         # Agent class — OpenRouter client wrapper
 │   │   │   ├── capital.ts       # getCapital() + capitalResponseSchema
@@ -67,9 +67,13 @@ essayist/
 │       │   └── agent.ts    # Creates Agent from OPENROUTER_API_KEY, attaches to state
 │       ├── routes/
 │       │   ├── _app.tsx    # HTML shell (imports styles.css)
-│       │   ├── index.tsx   # Home page — renders CapitalLookup island
+│       │   ├── index.tsx   # Home page — renders Chat island
 │       │   └── api/
-│       │       └── capital.ts  # GET /api/capital?country=… → { country, capital }
+│       │       ├── capital.ts  # GET /api/capital?country=… → { country, capital }
+│       │       └── chat.ts     # GET /api/chat?message=… → SSE stream
+│       ├── utils/
+│       │   ├── sse.ts       # SSE streaming helpers (parseSSE, streamModelResultSSE)
+│       │   └── useChat.ts   # useChat() hook for consuming SSE in Preact islands
 │       └── static/
 │           └── favicon.ico
 ```
@@ -78,7 +82,7 @@ essayist/
 
 | Package          | Path             | Purpose                                                                                                 |
 | ---------------- | ---------------- | ------------------------------------------------------------------------------------------------------- |
-| `@essayist/core` | `packages/core/` | Shared library: `Agent` class (OpenRouter wrapper), `getCapital`, `summarizeFile`, Zod schema utilities |
+| `@essayist/core` | `packages/core/` | Shared library: `Agent` class (OpenRouter wrapper), `getCapital`, `summarizeFile`, `createReadFileTool`, Zod schema utilities |
 | `@essayist/web`  | `packages/web/`  | Fresh 2.x web app (Preact + Tailwind CSS) deployed to Deno Deploy                                       |
 
 ### Important Entry Points
@@ -86,7 +90,7 @@ essayist/
 - **`packages/web/main.ts`** — Web app boot. Creates `App`, attaches
   `agentMiddleware`, calls `fsRoutes()`.
 - **`packages/core/mod.ts`** — Core library public API. Exports `getCapital`,
-  `summarizeFile`, and `Agent`.
+  `summarizeFile`, `Agent`, and `createReadFileTool`.
 - **`packages/web/routes/api/capital.ts`** — API route. Calls `getCapital` with
   the agent from state.
 - **`packages/web/routes/api/chat.ts`** — SSE streaming chat endpoint. Uses
@@ -108,7 +112,11 @@ essayist/
   middleware).
 - **Preact** (v10.29.1) — UI library (JSX precompiled, not client-side rendered
   except islands).
+- **@preact/signals** (v2.9.0) — Reactive signals for Preact islands (used by
+  `Chat` and `useChat`).
 - **Tailwind CSS** (v4.1.10) — Styling via `@tailwindcss/vite` plugin.
+- **daisyUI** (v5.5.20) — Component library built on Tailwind (badge, card, chat
+  bubble, hero, etc.).
 - **Vite** (v7.1.3) — Dev server and build tool (via `@fresh/plugin-vite`).
 
 ## Commands
@@ -208,8 +216,9 @@ Production builds and serving are handled by Deno Deploy.
 - **`client.ts`** — Imports global CSS (`styles.css`) for client‑side rendering.
   It is required by Fresh to inject the stylesheet into the generated HTML, even
   though it isn’t imported directly in other modules.
-- **Model is hardcoded** — `Agent` uses `openrouter/owl-alpha` as the model.
-  This is not configurable via constructor or env var.
+- **Models are hardcoded** — `Agent` uses a fixed list of models:
+  `["openai/gpt-oss-120b:free", "openrouter/owl-alpha"]`. This is not
+  configurable via constructor or env var.
 - **Fresh build output** — `_fresh/` is gitignored. Production builds are
   handled by Deno Deploy (`deno deploy` org: `dbud`, app: `essayist`).
 - **JSX precompilation** — Fresh precompiles JSX at build time. Only island
