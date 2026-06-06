@@ -9,10 +9,10 @@ function renderItem(item: StreamableOutputItem) {
         <div class="flex items-start gap-2 my-2 text-sm">
           <span class="badge badge-info badge-sm">tool</span>
           <div>
-            <code class="font-mono font-bold">{item.name}</code>
+            <code class="font-mono font-bold text-xs">{item.name}</code>
             {item.arguments && (
               <pre class="text-xs mt-1 opacity-70 overflow-x-auto">
-                {JSON.stringify(item.arguments, null, 2)}
+                {item.arguments}
               </pre>
             )}
           </div>
@@ -29,12 +29,18 @@ function renderItem(item: StreamableOutputItem) {
           </pre>
         </div>
       );
-    case "reasoning":
+    case "reasoning": {
+      const text = item.content
+        ?.filter((c) => c.type === "reasoning_text")
+        .map((c) => c.text)
+        .join("\n");
+      if (!text) return null;
       return (
-        <div class="my-2 text-sm opacity-60 italic border-l-2 border-base-300 pl-3">
-          {item.summary}
+        <div class="my-2 text-sm opacity-60 italic border-l-2 border-base-300">
+          {text}
         </div>
       );
+    }
     default:
       return null;
   }
