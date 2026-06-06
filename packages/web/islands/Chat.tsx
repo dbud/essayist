@@ -50,8 +50,8 @@ export default function Chat() {
   const input = useSignal("");
 
   return (
-    <div class="card bg-base-100 card-border border-base-300 max-w-2xl h-[70vh] flex flex-col">
-      <div class="card-body flex-1 flex flex-col p-0">
+    <div class="card bg-base-100 card-border border-base-300 max-w-2xl max-h-[70vh] flex flex-col overflow-hidden">
+      <div class="card-body flex-1 flex flex-col p-0 min-h-0">
         {/* Messages area */}
         <div class="flex-1 overflow-y-auto px-6 py-4 space-y-4 min-h-0">
           {messages.value.length === 0 && (
