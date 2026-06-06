@@ -23,8 +23,13 @@ function newMessage(
   return signal<ChatMessage>({ role, text, items: new Map() });
 }
 
-export function useChat(apiUrl: string) {
-  const messages = useSignal<Signal<ChatMessage>[]>([]);
+export function useChat(
+  apiUrl: string,
+  initial?: ChatMessage[],
+) {
+  const messages = useSignal<Signal<ChatMessage>[]>(
+    (initial ?? []).map((m) => signal<ChatMessage>(m)),
+  );
   const streaming = useSignal(false);
   const abortRef = useRef<AbortController | null>(null);
 

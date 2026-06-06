@@ -80,10 +80,10 @@ essayist/
 
 ### Key Packages
 
-| Package          | Path             | Purpose                                                                                                 |
-| ---------------- | ---------------- | ------------------------------------------------------------------------------------------------------- |
+| Package          | Path             | Purpose                                                                                                                       |
+| ---------------- | ---------------- | ----------------------------------------------------------------------------------------------------------------------------- |
 | `@essayist/core` | `packages/core/` | Shared library: `Agent` class (OpenRouter wrapper), `getCapital`, `summarizeFile`, `createReadFileTool`, Zod schema utilities |
-| `@essayist/web`  | `packages/web/`  | Fresh 2.x web app (Preact + Tailwind CSS) deployed to Deno Deploy                                       |
+| `@essayist/web`  | `packages/web/`  | Fresh 2.x web app (Preact + Tailwind CSS) deployed to Deno Deploy                                                             |
 
 ### Important Entry Points
 
