@@ -28,6 +28,13 @@ export interface GrepMatch {
   after: string[];
 }
 
+/** Options for grep search. */
+export interface GrepOptions {
+  path?: string;
+  caseSensitive?: boolean;
+  maxResults?: number;
+}
+
 /** Result of a grep operation. */
 export interface GrepResult {
   matches: GrepMatch[];
@@ -89,12 +96,7 @@ export interface VFS {
   list(prefix?: string): FileEntry[];
 
   /** Search files for a regex pattern. */
-  grep(
-    pattern: string,
-    path?: string,
-    caseSensitive?: boolean,
-    maxResults?: number,
-  ): GrepResult;
+  grep(pattern: string, options?: GrepOptions): GrepResult;
 
   /** Place a mark on a text span in a file. */
   mark(
