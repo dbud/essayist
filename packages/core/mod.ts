@@ -5,6 +5,7 @@ export {
   createGrepTool,
   createListFilesTool,
   createReadFileTool,
+  createWriteFileTool,
 } from "./src/tools/index.ts";
 export { VirtualFileSystem } from "./src/vfs/vfs.ts";
 export { InMemoryAdapter } from "./src/vfs/persistence.ts";
