@@ -1,21 +1,29 @@
 import { define } from "../../utils.ts";
-import { createReadFileTool } from "@essayist/core";
+import {
+  createReadFileTool,
+  InMemoryAdapter,
+  VirtualFileSystem,
+} from "@essayist/core";
 import { streamModelResultSSE } from "@/utils/sse.ts";
 
-const sampleFiles = new Map<string, string>([
-  [
-    "essay.txt",
-    "The quick brown fox jumps over the lazy dog. " +
-    "This sentence contains every letter of the alphabet.",
-  ],
-  [
-    "report.txt",
-    "Q3 revenue grew 12% year-over-year. " +
-    "Operating margins improved due to cost optimization.",
-  ],
-]);
+const adapter = new InMemoryAdapter();
+const vfs = new VirtualFileSystem(adapter);
 
-const tools = [createReadFileTool(sampleFiles)];
+vfs.write(
+  "essay.txt",
+  "The quick brown fox jumps over the lazy dog.\n" +
+    "This sentence contains every letter of the alphabet.\n" +
+    "It has been used as a typing test since the late 1800s.",
+);
+
+vfs.write(
+  "report.txt",
+  "Q3 revenue grew 12% year-over-year.\n" +
+    "Operating margins improved due to cost optimization.\n" +
+    "Customer acquisition cost decreased by 8%.",
+);
+
+const tools = [createReadFileTool(vfs)];
 
 export const handler = {
   GET: define.handlers((ctx) => {

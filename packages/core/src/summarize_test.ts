@@ -1,5 +1,7 @@
 import { assertEquals } from "@std/assert";
 import { summarizeFile } from "./summarize.ts";
+import { InMemoryAdapter } from "./vfs/persistence.ts";
+import { VirtualFileSystem } from "./vfs/vfs.ts";
 import type { Agent } from "./agent.ts";
 import type { ToolPrompt } from "./tools/index.ts";
 import type { ToolWithExecute } from "@openrouter/agent";
@@ -24,6 +26,8 @@ const sampleFiles = new Map<string, string>([
   ],
 ]);
 
+const vfs = new VirtualFileSystem(new InMemoryAdapter(sampleFiles));
+
 Deno.test("summarizeFile sends user prompt and tool prompts", async () => {
   let capturedInput = "";
   let capturedPrompts: readonly ToolPrompt[] = [];
@@ -35,7 +39,7 @@ Deno.test("summarizeFile sends user prompt and tool prompts", async () => {
     },
   );
 
-  const result = await summarizeFile("essay.txt", agent, sampleFiles);
+  const result = await summarizeFile("essay.txt", agent, vfs);
 
   assertEquals(result, "This is a pangram containing every letter.");
   assertEquals(
@@ -54,7 +58,7 @@ Deno.test("summarizeFile passes a read_file tool with instruction", async () => 
     },
   );
 
-  await summarizeFile("essay.txt", agent, sampleFiles);
+  await summarizeFile("essay.txt", agent, vfs);
 
   assertEquals(capturedPrompts.length, 1);
   const fn = capturedPrompts[0].tool as ToolWithExecute;
@@ -62,6 +66,8 @@ Deno.test("summarizeFile passes a read_file tool with instruction", async () => 
   assertEquals(fn.function.name, "read_file");
   assertEquals(
     capturedPrompts[0].instruction,
-    "Use the read_file tool to read file contents before answering.",
+    "Use the read_file tool to read file contents before answering. " +
+      "You can request a specific line range with start_line and end_line (1-based). " +
+      "Use numbered=true to see line numbers for referencing specific lines.",
   );
 });
