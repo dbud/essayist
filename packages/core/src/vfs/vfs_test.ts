@@ -24,33 +24,32 @@ const sampleEssay = [
 Deno.test("VFS.read -- full file", () => {
   const vfs = createVFS(new Map([["essay.txt", sampleEssay]]));
   const result = vfs.read("essay.txt");
-  assertEquals(result.content, sampleEssay);
-  assertEquals(result.total_lines, 4);
-  assertEquals(result.start_line, 1);
-  assertEquals(result.end_line, 4);
+  assertEquals(result, {
+    content: sampleEssay,
+    total_lines: 4,
+    start_line: 1,
+    end_line: 4,
+  });
 });
 
 Deno.test("VFS.read -- line range", () => {
   const vfs = createVFS(new Map([["essay.txt", sampleEssay]]));
   const result = vfs.read("essay.txt", 2, 3);
-  assertEquals(result.content, sampleEssay.split("\n").slice(1, 3).join("\n"));
-  assertEquals(result.total_lines, 4);
-  assertEquals(result.start_line, 2);
-  assertEquals(result.end_line, 3);
+  assertEquals(result, {
+    content: sampleEssay.split("\n").slice(1, 3).join("\n"),
+    total_lines: 4,
+    start_line: 2,
+    end_line: 3,
+  });
 });
 
 Deno.test("VFS.read -- numbered output", () => {
   const vfs = createVFS(new Map([["essay.txt", sampleEssay]]));
   const result = vfs.read("essay.txt", 1, 2, true);
-  const lines = result.content.split("\n");
-  assertEquals(
-    lines[0],
+  assertEquals(result.content.split("\n"), [
     "     1: The quick brown fox jumps over the lazy dog.",
-  );
-  assertEquals(
-    lines[1],
     "     2: This sentence contains every letter of the alphabet.",
-  );
+  ]);
 });
 
 Deno.test("VFS.read -- missing file returns empty", () => {
@@ -72,9 +71,7 @@ Deno.test("VFS.read -- clamps line range", () => {
 Deno.test("VFS.write -- creates new file", () => {
   const vfs = createVFS();
   const result = vfs.write("new.txt", "hello\nworld");
-  assertEquals(result.created, true);
-  assertEquals(result.lines, 2);
-  assertEquals(result.path, "new.txt");
+  assertEquals(result, { created: true, lines: 2, path: "new.txt" });
 });
 
 Deno.test("VFS.write -- overwrites existing file", () => {
@@ -102,13 +99,11 @@ Deno.test("VFS.list -- all files", () => {
     ]),
   );
   const files = vfs.list();
-  assertEquals(files.length, 3);
-  assertEquals(files[0].path, "a.txt");
-  assertEquals(files[0].lines, 1);
-  assertEquals(files[1].path, "b.txt");
-  assertEquals(files[1].lines, 2);
-  assertEquals(files[2].path, "c.md");
-  assertEquals(files[2].lines, 3);
+  assertEquals(files, [
+    { path: "a.txt", lines: 1 },
+    { path: "b.txt", lines: 2 },
+    { path: "c.md", lines: 3 },
+  ]);
 });
 
 Deno.test("VFS.list -- with prefix", () => {
@@ -120,9 +115,10 @@ Deno.test("VFS.list -- with prefix", () => {
     ]),
   );
   const files = vfs.list("notes/");
-  assertEquals(files.length, 2);
-  assertEquals(files[0].path, "notes/a.txt");
-  assertEquals(files[1].path, "notes/b.txt");
+  assertEquals(files, [
+    { path: "notes/a.txt", lines: 1 },
+    { path: "notes/b.txt", lines: 1 },
+  ]);
 });
 
 Deno.test("VFS.list -- empty", () => {
@@ -140,16 +136,29 @@ Deno.test("VFS.grep -- finds matches across files", () => {
     ]),
   );
   const result = vfs.grep("hello");
-  assertEquals(result.matches.length, 3);
-  assertEquals(result.matches[0].path, "a.txt");
-  assertEquals(result.matches[0].line_number, 1);
-  assertEquals(result.matches[0].line, "hello world");
-  assertEquals(result.matches[1].path, "a.txt");
-  assertEquals(result.matches[1].line_number, 3);
-  assertEquals(result.matches[1].line, "hello again");
-  assertEquals(result.matches[2].path, "b.txt");
-  assertEquals(result.matches[2].line_number, 2);
-  assertEquals(result.matches[2].line, "hello from b");
+  assertEquals(result.matches, [
+    {
+      path: "a.txt",
+      line_number: 1,
+      line: "hello world",
+      before: [],
+      after: ["foo bar", "hello again"],
+    },
+    {
+      path: "a.txt",
+      line_number: 3,
+      line: "hello again",
+      before: ["hello world", "foo bar"],
+      after: [],
+    },
+    {
+      path: "b.txt",
+      line_number: 2,
+      line: "hello from b",
+      before: ["no match here"],
+      after: [],
+    },
+  ]);
 });
 
 Deno.test("VFS.grep -- case insensitive by default", () => {
@@ -157,11 +166,22 @@ Deno.test("VFS.grep -- case insensitive by default", () => {
     new Map([["f.txt", "Hello world\nfoo bar\nhello again"]]),
   );
   const result = vfs.grep("hello");
-  assertEquals(result.matches.length, 2);
-  assertEquals(result.matches[0].line_number, 1);
-  assertEquals(result.matches[0].line, "Hello world");
-  assertEquals(result.matches[1].line_number, 3);
-  assertEquals(result.matches[1].line, "hello again");
+  assertEquals(result.matches, [
+    {
+      path: "f.txt",
+      line_number: 1,
+      line: "Hello world",
+      before: [],
+      after: ["foo bar", "hello again"],
+    },
+    {
+      path: "f.txt",
+      line_number: 3,
+      line: "hello again",
+      before: ["Hello world", "foo bar"],
+      after: [],
+    },
+  ]);
 });
 
 Deno.test("VFS.grep -- case sensitive", () => {
@@ -169,16 +189,29 @@ Deno.test("VFS.grep -- case sensitive", () => {
     new Map([["f.txt", "Hello world\nfoo bar\nhello again"]]),
   );
   const result = vfs.grep("hello", { caseSensitive: true });
-  assertEquals(result.matches.length, 1);
-  assertEquals(result.matches[0].line_number, 3);
-  assertEquals(result.matches[0].line, "hello again");
+  assertEquals(result.matches, [
+    {
+      path: "f.txt",
+      line_number: 3,
+      line: "hello again",
+      before: ["Hello world", "foo bar"],
+      after: [],
+    },
+  ]);
 });
 
 Deno.test("VFS.grep -- with context lines", () => {
   const vfs = createVFS(new Map([["f.txt", "a\nb\nMATCH\nd\ne"]]));
   const result = vfs.grep("MATCH");
-  assertEquals(result.matches[0].before, ["a", "b"]);
-  assertEquals(result.matches[0].after, ["d", "e"]);
+  assertEquals(result.matches, [
+    {
+      path: "f.txt",
+      line_number: 3,
+      line: "MATCH",
+      before: ["a", "b"],
+      after: ["d", "e"],
+    },
+  ]);
 });
 
 Deno.test("VFS.grep -- filters to specific path", () => {
@@ -189,8 +222,9 @@ Deno.test("VFS.grep -- filters to specific path", () => {
     ]),
   );
   const result = vfs.grep("target", { path: "a.txt" });
-  assertEquals(result.matches.length, 1);
-  assertEquals(result.matches[0].path, "a.txt");
+  assertEquals(result.matches, [
+    { path: "a.txt", line_number: 1, line: "target", before: [], after: [] },
+  ]);
 });
 
 Deno.test("VFS.grep -- max results", () => {
