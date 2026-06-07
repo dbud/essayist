@@ -5,3 +5,5 @@ export interface ToolPrompt {
   tool: Tool;
   instruction: string;
 }
+
+export { createReadFileTool } from "./read_file.ts";
