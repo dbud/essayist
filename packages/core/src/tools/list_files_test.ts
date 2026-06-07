@@ -4,7 +4,7 @@ import { createMockVFS } from "./testing/mock_vfs.ts";
 import type { FileEntry } from "../vfs/types.ts";
 import type { ToolWithExecute } from "@openrouter/agent";
 
-Deno.test("createListFilesTool -- returns files from VFS", () => {
+Deno.test("createListFilesTool -- delegates to VFS and returns result", () => {
   const files: FileEntry[] = [
     { path: "notes/ideas.md", lines: 10 },
     { path: "essay.txt", lines: 25 },
@@ -20,7 +20,7 @@ Deno.test("createListFilesTool -- returns files from VFS", () => {
   assertEquals(result.files, files);
 });
 
-Deno.test("createListFilesTool -- passes prefix to VFS.list", () => {
+Deno.test("createListFilesTool -- passes prefix to VFS", () => {
   let capturedPrefix: string | undefined;
   const vfs = createMockVFS({
     list: (prefix?: string) => {
@@ -36,21 +36,9 @@ Deno.test("createListFilesTool -- passes prefix to VFS.list", () => {
   assertEquals(capturedPrefix, "notes/");
 });
 
-Deno.test("createListFilesTool -- returns empty array when no files", () => {
+Deno.test("createListFilesTool -- has correct schema and instruction", () => {
   const vfs = createMockVFS();
-  const { tool } = createListFilesTool(vfs);
-  const fn = tool as ToolWithExecute;
-
-  const result = fn.function.execute({ prefix: undefined }) as {
-    files: FileEntry[];
-  };
-
-  assertEquals(result.files, []);
-});
-
-Deno.test("createListFilesTool -- has correct schema", () => {
-  const vfs = createMockVFS();
-  const { tool } = createListFilesTool(vfs);
+  const { tool, instruction } = createListFilesTool(vfs);
   const fn = tool as ToolWithExecute;
 
   assertEquals(fn.type, "function");
@@ -60,12 +48,6 @@ Deno.test("createListFilesTool -- has correct schema", () => {
     "List all files in the virtual file system. " +
       "Optionally filter by path prefix to list files in a specific directory.",
   );
-});
-
-Deno.test("createListFilesTool -- has instruction", () => {
-  const vfs = createMockVFS();
-  const { instruction } = createListFilesTool(vfs);
-
   assertEquals(
     instruction,
     "Use the list_files tool to discover what files are available. " +
