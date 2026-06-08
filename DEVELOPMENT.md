@@ -8,15 +8,17 @@ file current over leaving stale notes elsewhere.
 ## What This Is
 
 Essayist is a Deno monorepo that wraps the OpenRouter API to build AI-powered
-applications. The current features are a country-capital lookup and a file
-summarizer that demonstrates the pattern: a typed core library calls an LLM via
-OpenRouter, and a Fresh web app exposes it through a simple UI and API.
+writing tools. The core library provides an `Agent` class that calls LLMs via
+OpenRouter, a virtual file system with versioning and annotation support, and a
+set of file-manipulation tools the LLM can invoke. A Fresh web app exposes a
+chat interface backed by these tools.
 
 ## Monorepo Structure
 
 Deno workspace with two packages:
 
 - `packages/core/` — `@essayist/core`, shared library code
+- `packages/web/` — `@essayist/web`, Fresh web app
 
 ### Repository Tree
 
@@ -25,6 +27,8 @@ essayist/
 ├── deno.jsonc              # Workspace root (members: web, core, core/integration)
 ├── deno.lock               # Lockfile
 ├── .gitignore
+├── .github/workflows/
+│   └── deno.yml            # CI: fmt, lint, test
 ├── DEVELOPMENT.md          # ← You are here
 ├── vendor/                 # Vendored npm dependencies
 ├── node_modules/           # npm compatibility layer
@@ -32,7 +36,7 @@ essayist/
 ├── packages/
 │   ├── core/               # @essayist/core — shared library
 │   │   ├── deno.json       # Package config, exports, tasks
-│   │   ├── mod.ts          # Public API: getCapital, summarizeFile, Agent, createReadFileTool
+│   │   ├── mod.ts          # Public API
 │   │   ├── src/
 │   │   │   ├── agent.ts         # Agent class — OpenRouter client wrapper
 │   │   │   ├── capital.ts       # getCapital() + capitalResponseSchema
@@ -42,9 +46,23 @@ essayist/
 │   │   │   ├── summarize.ts     # summarizeFile() — file summarizer via tool calls
 │   │   │   ├── summarize_test.ts
 │   │   │   ├── tools/
-│   │   │   │   ├── index.ts     # ToolPrompt interface
-│   │   │   │   └── read_file.ts # createReadFileTool()
-│   │   │   └── tools_test.ts
+│   │   │   │   ├── index.ts         # ToolPrompt interface + re-exports
+│   │   │   │   ├── read_file.ts     # createReadFileTool()
+│   │   │   │   ├── read_file_test.ts
+│   │   │   │   ├── list_files.ts    # createListFilesTool()
+│   │   │   │   ├── list_files_test.ts
+│   │   │   │   ├── grep.ts          # createGrepTool()
+│   │   │   │   ├── grep_test.ts
+│   │   │   │   ├── write_file.ts    # createWriteFileTool()
+│   │   │   │   ├── write_file_test.ts
+│   │   │   │   └── testing/
+│   │   │   │       └── mock_vfs.ts  # createMockVFS() helper for tool tests
+│   │   │   └── vfs/
+│   │   │       ├── types.ts         # VFS interface + all result types
+│   │   │       ├── vfs.ts           # VirtualFileSystem (partial VFS impl)
+│   │   │       ├── vfs_test.ts      # Tests for read, write, list, grep, versioning
+│   │   │       ├── persistence.ts   # PersistenceAdapter interface + InMemoryAdapter
+│   │   │       └── persistence_test.ts
 │   │   └── integration/    # @essayist/core/integration — live API tests
 │   │       ├── deno.json
 │   │       ├── agent_test.ts       # Hits real OpenRouter API (getCapital)
@@ -52,21 +70,20 @@ essayist/
 │   │       └── utils.ts            # Reads OPENROUTER_API_KEY from env
 │   │
 │   └── web/                # @essayist/web — Fresh web app
-│       ├── deno.json       # Package config, tasks, compiler options
+│       ├── deno.jsonc      # Package config, tasks, compiler options
 │       ├── main.ts         # App entry: wires middleware + fsRoutes
-│       ├── client.ts       # (unused currently)
+│       ├── client.ts       # Imports global CSS (required by Fresh)
 │       ├── utils.ts        # State type + createDefine helper
 │       ├── vite.config.ts  # Vite + Fresh + Tailwind + core watcher plugin
 │       ├── _fresh/         # Generated Fresh build output (gitignored)
 │       ├── assets/
-│       │   └── styles.css  # Tailwind import
+│       │   └── styles.css  # Tailwind import + custom "essayist" daisyUI theme
 │       ├── islands/
-│       │   ├── CapitalLookup.tsx  # Interactive Preact island (capital lookup)
-│       │   └── Chat.tsx  # Interactive Preact island (streaming chat)
+│       │   └── Chat.tsx    # Interactive Preact island (streaming chat UI)
 │       ├── middleware/
 │       │   └── agent.ts    # Creates Agent from OPENROUTER_API_KEY, attaches to state
 │       ├── routes/
-│       │   ├── _app.tsx    # HTML shell (imports styles.css)
+│       │   ├── _app.tsx    # HTML shell (imports styles.css, navbar, theme)
 │       │   ├── index.tsx   # Home page — renders Chat island
 │       │   └── api/
 │       │       ├── capital.ts  # GET /api/capital?country=… → { country, capital }
@@ -80,32 +97,38 @@ essayist/
 
 ### Key Packages
 
-| Package          | Path             | Purpose                                                                                                                       |
-| ---------------- | ---------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| `@essayist/core` | `packages/core/` | Shared library: `Agent` class (OpenRouter wrapper), `getCapital`, `summarizeFile`, `createReadFileTool`, Zod schema utilities |
-| `@essayist/web`  | `packages/web/`  | Fresh 2.x web app (Preact + Tailwind CSS) deployed to Deno Deploy                                                             |
+| Package                      | Path                         | Purpose                                                                                  |
+| ---------------------------- | ---------------------------- | ---------------------------------------------------------------------------------------- |
+| `@essayist/core`             | `packages/core/`             | Shared library: `Agent`, `getCapital`, `summarizeFile`, VFS, tools, Zod schema utilities |
+| `@essayist/core/integration` | `packages/core/integration/` | Live API tests (require `OPENROUTER_API_KEY`)                                            |
+| `@essayist/web`              | `packages/web/`              | Fresh 2.x web app (Preact + Tailwind CSS + daisyUI) deployed to Deno Deploy              |
 
 ### Important Entry Points
 
 - **`packages/web/main.ts`** — Web app boot. Creates `App`, attaches
   `agentMiddleware`, calls `fsRoutes()`.
 - **`packages/core/mod.ts`** — Core library public API. Exports `getCapital`,
-  `summarizeFile`, `Agent`, and `createReadFileTool`.
+  `summarizeFile`, `Agent`, tool factories (`createReadFileTool`,
+  `createListFilesTool`, `createGrepTool`, `createWriteFileTool`),
+  `VirtualFileSystem`, and `InMemoryAdapter`.
 - **`packages/web/routes/api/capital.ts`** — API route. Calls `getCapital` with
   the agent from state.
-- **`packages/web/routes/api/chat.ts`** — SSE streaming chat endpoint. Uses
-  `Agent` to forward user messages to the LLM and streams tool results.
+- **`packages/web/routes/api/chat.ts`** — SSE streaming chat endpoint. Creates
+  an in-memory VFS seeded with sample files, wires up `read_file` tool, and uses
+  `Agent.callModelWithTools` to stream responses.
 - **`packages/web/islands/Chat.tsx`** — Interactive Preact island that consumes
-  the SSE stream via `useChat`.
+  the SSE stream via `useChat`. Renders chat bubbles, tool calls, reasoning, and
+  a message input form.
 - **`packages/web/middleware/agent.ts`** — Middleware. Instantiates `Agent` with
   `OPENROUTER_API_KEY` and attaches it to `ctx.state.agent`.
 - **`packages/web/utils/useChat.ts`** and **`packages/web/utils/sse.ts`** —
-  Helper utilities for managing the SSE connection and client‑side state.
+  Helper utilities for managing the SSE connection and client-side state.
 
 ### Key Dependencies
 
 - **OpenRouter** — `@openrouter/agent` (v^0.7.0) for `callModel`, `tool()`,
-  `stepCountIs`, and the `OpenRouter` client class.
+  `stepCountIs`, and the `OpenRouter` client class. Also `@openrouter/sdk`
+  (v^0.12.79) as a transitive dependency.
 - **Zod** (v4) — Schema validation, JSON Schema generation, and metadata for
   structured LLM output.
 - **Fresh** (v2.3.3) — Web framework (file-system routing, islands architecture,
@@ -115,8 +138,8 @@ essayist/
 - **@preact/signals** (v2.9.0) — Reactive signals for Preact islands (used by
   `Chat` and `useChat`).
 - **Tailwind CSS** (v4.1.10) — Styling via `@tailwindcss/vite` plugin.
-- **daisyUI** (v5.5.20) — Component library built on Tailwind (badge, card, chat
-  bubble, hero, etc.).
+- **daisyUI** (v5.5.20) — Component library built on Tailwind. Custom "essayist"
+  theme defined in `assets/styles.css`.
 - **Vite** (v7.1.3) — Dev server and build tool (via `@fresh/plugin-vite`).
 
 ## Commands
@@ -176,7 +199,7 @@ Production builds and serving are handled by Deno Deploy.
 ## Conventions and Patterns
 
 - **Deno workspace** — `deno.jsonc` defines workspace members. Each package has
-  its own `deno.json` with scoped imports.
+  its own `deno.json` (or `deno.jsonc` for web) with scoped imports.
 - **Fresh file-system routing** — Routes live in `routes/`, API routes in
   `routes/api/`. Islands (interactive Preact components) live in `islands/`.
 - **State management** — `createDefine` pattern from Fresh: `utils.ts` exports a
@@ -194,6 +217,15 @@ Production builds and serving are handled by Deno Deploy.
   to the SDK's `callModel`, which handles the full tool loop (send definitions,
   execute calls, feed results back). Tools are defined with `tool()` from
   `@openrouter/agent` and wrapped in a `ToolPrompt` (tool + instruction string).
+- **Tool factories** — Each tool has a `createXxxTool(vfs)` factory in
+  `packages/core/src/tools/`. Tools delegate to the `VFS` interface for all file
+  operations. A `createMockVFS(overrides?)` helper in
+  `tools/testing/mock_vfs.ts` provides stub implementations for unit testing.
+- **Virtual File System** — `VirtualFileSystem` implements the `VFS` interface
+  backed by a `PersistenceAdapter`. `InMemoryAdapter` is the default in-memory
+  store. The VFS supports read, write, list, grep, versioning (snapshot on
+  overwrite, revert, history), diff (Myers algorithm), and text-span marks with
+  fuzzy anchoring.
 - **Vite watches core** — `vite.config.ts` includes a custom `watchCore` plugin
   that adds `packages/core/` to Vite's file watcher so changes to core trigger
   web app reloads.
@@ -202,6 +234,8 @@ Production builds and serving are handled by Deno Deploy.
 - **Integration tests** — Live API tests are in a separate workspace member
   (`packages/core/integration/`) with their own `deno.json` and `.env` file.
   They skip gracefully without an API key.
+- **CI** — `.github/workflows/deno.yml` runs `deno fmt --check`, `deno lint`,
+  and `deno test -A` on push and PRs to `main`.
 - **Commit messages** — Follow
   [Conventional Commits](https://www.conventionalcommits.org/):
   `<type>(<scope>): <subject>`. Use imperative mood, capitalize first letter, no
@@ -213,9 +247,9 @@ Production builds and serving are handled by Deno Deploy.
 - **`OPENROUTER_API_KEY` required** — Both the web app and integration tests
   need this env var. The web middleware returns 500 if it's missing; integration
   tests print a warning and exit 0.
-- **`client.ts`** — Imports global CSS (`styles.css`) for client‑side rendering.
+- **`client.ts`** — Imports global CSS (`styles.css`) for client-side rendering.
   It is required by Fresh to inject the stylesheet into the generated HTML, even
-  though it isn’t imported directly in other modules.
+  though it isn't imported directly in other modules.
 - **Models are hardcoded** — `Agent` uses a fixed list of models:
   `["openai/gpt-oss-120b:free", "openrouter/owl-alpha"]`. This is not
   configurable via constructor or env var.
@@ -226,5 +260,3 @@ Production builds and serving are handled by Deno Deploy.
   dev. Do **not** use `jsx: "precompile"` — it transforms JSX before Vite sees
   the code, breaking client-side hot reload for islands. Only island components
   hydrate on the client.
-- **`z` no longer re-exported** — `@essayist/core` no longer exports `z`. Import
-  Zod directly (`import { z } from "zod"`) in consumer code.
