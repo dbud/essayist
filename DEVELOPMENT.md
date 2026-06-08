@@ -39,8 +39,10 @@ essayist/
 │   │   ├── mod.ts          # Public API
 │   │   ├── src/
 │   │   │   ├── agent.ts         # Agent class — OpenRouter client wrapper
+│   │   │   ├── agent_logger.ts  # logAgentCall(), logAgentResult() — stream logging
 │   │   │   ├── capital.ts       # getCapital() + capitalResponseSchema
 │   │   │   ├── capital_test.ts  # Unit tests for getCapital
+│   │   │   ├── logger.ts        # Lazy pino logger (env-safe import)
 │   │   │   ├── schema.ts        # Zod→JSON-schema instruction generator + example builder
 │   │   │   ├── schema_test.ts
 │   │   │   ├── summarize.ts     # summarizeFile() — file summarizer via tool calls
@@ -67,6 +69,7 @@ essayist/
 │   │       ├── deno.json
 │   │       ├── agent_test.ts       # Hits real OpenRouter API (getCapital)
 │   │       ├── summarize_test.ts   # Hits real OpenRouter API (summarizeFile)
+│   │       ├── tools_test.ts       # Integration tests for list_files, grep, write_file
 │   │       └── utils.ts            # Reads OPENROUTER_API_KEY from env
 │   │
 │   └── web/                # @essayist/web — Fresh web app
@@ -141,6 +144,8 @@ essayist/
 - **daisyUI** (v5.5.20) — Component library built on Tailwind. Custom "essayist"
   theme defined in `assets/styles.css`.
 - **Vite** (v7.1.3) — Dev server and build tool (via `@fresh/plugin-vite`).
+- **pino** (v9.6.0) — JSON logging library. Pretty-printed in dev, JSON in
+  production.
 
 ## Commands
 
@@ -199,7 +204,8 @@ Production builds and serving are handled by Deno Deploy.
 ## Conventions and Patterns
 
 - **Deno workspace** — `deno.jsonc` defines workspace members. Each package has
-  its own `deno.json` (or `deno.jsonc` for web) with scoped imports.
+  its own `deno.json` (or `deno.jsonc` for web) with scoped imports (`@/` maps
+  to `./src/` in core).
 - **Fresh file-system routing** — Routes live in `routes/`, API routes in
   `routes/api/`. Islands (interactive Preact components) live in `islands/`.
 - **State management** — `createDefine` pattern from Fresh: `utils.ts` exports a
@@ -223,9 +229,13 @@ Production builds and serving are handled by Deno Deploy.
   `tools/testing/mock_vfs.ts` provides stub implementations for unit testing.
 - **Virtual File System** — `VirtualFileSystem` implements the `VFS` interface
   backed by a `PersistenceAdapter`. `InMemoryAdapter` is the default in-memory
-  store. The VFS supports read, write, list, grep, versioning (snapshot on
-  overwrite, revert, history), diff (Myers algorithm), and text-span marks with
-  fuzzy anchoring.
+  store. The VFS supports read, write, list, grep (with directory prefix
+  matching), versioning (snapshot on overwrite, revert, history), diff (Myers
+  algorithm), and text-span marks with fuzzy anchoring.
+- **Agent logging** — `callModelWithTools` feeds the result to
+  `logAgentResult()` which reads the items stream and logs completed tool calls,
+  outputs, messages, and reasoning separately. Uses a lazy pino logger that
+  defers `import("pino")` to avoid env access at module load time.
 - **Vite watches core** — `vite.config.ts` includes a custom `watchCore` plugin
   that adds `packages/core/` to Vite's file watcher so changes to core trigger
   web app reloads.
@@ -260,3 +270,8 @@ Production builds and serving are handled by Deno Deploy.
   dev. Do **not** use `jsx: "precompile"` — it transforms JSX before Vite sees
   the code, breaking client-side hot reload for islands. Only island components
   hydrate on the client.
+- **Lazy logger** — `logger.ts` uses a dynamic `import("pino")` to avoid pino's
+  top-level `process.env` access, which crashes without `--allow-env`. The
+  `logger()` function returns `Promise<pino.Logger>` — consumers must `await`
+  it. This means importing `@essayist/core` no longer crashes in env-restricted
+  contexts.
