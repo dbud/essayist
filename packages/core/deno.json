@@ -25,7 +25,6 @@
     "test": "deno test -A",
     "test:watch": "deno test -A --watch",
     "test:integration": "deno test -A --env integration/",
-    "repl": "deno run -A --env repl.ts"
   },
   "lint": {
     "rules": {
