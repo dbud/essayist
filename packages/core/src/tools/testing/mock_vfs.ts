@@ -8,7 +8,7 @@ import type {
   ReadResult,
   VFS,
   WriteResult,
-} from "../../vfs/types.ts";
+} from "@/vfs/types.ts";
 
 /** Stub implementations for all VFS methods. */
 const stubs: VFS = {

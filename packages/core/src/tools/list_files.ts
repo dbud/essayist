@@ -1,7 +1,7 @@
 import { tool } from "@openrouter/agent";
 import { z } from "zod";
 import type { ToolPrompt } from "./index.ts";
-import type { VFS } from "../vfs/types.ts";
+import type { VFS } from "@/vfs/types.ts";
 
 const inputSchema = z.object({
   prefix: z.string().optional().describe(

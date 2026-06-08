@@ -1,7 +1,7 @@
 import { assertEquals } from "@std/assert";
 import { createGrepTool } from "./grep.ts";
 import { createMockVFS } from "./testing/mock_vfs.ts";
-import type { GrepMatch } from "../vfs/types.ts";
+import type { GrepMatch } from "@/vfs/types.ts";
 import type { ToolWithExecute } from "@openrouter/agent";
 
 Deno.test("createGrepTool -- delegates to VFS and returns result", () => {

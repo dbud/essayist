@@ -1,7 +1,7 @@
 import { OpenRouter, stepCountIs } from "@openrouter/agent";
 import { z } from "zod";
-import { generateInstructions, stripMarkdownFences } from "./schema.ts";
-import type { ToolPrompt } from "./tools/index.ts";
+import { generateInstructions, stripMarkdownFences } from "@/schema.ts";
+import type { ToolPrompt } from "@/tools/index.ts";
 
 const MODELS = ["openai/gpt-oss-120b:free", "openrouter/owl-alpha"];
 

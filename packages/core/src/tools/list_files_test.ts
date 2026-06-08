@@ -1,7 +1,7 @@
 import { assertEquals } from "@std/assert";
 import { createListFilesTool } from "./list_files.ts";
 import { createMockVFS } from "./testing/mock_vfs.ts";
-import type { FileEntry } from "../vfs/types.ts";
+import type { FileEntry } from "@/vfs/types.ts";
 import type { ToolWithExecute } from "@openrouter/agent";
 
 Deno.test("createListFilesTool -- delegates to VFS and returns result", () => {

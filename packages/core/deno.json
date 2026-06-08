@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "exports": "./mod.ts",
   "imports": {
+    "@/": "./src/",
     "@openrouter/agent": "npm:@openrouter/agent@^0.7.0",
     "@openrouter/sdk": "npm:@openrouter/sdk@^0.12.79",
     "@std/assert": "jsr:@std/assert@^1",
