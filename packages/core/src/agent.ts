@@ -2,6 +2,7 @@ import { OpenRouter, stepCountIs } from "@openrouter/agent";
 import { z } from "zod";
 import { generateInstructions, stripMarkdownFences } from "@/schema.ts";
 import type { ToolPrompt } from "@/tools/index.ts";
+import { logAgentCall, logAgentResult } from "@/agent_logger.ts";
 
 const MODELS = ["openai/gpt-oss-120b:free", "openrouter/owl-alpha"];
 
@@ -40,11 +41,16 @@ export class Agent {
     const instructions = toolPrompts.map((tp) => tp.instruction).join("\n");
     const fullInput = `${instructions}\n\n${input}`;
 
-    return this.#client.callModel({
+    const request = {
       models: MODELS,
       input: fullInput,
       tools,
       stopWhen: stepCountIs(maxRounds),
-    });
+    };
+    logAgentCall(request);
+    const result = this.#client.callModel(request);
+    logAgentResult(result);
+
+    return result;
   }
 }

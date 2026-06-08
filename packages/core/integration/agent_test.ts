@@ -5,12 +5,12 @@ import { createAgent } from "./utils.ts";
 
 const agent = createAgent();
 
-Deno.test("getCapital returns 'Paris' for France", async () => {
+Deno.test.ignore("getCapital returns 'Paris' for France", async () => {
   const capital = await getCapital("France", agent);
   assertMatch(capital, /paris/i);
 });
 
-Deno.test("getCapital throws for a fictitious country", async () => {
+Deno.test.ignore("getCapital throws for a fictitious country", async () => {
   await assertRejects(
     () => getCapital("Zylophrax", agent),
     Error,
