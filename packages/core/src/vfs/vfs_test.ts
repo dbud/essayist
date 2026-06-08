@@ -227,6 +227,20 @@ Deno.test("VFS.grep -- filters to specific path", () => {
   ]);
 });
 
+Deno.test("VFS.grep -- path as directory prefix", () => {
+  const vfs = createVFS(
+    new Map([
+      ["notes/a.txt", "hello world"],
+      ["notes/b.txt", "goodbye world"],
+      ["other/c.txt", "no match"],
+    ]),
+  );
+  const result = vfs.grep("world", { path: "notes/" });
+  assertEquals(result.matches.length, 2);
+  assertEquals(result.matches[0].path, "notes/a.txt");
+  assertEquals(result.matches[1].path, "notes/b.txt");
+});
+
 Deno.test("VFS.grep -- max results", () => {
   const vfs = createVFS(new Map([["f.txt", "x\nx\nx\nx\nx"]]));
   const result = vfs.grep("x", { maxResults: 3 });

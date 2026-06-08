@@ -125,7 +125,8 @@ export class VirtualFileSystem implements VFS {
     }
 
     const results: GrepResult = { matches: [] };
-    const files = path ? [path] : this.list().map((f) => f.path);
+    const allFiles = this.list().map((f) => f.path);
+    const files = path ? allFiles.filter((f) => f.startsWith(path)) : allFiles;
 
     for (const filePath of files) {
       if (results.matches.length >= maxResults) break;
