@@ -1,3 +1,4 @@
+import { unifiedDiff } from "@/vfs/diff.ts";
 import type { PersistenceAdapter } from "./persistence.ts";
 import type {
   DiffResult,
@@ -223,8 +224,15 @@ export class VirtualFileSystem implements VFS {
     return v?.content ?? "";
   }
 
-  diff(_path: string, _versionA: string, _versionB?: string): DiffResult {
-    throw new Error("Not implemented");
+  diff(path: string, versionA: string, versionB?: string): DiffResult {
+    const contentA = this.getVersionContent(path, versionA);
+    const contentB = versionB
+      ? this.getVersionContent(path, versionB)
+      : this.#getFile(path);
+
+    return {
+      diff: unifiedDiff(contentA, contentB, versionA, versionB ?? "current"),
+    };
   }
 
   #getFile(path: string): string {

@@ -411,3 +411,33 @@ Deno.test("VFS.getHistory -- includes line count per version", () => {
   const history = vfs.getHistory("f.txt");
   assertEquals(history[0].lines, 1);
 });
+
+// Diff
+
+Deno.test("VFS.diff -- between versions", () => {
+  const vfs = createVFS(new Map([["f.txt", "line1\nline2\nline3"]]));
+  vfs.write("f.txt", "line1\nmodified\nline3");
+  const history = vfs.getHistory("f.txt");
+  const diffResult = vfs.diff("f.txt", history[0].version_id);
+  assertEquals(diffResult.diff.includes("-line2"), true);
+  assertEquals(diffResult.diff.includes("+modified"), true);
+});
+
+Deno.test("VFS.diff -- between version and current", () => {
+  const vfs = createVFS(new Map([["f.txt", "original"]]));
+  vfs.write("f.txt", "changed");
+  const history = vfs.getHistory("f.txt");
+  const diffResult = vfs.diff("f.txt", history[0].version_id);
+  assertEquals(diffResult.diff.includes("---"), true);
+  assertEquals(diffResult.diff.includes("+++"), true);
+});
+
+Deno.test("VFS.diff -- identical content produces empty diff", () => {
+  const vfs = createVFS(new Map([["f.txt", "same"]]));
+  vfs.write("f.txt", "same");
+  const history = vfs.getHistory("f.txt");
+  if (history.length > 0) {
+    const diffResult = vfs.diff("f.txt", history[0].version_id);
+    assertEquals(diffResult.diff, "");
+  }
+});
