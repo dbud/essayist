@@ -4,7 +4,7 @@
   "exports": "./main.ts",
   "tasks": {
     "check": "deno fmt --check . && deno lint . && deno check",
-    "dev": "vite",
+    "dev": "DENO_ENV=development vite",
     "build": "vite build",
     "start": "deno serve -A _fresh/server.js",
     "update": "deno run -A -r jsr:@fresh/update ."

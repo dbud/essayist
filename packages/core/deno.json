@@ -24,7 +24,7 @@
     "check": "deno fmt --check . && deno lint . && deno check",
     "test": "deno test -A",
     "test:watch": "deno test -A --watch",
-    "test:integration": "deno test -A --env integration/"
+    "test:integration": "DENO_ENV=development deno test -A --env integration/"
   },
   "lint": {
     "rules": {
