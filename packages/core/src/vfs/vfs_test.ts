@@ -338,3 +338,76 @@ Deno.test("VFS.revert -- returns false for invalid version", () => {
   const vfs = createVFS(new Map([["f.txt", "content"]]));
   assertEquals(vfs.revert("f.txt", "nonexistent"), false);
 });
+
+// Snapshot versioning edge cases
+
+Deno.test("VFS.write -- writing empty to existing file snapshots previous content", () => {
+  const vfs = createVFS(new Map([["f.txt", "original"]]));
+  vfs.write("f.txt", "");
+  const history = vfs.getHistory("f.txt");
+  assertEquals(history.length, 1);
+});
+
+Deno.test("VFS.write -- overwriting empty file does not create snapshot", () => {
+  const vfs = createVFS(new Map([["f.txt", ""]]));
+  vfs.write("f.txt", "new content");
+  const history = vfs.getHistory("f.txt");
+  assertEquals(history.length, 0);
+});
+
+Deno.test("VFS.write -- writing empty to new file does not snapshot", () => {
+  const vfs = createVFS();
+  vfs.write("f.txt", "");
+  const history = vfs.getHistory("f.txt");
+  assertEquals(history.length, 0);
+});
+
+Deno.test("VFS.getHistory -- version content is retrievable via revert", () => {
+  const vfs = createVFS(new Map([["f.txt", "version A"]]));
+  vfs.write("f.txt", "version B");
+  vfs.write("f.txt", "version C");
+  const history = vfs.getHistory("f.txt");
+  assertEquals(history.length, 2);
+
+  const reverted = vfs.revert("f.txt", history[0].version_id);
+  assertEquals(reverted, true);
+  assertEquals(vfs.read("f.txt").content, "version A");
+});
+
+Deno.test("VFS.getHistory -- versions are sorted by timestamp", () => {
+  const vfs = createVFS(new Map([["f.txt", "v1"]]));
+  vfs.write("f.txt", "v2");
+  vfs.write("f.txt", "v3");
+  vfs.write("f.txt", "v4");
+  const history = vfs.getHistory("f.txt");
+  assertEquals(history.length, 3);
+  for (let i = 1; i < history.length; i++) {
+    assertEquals(history[i].timestamp >= history[i - 1].timestamp, true);
+  }
+});
+
+Deno.test("VFS.getVersionContent -- returns content for existing version", () => {
+  const vfs = createVFS(new Map([["f.txt", "version A"]]));
+  vfs.write("f.txt", "version B");
+  const history = vfs.getHistory("f.txt");
+  assertEquals(history.length, 1);
+  const content = vfs.getVersionContent("f.txt", history[0].version_id);
+  assertEquals(content, "version A");
+});
+
+Deno.test("VFS.getVersionContent -- returns empty for nonexistent version", () => {
+  const vfs = createVFS(new Map([["f.txt", "content"]]));
+  assertEquals(vfs.getVersionContent("f.txt", "nonexistent"), "");
+});
+
+Deno.test("VFS.getVersionContent -- returns empty for nonexistent file", () => {
+  const vfs = createVFS();
+  assertEquals(vfs.getVersionContent("missing.txt", "12345"), "");
+});
+
+Deno.test("VFS.getHistory -- includes line count per version", () => {
+  const vfs = createVFS(new Map([["f.txt", "one line"]]));
+  vfs.write("f.txt", "line one\nline two\nline three");
+  const history = vfs.getHistory("f.txt");
+  assertEquals(history[0].lines, 1);
+});

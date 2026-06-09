@@ -22,6 +22,7 @@ function escapeRegex(text: string): string {
 }
 
 let markCounter = 0;
+let versionCounter = 0;
 
 export class VirtualFileSystem implements VFS {
   #adapter: PersistenceAdapter;
@@ -215,6 +216,13 @@ export class VirtualFileSystem implements VFS {
     return true;
   }
 
+  getVersionContent(path: string, versionId: string): string {
+    const v = this.#adapter.get(this.#versionKey(path, versionId)) as
+      | { content: string; timestamp: number }
+      | undefined;
+    return v?.content ?? "";
+  }
+
   diff(_path: string, _versionA: string, _versionB?: string): DiffResult {
     throw new Error("Not implemented");
   }
@@ -251,7 +259,7 @@ export class VirtualFileSystem implements VFS {
     const content = this.#getFile(path);
     if (content === "") return;
 
-    const versionId = String(Date.now());
+    const versionId = `${Date.now()}_${++versionCounter}`;
     const listKey = this.#versionsListKey(path);
     const existing = this.#adapter.get(listKey) as string[] | undefined;
     const list = existing ?? [];
@@ -262,12 +270,5 @@ export class VirtualFileSystem implements VFS {
       content,
       timestamp: Date.now(),
     });
-  }
-
-  #getVersionContent(path: string, versionId: string): string {
-    const v = this.#adapter.get(this.#versionKey(path, versionId)) as
-      | { content: string; timestamp: number }
-      | undefined;
-    return v?.content ?? "";
   }
 }

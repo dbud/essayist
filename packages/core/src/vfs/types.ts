@@ -121,6 +121,9 @@ export interface VFS {
   /** Revert a file to a previous version. */
   revert(path: string, versionId: string): boolean;
 
+  /** Get the content of a specific version. Returns empty string if version not found. */
+  getVersionContent(path: string, versionId: string): string;
+
   /** Get unified diff between two versions (or current if only one specified). */
   diff(path: string, versionA: string, versionB?: string): DiffResult;
 }
