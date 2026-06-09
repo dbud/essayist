@@ -1,6 +1,6 @@
 import { App, staticFiles } from "fresh";
-import { agentMiddleware } from "./middleware/agent.ts";
-import type { State } from "./utils.ts";
+import { agentMiddleware } from "@/middleware/agent.ts";
+import type { State } from "@/define.ts";
 
 export const app = new App<State>()
   .use(staticFiles())

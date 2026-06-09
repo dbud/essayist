@@ -1,4 +1,4 @@
-import { define } from "../utils.ts";
+import { define } from "@/define.ts";
 import { Agent } from "@essayist/core";
 
 export const agentMiddleware = define.middleware(async (ctx) => {
