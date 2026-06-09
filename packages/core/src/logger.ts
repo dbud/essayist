@@ -3,13 +3,20 @@ import type pino from "pino";
 let _logger: Promise<pino.Logger> | undefined;
 
 export function logger(): Promise<pino.Logger> {
-  return _logger ??= import("pino").then((mod) => {
+  return _logger ??= import("pino").then(async (mod) => {
     const pinoFactory = mod.default;
     const isProduction = Deno.env.get("DENO_ENV") === "production";
-    return isProduction
-      ? pinoFactory({ level: Deno.env.get("LOG_LEVEL") ?? "info" })
-      : pinoFactory({
-        level: Deno.env.get("LOG_LEVEL") ?? "debug",
+    const level = Deno.env.get("LOG_LEVEL") ??
+      (isProduction ? "info" : "debug");
+
+    if (isProduction) {
+      return pinoFactory({ level });
+    }
+
+    try {
+      await import("pino-pretty");
+      return pinoFactory({
+        level,
         transport: {
           target: "pino-pretty",
           options: {
@@ -19,5 +26,8 @@ export function logger(): Promise<pino.Logger> {
           },
         },
       });
+    } catch {
+      return pinoFactory({ level });
+    }
   });
 }
