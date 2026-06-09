@@ -1,11 +1,11 @@
-export { getCapital } from "./src/capital.ts";
-export { summarizeFile } from "./src/summarize.ts";
-export { Agent } from "./src/agent.ts";
+export { getCapital } from "@/capital.ts";
+export { summarizeFile } from "@/summarize.ts";
+export { Agent } from "@/agent.ts";
 export {
   createGrepTool,
   createListFilesTool,
   createReadFileTool,
   createWriteFileTool,
-} from "./src/tools/index.ts";
-export { VirtualFileSystem } from "./src/vfs/vfs.ts";
-export { InMemoryAdapter } from "./src/vfs/persistence.ts";
+} from "@/tools/index.ts";
+export { VirtualFileSystem } from "@/vfs/vfs.ts";
+export { InMemoryAdapter } from "@/vfs/persistence.ts";
