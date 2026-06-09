@@ -1,6 +1,9 @@
 import { define } from "../../utils.ts";
 import {
+  createGrepTool,
+  createListFilesTool,
   createReadFileTool,
+  createWriteFileTool,
   InMemoryAdapter,
   VirtualFileSystem,
 } from "@essayist/core";
@@ -23,7 +26,12 @@ vfs.write(
     "Customer acquisition cost decreased by 8%.",
 );
 
-const tools = [createReadFileTool(vfs)];
+const tools = [
+  createReadFileTool(vfs),
+  createListFilesTool(vfs),
+  createGrepTool(vfs),
+  createWriteFileTool(vfs),
+];
 
 export const handler = {
   GET: define.handlers((ctx) => {
