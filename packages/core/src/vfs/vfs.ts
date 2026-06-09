@@ -17,6 +17,10 @@ const VERSIONS_PREFIX = "versions:";
 const MARKS_PREFIX = "marks:";
 const GREP_CONTEXT_LINES = 2;
 
+function escapeRegex(text: string): string {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 let markCounter = 0;
 
 export class VirtualFileSystem implements VFS {
@@ -120,8 +124,7 @@ export class VirtualFileSystem implements VFS {
     try {
       regex = new RegExp(pattern, flags);
     } catch {
-      const escaped = pattern.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-      regex = new RegExp(escaped, flags);
+      regex = new RegExp(escapeRegex(pattern), flags);
     }
 
     const results: GrepResult = { matches: [] };
@@ -156,6 +159,10 @@ export class VirtualFileSystem implements VFS {
     }
 
     return results;
+  }
+
+  search(text: string, options?: GrepOptions): GrepResult {
+    return this.grep(escapeRegex(text), options);
   }
 
   mark(

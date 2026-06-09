@@ -98,6 +98,9 @@ export interface VFS {
   /** Search files for a regex pattern. */
   grep(pattern: string, options?: GrepOptions): GrepResult;
 
+  /** Search files for plain text (escaped as literal regex). */
+  search(text: string, options?: GrepOptions): GrepResult;
+
   /** Place a mark on a text span in a file. */
   mark(
     path: string,

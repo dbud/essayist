@@ -82,7 +82,8 @@ const grepVFS = createVFS(
       "Operating margins improved due to cost optimization. " +
       "The parser module was refactored for better performance. " +
       "Customer satisfaction scores reached an all-time high. " +
-      "We plan to expand into new markets next quarter.",
+      "We plan to expand into new markets next quarter. " +
+      "The total budget is $5.00 for this project.",
     ],
   ]),
 );
@@ -97,6 +98,16 @@ Deno.test("integration: grep -- model searches for pattern across files", async 
 
   assertMatch(text, /parser/);
   assertMatch(text, /notes\/ideas\.md|notes\/todo\.md|report\.md/);
+});
+
+Deno.test("integration: grep -- model searches literal text with special chars", async () => {
+  const toolPrompt = createGrepTool(grepVFS);
+  const result = agent.callModelWithTools(
+    "Search for the exact text '$5.00' across all files. Use grep.",
+    [toolPrompt],
+  );
+  const text = await result.getText();
+  assertMatch(text, /5\.00/);
 });
 
 Deno.test("integration: grep -- model searches with regex", async () => {

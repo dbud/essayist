@@ -242,15 +242,62 @@ Deno.test("VFS.grep -- path as directory prefix", () => {
 });
 
 Deno.test("VFS.grep -- max results", () => {
-  const vfs = createVFS(new Map([["f.txt", "x\nx\nx\nx\nx"]]));
+  const vfs = createVFS(
+    new Map([
+      ["a.txt", "x\nx\nx\nx"],
+      ["b.txt", "x\nx\nx"],
+    ]),
+  );
   const result = vfs.grep("x", { maxResults: 3 });
   assertEquals(result.matches.length, 3);
 });
 
+Deno.test("VFS.grep -- skips empty files", () => {
+  const vfs = createVFS(
+    new Map([
+      ["empty.txt", ""],
+      ["f.txt", "hello world"],
+    ]),
+  );
+  const result = vfs.grep("hello");
+  assertEquals(result.matches.length, 1);
+  assertEquals(result.matches[0].path, "f.txt");
+});
+
 Deno.test("VFS.grep -- invalid regex falls back to literal", () => {
   const vfs = createVFS(new Map([["f.txt", "hello [world]"]]));
-  const result = vfs.grep("[world]");
+  const result = vfs.grep("[world");
   assertEquals(result.matches.length, 1);
+});
+
+// Search
+
+Deno.test("VFS.search -- plain text with special chars", () => {
+  const vfs = createVFS(
+    new Map([["f.txt", "price is $5.00 today"]]),
+  );
+  const result = vfs.search("$5.00");
+  assertEquals(result.matches.length, 1);
+  assertEquals(result.matches[0].line, "price is $5.00 today");
+});
+
+Deno.test("VFS.search -- plain text with regex metacharacters", () => {
+  const vfs = createVFS(
+    new Map([["f.txt", "use [bracket] or (paren) or ^caret"]]),
+  );
+  const result = vfs.search("[bracket]");
+  assertEquals(result.matches.length, 1);
+});
+
+Deno.test("VFS.search -- delegates to grep with escaped pattern", () => {
+  const vfs = createVFS(
+    new Map([
+      ["a.txt", "hello world"],
+      ["b.txt", "goodbye world"],
+    ]),
+  );
+  const result = vfs.search("world");
+  assertEquals(result.matches.length, 2);
 });
 
 // Versioning
