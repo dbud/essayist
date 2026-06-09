@@ -1,4 +1,3 @@
-export { getCapital } from "@/capital.ts";
 export { summarizeFile } from "@/summarize.ts";
 export { Agent } from "@/agent.ts";
 export {
