@@ -1,5 +1,6 @@
 import Chat from "@/islands/Chat.tsx";
 import FileBrowser from "@/islands/FileBrowser.tsx";
+import FileViewer from "@/islands/FileViewer.tsx";
 
 export default function HomePage() {
   return (
@@ -8,6 +9,9 @@ export default function HomePage() {
         <h2 class="text-lg font-semibold mb-4">Files</h2>
         <FileBrowser />
       </aside>
+      <div class="flex-1 min-w-0">
+        <FileViewer />
+      </div>
       <div class="flex-1 min-w-0">
         <Chat />
       </div>

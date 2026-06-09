@@ -1,28 +1,8 @@
-import { useSignal } from "@preact/signals";
-import { useEffect } from "preact/hooks";
-
-interface FileEntry {
-  path: string;
-  lines: number;
-}
+import { selectedFile } from "@/signals.ts";
+import { useFiles } from "@/hooks/useFiles.ts";
 
 export default function FileBrowser() {
-  const files = useSignal<FileEntry[]>([]);
-  const loading = useSignal(true);
-  const error = useSignal("");
-
-  useEffect(() => {
-    fetch("/api/files")
-      .then((res) => res.json())
-      .then((data) => {
-        files.value = data;
-        loading.value = false;
-      })
-      .catch((err) => {
-        error.value = err.message;
-        loading.value = false;
-      });
-  }, []);
+  const { files, loading, error } = useFiles();
 
   if (loading.value) {
     return <span class="loading loading-spinner loading-sm" />;
@@ -36,9 +16,16 @@ export default function FileBrowser() {
     <ul class="menu menu-compact bg-base-100 rounded-box">
       {files.value.map((file) => (
         <li key={file.path}>
-          <a class="font-mono text-sm">
+          <a
+            class={`font-mono text-sm ${
+              selectedFile.value === file.path ? "active" : ""
+            }`}
+            onClick={() => selectedFile.value = file.path}
+          >
             {file.path}
-            <span class="text-base-content/40 ml-2">{file.lines} lines</span>
+            <span class="text-base-content/40 ml-2">
+              {file.lines} lines
+            </span>
           </a>
         </li>
       ))}

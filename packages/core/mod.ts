@@ -8,3 +8,14 @@ export {
 } from "@/tools/index.ts";
 export { VirtualFileSystem } from "@/vfs/vfs.ts";
 export { InMemoryAdapter } from "@/vfs/persistence.ts";
+export type {
+  DiffResult,
+  FileEntry,
+  FileVersion,
+  GrepOptions,
+  GrepResult,
+  Mark,
+  MarkResult,
+  ReadResult,
+  WriteResult,
+} from "@/vfs/types.ts";
