@@ -2,7 +2,7 @@ import { signal, useSignal } from "@preact/signals";
 import type { Signal } from "@preact/signals";
 import { useEffect, useRef } from "preact/hooks";
 import type { StreamableOutputItem } from "@openrouter/agent";
-import { parseSSE } from "./sse.ts";
+import { parseSSE } from "@/utils/sse.ts";
 
 export interface ChatMessage {
   role: "user" | "assistant";

@@ -1,6 +1,6 @@
 import { useComputed, useSignal } from "@preact/signals";
 import type { StreamableOutputItem } from "@openrouter/agent";
-import { useChat } from "@/utils/useChat.ts";
+import { useChat } from "@/hooks/useChat.ts";
 import { useEffect, useRef } from "preact/hooks";
 
 function pprint<T>(a: string | T) {
