@@ -6,7 +6,6 @@ export default function HomePage() {
   return (
     <main class="container mx-auto p-8 flex-1 flex gap-8">
       <aside class="w-64 shrink-0">
-        <h2 class="text-lg font-semibold mb-4">Files</h2>
         <FileBrowser />
       </aside>
       <div class="flex-1 min-w-0">
