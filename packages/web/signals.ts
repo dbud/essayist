@@ -1,8 +1,8 @@
-import { signal } from "@preact/signals";
+import { persistentSignal } from "@/utils/persistentSignal.ts";
 
-export const selectedFile = signal("");
-export const openedFiles = signal<string[]>([]);
-export const fileHistory = signal<string[]>([]);
+export const selectedFile = persistentSignal("selectedFile", "");
+export const openedFiles = persistentSignal<string[]>("openedFiles", []);
+export const fileHistory = persistentSignal<string[]>("fileHistory", []);
 
 export function openFile(path: string) {
   selectedFile.value = path;
