@@ -63,84 +63,80 @@ export default function Chat() {
   }, [messageCount.value, lastText.value, streaming.value]);
 
   return (
-    <div class="card bg-base-100 card-border border-base-300 max-w-2xl h-full max-h-[70vh] flex flex-col overflow-hidden">
-      <div class="card-body flex-1 flex flex-col p-0 min-h-0">
+    <div class="h-full max-h-[70vh] flex flex-col">
+      <div class="flex flex-1 flex-col gap-2 min-h-0">
         {/* Messages area */}
-        <div
-          ref={scrollRef}
-          class="flex-1 overflow-y-auto m-4 space-y-4 min-h-0"
-        >
-          {messages.value.length === 0 && (
-            <div class="text-base-content/50">
-              Send a message to start chatting
+        {messages.value.length > 0 &&
+          (
+            <div
+              ref={scrollRef}
+              class="text-sm flex-1 overflow-y-auto space-y-4 min-h-0"
+            >
+              {messages.value.map((msgSig, i) => {
+                const msg = msgSig.value!;
+                const isUser = msg.role === "user";
+                return (
+                  <div
+                    key={i}
+                    class={`chat ${isUser ? "chat-end" : "chat-start"}`}
+                  >
+                    {/* Bubble */}
+                    <div
+                      class={`chat-bubble ${
+                        isUser ? "chat-bubble-primary" : "chat-bubble"
+                      }`}
+                    >
+                      {/* Tool calls and reasoning items */}
+                      <div class="flex flex-col gap-4">
+                        {Array.from(msg.items.entries()).map(([key, item]) => (
+                          <div key={key}>{renderItem(item)}</div>
+                        ))}
+                      </div>
+
+                      {/* Text content */}
+                      {msg.text && (
+                        <div class="whitespace-pre-wrap">{msg.text}</div>
+                      )}
+
+                      {/* Streaming indicator */}
+                      {i === messages.value.length - 1 && streaming.value &&
+                        !msg.text && (
+                        <span class="loading loading-dots loading-sm"></span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           )}
-          {messages.value.map((msgSig, i) => {
-            const msg = msgSig.value!;
-            const isUser = msg.role === "user";
-            return (
-              <div
-                key={i}
-                class={`chat ${isUser ? "chat-end" : "chat-start"}`}
-              >
-                {/* Bubble */}
-                <div
-                  class={`chat-bubble ${
-                    isUser ? "chat-bubble-primary" : "chat-bubble"
-                  }`}
-                >
-                  {/* Tool calls and reasoning items */}
-                  <div class="flex flex-col gap-4">
-                    {Array.from(msg.items.entries()).map(([key, item]) => (
-                      <div key={key}>{renderItem(item)}</div>
-                    ))}
-                  </div>
-
-                  {/* Text content */}
-                  {msg.text && (
-                    <div class="whitespace-pre-wrap">{msg.text}</div>
-                  )}
-
-                  {/* Streaming indicator */}
-                  {i === messages.value.length - 1 && streaming.value &&
-                    !msg.text && (
-                    <span class="loading loading-dots loading-sm"></span>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
 
         {/* Input area */}
-        <div class="bg-base-300 flex p-4">
-          <form
-            class="grow flex gap-4"
-            onSubmit={(e) => {
-              e.preventDefault();
-              send(input.value);
-              input.value = "";
-            }}
+        <form
+          class="grow flex gap-2"
+          onSubmit={(e) => {
+            e.preventDefault();
+            send(input.value);
+            input.value = "";
+          }}
+        >
+          <input
+            type="text"
+            value={input.value}
+            onInput={(e) => input.value = e.currentTarget.value}
+            placeholder="Type a message..."
+            class="input input-bordered flex-1"
+            disabled={streaming.value}
+          />
+          <button
+            type="submit"
+            class="btn btn-primary"
+            disabled={streaming.value || !input.value.trim()}
           >
-            <input
-              type="text"
-              value={input.value}
-              onInput={(e) => input.value = e.currentTarget.value}
-              placeholder="Type a message..."
-              class="input input-bordered flex-1"
-              disabled={streaming.value}
-            />
-            <button
-              type="submit"
-              class="btn btn-primary"
-              disabled={streaming.value || !input.value.trim()}
-            >
-              {streaming.value
-                ? <span class="loading loading-spinner loading-sm"></span>
-                : "Send"}
-            </button>
-          </form>
-        </div>
+            {streaming.value
+              ? <span class="loading loading-spinner loading-sm"></span>
+              : "Send"}
+          </button>
+        </form>
       </div>
     </div>
   );
