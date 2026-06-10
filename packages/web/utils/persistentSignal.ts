@@ -1,10 +1,5 @@
-import {
-  effect,
-  type Signal,
-  signal,
-  useSignal,
-  useSignalEffect,
-} from "@preact/signals";
+import { effect, type Signal, signal, useSignal } from "@preact/signals";
+import { useEffect, useRef } from "preact/hooks";
 
 const cache = new Map<string, Signal<unknown>>();
 
@@ -38,12 +33,28 @@ export function persistentSignal<T>(key: string, fallback: T): Signal<T> {
 }
 
 export function usePersistentSignal<T>(key: string, fallback: T) {
-  const s = useSignal<T>(readStored(key, fallback));
+  const s = useSignal<T>(fallback);
+  const skipNextPersist = useRef(false);
 
-  useSignalEffect(() => {
+  useEffect(() => {
+    skipNextPersist.current = true;
+    s.value = readStored(key, fallback);
+  }, [key, fallback]);
+
+  useEffect(() => {
     if (typeof window === "undefined") return;
-    localStorage.setItem(key, JSON.stringify(s.value));
-  });
+
+    if (skipNextPersist.current) {
+      skipNextPersist.current = false;
+      return;
+    }
+
+    try {
+      localStorage.setItem(key, JSON.stringify(s.value));
+    } catch {
+      // ignore storage/serialisation errors
+    }
+  }, [key, s.value]);
 
   return s;
 }
