@@ -1,4 +1,5 @@
 import type { PageProps } from "fresh";
+import ClearCache from "@/islands/ClearCache.tsx";
 
 export default function App({ Component }: PageProps) {
   return (
@@ -12,6 +13,9 @@ export default function App({ Component }: PageProps) {
         <nav class="navbar bg-base-100 shadow-sm">
           <div class="navbar-start">
             <a class="btn btn-ghost text-xl">Essayist</a>
+          </div>
+          <div class="navbar-end">
+            <ClearCache />
           </div>
         </nav>
         <Component />
