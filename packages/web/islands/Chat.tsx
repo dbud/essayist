@@ -70,7 +70,7 @@ export default function Chat() {
           (
             <div
               ref={scrollRef}
-              class="text-sm flex-1 overflow-y-auto space-y-4 min-h-0"
+              class="text-sm flex-1 overflow-y-auto space-y-4 min-h-0 shadow-[inset_0_8px_8px_-10px_rgba(0,0,0,0.3)] pt-4"
             >
               {messages.value.map((msgSig, i) => {
                 const msg = msgSig.value!;

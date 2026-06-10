@@ -16,7 +16,9 @@ export default function Tabs() {
         return (
           <a
             key={path}
-            class={`tab shrink-0 ${isActive ? "tab-active bg-primary/10" : ""}`}
+            class={`tab shrink-0 ${
+              isActive ? "tab-active bg-primary/10 shadow" : ""
+            }`}
             onClick={() => openFile(path)}
           >
             <span class="flex items-center gap-2">
