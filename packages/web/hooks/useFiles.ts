@@ -1,13 +1,15 @@
 import { useSignal } from "@preact/signals";
 import { useEffect } from "preact/hooks";
 import type { FileEntry, ReadResult } from "@essayist/core";
+import { usePersistentSignal } from "@/utils/persistentSignal.ts";
 
 export function useFiles() {
-  const files = useSignal<FileEntry[]>([]);
-  const loading = useSignal(true);
+  const files = usePersistentSignal<FileEntry[]>("files", []);
+  const loading = useSignal(false);
   const error = useSignal("");
 
   useEffect(() => {
+    loading.value = true;
     fetch("/api/files")
       .then((res) => res.json())
       .then((data) => {
@@ -25,7 +27,10 @@ export function useFiles() {
 }
 
 export function useFileContent(path: string) {
-  const content = useSignal<ReadResult | null>(null);
+  const content = usePersistentSignal<ReadResult | null>(
+    `file:${path}`,
+    null,
+  );
   const loading = useSignal(false);
   const error = useSignal("");
 
