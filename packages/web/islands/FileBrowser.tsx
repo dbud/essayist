@@ -1,4 +1,4 @@
-import { selectedFile } from "@/signals.ts";
+import { openFile, selectedFile } from "@/signals.ts";
 import { useFiles } from "@/hooks/useFiles.ts";
 import { buildFileTree, type TreeNode } from "@/utils/fileTree.ts";
 import { FileText, Folder, FolderOpen } from "lucide-preact";
@@ -39,7 +39,7 @@ function FileItem({ node }: { node: TreeNode }) {
     <li>
       <a
         class={isSelected ? "bg-primary/10" : ""}
-        onClick={() => selectedFile.value = node.path}
+        onClick={() => openFile(node.path)}
       >
         <FileText size={16} />
         {node.name}

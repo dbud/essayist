@@ -1,6 +1,6 @@
 import { selectedFile } from "@/signals.ts";
 import { useFileContent } from "@/hooks/useFiles.ts";
-import { FileText } from "lucide-preact";
+import Tabs from "@/islands/Tabs.tsx";
 
 export default function FileViewer() {
   const { content, loading, error } = useFileContent(selectedFile.value);
@@ -19,16 +19,16 @@ export default function FileViewer() {
 
   return (
     <div class="flex flex-col h-full">
-      <div class="tabs tabs-boxed bg-base-200 rounded-box rounded-b-none">
-        <a class="tab tab-active gap-2">
-          <FileText size={14} />
-          {selectedFile.value.split("/").pop()}
-        </a>
-      </div>
+      <Tabs />
       {content.value && content.value.content && (
-        <pre class="font-mono text-sm whitespace-pre-wrap bg-base-100 p-4 rounded-box rounded-t-none flex-1 overflow-x-auto">
-          {content.value.content}
-        </pre>
+        <div class="text-sm bg-base-100 p-4 rounded-box rounded-t-none flex-1 overflow-x-auto flex">
+          <div class="font-mono text-base-content/30 select-none shrink-0 text-right pr-4">
+            {content.value.content.split("\n").map((_, i) => (
+              <div key={i}>{i + 1}</div>
+            ))}
+          </div>
+          <div class="whitespace-pre-wrap flex-1">{content.value.content}</div>
+        </div>
       )}
     </div>
   );
