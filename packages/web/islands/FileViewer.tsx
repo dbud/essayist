@@ -16,12 +16,11 @@ export default function FileViewer() {
   return (
     <div class="flex flex-col h-full">
       <Tabs />
-      <div class="text-sm bg-base-100 p-4 rounded-box rounded-tl-none flex-1 overflow-x-auto flex relative shadow">
-        {loading.value && (
-          <div class="absolute inset-0 flex items-center justify-center bg-base-100/80 z-10">
-            <span class="loading loading-spinner loading-md" />
-          </div>
-        )}
+      <div
+        class={`text-sm bg-base-100 p-4 rounded-box rounded-tl-none flex-1 overflow-x-auto flex relative shadow ${
+          loading.value ? "loading-border" : ""
+        }`}
+      >
         {content.value && content.value.content && (
           <>
             <div class="font-mono text-base-content/30 select-none shrink-0 text-right pr-4">

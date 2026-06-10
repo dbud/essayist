@@ -52,16 +52,14 @@ export default function FileBrowser() {
   const { files, loading, error } = useFiles();
   const tree = useMemo(() => buildFileTree(files.value), [files.value]);
 
-  if (loading.value) {
-    return <span class="loading loading-spinner loading-sm" />;
-  }
-
   if (error.value) {
     return <div class="text-error">{error.value}</div>;
   }
 
   return (
-    <ul class="menu bg-base-200 w-full">
+    <ul
+      class={`menu bg-base-200 w-full ${loading.value ? "loading-border" : ""}`}
+    >
       {tree.children.map((node) =>
         node.isFile
           ? <FileItem key={node.path} node={node} />
