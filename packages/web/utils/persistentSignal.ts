@@ -39,7 +39,7 @@ export function usePersistentSignal<T>(key: string, fallback: T) {
   useEffect(() => {
     skipNextPersist.current = true;
     s.value = readStored(key, fallback);
-  }, [key, fallback]);
+  }, [key]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
