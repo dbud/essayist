@@ -11,7 +11,8 @@ Essayist is a Deno monorepo that wraps the OpenRouter API to build AI-powered
 writing tools. The core library provides an `Agent` class that calls LLMs via
 OpenRouter, a virtual file system with versioning and annotation support, and a
 set of file-manipulation tools the LLM can invoke. A Fresh web app exposes a
-chat interface backed by these tools.
+chat interface backed by these tools, a file browser, and a file viewer with
+markdown rendering.
 
 ## Monorepo Structure
 
@@ -76,24 +77,44 @@ essayist/
 │       ├── deno.jsonc      # Package config, tasks, compiler options
 │       ├── main.ts         # App entry: wires middleware + fsRoutes
 │       ├── client.ts       # Imports global CSS (required by Fresh)
-│       ├── utils.ts        # State type + createDefine helper
+│       ├── define.ts       # State type + createDefine helper
+│       ├── signals.ts      # Global persistent signals (selectedFile, openedFiles, etc.)
+│       ├── vfs.ts          # Server-side VFS instance seeded with sample files
 │       ├── vite.config.ts  # Vite + Fresh + Tailwind + core watcher plugin
 │       ├── _fresh/         # Generated Fresh build output (gitignored)
 │       ├── assets/
 │       │   └── styles.css  # Tailwind import + custom "essayist" daisyUI theme
+│       ├── components/
+│       │   ├── FontSelect.tsx      # Font family toggle (serif/sans/mono) for file viewer
+│       │   ├── MarkdownView.tsx    # Renders markdown HTML (via marked + DOMPurify)
+│       │   ├── Toolbar.tsx         # Generic toolbar shell (accepts children)
+│       │   └── ViewModeSelect.tsx  # View mode toggle (auto/markdown/plain) for file viewer
+│       ├── hooks/
+│       │   ├── useChat.ts          # useChat() hook — SSE chat for Preact islands
+│       │   └── useFiles.ts         # useFiles() + useFileContent() — file API hooks
 │       ├── islands/
-│       │   └── Chat.tsx    # Interactive Preact island (streaming chat UI)
+│       │   ├── Chat.tsx            # Interactive Preact island (streaming chat UI)
+│       │   ├── ClearCache.tsx      # Button to clear localStorage + reload
+│       │   ├── FileBrowser.tsx     # File tree sidebar (fetches from /api/files)
+│       │   ├── FileViewer.tsx      # File content viewer (markdown or plain text)
+│       │   ├── Section.tsx         # Collapsible sidebar section (details/summary)
+│       │   └── Tabs.tsx            # Open file tabs with close buttons
 │       ├── middleware/
 │       │   └── agent.ts    # Creates Agent from OPENROUTER_API_KEY, attaches to state
 │       ├── routes/
-│       │   ├── _app.tsx    # HTML shell (imports styles.css, navbar, theme)
-│       │   ├── index.tsx   # Home page — renders Chat island
+│       │   ├── _app.tsx    # HTML shell (navbar, h-dvh body, theme)
+│       │   ├── index.tsx   # Home page — three-column layout (browser, viewer, sidebar)
 │       │   └── api/
-│       │       ├── capital.ts  # GET /api/capital?country=… → { country, capital }
-│       │       └── chat.ts     # GET /api/chat?message=… → SSE stream
+│       │       ├── chat.ts         # GET /api/chat?message=… → SSE stream
+│       │       └── files/
+│       │           ├── index.ts    # GET /api/files → file list
+│       │           └── [path].ts   # GET /api/files/:path → file content
 │       ├── utils/
-│       │   ├── sse.ts       # SSE streaming helpers (parseSSE, streamModelResultSSE)
-│       │   └── useChat.ts   # useChat() hook for consuming SSE in Preact islands
+│       │   ├── fileTree.ts     # buildFileTree() — converts flat file list to tree
+│       │   ├── markdown.ts     # renderMarkdown() — marked + DOMPurify
+│       │   ├── persistentSignal.ts  # persistentSignal() + usePersistentSignal()
+│       │   ├── sanitize.ts     # sanitizeHtml() — DOMPurify wrapper
+│       │   └── sse.ts          # SSE streaming helpers (parseSSE, streamModelResultSSE)
 │       └── static/
 │           └── favicon.ico
 ```
@@ -114,16 +135,36 @@ essayist/
   `summarizeFile`, `Agent`, tool factories (`createReadFileTool`,
   `createListFilesTool`, `createGrepTool`, `createWriteFileTool`),
   `VirtualFileSystem`, and `InMemoryAdapter`.
-- **`packages/web/routes/api/capital.ts`** — API route. Calls `getCapital` with
-  the agent from state.
 - **`packages/web/routes/api/chat.ts`** — SSE streaming chat endpoint. Creates
   an in-memory VFS seeded with sample files, wires up `read_file` tool, and uses
   `Agent.callModelWithTools` to stream responses.
+- **`packages/web/routes/api/files/index.ts`** — GET `/api/files`. Lists all
+  files from the server-side VFS.
+- **`packages/web/routes/api/files/[path].ts`** — GET `/api/files/:path`. Reads
+  a single file from the VFS.
 - **`packages/web/islands/Chat.tsx`** — Interactive Preact island that consumes
   the SSE stream via `useChat`. Renders chat bubbles, tool calls, reasoning, and
   a message input form.
+- **`packages/web/islands/FileViewer.tsx`** — File content viewer island.
+  Fetches file content from `/api/files/:path`, renders as markdown or plain text
+  based on view mode. Includes `FontSelect` and `ViewModeSelect` in a `Toolbar`.
+- **`packages/web/islands/FileBrowser.tsx`** — File tree sidebar island.
+  Fetches file list from `/api/files`, renders a collapsible tree with folders
+  and files.
+- **`packages/web/islands/Tabs.tsx`** — Open file tabs with close buttons.
+  Uses `openedFiles` and `selectedFile` signals.
+- **`packages/web/islands/Section.tsx`** — Collapsible sidebar section using
+  `<details>`/`<summary>` with daisyUI `collapse` styling.
 - **`packages/web/middleware/agent.ts`** — Middleware. Instantiates `Agent` with
   `OPENROUTER_API_KEY` and attaches it to `ctx.state.agent`.
+- **`packages/web/signals.ts`** — Global persistent signals:
+  `selectedFile`, `openedFiles`, `fileHistory`, `viewerFont`, `viewMode`.
+  Also exports `openFile()` and `closeFile()` helpers.
+- **`packages/web/vfs.ts`** — Server-side VFS instance seeded with sample files
+  (essay.txt, report.txt, notes/ideas.md, markdown-showcase.md, etc.).
+- **`packages/web/utils/persistentSignal.ts`** — `persistentSignal()` (global
+  singleton signals synced to localStorage) and `usePersistentSignal()` (hook
+  version for island components).
 - **`packages/web/utils/useChat.ts`** and **`packages/web/utils/sse.ts`** —
   Helper utilities for managing the SSE connection and client-side state.
 
@@ -139,13 +180,16 @@ essayist/
 - **Preact** (v10.29.1) — UI library (JSX precompiled, not client-side rendered
   except islands).
 - **@preact/signals** (v2.9.0) — Reactive signals for Preact islands (used by
-  `Chat` and `useChat`).
+  `Chat`, `FileViewer`, `FileBrowser`, `Tabs`, and `useChat`).
 - **Tailwind CSS** (v4.1.10) — Styling via `@tailwindcss/vite` plugin.
 - **daisyUI** (v5.5.20) — Component library built on Tailwind. Custom "essayist"
   theme defined in `assets/styles.css`.
 - **Vite** (v7.1.3) — Dev server and build tool (via `@fresh/plugin-vite`).
 - **pino** (v9.6.0) — JSON logging library. Pretty-printed in dev, JSON in
   production.
+- **marked** — Markdown parsing for `MarkdownView` component.
+- **DOMPurify** — HTML sanitization for rendered markdown.
+- **lucide-preact** — Icon library (FileText, Folder, FolderOpen, X, Zap, etc.).
 
 ## Commands
 
@@ -208,8 +252,24 @@ Production builds and serving are handled by Deno Deploy.
   to `./src/` in core).
 - **Fresh file-system routing** — Routes live in `routes/`, API routes in
   `routes/api/`. Islands (interactive Preact components) live in `islands/`.
-- **State management** — `createDefine` pattern from Fresh: `utils.ts` exports a
-  typed `define` helper; middleware populates `ctx.state.agent`.
+- **State management** — `createDefine` pattern from Fresh: `define.ts` exports a
+  typed `define` helper; middleware populates `ctx.state.agent`. Client-side
+  state uses `@preact/signals` via `persistentSignal()` (global) and
+  `usePersistentSignal()` (per-island hook), both synced to localStorage.
+- **Three-column layout** — The home page (`routes/index.tsx`) uses a horizontal
+  flex layout: file browser (`w-64`), file viewer (`flex-1`), and right sidebar
+  (`flex-1 max-w-lg`). The body uses `h-dvh` to constrain to the viewport.
+  The right sidebar wraps a `join join-vertical` group of collapsible sections
+  in a scrollable container (`overflow-y-auto min-h-0`).
+- **File viewer layout** — `FileViewer` uses a flex column with `h-full`
+  constrained by the route wrapper's `min-h-0`. The toolbar and content area
+  use `flex-1 min-h-0` with `overflow-y-auto` so the content scrolls within
+  remaining space. A spacer div at the bottom allows scrolling past the end.
+- **View mode** — `viewMode` signal (`auto`, `markdown`, `plain`) controls
+  whether file content is rendered as markdown or plain text. Auto mode uses
+  the file extension (`.md` → markdown).
+- **Font selection** — `viewerFont` signal (`font-serif`, `font-sans`,
+  `font-mono`) controls the font family applied to file content.
 - **Structured LLM output** — `Agent.callModel(input, schema)` sends a Zod
   schema-derived instruction prompt with an example JSON object, expects JSON
   back, parses it with `stripMarkdownFences`, and validates with Zod. The schema
@@ -275,3 +335,18 @@ Production builds and serving are handled by Deno Deploy.
   `logger()` function returns `Promise<pino.Logger>` — consumers must `await`
   it. This means importing `@essayist/core` no longer crashes in env-restricted
   contexts.
+- **Flex scroll containers** — For `overflow-y-auto` to work in a flex child, every
+  ancestor in the chain needs `min-h-0` to allow shrinking below content size.
+  The pattern is: `h-dvh` on body → `flex-1 min-h-0` on the route wrapper →
+  `h-full min-h-0` on the component → `flex-1 min-h-0 overflow-y-auto` on the
+  scroll container. Missing `min-h-0` at any level causes the content to expand
+  past the viewport instead of scrolling.
+- **`join` layout and scroll** — daisyUI's `join` class uses `inline-flex` which
+  doesn't support `overflow`. To make a scrollable sidebar with `join` styling,
+  wrap the `join` group in a separate scrollable container div rather than
+  applying `overflow` directly to the `join` parent.
+- **Persistent signals** — `persistentSignal()` creates global singleton signals
+  shared across the app. `usePersistentSignal()` is a hook that creates per-island
+  signals synced to localStorage. Use the global version for app-wide state
+  (selectedFile, openedFiles) and the hook version for island-local state
+  (chat messages, file content).
