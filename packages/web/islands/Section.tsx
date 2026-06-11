@@ -1,6 +1,5 @@
 import type { ComponentChildren } from "preact";
 import { useSignal } from "@preact/signals";
-import { ChevronDown, ChevronRight } from "lucide-preact";
 
 interface SectionProps {
   title: string;
@@ -25,7 +24,6 @@ export default function Section(
           open.value = !open.value;
         }}
       >
-        {open.value ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
         {title}
       </summary>
       <div class="collapse-content">{children}</div>
