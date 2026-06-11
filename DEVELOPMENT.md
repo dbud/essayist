@@ -146,20 +146,21 @@ essayist/
   the SSE stream via `useChat`. Renders chat bubbles, tool calls, reasoning, and
   a message input form.
 - **`packages/web/islands/FileViewer.tsx`** — File content viewer island.
-  Fetches file content from `/api/files/:path`, renders as markdown or plain text
-  based on view mode. Includes `FontSelect` and `ViewModeSelect` in a `Toolbar`.
-- **`packages/web/islands/FileBrowser.tsx`** — File tree sidebar island.
-  Fetches file list from `/api/files`, renders a collapsible tree with folders
-  and files.
-- **`packages/web/islands/Tabs.tsx`** — Open file tabs with close buttons.
-  Uses `openedFiles` and `selectedFile` signals.
+  Fetches file content from `/api/files/:path`, renders as markdown or plain
+  text based on view mode. Includes `FontSelect` and `ViewModeSelect` in a
+  `Toolbar`.
+- **`packages/web/islands/FileBrowser.tsx`** — File tree sidebar island. Fetches
+  file list from `/api/files`, renders a collapsible tree with folders and
+  files.
+- **`packages/web/islands/Tabs.tsx`** — Open file tabs with close buttons. Uses
+  `openedFiles` and `selectedFile` signals.
 - **`packages/web/islands/Section.tsx`** — Collapsible sidebar section using
   `<details>`/`<summary>` with daisyUI `collapse` styling.
 - **`packages/web/middleware/agent.ts`** — Middleware. Instantiates `Agent` with
   `OPENROUTER_API_KEY` and attaches it to `ctx.state.agent`.
-- **`packages/web/signals.ts`** — Global persistent signals:
-  `selectedFile`, `openedFiles`, `fileHistory`, `viewerFont`, `viewMode`.
-  Also exports `openFile()` and `closeFile()` helpers.
+- **`packages/web/signals.ts`** — Global persistent signals: `selectedFile`,
+  `openedFiles`, `fileHistory`, `viewerFont`, `viewMode`. Also exports
+  `openFile()` and `closeFile()` helpers.
 - **`packages/web/vfs.ts`** — Server-side VFS instance seeded with sample files
   (essay.txt, report.txt, notes/ideas.md, markdown-showcase.md, etc.).
 - **`packages/web/utils/persistentSignal.ts`** — `persistentSignal()` (global
@@ -252,22 +253,22 @@ Production builds and serving are handled by Deno Deploy.
   to `./src/` in core).
 - **Fresh file-system routing** — Routes live in `routes/`, API routes in
   `routes/api/`. Islands (interactive Preact components) live in `islands/`.
-- **State management** — `createDefine` pattern from Fresh: `define.ts` exports a
-  typed `define` helper; middleware populates `ctx.state.agent`. Client-side
+- **State management** — `createDefine` pattern from Fresh: `define.ts` exports
+  a typed `define` helper; middleware populates `ctx.state.agent`. Client-side
   state uses `@preact/signals` via `persistentSignal()` (global) and
   `usePersistentSignal()` (per-island hook), both synced to localStorage.
 - **Three-column layout** — The home page (`routes/index.tsx`) uses a horizontal
   flex layout: file browser (`w-64`), file viewer (`flex-1`), and right sidebar
-  (`flex-1 max-w-lg`). The body uses `h-dvh` to constrain to the viewport.
-  The right sidebar wraps a `join join-vertical` group of collapsible sections
-  in a scrollable container (`overflow-y-auto min-h-0`).
+  (`flex-1 max-w-lg`). The body uses `h-dvh` to constrain to the viewport. The
+  right sidebar wraps a `join join-vertical` group of collapsible sections in a
+  scrollable container (`overflow-y-auto min-h-0`).
 - **File viewer layout** — `FileViewer` uses a flex column with `h-full`
-  constrained by the route wrapper's `min-h-0`. The toolbar and content area
-  use `flex-1 min-h-0` with `overflow-y-auto` so the content scrolls within
+  constrained by the route wrapper's `min-h-0`. The toolbar and content area use
+  `flex-1 min-h-0` with `overflow-y-auto` so the content scrolls within
   remaining space. A spacer div at the bottom allows scrolling past the end.
 - **View mode** — `viewMode` signal (`auto`, `markdown`, `plain`) controls
-  whether file content is rendered as markdown or plain text. Auto mode uses
-  the file extension (`.md` → markdown).
+  whether file content is rendered as markdown or plain text. Auto mode uses the
+  file extension (`.md` → markdown).
 - **Font selection** — `viewerFont` signal (`font-serif`, `font-sans`,
   `font-mono`) controls the font family applied to file content.
 - **Structured LLM output** — `Agent.callModel(input, schema)` sends a Zod
@@ -335,10 +336,10 @@ Production builds and serving are handled by Deno Deploy.
   `logger()` function returns `Promise<pino.Logger>` — consumers must `await`
   it. This means importing `@essayist/core` no longer crashes in env-restricted
   contexts.
-- **Flex scroll containers** — For `overflow-y-auto` to work in a flex child, every
-  ancestor in the chain needs `min-h-0` to allow shrinking below content size.
-  The pattern is: `h-dvh` on body → `flex-1 min-h-0` on the route wrapper →
-  `h-full min-h-0` on the component → `flex-1 min-h-0 overflow-y-auto` on the
+- **Flex scroll containers** — For `overflow-y-auto` to work in a flex child,
+  every ancestor in the chain needs `min-h-0` to allow shrinking below content
+  size. The pattern is: `h-dvh` on body → `flex-1 min-h-0` on the route wrapper
+  → `h-full min-h-0` on the component → `flex-1 min-h-0 overflow-y-auto` on the
   scroll container. Missing `min-h-0` at any level causes the content to expand
   past the viewport instead of scrolling.
 - **`join` layout and scroll** — daisyUI's `join` class uses `inline-flex` which
@@ -346,7 +347,7 @@ Production builds and serving are handled by Deno Deploy.
   wrap the `join` group in a separate scrollable container div rather than
   applying `overflow` directly to the `join` parent.
 - **Persistent signals** — `persistentSignal()` creates global singleton signals
-  shared across the app. `usePersistentSignal()` is a hook that creates per-island
-  signals synced to localStorage. Use the global version for app-wide state
-  (selectedFile, openedFiles) and the hook version for island-local state
+  shared across the app. `usePersistentSignal()` is a hook that creates
+  per-island signals synced to localStorage. Use the global version for app-wide
+  state (selectedFile, openedFiles) and the hook version for island-local state
   (chat messages, file content).
