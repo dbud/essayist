@@ -12,19 +12,21 @@ export default function HomePage() {
       <div class="flex-1 min-w-0 min-h-0 h-full flex flex-col">
         <FileViewer />
       </div>
-      <aside class="flex-1 max-w-lg shrink-0 join join-vertical">
-        <Section title="Chat">
-          <Chat />
-        </Section>
-        <Section title="File Stats">
-          <div class="text-sm text-base-content/50">Coming soon</div>
-        </Section>
-        <Section title="File History">
-          <div class="text-sm text-base-content/50">Coming soon</div>
-        </Section>
-        <Section title="Unreviewed Marks">
-          <div class="text-sm text-base-content/50">Coming soon</div>
-        </Section>
+      <aside class="flex-1 max-w-lg shrink-0 min-h-0 overflow-y-auto flex flex-col">
+        <div class="join join-vertical">
+          <Section title="Chat">
+            <Chat />
+          </Section>
+          <Section title="File Stats">
+            <div class="text-sm text-base-content/50">Coming soon</div>
+          </Section>
+          <Section title="File History">
+            <div class="text-sm text-base-content/50">Coming soon</div>
+          </Section>
+          <Section title="Unreviewed Marks">
+            <div class="text-sm text-base-content/50">Coming soon</div>
+          </Section>
+        </div>
       </aside>
     </main>
   );

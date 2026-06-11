@@ -64,7 +64,7 @@ export default function Chat() {
   }, [messageCount.value, lastText.value, streaming.value]);
 
   return (
-    <div class="h-full max-h-[70vh] flex flex-col">
+    <div class="flex-1 min-h-0 max-h-[50vh] flex flex-col">
       <div class="flex flex-1 flex-col gap-2 min-h-0">
         {/* Messages area */}
         {messages.value.length > 0 &&
