@@ -2,7 +2,7 @@ import { useComputed, useSignal } from "@preact/signals";
 import type { StreamableOutputItem } from "@openrouter/agent";
 import { useChat } from "@/hooks/useChat.ts";
 import { useEffect, useRef } from "preact/hooks";
-import { renderMarkdown } from "@/utils/markdown.ts";
+import MarkdownView from "@/components/MarkdownView.tsx";
 
 function pprint<T>(a: string | T) {
   const object = typeof a === "string" ? JSON.parse(a) : a;
@@ -97,12 +97,9 @@ export default function Chat() {
                       {/* Text content */}
                       {msg.text && (
                         isUser ? <div>{msg.text}</div> : (
-                          <div
-                            class="prose prose-sm whitespace-pre-wrap"
-                            // deno-lint-ignore react-no-danger
-                            dangerouslySetInnerHTML={{
-                              __html: renderMarkdown(msg.text),
-                            }}
+                          <MarkdownView
+                            content={msg.text}
+                            class="whitespace-pre-wrap"
                           />
                         )
                       )}

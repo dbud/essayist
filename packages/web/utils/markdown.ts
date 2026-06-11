@@ -1,4 +1,5 @@
 import { marked } from "marked";
+import { sanitizeHtml } from "./sanitize.ts";
 
 marked.setOptions({
   breaks: true,
@@ -6,5 +7,6 @@ marked.setOptions({
 });
 
 export function renderMarkdown(text: string): string {
-  return marked.parse(text) as string;
+  const rawHtml = marked.parse(text) as string;
+  return sanitizeHtml(rawHtml);
 }
