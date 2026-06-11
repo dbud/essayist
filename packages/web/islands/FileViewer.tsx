@@ -1,10 +1,36 @@
-import { selectedFile } from "@/signals.ts";
+import { selectedFile, viewerFont, viewMode } from "@/signals.ts";
 import { useFileContent } from "@/hooks/useFiles.ts";
 import Tabs from "@/islands/Tabs.tsx";
+import Toolbar from "@/components/Toolbar.tsx";
+import FontSelect from "@/components/FontSelect.tsx";
+import ViewModeSelect from "@/components/ViewModeSelect.tsx";
 import MarkdownView from "@/components/MarkdownView.tsx";
 
 function isMarkdown(path: string): boolean {
   return path.toLowerCase().endsWith(".md");
+}
+
+function showMarkdown(): boolean {
+  if (viewMode.value === "markdown") return true;
+  if (viewMode.value === "plain") return false;
+  return isMarkdown(selectedFile.value);
+}
+
+function FileContent({ content }: { content: string }) {
+  if (showMarkdown()) {
+    return (
+      <MarkdownView
+        content={content}
+        class={`px-4 py-2 ${viewerFont.value}`}
+      />
+    );
+  }
+
+  return (
+    <div class={`${viewerFont.value} prose whitespace-pre-wrap`}>
+      {content}
+    </div>
+  );
 }
 
 export default function FileViewer() {
@@ -19,34 +45,25 @@ export default function FileViewer() {
   }
 
   return (
-    <div class="flex flex-col h-full">
+    <div class="flex flex-col h-full min-h-0">
       <Tabs />
       <div
-        class={`text-sm bg-base-100 p-4 rounded-box rounded-tl-none flex-1 overflow-x-auto flex relative shadow ${
-          loading.value ? "loading-border" : ""
-        }`}
+        class={`text-sm bg-base-100 rounded-box rounded-tl-none
+        flex-1 min-h-0 overflow-x-auto flex flex-col shadow
+        ${loading.value ? "loading-border" : ""}`}
       >
-        {content.value && content.value.content && (
-          isMarkdown(selectedFile.value)
-            ? (
-              <MarkdownView
-                content={content.value.content}
-                class="flex-1 px-4 py-2"
-              />
-            )
-            : (
-              <>
-                <div class="font-mono text-base-content/30 select-none shrink-0 text-right pr-4">
-                  {content.value.content.split("\n").map((_, i) => (
-                    <div key={i}>{i + 1}</div>
-                  ))}
-                </div>
-                <div class="font-serif whitespace-pre-wrap flex-1">
-                  {content.value.content}
-                </div>
-              </>
-            )
-        )}
+        <Toolbar>
+          <div class="flex items-center gap-4">
+            <FontSelect />
+            <ViewModeSelect />
+          </div>
+        </Toolbar>
+        <div class="flex-1 min-h-0 flex overflow-x-auto overflow-y-auto p-4">
+          {content.value && content.value.content && (
+            <FileContent content={content.value.content} />
+          )}
+          <div class="shrink-0 h-32" />
+        </div>
       </div>
     </div>
   );
