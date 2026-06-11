@@ -1,5 +1,23 @@
 @import "tailwindcss";
 
+@theme {
+  --font-serif: "Source Serif 4 Variable", ui-serif, Georgia, serif;
+  --font-sans: "Hanken Grotesk Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Recursive Variable", ui-monospace, SFMono-Regular, monospace;
+}
+
+@layer utilities {
+  .font-mono {
+    font-variation-settings: "MONO" 1;
+  }
+}
+
+@layer base {
+  html {
+    font-size: 16.5px;
+  }
+}
+
 @plugin "daisyui" {
   themes: essayist;
 }
@@ -51,12 +69,10 @@
   right: 0;
   height: 2px;
   border-radius: 2px;
-  background: linear-gradient(
-    90deg,
-    transparent 40%,
-    var(--color-primary) 50%,
-    transparent 60%
-  );
+  background: linear-gradient(90deg,
+      transparent 40%,
+      var(--color-primary) 50%,
+      transparent 60%);
   background-size: 200% 100%;
   animation: loading-slide 3s ease-in-out infinite;
 }

@@ -28,7 +28,7 @@ export default function FileViewer() {
                 <div key={i}>{i + 1}</div>
               ))}
             </div>
-            <div class="whitespace-pre-wrap flex-1">
+            <div class="font-serif whitespace-pre-wrap flex-1">
               {content.value.content}
             </div>
           </>

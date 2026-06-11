@@ -36,7 +36,7 @@ function renderItem(item: StreamableOutputItem) {
         ...(item.content?.filter((c) => c.type === "reasoning_text") ?? []),
       ].map((s) => s.text).join("\n");
       return (
-        <div class="opacity-60 italic text-sm">
+        <div class="opacity-60 italic text-xs">
           {text}
         </div>
       );
