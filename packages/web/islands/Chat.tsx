@@ -2,6 +2,7 @@ import { useComputed, useSignal } from "@preact/signals";
 import type { StreamableOutputItem } from "@openrouter/agent";
 import { useChat } from "@/hooks/useChat.ts";
 import { useEffect, useRef } from "preact/hooks";
+import { renderMarkdown } from "@/utils/markdown.ts";
 
 function pprint<T>(a: string | T) {
   const object = typeof a === "string" ? JSON.parse(a) : a;
@@ -36,7 +37,7 @@ function renderItem(item: StreamableOutputItem) {
         ...(item.content?.filter((c) => c.type === "reasoning_text") ?? []),
       ].map((s) => s.text).join("\n");
       return (
-        <div class="opacity-60 italic text-xs">
+        <div class="opacity-60 italic">
           {text}
         </div>
       );
@@ -95,7 +96,15 @@ export default function Chat() {
 
                       {/* Text content */}
                       {msg.text && (
-                        <div class="whitespace-pre-wrap">{msg.text}</div>
+                        isUser ? <div>{msg.text}</div> : (
+                          <div
+                            class="prose prose-sm whitespace-pre-wrap"
+                            // deno-lint-ignore react-no-danger
+                            dangerouslySetInnerHTML={{
+                              __html: renderMarkdown(msg.text),
+                            }}
+                          />
+                        )
                       )}
 
                       {/* Streaming indicator */}
