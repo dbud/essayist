@@ -17,6 +17,11 @@
       ]
     }
   },
+  "fmt": {
+    "exclude": [
+      "**/*.css"
+    ]
+  },
   "exclude": [
     "**/_fresh/*"
   ],
