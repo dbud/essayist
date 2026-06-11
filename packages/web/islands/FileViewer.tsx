@@ -58,7 +58,7 @@ export default function FileViewer() {
             <ViewModeSelect />
           </div>
         </Toolbar>
-        <div class="flex-1 min-h-0 flex overflow-x-auto overflow-y-auto p-4">
+        <div class="flex-1 min-h-0 flex flex-col overflow-x-auto overflow-y-auto p-4">
           {content.value && content.value.content && (
             <FileContent content={content.value.content} />
           )}
