@@ -1,4 +1,4 @@
-import { unifiedDiff } from "@/vfs/diff.ts";
+import { unifiedDiff } from "@/vfs/unified_diff.ts";
 import type { PersistenceAdapter } from "./persistence.ts";
 import type {
   DiffResult,

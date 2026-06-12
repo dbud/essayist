@@ -1,5 +1,5 @@
 import { assertEquals, assertStrictEquals } from "@std/assert";
-import { unifiedDiff } from "./diff.ts";
+import { unifiedDiff } from "./unified_diff.ts";
 
 Deno.test("unifiedDiff -- identical strings produce empty diff", () => {
   const result = unifiedDiff("same", "same");
