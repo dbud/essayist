@@ -76,6 +76,7 @@ export class VirtualFileSystem implements VFS {
 
     if (existed) {
       this.#snapshotVersion(path);
+      // TODO: migrate marks
     }
 
     this.#adapter.set(this.#fileKey(path), content);
@@ -169,6 +170,7 @@ export class VirtualFileSystem implements VFS {
 
   mark(
     _path: string,
+    _versionId: string,
     _selectedText: string,
     _comment: string,
     _label?: string,
@@ -176,7 +178,7 @@ export class VirtualFileSystem implements VFS {
     throw new Error("Not implemented");
   }
 
-  getMarks(_path?: string): Mark[] {
+  getMarks(_path: string, _versionId: string): Mark[] {
     throw new Error("Not implemented");
   }
 
@@ -212,8 +214,8 @@ export class VirtualFileSystem implements VFS {
       | undefined;
     if (!v) return false;
 
-    this.#snapshotVersion(path);
-    this.#adapter.set(this.#fileKey(path), v.content);
+    // write() handles snapshotting and mark migration.
+    this.write(path, v.content);
     return true;
   }
 
@@ -226,12 +228,12 @@ export class VirtualFileSystem implements VFS {
 
   diff(path: string, versionA: string, versionB?: string): DiffResult {
     const contentA = this.getVersionContent(path, versionA);
-    const contentB = versionB
+    const contentB = versionB // TODO: unify version id
       ? this.getVersionContent(path, versionB)
       : this.#getFile(path);
 
     return {
-      diff: unifiedDiff(contentA, contentB, versionA, versionB ?? "current"),
+      diff: unifiedDiff(contentA, contentB, versionA, versionB),
     };
   }
 
@@ -247,8 +249,27 @@ export class VirtualFileSystem implements VFS {
     return `${MARKS_PREFIX}${id}`;
   }
 
+  #marksListKey(path: string, versionId: string): string {
+    return `${MARKS_PREFIX}list:${path}:${versionId}`;
+  }
+
   #saveMark(mark: Mark): void {
     this.#adapter.set(this.#markKey(mark.id), mark);
+
+    const listKey = this.#marksListKey(mark.path, mark.version_id);
+    const list = this.#adapter.get(listKey) as string[] | undefined ?? [];
+    list.push(mark.id);
+    this.#adapter.set(listKey, list);
+  }
+
+  #saveMarks(path: string, versionId: string, marks: Mark[]): void {
+    const list: string[] = [];
+    for (const mark of marks) {
+      this.#adapter.set(this.#markKey(mark.id), mark);
+      list.push(mark.id);
+    }
+    const listKey = this.#marksListKey(path, versionId);
+    this.#adapter.set(listKey, list);
   }
 
   #generateMarkId(): string {
@@ -263,9 +284,9 @@ export class VirtualFileSystem implements VFS {
     return `${VERSIONS_PREFIX}${path}:${versionId}`;
   }
 
-  #snapshotVersion(path: string): void {
+  #snapshotVersion(path: string): string | null {
     const content = this.#getFile(path);
-    if (content === "") return;
+    if (content === "") return null; // TODO: unify version behavior
 
     const versionId = `${Date.now()}_${++versionCounter}`;
     const listKey = this.#versionsListKey(path);
@@ -278,5 +299,7 @@ export class VirtualFileSystem implements VFS {
       content,
       timestamp: Date.now(),
     });
+
+    return versionId;
   }
 }

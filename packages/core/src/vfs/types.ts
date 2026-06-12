@@ -40,25 +40,37 @@ export interface GrepResult {
   matches: GrepMatch[];
 }
 
-/** A mark on a text span. */
+export type MarkStatus = "resolved" | "stale";
+
+/**
+ * A mark on a text span in a specific version of a file.
+ *
+ * Marks are version-bound: each mark belongs to exactly one version.
+ * When a new version is created (via write), marks from the previous
+ * version are migrated using the mark resolver. If the mark's text
+ * can be found in the new content, the mark is copied as "resolved".
+ * Otherwise, it is copied as "stale".
+ */
 export interface Mark {
   id: string;
+  thread_id: string; // stable id across versions
   path: string;
+  version_id: string;
   selected_text: string;
   before_context: string;
   after_context: string;
   comment: string;
   label?: string;
   created_at: number;
-  /** True if the mark could not be resolved to the current file content. */
-  stale?: boolean;
-  /** The resolved line number (1-based) when reading marks. Undefined if stale. */
-  resolved_line?: number;
+  offset: number | null;
+  length: number | null;
+  status: MarkStatus;
 }
 
 /** Result of a mark operation. */
 export interface MarkResult {
   mark_id: string;
+  thread_id: string;
   marked: boolean;
 }
 
@@ -79,6 +91,10 @@ export interface DiffResult {
  *
  * All file paths are strings (e.g. "essay.txt", "notes/ideas.md").
  * Line numbers are 1-based and inclusive.
+ *
+ * VFS maintains a sequence of immutable versions for each file.
+ * The latest version is the current content. Marks are tied to
+ * specific versions and are migrated on write.
  */
 export interface VFS {
   /** Read file content, optionally a line range. */
@@ -89,7 +105,10 @@ export interface VFS {
     numbered?: boolean,
   ): ReadResult;
 
-  /** Write (create or overwrite) a file. Snapshots the old version on overwrite. */
+  /**
+   * Write new content, creating a new version.
+   * Snapshots the old version and migrates its marks to the new version.
+   */
   write(path: string, content: string): WriteResult;
 
   /** List files, optionally filtered by path prefix. */
@@ -101,16 +120,17 @@ export interface VFS {
   /** Search files for plain text (escaped as literal regex). */
   search(text: string, options?: GrepOptions): GrepResult;
 
-  /** Place a mark on a text span in a file. */
+  /** Place a mark on a text span in a specific version of a file. */
   mark(
     path: string,
+    versionId: string,
     selectedText: string,
     comment: string,
     label?: string,
   ): MarkResult;
 
-  /** Get marks for a file (or all files). */
-  getMarks(path?: string): Mark[];
+  /** Get marks for a specific version of a file. */
+  getMarks(path: string, versionId: string): Mark[];
 
   /** Delete a mark by ID. Returns true if the mark existed. */
   deleteMark(markId: string): boolean;
@@ -118,12 +138,16 @@ export interface VFS {
   /** Get version history for a file. */
   getHistory(path: string): FileVersion[];
 
-  /** Revert a file to a previous version. */
+  /**
+   * Revert a file to a previous version.
+   * Creates a new version with the old content.
+   * Marks from the reverted version are copied to the new version.
+   */
   revert(path: string, versionId: string): boolean;
 
   /** Get the content of a specific version. Returns empty string if version not found. */
   getVersionContent(path: string, versionId: string): string;
 
-  /** Get unified diff between two versions (or current if only one specified). */
-  diff(path: string, versionA: string, versionB?: string): DiffResult;
+  /** Get unified diff between two versions. */
+  diff(path: string, versionA: string, versionB: string): DiffResult;
 }
