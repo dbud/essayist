@@ -41,20 +41,31 @@ Deno.test("fuzzyFind -- single character substitution", () => {
   });
 });
 
-Deno.test("fuzzyFind -- single character insertion in pattern", () => {
+Deno.test("fuzzyFind -- single character insertion in pattern (N+1 window)", () => {
   const result = fuzzyFind("hello world", "helllo", 0.8);
   assertObjectMatch(result!, {
     offset: 0,
     text: "hello",
   });
+  assertEquals(result!.text.length, 5);
 });
 
-Deno.test("fuzzyFind -- single character deletion in pattern", () => {
+Deno.test("fuzzyFind -- single character deletion in pattern (N-1 window)", () => {
   const result = fuzzyFind("hello world", "helo", 0.8);
   assertObjectMatch(result!, {
     offset: 0,
     text: "hello",
   });
+  assertEquals(result!.text.length, 5);
+});
+
+Deno.test("fuzzyFind -- N-1 window matches shorter text", () => {
+  const result = fuzzyFind("helo world", "hello", 0.7);
+  assertObjectMatch(result!, {
+    offset: 0,
+    text: "helo",
+  });
+  assertEquals(result!.text.length, 4);
 });
 
 // fuzzyFind -- threshold behavior
