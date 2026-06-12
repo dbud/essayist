@@ -13,7 +13,7 @@ export function unifiedDiff(
 
   const ops = myersDiff(oldLines, newLines);
 
-  const hunks = buildHunks(ops, oldLines, newLines);
+  const hunks = buildUnifiedHunks(ops, oldLines, newLines);
 
   if (hunks.length === 0) return "";
 
@@ -40,7 +40,7 @@ interface DiffOp {
   newLine?: string;
 }
 
-interface Hunk {
+interface UnifiedHunk {
   oldStart: number;
   newStart: number;
   oldCount: number;
@@ -92,10 +92,10 @@ function myersDiff(oldLines: string[], newLines: string[]): DiffOp[] {
   return ops;
 }
 
-function buildHunk(
+function buildUnifiedHunk(
   ops: DiffOp[],
   startIdx: number,
-): { hunk: Hunk; nextIdx: number } {
+): { hunk: UnifiedHunk; nextIdx: number } | null {
   const hunkLines: string[] = [];
   let oldCount = 0;
   let newCount = 0;
@@ -106,10 +106,7 @@ function buildHunk(
   }
 
   if (idx >= ops.length) {
-    return {
-      hunk: { oldStart: 0, newStart: 0, oldCount: 0, newCount: 0, lines: [] },
-      nextIdx: idx,
-    };
+    return null;
   }
 
   const changeStart = idx;
@@ -176,20 +173,19 @@ function buildHunk(
   };
 }
 
-function buildHunks(
+function buildUnifiedHunks(
   ops: DiffOp[],
   _oldLines: string[],
   _newLines: string[],
-): Hunk[] {
-  const hunks: Hunk[] = [];
+): UnifiedHunk[] {
+  const hunks: UnifiedHunk[] = [];
   let idx = 0;
 
   while (idx < ops.length) {
-    const { hunk, nextIdx } = buildHunk(ops, idx);
-    if (hunk.lines.length > 0) {
-      hunks.push(hunk);
-    }
-    if (nextIdx === idx) break; // safety: prevent infinite loop
+    const result = buildUnifiedHunk(ops, idx);
+    if (result === null) break;
+    const { hunk, nextIdx } = result;
+    hunks.push(hunk);
     idx = nextIdx;
   }
 
