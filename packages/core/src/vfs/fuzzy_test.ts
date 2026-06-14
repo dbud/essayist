@@ -1,6 +1,6 @@
 import { assertEquals } from "@std/assert/equals";
 import { assertObjectMatch } from "@std/assert/object-match";
-import { fuzzyFind, fuzzyFindNear, fuzzyIndexOf } from "@/vfs/fuzzy.ts";
+import { fuzzyFind, fuzzyFindNear } from "@/vfs/fuzzy.ts";
 
 // fuzzyFind -- exact matches
 
@@ -191,75 +191,13 @@ Deno.test("fuzzyFindNear -- empty text returns null", () => {
   assertEquals(result, null);
 });
 
-Deno.test("fuzzyFindNear -- empty pattern returns null", () => {
+Deno.test("fuzzyFindNear -- empty pattern matches at start", () => {
   const result = fuzzyFindNear("hello world", "", 0, 5, 0.8);
-  assertEquals(result, null);
-});
-
-// fuzzyIndexOf -- exact match
-
-Deno.test("fuzzyIndexOf -- exact match at start", () => {
-  const result = fuzzyIndexOf("hello world", "hello", 0.8);
   assertObjectMatch(result!, {
-    index: 0,
-    length: 5,
+    offset: 0,
+    text: "",
+    score: 1,
   });
-});
-
-Deno.test("fuzzyIndexOf -- exact match in middle", () => {
-  const result = fuzzyIndexOf("hello world", "world", 0.8);
-  assertObjectMatch(result!, {
-    index: 6,
-    length: 5,
-  });
-});
-
-Deno.test("fuzzyIndexOf -- exact match preferred over fuzzy", () => {
-  const result = fuzzyIndexOf("hallo world hello", "hallo", 0.8);
-  assertObjectMatch(result!, {
-    index: 0,
-    length: 5,
-  });
-});
-
-// fuzzyIndexOf -- fuzzy fallback
-
-Deno.test("fuzzyIndexOf -- fuzzy match when no exact match", () => {
-  const result = fuzzyIndexOf("hello world", "hallo", 0.8);
-  assertObjectMatch(result!, {
-    index: 0,
-    length: 5,
-  });
-});
-
-Deno.test("fuzzyIndexOf -- returns null when below threshold", () => {
-  const result = fuzzyIndexOf("hello world", "xyz", 0.8);
-  assertEquals(result, null);
-});
-
-// fuzzyIndexOf -- empty inputs
-
-Deno.test("fuzzyIndexOf -- empty text returns null", () => {
-  const result = fuzzyIndexOf("", "hello", 0.8);
-  assertEquals(result, null);
-});
-
-Deno.test("fuzzyIndexOf -- empty pattern matches at start", () => {
-  const result = fuzzyIndexOf("hello world", "", 0.8);
-  assertObjectMatch(result!, {
-    index: 0,
-    length: 0,
-  });
-});
-
-// fuzzyIndexOf -- match length differs from pattern
-
-Deno.test("fuzzyIndexOf -- match length can differ from pattern", () => {
-  const result = fuzzyIndexOf("hello world", "helo", 0.8);
-  assertObjectMatch(result!, {
-    index: 0,
-  });
-  assertEquals(result!.length, 5); // matched "hello", not "helo"
 });
 
 // -- real-world prose scenarios --
@@ -280,11 +218,11 @@ Deno.test("fuzzyFindNear -- find near known position after edit", () => {
   });
 });
 
-Deno.test("fuzzyIndexOf -- word changed slightly", () => {
+Deno.test("fuzzyFindNear -- word changed slightly", () => {
   const text = "The colour of the sky is blue.";
-  const result = fuzzyIndexOf(text, "color", 0.8);
+  const result = fuzzyFindNear(text, "color", 4, 10, 0.8);
   assertObjectMatch(result!, {
-    index: 4,
-    length: 6,
+    offset: 4,
+    text: "colour",
   });
 });

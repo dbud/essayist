@@ -62,8 +62,8 @@ export interface Mark {
   comment: string;
   label?: string;
   created_at: number;
-  offset: number | null;
-  length: number | null;
+  offset: number;
+  length: number;
   status: MarkStatus;
 }
 

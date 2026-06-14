@@ -41,9 +41,9 @@ export function fuzzyFind(
 }
 
 /**
- * Find the best fuzzy match of `pattern` in `text` within
- * [center - radius, center + radius). Returns null if no match
- * exceeds the threshold.
+ * Find `pattern` in `text` within [center - radius, center + radius).
+ * Tries exact match first, then falls back to fuzzy matching.
+ * Returns the match with offset relative to the full text, or null.
  */
 export function fuzzyFindNear(
   text: string,
@@ -56,6 +56,13 @@ export function fuzzyFindNear(
   const end = Math.min(text.length, center + radius);
   if (end - start < pattern.length) return null;
 
+  // Try exact match first within the search window.
+  const exactIdx = text.indexOf(pattern, start);
+  if (exactIdx !== -1 && exactIdx + pattern.length <= end) {
+    return { offset: exactIdx, text: pattern, score: 1 };
+  }
+
+  // Fall back to fuzzy matching within the window.
   const segment = text.slice(start, end);
   const best = fuzzyFind(segment, pattern, threshold);
   if (!best) return null;
@@ -65,27 +72,4 @@ export function fuzzyFindNear(
     text: best.text,
     score: best.score,
   };
-}
-
-/**
- * Find `pattern` within `text` using fuzzy matching.
- * Tries an exact match first, then falls back to fuzzyFind.
- * Returns the index and length of the match, or null.
- */
-export function fuzzyIndexOf(
-  text: string,
-  pattern: string,
-  threshold: number,
-): { index: number; length: number } | null {
-  const exactIdx = text.indexOf(pattern);
-  if (exactIdx !== -1) {
-    return { index: exactIdx, length: pattern.length };
-  }
-
-  const best = fuzzyFind(text, pattern, threshold);
-  if (best) {
-    return { index: best.offset, length: best.text.length };
-  }
-
-  return null;
 }
