@@ -41,8 +41,6 @@ essayist/
 │   │   ├── src/
 │   │   │   ├── agent.ts         # Agent class — OpenRouter client wrapper
 │   │   │   ├── agent_logger.ts  # logAgentCall(), logAgentResult() — stream logging
-│   │   │   ├── capital.ts       # getCapital() + capitalResponseSchema
-│   │   │   ├── capital_test.ts  # Unit tests for getCapital
 │   │   │   ├── logger.ts        # Lazy pino logger (env-safe import)
 │   │   │   ├── schema.ts        # Zod→JSON-schema instruction generator + example builder
 │   │   │   ├── schema_test.ts
@@ -65,10 +63,19 @@ essayist/
 │   │   │       ├── vfs.ts           # VirtualFileSystem (partial VFS impl)
 │   │   │       ├── vfs_test.ts      # Tests for read, write, list, grep, versioning
 │   │   │       ├── persistence.ts   # PersistenceAdapter interface + InMemoryAdapter
-│   │   │       └── persistence_test.ts
+│   │   │       ├── persistence_test.ts
+│   │   │       ├── diff.ts          # Per-word diff
+│   │   │       ├── diff_test.ts
+│   │   │       ├── unified_diff.ts  # unifiedDiff() — unified diff formatter
+│   │   │       ├── unified_diff_test.ts
+│   │   │       ├── fuzzy.ts         # Fuzzy text matching for mark anchoring
+│   │   │       ├── fuzzy_test.ts
+│   │   │       ├── levenshtein.ts   # Levenshtein distance for fuzzy matching
+│   │   │       ├── levenshtein_test.ts
+│   │   │       ├── marks_resolver.ts   # Mark migration across versions
+│   │   │       └── marks_resolver_test.ts
 │   │   └── integration/    # @essayist/core/integration — live API tests
 │   │       ├── deno.json
-│   │       ├── agent_test.ts       # Hits real OpenRouter API (getCapital)
 │   │       ├── summarize_test.ts   # Hits real OpenRouter API (summarizeFile)
 │   │       ├── tools_test.ts       # Integration tests for list_files, grep, write_file
 │   │       └── utils.ts            # Reads OPENROUTER_API_KEY from env
@@ -121,22 +128,24 @@ essayist/
 
 ### Key Packages
 
-| Package                      | Path                         | Purpose                                                                                  |
-| ---------------------------- | ---------------------------- | ---------------------------------------------------------------------------------------- |
-| `@essayist/core`             | `packages/core/`             | Shared library: `Agent`, `getCapital`, `summarizeFile`, VFS, tools, Zod schema utilities |
-| `@essayist/core/integration` | `packages/core/integration/` | Live API tests (require `OPENROUTER_API_KEY`)                                            |
-| `@essayist/web`              | `packages/web/`              | Fresh 2.x web app (Preact + Tailwind CSS + daisyUI) deployed to Deno Deploy              |
+| Package                      | Path                         | Purpose                                                                     |
+| ---------------------------- | ---------------------------- | --------------------------------------------------------------------------- |
+| `@essayist/core`             | `packages/core/`             | Shared library: `Agent`, `summarizeFile`, VFS, tools, Zod schema utilities  |
+| `@essayist/core/integration` | `packages/core/integration/` | Live API tests (require `OPENROUTER_API_KEY`)                               |
+| `@essayist/web`              | `packages/web/`              | Fresh 2.x web app (Preact + Tailwind CSS + daisyUI) deployed to Deno Deploy |
 
 ### Important Entry Points
 
 - **`packages/web/main.ts`** — Web app boot. Creates `App`, attaches
   `agentMiddleware`, calls `fsRoutes()`.
-- **`packages/core/mod.ts`** — Core library public API. Exports `getCapital`,
-  `summarizeFile`, `Agent`, tool factories (`createReadFileTool`,
-  `createListFilesTool`, `createGrepTool`, `createWriteFileTool`),
-  `VirtualFileSystem`, and `InMemoryAdapter`.
-- **`packages/web/routes/api/chat.ts`** — SSE streaming chat endpoint. Creates
-  an in-memory VFS seeded with sample files, wires up `read_file` tool, and uses
+- **`packages/core/mod.ts`** — Core library public API. Exports `summarizeFile`,
+  `Agent`, tool factories (`createReadFileTool`, `createListFilesTool`,
+  `createGrepTool`, `createWriteFileTool`), `VirtualFileSystem`,
+  `InMemoryAdapter`, and VFS types (`DiffResult`, `FileEntry`, `FileSnapshot`,
+  `FileVersion`, `GrepOptions`, `GrepResult`, `Mark`, `MarkResult`,
+  `ReadOptions`, `WriteResult`).
+- **`packages/web/routes/api/chat.ts`** — SSE streaming chat endpoint. Uses the
+  server-side VFS seeded with sample files, wires up all four tools, and uses
   `Agent.callModelWithTools` to stream responses.
 - **`packages/web/routes/api/files/index.ts`** — GET `/api/files`. Lists all
   files from the server-side VFS.
@@ -162,11 +171,12 @@ essayist/
   `openedFiles`, `fileHistory`, `viewerFont`, `viewMode`. Also exports
   `openFile()` and `closeFile()` helpers.
 - **`packages/web/vfs.ts`** — Server-side VFS instance seeded with sample files
-  (essay.txt, report.txt, notes/ideas.md, markdown-showcase.md, etc.).
+  (essay.txt, report.txt, notes/ideas.md, notes/todo.md, notes/archive/, src/,
+  markdown-showcase.md).
 - **`packages/web/utils/persistentSignal.ts`** — `persistentSignal()` (global
   singleton signals synced to localStorage) and `usePersistentSignal()` (hook
   version for island components).
-- **`packages/web/utils/useChat.ts`** and **`packages/web/utils/sse.ts`** —
+- **`packages/web/hooks/useChat.ts`** and **`packages/web/utils/sse.ts`** —
   Helper utilities for managing the SSE connection and client-side state.
 
 ### Key Dependencies
@@ -183,14 +193,19 @@ essayist/
 - **@preact/signals** (v2.9.0) — Reactive signals for Preact islands (used by
   `Chat`, `FileViewer`, `FileBrowser`, `Tabs`, and `useChat`).
 - **Tailwind CSS** (v4.1.10) — Styling via `@tailwindcss/vite` plugin.
+- **@tailwindcss/typography** (v0.5.16) — Typography plugin for prose styling.
 - **daisyUI** (v5.5.20) — Component library built on Tailwind. Custom "essayist"
   theme defined in `assets/styles.css`.
 - **Vite** (v7.1.3) — Dev server and build tool (via `@fresh/plugin-vite`).
 - **pino** (v9.6.0) — JSON logging library. Pretty-printed in dev, JSON in
   production.
-- **marked** — Markdown parsing for `MarkdownView` component.
-- **DOMPurify** — HTML sanitization for rendered markdown.
-- **lucide-preact** — Icon library (FileText, Folder, FolderOpen, X, Zap, etc.).
+- **marked** (v17.0.3) — Markdown parsing for `MarkdownView` component.
+- **DOMPurify** (v3.4.9) — HTML sanitization for rendered markdown.
+- **lucide-preact** (v1.17.0) — Icon library (FileText, Folder, FolderOpen, X,
+  Zap, etc.).
+- **@fontsource-variable/hanken-grotesk** — Sans-serif variable font.
+- **@fontsource-variable/recursive** — Mono variable font.
+- **@fontsource-variable/source-serif-4** — Serif variable font.
 
 ## Commands
 
@@ -250,7 +265,7 @@ Production builds and serving are handled by Deno Deploy.
 
 - **Deno workspace** — `deno.jsonc` defines workspace members. Each package has
   its own `deno.json` (or `deno.jsonc` for web) with scoped imports (`@/` maps
-  to `./src/` in core).
+  to `./src/` in core, `./` in web).
 - **Fresh file-system routing** — Routes live in `routes/`, API routes in
   `routes/api/`. Islands (interactive Preact components) live in `islands/`.
 - **State management** — `createDefine` pattern from Fresh: `define.ts` exports
@@ -270,11 +285,11 @@ Production builds and serving are handled by Deno Deploy.
   whether file content is rendered as markdown or plain text. Auto mode uses the
   file extension (`.md` → markdown).
 - **Font selection** — `viewerFont` signal (`font-serif`, `font-sans`,
-  `font-mono`) controls the font family applied to file content.
+  `font-mono`) controls the font family applied to file content. Three variable
+  font families are loaded via `@fontsource-variable/*` packages.
 - **Structured LLM output** — `Agent.callModel(input, schema)` sends a Zod
   schema-derived instruction prompt with an example JSON object, expects JSON
-  back, parses it with `stripMarkdownFences`, and validates with Zod. The schema
-  is passed by the caller (e.g. `capital.ts` owns `capitalResponseSchema`).
+  back, parses it with `stripMarkdownFences`, and validates with Zod.
 - **Schema instructions** —
   `generateInstructions(schema, { includeExample: true })` produces a field
   listing from the Zod schema's JSON Schema representation. Example values are
@@ -290,13 +305,16 @@ Production builds and serving are handled by Deno Deploy.
   `tools/testing/mock_vfs.ts` provides stub implementations for unit testing.
 - **Virtual File System** — `VirtualFileSystem` implements the `VFS` interface
   backed by a `PersistenceAdapter`. `InMemoryAdapter` is the default in-memory
-  store. The VFS supports read, write, list, grep (with directory prefix
-  matching), versioning (snapshot on overwrite, revert, history), diff (Myers
-  algorithm), and text-span marks with fuzzy anchoring.
-- **Agent logging** — `callModelWithTools` feeds the result to
-  `logAgentResult()` which reads the items stream and logs completed tool calls,
-  outputs, messages, and reasoning separately. Uses a lazy pino logger that
-  defers `import("pino")` to avoid env access at module load time.
+  store. The VFS supports read (with line-range and numbering options), write,
+  list (with directory prefix filtering), grep (regex), search (literal text),
+  versioning (history, revert), and unified diff between versions. Mark-related
+  methods (`mark`, `getMarks`, `deleteMark`) are defined on the interface but
+  currently throw `Error("Not implemented")`.
+- **Agent logging** — `callModelWithTools` feeds the request to `logAgentCall()`
+  and the result to `logAgentResult()`, which reads the items stream and logs
+  completed tool calls, outputs, messages, and reasoning separately. Uses a lazy
+  pino logger that defers `import("pino")` to avoid env access at module load
+  time.
 - **Vite watches core** — `vite.config.ts` includes a custom `watchCore` plugin
   that adds `packages/core/` to Vite's file watcher so changes to core trigger
   web app reloads.
