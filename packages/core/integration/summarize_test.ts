@@ -18,7 +18,11 @@ await vfs.write(
     "Pangrams are often used to test typewriters and keyboards.",
 );
 
-Deno.test("summarizeFile summarizes a file via tool call", async () => {
-  const summary = await summarizeFile("pangram.txt", agent, vfs);
-  assertMatch(summary, /pangram|alphabet|letter/i);
+Deno.test({
+  name: "summarizeFile summarizes a file via tool call",
+  ignore: !agent,
+  fn: async () => {
+    const summary = await summarizeFile("pangram.txt", agent!, vfs);
+    assertMatch(summary, /pangram|alphabet|letter/i);
+  },
 });
