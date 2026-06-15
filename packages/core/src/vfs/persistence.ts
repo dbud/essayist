@@ -18,21 +18,26 @@ export class InMemoryAdapter implements PersistenceAdapter {
     }
   }
 
-  get(key: string): unknown {
-    return this.#store.get(key);
+  get(key: string): Promise<unknown> {
+    return Promise.resolve(this.#store.get(key));
   }
 
-  set(key: string, value: unknown): void {
+  set(key: string, value: unknown): Promise<void> {
     this.#store.set(key, value);
+    return Promise.resolve();
   }
 
-  delete(key: string): void {
+  delete(key: string): Promise<void> {
     this.#store.delete(key);
+    return Promise.resolve();
   }
 
-  list(prefix?: string): Iterable<string> {
-    if (!prefix) return this.#store.keys();
-    return [...this.#store.keys()].filter((k) => k.startsWith(prefix));
+  async *list(prefix?: string): AsyncIterable<string> {
+    for (const key of this.#store.keys()) {
+      if (!prefix || key.startsWith(prefix)) {
+        yield key;
+      }
+    }
   }
 
   get store(): Map<string, unknown> {

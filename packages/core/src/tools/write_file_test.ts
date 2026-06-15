@@ -3,14 +3,14 @@ import { createWriteFileTool } from "./write_file.ts";
 import { createMockVFS } from "./testing/mock_vfs.ts";
 import type { ToolWithExecute } from "@openrouter/agent";
 
-Deno.test("createWriteFileTool -- delegates to VFS and returns result", () => {
+Deno.test("createWriteFileTool -- delegates to VFS and returns result", async () => {
   const vfs = createMockVFS({
     write: () => ({ path: "f.txt", lines: 2, created: true }),
   });
   const { tool } = createWriteFileTool(vfs);
   const fn = tool as ToolWithExecute;
 
-  const result = fn.function.execute({
+  const result = await fn.function.execute({
     path: "f.txt",
     content: "hello\nworld",
   }) as { created: boolean };
@@ -18,7 +18,7 @@ Deno.test("createWriteFileTool -- delegates to VFS and returns result", () => {
   assertEquals(result.created, true);
 });
 
-Deno.test("createWriteFileTool -- passes path and content to VFS", () => {
+Deno.test("createWriteFileTool -- passes path and content to VFS", async () => {
   let capturedPath = "";
   let capturedContent = "";
   const vfs = createMockVFS({
@@ -31,7 +31,7 @@ Deno.test("createWriteFileTool -- passes path and content to VFS", () => {
   const { tool } = createWriteFileTool(vfs);
   const fn = tool as ToolWithExecute;
 
-  fn.function.execute({ path: "notes/ideas.md", content: "new idea" });
+  await fn.function.execute({ path: "notes/ideas.md", content: "new idea" });
 
   assertEquals(capturedPath, "notes/ideas.md");
   assertEquals(capturedContent, "new idea");

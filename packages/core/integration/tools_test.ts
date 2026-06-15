@@ -11,12 +11,14 @@ import { createAgent } from "./utils.ts";
 
 const agent = createAgent();
 
-function createVFS(files?: Map<string, string>): VirtualFileSystem {
+async function createVFS(
+  files?: Map<string, string>,
+): Promise<VirtualFileSystem> {
   const adapter = new InMemoryAdapter();
   const vfs = new VirtualFileSystem(adapter);
   if (files) {
     for (const [path, content] of files) {
-      vfs.write(path, content);
+      await vfs.write(path, content);
     }
   }
   return vfs;
@@ -24,7 +26,7 @@ function createVFS(files?: Map<string, string>): VirtualFileSystem {
 
 // list_files
 
-const listFilesVFS = createVFS(
+const listFilesVFS = await createVFS(
   new Map([
     [
       "notes/ideas.md",
@@ -59,7 +61,7 @@ Deno.test("integration: list_files -- model discovers files", async () => {
 
 // grep
 
-const grepVFS = createVFS(
+const grepVFS = await createVFS(
   new Map([
     [
       "notes/ideas.md",
@@ -136,7 +138,7 @@ Deno.test("integration: grep -- model searches with regex", async () => {
 // write_file
 
 Deno.test("integration: write_file -- model creates a file", async () => {
-  const vfs = createVFS();
+  const vfs = await createVFS();
   const toolPrompt = createWriteFileTool(vfs);
   const result = agent.callModelWithTools(
     "Create a file called 'hello.txt' with the content 'Hello, world!'",
@@ -144,13 +146,13 @@ Deno.test("integration: write_file -- model creates a file", async () => {
   );
   await result.getText();
 
-  const file = vfs.read("hello.txt");
+  const file = await vfs.read("hello.txt");
   assertEquals(file.content, "Hello, world!");
   assertEquals(file.lines, 1);
 });
 
 Deno.test("integration: write_file -- model overwrites a file", async () => {
-  const vfs = createVFS(new Map([["config.json", '{"version": "1.0"}']]));
+  const vfs = await createVFS(new Map([["config.json", '{"version": "1.0"}']]));
   const toolPrompt = createWriteFileTool(vfs);
   const result = agent.callModelWithTools(
     'Overwrite config.json with: {"version": "2.0"}',
@@ -158,13 +160,13 @@ Deno.test("integration: write_file -- model overwrites a file", async () => {
   );
   await result.getText();
 
-  const file = vfs.read("config.json");
+  const file = await vfs.read("config.json");
   assertMatch(file.content, /"version": "2.0"/);
 });
 
 // read_file + write_file
 
-const readWriteVFS = createVFS(
+const readWriteVFS = await createVFS(
   new Map([
     [
       "input.txt",
@@ -182,7 +184,7 @@ Deno.test("integration: read_file + write_file -- model reads then transforms", 
   );
   await result.getText();
 
-  const file = readWriteVFS.read("sorted.txt");
+  const file = await readWriteVFS.read("sorted.txt");
   const lines = file.content.split("\n");
   assertEquals(lines, [
     "apple",

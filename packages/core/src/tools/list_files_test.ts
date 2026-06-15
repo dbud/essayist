@@ -4,7 +4,7 @@ import { createMockVFS } from "./testing/mock_vfs.ts";
 import type { FileEntry } from "@/vfs/types.ts";
 import type { ToolWithExecute } from "@openrouter/agent";
 
-Deno.test("createListFilesTool -- delegates to VFS and returns result", () => {
+Deno.test("createListFilesTool -- delegates to VFS and returns result", async () => {
   const files: FileEntry[] = [
     { path: "notes/ideas.md", lines: 10 },
     { path: "essay.txt", lines: 25 },
@@ -13,14 +13,14 @@ Deno.test("createListFilesTool -- delegates to VFS and returns result", () => {
   const { tool } = createListFilesTool(vfs);
   const fn = tool as ToolWithExecute;
 
-  const result = fn.function.execute({ prefix: undefined }) as {
+  const result = await fn.function.execute({ prefix: undefined }) as {
     files: FileEntry[];
   };
 
   assertEquals(result.files, files);
 });
 
-Deno.test("createListFilesTool -- passes prefix to VFS", () => {
+Deno.test("createListFilesTool -- passes prefix to VFS", async () => {
   let capturedPrefix: string | undefined;
   const vfs = createMockVFS({
     list: (prefix?: string) => {
@@ -31,7 +31,7 @@ Deno.test("createListFilesTool -- passes prefix to VFS", () => {
   const { tool } = createListFilesTool(vfs);
   const fn = tool as ToolWithExecute;
 
-  fn.function.execute({ prefix: "notes/" });
+  await fn.function.execute({ prefix: "notes/" });
 
   assertEquals(capturedPrefix, "notes/");
 });

@@ -33,8 +33,8 @@ export function createWriteFileTool(vfs: VFS): ToolPrompt {
         "snapshotted for version history. Returns whether the file was newly created.",
       inputSchema,
       outputSchema,
-      execute: ({ path, content }): WriteFileOutput => {
-        return vfs.write(path, content);
+      execute: async ({ path, content }): Promise<WriteFileOutput> => {
+        return await vfs.write(path, content);
       },
     }),
   };

@@ -32,8 +32,8 @@ export function createListFilesTool(vfs: VFS): ToolPrompt {
         "Optionally filter by path prefix to list files in a specific directory.",
       inputSchema,
       outputSchema,
-      execute: ({ prefix }): ListFilesOutput => {
-        return { files: vfs.list(prefix) };
+      execute: async ({ prefix }): Promise<ListFilesOutput> => {
+        return { files: await vfs.list(prefix) };
       },
     }),
   };

@@ -4,7 +4,7 @@ import { createMockVFS } from "./testing/mock_vfs.ts";
 import type { GrepMatch } from "@/vfs/types.ts";
 import type { ToolWithExecute } from "@openrouter/agent";
 
-Deno.test("createGrepTool -- delegates to VFS and returns result", () => {
+Deno.test("createGrepTool -- delegates to VFS and returns result", async () => {
   const matches: GrepMatch[] = [
     {
       path: "essay.txt",
@@ -18,7 +18,7 @@ Deno.test("createGrepTool -- delegates to VFS and returns result", () => {
   const { tool } = createGrepTool(vfs);
   const fn = tool as ToolWithExecute;
 
-  const result = fn.function.execute({
+  const result = await fn.function.execute({
     pattern: "fox",
     options: undefined,
   }) as { matches: GrepMatch[] };
@@ -26,7 +26,7 @@ Deno.test("createGrepTool -- delegates to VFS and returns result", () => {
   assertEquals(result.matches, matches);
 });
 
-Deno.test("createGrepTool -- passes pattern and options to VFS", () => {
+Deno.test("createGrepTool -- passes pattern and options to VFS", async () => {
   let capturedPattern = "";
   let capturedOptions: unknown;
   const vfs = createMockVFS({
@@ -39,7 +39,7 @@ Deno.test("createGrepTool -- passes pattern and options to VFS", () => {
   const { tool } = createGrepTool(vfs);
   const fn = tool as ToolWithExecute;
 
-  fn.function.execute({
+  await fn.function.execute({
     pattern: "hello",
     options: { path: "notes/ideas.md", case_sensitive: true, max_results: 10 },
   });

@@ -11,7 +11,7 @@ const agent = createAgent();
 const adapter = new InMemoryAdapter();
 const vfs = new VirtualFileSystem(adapter);
 
-vfs.write(
+await vfs.write(
   "pangram.txt",
   "The quick brown fox jumps over the lazy dog. " +
     "This sentence contains every letter of the English alphabet. " +

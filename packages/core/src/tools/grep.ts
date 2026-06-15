@@ -53,8 +53,8 @@ export function createGrepTool(vfs: VFS): ToolPrompt {
         "Case-insensitive by default.",
       inputSchema,
       outputSchema,
-      execute: ({ pattern, options }): GrepOutput => {
-        return vfs.grep(pattern, options);
+      execute: async ({ pattern, options }): Promise<GrepOutput> => {
+        return await vfs.grep(pattern, options);
       },
     }),
   };

@@ -2,8 +2,8 @@ import { define } from "@/define.ts";
 import { vfs } from "@/vfs.ts";
 
 export const handler = {
-  GET: define.handlers((_ctx) => {
-    const files = vfs.list();
+  GET: define.handlers(async (_ctx) => {
+    const files = await vfs.list();
     return Response.json(files);
   }),
 };

@@ -113,22 +113,22 @@ export interface DiffResult {
  */
 export interface VFS {
   /** Read file content. By default reads the latest version. */
-  read(path: string, options?: ReadOptions): FileReadResult;
+  read(path: string, options?: ReadOptions): Promise<FileReadResult>;
 
   /**
    * Write new content, creating a new version.
    * Snapshots the old version and migrates its marks to the new version.
    */
-  write(path: string, content: string): WriteResult;
+  write(path: string, content: string): Promise<WriteResult>;
 
   /** List files, optionally filtered by path prefix. */
-  list(prefix?: string): FileEntry[];
+  list(prefix?: string): Promise<FileEntry[]>;
 
   /** Search files for a regex pattern. */
-  grep(pattern: string, options?: GrepOptions): GrepResult;
+  grep(pattern: string, options?: GrepOptions): Promise<GrepResult>;
 
   /** Search files for plain text (escaped as literal regex). */
-  search(text: string, options?: GrepOptions): GrepResult;
+  search(text: string, options?: GrepOptions): Promise<GrepResult>;
 
   /** Place a mark on a text span in a specific version of a file. */
   mark(
@@ -137,24 +137,24 @@ export interface VFS {
     selectedText: string,
     comment: string,
     label?: string,
-  ): MarkResult;
+  ): Promise<MarkResult>;
 
   /** Get marks for a specific version of a file. */
-  getMarks(path: string, versionId: string): Mark[];
+  getMarks(path: string, versionId: string): Promise<Mark[]>;
 
   /** Delete a mark by ID. Returns true if the mark existed. */
-  deleteMark(markId: string): boolean;
+  deleteMark(markId: string): Promise<boolean>;
 
   /** Get version history for a file. */
-  getHistory(path: string): FileVersion[];
+  getHistory(path: string): Promise<FileVersion[]>;
 
   /**
    * Revert a file to a previous version.
    * Creates a new version with the old content.
    * Marks from the reverted version are copied to the new version.
    */
-  revert(path: string, versionId: string): boolean;
+  revert(path: string, versionId: string): Promise<boolean>;
 
   /** Get unified diff between two versions. */
-  diff(path: string, versionA: string, versionB: string): DiffResult;
+  diff(path: string, versionA: string, versionB: string): Promise<DiffResult>;
 }

@@ -127,5 +127,5 @@ That's all folks!`,
 };
 
 for (const [path, content] of Object.entries(files)) {
-  vfs.write(path, content);
+  await vfs.write(path, content);
 }

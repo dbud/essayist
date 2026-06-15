@@ -35,10 +35,10 @@ export class VirtualFileSystem implements VFS {
     this.#adapter = adapter;
   }
 
-  read(
+  async read(
     path: string,
     { versionId, startLine, endLine, numbered }: ReadOptions = {},
-  ): FileReadResult {
+  ): Promise<FileReadResult> {
     let snapshot: FileSnapshot = {
       content: "",
       version_id: versionId ?? "",
@@ -46,13 +46,13 @@ export class VirtualFileSystem implements VFS {
       lines: 0,
     };
     if (versionId) {
-      snapshot = {
-        ...snapshot,
-        ...this.#getVersion(path, versionId),
-        content: this.#getVersionContent(path, versionId),
-      };
+      const [version, content] = await Promise.all([
+        this.#getVersion(path, versionId),
+        this.#getVersionContent(path, versionId),
+      ]);
+      snapshot = { ...snapshot, ...version, content };
     } else {
-      snapshot = { ...snapshot, ...this.#getFile(path) };
+      snapshot = { ...snapshot, ...(await this.#getFile(path)) };
     }
 
     const start = Math.max(1, startLine ?? 1);
@@ -73,7 +73,7 @@ export class VirtualFileSystem implements VFS {
     };
   }
 
-  write(path: string, content: string): WriteResult {
+  async write(path: string, content: string): Promise<WriteResult> {
     const timestamp = Date.now();
     const lines = content.split("\n").length;
     const versionId = `${timestamp}_${++versionCounter}`;
@@ -83,16 +83,18 @@ export class VirtualFileSystem implements VFS {
       lines,
     };
     const versionsKey = this.#versionsKey(path);
-    const versions = this.#adapter.get(versionsKey) as
+    const versions = await this.#adapter.get(versionsKey) as
       | FileVersion[]
       | undefined ?? [];
     versions.push(version);
-    this.#adapter.set(versionsKey, versions);
-    this.#adapter.set(this.#contentKey(path, versionId), content);
-    this.#adapter.set(
-      this.#latestKey(path),
-      { content, ...version } as FileSnapshot,
-    );
+    await Promise.all([
+      this.#adapter.set(versionsKey, versions),
+      this.#adapter.set(this.#contentKey(path, versionId), content),
+      this.#adapter.set(
+        this.#latestKey(path),
+        { content, ...version } as FileSnapshot,
+      ),
+    ]);
 
     return {
       path,
@@ -101,36 +103,23 @@ export class VirtualFileSystem implements VFS {
     };
   }
 
-  list(prefix?: string): FileEntry[] {
+  async list(prefix?: string): Promise<FileEntry[]> {
     const searchPrefix = FILE_LATEST_PREFIX + (prefix ?? "");
-
     const entries: FileEntry[] = [];
 
-    const iter = this.#adapter.list(searchPrefix);
-
-    if (Symbol.iterator in iter) {
-      for (const key of iter as Iterable<string>) {
-        const path = key.slice(FILE_LATEST_PREFIX.length);
-        const latest = this.#getFile(path);
-        if (latest) {
-          entries.push({
-            path,
-            lines: latest.lines,
-          });
-        }
+    for await (const key of this.#adapter.list(searchPrefix)) {
+      const path = key.slice(FILE_LATEST_PREFIX.length);
+      const latest = await this.#getFile(path);
+      if (latest) {
+        entries.push({ path, lines: latest.lines });
       }
-    } else {
-      throw new Error(
-        "Async persistence adapters require async VFS methods. " +
-          "Use InMemoryAdapter for synchronous operation.",
-      );
     }
 
     entries.sort((a, b) => a.path.localeCompare(b.path));
     return entries;
   }
 
-  grep(pattern: string, options?: GrepOptions): GrepResult {
+  async grep(pattern: string, options?: GrepOptions): Promise<GrepResult> {
     const { path, caseSensitive = false, maxResults = 50 } = options ?? {};
     const flags = caseSensitive ? "g" : "gi";
     let regex: RegExp;
@@ -141,12 +130,12 @@ export class VirtualFileSystem implements VFS {
     }
 
     const results: GrepResult = { matches: [] };
-    const files = this.list(path).map((f) => f.path);
+    const files = await this.list(path);
 
-    for (const filePath of files) {
+    for (const file of files) {
       if (results.matches.length >= maxResults) break;
 
-      const latest = this.#getFile(filePath);
+      const latest = await this.#getFile(file.path);
       if (!latest) continue;
       const content = latest.content;
       if (content === "") continue;
@@ -159,7 +148,7 @@ export class VirtualFileSystem implements VFS {
         regex.lastIndex = 0;
         if (regex.test(lines[i])) {
           results.matches.push({
-            path: filePath,
+            path: file.path,
             line_number: i + 1,
             line: lines[i],
             before: lines.slice(Math.max(0, i - GREP_CONTEXT_LINES), i),
@@ -175,7 +164,7 @@ export class VirtualFileSystem implements VFS {
     return results;
   }
 
-  search(text: string, options?: GrepOptions): GrepResult {
+  search(text: string, options?: GrepOptions): Promise<GrepResult> {
     return this.grep(escapeRegex(text), options);
   }
 
@@ -185,58 +174,68 @@ export class VirtualFileSystem implements VFS {
     _selectedText: string,
     _comment: string,
     _label?: string,
-  ): MarkResult {
+  ): Promise<MarkResult> {
     throw new Error("Not implemented");
   }
 
-  getMarks(_path: string, _versionId: string): Mark[] {
+  getMarks(_path: string, _versionId: string): Promise<Mark[]> {
     throw new Error("Not implemented");
   }
 
-  deleteMark(_markId: string): boolean {
+  deleteMark(_markId: string): Promise<boolean> {
     throw new Error("Not implemented");
   }
 
-  getHistory(path: string): FileVersion[] {
-    const versions = this.#adapter.get(this.#versionsKey(path)) as
+  async getHistory(path: string): Promise<FileVersion[]> {
+    const versions = await this.#adapter.get(this.#versionsKey(path)) as
       | FileVersion[]
       | undefined ?? [];
     return versions.sort((a, b) => a.timestamp - b.timestamp);
   }
 
-  revert(path: string, versionId: string): boolean {
-    const content = this.#getVersionContent(path, versionId);
+  async revert(path: string, versionId: string): Promise<boolean> {
+    const content = await this.#getVersionContent(path, versionId);
     if (content === "") return false;
 
-    this.write(path, content);
+    await this.write(path, content);
     return true;
   }
 
-  diff(path: string, versionA: string, versionB: string): DiffResult {
-    const contentA = this.#getVersionContent(path, versionA);
-    const contentB = this.#getVersionContent(path, versionB);
+  async diff(
+    path: string,
+    versionA: string,
+    versionB: string,
+  ): Promise<DiffResult> {
+    const [contentA, contentB] = await Promise.all([
+      this.#getVersionContent(path, versionA),
+      this.#getVersionContent(path, versionB),
+    ]);
 
     return {
       diff: unifiedDiff(contentA, contentB, versionA, versionB),
     };
   }
 
-  #getFile(path: string): FileSnapshot | undefined {
-    return this.#adapter.get(this.#latestKey(path)) as
+  async #getFile(path: string): Promise<FileSnapshot | undefined> {
+    return await this.#adapter.get(this.#latestKey(path)) as
       | FileSnapshot
       | undefined;
   }
 
-  #getVersion(path: string, versionId: string): FileVersion | undefined {
-    const versions = this.#adapter.get(this.#versionsKey(path)) as
+  async #getVersion(
+    path: string,
+    versionId: string,
+  ): Promise<FileVersion | undefined> {
+    const versions = await this.#adapter.get(this.#versionsKey(path)) as
       | FileVersion[]
       | undefined ?? [];
     return versions.find((version) => version.version_id === versionId);
   }
 
-  #getVersionContent(path: string, versionId: string): string {
-    return (this.#adapter.get(this.#contentKey(path, versionId)) as string) ??
-      "";
+  async #getVersionContent(path: string, versionId: string): Promise<string> {
+    return (await this.#adapter.get(
+      this.#contentKey(path, versionId),
+    ) as string) ?? "";
   }
 
   #latestKey(path: string): string {
@@ -259,23 +258,25 @@ export class VirtualFileSystem implements VFS {
     return `${MARKS_PREFIX}list:${path}:${versionId}`;
   }
 
-  #saveMark(mark: Mark): void {
-    this.#adapter.set(this.#markKey(mark.id), mark);
+  async #saveMark(mark: Mark): Promise<void> {
+    await this.#adapter.set(this.#markKey(mark.id), mark);
 
     const listKey = this.#marksListKey(mark.path, mark.version_id);
-    const list = this.#adapter.get(listKey) as string[] | undefined ?? [];
+    const list = await this.#adapter.get(listKey) as string[] | undefined ?? [];
     list.push(mark.id);
-    this.#adapter.set(listKey, list);
+    await this.#adapter.set(listKey, list);
   }
 
-  #saveMarks(path: string, versionId: string, marks: Mark[]): void {
-    const list: string[] = [];
-    for (const mark of marks) {
-      this.#adapter.set(this.#markKey(mark.id), mark);
-      list.push(mark.id);
-    }
-    const listKey = this.#marksListKey(path, versionId);
-    this.#adapter.set(listKey, list);
+  async #saveMarks(
+    path: string,
+    versionId: string,
+    marks: Mark[],
+  ): Promise<void> {
+    const list = marks.map((mark) => mark.id);
+    await Promise.all([
+      ...marks.map((mark) => this.#adapter.set(this.#markKey(mark.id), mark)),
+      this.#adapter.set(this.#marksListKey(path, versionId), list),
+    ]);
   }
 
   #generateMarkId(): string {

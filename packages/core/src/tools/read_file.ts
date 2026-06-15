@@ -42,8 +42,10 @@ export function createReadFileTool(vfs: VFS): ToolPrompt {
         "and optional line numbering for easy reference.",
       inputSchema,
       outputSchema,
-      execute: ({ path, start_line, end_line, numbered }): ReadFileOutput => {
-        const result: FileReadResult = vfs.read(path, {
+      execute: async (
+        { path, start_line, end_line, numbered },
+      ): Promise<ReadFileOutput> => {
+        const result: FileReadResult = await vfs.read(path, {
           startLine: start_line,
           endLine: end_line,
           numbered,
