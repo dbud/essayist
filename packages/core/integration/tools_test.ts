@@ -13,12 +13,13 @@ const agent = createAgent();
 
 function createVFS(files?: Map<string, string>): VirtualFileSystem {
   const adapter = new InMemoryAdapter();
+  const vfs = new VirtualFileSystem(adapter);
   if (files) {
     for (const [path, content] of files) {
-      adapter.set(`file:${path}`, content);
+      vfs.write(path, content);
     }
   }
-  return new VirtualFileSystem(adapter);
+  return vfs;
 }
 
 // list_files
@@ -145,7 +146,7 @@ Deno.test("integration: write_file -- model creates a file", async () => {
 
   const file = vfs.read("hello.txt");
   assertEquals(file.content, "Hello, world!");
-  assertEquals(file.total_lines, 1);
+  assertEquals(file.lines, 1);
 });
 
 Deno.test("integration: write_file -- model overwrites a file", async () => {

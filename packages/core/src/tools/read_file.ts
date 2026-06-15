@@ -1,7 +1,7 @@
 import { tool } from "@openrouter/agent";
 import { z } from "zod";
 import type { ToolPrompt } from "./index.ts";
-import type { VFS } from "@/vfs/types.ts";
+import type { FileReadResult, VFS } from "@/vfs/types.ts";
 
 const inputSchema = z.object({
   path: z.string().describe("The path of the file to read"),
@@ -17,8 +17,10 @@ const inputSchema = z.object({
 });
 
 const outputSchema = z.object({
+  version_id: z.string().describe("Version ID of the read content"),
+  timestamp: z.number().describe("Timestamp of the version"),
+  lines: z.number().describe("Total number of lines in the file"),
   content: z.string().describe("The text content of the file"),
-  total_lines: z.number().describe("Total number of lines in the file"),
   start_line: z.number().describe("First line that was returned (1-based)"),
   end_line: z.number().describe("Last line that was returned (1-based)"),
 });
@@ -41,7 +43,12 @@ export function createReadFileTool(vfs: VFS): ToolPrompt {
       inputSchema,
       outputSchema,
       execute: ({ path, start_line, end_line, numbered }): ReadFileOutput => {
-        return vfs.read(path, start_line, end_line, numbered);
+        const result: FileReadResult = vfs.read(path, {
+          startLine: start_line,
+          endLine: end_line,
+          numbered,
+        });
+        return result;
       },
     }),
   };

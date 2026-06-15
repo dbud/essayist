@@ -6,8 +6,10 @@ import type { ToolWithExecute } from "@openrouter/agent";
 Deno.test("createReadFileTool -- delegates to VFS and returns result", async () => {
   const vfs = createMockVFS({
     read: () => ({
+      version_id: "v1",
+      timestamp: 1000,
       content: "hello world",
-      total_lines: 1,
+      lines: 1,
       start_line: 1,
       end_line: 1,
     }),
@@ -22,12 +24,19 @@ Deno.test("createReadFileTool -- delegates to VFS and returns result", async () 
   assertEquals(result.content, "hello world");
 });
 
-Deno.test("createReadFileTool -- passes line range to VFS", async () => {
+Deno.test("createReadFileTool -- passes options bag to VFS", async () => {
   let capturedArgs: unknown;
   const vfs = createMockVFS({
     read: (...args: unknown[]) => {
       capturedArgs = args;
-      return { content: "", total_lines: 0, start_line: 0, end_line: 0 };
+      return {
+        version_id: "v1",
+        timestamp: 0,
+        content: "",
+        lines: 0,
+        start_line: 0,
+        end_line: 0,
+      };
     },
   });
   const { tool } = createReadFileTool(vfs);
@@ -35,7 +44,10 @@ Deno.test("createReadFileTool -- passes line range to VFS", async () => {
 
   await fn.function.execute({ path: "f.txt", start_line: 2, end_line: 5 });
 
-  assertEquals(capturedArgs, ["f.txt", 2, 5, undefined]);
+  assertEquals(capturedArgs, [
+    "f.txt",
+    { startLine: 2, endLine: 5, numbered: undefined },
+  ]);
 });
 
 Deno.test("createReadFileTool -- has correct schema and instruction", () => {

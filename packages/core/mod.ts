@@ -11,11 +11,12 @@ export { InMemoryAdapter } from "@/vfs/persistence.ts";
 export type {
   DiffResult,
   FileEntry,
+  FileSnapshot,
   FileVersion,
   GrepOptions,
   GrepResult,
   Mark,
   MarkResult,
-  ReadResult,
+  ReadOptions,
   WriteResult,
 } from "@/vfs/types.ts";

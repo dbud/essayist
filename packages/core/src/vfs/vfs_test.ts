@@ -4,12 +4,13 @@ import { VirtualFileSystem } from "./vfs.ts";
 
 function createVFS(files?: Map<string, string>): VirtualFileSystem {
   const adapter = new InMemoryAdapter();
+  const vfs = new VirtualFileSystem(adapter);
   if (files) {
     for (const [path, content] of files) {
-      adapter.set(`file:${path}`, content);
+      vfs.write(path, content);
     }
   }
-  return new VirtualFileSystem(adapter);
+  return vfs;
 }
 
 const sampleEssay = [
@@ -21,31 +22,31 @@ const sampleEssay = [
 
 // Read
 
-Deno.test("VFS.read -- full file", () => {
+Deno.test("VFS.read -- full file (latest)", () => {
   const vfs = createVFS(new Map([["essay.txt", sampleEssay]]));
   const result = vfs.read("essay.txt");
-  assertEquals(result, {
-    content: sampleEssay,
-    total_lines: 4,
-    start_line: 1,
-    end_line: 4,
-  });
+  assertEquals(result.content, sampleEssay);
+  assertEquals(result.lines, 4);
+  assertEquals(result.start_line, 1);
+  assertEquals(result.end_line, 4);
 });
 
 Deno.test("VFS.read -- line range", () => {
   const vfs = createVFS(new Map([["essay.txt", sampleEssay]]));
-  const result = vfs.read("essay.txt", 2, 3);
-  assertEquals(result, {
-    content: sampleEssay.split("\n").slice(1, 3).join("\n"),
-    total_lines: 4,
-    start_line: 2,
-    end_line: 3,
-  });
+  const result = vfs.read("essay.txt", { startLine: 2, endLine: 3 });
+  assertEquals(result.content, sampleEssay.split("\n").slice(1, 3).join("\n"));
+  assertEquals(result.lines, 4);
+  assertEquals(result.start_line, 2);
+  assertEquals(result.end_line, 3);
 });
 
 Deno.test("VFS.read -- numbered output", () => {
   const vfs = createVFS(new Map([["essay.txt", sampleEssay]]));
-  const result = vfs.read("essay.txt", 1, 2, true);
+  const result = vfs.read("essay.txt", {
+    startLine: 1,
+    endLine: 2,
+    numbered: true,
+  });
   assertEquals(result.content.split("\n"), [
     "     1: The quick brown fox jumps over the lazy dog.",
     "     2: This sentence contains every letter of the alphabet.",
@@ -56,14 +57,25 @@ Deno.test("VFS.read -- missing file returns empty", () => {
   const vfs = createVFS();
   const result = vfs.read("missing.txt");
   assertEquals(result.content, "");
-  assertEquals(result.total_lines, 0);
+  assertEquals(result.lines, 0);
 });
 
 Deno.test("VFS.read -- clamps line range", () => {
   const vfs = createVFS(new Map([["essay.txt", sampleEssay]]));
-  const result = vfs.read("essay.txt", -5, 100);
+  const result = vfs.read("essay.txt", { startLine: -5, endLine: 100 });
   assertEquals(result.start_line, 1);
   assertEquals(result.end_line, 4);
+});
+
+Deno.test("VFS.read -- specific version", () => {
+  const vfs = createVFS(new Map([["f.txt", "original"]]));
+  vfs.write("f.txt", "modified");
+  const history = vfs.getHistory("f.txt");
+  assertEquals(history.length, 2);
+  const original = vfs.read("f.txt", { versionId: history[0].version_id });
+  assertEquals(original.content, "original");
+  const latest = vfs.read("f.txt", { versionId: history[1].version_id });
+  assertEquals(latest.content, "modified");
 });
 
 // Write
@@ -81,9 +93,16 @@ Deno.test("VFS.write -- overwrites existing file", () => {
   assertEquals(result.lines, 1);
 });
 
-Deno.test("VFS.write -- auto-versioning on overwrite", () => {
+Deno.test("VFS.write -- creates version snapshot", () => {
   const vfs = createVFS(new Map([["f.txt", "version1"]]));
   vfs.write("f.txt", "version2");
+  const history = vfs.getHistory("f.txt");
+  assertEquals(history.length, 2);
+});
+
+Deno.test("VFS.write -- first write also creates a version", () => {
+  const vfs = createVFS();
+  vfs.write("f.txt", "hello");
   const history = vfs.getHistory("f.txt");
   assertEquals(history.length, 1);
 });
@@ -302,76 +321,12 @@ Deno.test("VFS.search -- delegates to grep with escaped pattern", () => {
 
 // Versioning
 
-Deno.test("VFS.getHistory -- empty for new file", () => {
-  const vfs = createVFS(new Map([["f.txt", "content"]]));
-  assertEquals(vfs.getHistory("f.txt"), []);
-});
-
-Deno.test("VFS.getHistory -- tracks multiple versions", () => {
+Deno.test("VFS.getHistory -- includes all versions including latest", () => {
   const vfs = createVFS(new Map([["f.txt", "v1"]]));
   vfs.write("f.txt", "v2");
   vfs.write("f.txt", "v3");
   const history = vfs.getHistory("f.txt");
-  assertEquals(history.length, 2);
-  assertEquals(history[0].timestamp <= history[1].timestamp, true);
-});
-
-Deno.test("VFS.revert -- restores previous version", () => {
-  const vfs = createVFS(new Map([["f.txt", "original"]]));
-  vfs.write("f.txt", "modified");
-  const history = vfs.getHistory("f.txt");
-  const reverted = vfs.revert("f.txt", history[0].version_id);
-  assertEquals(reverted, true);
-  assertEquals(vfs.read("f.txt").content, "original");
-});
-
-Deno.test("VFS.revert -- snapshots current before reverting", () => {
-  const vfs = createVFS(new Map([["f.txt", "v1"]]));
-  vfs.write("f.txt", "v2");
-  const history = vfs.getHistory("f.txt");
-  vfs.revert("f.txt", history[0].version_id);
-  const newHistory = vfs.getHistory("f.txt");
-  assertEquals(newHistory.length, 2);
-});
-
-Deno.test("VFS.revert -- returns false for invalid version", () => {
-  const vfs = createVFS(new Map([["f.txt", "content"]]));
-  assertEquals(vfs.revert("f.txt", "nonexistent"), false);
-});
-
-// Snapshot versioning edge cases
-
-Deno.test("VFS.write -- writing empty to existing file snapshots previous content", () => {
-  const vfs = createVFS(new Map([["f.txt", "original"]]));
-  vfs.write("f.txt", "");
-  const history = vfs.getHistory("f.txt");
-  assertEquals(history.length, 1);
-});
-
-Deno.test("VFS.write -- overwriting empty file does not create snapshot", () => {
-  const vfs = createVFS(new Map([["f.txt", ""]]));
-  vfs.write("f.txt", "new content");
-  const history = vfs.getHistory("f.txt");
-  assertEquals(history.length, 0);
-});
-
-Deno.test("VFS.write -- writing empty to new file does not snapshot", () => {
-  const vfs = createVFS();
-  vfs.write("f.txt", "");
-  const history = vfs.getHistory("f.txt");
-  assertEquals(history.length, 0);
-});
-
-Deno.test("VFS.getHistory -- version content is retrievable via revert", () => {
-  const vfs = createVFS(new Map([["f.txt", "version A"]]));
-  vfs.write("f.txt", "version B");
-  vfs.write("f.txt", "version C");
-  const history = vfs.getHistory("f.txt");
-  assertEquals(history.length, 2);
-
-  const reverted = vfs.revert("f.txt", history[0].version_id);
-  assertEquals(reverted, true);
-  assertEquals(vfs.read("f.txt").content, "version A");
+  assertEquals(history.length, 3);
 });
 
 Deno.test("VFS.getHistory -- versions are sorted by timestamp", () => {
@@ -380,29 +335,10 @@ Deno.test("VFS.getHistory -- versions are sorted by timestamp", () => {
   vfs.write("f.txt", "v3");
   vfs.write("f.txt", "v4");
   const history = vfs.getHistory("f.txt");
-  assertEquals(history.length, 3);
+  assertEquals(history.length, 4);
   for (let i = 1; i < history.length; i++) {
     assertEquals(history[i].timestamp >= history[i - 1].timestamp, true);
   }
-});
-
-Deno.test("VFS.getVersionContent -- returns content for existing version", () => {
-  const vfs = createVFS(new Map([["f.txt", "version A"]]));
-  vfs.write("f.txt", "version B");
-  const history = vfs.getHistory("f.txt");
-  assertEquals(history.length, 1);
-  const content = vfs.getVersionContent("f.txt", history[0].version_id);
-  assertEquals(content, "version A");
-});
-
-Deno.test("VFS.getVersionContent -- returns empty for nonexistent version", () => {
-  const vfs = createVFS(new Map([["f.txt", "content"]]));
-  assertEquals(vfs.getVersionContent("f.txt", "nonexistent"), "");
-});
-
-Deno.test("VFS.getVersionContent -- returns empty for nonexistent file", () => {
-  const vfs = createVFS();
-  assertEquals(vfs.getVersionContent("missing.txt", "12345"), "");
 });
 
 Deno.test("VFS.getHistory -- includes line count per version", () => {
@@ -410,6 +346,31 @@ Deno.test("VFS.getHistory -- includes line count per version", () => {
   vfs.write("f.txt", "line one\nline two\nline three");
   const history = vfs.getHistory("f.txt");
   assertEquals(history[0].lines, 1);
+  assertEquals(history[1].lines, 3);
+});
+
+Deno.test("VFS.revert -- restores previous version as new version", () => {
+  const vfs = createVFS(new Map([["f.txt", "original"]]));
+  vfs.write("f.txt", "modified");
+  const history = vfs.getHistory("f.txt");
+  const originalVersionId = history[0].version_id;
+  const reverted = vfs.revert("f.txt", originalVersionId);
+  assertEquals(reverted, true);
+  assertEquals(vfs.read("f.txt").content, "original");
+});
+
+Deno.test("VFS.revert -- creates a new version when reverting", () => {
+  const vfs = createVFS(new Map([["f.txt", "v1"]]));
+  vfs.write("f.txt", "v2");
+  const history = vfs.getHistory("f.txt");
+  vfs.revert("f.txt", history[0].version_id);
+  const newHistory = vfs.getHistory("f.txt");
+  assertEquals(newHistory.length, 3);
+});
+
+Deno.test("VFS.revert -- returns false for invalid version", () => {
+  const vfs = createVFS(new Map([["f.txt", "content"]]));
+  assertEquals(vfs.revert("f.txt", "nonexistent"), false);
 });
 
 // Diff
@@ -418,26 +379,27 @@ Deno.test("VFS.diff -- between versions", () => {
   const vfs = createVFS(new Map([["f.txt", "line1\nline2\nline3"]]));
   vfs.write("f.txt", "line1\nmodified\nline3");
   const history = vfs.getHistory("f.txt");
-  const diffResult = vfs.diff("f.txt", history[0].version_id);
+  const diffResult = vfs.diff(
+    "f.txt",
+    history[0].version_id,
+    history[1].version_id,
+  );
   assertEquals(diffResult.diff.includes("-line2"), true);
   assertEquals(diffResult.diff.includes("+modified"), true);
 });
 
-Deno.test("VFS.diff -- between version and current", () => {
-  const vfs = createVFS(new Map([["f.txt", "original"]]));
-  vfs.write("f.txt", "changed");
-  const history = vfs.getHistory("f.txt");
-  const diffResult = vfs.diff("f.txt", history[0].version_id);
-  assertEquals(diffResult.diff.includes("---"), true);
-  assertEquals(diffResult.diff.includes("+++"), true);
-});
-
 Deno.test("VFS.diff -- identical content produces empty diff", () => {
   const vfs = createVFS(new Map([["f.txt", "same"]]));
-  vfs.write("f.txt", "same");
+  vfs.write("f.txt", "different");
   const history = vfs.getHistory("f.txt");
-  if (history.length > 0) {
-    const diffResult = vfs.diff("f.txt", history[0].version_id);
+  if (history.length >= 2) {
+    vfs.write("f.txt", "same");
+    const newHistory = vfs.getHistory("f.txt");
+    const diffResult = vfs.diff(
+      "f.txt",
+      newHistory[0].version_id,
+      newHistory[2].version_id,
+    );
     assertEquals(diffResult.diff, "");
   }
 });

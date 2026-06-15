@@ -26,9 +26,11 @@ function createMockAgentWithTools(
 
 const vfs = createMockVFS({
   read: () => ({
+    version_id: "v1",
+    timestamp: 1000,
     content: "The quick brown fox jumps over the lazy dog. " +
       "This sentence contains every letter of the alphabet.",
-    total_lines: 1,
+    lines: 1,
     start_line: 1,
     end_line: 1,
   }),

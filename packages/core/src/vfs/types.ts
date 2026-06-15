@@ -1,9 +1,13 @@
-/** Result of a read operation. */
-export interface ReadResult {
-  content: string;
-  total_lines: number;
-  start_line: number;
-  end_line: number;
+/** Options for reading a file. */
+export interface ReadOptions {
+  /** Version ID to read. If omitted, reads the latest version. */
+  versionId?: string;
+  /** First line to return (1-based, inclusive). Defaults to 1. */
+  startLine?: number;
+  /** Last line to return (1-based, inclusive). Defaults to the last line. */
+  endLine?: number;
+  /** If true, prefix each line with its line number. */
+  numbered?: boolean;
 }
 
 /** Result of a write operation. */
@@ -74,7 +78,18 @@ export interface MarkResult {
   marked: boolean;
 }
 
-/** A file version snapshot. */
+/** A file version snapshot -- version metadata + content. */
+export interface FileSnapshot extends FileVersion {
+  content: string;
+}
+
+/** Result of a read operation -- snapshot + line range window. */
+export interface FileReadResult extends FileSnapshot {
+  start_line: number;
+  end_line: number;
+}
+
+/** Metadata about a file version (no content). */
 export interface FileVersion {
   version_id: string;
   timestamp: number;
@@ -97,13 +112,8 @@ export interface DiffResult {
  * specific versions and are migrated on write.
  */
 export interface VFS {
-  /** Read file content, optionally a line range. */
-  read(
-    path: string,
-    startLine?: number,
-    endLine?: number,
-    numbered?: boolean,
-  ): ReadResult;
+  /** Read file content. By default reads the latest version. */
+  read(path: string, options?: ReadOptions): FileReadResult;
 
   /**
    * Write new content, creating a new version.
@@ -144,9 +154,6 @@ export interface VFS {
    * Marks from the reverted version are copied to the new version.
    */
   revert(path: string, versionId: string): boolean;
-
-  /** Get the content of a specific version. Returns empty string if version not found. */
-  getVersionContent(path: string, versionId: string): string;
 
   /** Get unified diff between two versions. */
   diff(path: string, versionA: string, versionB: string): DiffResult;

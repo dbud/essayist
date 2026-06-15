@@ -30,11 +30,11 @@ Deno.test("InMemoryAdapter -- list all keys", () => {
 
 Deno.test("InMemoryAdapter -- list with prefix", () => {
   const adapter = new InMemoryAdapter();
-  adapter.set("file:a", "x");
-  adapter.set("file:b", "y");
+  adapter.set("file:latest:a", "x");
+  adapter.set("file:latest:b", "y");
   adapter.set("mark:1", "z");
-  const keys = [...adapter.list("file:")];
-  assertEquals(keys, ["file:a", "file:b"]);
+  const keys = [...adapter.list("file:")].sort();
+  assertEquals(keys, ["file:latest:a", "file:latest:b"]);
 });
 
 Deno.test("InMemoryAdapter -- constructor from Record", () => {

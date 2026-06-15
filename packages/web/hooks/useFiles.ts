@@ -1,6 +1,6 @@
 import { useSignal } from "@preact/signals";
 import { useEffect } from "preact/hooks";
-import type { FileEntry, ReadResult } from "@essayist/core";
+import type { FileEntry, FileSnapshot } from "@essayist/core";
 import { usePersistentSignal } from "@/utils/persistentSignal.ts";
 
 export function useFiles() {
@@ -27,7 +27,7 @@ export function useFiles() {
 }
 
 export function useFileContent(path: string) {
-  const content = usePersistentSignal<ReadResult | null>(
+  const content = usePersistentSignal<FileSnapshot | null>(
     `file:${path}`,
     null,
   );
@@ -45,7 +45,7 @@ export function useFileContent(path: string) {
 
     fetch(`/api/files/${encodeURIComponent(path)}`)
       .then((res) => res.json())
-      .then((data: ReadResult) => {
+      .then((data: FileSnapshot) => {
         content.value = data;
       })
       .catch((err) => {
