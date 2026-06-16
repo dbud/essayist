@@ -1,6 +1,7 @@
 import {
   createGrepTool,
   createListFilesTool,
+  createMarkTool,
   createReadFileTool,
   createWriteFileTool,
 } from "@essayist/core";
@@ -210,5 +211,41 @@ Deno.test({
       "fig",
       "grape",
     ]);
+  },
+});
+
+// mark
+
+const markVFS = await createVFS(
+  new Map([
+    [
+      "essay.txt",
+      "The quick brown fox jumps over the lazy dog. " +
+      "This sentence contains every letter of the alphabet. " +
+      "Pangrams are often used to test typewriters and keyboards. " +
+      "The fox was quick, the dog was lazy, and the sentence was perfect.",
+    ],
+  ]),
+);
+
+Deno.test({
+  name: "integration: mark -- model reads then marks a text span",
+  ignore: !agent,
+  fn: async () => {
+    const readTool = createReadFileTool(markVFS);
+    const markTool = createMarkTool(markVFS);
+    const result = agent!.callModelWithTools(
+      "Read essay.txt with numbered=true, then mark the word 'fox' " +
+        "with a comment 'This is the first animal mention' and label 'note'.",
+      [readTool, markTool],
+    );
+    await result.getText();
+
+    const file = await markVFS.read("essay.txt");
+    const marks = await markVFS.getMarks("essay.txt", file.version_id);
+    assertEquals(marks.length, 1);
+    assertMatch(marks[0].selected_text, /fox/);
+    assertMatch(marks[0].comment, /animal/);
+    assertEquals(marks[0].label, "note");
   },
 });

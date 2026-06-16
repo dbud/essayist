@@ -3,6 +3,7 @@ export { Agent } from "@/agent.ts";
 export {
   createGrepTool,
   createListFilesTool,
+  createMarkTool,
   createReadFileTool,
   createWriteFileTool,
 } from "@/tools/index.ts";

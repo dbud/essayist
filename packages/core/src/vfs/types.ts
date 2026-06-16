@@ -48,7 +48,7 @@ export type MarkStatus = "resolved" | "stale";
 
 export interface MarkOptions {
   label?: string;
-  offsetHint?: number;
+  lineHint?: number;
   threadId?: string;
   contextRadius?: number;
 }

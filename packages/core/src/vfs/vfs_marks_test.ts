@@ -43,17 +43,17 @@ Deno.test("VFS.mark -- returns marked false for empty file", async () => {
   assertEquals(result.marked, false);
 });
 
-Deno.test("VFS.mark -- uses offsetHint to disambiguate duplicates", async () => {
+Deno.test("VFS.mark -- uses lineHint to disambiguate duplicates", async () => {
   const { vfs, versionId } = await createFile(
     "f.txt",
-    "The cat sat on the cat mat.",
+    "The cat sat on\nthe cat mat.",
   );
 
   const result = await vfs.mark(
     "f.txt",
     "cat",
     "second cat",
-    { offsetHint: 20 },
+    { lineHint: 2 },
   );
 
   assertEquals(result.marked, true);
