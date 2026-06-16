@@ -137,10 +137,9 @@ export interface VFS {
   /** Search files for plain text (escaped as literal regex). */
   search(text: string, options?: GrepOptions): Promise<GrepResult>;
 
-  /** Place a mark on a text span in a specific version of a file. */
+  /** Place a mark on a text span in the latest version of a file. */
   mark(
     path: string,
-    versionId: string,
     selectedText: string,
     comment: string,
     options?: MarkOptions,

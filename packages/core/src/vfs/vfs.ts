@@ -194,7 +194,6 @@ export class VirtualFileSystem implements VFS {
 
   async mark(
     path: string,
-    versionId: string,
     selectedText: string,
     comment: string,
     {
@@ -204,11 +203,11 @@ export class VirtualFileSystem implements VFS {
       contextRadius = DEFAULT_CONTEXT_RADIUS,
     }: MarkOptions = {},
   ): Promise<MarkResult> {
-    const content = await this.#getVersionContent(path, versionId);
-    if (content === "") {
+    const latest = await this.#getFile(path);
+    if (!latest) {
       return { mark_id: "", thread_id: "", marked: false };
     }
-
+    const { content, version_id } = latest;
     const offset = findNearestOccurrence(
       content,
       selectedText,
@@ -231,7 +230,7 @@ export class VirtualFileSystem implements VFS {
       id: this.#generateMarkId(),
       thread_id: threadId ?? this.#generateMarkId(),
       path,
-      version_id: versionId,
+      version_id,
       selected_text: selectedText,
       before_context: beforeContext,
       after_context: afterContext,

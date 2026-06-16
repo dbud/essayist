@@ -5,13 +5,12 @@ import { createFile, createVFS } from "./testing/helpers.ts";
 // -- mark --
 
 Deno.test("VFS.mark -- places a mark on selected text", async () => {
-  const { vfs, versionId } = await createFile(
+  const { vfs } = await createFile(
     "essay.txt",
     "The quick brown fox jumps over the lazy dog.",
   );
   const result = await vfs.mark(
     "essay.txt",
-    versionId,
     "quick brown",
     "nice phrase",
   );
@@ -22,10 +21,9 @@ Deno.test("VFS.mark -- places a mark on selected text", async () => {
 });
 
 Deno.test("VFS.mark -- returns marked false when text not found", async () => {
-  const { vfs, versionId } = await createFile("f.txt", "hello world");
+  const { vfs } = await createFile("f.txt", "hello world");
   const result = await vfs.mark(
     "f.txt",
-    versionId,
     "nonexistent",
     "comment",
   );
@@ -35,10 +33,9 @@ Deno.test("VFS.mark -- returns marked false when text not found", async () => {
 });
 
 Deno.test("VFS.mark -- returns marked false for empty file", async () => {
-  const { vfs, versionId } = await createFile("f.txt", "");
+  const { vfs } = await createFile("f.txt", "");
   const result = await vfs.mark(
     "f.txt",
-    versionId,
     "anything",
     "comment",
   );
@@ -54,7 +51,6 @@ Deno.test("VFS.mark -- uses offsetHint to disambiguate duplicates", async () => 
 
   const result = await vfs.mark(
     "f.txt",
-    versionId,
     "cat",
     "second cat",
     { offsetHint: 20 },
@@ -70,7 +66,6 @@ Deno.test("VFS.mark -- accepts explicit threadId", async () => {
   const { vfs, versionId } = await createFile("f.txt", "hello world");
   const result = await vfs.mark(
     "f.txt",
-    versionId,
     "hello",
     "greeting",
     { threadId: "thread-abc" },
@@ -84,7 +79,7 @@ Deno.test("VFS.mark -- accepts explicit threadId", async () => {
 Deno.test("VFS.mark -- captures context around selection", async () => {
   const content = "A".repeat(100) + "TARGET" + "B".repeat(100);
   const { vfs, versionId } = await createFile("f.txt", content);
-  await vfs.mark("f.txt", versionId, "TARGET", "middle");
+  await vfs.mark("f.txt", "TARGET", "middle");
 
   const marks = await vfs.getMarks("f.txt", versionId);
   assertEquals(marks.length, 1);
@@ -96,7 +91,7 @@ Deno.test("VFS.mark -- captures context around selection", async () => {
 
 Deno.test("VFS.mark -- context truncated at file boundaries", async () => {
   const { vfs, versionId } = await createFile("f.txt", "hi world");
-  await vfs.mark("f.txt", versionId, "hi", "at start");
+  await vfs.mark("f.txt", "hi", "at start");
 
   const marks = await vfs.getMarks("f.txt", versionId);
   assertEquals(marks.length, 1);
@@ -109,7 +104,7 @@ Deno.test("VFS.mark -- context truncated at file boundaries", async () => {
 Deno.test("VFS.mark -- uses custom contextRadius", async () => {
   const content = "A".repeat(100) + "TARGET" + "B".repeat(100);
   const { vfs, versionId } = await createFile("f.txt", content);
-  await vfs.mark("f.txt", versionId, "TARGET", "custom radius", {
+  await vfs.mark("f.txt", "TARGET", "custom radius", {
     contextRadius: 10,
   });
 
@@ -123,9 +118,7 @@ Deno.test("VFS.mark -- uses custom contextRadius", async () => {
 
 Deno.test("VFS.mark -- stores label when provided", async () => {
   const { vfs, versionId } = await createFile("f.txt", "hello world");
-  await vfs.mark("f.txt", versionId, "hello", "greeting", {
-    label: "important",
-  });
+  await vfs.mark("f.txt", "hello", "greeting", { label: "important" });
 
   const marks = await vfs.getMarks("f.txt", versionId);
   assertEquals(marks[0].label, "important");
@@ -145,8 +138,8 @@ Deno.test("VFS.getMarks -- returns all marks for a version", async () => {
     "The quick brown fox jumps over the lazy dog.",
   );
 
-  await vfs.mark("f.txt", versionId, "quick", "adj");
-  await vfs.mark("f.txt", versionId, "fox", "noun");
+  await vfs.mark("f.txt", "quick", "adj");
+  await vfs.mark("f.txt", "fox", "noun");
 
   const marks = await vfs.getMarks("f.txt", versionId);
   assertEquals(marks.length, 2);
@@ -158,12 +151,7 @@ Deno.test("VFS.getMarks -- returns all marks for a version", async () => {
 
 Deno.test("VFS.deleteMark -- removes a mark", async () => {
   const { vfs, versionId } = await createFile("f.txt", "hello world");
-  const result = await vfs.mark(
-    "f.txt",
-    versionId,
-    "hello",
-    "greeting",
-  );
+  const result = await vfs.mark("f.txt", "hello", "greeting");
 
   assertEquals(result.marked, true);
   const deleted = await vfs.deleteMark("f.txt", versionId, result.mark_id);
@@ -182,9 +170,9 @@ Deno.test("VFS.deleteMark -- returns false for nonexistent mark", async () => {
 // -- mark migration on write --
 
 Deno.test("VFS.write -- migrates marks to new version when text unchanged", async () => {
-  const { vfs, versionId: v1 } = await createFile("f.txt", "hello world");
+  const { vfs } = await createFile("f.txt", "hello world");
 
-  await vfs.mark("f.txt", v1, "hello", "greeting");
+  await vfs.mark("f.txt", "hello", "greeting");
   await vfs.write("f.txt", "hello beautiful world");
 
   const file = await vfs.read("f.txt");
@@ -199,9 +187,9 @@ Deno.test("VFS.write -- migrates marks to new version when text unchanged", asyn
 });
 
 Deno.test("VFS.write -- migrates marks with shifted offset", async () => {
-  const { vfs, versionId: v1 } = await createFile("f.txt", "hello world");
+  const { vfs } = await createFile("f.txt", "hello world");
 
-  await vfs.mark("f.txt", v1, "world", "noun");
+  await vfs.mark("f.txt", "world", "noun");
   await vfs.write("f.txt", "hello beautiful world");
 
   const file = await vfs.read("f.txt");
@@ -215,9 +203,9 @@ Deno.test("VFS.write -- migrates marks with shifted offset", async () => {
 });
 
 Deno.test("VFS.write -- marks become stale when text is deleted", async () => {
-  const { vfs, versionId: v1 } = await createFile("f.txt", "hello world");
+  const { vfs } = await createFile("f.txt", "hello world");
 
-  await vfs.mark("f.txt", v1, "world", "noun");
+  await vfs.mark("f.txt", "world", "noun");
   await vfs.write("f.txt", "hello");
 
   const file = await vfs.read("f.txt");
@@ -234,28 +222,12 @@ Deno.test("VFS.write -- no marks to migrate on first write", async () => {
   assertEquals(file.lines, 1);
 });
 
-Deno.test("VFS.write -- marks from v1 not visible in v2 list before migration", async () => {
-  const { vfs, versionId: v1 } = await createFile("f.txt", "hello world");
-
-  await vfs.mark("f.txt", v1, "hello", "greeting");
-  await vfs.write("f.txt", "hello world again");
-
-  const v1Marks = await vfs.getMarks("f.txt", v1);
-  assertEquals(v1Marks.length, 1);
-
-  const file = await vfs.read("f.txt");
-  const v2Marks = await vfs.getMarks("f.txt", file.version_id);
-  assertEquals(v2Marks.length, 1);
-
-  assertEquals(v1Marks[0].id !== v2Marks[0].id, true);
-});
-
 // -- mark migration on revert --
 
 Deno.test("VFS.revert -- migrates marks through write", async () => {
   const { vfs, versionId: v1 } = await createFile("f.txt", "hello world");
 
-  await vfs.mark("f.txt", v1, "hello", "greeting");
+  await vfs.mark("f.txt", "hello", "greeting");
   await vfs.write("f.txt", "goodbye world");
   await vfs.revert("f.txt", v1);
 
