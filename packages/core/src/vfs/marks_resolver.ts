@@ -99,7 +99,7 @@ function mapOffset(
  * Find all occurrences of `pattern` in `text` and return the one
  * closest to `targetOffset`. Returns null if no occurrences found.
  */
-function findNearestOccurrence(
+export function findNearestOccurrence(
   text: string,
   pattern: string,
   targetOffset: number,

@@ -1,4 +1,5 @@
 import { unifiedDiff } from "@/vfs/unified_diff.ts";
+import { findNearestOccurrence, resolveMarks } from "@/vfs/marks_resolver.ts";
 import type { PersistenceAdapter } from "./persistence.ts";
 import type {
   DiffResult,
@@ -8,12 +9,15 @@ import type {
   GrepOptions,
   GrepResult,
   Mark,
+  MarkOptions,
   MarkResult,
   ReadOptions,
   VFS,
   WriteResult,
 } from "./types.ts";
 import { FileSnapshot } from "@essayist/core";
+
+const DEFAULT_CONTEXT_RADIUS = 60;
 
 const FILE_LATEST_PREFIX = "file:latest:";
 const FILE_VERSIONS_PREFIX = "file:versions:";
@@ -86,6 +90,14 @@ export class VirtualFileSystem implements VFS {
     const versions = await this.#adapter.get(versionsKey) as
       | FileVersion[]
       | undefined ?? [];
+
+    const previousVersionId = versions.length > 0
+      ? versions[versions.length - 1].version_id
+      : undefined;
+    const oldContent = previousVersionId
+      ? await this.#getVersionContent(path, previousVersionId)
+      : "";
+
     versions.push(version);
     await Promise.all([
       this.#adapter.set(versionsKey, versions),
@@ -95,6 +107,18 @@ export class VirtualFileSystem implements VFS {
         { content, ...version } as FileSnapshot,
       ),
     ]);
+
+    if (previousVersionId) {
+      const oldMarks = await this.#getMarksList(path, previousVersionId);
+      if (oldMarks.length > 0) {
+        const newMarks = resolveMarks({
+          marks: oldMarks,
+          oldContent,
+          newContent: content,
+        });
+        await this.#saveMarks(path, versionId, newMarks);
+      }
+    }
 
     return {
       path,
@@ -168,22 +192,81 @@ export class VirtualFileSystem implements VFS {
     return this.grep(escapeRegex(text), options);
   }
 
-  mark(
-    _path: string,
-    _versionId: string,
-    _selectedText: string,
-    _comment: string,
-    _label?: string,
+  async mark(
+    path: string,
+    versionId: string,
+    selectedText: string,
+    comment: string,
+    {
+      label,
+      offsetHint = 0,
+      threadId,
+      contextRadius = DEFAULT_CONTEXT_RADIUS,
+    }: MarkOptions = {},
   ): Promise<MarkResult> {
-    throw new Error("Not implemented");
+    const content = await this.#getVersionContent(path, versionId);
+    if (content === "") {
+      return { mark_id: "", thread_id: "", marked: false };
+    }
+
+    const offset = findNearestOccurrence(
+      content,
+      selectedText,
+      offsetHint,
+    );
+    if (offset === null) {
+      return { mark_id: "", thread_id: "", marked: false };
+    }
+
+    const beforeContext = content.slice(
+      Math.max(0, offset - contextRadius),
+      offset,
+    );
+    const afterContext = content.slice(
+      offset + selectedText.length,
+      offset + selectedText.length + contextRadius,
+    );
+
+    const mark: Mark = {
+      id: this.#generateMarkId(),
+      thread_id: threadId ?? this.#generateMarkId(),
+      path,
+      version_id: versionId,
+      selected_text: selectedText,
+      before_context: beforeContext,
+      after_context: afterContext,
+      comment,
+      label,
+      created_at: Date.now(),
+      offset,
+      length: selectedText.length,
+      status: "resolved",
+    };
+
+    await this.#saveMark(mark);
+
+    return {
+      mark_id: mark.id,
+      thread_id: mark.thread_id,
+      marked: true,
+    };
   }
 
-  getMarks(_path: string, _versionId: string): Promise<Mark[]> {
-    throw new Error("Not implemented");
+  async getMarks(path: string, versionId: string): Promise<Mark[]> {
+    return await this.#getMarksList(path, versionId);
   }
 
-  deleteMark(_markId: string): Promise<boolean> {
-    throw new Error("Not implemented");
+  async deleteMark(
+    path: string,
+    versionId: string,
+    markId: string,
+  ): Promise<boolean> {
+    const key = this.#marksKey(path, versionId);
+    const marks = await this.#getMarksList(path, versionId);
+    const filtered = marks.filter((m) => m.id !== markId);
+    if (filtered.length === marks.length) return false;
+    await this.#adapter.set(key, filtered);
+    return true;
   }
 
   async getHistory(path: string): Promise<FileVersion[]> {
@@ -250,21 +333,17 @@ export class VirtualFileSystem implements VFS {
     return `${FILE_VERSIONS_PREFIX}${path}`;
   }
 
-  #markKey(id: string): string {
-    return `${MARKS_PREFIX}${id}`;
-  }
-
-  #marksListKey(path: string, versionId: string): string {
-    return `${MARKS_PREFIX}list:${path}:${versionId}`;
+  #marksKey(path: string, versionId: string): string {
+    return `${MARKS_PREFIX}${path}:${versionId}`;
   }
 
   async #saveMark(mark: Mark): Promise<void> {
-    await this.#adapter.set(this.#markKey(mark.id), mark);
-
-    const listKey = this.#marksListKey(mark.path, mark.version_id);
-    const list = await this.#adapter.get(listKey) as string[] | undefined ?? [];
-    list.push(mark.id);
-    await this.#adapter.set(listKey, list);
+    const marks = await this.#getMarksList(mark.path, mark.version_id);
+    marks.push(mark);
+    await this.#adapter.set(
+      this.#marksKey(mark.path, mark.version_id),
+      marks,
+    );
   }
 
   async #saveMarks(
@@ -272,14 +351,16 @@ export class VirtualFileSystem implements VFS {
     versionId: string,
     marks: Mark[],
   ): Promise<void> {
-    const list = marks.map((mark) => mark.id);
-    await Promise.all([
-      ...marks.map((mark) => this.#adapter.set(this.#markKey(mark.id), mark)),
-      this.#adapter.set(this.#marksListKey(path, versionId), list),
-    ]);
+    await this.#adapter.set(this.#marksKey(path, versionId), marks);
   }
 
   #generateMarkId(): string {
     return `mark_${Date.now()}_${++markCounter}`;
+  }
+
+  async #getMarksList(path: string, versionId: string): Promise<Mark[]> {
+    return await this.#adapter.get(this.#marksKey(path, versionId)) as
+      | Mark[]
+      | undefined ?? [];
   }
 }

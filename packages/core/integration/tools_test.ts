@@ -3,26 +3,12 @@ import {
   createListFilesTool,
   createReadFileTool,
   createWriteFileTool,
-  InMemoryAdapter,
-  VirtualFileSystem,
 } from "@essayist/core";
 import { assertEquals, assertMatch } from "@std/assert";
 import { createAgent } from "./utils.ts";
+import { createVFS } from "@/vfs/testing/helpers.ts";
 
 const agent = createAgent();
-
-async function createVFS(
-  files?: Map<string, string>,
-): Promise<VirtualFileSystem> {
-  const adapter = new InMemoryAdapter();
-  const vfs = new VirtualFileSystem(adapter);
-  if (files) {
-    for (const [path, content] of files) {
-      await vfs.write(path, content);
-    }
-  }
-  return vfs;
-}
 
 // list_files
 

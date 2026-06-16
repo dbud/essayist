@@ -1,19 +1,5 @@
 import { assertEquals } from "@std/assert";
-import { InMemoryAdapter } from "./persistence.ts";
-import { VirtualFileSystem } from "./vfs.ts";
-
-async function createVFS(
-  files?: Map<string, string>,
-): Promise<VirtualFileSystem> {
-  const adapter = new InMemoryAdapter();
-  const vfs = new VirtualFileSystem(adapter);
-  if (files) {
-    for (const [path, content] of files) {
-      await vfs.write(path, content);
-    }
-  }
-  return vfs;
-}
+import { createVFS } from "./testing/helpers.ts";
 
 const sampleEssay = [
   "The quick brown fox jumps over the lazy dog.",

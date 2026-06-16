@@ -46,6 +46,13 @@ export interface GrepResult {
 
 export type MarkStatus = "resolved" | "stale";
 
+export interface MarkOptions {
+  label?: string;
+  offsetHint?: number;
+  threadId?: string;
+  contextRadius?: number;
+}
+
 /**
  * A mark on a text span in a specific version of a file.
  *
@@ -136,14 +143,14 @@ export interface VFS {
     versionId: string,
     selectedText: string,
     comment: string,
-    label?: string,
+    options?: MarkOptions,
   ): Promise<MarkResult>;
 
   /** Get marks for a specific version of a file. */
   getMarks(path: string, versionId: string): Promise<Mark[]>;
 
   /** Delete a mark by ID. Returns true if the mark existed. */
-  deleteMark(markId: string): Promise<boolean>;
+  deleteMark(path: string, versionId: string, markId: string): Promise<boolean>;
 
   /** Get version history for a file. */
   getHistory(path: string): Promise<FileVersion[]>;
