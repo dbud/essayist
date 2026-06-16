@@ -16,6 +16,7 @@ export type {
   GrepOptions,
   GrepResult,
   Mark,
+  MarkOptions,
   MarkResult,
   ReadOptions,
   WriteResult,

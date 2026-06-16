@@ -60,8 +60,9 @@ essayist/
 │   │   │   │       └── mock_vfs.ts  # createMockVFS() helper for tool tests
 │   │   │   └── vfs/
 │   │   │       ├── types.ts         # VFS interface + all result types
-│   │   │       ├── vfs.ts           # VirtualFileSystem (partial VFS impl)
+│   │   │       ├── vfs.ts           # VirtualFileSystem (full VFS impl)
 │   │   │       ├── vfs_test.ts      # Tests for read, write, list, grep, versioning
+│   │   │       ├── vfs_marks_test.ts # Tests for mark, getMarks, deleteMark, migration
 │   │   │       ├── persistence.ts   # PersistenceAdapter interface + InMemoryAdapter
 │   │   │       ├── persistence_test.ts
 │   │   │       ├── diff.ts          # Per-word diff
@@ -72,8 +73,10 @@ essayist/
 │   │   │       ├── fuzzy_test.ts
 │   │   │       ├── levenshtein.ts   # Levenshtein distance for fuzzy matching
 │   │   │       ├── levenshtein_test.ts
-│   │   │       ├── marks_resolver.ts   # Mark migration across versions
-│   │   │       └── marks_resolver_test.ts
+│   │   │       ├── marks_resolver.ts   # Mark migration across versions + fuzzy find
+│   │   │       ├── marks_resolver_test.ts
+│   │   │       └── testing/
+│   │   │           └── helpers.ts       # createVFS(), createFile() test helpers
 │   │   └── integration/    # @essayist/core/integration — live API tests
 │   │       ├── deno.json
 │   │       ├── summarize_test.ts   # Hits real OpenRouter API (summarizeFile)
@@ -142,8 +145,8 @@ essayist/
   `Agent`, tool factories (`createReadFileTool`, `createListFilesTool`,
   `createGrepTool`, `createWriteFileTool`), `VirtualFileSystem`,
   `InMemoryAdapter`, and VFS types (`DiffResult`, `FileEntry`, `FileSnapshot`,
-  `FileVersion`, `GrepOptions`, `GrepResult`, `Mark`, `MarkResult`,
-  `ReadOptions`, `WriteResult`).
+  `FileVersion`, `GrepOptions`, `GrepResult`, `Mark`, `MarkOptions`,
+  `MarkResult`, `ReadOptions`, `WriteResult`).
 - **`packages/web/routes/api/chat.ts`** — SSE streaming chat endpoint. Uses the
   server-side VFS seeded with sample files, wires up all four tools, and uses
   `Agent.callModelWithTools` to stream responses.
@@ -307,9 +310,15 @@ Production builds and serving are handled by Deno Deploy.
   backed by a `PersistenceAdapter`. `InMemoryAdapter` is the default in-memory
   store. The VFS supports read (with line-range and numbering options), write,
   list (with directory prefix filtering), grep (regex), search (literal text),
-  versioning (history, revert), and unified diff between versions. Mark-related
-  methods (`mark`, `getMarks`, `deleteMark`) are defined on the interface but
-  currently throw `Error("Not implemented")`.
+  versioning (history, revert), and unified diff between versions. Marks are
+  text-span annotations bound to specific versions, with automatic migration
+  across versions via diff-based offset mapping and fuzzy matching
+  (`marks_resolver.ts`). `mark()` accepts an optional `MarkOptions` bag
+  (`label`, `offsetHint`, `threadId`, `contextRadius`).
+  `deleteMark(path,
+  versionId, markId)` removes a mark by ID from a specific
+  version. Marks are stored per-version as `Mark[]` under a single key
+  `marks:{path}:{versionId}`.
 - **Agent logging** — `callModelWithTools` feeds the request to `logAgentCall()`
   and the result to `logAgentResult()`, which reads the items stream and logs
   completed tool calls, outputs, messages, and reasoning separately. Uses a lazy
