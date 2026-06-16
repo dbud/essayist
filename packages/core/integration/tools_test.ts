@@ -216,24 +216,22 @@ Deno.test({
 
 // mark
 
-const markVFS = await createVFS(
-  new Map([
-    [
-      "essay.txt",
-      "The quick brown fox jumps over the lazy dog. " +
-      "This sentence contains every letter of the alphabet. " +
-      "Pangrams are often used to test typewriters and keyboards. " +
-      "The fox was quick, the dog was lazy, and the sentence was perfect.",
-    ],
-  ]),
-);
+const ESSAY_CONTENT = "The quick brown fox jumps over the lazy dog.\n" +
+  "This sentence contains every letter of the alphabet.\n" +
+  "Pangrams are often used to test typewriters and keyboards.\n" +
+  "The fox was quick, the dog was lazy, and the sentence was perfect.";
+
+function createMarkVFS() {
+  return createVFS(new Map([["essay.txt", ESSAY_CONTENT]]));
+}
 
 Deno.test({
   name: "integration: mark -- model reads then marks a text span",
   ignore: !agent,
   fn: async () => {
-    const readTool = createReadFileTool(markVFS);
-    const markTool = createMarkTool(markVFS);
+    const vfs = await createMarkVFS();
+    const readTool = createReadFileTool(vfs);
+    const markTool = createMarkTool(vfs);
     const result = agent!.callModelWithTools(
       "Read essay.txt with numbered=true, then mark the word 'fox' " +
         "with a comment 'This is the first animal mention' and label 'note'.",
@@ -241,11 +239,38 @@ Deno.test({
     );
     await result.getText();
 
-    const file = await markVFS.read("essay.txt");
-    const marks = await markVFS.getMarks("essay.txt", file.version_id);
+    const file = await vfs.read("essay.txt");
+    const marks = await vfs.getMarks("essay.txt", file.version_id);
     assertEquals(marks.length, 1);
     assertMatch(marks[0].selected_text, /fox/);
     assertMatch(marks[0].comment, /animal/);
     assertEquals(marks[0].label, "note");
+  },
+});
+
+Deno.test({
+  name: "integration: mark -- model uses line_hint to disambiguate duplicates",
+  ignore: !agent,
+  fn: async () => {
+    const vfs = await createMarkVFS();
+    const readTool = createReadFileTool(vfs);
+    const markTool = createMarkTool(vfs);
+    const result = agent!.callModelWithTools(
+      "Read essay.txt with numbered=true. " +
+        "The word 'quick' appears twice. " +
+        "Use the mark tool to mark 'quick' in the last sentence" +
+        "with comment 'second occurrence' and label 'verify'. " +
+        "Use line_hint to specify which occurrence.",
+      [readTool, markTool],
+    );
+    await result.getText();
+
+    const file = await vfs.read("essay.txt");
+    const marks = await vfs.getMarks("essay.txt", file.version_id);
+    assertEquals(marks.length, 1);
+    assertMatch(marks[0].selected_text, /quick/);
+    assertMatch(marks[0].comment, /second/);
+    assertEquals(marks[0].label, "verify");
+    assertEquals(marks[0].offset, ESSAY_CONTENT.indexOf("quick", 10));
   },
 });

@@ -56,6 +56,8 @@ essayist/
 │   │   │   │   ├── grep_test.ts
 │   │   │   │   ├── write_file.ts    # createWriteFileTool()
 │   │   │   │   ├── write_file_test.ts
+│   │   │   │   ├── mark.ts           # createMarkTool()
+│   │   │   │   └── mark_test.ts
 │   │   │   │   └── testing/
 │   │   │   │       └── mock_vfs.ts  # createMockVFS() helper for tool tests
 │   │   │   └── vfs/
@@ -143,10 +145,10 @@ essayist/
   `agentMiddleware`, calls `fsRoutes()`.
 - **`packages/core/mod.ts`** — Core library public API. Exports `summarizeFile`,
   `Agent`, tool factories (`createReadFileTool`, `createListFilesTool`,
-  `createGrepTool`, `createWriteFileTool`), `VirtualFileSystem`,
-  `InMemoryAdapter`, and VFS types (`DiffResult`, `FileEntry`, `FileSnapshot`,
-  `FileVersion`, `GrepOptions`, `GrepResult`, `Mark`, `MarkOptions`,
-  `MarkResult`, `ReadOptions`, `WriteResult`).
+  `createGrepTool`, `createWriteFileTool`, `createMarkTool`),
+  `VirtualFileSystem`, `InMemoryAdapter`, and VFS types (`DiffResult`,
+  `FileEntry`, `FileSnapshot`, `FileVersion`, `GrepOptions`, `GrepResult`,
+  `Mark`, `MarkOptions`, `MarkResult`, `ReadOptions`, `WriteResult`).
 - **`packages/web/routes/api/chat.ts`** — SSE streaming chat endpoint. Uses the
   server-side VFS seeded with sample files, wires up all four tools, and uses
   `Agent.callModelWithTools` to stream responses.
@@ -306,6 +308,11 @@ Production builds and serving are handled by Deno Deploy.
   `packages/core/src/tools/`. Tools delegate to the `VFS` interface for all file
   operations. A `createMockVFS(overrides?)` helper in
   `tools/testing/mock_vfs.ts` provides stub implementations for unit testing.
+  The `createMarkTool(vfs)` factory creates a tool for annotating text spans
+  with comments. It accepts `path`, `selected_text`, `comment`, and optional
+  `label`, `line_hint`, `thread_id`, and `context_radius` params. `line_hint` is
+  a 1-based line number from the numbered read output, used to disambiguate
+  duplicate text occurrences.
 - **Virtual File System** — `VirtualFileSystem` implements the `VFS` interface
   backed by a `PersistenceAdapter`. `InMemoryAdapter` is the default in-memory
   store. The VFS supports read (with line-range and numbering options), write,
@@ -314,9 +321,10 @@ Production builds and serving are handled by Deno Deploy.
   text-span annotations bound to specific versions, with automatic migration
   across versions via diff-based offset mapping and fuzzy matching
   (`marks_resolver.ts`). `mark()` accepts an optional `MarkOptions` bag
-  (`label`, `offsetHint`, `threadId`, `contextRadius`).
-  `deleteMark(path,
-  versionId, markId)` removes a mark by ID from a specific
+  (`label`, `lineHint`, `threadId`, `contextRadius`). `lineHint` is a 1-based
+  line number that is internally converted to a character offset via a
+  `lineToOffset()` helper before disambiguating duplicate occurrences.
+  `deleteMark(path, versionId, markId)` removes a mark by ID from a specific
   version. Marks are stored per-version as `Mark[]` under a single key
   `marks:{path}:{versionId}`.
 - **Agent logging** — `callModelWithTools` feeds the request to `logAgentCall()`
