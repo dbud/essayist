@@ -50,7 +50,6 @@ export function resolveMarks(
   { marks, newContent, oldContent }: ResolveInput,
   options?: ResolveOptions,
 ): Mark[] {
-  if (marks.length === 0) return [];
   if (oldContent === "" || oldContent === newContent) {
     return marks.map((m) => ({ ...m, id: generateMarkId() }));
   }

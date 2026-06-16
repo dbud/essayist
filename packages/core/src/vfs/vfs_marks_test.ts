@@ -215,6 +215,25 @@ Deno.test("VFS.write -- marks become stale when text is deleted", async () => {
   assertEquals(marks[0].status, "stale");
 });
 
+Deno.test("VFS.write -- stale marks survive subsequent writes", async () => {
+  const { vfs } = await createFile("f.txt", "hello world");
+
+  await vfs.mark("f.txt", "world", "noun");
+  await vfs.write("f.txt", "hello");
+
+  const file2 = await vfs.read("f.txt");
+  const marks2 = await vfs.getMarks("f.txt", file2.version_id);
+  assertEquals(marks2.length, 1);
+  assertEquals(marks2[0].status, "stale");
+
+  await vfs.write("f.txt", "hello again");
+
+  const file3 = await vfs.read("f.txt");
+  const marks3 = await vfs.getMarks("f.txt", file3.version_id);
+  assertEquals(marks3.length, 1);
+  assertEquals(marks3[0].status, "stale");
+});
+
 Deno.test("VFS.write -- no marks to migrate on first write", async () => {
   const vfs = await createVFS();
   await vfs.write("f.txt", "hello");

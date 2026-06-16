@@ -22,9 +22,9 @@
   },
   "tasks": {
     "check": "deno fmt --check . && deno lint . && deno check",
-    "test": "deno test -A",
+    "test": "deno test -A --coverage",
     "test:watch": "deno test -A --watch",
-    "test:integration": "DENO_ENV=development deno test -A --env integration/"
+    "test:integration": "DENO_ENV=development deno test -A --env --coverage integration/"
   },
   "lint": {
     "rules": {
