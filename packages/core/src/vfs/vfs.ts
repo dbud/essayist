@@ -25,21 +25,6 @@ const FILE_CONTENT_PREFIX = "file:content:";
 const MARKS_PREFIX = "marks:";
 const GREP_CONTEXT_LINES = 2;
 
-/**
- * Convert a 1-based line number to a character offset into the content.
- */
-function lineToOffset(content: string, line: number): number {
-  let offset = 0;
-  let currentLine = 1;
-  while (currentLine < line && offset < content.length) {
-    const nl = content.indexOf("\n", offset);
-    if (nl === -1) break;
-    offset = nl + 1;
-    currentLine++;
-  }
-  return offset;
-}
-
 function escapeRegex(text: string): string {
   return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
@@ -380,4 +365,17 @@ export class VirtualFileSystem implements VFS {
       | Mark[]
       | undefined ?? [];
   }
+}
+
+/** Convert a 1-based line number to a character offset into the content. */
+function lineToOffset(content: string, line: number): number {
+  let offset = 0;
+  let currentLine = 1;
+  while (currentLine < line && offset < content.length) {
+    const nl = content.indexOf("\n", offset);
+    if (nl === -1) break;
+    offset = nl + 1;
+    currentLine++;
+  }
+  return offset;
 }

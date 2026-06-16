@@ -62,6 +62,45 @@ Deno.test("VFS.mark -- uses lineHint to disambiguate duplicates", async () => {
   assertEquals(marks[0].offset, 19);
 });
 
+Deno.test("VFS.mark -- lineHint 1 targets first line", async () => {
+  const { vfs, versionId } = await createFile(
+    "f.txt",
+    "alpha beta\ngamma delta",
+  );
+
+  await vfs.mark("f.txt", "alpha", "on line 1", { lineHint: 1 });
+
+  const marks = await vfs.getMarks("f.txt", versionId);
+  assertEquals(marks.length, 1);
+  assertEquals(marks[0].offset, 0);
+});
+
+Deno.test("VFS.mark -- lineHint beyond last line clamps to end", async () => {
+  const { vfs, versionId } = await createFile(
+    "f.txt",
+    "hello",
+  );
+
+  await vfs.mark("f.txt", "hello", "only line", { lineHint: 99 });
+
+  const marks = await vfs.getMarks("f.txt", versionId);
+  assertEquals(marks.length, 1);
+  assertEquals(marks[0].offset, 0);
+});
+
+Deno.test("VFS.mark -- lineHint with no newlines", async () => {
+  const { vfs, versionId } = await createFile(
+    "f.txt",
+    "single line content",
+  );
+
+  await vfs.mark("f.txt", "line", "no newlines", { lineHint: 1 });
+
+  const marks = await vfs.getMarks("f.txt", versionId);
+  assertEquals(marks.length, 1);
+  assertEquals(marks[0].offset, 7);
+});
+
 Deno.test("VFS.mark -- accepts explicit threadId", async () => {
   const { vfs, versionId } = await createFile("f.txt", "hello world");
   const result = await vfs.mark(
