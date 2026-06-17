@@ -13,8 +13,16 @@ function watchCore() {
     },
   };
 }
+
 export default defineConfig({
   plugins: [fresh(), tailwindcss(), watchCore()],
+  resolve: {
+    alias: {
+      react: "preact/compat",
+      "react-dom": "preact/compat",
+      "react-dom/client": "preact/compat/client",
+    },
+  },
   server: {
     fs: {
       allow: ["../.."],
