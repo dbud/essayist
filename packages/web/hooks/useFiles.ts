@@ -40,6 +40,8 @@ export function useFileContent(path: string) {
       return;
     }
 
+    const controller = new AbortController();
+
     loading.value = true;
     error.value = "";
 
@@ -49,11 +51,16 @@ export function useFileContent(path: string) {
         content.value = data;
       })
       .catch((err) => {
+        if (err.name !== "AbortError") {
+          error.value = err.message;
+        }
         error.value = err.message;
       })
       .finally(() => {
         loading.value = false;
       });
+
+    return () => controller.abort();
   }, [path]);
 
   return { content, loading, error };
