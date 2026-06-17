@@ -4,8 +4,7 @@
     "./packages/core",
     "./packages/core/integration"
   ],
-  "nodeModulesDir": "manual",
-  "vendor": true,
+  "nodeModulesDir": "auto",
   "deploy": {
     "org": "dbud",
     "app": "essayist"
