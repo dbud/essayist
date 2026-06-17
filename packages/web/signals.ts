@@ -1,4 +1,6 @@
 import { persistentSignal } from "@/utils/persistentSignal.ts";
+import { signal } from "@preact/signals";
+import { type LexicalEditor } from "lexical";
 
 export const selectedFile = persistentSignal("selectedFile", "");
 export const openedFiles = persistentSignal<string[]>("openedFiles", []);
@@ -24,3 +26,5 @@ export function closeFile(path: string) {
     selectedFile.value = mostRecent ?? remaining[0] ?? "";
   }
 }
+
+export const activeEditor = signal<LexicalEditor | null>(null);

@@ -2,6 +2,7 @@ import { LexicalComposer } from "@lexical/react/LexicalComposer";
 import { RichTextPlugin } from "@lexical/react/LexicalRichTextPlugin";
 import { ContentEditable } from "@lexical/react/LexicalContentEditable";
 import { HistoryPlugin } from "@lexical/react/LexicalHistoryPlugin";
+import { EditorRefPlugin } from "@lexical/react/LexicalEditorRefPlugin";
 import {
   $convertFromMarkdownString,
   // $convertToMarkdownString,
@@ -12,7 +13,8 @@ import { HeadingNode, QuoteNode } from "@lexical/rich-text";
 import { LinkNode } from "@lexical/link";
 import { ListItemNode, ListNode } from "@lexical/list";
 import { CodeNode } from "@lexical/code";
-import { viewerFont } from "@/signals.ts";
+import { activeEditor, viewerFont } from "@/signals.ts";
+import { LexicalEditor } from "lexical";
 
 interface EditorProps {
   initialContent: string;
@@ -59,6 +61,9 @@ export default function Editor(
         ErrorBoundary={ErrorBoundary}
       />
       <HistoryPlugin />
+      <EditorRefPlugin
+        editorRef={(editor: LexicalEditor) => activeEditor.value = editor}
+      />
     </LexicalComposer>
   );
 }
