@@ -3,50 +3,35 @@ import { RichTextPlugin } from "@lexical/react/LexicalRichTextPlugin";
 import { ContentEditable } from "@lexical/react/LexicalContentEditable";
 import { HistoryPlugin } from "@lexical/react/LexicalHistoryPlugin";
 import { EditorRefPlugin } from "@lexical/react/LexicalEditorRefPlugin";
-import {
-  $convertFromMarkdownString,
-  // $convertToMarkdownString,
-  TRANSFORMERS,
-} from "@lexical/markdown";
-import ErrorBoundary from "./ErrorBoundary.tsx";
-import { HeadingNode, QuoteNode } from "@lexical/rich-text";
-import { LinkNode } from "@lexical/link";
-import { ListItemNode, ListNode } from "@lexical/list";
-import { CodeNode } from "@lexical/code";
+import ErrorBoundary from "@/islands/ErrorBoundary.tsx";
 import { activeEditor, viewerFont } from "@/signals.ts";
-import { LexicalEditor } from "lexical";
+import { LexicalEditor, SerializedEditorState } from "lexical";
+import { OnChangePlugin } from "@lexical/react/LexicalOnChangePlugin";
+import { nodes } from "@/islands/editor/nodes.ts";
 
 interface EditorProps {
-  initialContent: string;
+  onSnapshot: (state: SerializedEditorState) => void;
+  initialSnapshot: SerializedEditorState;
 }
 
 export default function Editor(
-  { initialContent }: EditorProps,
+  { onSnapshot, initialSnapshot }: EditorProps,
 ) {
   return (
     <LexicalComposer
       initialConfig={{
         namespace: "essayist-editor",
-        theme: {},
         onError(e: Error) {
           console.log(e);
         },
-        nodes: [
-          HeadingNode,
-          LinkNode,
-          ListNode,
-          ListItemNode,
-          QuoteNode,
-          CodeNode,
-        ],
-        editorState: () => {
-          return $convertFromMarkdownString(
-            initialContent,
-            TRANSFORMERS,
-          );
-        },
+        nodes,
+        editorState: JSON.stringify(initialSnapshot),
       }}
     >
+      <OnChangePlugin
+        onChange={(editorState) => onSnapshot(editorState.toJSON())}
+      />
+
       <RichTextPlugin
         contentEditable={
           <ContentEditable
@@ -62,7 +47,12 @@ export default function Editor(
       />
       <HistoryPlugin />
       <EditorRefPlugin
-        editorRef={(editor: LexicalEditor) => activeEditor.value = editor}
+        editorRef={(editor: LexicalEditor) => {
+          activeEditor.value = editor;
+          return () => {
+            activeEditor.value = null;
+          };
+        }}
       />
     </LexicalComposer>
   );
