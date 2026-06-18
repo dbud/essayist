@@ -35,7 +35,7 @@ export default function Editor(
       <RichTextPlugin
         contentEditable={
           <ContentEditable
-            class={`prose ${viewerFont.value} whitespace-pre-wrap editor-input outline-none`}
+            class={`prose ${viewerFont.value} whitespace-pre-wrap editor-input outline-none max-w-none`}
             placeholder={
               <span class="text-base-content/40 pointer-events-none">
                 Start writing...
