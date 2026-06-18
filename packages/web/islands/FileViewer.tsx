@@ -3,10 +3,10 @@ import { useFileContent } from "@/hooks/useFiles.ts";
 import Tabs from "@/islands/Tabs.tsx";
 import Toolbar from "@/components/Toolbar.tsx";
 import FontSelect from "@/components/FontSelect.tsx";
-import ViewModeSelect from "@/components/ViewModeSelect.tsx";
 import Editor from "@/islands/editor/Editor.tsx";
-import { useFileEditorSnapshot } from "@/hooks/useFileEditorSnapshot.ts";
+import { useEditorSnapshot } from "@/hooks/useEditorSnapshot.ts";
 import { useMarkdownSnapshot } from "@/hooks/useMarkdownSnapshot.ts";
+import { useDerivedSnapshot } from "@/hooks/useDerivedSnapshot.ts";
 
 export default function FileViewer() {
   const path = selectedFile.value;
@@ -16,15 +16,14 @@ export default function FileViewer() {
 
 function FileViewerBody({ path }: { path: string }) {
   const { content, loading, error } = useFileContent(path);
-  const { snapshot: savedSnapshot, setSnapshot: setSnapshot } =
-    useFileEditorSnapshot(
+  const { editorSnapshot, setSnapshot } = useEditorSnapshot(path);
+  const { snapshot, loading: snapshotLoading, derivedSnapshot } =
+    useMarkdownSnapshot(
       path,
+      content.value?.content ?? null,
+      editorSnapshot,
     );
-  const { snapshot, loading: snapshotLoading } = useMarkdownSnapshot(
-    path,
-    content.value?.content ?? null,
-    savedSnapshot,
-  );
+  useDerivedSnapshot(path, derivedSnapshot.value);
 
   if (error.value) {
     return <div class="text-error">{error.value}</div>;
@@ -41,7 +40,6 @@ function FileViewerBody({ path }: { path: string }) {
         <Toolbar>
           <div class="flex items-center gap-4">
             <FontSelect />
-            <ViewModeSelect />
           </div>
         </Toolbar>
         <div class="flex-1 min-h-0 flex flex-col overflow-x-auto overflow-y-auto p-4">

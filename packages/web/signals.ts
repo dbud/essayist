@@ -32,3 +32,20 @@ export const activeEditor = signal<LexicalEditor | null>(null);
 export const editorSnapshots = signal<Map<string, SerializedEditorState>>(
   new Map(),
 );
+
+export function setEditorSnapshot(path: string, state: SerializedEditorState) {
+  const next = new Map(editorSnapshots.value);
+  next.set(path, state);
+  editorSnapshots.value = next;
+}
+
+export const editorBaselineSerializedSnapshots = signal<Record<string, string>>(
+  {},
+);
+
+export function setBaselineSnapshot(path: string, serialized: string) {
+  editorBaselineSerializedSnapshots.value = {
+    ...editorBaselineSerializedSnapshots.value,
+    [path]: serialized,
+  };
+}

@@ -11,6 +11,7 @@ export function useMarkdownSnapshot(
 ) {
   const snapshot = useSignal<SerializedEditorState | null>(savedSnapshot);
   const loading = useSignal(savedSnapshot == null && markdown == null);
+  const derivedSnapshot = useSignal<SerializedEditorState | null>(null);
 
   useEffect(() => {
     if (savedSnapshot) {
@@ -37,7 +38,9 @@ export function useMarkdownSnapshot(
     });
 
     const unregister = editor.registerUpdateListener(({ editorState }) => {
-      snapshot.value = editorState.toJSON();
+      const derived = editorState.toJSON();
+      snapshot.value = derived;
+      derivedSnapshot.value = derived;
       loading.value = false;
       unregister();
     });
@@ -53,5 +56,6 @@ export function useMarkdownSnapshot(
   return {
     snapshot,
     loading,
+    derivedSnapshot,
   };
 }
