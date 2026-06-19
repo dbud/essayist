@@ -1,16 +1,15 @@
-import { closeFile, openedFiles, openFile, selectedFile } from "@/signals.ts";
+import { closeFile, openedFiles, openFile } from "@/signals.ts";
 import { FileText, X } from "lucide-preact";
-import { useFileDirty } from "@/hooks/useFileDirty.ts";
+import { useFile } from "@/signals/file.ts";
 
 function Tab({ path }: { path: string }) {
   const name = path.split("/").pop() ?? path;
-  const isActive = selectedFile.value === path;
-  const dirty = useFileDirty(path);
+  const { dirty, isSelected } = useFile(path);
 
   return (
     <a
       class={`tab shrink-0 ${
-        isActive ? "tab-active bg-primary/10 shadow" : ""
+        isSelected.value ? "tab-active bg-primary/10 shadow" : ""
       }`}
       onClick={() => openFile(path)}
     >
