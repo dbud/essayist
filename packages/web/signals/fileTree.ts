@@ -1,8 +1,8 @@
-import { computed, createModel, signal } from "@preact/signals";
+import { computed, createModel, Signal, signal } from "@preact/signals";
 import { FileEntry } from "@essayist/core";
 import createAsyncState from "@/utils/asyncState.ts";
 import { useMemo } from "preact/hooks";
-import { buildFileTree, type TreeNode } from "@/utils/fileTree.ts";
+import { selectedFile } from "@/signals.ts";
 
 export const FileTreeModel = createModel((/* TODO: workspaceId */) => {
   const files = signal<FileEntry[]>([]);
@@ -32,4 +32,57 @@ export function useFiles() {
   return useMemo(() => new FileTreeModel(), []);
 }
 
-export type { TreeNode };
+export interface TreeNode {
+  name: string;
+  path: string;
+  isFile: boolean;
+  isSelected: Signal<boolean>;
+  children: TreeNode[];
+}
+
+function buildFileTree(files: FileEntry[]): TreeNode {
+  const root: TreeNode = {
+    name: "",
+    path: "",
+    isFile: false,
+    children: [],
+    isSelected: signal(false),
+  };
+
+  for (const file of files) {
+    const parts = file.path.split("/");
+    let current = root;
+
+    for (let i = 0; i < parts.length; i++) {
+      const part = parts[i];
+      const isFile = i === parts.length - 1;
+      const path = parts.slice(0, i + 1).join("/");
+
+      let child = current.children.find((c) => c.name === part);
+      if (!child) {
+        child = {
+          name: part,
+          path,
+          isFile,
+          isSelected: computed(() => selectedFile.value === path),
+          children: [],
+        };
+        current.children.push(child);
+      }
+      current = child;
+    }
+  }
+
+  sortTree(root);
+  return root;
+}
+
+function sortTree(node: TreeNode): void {
+  node.children.sort((a, b) => {
+    if (a.isFile !== b.isFile) return a.isFile ? 1 : -1;
+    return a.name.localeCompare(b.name);
+  });
+  for (const child of node.children) {
+    sortTree(child);
+  }
+}
