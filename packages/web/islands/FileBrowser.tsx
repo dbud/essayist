@@ -1,9 +1,7 @@
 import { openFile, selectedFile } from "@/signals.ts";
-import { buildFileTree, type TreeNode } from "@/utils/fileTree.ts";
 import { FileText, Folder, FolderOpen } from "lucide-preact";
-import { useMemo } from "preact/hooks";
 import { useSignal } from "@preact/signals";
-import { useFiles } from "@/signals/fileTree.ts";
+import { type TreeNode, useFiles } from "@/signals/fileTree.ts";
 
 function FolderItem({ node }: { node: TreeNode }) {
   const open = useSignal(true);
@@ -49,8 +47,7 @@ function FileItem({ node }: { node: TreeNode }) {
 }
 
 export default function FileBrowser() {
-  const { files, loading, error } = useFiles();
-  const tree = useMemo(() => buildFileTree(files.value), [files.value]);
+  const { tree, loading, error } = useFiles();
 
   if (error.value) {
     return <div class="text-error">{error.value}</div>;
@@ -60,7 +57,7 @@ export default function FileBrowser() {
     <ul
       class={`menu bg-base-200 w-full ${loading.value ? "loading-border" : ""}`}
     >
-      {tree.children.map((node) =>
+      {tree.value.children.map((node) =>
         node.isFile
           ? <FileItem key={node.path} node={node} />
           : <FolderItem key={node.path} node={node} />
