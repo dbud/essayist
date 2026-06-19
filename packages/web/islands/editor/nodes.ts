@@ -2,6 +2,8 @@ import { HeadingNode, QuoteNode } from "@lexical/rich-text";
 import { LinkNode } from "@lexical/link";
 import { ListItemNode, ListNode } from "@lexical/list";
 import { CodeNode } from "@lexical/code";
+// TODO: ↓ is deprecated, use extensions
+// import { HorizontalRuleNode } from "@lexical/react/LexicalHorizontalRuleNode";
 
 export const nodes = [
   HeadingNode,
@@ -10,4 +12,5 @@ export const nodes = [
   ListItemNode,
   QuoteNode,
   CodeNode,
+  // HorizontalRuleNode,
 ];

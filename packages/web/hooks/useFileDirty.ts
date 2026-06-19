@@ -1,14 +1,6 @@
-import { computed } from "@preact/signals";
-import {
-  editorBaselineSerializedSnapshots,
-  editorSnapshots,
-} from "@/signals.ts";
+import { useSignal } from "@preact/signals";
 
-export function useFileDirty(path: string) {
-  return computed(() => {
-    const current = editorSnapshots.value.get(path);
-    const baseline = editorBaselineSerializedSnapshots.value[path];
-    if (!current || !baseline) return false;
-    return JSON.stringify(current) !== baseline;
-  });
+export function useFileDirty(_path: string) {
+  const todo = useSignal(false);
+  return todo;
 }

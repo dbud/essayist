@@ -30,6 +30,8 @@
     "@fontsource-variable/hanken-grotesk": "npm:@fontsource-variable/hanken-grotesk@^5.2.8",
     "@fontsource-variable/recursive": "npm:@fontsource-variable/recursive@^5.2.8",
     "@fontsource-variable/source-serif-4": "npm:@fontsource-variable/source-serif-4@^5.2.9",
+    "@lexical/extension": "npm:@lexical/extension@^0.45.0",
+    "@lexical/history": "npm:@lexical/history@^0.45.0",
     "@lexical/markdown": "npm:@lexical/markdown@^0.45.0",
     "@lexical/react": "npm:@lexical/react@^0.45.0",
     "@openrouter/agent": "npm:@openrouter/agent@^0.7.1",
