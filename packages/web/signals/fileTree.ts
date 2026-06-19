@@ -2,7 +2,7 @@ import { computed, createModel, Signal, signal } from "@preact/signals";
 import { FileEntry } from "@essayist/core";
 import createAsyncState from "@/utils/asyncState.ts";
 import { useMemo } from "preact/hooks";
-import { selectedFile } from "@/signals.ts";
+import { openedFiles } from "@/signals/openedFiles.ts";
 
 export const FileTreeModel = createModel((/* TODO: workspaceId */) => {
   const files = signal<FileEntry[]>([]);
@@ -64,7 +64,7 @@ function buildFileTree(files: FileEntry[]): TreeNode {
           name: part,
           path,
           isFile,
-          isSelected: computed(() => selectedFile.value === path),
+          isSelected: computed(() => openedFiles.selected.value === path),
           children: [],
         };
         current.children.push(child);

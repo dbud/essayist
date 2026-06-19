@@ -1,11 +1,11 @@
-import { selectedFile } from "@/signals.ts";
 import Tabs from "@/islands/Tabs.tsx";
 import Toolbar from "@/components/Toolbar.tsx";
 import FontSelect from "@/components/FontSelect.tsx";
 import { useFile } from "@/signals/file.ts";
+import { openedFiles } from "@/signals/openedFiles.ts";
 
 export default function FileViewer() {
-  const path = selectedFile.value;
+  const path = openedFiles.selected.value;
   if (!path) return null;
   return <FileViewerBody key={path} path={path} />;
 }

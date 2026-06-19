@@ -1,13 +1,13 @@
 import { computed, createModel, signal } from "@preact/signals";
 import { FileSnapshot } from "@essayist/core";
 import createAsyncState from "@/utils/asyncState.ts";
-import { selectedFile } from "@/signals.ts";
+import { openedFiles } from "@/signals/openedFiles.ts";
 
 export const FileModel = createModel((path: string) => {
   const content = signal<FileSnapshot | null>(null);
   const [run, { loading, error }] = createAsyncState();
   const dirty = computed(() => false); // TODO
-  const isSelected = computed(() => path === selectedFile.value);
+  const isSelected = computed(() => path === openedFiles.selected.value);
 
   async function load() {
     const result = await run(async () => {

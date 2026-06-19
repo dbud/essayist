@@ -1,17 +1,17 @@
-import { closeFile, openedFiles, openFile } from "@/signals.ts";
 import { FileText, X } from "lucide-preact";
 import { useFile } from "@/signals/file.ts";
+import { openedFiles } from "@/signals/openedFiles.ts";
 
 function Tab({ path }: { path: string }) {
   const name = path.split("/").pop() ?? path;
-  const { dirty, isSelected } = useFile(path);
+  const { dirty, isSelected: isSelected } = useFile(path);
 
   return (
     <a
       class={`tab shrink-0 ${
         isSelected.value ? "tab-active bg-primary/10 shadow" : ""
       }`}
-      onClick={() => openFile(path)}
+      onClick={() => openedFiles.open(path)}
     >
       <span class="flex items-center gap-2">
         <FileText size={14} />
@@ -25,7 +25,7 @@ function Tab({ path }: { path: string }) {
               class="btn btn-ghost btn-xs p-0 w-6 -mx-2"
               onClick={(e) => {
                 e.stopPropagation();
-                closeFile(path);
+                openedFiles.close(path);
               }}
             >
               <X size={12} />
@@ -37,7 +37,7 @@ function Tab({ path }: { path: string }) {
 }
 
 export default function Tabs() {
-  const files = openedFiles.value;
+  const files = openedFiles.opened.value;
 
   if (files.length === 0) {
     return null;
