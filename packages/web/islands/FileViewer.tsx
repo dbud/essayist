@@ -11,7 +11,7 @@ export default function FileViewer() {
 }
 
 function FileViewerBody({ path }: { path: string }) {
-  const { content, loading, error } = useFile(path);
+  const { content, snapshot, loading, error } = useFile(path);
 
   if (error.value) {
     return <div class="text-error">{error.value}</div>;
@@ -33,6 +33,9 @@ function FileViewerBody({ path }: { path: string }) {
         <div class="flex-1 min-h-0 flex flex-col overflow-x-auto overflow-y-auto p-4">
           <pre class="text-xs whitespace-pre-wrap break-all">
             {JSON.stringify(content.value, null, 2)}
+          </pre>
+          <pre class="text-xs whitespace-pre-wrap break-all">
+            {JSON.stringify(snapshot.value, null, 2)}
           </pre>
           <div class="shrink-0 h-32" />
         </div>

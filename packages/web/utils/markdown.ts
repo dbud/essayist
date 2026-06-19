@@ -18,12 +18,9 @@ export function renderMarkdown(text: string): string {
  * Converts markdown string to a Lexical editor state using a headless
  * bootstrap editor. The editor is created, used once, and discarded.
  */
-export function markdownToEditorState(
-  markdown: string,
-  path: string,
-): SerializedEditorState {
+export function markdownToEditorState(content: string): SerializedEditorState {
   const editor = createEditor({
-    namespace: `bootstrap-${path}`,
+    namespace: `bootstrap-markdown`,
     theme: {},
     nodes,
     onError(error) {
@@ -33,8 +30,8 @@ export function markdownToEditorState(
 
   editor.update(() => {
     $getRoot().clear();
-    $convertFromMarkdownString(markdown, TRANSFORMERS);
-  });
+    $convertFromMarkdownString(content, TRANSFORMERS);
+  }, { discrete: true });
 
   return editor.getEditorState().toJSON();
 }
