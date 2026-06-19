@@ -45,7 +45,9 @@ export function useFileContent(path: string) {
     loading.value = true;
     error.value = "";
 
-    fetch(`/api/files/${encodeURIComponent(path)}`)
+    fetch(`/api/files/${encodeURIComponent(path)}`, {
+      signal: controller.signal,
+    })
       .then((res) => res.json())
       .then((data: FileSnapshot) => {
         content.value = data;
@@ -54,7 +56,6 @@ export function useFileContent(path: string) {
         if (err.name !== "AbortError") {
           error.value = err.message;
         }
-        error.value = err.message;
       })
       .finally(() => {
         loading.value = false;
