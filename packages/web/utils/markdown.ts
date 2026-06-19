@@ -1,4 +1,4 @@
-import { $getRoot, createEditor, SerializedEditorState } from "lexical";
+import { $getRoot, createEditor, EditorState } from "lexical";
 import { $convertFromMarkdownString, TRANSFORMERS } from "@lexical/markdown";
 import { marked } from "marked";
 import { sanitizeHtml } from "./sanitize.ts";
@@ -18,7 +18,7 @@ export function renderMarkdown(text: string): string {
  * Converts markdown string to a Lexical editor state using a headless
  * bootstrap editor. The editor is created, used once, and discarded.
  */
-export function markdownToEditorState(content: string): SerializedEditorState {
+export function markdownToEditorState(content: string): EditorState {
   const editor = createEditor({
     namespace: `bootstrap-markdown`,
     theme: {},
@@ -33,5 +33,5 @@ export function markdownToEditorState(content: string): SerializedEditorState {
     $convertFromMarkdownString(content, TRANSFORMERS);
   }, { discrete: true });
 
-  return editor.getEditorState().toJSON();
+  return editor.getEditorState();
 }

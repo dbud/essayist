@@ -3,6 +3,7 @@ import Toolbar from "@/components/Toolbar.tsx";
 import FontSelect from "@/components/FontSelect.tsx";
 import { useFile } from "@/signals/file.ts";
 import { openedFiles } from "@/signals/openedFiles.ts";
+import Editor from "@/islands/editor/Editor.tsx";
 
 export default function FileViewer() {
   const path = openedFiles.selected.value;
@@ -11,7 +12,9 @@ export default function FileViewer() {
 }
 
 function FileViewerBody({ path }: { path: string }) {
-  const { content, snapshot, loading, error } = useFile(path);
+  const { state, initialState, setModifiedState, loading, error } = useFile(
+    path,
+  );
 
   if (error.value) {
     return <div class="text-error">{error.value}</div>;
@@ -23,7 +26,7 @@ function FileViewerBody({ path }: { path: string }) {
       <div
         class={`text-sm bg-base-100 rounded-box rounded-tl-none
         flex-1 min-h-0 overflow-x-auto flex flex-col shadow
-        ${loading.value ? "loading-border" : ""}`}
+        ${loading.value || !state.value ? "loading-border" : ""}`}
       >
         <Toolbar>
           <div class="flex items-center gap-4">
@@ -31,12 +34,12 @@ function FileViewerBody({ path }: { path: string }) {
           </div>
         </Toolbar>
         <div class="flex-1 min-h-0 flex flex-col overflow-x-auto overflow-y-auto p-4">
-          <pre class="text-xs whitespace-pre-wrap break-all">
-            {JSON.stringify(content.value, null, 2)}
-          </pre>
-          <pre class="text-xs whitespace-pre-wrap break-all">
-            {JSON.stringify(snapshot.value, null, 2)}
-          </pre>
+          {initialState.value && (
+            <Editor
+              initialState={initialState.value}
+              onChange={setModifiedState}
+            />
+          )}
           <div class="shrink-0 h-32" />
         </div>
       </div>

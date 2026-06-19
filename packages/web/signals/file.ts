@@ -3,18 +3,28 @@ import { FileSnapshot } from "@essayist/core";
 import createAsyncState from "@/utils/asyncState.ts";
 import { openedFiles } from "@/signals/openedFiles.ts";
 import { markdownToEditorState } from "@/utils/markdown.ts";
+import { EditorState } from "lexical";
 
 export const FileModel = createModel((path: string) => {
   const content = signal<FileSnapshot | null>(null);
   const [run, { loading, error }] = createAsyncState();
-  const dirty = computed(() => false); // TODO
   const isSelected = computed(() => path === openedFiles.selected.value);
 
-  const snapshot = computed(() => {
-    if (content.value) {
-      return markdownToEditorState(content.value.content);
-    }
-  });
+  const initialState = computed(() =>
+    content.value ? markdownToEditorState(content.value.content) : null
+  );
+
+  const modifiedState = signal<EditorState | null>(null);
+  function setModifiedState(state: EditorState) {
+    modifiedState.value = state;
+  }
+
+  const dirty = computed(() =>
+    modifiedState.value !== null &&
+    JSON.stringify(initialState.value) !== JSON.stringify(modifiedState.value)
+  );
+
+  const state = computed(() => modifiedState.value ?? initialState.value);
 
   async function load() {
     const result = await run(async () => {
@@ -28,7 +38,9 @@ export const FileModel = createModel((path: string) => {
 
   return {
     content,
-    snapshot,
+    initialState,
+    state,
+    setModifiedState,
     loading,
     error,
     dirty,
