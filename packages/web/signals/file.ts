@@ -7,10 +7,11 @@ export const FileModel = createModel((path: string) => {
   const [run, { loading, error }] = createAsyncState();
 
   async function load() {
-    content.value = await run(async () => {
+    const result = await run(async () => {
       const res = await fetch(`/api/files/${encodeURIComponent(path)}`);
       return await res.json() as FileSnapshot;
-    }) ?? null;
+    });
+    if (result) content.value = result;
   }
 
   load();
@@ -19,7 +20,6 @@ export const FileModel = createModel((path: string) => {
     content,
     loading,
     error,
-    load,
   };
 });
 
