@@ -1,8 +1,8 @@
 import { selectedFile } from "@/signals.ts";
-import { useFileContent } from "@/hooks/useFiles.ts";
 import Tabs from "@/islands/Tabs.tsx";
 import Toolbar from "@/components/Toolbar.tsx";
 import FontSelect from "@/components/FontSelect.tsx";
+import { useFile } from "@/signals/file.ts";
 
 export default function FileViewer() {
   const path = selectedFile.value;
@@ -11,7 +11,7 @@ export default function FileViewer() {
 }
 
 function FileViewerBody({ path }: { path: string }) {
-  const { content, loading, error } = useFileContent(path);
+  const { content, loading, error } = useFile(path);
 
   if (error.value) {
     return <div class="text-error">{error.value}</div>;
