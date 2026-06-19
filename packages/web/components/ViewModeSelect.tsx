@@ -1,4 +1,4 @@
-import { viewMode } from "@/signals.ts";
+import { viewMode } from "@/signals/preferences.ts";
 
 const viewModeOptions = [
   { value: "auto", label: "Auto" },

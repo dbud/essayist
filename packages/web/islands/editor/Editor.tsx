@@ -2,7 +2,7 @@ import { LexicalExtensionComposer } from "@lexical/react/LexicalExtensionCompose
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import { ContentEditable } from "@lexical/react/LexicalContentEditable";
 import { OnChangePlugin } from "@lexical/react/LexicalOnChangePlugin";
-import { viewerFont } from "@/signals.ts";
+import { viewerFont } from "@/signals/preferences.ts";
 import { defineExtension, SerializedEditorState } from "lexical";
 import { HistoryExtension } from "@lexical/history";
 import { RichTextExtension } from "@lexical/rich-text";

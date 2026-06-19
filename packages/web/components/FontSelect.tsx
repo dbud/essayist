@@ -1,4 +1,4 @@
-import { viewerFont } from "@/signals.ts";
+import { viewerFont } from "@/signals/preferences.ts";
 
 const fontOptions = [
   { value: "font-serif", label: "Serif" },
