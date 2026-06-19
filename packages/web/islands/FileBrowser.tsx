@@ -1,9 +1,9 @@
 import { openFile, selectedFile } from "@/signals.ts";
-import { useFiles } from "@/hooks/useFiles.ts";
 import { buildFileTree, type TreeNode } from "@/utils/fileTree.ts";
 import { FileText, Folder, FolderOpen } from "lucide-preact";
 import { useMemo } from "preact/hooks";
 import { useSignal } from "@preact/signals";
+import { useFiles } from "@/signals/fileTree.ts";
 
 function FolderItem({ node }: { node: TreeNode }) {
   const open = useSignal(true);
