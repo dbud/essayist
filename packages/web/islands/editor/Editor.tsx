@@ -10,7 +10,7 @@ import { ContentEditable } from "@lexical/react/LexicalContentEditable";
 import { LexicalExtensionComposer } from "@lexical/react/LexicalExtensionComposer";
 import { OnChangePlugin } from "@lexical/react/LexicalOnChangePlugin";
 import { RichTextExtension } from "@lexical/rich-text";
-import { defineExtension, type EditorState } from "lexical";
+import { configExtension, defineExtension, type EditorState } from "lexical";
 import { useMemo } from "preact/hooks";
 import { viewerFont } from "@/signals/preferences.ts";
 
@@ -25,7 +25,7 @@ const editorExtension = defineExtension({
   dependencies: [
     RichTextExtension,
     HistoryExtension,
-    AutoFocusExtension,
+    configExtension(AutoFocusExtension, { defaultSelection: "rootStart" }),
     LinkExtension,
     ListExtension,
     CodeExtension,
@@ -45,7 +45,6 @@ const contentEditable = (
 );
 
 export default function Editor({ state, onChange }: EditorProps) {
-  console.log("Editor", JSON.stringify(state));
   const extension = useMemo(
     () => ({
       ...editorExtension,
