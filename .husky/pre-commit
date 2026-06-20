@@ -1,0 +1,1 @@
+deno task fmt:check && deno test -A
