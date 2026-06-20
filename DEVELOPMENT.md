@@ -12,7 +12,7 @@ writing tools. The core library provides an `Agent` class that calls LLMs via
 OpenRouter, a virtual file system with versioning and annotation support, and a
 set of file-manipulation tools the LLM can invoke. A Fresh web app exposes a
 chat interface backed by these tools, a file browser, and a file viewer with
-markdown rendering.
+markdown rendering. The app also includes a Lexical-based rich text editor.
 
 ## Monorepo Structure
 
@@ -28,8 +28,13 @@ essayist/
 ├── deno.jsonc              # Workspace root (members: web, core, core/integration)
 ├── deno.lock               # Lockfile
 ├── .gitignore
+├── biome.json              # Biome formatter/linter config
 ├── .github/workflows/
-│   └── deno.yml            # CI: fmt, lint, test
+│   └── deno.yml            # CI: fmt:check, lint, test
+├── .husky/
+│   └── pre-commit          # Runs fmt:check + test before commit
+├── .zed/
+│   └── settings.json       # Zed editor config (Deno LSP + Biome)
 ├── DEVELOPMENT.md          # ← You are here
 ├── vendor/                 # Vendored npm dependencies
 ├── node_modules/           # npm compatibility layer
@@ -90,7 +95,7 @@ essayist/
 │       ├── main.ts         # App entry: wires middleware + fsRoutes
 │       ├── client.ts       # Imports global CSS (required by Fresh)
 │       ├── define.ts       # State type + createDefine helper
-│       ├── signals.ts      # Global persistent signals (selectedFile, openedFiles, etc.)
+│       ├── signals.ts      # activeEditor signal (Lexical editor instance)
 │       ├── vfs.ts          # Server-side VFS instance seeded with sample files
 │       ├── vite.config.ts  # Vite + Fresh + Tailwind + core watcher plugin
 │       ├── _fresh/         # Generated Fresh build output (gitignored)
@@ -102,15 +107,19 @@ essayist/
 │       │   ├── Toolbar.tsx         # Generic toolbar shell (accepts children)
 │       │   └── ViewModeSelect.tsx  # View mode toggle (auto/markdown/plain) for file viewer
 │       ├── hooks/
-│       │   ├── useChat.ts          # useChat() hook — SSE chat for Preact islands
-│       │   └── useFiles.ts         # useFiles() + useFileContent() — file API hooks
+│       │   └── useChat.ts          # useChat() hook — SSE chat for Preact islands
 │       ├── islands/
 │       │   ├── Chat.tsx            # Interactive Preact island (streaming chat UI)
 │       │   ├── ClearCache.tsx      # Button to clear localStorage + reload
+│       │   ├── ErrorBoundary.tsx   # Preact error boundary with reset button
 │       │   ├── FileBrowser.tsx     # File tree sidebar (fetches from /api/files)
 │       │   ├── FileViewer.tsx      # File content viewer (markdown or plain text)
+│       │   ├── LexicalTreeViewSection.tsx  # Debug panel showing active Lexical editor state
 │       │   ├── Section.tsx         # Collapsible sidebar section (details/summary)
-│       │   └── Tabs.tsx            # Open file tabs with close buttons
+│       │   ├── Tabs.tsx            # Open file tabs with close buttons
+│       │   └── editor/
+│       │       ├── Editor.tsx      # Lexical rich text editor island component
+│       │       └── nodes.ts        # Lexical node registrations (heading, list, code, etc.)
 │       ├── middleware/
 │       │   └── agent.ts    # Creates Agent from OPENROUTER_API_KEY, attaches to state
 │       ├── routes/
@@ -121,12 +130,17 @@ essayist/
 │       │       └── files/
 │       │           ├── index.ts    # GET /api/files → file list
 │       │           └── [path].ts   # GET /api/files/:path → file content
+│       ├── signals/
+│       │   ├── file.ts            # FileModel — per-file state (content, loading, dirty, etc.)
+│       │   ├── fileTree.ts        # FileTreeModel + useFiles() + buildFileTree()
+│       │   ├── openedFiles.ts     # OpenedFilesModel — selectedFile, openedFiles, fileHistory
+│       │   └── preferences.ts     # viewerFont, viewMode persistent signals
 │       ├── utils/
-│       │   ├── fileTree.ts     # buildFileTree() — converts flat file list to tree
-│       │   ├── markdown.ts     # renderMarkdown() — marked + DOMPurify
+│       │   ├── asyncState.ts      # createAsyncState() — loading/error state helper
+│       │   ├── markdown.ts        # renderMarkdown() + markdownToEditorState()
 │       │   ├── persistentSignal.ts  # persistentSignal() + usePersistentSignal()
-│       │   ├── sanitize.ts     # sanitizeHtml() — DOMPurify wrapper
-│       │   └── sse.ts          # SSE streaming helpers (parseSSE, streamModelResultSSE)
+│       │   ├── sanitize.ts        # sanitizeHtml() — DOMPurify wrapper
+│       │   └── sse.ts             # SSE streaming helpers (parseSSE, streamModelResultSSE)
 │       └── static/
 │           └── favicon.ico
 ```
@@ -150,8 +164,8 @@ essayist/
   `FileEntry`, `FileSnapshot`, `FileVersion`, `GrepOptions`, `GrepResult`,
   `Mark`, `MarkOptions`, `MarkResult`, `ReadOptions`, `WriteResult`).
 - **`packages/web/routes/api/chat.ts`** — SSE streaming chat endpoint. Uses the
-  server-side VFS seeded with sample files, wires up all four tools, and uses
-  `Agent.callModelWithTools` to stream responses.
+  server-side VFS seeded with sample files, wires up read, list, grep, and write
+  tools, and uses `Agent.callModelWithTools` to stream responses.
 - **`packages/web/routes/api/files/index.ts`** — GET `/api/files`. Lists all
   files from the server-side VFS.
 - **`packages/web/routes/api/files/[path].ts`** — GET `/api/files/:path`. Reads
@@ -165,28 +179,57 @@ essayist/
   `Toolbar`.
 - **`packages/web/islands/FileBrowser.tsx`** — File tree sidebar island. Fetches
   file list from `/api/files`, renders a collapsible tree with folders and
-  files.
+  files. Uses `FileTreeModel` from `signals/fileTree.ts`.
 - **`packages/web/islands/Tabs.tsx`** — Open file tabs with close buttons. Uses
-  `openedFiles` and `selectedFile` signals.
+  `openedFiles` and `selectedFile` signals from `signals/openedFiles.ts`.
 - **`packages/web/islands/Section.tsx`** — Collapsible sidebar section using
   `<details>`/`<summary>` with daisyUI `collapse` styling.
+- **`packages/web/islands/ErrorBoundary.tsx`** — Preact error boundary island
+  using `useErrorBoundary`. Renders error message with a "Try again" reset
+  button.
+- **`packages/web/islands/LexicalTreeViewSection.tsx`** — Debug panel that
+  displays the active Lexical editor's JSON state. Renders inside a collapsible
+  `Section` titled "Lexical Editor".
+- **`packages/web/islands/editor/Editor.tsx`** — Lexical rich text editor
+  component. Composes `RichTextExtension`, `HistoryExtension`,
+  `AutoFocusExtension`, `LinkExtension`, `ListExtension`, `CodeExtension`, and
+  `HorizontalRuleExtension`. Uses `@lexical/react` runtime plugins.
+- **`packages/web/islands/editor/nodes.ts`** — Lexical node registrations
+  (`HeadingNode`, `LinkNode`, `ListNode`, `ListItemNode`, `QuoteNode`,
+  `CodeNode`) shared between the editor and markdown-to-editor-state conversion.
 - **`packages/web/middleware/agent.ts`** — Middleware. Instantiates `Agent` with
   `OPENROUTER_API_KEY` and attaches it to `ctx.state.agent`.
-- **`packages/web/signals.ts`** — Global persistent signals: `selectedFile`,
-  `openedFiles`, `fileHistory`, `viewerFont`, `viewMode`. Also exports
-  `openFile()` and `closeFile()` helpers.
+- **`packages/web/signals.ts`** — Exports the `activeEditor` signal
+  (`LexicalEditor | null`), used by `LexicalTreeViewSection`.
+- **`packages/web/signals/openedFiles.ts`** — `OpenedFilesModel` with
+  `selectedFile`, `openedFiles`, `fileHistory` persistent signals and `open()`/
+  `close()` helpers. Instantiated as the global `openedFiles` singleton.
+- **`packages/web/signals/fileTree.ts`** — `FileTreeModel` with file list
+  loading, error state, and `buildFileTree()` tree builder. Exports `useFiles()`
+  hook and `TreeNode` interface.
+- **`packages/web/signals/file.ts`** — `FileModel` with per-file content,
+  loading, error, dirty tracking, and Lexical editor state (`initialState`,
+  `modifiedState`, `state`). Exports `useFile(path)` helper.
+- **`packages/web/signals/preferences.ts`** — `viewerFont` and `viewMode`
+  persistent signals.
 - **`packages/web/vfs.ts`** — Server-side VFS instance seeded with sample files
-  (essay.txt, report.txt, notes/ideas.md, notes/todo.md, notes/archive/, src/,
-  markdown-showcase.md).
+  (essay.txt, report.txt, notes/ideas.md, notes/todo.md, notes/archive/,
+  src/main.ts, src/utils.ts, markdown-showcase.md).
 - **`packages/web/utils/persistentSignal.ts`** — `persistentSignal()` (global
   singleton signals synced to localStorage) and `usePersistentSignal()` (hook
   version for island components).
+- **`packages/web/utils/asyncState.ts`** — `createAsyncState()` helper that
+  returns a `run(task)` function plus `loading` and `error` signals. Used by
+  `FileModel` and `FileTreeModel`.
 - **`packages/web/hooks/useChat.ts`** and **`packages/web/utils/sse.ts`** —
   Helper utilities for managing the SSE connection and client-side state.
+- **`packages/web/utils/markdown.ts`** — `renderMarkdown()` (marked +
+  DOMPurify) and `markdownToEditorState()` (marked → Lexical editor state via
+  `@lexical/markdown` transformers).
 
 ### Key Dependencies
 
-- **OpenRouter** — `@openrouter/agent` (v^0.7.0) for `callModel`, `tool()`,
+- **OpenRouter** — `@openrouter/agent` (v^0.7.1) for `callModel`, `tool()`,
   `stepCountIs`, and the `OpenRouter` client class. Also `@openrouter/sdk`
   (v^0.12.79) as a transitive dependency.
 - **Zod** (v4) — Schema validation, JSON Schema generation, and metadata for
@@ -196,29 +239,40 @@ essayist/
 - **Preact** (v10.29.1) — UI library (JSX precompiled, not client-side rendered
   except islands).
 - **@preact/signals** (v2.9.0) — Reactive signals for Preact islands (used by
-  `Chat`, `FileViewer`, `FileBrowser`, `Tabs`, and `useChat`).
+  `Chat`, `FileViewer`, `FileBrowser`, `Tabs`, and `useChat`). Also provides
+  `createModel()` for stateful model patterns (`FileModel`, `FileTreeModel`,
+  `OpenedFilesModel`).
 - **Tailwind CSS** (v4.1.10) — Styling via `@tailwindcss/vite` plugin.
 - **@tailwindcss/typography** (v0.5.16) — Typography plugin for prose styling.
 - **daisyUI** (v5.5.20) — Component library built on Tailwind. Custom "essayist"
   theme defined in `assets/styles.css`.
 - **Vite** (v7.1.3) — Dev server and build tool (via `@fresh/plugin-vite`).
-- **pino** (v9.6.0) — JSON logging library. Pretty-printed in dev, JSON in
+- **pino** (v10.3.1) — JSON logging library. Pretty-printed in dev, JSON in
   production.
 - **marked** (v17.0.3) — Markdown parsing for `MarkdownView` component.
 - **DOMPurify** (v3.4.9) — HTML sanitization for rendered markdown.
+- **Lexical** (v0.45.0) — Rich text editor framework. Used via `lexical`,
+  `@lexical/react`, `@lexical/rich-text`, `@lexical/history`, `@lexical/link`,
+  `@lexical/list`, `@lexical/code`, `@lexical/extension`, and
+  `@lexical/markdown` (for markdown ↔ editor state conversion).
 - **lucide-preact** (v1.17.0) — Icon library (FileText, Folder, FolderOpen, X,
   Zap, etc.).
 - **@fontsource-variable/hanken-grotesk** — Sans-serif variable font.
 - **@fontsource-variable/recursive** — Mono variable font.
 - **@fontsource-variable/source-serif-4** — Serif variable font.
+- **@biomejs/biome** (v2.5.0) — Formatter and linter (replaces deno fmt/lint
+  for code formatting; Biome handles JS/TS/JSON/CSS, Deno handles .ts fmt via
+  `deno fmt`).
 
 ## Commands
 
 ### Formatting
 
+Biome is the primary formatter for JS/TS/JSON/CSS files:
+
 ```
-deno fmt
-deno fmt --check .
+deno task fmt          # Format all files (Biome write)
+deno task fmt:check    # Check formatting (Biome check)
 ```
 
 ### Linting
@@ -259,12 +313,24 @@ deno task -f web dev
 
 Production builds and serving are handled by Deno Deploy.
 
+### Per-package Check
+
+Each package has a `check` task that runs fmt, lint, and type check:
+
+```
+deno task -f core check
+deno task -f web check
+```
+
 ## Pre-commit Checklist
 
-1. `deno fmt`
+1. `deno task fmt:check`
 2. `deno lint`
 3. `deno check`
 4. `deno test -A`
+
+The `.husky/pre-commit` hook runs `deno task fmt:check && deno test -A`
+automatically before each commit.
 
 ## Conventions and Patterns
 
@@ -277,6 +343,8 @@ Production builds and serving are handled by Deno Deploy.
   a typed `define` helper; middleware populates `ctx.state.agent`. Client-side
   state uses `@preact/signals` via `persistentSignal()` (global) and
   `usePersistentSignal()` (per-island hook), both synced to localStorage.
+  Stateful models use `createModel()` from `@preact/signals` (`FileModel`,
+  `FileTreeModel`, `OpenedFilesModel`).
 - **Three-column layout** — The home page (`routes/index.tsx`) uses a horizontal
   flex layout: file browser (`w-64`), file viewer (`flex-1`), and right sidebar
   (`flex-1 max-w-lg`). The body uses `h-dvh` to constrain to the viewport. The
@@ -316,17 +384,16 @@ Production builds and serving are handled by Deno Deploy.
 - **Virtual File System** — `VirtualFileSystem` implements the `VFS` interface
   backed by a `PersistenceAdapter`. `InMemoryAdapter` is the default in-memory
   store. The VFS supports read (with line-range and numbering options), write,
-  list (with directory prefix filtering), grep (regex), search (literal text),
-  versioning (history, revert), and unified diff between versions. Marks are
-  text-span annotations bound to specific versions, with automatic migration
-  across versions via diff-based offset mapping and fuzzy matching
-  (`marks_resolver.ts`). `mark()` accepts an optional `MarkOptions` bag
-  (`label`, `lineHint`, `threadId`, `contextRadius`). `lineHint` is a 1-based
-  line number that is internally converted to a character offset via a
-  `lineToOffset()` helper before disambiguating duplicate occurrences.
-  `deleteMark(path, versionId, markId)` removes a mark by ID from a specific
-  version. Marks are stored per-version as `Mark[]` under a single key
-  `marks:{path}:{versionId}`.
+  list (with directory prefix filtering), grep (regex), versioning (history,
+  revert), and unified diff between versions. Marks are text-span annotations
+  bound to specific versions, with automatic migration across versions via
+  diff-based offset mapping and fuzzy matching (`marks_resolver.ts`). `mark()`
+  accepts an optional `MarkOptions` bag (`label`, `lineHint`, `threadId`,
+  `contextRadius`). `lineHint` is a 1-based line number that is internally
+  converted to a character offset via a `lineToOffset()` helper before
+  disambiguating duplicate occurrences. `deleteMark(path, versionId, markId)`
+  removes a mark by ID from a specific version. Marks are stored per-version as
+  `Mark[]` under a single key `marks:{path}:{versionId}`.
 - **Agent logging** — `callModelWithTools` feeds the request to `logAgentCall()`
   and the result to `logAgentResult()`, which reads the items stream and logs
   completed tool calls, outputs, messages, and reasoning separately. Uses a lazy
@@ -335,18 +402,20 @@ Production builds and serving are handled by Deno Deploy.
 - **Vite watches core** — `vite.config.ts` includes a custom `watchCore` plugin
   that adds `packages/core/` to Vite's file watcher so changes to core trigger
   web app reloads.
-- **Vendored dependencies** — `deno.jsonc` has `"vendor": true`; npm packages
-  are vendored locally.
+- **Vendored dependencies** — npm packages are vendored locally in `vendor/`.
 - **Integration tests** — Live API tests are in a separate workspace member
   (`packages/core/integration/`) with their own `deno.json` and `.env` file.
   They skip gracefully without an API key.
-- **CI** — `.github/workflows/deno.yml` runs `deno fmt --check`, `deno lint`,
+- **CI** — `.github/workflows/deno.yml` runs `deno task fmt:check`, `deno lint`,
   and `deno test -A` on push and PRs to `main`.
 - **Commit messages** — Follow
   [Conventional Commits](https://www.conventionalcommits.org/):
   `<type>(<scope>): <subject>`. Use imperative mood, capitalize first letter, no
   trailing period. Types: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`,
   `test`, `build`, `ci`, `chore`, `revert`.
+- **Editor** — Zed is configured in `.zed/settings.json` to use Deno LSP and
+  Biome for JS/TS/JSON/CSS files. Biome handles formatting and linting; Deno
+  handles type checking.
 
 ## Known Gotchas
 
@@ -386,3 +455,16 @@ Production builds and serving are handled by Deno Deploy.
   per-island signals synced to localStorage. Use the global version for app-wide
   state (selectedFile, openedFiles) and the hook version for island-local state
   (chat messages, file content).
+- **createModel singletons** — `OpenedFilesModel` and `FileTreeModel` use
+  `createModel()` which returns a class. They are instantiated as module-level
+  singletons (`new OpenedFilesModel()`, `new FileTreeModel()`). `FileModel`
+  uses a `Map` cache keyed by path. Do not create multiple instances of these
+  models.
+- **Lexical markdown conversion** — `markdownToEditorState()` creates a
+  headless Lexical editor via `createEditor()` on every call. This is used to
+  convert markdown content to an `EditorState` for the `Editor` island. The
+  bootstrap editor is discarded after its state is extracted.
+- **createMarkTool not wired in chat** — The chat endpoint (`routes/api/chat.ts`)
+  only wires `createReadFileTool`, `createListFilesTool`, `createGrepTool`, and
+  `createWriteFileTool`. `createMarkTool` is exported from core but not included
+  in the chat tools array.
