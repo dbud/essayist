@@ -1,8 +1,8 @@
+import type { ToolWithExecute } from "@openrouter/agent";
 import { assertEquals } from "@std/assert";
+import type { GrepMatch } from "@/vfs/types.ts";
 import { createGrepTool } from "./grep.ts";
 import { createMockVFS } from "./testing/mock_vfs.ts";
-import type { GrepMatch } from "@/vfs/types.ts";
-import type { ToolWithExecute } from "@openrouter/agent";
 
 Deno.test("createGrepTool -- delegates to VFS and returns result", async () => {
   const matches: GrepMatch[] = [
@@ -18,10 +18,10 @@ Deno.test("createGrepTool -- delegates to VFS and returns result", async () => {
   const { tool } = createGrepTool(vfs);
   const fn = tool as ToolWithExecute;
 
-  const result = await fn.function.execute({
+  const result = (await fn.function.execute({
     pattern: "fox",
     options: undefined,
-  }) as { matches: GrepMatch[] };
+  })) as { matches: GrepMatch[] };
 
   assertEquals(result.matches, matches);
 });

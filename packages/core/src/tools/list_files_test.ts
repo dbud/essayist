@@ -1,8 +1,8 @@
+import type { ToolWithExecute } from "@openrouter/agent";
 import { assertEquals } from "@std/assert";
+import type { FileEntry } from "@/vfs/types.ts";
 import { createListFilesTool } from "./list_files.ts";
 import { createMockVFS } from "./testing/mock_vfs.ts";
-import type { FileEntry } from "@/vfs/types.ts";
-import type { ToolWithExecute } from "@openrouter/agent";
 
 Deno.test("createListFilesTool -- delegates to VFS and returns result", async () => {
   const files: FileEntry[] = [
@@ -13,7 +13,7 @@ Deno.test("createListFilesTool -- delegates to VFS and returns result", async ()
   const { tool } = createListFilesTool(vfs);
   const fn = tool as ToolWithExecute;
 
-  const result = await fn.function.execute({ prefix: undefined }) as {
+  const result = (await fn.function.execute({ prefix: undefined })) as {
     files: FileEntry[];
   };
 

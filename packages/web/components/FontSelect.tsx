@@ -18,7 +18,7 @@ export default function FontSelect() {
             class={`join-item btn btn-xs ${opt.value} ${
               viewerFont.value === opt.value ? "btn-active" : ""
             }`}
-            onClick={() => viewerFont.value = opt.value}
+            onClick={() => (viewerFont.value = opt.value)}
           >
             {opt.label}
           </button>

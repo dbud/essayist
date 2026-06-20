@@ -1,4 +1,5 @@
 import { assertEquals } from "@std/assert/equals";
+import { assertExists } from "@std/assert/exists";
 import { assertObjectMatch } from "@std/assert/object-match";
 import { fuzzyFind, fuzzyFindNear } from "@/vfs/fuzzy.ts";
 
@@ -6,7 +7,8 @@ import { fuzzyFind, fuzzyFindNear } from "@/vfs/fuzzy.ts";
 
 Deno.test("fuzzyFind -- exact match at start", () => {
   const result = fuzzyFind("hello world", "hello", 1);
-  assertObjectMatch(result!, {
+  assertExists(result);
+  assertObjectMatch(result, {
     offset: 0,
     text: "hello",
     score: 1,
@@ -15,7 +17,8 @@ Deno.test("fuzzyFind -- exact match at start", () => {
 
 Deno.test("fuzzyFind -- exact match in middle", () => {
   const result = fuzzyFind("hello world", "world", 1);
-  assertObjectMatch(result!, {
+  assertExists(result);
+  assertObjectMatch(result, {
     offset: 6,
     text: "world",
     score: 1,
@@ -24,7 +27,8 @@ Deno.test("fuzzyFind -- exact match in middle", () => {
 
 Deno.test("fuzzyFind -- exact match with high threshold", () => {
   const result = fuzzyFind("hello world", "hello", 0.99);
-  assertObjectMatch(result!, {
+  assertExists(result);
+  assertObjectMatch(result, {
     offset: 0,
     text: "hello",
     score: 1,
@@ -35,7 +39,8 @@ Deno.test("fuzzyFind -- exact match with high threshold", () => {
 
 Deno.test("fuzzyFind -- single character substitution", () => {
   const result = fuzzyFind("hello world", "hallo", 0.8);
-  assertObjectMatch(result!, {
+  assertExists(result);
+  assertObjectMatch(result, {
     offset: 0,
     text: "hello",
   });
@@ -43,29 +48,32 @@ Deno.test("fuzzyFind -- single character substitution", () => {
 
 Deno.test("fuzzyFind -- single character insertion in pattern (N+1 window)", () => {
   const result = fuzzyFind("hello world", "helllo", 0.8);
-  assertObjectMatch(result!, {
+  assertExists(result);
+  assertObjectMatch(result, {
     offset: 0,
     text: "hello",
   });
-  assertEquals(result!.text.length, 5);
+  assertEquals(result.text.length, 5);
 });
 
 Deno.test("fuzzyFind -- single character deletion in pattern (N-1 window)", () => {
   const result = fuzzyFind("hello world", "helo", 0.8);
-  assertObjectMatch(result!, {
+  assertExists(result);
+  assertObjectMatch(result, {
     offset: 0,
     text: "hello",
   });
-  assertEquals(result!.text.length, 5);
+  assertEquals(result.text.length, 5);
 });
 
 Deno.test("fuzzyFind -- N-1 window matches shorter text", () => {
   const result = fuzzyFind("helo world", "hello", 0.7);
-  assertObjectMatch(result!, {
+  assertExists(result);
+  assertObjectMatch(result, {
     offset: 0,
     text: "helo",
   });
-  assertEquals(result!.text.length, 4);
+  assertEquals(result.text.length, 4);
 });
 
 // fuzzyFind -- threshold behavior
@@ -101,23 +109,26 @@ Deno.test("fuzzyFind -- empty pattern returns null", () => {
 
 Deno.test("fuzzyFind -- returns highest scoring match", () => {
   const result = fuzzyFind("cat bat rat", "bet", 0.6);
-  assertObjectMatch(result!, { text: "bat" });
-  assertEquals(result!.score >= 0.6, true);
+  assertExists(result);
+  assertObjectMatch(result, { text: "bat" });
+  assertEquals(result.score >= 0.6, true);
 });
 
 Deno.test("fuzzyFind -- fuzzy picks best over partial matches", () => {
   const result = fuzzyFind("abc xyz ab", "abcd", 0.6);
-  assertObjectMatch(result!, {
+  assertExists(result);
+  assertObjectMatch(result, {
     offset: 0,
     text: "abc",
   });
-  assertEquals(result!.score > 0.6, true);
-  assertEquals(result!.score < 1, true);
+  assertEquals(result.score > 0.6, true);
+  assertEquals(result.score < 1, true);
 });
 
 Deno.test("fuzzyFind -- single char pattern", () => {
   const result = fuzzyFind("abc", "b", 1);
-  assertObjectMatch(result!, {
+  assertExists(result);
+  assertObjectMatch(result, {
     offset: 1,
     text: "b",
     score: 1,
@@ -133,7 +144,8 @@ Deno.test("fuzzyFind -- pattern longer than text", () => {
 
 Deno.test("fuzzyFindNear -- match within radius", () => {
   const result = fuzzyFindNear("hello world", "world", 6, 5, 1);
-  assertObjectMatch(result!, {
+  assertExists(result);
+  assertObjectMatch(result, {
     offset: 6,
     text: "world",
     score: 1,
@@ -147,7 +159,8 @@ Deno.test("fuzzyFindNear -- match outside radius returns null", () => {
 
 Deno.test("fuzzyFindNear -- offset is relative to full text", () => {
   const result = fuzzyFindNear("xxx hello world", "hello", 8, 5, 1);
-  assertObjectMatch(result!, {
+  assertExists(result);
+  assertObjectMatch(result, {
     offset: 4,
     text: "hello",
   });
@@ -155,7 +168,8 @@ Deno.test("fuzzyFindNear -- offset is relative to full text", () => {
 
 Deno.test("fuzzyFindNear -- fuzzy match within radius", () => {
   const result = fuzzyFindNear("hello world goodbye", "hallo", 3, 5, 0.8);
-  assertObjectMatch(result!, {
+  assertExists(result);
+  assertObjectMatch(result, {
     offset: 0,
     text: "hello",
   });
@@ -165,7 +179,8 @@ Deno.test("fuzzyFindNear -- fuzzy match within radius", () => {
 
 Deno.test("fuzzyFindNear -- center near start clamps to 0", () => {
   const result = fuzzyFindNear("hello world", "hello", 0, 10, 1);
-  assertObjectMatch(result!, {
+  assertExists(result);
+  assertObjectMatch(result, {
     offset: 0,
     text: "hello",
   });
@@ -173,7 +188,8 @@ Deno.test("fuzzyFindNear -- center near start clamps to 0", () => {
 
 Deno.test("fuzzyFindNear -- center near end clamps to text length", () => {
   const result = fuzzyFindNear("hello world", "world", 11, 5, 1);
-  assertObjectMatch(result!, {
+  assertExists(result);
+  assertObjectMatch(result, {
     offset: 6,
     text: "world",
   });
@@ -193,7 +209,8 @@ Deno.test("fuzzyFindNear -- empty text returns null", () => {
 
 Deno.test("fuzzyFindNear -- empty pattern matches at start", () => {
   const result = fuzzyFindNear("hello world", "", 0, 5, 0.8);
-  assertObjectMatch(result!, {
+  assertExists(result);
+  assertObjectMatch(result, {
     offset: 0,
     text: "",
     score: 1,
@@ -205,7 +222,8 @@ Deno.test("fuzzyFindNear -- empty pattern matches at start", () => {
 Deno.test("fuzzyFind -- typo in prose", () => {
   const text = "The art of writing requires patience and dedication.";
   const result = fuzzyFind(text, "dedicaton", 0.9);
-  assertObjectMatch(result!, {
+  assertExists(result);
+  assertObjectMatch(result, {
     text: "dedication",
   });
 });
@@ -213,7 +231,8 @@ Deno.test("fuzzyFind -- typo in prose", () => {
 Deno.test("fuzzyFindNear -- find near known position after edit", () => {
   const newText = "The quick brown fox jumps over the lazy cat.";
   const result = fuzzyFindNear(newText, "lazy", 35, 10, 0.8);
-  assertObjectMatch(result!, {
+  assertExists(result);
+  assertObjectMatch(result, {
     text: "lazy",
   });
 });
@@ -221,7 +240,8 @@ Deno.test("fuzzyFindNear -- find near known position after edit", () => {
 Deno.test("fuzzyFindNear -- word changed slightly", () => {
   const text = "The colour of the sky is blue.";
   const result = fuzzyFindNear(text, "color", 4, 10, 0.8);
-  assertObjectMatch(result!, {
+  assertExists(result);
+  assertObjectMatch(result, {
     offset: 4,
     text: "colour",
   });

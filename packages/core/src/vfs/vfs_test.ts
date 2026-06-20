@@ -282,9 +282,7 @@ Deno.test("VFS.grep -- invalid regex falls back to literal", async () => {
 // Search
 
 Deno.test("VFS.search -- plain text with special chars", async () => {
-  const vfs = await createVFS(
-    new Map([["f.txt", "price is $5.00 today"]]),
-  );
+  const vfs = await createVFS(new Map([["f.txt", "price is $5.00 today"]]));
   const result = await vfs.search("$5.00");
   assertEquals(result.matches.length, 1);
   assertEquals(result.matches[0].line, "price is $5.00 today");

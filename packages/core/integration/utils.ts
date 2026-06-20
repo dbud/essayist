@@ -22,3 +22,8 @@ export function createAgent(): Agent | null {
 
   return new Agent(apiKey);
 }
+
+export function require<T>(value: T | null | undefined): T {
+  if (value == null) throw new Error("value is required but was not provided");
+  return value;
+}

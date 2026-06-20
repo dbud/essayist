@@ -33,7 +33,7 @@ jobs:
         run: deno install
 
       - name: Verify formatting
-        run: deno fmt --check
+        run: deno task fmt:check
 
       - name: Run linter
         run: deno lint

@@ -1,19 +1,26 @@
 import { tool } from "@openrouter/agent";
 import { z } from "zod";
-import type { ToolPrompt } from "./index.ts";
 import type { FileReadResult, VFS } from "@/vfs/types.ts";
+import type { ToolPrompt } from "./index.ts";
 
 const inputSchema = z.object({
   path: z.string().describe("The path of the file to read"),
-  start_line: z.number().optional().describe(
-    "First line to read (1-based, inclusive). Defaults to 1.",
-  ),
-  end_line: z.number().optional().describe(
-    "Last line to read (1-based, inclusive). Defaults to the last line.",
-  ),
-  numbered: z.boolean().optional().describe(
-    "If true, prefix each line with its line number for easy reference.",
-  ),
+  start_line: z
+    .number()
+    .optional()
+    .describe("First line to read (1-based, inclusive). Defaults to 1."),
+  end_line: z
+    .number()
+    .optional()
+    .describe(
+      "Last line to read (1-based, inclusive). Defaults to the last line.",
+    ),
+  numbered: z
+    .boolean()
+    .optional()
+    .describe(
+      "If true, prefix each line with its line number for easy reference.",
+    ),
 });
 
 const outputSchema = z.object({
@@ -42,9 +49,12 @@ export function createReadFileTool(vfs: VFS): ToolPrompt {
         "and optional line numbering for easy reference.",
       inputSchema,
       outputSchema,
-      execute: async (
-        { path, start_line, end_line, numbered },
-      ): Promise<ReadFileOutput> => {
+      execute: async ({
+        path,
+        start_line,
+        end_line,
+        numbered,
+      }): Promise<ReadFileOutput> => {
         const result: FileReadResult = await vfs.read(path, {
           startLine: start_line,
           endLine: end_line,

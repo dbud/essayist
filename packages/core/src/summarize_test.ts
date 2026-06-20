@@ -1,9 +1,9 @@
-import { assertEquals } from "@std/assert";
-import { summarizeFile } from "./summarize.ts";
-import { createMockVFS } from "./tools/testing/mock_vfs.ts";
-import type { Agent } from "./agent.ts";
-import type { ToolPrompt } from "./tools/index.ts";
 import type { ToolWithExecute } from "@openrouter/agent";
+import { assertEquals } from "@std/assert";
+import type { Agent } from "./agent.ts";
+import { summarizeFile } from "./summarize.ts";
+import type { ToolPrompt } from "./tools/index.ts";
+import { createMockVFS } from "./tools/testing/mock_vfs.ts";
 
 function createMockAgentWithTools(
   responseText: string,
@@ -28,7 +28,8 @@ const vfs = createMockVFS({
   read: () => ({
     version_id: "v1",
     timestamp: 1000,
-    content: "The quick brown fox jumps over the lazy dog. " +
+    content:
+      "The quick brown fox jumps over the lazy dog. " +
       "This sentence contains every letter of the alphabet.",
     lines: 1,
     start_line: 1,
@@ -45,13 +46,10 @@ Deno.test("summarizeFile -- delegates to agent and returns result", async () => 
 Deno.test("summarizeFile -- sends correct prompt and tool", async () => {
   let capturedInput = "";
   let capturedPrompts: readonly ToolPrompt[] = [];
-  const agent = createMockAgentWithTools(
-    "Summary.",
-    (input, toolPrompts) => {
-      capturedInput = input;
-      capturedPrompts = toolPrompts;
-    },
-  );
+  const agent = createMockAgentWithTools("Summary.", (input, toolPrompts) => {
+    capturedInput = input;
+    capturedPrompts = toolPrompts;
+  });
 
   await summarizeFile("essay.txt", agent, vfs);
 

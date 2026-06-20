@@ -1,10 +1,8 @@
 import { App, staticFiles } from "fresh";
-import { agentMiddleware } from "@/middleware/agent.ts";
 import type { State } from "@/define.ts";
+import { agentMiddleware } from "@/middleware/agent.ts";
 
-export const app = new App<State>()
-  .use(staticFiles())
-  .use(agentMiddleware);
+export const app = new App<State>().use(staticFiles()).use(agentMiddleware);
 
 app.fsRoutes();
 

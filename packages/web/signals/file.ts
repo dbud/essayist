@@ -1,9 +1,9 @@
+import type { FileSnapshot } from "@essayist/core";
 import { computed, createModel, signal } from "@preact/signals";
-import { FileSnapshot } from "@essayist/core";
-import createAsyncState from "@/utils/asyncState.ts";
+import type { EditorState } from "lexical";
 import { openedFiles } from "@/signals/openedFiles.ts";
+import createAsyncState from "@/utils/asyncState.ts";
 import { markdownToEditorState } from "@/utils/markdown.ts";
-import { EditorState } from "lexical";
 
 export const FileModel = createModel((path: string) => {
   const content = signal<FileSnapshot | null>(null);
@@ -11,7 +11,7 @@ export const FileModel = createModel((path: string) => {
   const isSelected = computed(() => path === openedFiles.selected.value);
 
   const initialState = computed(() =>
-    content.value ? markdownToEditorState(content.value.content) : null
+    content.value ? markdownToEditorState(content.value.content) : null,
   );
 
   const modifiedState = signal<EditorState | null>(null);
@@ -19,9 +19,11 @@ export const FileModel = createModel((path: string) => {
     modifiedState.value = state;
   }
 
-  const dirty = computed(() =>
-    modifiedState.value !== null &&
-    JSON.stringify(initialState.value) !== JSON.stringify(modifiedState.value)
+  const dirty = computed(
+    () =>
+      modifiedState.value !== null &&
+      JSON.stringify(initialState.value) !==
+        JSON.stringify(modifiedState.value),
   );
 
   const state = computed(() => modifiedState.value ?? initialState.value);
@@ -29,7 +31,7 @@ export const FileModel = createModel((path: string) => {
   async function load() {
     const result = await run(async () => {
       const res = await fetch(`/api/files/${encodeURIComponent(path)}`);
-      return await res.json() as FileSnapshot;
+      return (await res.json()) as FileSnapshot;
     });
     if (result) content.value = result;
   }

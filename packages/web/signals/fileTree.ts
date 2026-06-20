@@ -1,8 +1,8 @@
-import { computed, createModel, Signal, signal } from "@preact/signals";
-import { FileEntry } from "@essayist/core";
-import createAsyncState from "@/utils/asyncState.ts";
+import type { FileEntry } from "@essayist/core";
+import { computed, createModel, type Signal, signal } from "@preact/signals";
 import { useMemo } from "preact/hooks";
 import { openedFiles } from "@/signals/openedFiles.ts";
+import createAsyncState from "@/utils/asyncState.ts";
 
 export const FileTreeModel = createModel((/* TODO: workspaceId */) => {
   const files = signal<FileEntry[]>([]);
@@ -13,7 +13,7 @@ export const FileTreeModel = createModel((/* TODO: workspaceId */) => {
   async function load() {
     const result = await run(async () => {
       const res = await fetch("/api/files");
-      return await res.json() as FileEntry[];
+      return (await res.json()) as FileEntry[];
     });
     if (result) files.value = result;
   }

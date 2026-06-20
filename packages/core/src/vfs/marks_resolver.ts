@@ -1,6 +1,6 @@
+import { fuzzyFindNear } from "@/vfs/fuzzy.ts";
 import { computeDiff, type DiffHunk } from "./diff.ts";
 import type { Mark } from "./types.ts";
-import { fuzzyFindNear } from "@/vfs/fuzzy.ts";
 
 let resolverMarkCounter = 0;
 
@@ -70,10 +70,7 @@ export function resolveMarks(
   });
 }
 
-function mapOffset(
-  mark: Mark,
-  hunks: DiffHunk[],
-): [boolean, number] {
+function mapOffset(mark: Mark, hunks: DiffHunk[]): [boolean, number] {
   const markStart = mark.offset;
   const markEnd = mark.offset + mark.length;
   let delta = 0;
@@ -83,10 +80,11 @@ function mapOffset(
     }
     if (markStart < hunk.oldEnd && markEnd > hunk.oldStart) {
       // mark overlaps this hunk -- estimate based on position
-      const ratio = (markStart - hunk.oldStart) /
-        (hunk.oldEnd - hunk.oldStart);
-      const estimatedOffset = hunk.newStart +
-        Math.round(ratio * (hunk.newEnd - hunk.newStart)) + delta;
+      const ratio = (markStart - hunk.oldStart) / (hunk.oldEnd - hunk.oldStart);
+      const estimatedOffset =
+        hunk.newStart +
+        Math.round(ratio * (hunk.newEnd - hunk.newStart)) +
+        delta;
       return [false, estimatedOffset];
     }
     delta = hunk.newEnd - hunk.oldEnd;
@@ -107,8 +105,9 @@ export function findNearestOccurrence(
   let bestDistance = Infinity;
 
   let searchFrom = 0;
-  let idx: number;
-  while ((idx = text.indexOf(pattern, searchFrom)) !== -1) {
+  while (true) {
+    const idx = text.indexOf(pattern, searchFrom);
+    if (idx === -1) break;
     const distance = Math.abs(idx - targetOffset);
     if (distance < bestDistance) {
       bestDistance = distance;
@@ -152,7 +151,8 @@ function fuzzyResolveMark(
   const searchRadius = Math.max(
     minSearchRadius,
     searchRadiusMultiplier *
-      (mark.before_context.length + mark.selected_text.length +
+      (mark.before_context.length +
+        mark.selected_text.length +
         mark.after_context.length),
   );
 
@@ -213,8 +213,8 @@ function fuzzyResolveMark(
       ...mark,
       id: generateMarkId(),
       status: "stale",
-      offset: beforeResult?.endOffset ?? afterResult?.offset ??
-        expectedNewOffset,
+      offset:
+        beforeResult?.endOffset ?? afterResult?.offset ?? expectedNewOffset,
       length: 0,
     };
   }

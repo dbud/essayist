@@ -18,7 +18,7 @@ export default function ViewModeSelect() {
             class={`join-item btn btn-xs ${
               viewMode.value === opt.value ? "btn-active" : ""
             }`}
-            onClick={() => viewMode.value = opt.value}
+            onClick={() => (viewMode.value = opt.value)}
           >
             {opt.label}
           </button>

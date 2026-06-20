@@ -1,13 +1,12 @@
-import { defineConfig } from "vite";
-import tailwindcss from "@tailwindcss/vite";
-import { fresh } from "@fresh/plugin-vite";
 import { fileURLToPath } from "node:url";
+import { fresh } from "@fresh/plugin-vite";
+import tailwindcss from "@tailwindcss/vite";
+import { defineConfig, type ViteDevServer } from "vite";
 
 function watchCore() {
   return {
     name: "watch-core",
-    // deno-lint-ignore no-explicit-any
-    configureServer(server: any) {
+    configureServer(server: ViteDevServer) {
       const path = fileURLToPath(new URL("../core", import.meta.url));
       server.watcher.add(path);
     },

@@ -1,5 +1,5 @@
-export { summarizeFile } from "@/summarize.ts";
 export { Agent } from "@/agent.ts";
+export { summarizeFile } from "@/summarize.ts";
 export {
   createGrepTool,
   createListFilesTool,
@@ -7,7 +7,6 @@ export {
   createReadFileTool,
   createWriteFileTool,
 } from "@/tools/index.ts";
-export { VirtualFileSystem } from "@/vfs/vfs.ts";
 export { InMemoryAdapter } from "@/vfs/persistence.ts";
 export type {
   DiffResult,
@@ -22,3 +21,4 @@ export type {
   ReadOptions,
   WriteResult,
 } from "@/vfs/types.ts";
+export { VirtualFileSystem } from "@/vfs/vfs.ts";

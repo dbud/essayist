@@ -1,7 +1,7 @@
+import type { ToolWithExecute } from "@openrouter/agent";
 import { assertEquals } from "@std/assert";
 import { createMarkTool } from "./mark.ts";
 import { createMockVFS } from "./testing/mock_vfs.ts";
-import type { ToolWithExecute } from "@openrouter/agent";
 
 Deno.test("createMarkTool -- delegates to VFS and returns result", async () => {
   const vfs = createMockVFS({
@@ -14,11 +14,11 @@ Deno.test("createMarkTool -- delegates to VFS and returns result", async () => {
   const { tool } = createMarkTool(vfs);
   const fn = tool as ToolWithExecute;
 
-  const result = await fn.function.execute({
+  const result = (await fn.function.execute({
     path: "f.txt",
     selected_text: "hello",
     comment: "greeting",
-  }) as { marked: boolean; mark_id: string };
+  })) as { marked: boolean; mark_id: string };
 
   assertEquals(result.marked, true);
   assertEquals(result.mark_id, "mark_123");

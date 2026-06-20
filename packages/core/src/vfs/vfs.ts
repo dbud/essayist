@@ -1,5 +1,6 @@
-import { unifiedDiff } from "@/vfs/unified_diff.ts";
+import type { FileSnapshot } from "@essayist/core";
 import { findNearestOccurrence, resolveMarks } from "@/vfs/marks_resolver.ts";
+import { unifiedDiff } from "@/vfs/unified_diff.ts";
 import type { PersistenceAdapter } from "./persistence.ts";
 import type {
   DiffResult,
@@ -15,7 +16,6 @@ import type {
   VFS,
   WriteResult,
 } from "./types.ts";
-import { FileSnapshot } from "@essayist/core";
 
 const DEFAULT_CONTEXT_RADIUS = 60;
 
@@ -87,13 +87,14 @@ export class VirtualFileSystem implements VFS {
       lines,
     };
     const versionsKey = this.#versionsKey(path);
-    const versions = await this.#adapter.get(versionsKey) as
-      | FileVersion[]
-      | undefined ?? [];
+    const versions =
+      ((await this.#adapter.get(versionsKey)) as FileVersion[] | undefined) ??
+      [];
 
-    const previousVersionId = versions.length > 0
-      ? versions[versions.length - 1].version_id
-      : undefined;
+    const previousVersionId =
+      versions.length > 0
+        ? versions[versions.length - 1].version_id
+        : undefined;
     const oldContent = previousVersionId
       ? await this.#getVersionContent(path, previousVersionId)
       : "";
@@ -102,10 +103,10 @@ export class VirtualFileSystem implements VFS {
     await Promise.all([
       this.#adapter.set(versionsKey, versions),
       this.#adapter.set(this.#contentKey(path, versionId), content),
-      this.#adapter.set(
-        this.#latestKey(path),
-        { content, ...version } as FileSnapshot,
-      ),
+      this.#adapter.set(this.#latestKey(path), {
+        content,
+        ...version,
+      } as FileSnapshot),
     ]);
 
     if (previousVersionId) {
@@ -208,14 +209,9 @@ export class VirtualFileSystem implements VFS {
       return { mark_id: "", thread_id: "", marked: false };
     }
     const { content, version_id } = latest;
-    const offsetHint = lineHint !== undefined
-      ? lineToOffset(content, lineHint)
-      : 0;
-    const offset = findNearestOccurrence(
-      content,
-      selectedText,
-      offsetHint,
-    );
+    const offsetHint =
+      lineHint !== undefined ? lineToOffset(content, lineHint) : 0;
+    const offset = findNearestOccurrence(content, selectedText, offsetHint);
     if (offset === null) {
       return { mark_id: "", thread_id: "", marked: false };
     }
@@ -272,9 +268,10 @@ export class VirtualFileSystem implements VFS {
   }
 
   async getHistory(path: string): Promise<FileVersion[]> {
-    const versions = await this.#adapter.get(this.#versionsKey(path)) as
-      | FileVersion[]
-      | undefined ?? [];
+    const versions =
+      ((await this.#adapter.get(this.#versionsKey(path))) as
+        | FileVersion[]
+        | undefined) ?? [];
     return versions.sort((a, b) => a.timestamp - b.timestamp);
   }
 
@@ -302,7 +299,7 @@ export class VirtualFileSystem implements VFS {
   }
 
   async #getFile(path: string): Promise<FileSnapshot | undefined> {
-    return await this.#adapter.get(this.#latestKey(path)) as
+    return (await this.#adapter.get(this.#latestKey(path))) as
       | FileSnapshot
       | undefined;
   }
@@ -311,16 +308,19 @@ export class VirtualFileSystem implements VFS {
     path: string,
     versionId: string,
   ): Promise<FileVersion | undefined> {
-    const versions = await this.#adapter.get(this.#versionsKey(path)) as
-      | FileVersion[]
-      | undefined ?? [];
+    const versions =
+      ((await this.#adapter.get(this.#versionsKey(path))) as
+        | FileVersion[]
+        | undefined) ?? [];
     return versions.find((version) => version.version_id === versionId);
   }
 
   async #getVersionContent(path: string, versionId: string): Promise<string> {
-    return (await this.#adapter.get(
-      this.#contentKey(path, versionId),
-    ) as string) ?? "";
+    return (
+      ((await this.#adapter.get(
+        this.#contentKey(path, versionId),
+      )) as string) ?? ""
+    );
   }
 
   #latestKey(path: string): string {
@@ -342,10 +342,7 @@ export class VirtualFileSystem implements VFS {
   async #saveMark(mark: Mark): Promise<void> {
     const marks = await this.#getMarksList(mark.path, mark.version_id);
     marks.push(mark);
-    await this.#adapter.set(
-      this.#marksKey(mark.path, mark.version_id),
-      marks,
-    );
+    await this.#adapter.set(this.#marksKey(mark.path, mark.version_id), marks);
   }
 
   async #saveMarks(
@@ -361,9 +358,11 @@ export class VirtualFileSystem implements VFS {
   }
 
   async #getMarksList(path: string, versionId: string): Promise<Mark[]> {
-    return await this.#adapter.get(this.#marksKey(path, versionId)) as
-      | Mark[]
-      | undefined ?? [];
+    return (
+      ((await this.#adapter.get(this.#marksKey(path, versionId))) as
+        | Mark[]
+        | undefined) ?? []
+    );
   }
 }
 

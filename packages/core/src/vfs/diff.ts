@@ -23,7 +23,9 @@ function tokenize(text: string): Token[] {
   const tokens: Token[] = [];
   const regex = /\S+\s*/g;
   let match: RegExpExecArray | null;
-  while ((match = regex.exec(text)) !== null) {
+  while (true) {
+    match = regex.exec(text);
+    if (match === null) break;
     const offset = match.index;
     tokens.push({
       text: match[0],
@@ -40,32 +42,33 @@ function tokenize(text: string): Token[] {
  * Uses Myers' LCS algorithm on word tokens, then maps back
  * to character offsets in the original texts.
  */
-export function computeDiff(
-  oldText: string,
-  newText: string,
-): DiffHunk[] {
+export function computeDiff(oldText: string, newText: string): DiffHunk[] {
   if (oldText === "" && newText === "") return [];
   if (oldText === "") {
-    return [{
-      type: "insert",
-      oldStart: 0,
-      oldEnd: 0,
-      newStart: 0,
-      newEnd: newText.length,
-      oldText: "",
-      newText,
-    }];
+    return [
+      {
+        type: "insert",
+        oldStart: 0,
+        oldEnd: 0,
+        newStart: 0,
+        newEnd: newText.length,
+        oldText: "",
+        newText,
+      },
+    ];
   }
   if (newText === "") {
-    return [{
-      type: "delete",
-      oldStart: 0,
-      oldEnd: oldText.length,
-      newStart: 0,
-      newEnd: 0,
-      oldText,
-      newText: "",
-    }];
+    return [
+      {
+        type: "delete",
+        oldStart: 0,
+        oldEnd: oldText.length,
+        newStart: 0,
+        newEnd: 0,
+        oldText,
+        newText: "",
+      },
+    ];
   }
   if (oldText === newText) return [];
 
@@ -82,16 +85,12 @@ interface DiffOp {
   newIdx?: number;
 }
 
-function myersDiff(
-  oldTokens: Token[],
-  newTokens: Token[],
-): DiffOp[] {
+function myersDiff(oldTokens: Token[], newTokens: Token[]): DiffOp[] {
   const N = oldTokens.length;
   const M = newTokens.length;
 
-  const dp: number[][] = Array.from(
-    { length: N + 1 },
-    () => new Array(M + 1).fill(0),
+  const dp: number[][] = Array.from({ length: N + 1 }, () =>
+    new Array(M + 1).fill(0),
   );
 
   for (let i = 1; i <= N; i++) {
@@ -105,7 +104,8 @@ function myersDiff(
   }
 
   const ops: DiffOp[] = [];
-  let i = N, j = M;
+  let i = N,
+    j = M;
 
   while (i > 0 || j > 0) {
     if (i > 0 && j > 0 && oldTokens[i - 1].text === newTokens[j - 1].text) {
@@ -163,14 +163,14 @@ function buildHunks(
     }
 
     if (oldStart === Infinity) {
-      oldStart = oldEnd = changeStart > 0
-        ? oldTokens[ops[changeStart - 1].oldIdx!].endOffset
-        : 0;
+      oldStart = oldEnd =
+        // biome-ignore lint:style:noNonNullAssertion
+        changeStart > 0 ? oldTokens[ops[changeStart - 1].oldIdx!].endOffset : 0;
     }
     if (newStart === Infinity) {
-      newStart = newEnd = changeStart > 0
-        ? newTokens[ops[changeStart - 1].newIdx!].endOffset
-        : 0;
+      newStart = newEnd =
+        // biome-ignore lint:style:noNonNullAssertion
+        changeStart > 0 ? newTokens[ops[changeStart - 1].newIdx!].endOffset : 0;
     }
 
     const oldSlice = oldText.slice(oldStart, oldEnd);

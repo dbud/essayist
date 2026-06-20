@@ -12,7 +12,9 @@ export default function App({ Component }: PageProps) {
       <body class="h-dvh bg-base-200 text-base-content flex flex-col">
         <nav class="navbar bg-base-100 shadow-sm">
           <div class="navbar-start">
-            <a class="btn btn-ghost text-xl">Essayist</a>
+            <a href="/" class="btn btn-ghost text-xl">
+              Essayist
+            </a>
           </div>
           <div class="navbar-end">
             <ClearCache />

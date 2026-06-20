@@ -11,22 +11,22 @@ type JsonValue =
 type JsonSchema =
   | boolean
   | {
-    type?: string | string[];
-    properties?: Record<string, JsonSchema>;
-    required?: string[];
-    description?: string;
-    enum?: JsonValue[];
-    const?: JsonValue;
-    default?: JsonValue;
-    items?: JsonSchema | JsonSchema[];
-    additionalProperties?: JsonSchema | boolean;
-    propertyNames?: JsonSchema | boolean;
-    anyOf?: JsonSchema[];
-    oneOf?: JsonSchema[];
-    allOf?: JsonSchema[];
-    $ref?: string;
-    $defs?: Record<string, JsonSchema>;
-  };
+      type?: string | string[];
+      properties?: Record<string, JsonSchema>;
+      required?: string[];
+      description?: string;
+      enum?: JsonValue[];
+      const?: JsonValue;
+      default?: JsonValue;
+      items?: JsonSchema | JsonSchema[];
+      additionalProperties?: JsonSchema | boolean;
+      propertyNames?: JsonSchema | boolean;
+      anyOf?: JsonSchema[];
+      oneOf?: JsonSchema[];
+      allOf?: JsonSchema[];
+      $ref?: string;
+      $defs?: Record<string, JsonSchema>;
+    };
 
 function resolveRef(
   schema: JsonSchema,
@@ -64,9 +64,7 @@ function isNullable(prop: JsonSchema): boolean {
 
   const variants = prop.anyOf ?? prop.oneOf;
   if (variants) {
-    return variants.some(
-      (s) => typeof s !== "boolean" && s.type === "null",
-    );
+    return variants.some((s) => typeof s !== "boolean" && s.type === "null");
   }
   return false;
 }
@@ -186,9 +184,7 @@ export function generateInstructions(
       if (prop.description) parts.push(prop.description);
 
       if (prop.enum) {
-        parts.push(
-          `one of ${prop.enum.map((v) => formatValue(v)).join(", ")}`,
-        );
+        parts.push(`one of ${prop.enum.map((v) => formatValue(v)).join(", ")}`);
       } else if (prop.const !== undefined) {
         parts.push(`literal ${formatValue(prop.const)}`);
       }

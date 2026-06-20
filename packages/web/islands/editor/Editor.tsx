@@ -1,18 +1,18 @@
-import { LexicalExtensionComposer } from "@lexical/react/LexicalExtensionComposer";
-import { ContentEditable } from "@lexical/react/LexicalContentEditable";
-import { OnChangePlugin } from "@lexical/react/LexicalOnChangePlugin";
-import { viewerFont } from "@/signals/preferences.ts";
-import { defineExtension, EditorState } from "lexical";
-import { HistoryExtension } from "@lexical/history";
-import { RichTextExtension } from "@lexical/rich-text";
+import { CodeExtension } from "@lexical/code";
 import {
   AutoFocusExtension,
   HorizontalRuleExtension,
 } from "@lexical/extension";
+import { HistoryExtension } from "@lexical/history";
 import { LinkExtension } from "@lexical/link";
 import { ListExtension } from "@lexical/list";
-import { CodeExtension } from "@lexical/code";
+import { ContentEditable } from "@lexical/react/LexicalContentEditable";
+import { LexicalExtensionComposer } from "@lexical/react/LexicalExtensionComposer";
+import { OnChangePlugin } from "@lexical/react/LexicalOnChangePlugin";
+import { RichTextExtension } from "@lexical/rich-text";
+import { defineExtension, type EditorState } from "lexical";
 import { useMemo } from "preact/hooks";
+import { viewerFont } from "@/signals/preferences.ts";
 
 interface EditorProps {
   state: EditorState;

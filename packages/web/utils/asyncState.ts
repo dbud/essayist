@@ -1,4 +1,4 @@
-import { Signal, signal } from "@preact/signals";
+import { type Signal, signal } from "@preact/signals";
 
 export default function createAsyncState(): [
   <T>(task: () => Promise<T>) => Promise<T | undefined>,

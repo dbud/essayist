@@ -179,9 +179,11 @@ Deno.test("generateInstructions handles default values", () => {
 
 Deno.test("generateInstructions handles nullable objects", () => {
   const schema = z.object({
-    user: z.object({
-      name: z.string(),
-    }).nullable(),
+    user: z
+      .object({
+        name: z.string(),
+      })
+      .nullable(),
   });
 
   assertEquals(
@@ -262,10 +264,7 @@ Deno.test("stripMarkdownFences removes plain code fences", () => {
 });
 
 Deno.test("stripMarkdownFences handles text without fences", () => {
-  assertEquals(
-    stripMarkdownFences('{"key": "value"}'),
-    '{"key": "value"}',
-  );
+  assertEquals(stripMarkdownFences('{"key": "value"}'), '{"key": "value"}');
 });
 
 Deno.test("stripMarkdownFences trims whitespace around fences", () => {

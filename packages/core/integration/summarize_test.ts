@@ -4,7 +4,7 @@ import {
   VirtualFileSystem,
 } from "@essayist/core";
 import { assertMatch } from "@std/assert";
-import { createAgent } from "./utils.ts";
+import { createAgent, require } from "./utils.ts";
 
 const agent = createAgent();
 
@@ -22,7 +22,7 @@ Deno.test({
   name: "summarizeFile summarizes a file via tool call",
   ignore: !agent,
   fn: async () => {
-    const summary = await summarizeFile("pangram.txt", agent!, vfs);
+    const summary = await summarizeFile("pangram.txt", require(agent), vfs);
     assertMatch(summary, /pangram|alphabet|letter/i);
   },
 });

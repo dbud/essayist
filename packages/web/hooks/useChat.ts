@@ -1,7 +1,7 @@
-import { signal, useSignal } from "@preact/signals";
-import type { Signal } from "@preact/signals";
-import { useEffect, useRef } from "preact/hooks";
 import type { StreamableOutputItem } from "@openrouter/agent";
+import type { Signal } from "@preact/signals";
+import { signal, useSignal } from "@preact/signals";
+import { useEffect, useRef } from "preact/hooks";
 import { parseSSE } from "@/utils/sse.ts";
 
 export interface ChatMessage {
@@ -12,21 +12,16 @@ export interface ChatMessage {
 
 function itemKey(item: StreamableOutputItem): string {
   const any = item as Record<string, unknown>;
-  return (any.id as string) ?? (any.callId as string) ??
-    Math.random().toString(36);
+  return (
+    (any.id as string) ?? (any.callId as string) ?? Math.random().toString(36)
+  );
 }
 
-function newMessage(
-  role: ChatMessage["role"],
-  text = "",
-): Signal<ChatMessage> {
+function newMessage(role: ChatMessage["role"], text = ""): Signal<ChatMessage> {
   return signal<ChatMessage>({ role, text, items: new Map() });
 }
 
-export function useChat(
-  apiUrl: string,
-  initial?: ChatMessage[],
-) {
+export function useChat(apiUrl: string, initial?: ChatMessage[]) {
   const messages = useSignal<Signal<ChatMessage>[]>(
     (initial ?? []).map((m) => signal<ChatMessage>(m)),
   );
@@ -39,24 +34,19 @@ export function useChat(
     if (!text.trim() || streaming.value) return;
 
     const reply = newMessage("assistant");
-    messages.value = [
-      ...messages.value,
-      newMessage("user", text),
-      reply,
-    ];
+    messages.value = [...messages.value, newMessage("user", text), reply];
     streaming.value = true;
 
     const controller = new AbortController();
     abortRef.current = controller;
 
     try {
-      const res = await fetch(
-        `${apiUrl}?message=${encodeURIComponent(text)}`,
-        { signal: controller.signal },
-      );
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const res = await fetch(`${apiUrl}?message=${encodeURIComponent(text)}`, {
+        signal: controller.signal,
+      });
+      if (!res.ok || !res.body) throw new Error(`HTTP ${res.status}`);
 
-      for await (const { event, data } of parseSSE(res.body!)) {
+      for await (const { event, data } of parseSSE(res.body)) {
         if (event === "delta") {
           reply.value = {
             ...reply.value,
@@ -74,7 +64,7 @@ export function useChat(
       if ((err as Error).name !== "AbortError") {
         reply.value = {
           ...reply.value,
-          text: reply.value.text + `\n\nError: ${String(err)}`,
+          text: `${reply.value.text}\n\nError: ${String(err)}`,
         };
       }
     } finally {

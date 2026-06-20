@@ -1,10 +1,10 @@
-import Tabs from "@/islands/Tabs.tsx";
-import Toolbar from "@/components/Toolbar.tsx";
+import { useMemo } from "preact/hooks";
 import FontSelect from "@/components/FontSelect.tsx";
+import Toolbar from "@/components/Toolbar.tsx";
+import Editor from "@/islands/editor/Editor.tsx";
+import Tabs from "@/islands/Tabs.tsx";
 import { useFile } from "@/signals/file.ts";
 import { openedFiles } from "@/signals/openedFiles.ts";
-import Editor from "@/islands/editor/Editor.tsx";
-import { useMemo } from "preact/hooks";
 
 export default function FileViewer() {
   const path = openedFiles.selected.value;
@@ -13,9 +13,8 @@ export default function FileViewer() {
 }
 
 function FileViewerBody({ path }: { path: string }) {
-  const { state, initialState, setModifiedState, loading, error } = useFile(
-    path,
-  );
+  const { state, initialState, setModifiedState, loading, error } =
+    useFile(path);
   const editorState = useMemo(() => state.value, [path, initialState.value]);
 
   if (error.value) {
@@ -37,10 +36,7 @@ function FileViewerBody({ path }: { path: string }) {
         </Toolbar>
         <div class="flex-1 min-h-0 flex flex-col overflow-x-auto overflow-y-auto p-4">
           {editorState && (
-            <Editor
-              state={editorState}
-              onChange={setModifiedState}
-            />
+            <Editor state={editorState} onChange={setModifiedState} />
           )}
           <div class="shrink-0 h-32" />
         </div>

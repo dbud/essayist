@@ -1,7 +1,7 @@
-import { HeadingNode, QuoteNode } from "@lexical/rich-text";
+import { CodeNode } from "@lexical/code";
 import { LinkNode } from "@lexical/link";
 import { ListItemNode, ListNode } from "@lexical/list";
-import { CodeNode } from "@lexical/code";
+import { HeadingNode, QuoteNode } from "@lexical/rich-text";
 // TODO: ↓ is deprecated, use extensions
 // import { HorizontalRuleNode } from "@lexical/react/LexicalHorizontalRuleNode";
 

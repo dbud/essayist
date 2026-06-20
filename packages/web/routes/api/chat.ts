@@ -1,10 +1,10 @@
-import { define } from "@/define.ts";
 import {
   createGrepTool,
   createListFilesTool,
   createReadFileTool,
   createWriteFileTool,
 } from "@essayist/core";
+import { define } from "@/define.ts";
 import { streamModelResultSSE } from "@/utils/sse.ts";
 import { vfs } from "@/vfs.ts";
 
@@ -34,7 +34,7 @@ export const handler = {
       headers: {
         "Content-Type": "text/event-stream",
         "Cache-Control": "no-cache",
-        "Connection": "keep-alive",
+        Connection: "keep-alive",
       },
     });
   }),

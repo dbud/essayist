@@ -1,6 +1,6 @@
 import { assertEquals } from "@std/assert";
 import { assertObjectMatch } from "@std/assert/object-match";
-import { resolveMarks, ResolveOptions } from "./marks_resolver.ts";
+import { type ResolveOptions, resolveMarks } from "./marks_resolver.ts";
 import type { Mark } from "./types.ts";
 
 function createMark(
@@ -155,12 +155,14 @@ Deno.test("resolveMarks -- minor typo fix inside marked text (fuzzy)", () => {
   */
   const oldContent = "The quick brown fox";
   const newContent = "The quik brown fox";
-  const marks = [createMark({
-    selected_text: "quick",
-    offset: 4,
-    before_context: "The ",
-    after_context: " brown",
-  })];
+  const marks = [
+    createMark({
+      selected_text: "quick",
+      offset: 4,
+      before_context: "The ",
+      after_context: " brown",
+    }),
+  ];
 
   const result = resolve(marks, oldContent, newContent);
 
@@ -187,12 +189,14 @@ Deno.test("resolveMarks -- single word substituted (Phase 1 fails, Phase 2 resol
   */
   const oldContent = "The quick brown fox";
   const newContent = "The slow brown fox";
-  const marks = [createMark({
-    selected_text: "quick",
-    offset: 4,
-    before_context: "The ",
-    after_context: " brown",
-  })];
+  const marks = [
+    createMark({
+      selected_text: "quick",
+      offset: 4,
+      before_context: "The ",
+      after_context: " brown",
+    }),
+  ];
 
   const result = resolve(marks, oldContent, newContent);
 
@@ -217,12 +221,14 @@ Deno.test("resolveMarks -- sentence completely rewritten, both contexts intact",
   const oldContent =
     "Writing is a craft that requires patience and dedication.";
   const newContent = "Writing is an art that demands patience and dedication.";
-  const marks = [createMark({
-    selected_text: "a craft that requires",
-    offset: 11,
-    before_context: "Writing is ",
-    after_context: " patience and dedication",
-  })];
+  const marks = [
+    createMark({
+      selected_text: "a craft that requires",
+      offset: 11,
+      before_context: "Writing is ",
+      after_context: " patience and dedication",
+    }),
+  ];
 
   const result = resolve(marks, oldContent, newContent);
 
@@ -254,13 +260,17 @@ Deno.test("resolveMarks -- paragraph rewritten, context fuzzy-matches at boundar
     "The conclusion of the previous section was clear and well supported. The entire paragraph needs complete revision. The next section begins with an introduction.";
   const newContent =
     "The conclusion of the previous section was clear and somewhat supported. The entire paragraph was completely rewritten from scratch. The next section begins with an introduction.";
-  const marks = [createMark({
-    selected_text: "The entire paragraph needs complete revision.",
-    offset: oldContent.indexOf("The entire paragraph needs complete revision."),
-    before_context:
-      "The conclusion of the previous section was clear and well supported. ",
-    after_context: " The next section begins with an introduction.",
-  })];
+  const marks = [
+    createMark({
+      selected_text: "The entire paragraph needs complete revision.",
+      offset: oldContent.indexOf(
+        "The entire paragraph needs complete revision.",
+      ),
+      before_context:
+        "The conclusion of the previous section was clear and well supported. ",
+      after_context: " The next section begins with an introduction.",
+    }),
+  ];
 
   const result = resolve(marks, oldContent, newContent);
 
@@ -291,12 +301,14 @@ Deno.test("resolveMarks -- sentence deleted, contexts abut, zero-length resolved
   */
   const oldContent = "Keep this.Delete this.Keep that.";
   const newContent = "Keep this.Keep that.";
-  const marks = [createMark({
-    selected_text: "Delete this.",
-    offset: oldContent.indexOf("Delete this."),
-    before_context: "Keep this.",
-    after_context: "Keep that.",
-  })];
+  const marks = [
+    createMark({
+      selected_text: "Delete this.",
+      offset: oldContent.indexOf("Delete this."),
+      before_context: "Keep this.",
+      after_context: "Keep that.",
+    }),
+  ];
 
   const result = resolve(marks, oldContent, newContent);
 
@@ -319,17 +331,19 @@ Deno.test("resolveMarks -- long context with small edit near boundary", () => {
     A small change at the far end of a long context string still yields high similarity.
   */
   const preamble = "This is a long preamble that provides context. ".repeat(4);
-  const postamble = " This is a long postamble that provides trailing context. "
-    .repeat(4);
-  const oldContent = preamble + "The marked text." + postamble;
-  const newContent = preamble + "Completely rewritten." + postamble;
+  const postamble =
+    " This is a long postamble that provides trailing context. ".repeat(4);
+  const oldContent = `${preamble}The marked text.${postamble}`;
+  const newContent = `${preamble}Completely rewritten.${postamble}`;
 
-  const marks = [createMark({
-    selected_text: "The marked text.",
-    offset: preamble.length,
-    before_context: preamble,
-    after_context: postamble,
-  })];
+  const marks = [
+    createMark({
+      selected_text: "The marked text.",
+      offset: preamble.length,
+      before_context: preamble,
+      after_context: postamble,
+    }),
+  ];
 
   const result = resolve(marks, oldContent, newContent);
 
@@ -359,12 +373,14 @@ Deno.test("resolveMarks -- only before_context matches, stale zero-length at end
   const oldContent = "The quick brown fox jumps over the lazy dog.";
   const newContent =
     "The quick brown cat leaps over something entirely different.";
-  const marks = [createMark({
-    selected_text: "fox",
-    offset: oldContent.indexOf("fox"),
-    before_context: "The quick brown ",
-    after_context: " jumps over the lazy dog",
-  })];
+  const marks = [
+    createMark({
+      selected_text: "fox",
+      offset: oldContent.indexOf("fox"),
+      before_context: "The quick brown ",
+      after_context: " jumps over the lazy dog",
+    }),
+  ];
 
   const result = resolve(marks, oldContent, newContent);
 
@@ -395,12 +411,14 @@ Deno.test("resolveMarks -- only after_context matches, stale zero-length at star
     "The opening sentence was changed completely. The quick brown fox jumps over the lazy dog.";
   const newContent =
     "Totally new opening here. A fast gray cat leaps over the lazy dog.";
-  const marks = [createMark({
-    selected_text: "The quick brown fox",
-    offset: oldContent.indexOf("The quick brown fox"),
-    before_context: "The opening sentence was changed completely. ",
-    after_context: " jumps over the lazy dog",
-  })];
+  const marks = [
+    createMark({
+      selected_text: "The quick brown fox",
+      offset: oldContent.indexOf("The quick brown fox"),
+      before_context: "The opening sentence was changed completely. ",
+      after_context: " jumps over the lazy dog",
+    }),
+  ];
 
   const result = resolve(marks, oldContent, newContent);
 
@@ -429,12 +447,14 @@ Deno.test("resolveMarks -- empty before_context (mark at content start)", () => 
   */
   const oldContent = "Hello world today";
   const newContent = "Goodbye world today";
-  const marks = [createMark({
-    selected_text: "Hello",
-    offset: 0,
-    before_context: "",
-    after_context: " world",
-  })];
+  const marks = [
+    createMark({
+      selected_text: "Hello",
+      offset: 0,
+      before_context: "",
+      after_context: " world",
+    }),
+  ];
 
   const result = resolve(marks, oldContent, newContent);
 
@@ -464,12 +484,14 @@ Deno.test("resolveMarks -- empty after_context (mark at content end)", () => {
            */
   const oldContent = "Hello world today";
   const newContent = "Hello world yesterday";
-  const marks = [createMark({
-    selected_text: "today",
-    offset: oldContent.indexOf("today"),
-    before_context: "Hello world ",
-    after_context: "",
-  })];
+  const marks = [
+    createMark({
+      selected_text: "today",
+      offset: oldContent.indexOf("today"),
+      before_context: "Hello world ",
+      after_context: "",
+    }),
+  ];
 
   const result = resolve(marks, oldContent, newContent);
 
@@ -498,12 +520,14 @@ Deno.test("resolveMarks -- both contexts empty (selected_text is entire content)
   */
   const oldContent = "Hello world";
   const newContent = "Goodbye world";
-  const marks = [createMark({
-    selected_text: "Hello world",
-    offset: 0,
-    before_context: "",
-    after_context: "",
-  })];
+  const marks = [
+    createMark({
+      selected_text: "Hello world",
+      offset: 0,
+      before_context: "",
+      after_context: "",
+    }),
+  ];
 
   const result = resolve(marks, oldContent, newContent);
 
@@ -531,12 +555,14 @@ Deno.test("resolveMarks -- selected text cut and pasted elsewhere", () => {
   */
   const oldContent = "First part. Middle part. Last part.";
   const newContent = "First part. Last part. Middle part.";
-  const marks = [createMark({
-    selected_text: "Middle part",
-    offset: oldContent.indexOf("Middle part"),
-    before_context: "First part. ",
-    after_context: " Last part",
-  })];
+  const marks = [
+    createMark({
+      selected_text: "Middle part",
+      offset: oldContent.indexOf("Middle part"),
+      before_context: "First part. ",
+      after_context: " Last part",
+    }),
+  ];
 
   const result = resolve(marks, oldContent, newContent);
 
@@ -559,17 +585,19 @@ Deno.test("resolveMarks -- Phase 3 finds moved text when contexts become adjacen
   const after = "AFTER";
   const filler = "filler. ";
 
-  const oldContent = filler + filler + before + selected + after +
-    filler + filler;
-  const newContent = selected + filler + filler + filler + before + after +
-    filler;
+  const oldContent =
+    filler + filler + before + selected + after + filler + filler;
+  const newContent =
+    selected + filler + filler + filler + before + after + filler;
 
-  const marks = [createMark({
-    selected_text: selected,
-    offset: oldContent.indexOf(selected),
-    before_context: before,
-    after_context: after,
-  })];
+  const marks = [
+    createMark({
+      selected_text: selected,
+      offset: oldContent.indexOf(selected),
+      before_context: before,
+      after_context: after,
+    }),
+  ];
 
   // With tiny search radius, Phase 1 can't reach selected_text at offset 0.
   // Phase 2 finds BEFORE/AFTER adjacent -> empty gap -> fall through.
@@ -602,12 +630,14 @@ Deno.test("resolveMarks -- marked region and all context deleted entirely", () =
   */
   const oldContent = "Unique preamble. Marked text. Unique postamble.";
   const newContent = "Completely different content with no overlap.";
-  const marks = [createMark({
-    selected_text: "Marked text",
-    offset: oldContent.indexOf("Marked text"),
-    before_context: "Unique preamble. ",
-    after_context: " Unique postamble",
-  })];
+  const marks = [
+    createMark({
+      selected_text: "Marked text",
+      offset: oldContent.indexOf("Marked text"),
+      before_context: "Unique preamble. ",
+      after_context: " Unique postamble",
+    }),
+  ];
 
   const result = resolve(marks, oldContent, newContent);
 
@@ -636,12 +666,14 @@ Deno.test("resolveMarks -- separate contextFuzzyThreshold vs selectedTextFuzzyTh
   */
   const oldContent = "The quick brown fox jumps over the lazy dog.";
   const newContent = "The quik brown fox leaps over the lazy dog.";
-  const marks = [createMark({
-    selected_text: "quick",
-    offset: 4,
-    before_context: "The ",
-    after_context: " brown",
-  })];
+  const marks = [
+    createMark({
+      selected_text: "quick",
+      offset: 4,
+      before_context: "The ",
+      after_context: " brown",
+    }),
+  ];
 
   const result = resolve(marks, oldContent, newContent, {
     selectedTextFuzzyThreshold: 0.85,

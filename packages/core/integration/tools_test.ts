@@ -6,8 +6,8 @@ import {
   createWriteFileTool,
 } from "@essayist/core";
 import { assertEquals, assertMatch } from "@std/assert";
-import { createAgent } from "./utils.ts";
 import { createVFS } from "@/vfs/testing/helpers.ts";
+import { createAgent, require } from "./utils.ts";
 
 const agent = createAgent();
 
@@ -26,9 +26,9 @@ const listFilesVFS = await createVFS(
     [
       "essay.txt",
       "The quick brown fox jumps over the lazy dog. " +
-      "This sentence contains every letter of the alphabet. " +
-      "Pangrams are often used to test typewriters and keyboards. " +
-      "They have been popular since the late 1800s.",
+        "This sentence contains every letter of the alphabet. " +
+        "Pangrams are often used to test typewriters and keyboards. " +
+        "They have been popular since the late 1800s.",
     ],
   ]),
 );
@@ -38,7 +38,7 @@ Deno.test({
   ignore: !agent,
   fn: async () => {
     const toolPrompt = createListFilesTool(listFilesVFS);
-    const result = agent!.callModelWithTools(
+    const result = require(agent).callModelWithTools(
       "What files are available? List all of them.",
       [toolPrompt],
     );
@@ -65,19 +65,19 @@ const grepVFS = await createVFS(
     [
       "essay.txt",
       "The quick brown fox jumps over the lazy dog. " +
-      "This sentence contains every letter of the alphabet. " +
-      "Pangrams are often used to test typewriters and keyboards. " +
-      "They have been popular since the late 1800s. " +
-      "The fox was quick, the dog was lazy, and the sentence was perfect.",
+        "This sentence contains every letter of the alphabet. " +
+        "Pangrams are often used to test typewriters and keyboards. " +
+        "They have been popular since the late 1800s. " +
+        "The fox was quick, the dog was lazy, and the sentence was perfect.",
     ],
     [
       "report.md",
       "Q3 revenue grew 12% year-over-year. " +
-      "Operating margins improved due to cost optimization. " +
-      "The parser module was refactored for better performance. " +
-      "Customer satisfaction scores reached an all-time high. " +
-      "We plan to expand into new markets next quarter. " +
-      "The total budget is $5.00 for this project.",
+        "Operating margins improved due to cost optimization. " +
+        "The parser module was refactored for better performance. " +
+        "Customer satisfaction scores reached an all-time high. " +
+        "We plan to expand into new markets next quarter. " +
+        "The total budget is $5.00 for this project.",
     ],
   ]),
 );
@@ -87,7 +87,7 @@ Deno.test({
   ignore: !agent,
   fn: async () => {
     const toolPrompt = createGrepTool(grepVFS);
-    const result = agent!.callModelWithTools(
+    const result = require(agent).callModelWithTools(
       "Search for all mentions of 'parser' across all files. Tell me which files contain it and the matching lines.",
       [toolPrompt],
     );
@@ -103,7 +103,7 @@ Deno.test({
   ignore: !agent,
   fn: async () => {
     const toolPrompt = createGrepTool(grepVFS);
-    const result = agent!.callModelWithTools(
+    const result = require(agent).callModelWithTools(
       "Search for the exact text '$5.00' across all files. Use grep.",
       [toolPrompt],
     );
@@ -117,7 +117,7 @@ Deno.test({
   ignore: !agent,
   fn: async () => {
     const toolPrompt = createGrepTool(grepVFS);
-    const result = agent!.callModelWithTools(
+    const result = require(agent).callModelWithTools(
       "Find all lines that start with '- ' (list items) in the notes directory. Use a regex pattern.",
       [toolPrompt],
     );
@@ -146,7 +146,7 @@ Deno.test({
   fn: async () => {
     const vfs = await createVFS();
     const toolPrompt = createWriteFileTool(vfs);
-    const result = agent!.callModelWithTools(
+    const result = require(agent).callModelWithTools(
       "Create a file called 'hello.txt' with the content 'Hello, world!'",
       [toolPrompt],
     );
@@ -166,7 +166,7 @@ Deno.test({
       new Map([["config.json", '{"version": "1.0"}']]),
     );
     const toolPrompt = createWriteFileTool(vfs);
-    const result = agent!.callModelWithTools(
+    const result = require(agent).callModelWithTools(
       'Overwrite config.json with: {"version": "2.0"}',
       [toolPrompt],
     );
@@ -181,10 +181,7 @@ Deno.test({
 
 const readWriteVFS = await createVFS(
   new Map([
-    [
-      "input.txt",
-      "elderberry\nbanana\ngrape\napple\nfig\ndate\ncherry",
-    ],
+    ["input.txt", "elderberry\nbanana\ngrape\napple\nfig\ndate\ncherry"],
   ]),
 );
 
@@ -194,7 +191,7 @@ Deno.test({
   fn: async () => {
     const readTool = createReadFileTool(readWriteVFS);
     const writeTool = createWriteFileTool(readWriteVFS);
-    const result = agent!.callModelWithTools(
+    const result = require(agent).callModelWithTools(
       "Read input.txt, sort the lines alphabetically, and write the sorted output to sorted.txt",
       [readTool, writeTool],
     );
@@ -216,7 +213,8 @@ Deno.test({
 
 // mark
 
-const ESSAY_CONTENT = "The quick brown fox jumps over the lazy dog.\n" +
+const ESSAY_CONTENT =
+  "The quick brown fox jumps over the lazy dog.\n" +
   "This sentence contains every letter of the alphabet.\n" +
   "Pangrams are often used to test typewriters and keyboards.\n" +
   "The fox was quick, the dog was lazy, and the sentence was perfect.";
@@ -232,7 +230,7 @@ Deno.test({
     const vfs = await createMarkVFS();
     const readTool = createReadFileTool(vfs);
     const markTool = createMarkTool(vfs);
-    const result = agent!.callModelWithTools(
+    const result = require(agent).callModelWithTools(
       "Read essay.txt with numbered=true, then mark the word 'fox' " +
         "with a comment 'This is the first animal mention' and label 'note'.",
       [readTool, markTool],
@@ -255,7 +253,7 @@ Deno.test({
     const vfs = await createMarkVFS();
     const readTool = createReadFileTool(vfs);
     const markTool = createMarkTool(vfs);
-    const result = agent!.callModelWithTools(
+    const result = require(agent).callModelWithTools(
       "Read essay.txt with numbered=true. " +
         "The word 'quick' appears twice. " +
         "Use the mark tool to mark 'quick' in the last sentence" +

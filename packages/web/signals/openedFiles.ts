@@ -1,5 +1,5 @@
-import { persistentSignal } from "@/utils/persistentSignal.ts";
 import { createModel } from "@preact/signals";
+import { persistentSignal } from "@/utils/persistentSignal.ts";
 
 export const OpenedFilesModel = createModel(() => {
   const selected = persistentSignal("selectedFile", "");

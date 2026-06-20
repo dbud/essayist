@@ -10,15 +10,8 @@
     "zod": "npm:zod@^4"
   },
   "publish": {
-    "include": [
-      "mod.ts",
-      "src/**/*.ts",
-      "deno.json"
-    ],
-    "exclude": [
-      "**/*_test.ts",
-      "**/*.spec.ts"
-    ]
+    "include": ["mod.ts", "src/**/*.ts", "deno.json"],
+    "exclude": ["**/*_test.ts", "**/*.spec.ts"]
   },
   "tasks": {
     "check": "deno fmt --check . && deno lint . && deno check",
@@ -28,9 +21,7 @@
   },
   "lint": {
     "rules": {
-      "tags": [
-        "recommended"
-      ]
+      "tags": ["recommended"]
     }
   }
 }

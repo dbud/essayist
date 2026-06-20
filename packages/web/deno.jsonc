@@ -11,22 +11,16 @@
   },
   "lint": {
     "rules": {
-      "tags": [
-        "fresh",
-        "recommended"
-      ]
+      "tags": ["fresh", "recommended"]
     }
   },
   "fmt": {
-    "exclude": [
-      "**/*.css"
-    ]
+    "exclude": ["**/*.css"]
   },
-  "exclude": [
-    "**/_fresh/*"
-  ],
+  "exclude": ["**/_fresh/*"],
   "imports": {
     "@/": "./",
+    "@biomejs/biome": "npm:@biomejs/biome@^2.5.0",
     "@fontsource-variable/hanken-grotesk": "npm:@fontsource-variable/hanken-grotesk@^5.2.8",
     "@fontsource-variable/recursive": "npm:@fontsource-variable/recursive@^5.2.8",
     "@fontsource-variable/source-serif-4": "npm:@fontsource-variable/source-serif-4@^5.2.9",
@@ -55,16 +49,9 @@
     "@tailwindcss/typography": "npm:@tailwindcss/typography@^0.5.16"
   },
   "compilerOptions": {
-    "lib": [
-      "dom",
-      "dom.asynciterable",
-      "dom.iterable",
-      "deno.ns"
-    ],
+    "lib": ["dom", "dom.asynciterable", "dom.iterable", "deno.ns"],
     "jsx": "react-jsx",
     "jsxImportSource": "preact",
-    "types": [
-      "vite/client"
-    ]
+    "types": ["vite/client"]
   }
 }

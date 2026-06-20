@@ -1,5 +1,5 @@
-import { FileText, Folder, FolderOpen } from "lucide-preact";
 import { useSignal } from "@preact/signals";
+import { FileText, Folder, FolderOpen } from "lucide-preact";
 import { type TreeNode, useFiles } from "@/signals/fileTree.ts";
 import { openedFiles } from "@/signals/openedFiles.ts";
 
@@ -9,7 +9,9 @@ function FolderItem({ node }: { node: TreeNode }) {
   return (
     <li>
       <details open={open.value}>
+        {/** biome-ignore lint/a11y/useSemanticElements: summary is clickable */}
         <summary
+          role="button"
           onClick={(e) => {
             e.preventDefault();
             open.value = !open.value;
@@ -20,9 +22,11 @@ function FolderItem({ node }: { node: TreeNode }) {
         </summary>
         <ul>
           {node.children.map((child) =>
-            child.isFile
-              ? <FileItem key={child.path} node={child} />
-              : <FolderItem key={child.path} node={child} />
+            child.isFile ? (
+              <FileItem key={child.path} node={child} />
+            ) : (
+              <FolderItem key={child.path} node={child} />
+            ),
           )}
         </ul>
       </details>
@@ -33,13 +37,14 @@ function FolderItem({ node }: { node: TreeNode }) {
 function FileItem({ node }: { node: TreeNode }) {
   return (
     <li>
-      <a
+      <button
+        type="button"
         class={node.isSelected.value ? "bg-primary/10" : ""}
         onClick={() => openedFiles.open(node.path)}
       >
         <FileText size={16} />
         {node.name}
-      </a>
+      </button>
     </li>
   );
 }
@@ -56,9 +61,11 @@ export default function FileBrowser() {
       class={`menu bg-base-200 w-full ${loading.value ? "loading-border" : ""}`}
     >
       {tree.value.children.map((node) =>
-        node.isFile
-          ? <FileItem key={node.path} node={node} />
-          : <FolderItem key={node.path} node={node} />
+        node.isFile ? (
+          <FileItem key={node.path} node={node} />
+        ) : (
+          <FolderItem key={node.path} node={node} />
+        ),
       )}
     </ul>
   );

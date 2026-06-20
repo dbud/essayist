@@ -9,11 +9,7 @@ Deno.test("VFS.mark -- places a mark on selected text", async () => {
     "essay.txt",
     "The quick brown fox jumps over the lazy dog.",
   );
-  const result = await vfs.mark(
-    "essay.txt",
-    "quick brown",
-    "nice phrase",
-  );
+  const result = await vfs.mark("essay.txt", "quick brown", "nice phrase");
 
   assertEquals(result.marked, true);
   assertEquals(typeof result.mark_id, "string");
@@ -22,11 +18,7 @@ Deno.test("VFS.mark -- places a mark on selected text", async () => {
 
 Deno.test("VFS.mark -- returns marked false when text not found", async () => {
   const { vfs } = await createFile("f.txt", "hello world");
-  const result = await vfs.mark(
-    "f.txt",
-    "nonexistent",
-    "comment",
-  );
+  const result = await vfs.mark("f.txt", "nonexistent", "comment");
 
   assertEquals(result.marked, false);
   assertEquals(result.mark_id, "");
@@ -34,11 +26,7 @@ Deno.test("VFS.mark -- returns marked false when text not found", async () => {
 
 Deno.test("VFS.mark -- returns marked false for empty file", async () => {
   const { vfs } = await createFile("f.txt", "");
-  const result = await vfs.mark(
-    "f.txt",
-    "anything",
-    "comment",
-  );
+  const result = await vfs.mark("f.txt", "anything", "comment");
 
   assertEquals(result.marked, false);
 });
@@ -49,12 +37,7 @@ Deno.test("VFS.mark -- uses lineHint to disambiguate duplicates", async () => {
     "The cat sat on\nthe cat mat.",
   );
 
-  const result = await vfs.mark(
-    "f.txt",
-    "cat",
-    "second cat",
-    { lineHint: 2 },
-  );
+  const result = await vfs.mark("f.txt", "cat", "second cat", { lineHint: 2 });
 
   assertEquals(result.marked, true);
   const marks = await vfs.getMarks("f.txt", versionId);
@@ -76,10 +59,7 @@ Deno.test("VFS.mark -- lineHint 1 targets first line", async () => {
 });
 
 Deno.test("VFS.mark -- lineHint beyond last line clamps to end", async () => {
-  const { vfs, versionId } = await createFile(
-    "f.txt",
-    "hello",
-  );
+  const { vfs, versionId } = await createFile("f.txt", "hello");
 
   await vfs.mark("f.txt", "hello", "only line", { lineHint: 99 });
 
@@ -89,10 +69,7 @@ Deno.test("VFS.mark -- lineHint beyond last line clamps to end", async () => {
 });
 
 Deno.test("VFS.mark -- lineHint with no newlines", async () => {
-  const { vfs, versionId } = await createFile(
-    "f.txt",
-    "single line content",
-  );
+  const { vfs, versionId } = await createFile("f.txt", "single line content");
 
   await vfs.mark("f.txt", "line", "no newlines", { lineHint: 1 });
 
@@ -103,12 +80,9 @@ Deno.test("VFS.mark -- lineHint with no newlines", async () => {
 
 Deno.test("VFS.mark -- accepts explicit threadId", async () => {
   const { vfs, versionId } = await createFile("f.txt", "hello world");
-  const result = await vfs.mark(
-    "f.txt",
-    "hello",
-    "greeting",
-    { threadId: "thread-abc" },
-  );
+  const result = await vfs.mark("f.txt", "hello", "greeting", {
+    threadId: "thread-abc",
+  });
 
   assertEquals(result.thread_id, "thread-abc");
   const marks = await vfs.getMarks("f.txt", versionId);
@@ -116,7 +90,7 @@ Deno.test("VFS.mark -- accepts explicit threadId", async () => {
 });
 
 Deno.test("VFS.mark -- captures context around selection", async () => {
-  const content = "A".repeat(100) + "TARGET" + "B".repeat(100);
+  const content = `${"A".repeat(100)}TARGET${"B".repeat(100)}`;
   const { vfs, versionId } = await createFile("f.txt", content);
   await vfs.mark("f.txt", "TARGET", "middle");
 
@@ -141,7 +115,7 @@ Deno.test("VFS.mark -- context truncated at file boundaries", async () => {
 });
 
 Deno.test("VFS.mark -- uses custom contextRadius", async () => {
-  const content = "A".repeat(100) + "TARGET" + "B".repeat(100);
+  const content = `${"A".repeat(100)}TARGET${"B".repeat(100)}`;
   const { vfs, versionId } = await createFile("f.txt", content);
   await vfs.mark("f.txt", "TARGET", "custom radius", {
     contextRadius: 10,

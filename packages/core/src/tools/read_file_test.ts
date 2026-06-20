@@ -1,7 +1,7 @@
+import type { ToolWithExecute } from "@openrouter/agent";
 import { assertEquals } from "@std/assert";
 import { createReadFileTool } from "./read_file.ts";
 import { createMockVFS } from "./testing/mock_vfs.ts";
-import type { ToolWithExecute } from "@openrouter/agent";
 
 Deno.test("createReadFileTool -- delegates to VFS and returns result", async () => {
   const vfs = createMockVFS({
@@ -17,7 +17,7 @@ Deno.test("createReadFileTool -- delegates to VFS and returns result", async () 
   const { tool } = createReadFileTool(vfs);
   const fn = tool as ToolWithExecute;
 
-  const result = await fn.function.execute({ path: "f.txt" }) as {
+  const result = (await fn.function.execute({ path: "f.txt" })) as {
     content: string;
   };
 

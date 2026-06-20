@@ -1,8 +1,4 @@
-import {
-  type CallModelInput,
-  type ModelResult,
-  type Tool,
-} from "@openrouter/agent";
+import type { CallModelInput, ModelResult, Tool } from "@openrouter/agent";
 import { logger } from "./logger.ts";
 
 export async function logAgentCall(request: CallModelInput<readonly Tool[]>) {
@@ -18,12 +14,12 @@ export function logAgentResult(result: ModelResult<readonly Tool[]>) {
       for await (const item of result.getItemsStream()) {
         if (item.type === "function_call_output") {
           const { callId, output: outputRaw } = item;
-          const output = typeof outputRaw === "string"
-            ? JSON.parse(outputRaw)
-            : outputRaw;
+          const output =
+            typeof outputRaw === "string" ? JSON.parse(outputRaw) : outputRaw;
           l.debug({ callId, output }, "function_call_output");
         } else if (
-          item.type === "function_call" && item.status === "completed"
+          item.type === "function_call" &&
+          item.status === "completed"
         ) {
           const { name: fn, arguments: argString, callId } = item;
           const args = JSON.parse(argString);

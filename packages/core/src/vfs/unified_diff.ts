@@ -17,10 +17,7 @@ export function unifiedDiff(
 
   if (hunks.length === 0) return "";
 
-  const lines: string[] = [
-    `--- ${oldLabel}`,
-    `+++ ${newLabel}`,
-  ];
+  const lines: string[] = [`--- ${oldLabel}`, `+++ ${newLabel}`];
 
   for (const hunk of hunks) {
     lines.push(
@@ -31,7 +28,7 @@ export function unifiedDiff(
     }
   }
 
-  return lines.join("\n") + "\n";
+  return `${lines.join("\n")}\n`;
 }
 
 interface DiffOp {
@@ -52,9 +49,8 @@ function myersDiff(oldLines: string[], newLines: string[]): DiffOp[] {
   const N = oldLines.length;
   const M = newLines.length;
 
-  const dp: number[][] = Array.from(
-    { length: N + 1 },
-    () => new Array(M + 1).fill(0),
+  const dp: number[][] = Array.from({ length: N + 1 }, () =>
+    new Array(M + 1).fill(0),
   );
 
   for (let i = 1; i <= N; i++) {
@@ -68,7 +64,8 @@ function myersDiff(oldLines: string[], newLines: string[]): DiffOp[] {
   }
 
   const ops: DiffOp[] = [];
-  let i = N, j = M;
+  let i = N,
+    j = M;
 
   while (i > 0 || j > 0) {
     if (i > 0 && j > 0 && oldLines[i - 1] === newLines[j - 1]) {

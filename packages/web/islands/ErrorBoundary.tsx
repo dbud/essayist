@@ -14,7 +14,9 @@ export default function ({ children }: ErrorBoundaryProps) {
       <>
         <p>Something went wrong</p>
         <p>error message: {error.message}</p>
-        <button type="button" onClick={resetError}>Try again</button>
+        <button type="button" onClick={resetError}>
+          Try again
+        </button>
       </>
     );
   }

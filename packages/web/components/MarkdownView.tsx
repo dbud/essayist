@@ -5,9 +5,10 @@ interface MarkdownViewProps {
   class?: string;
 }
 
-export default function MarkdownView(
-  { content, class: className = "" }: MarkdownViewProps,
-) {
+export default function MarkdownView({
+  content,
+  class: className = "",
+}: MarkdownViewProps) {
   return (
     <div
       class={`prose max-w-none ${className}`}
