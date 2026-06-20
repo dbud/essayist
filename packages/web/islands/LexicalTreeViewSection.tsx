@@ -7,9 +7,6 @@ export default function LexicalTreeViewSection() {
   return (
     <Section title="Lexical Editor">
       <TreeView editor={activeEditor.value} viewClassName="text-xs" />
-      <pre class="text-xs whitespace-pre-wrap break-all">
-        {JSON.stringify(activeEditor.value, null, 2)}
-      </pre>
     </Section>
   );
 }
