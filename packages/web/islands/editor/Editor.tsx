@@ -1,9 +1,11 @@
 import { ContentEditable } from "@lexical/react/LexicalContentEditable";
+import { EditorRefPlugin } from "@lexical/react/LexicalEditorRefPlugin";
 import { LexicalExtensionComposer } from "@lexical/react/LexicalExtensionComposer";
 import { OnChangePlugin } from "@lexical/react/LexicalOnChangePlugin";
-import type { EditorState } from "lexical";
+import type { EditorState, LexicalEditor } from "lexical";
 import { useMemo } from "preact/hooks";
 import { viewerFont } from "@/signals/preferences.ts";
+import { activeEditor } from "@/signals.ts";
 import editorExtension from "./extension.ts";
 
 interface EditorProps {
@@ -38,6 +40,9 @@ export default function Editor({ state, onChange }: EditorProps) {
         contentEditable={contentEditable}
       >
         {onChange && <OnChangePlugin onChange={onChange} />}
+        <EditorRefPlugin
+          editorRef={(editor: LexicalEditor) => (activeEditor.value = editor)}
+        />
       </LexicalExtensionComposer>
     </div>
   );
