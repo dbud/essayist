@@ -15,7 +15,7 @@ import { CodeExtension } from "@lexical/code";
 import { useMemo } from "preact/hooks";
 
 interface EditorProps {
-  initialState: EditorState;
+  state: EditorState;
   onChange?: (state: EditorState) => void;
 }
 
@@ -33,32 +33,35 @@ const editorExtension = defineExtension({
   ],
 });
 
-export default function Editor({ initialState, onChange }: EditorProps) {
-  const contentEditable = (
-    <ContentEditable
-      class={`prose ${viewerFont.value} whitespace-pre-wrap editor-input outline-none max-w-none`}
-      placeholder={
-        <span class="text-base-content/40 pointer-events-none">
-          Start writing...
-        </span>
-      }
-    />
-  );
+const contentEditable = (
+  <ContentEditable
+    class={`prose whitespace-pre-wrap editor-input outline-none max-w-none`}
+    placeholder={
+      <span class="text-base-content/40 pointer-events-none">
+        Start writing...
+      </span>
+    }
+  />
+);
 
+export default function Editor({ state, onChange }: EditorProps) {
+  console.log("Editor", JSON.stringify(state));
   const extension = useMemo(
     () => ({
       ...editorExtension,
-      $initialEditorState: initialState,
+      $initialEditorState: state,
     }),
-    [initialState],
+    [state],
   );
 
   return (
-    <LexicalExtensionComposer
-      extension={extension}
-      contentEditable={contentEditable}
-    >
-      {onChange && <OnChangePlugin onChange={onChange} />}
-    </LexicalExtensionComposer>
+    <div class={`${viewerFont}`}>
+      <LexicalExtensionComposer
+        extension={extension}
+        contentEditable={contentEditable}
+      >
+        {onChange && <OnChangePlugin onChange={onChange} />}
+      </LexicalExtensionComposer>
+    </div>
   );
 }

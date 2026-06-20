@@ -4,6 +4,7 @@ import FontSelect from "@/components/FontSelect.tsx";
 import { useFile } from "@/signals/file.ts";
 import { openedFiles } from "@/signals/openedFiles.ts";
 import Editor from "@/islands/editor/Editor.tsx";
+import { useMemo } from "preact/hooks";
 
 export default function FileViewer() {
   const path = openedFiles.selected.value;
@@ -15,6 +16,7 @@ function FileViewerBody({ path }: { path: string }) {
   const { state, initialState, setModifiedState, loading, error } = useFile(
     path,
   );
+  const editorState = useMemo(() => state.value, [path, initialState.value]);
 
   if (error.value) {
     return <div class="text-error">{error.value}</div>;
@@ -34,9 +36,9 @@ function FileViewerBody({ path }: { path: string }) {
           </div>
         </Toolbar>
         <div class="flex-1 min-h-0 flex flex-col overflow-x-auto overflow-y-auto p-4">
-          {initialState.value && (
+          {editorState && (
             <Editor
-              initialState={initialState.value}
+              state={editorState}
               onChange={setModifiedState}
             />
           )}
