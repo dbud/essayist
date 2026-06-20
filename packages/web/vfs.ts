@@ -129,3 +129,20 @@ That's all folks!`,
 for (const [path, content] of Object.entries(files)) {
   await vfs.write(path, content);
 }
+
+// Add sample marks
+await vfs.mark(
+  "essay.txt",
+  "The quick brown fox jumps over the lazy dog.",
+  "Classic pangram \u2014 every letter of the alphabet.",
+);
+await vfs.mark(
+  "essay.txt",
+  "since the late",
+  "Historical context would strengthen this claim.",
+);
+await vfs.mark(
+  "notes/ideas.md",
+  "Build a writing assistant",
+  "Core product idea \u2014 prioritize this.",
+);

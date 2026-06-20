@@ -7,6 +7,8 @@ export {
   createReadFileTool,
   createWriteFileTool,
 } from "@/tools/index.ts";
+export type { ResolveInput, ResolveOptions } from "@/vfs/marks_resolver.ts";
+export { resolveMarks } from "@/vfs/marks_resolver.ts";
 export { InMemoryAdapter } from "@/vfs/persistence.ts";
 export type {
   DiffResult,
