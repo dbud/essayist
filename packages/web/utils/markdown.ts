@@ -1,7 +1,8 @@
+import { buildEditorFromExtensions } from "@lexical/extension";
 import { $convertFromMarkdownString, TRANSFORMERS } from "@lexical/markdown";
-import { $getRoot, createEditor, type EditorState } from "lexical";
+import { $getRoot, type EditorState } from "lexical";
 import { marked } from "marked";
-import { nodes } from "@/islands/editor/nodes.ts";
+import editorExtension from "@/islands/editor/extension.ts";
 import { sanitizeHtml } from "./sanitize.ts";
 
 marked.setOptions({
@@ -16,16 +17,14 @@ export function renderMarkdown(text: string): string {
 
 /**
  * Converts markdown string to a Lexical editor state using a headless
- * bootstrap editor. The editor is created, used once, and discarded.
+ * bootstrap editor built from the shared editor extension.
+ * The editor is created, used once, and discarded.
  */
 export function markdownToEditorState(content: string): EditorState {
-  const editor = createEditor({
-    namespace: `bootstrap-markdown`,
-    theme: {},
-    nodes,
-    onError(error) {
-      throw error;
-    },
+  const editor = buildEditorFromExtensions({
+    ...editorExtension,
+    $initialEditorState: undefined,
+    namespace: "bootstrap-markdown",
   });
 
   editor.update(

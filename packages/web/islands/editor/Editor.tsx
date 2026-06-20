@@ -1,37 +1,15 @@
-import { CodeExtension } from "@lexical/code";
-import {
-  AutoFocusExtension,
-  HorizontalRuleExtension,
-} from "@lexical/extension";
-import { HistoryExtension } from "@lexical/history";
-import { LinkExtension } from "@lexical/link";
-import { ListExtension } from "@lexical/list";
 import { ContentEditable } from "@lexical/react/LexicalContentEditable";
 import { LexicalExtensionComposer } from "@lexical/react/LexicalExtensionComposer";
 import { OnChangePlugin } from "@lexical/react/LexicalOnChangePlugin";
-import { RichTextExtension } from "@lexical/rich-text";
-import { configExtension, defineExtension, type EditorState } from "lexical";
+import type { EditorState } from "lexical";
 import { useMemo } from "preact/hooks";
 import { viewerFont } from "@/signals/preferences.ts";
+import editorExtension from "./extension.ts";
 
 interface EditorProps {
   state: EditorState;
   onChange?: (state: EditorState) => void;
 }
-
-const editorExtension = defineExtension({
-  name: "[root]",
-  namespace: "essayist-editor",
-  dependencies: [
-    RichTextExtension,
-    HistoryExtension,
-    configExtension(AutoFocusExtension, { defaultSelection: "rootStart" }),
-    LinkExtension,
-    ListExtension,
-    CodeExtension,
-    HorizontalRuleExtension,
-  ],
-});
 
 const contentEditable = (
   <ContentEditable

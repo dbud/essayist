@@ -119,6 +119,7 @@ essayist/
 │       │   ├── Tabs.tsx            # Open file tabs with close buttons
 │       │   └── editor/
 │       │       ├── Editor.tsx      # Lexical rich text editor island component
+│       │       ├── extension.ts   # Shared editor extension (defineExtension with all deps)
 │       │       └── nodes.ts        # Lexical node registrations (heading, list, code, etc.)
 │       ├── middleware/
 │       │   └── agent.ts    # Creates Agent from OPENROUTER_API_KEY, attaches to state
@@ -191,12 +192,17 @@ essayist/
   displays the active Lexical editor's JSON state. Renders inside a collapsible
   `Section` titled "Lexical Editor".
 - **`packages/web/islands/editor/Editor.tsx`** — Lexical rich text editor
-  component. Composes `RichTextExtension`, `HistoryExtension`,
-  `AutoFocusExtension`, `LinkExtension`, `ListExtension`, `CodeExtension`, and
-  `HorizontalRuleExtension`. Uses `@lexical/react` runtime plugins.
+  component. Imports the shared `editorExtension` and spreads it with
+  `$initialEditorState` per render. Uses `@lexical/react` runtime plugins.
+- **`packages/web/islands/editor/extension.ts`** — Shared editor extension
+  defined via `defineExtension` with dependencies: `RichTextExtension`,
+  `HistoryExtension`, `AutoFocusExtension`, `LinkExtension`, `ListExtension`,
+  `CodeExtension`, `HorizontalRuleExtension`. Used by both `Editor.tsx` (React)
+  and `markdownToEditorState()` (headless).
 - **`packages/web/islands/editor/nodes.ts`** — Lexical node registrations
   (`HeadingNode`, `LinkNode`, `ListNode`, `ListItemNode`, `QuoteNode`,
-  `CodeNode`) shared between the editor and markdown-to-editor-state conversion.
+  `CodeNode`). Note: nodes are now declared via extensions, not passed directly
+  to `createEditor`.
 - **`packages/web/middleware/agent.ts`** — Middleware. Instantiates `Agent` with
   `OPENROUTER_API_KEY` and attaches it to `ctx.state.agent`.
 - **`packages/web/signals.ts`** — Exports the `activeEditor` signal
@@ -224,8 +230,10 @@ essayist/
 - **`packages/web/hooks/useChat.ts`** and **`packages/web/utils/sse.ts`** —
   Helper utilities for managing the SSE connection and client-side state.
 - **`packages/web/utils/markdown.ts`** — `renderMarkdown()` (marked +
-  DOMPurify) and `markdownToEditorState()` (marked → Lexical editor state via
-  `@lexical/markdown` transformers).
+  DOMPurify) and `markdownToEditorState()` (markdown → Lexical `EditorState` via
+  `buildEditorFromExtensions` + `@lexical/markdown` transformers). Uses the
+  shared `editorExtension` so the bootstrap editor has the same extensions as
+  the React editor.
 
 ### Key Dependencies
 
@@ -384,8 +392,9 @@ automatically before each commit.
 - **Virtual File System** — `VirtualFileSystem` implements the `VFS` interface
   backed by a `PersistenceAdapter`. `InMemoryAdapter` is the default in-memory
   store. The VFS supports read (with line-range and numbering options), write,
-  list (with directory prefix filtering), grep (regex), versioning (history,
-  revert), and unified diff between versions. Marks are text-span annotations
+  list (with directory prefix filtering), grep (regex), search (literal text),
+  versioning (history, revert), and unified diff between versions. Marks are
+  text-span annotations
   bound to specific versions, with automatic migration across versions via
   diff-based offset mapping and fuzzy matching (`marks_resolver.ts`). `mark()`
   accepts an optional `MarkOptions` bag (`label`, `lineHint`, `threadId`,
@@ -461,9 +470,11 @@ automatically before each commit.
   uses a `Map` cache keyed by path. Do not create multiple instances of these
   models.
 - **Lexical markdown conversion** — `markdownToEditorState()` creates a
-  headless Lexical editor via `createEditor()` on every call. This is used to
-  convert markdown content to an `EditorState` for the `Editor` island. The
-  bootstrap editor is discarded after its state is extracted.
+  headless Lexical editor via `buildEditorFromExtensions()` on every call,
+  using the shared `editorExtension`. This ensures the bootstrap editor has
+  the same extensions (rich text, history, links, lists, code, etc.) as the
+  React-based `Editor` island. The bootstrap editor is discarded after its
+  state is extracted.
 - **createMarkTool not wired in chat** — The chat endpoint (`routes/api/chat.ts`)
   only wires `createReadFileTool`, `createListFilesTool`, `createGrepTool`, and
   `createWriteFileTool`. `createMarkTool` is exported from core but not included
