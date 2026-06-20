@@ -118,9 +118,10 @@ essayist/
 │       │   ├── Section.tsx         # Collapsible sidebar section (details/summary)
 │       │   ├── Tabs.tsx            # Open file tabs with close buttons
 │       │   └── editor/
-│       │       ├── Editor.tsx      # Lexical rich text editor island component
-│       │       ├── extension.ts   # Shared editor extension (defineExtension with all deps)
-│       │       └── nodes.ts        # Lexical node registrations (heading, list, code, etc.)
+│       │       ├── ActiveEditorRef.tsx  # EditorRefPlugin wrapper that sets/clears activeEditor
+│       │       ├── Editor.tsx           # Lexical rich text editor island component
+│       │       ├── extension.ts         # Shared editor extension (defineExtension with all deps)
+│       │       └── nodes.ts              # Lexical node registrations (heading, list, code, etc.)
 │       ├── middleware/
 │       │   └── agent.ts    # Creates Agent from OPENROUTER_API_KEY, attaches to state
 │       ├── routes/
@@ -191,6 +192,10 @@ essayist/
 - **`packages/web/islands/LexicalTreeViewSection.tsx`** — Debug panel that
   displays the active Lexical editor's JSON state. Renders inside a collapsible
   `Section` titled "Lexical Editor".
+- **`packages/web/islands/editor/ActiveEditorRef.tsx`** — Wraps
+  `EditorRefPlugin` and a `useEffect` cleanup into a single component. Sets
+  `activeEditor.value` on mount and clears it on unmount, preventing stale
+  editor references after the island is removed from the DOM.
 - **`packages/web/islands/editor/Editor.tsx`** — Lexical rich text editor
   component. Imports the shared `editorExtension` and spreads it with
   `$initialEditorState` per render. Uses `@lexical/react` runtime plugins.
