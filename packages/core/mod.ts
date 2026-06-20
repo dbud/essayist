@@ -20,6 +20,7 @@ export type {
   Mark,
   MarkOptions,
   MarkResult,
+  MarkStatus,
   ReadOptions,
   WriteResult,
 } from "@/vfs/types.ts";

@@ -2,6 +2,7 @@ import Chat from "@/islands/Chat.tsx";
 import FileBrowser from "@/islands/FileBrowser.tsx";
 import FileViewer from "@/islands/FileViewer.tsx";
 import LexicalTreeViewSection from "@/islands/LexicalTreeViewSection.tsx";
+import MarksSection from "@/islands/MarksSection.tsx";
 import Section from "@/islands/Section.tsx";
 
 export default function HomePage() {
@@ -15,6 +16,7 @@ export default function HomePage() {
       </div>
       <aside class="flex-1 max-w-lg shrink-0 min-h-0 overflow-y-auto flex flex-col">
         <div class="join join-vertical">
+          <MarksSection />
           <LexicalTreeViewSection />
           <Section title="Chat">
             <Chat />
@@ -23,9 +25,6 @@ export default function HomePage() {
             <div class="text-sm text-base-content/50">Coming soon</div>
           </Section>
           <Section title="File History">
-            <div class="text-sm text-base-content/50">Coming soon</div>
-          </Section>
-          <Section title="Unreviewed Marks">
             <div class="text-sm text-base-content/50">Coming soon</div>
           </Section>
         </div>
