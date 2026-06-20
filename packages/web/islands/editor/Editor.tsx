@@ -1,6 +1,7 @@
 import { ContentEditable } from "@lexical/react/LexicalContentEditable";
 import { EditorRefPlugin } from "@lexical/react/LexicalEditorRefPlugin";
 import { LexicalExtensionComposer } from "@lexical/react/LexicalExtensionComposer";
+import { MarkdownShortcutPlugin } from "@lexical/react/LexicalMarkdownShortcutPlugin";
 import { OnChangePlugin } from "@lexical/react/LexicalOnChangePlugin";
 import type { EditorState, LexicalEditor } from "lexical";
 import { useMemo } from "preact/hooks";
@@ -40,6 +41,7 @@ export default function Editor({ state, onChange }: EditorProps) {
         contentEditable={contentEditable}
       >
         {onChange && <OnChangePlugin onChange={onChange} />}
+        <MarkdownShortcutPlugin />
         <EditorRefPlugin
           editorRef={(editor: LexicalEditor) => (activeEditor.value = editor)}
         />
