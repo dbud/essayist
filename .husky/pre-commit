@@ -1,1 +1,12 @@
-deno task fmt:check && deno test -A
+staged_files=$(git diff --cached --name-only --diff-filter=ACMR -- \
+  '*.ts' '*.tsx' '*.js' '*.jsx' '*.mjs' '*.mts' '*.cjs' '*.cts' \
+  '*.json' '*.jsonc' '*.css')
+
+if [ -n "$staged_files" ]; then
+  echo "$staged_files" | xargs deno lint
+  echo "$staged_files" | xargs biome check
+fi
+
+deno check
+
+deno test -A
