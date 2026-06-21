@@ -49,11 +49,7 @@ export default function MarksSection() {
   const path = openedFiles.selected.value;
   if (!path) return null;
 
-  return (
-    <Section title="Marks">
-      <Marks path={path} />
-    </Section>
-  );
+  return <Marks path={path} />;
 }
 
 function Marks({ path }: { path: string }) {
@@ -64,10 +60,12 @@ function Marks({ path }: { path: string }) {
   }
 
   return (
-    <div class="flex flex-col gap-3">
-      {grouped.value.map((group) => (
-        <MarkGroupCard key={group.thread_id} group={group} />
-      ))}
-    </div>
+    <Section title="Marks">
+      <div class="flex flex-col gap-3">
+        {grouped.value.map((group) => (
+          <MarkGroupCard key={group.thread_id} group={group} />
+        ))}
+      </div>
+    </Section>
   );
 }
