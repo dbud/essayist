@@ -3,7 +3,10 @@ import { computed, createModel, signal } from "@preact/signals";
 import type { EditorState } from "lexical";
 import { openedFiles } from "@/signals/openedFiles.ts";
 import createAsyncState from "@/utils/asyncState.ts";
-import { markdownToEditorState } from "@/utils/markdown.ts";
+import {
+  editorStateToMarkdown,
+  markdownToEditorState,
+} from "@/utils/markdown.ts";
 
 export const FileModel = createModel((path: string) => {
   const content = signal<FileSnapshot | null>(null);
@@ -28,6 +31,10 @@ export const FileModel = createModel((path: string) => {
 
   const state = computed(() => modifiedState.value ?? initialState.value);
 
+  const markdown = computed(() =>
+    state.value ? editorStateToMarkdown(state.value) : null,
+  );
+
   async function load() {
     const result = await run(async () => {
       const res = await fetch(`/api/files/${encodeURIComponent(path)}`);
@@ -45,6 +52,7 @@ export const FileModel = createModel((path: string) => {
     setModifiedState,
     loading,
     error,
+    markdown,
     dirty,
     isSelected,
   };

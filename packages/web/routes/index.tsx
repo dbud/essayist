@@ -1,4 +1,5 @@
 import Chat from "@/islands/Chat.tsx";
+import ExportPreviewSection from "@/islands/ExportPreviewSection.tsx";
 import FileBrowser from "@/islands/FileBrowser.tsx";
 import FileViewer from "@/islands/FileViewer.tsx";
 import LexicalTreeViewSection from "@/islands/LexicalTreeViewSection.tsx";
@@ -16,6 +17,7 @@ export default function HomePage() {
       </div>
       <aside class="flex-1 max-w-lg shrink-0 min-h-0 overflow-y-auto flex flex-col">
         <div class="join join-vertical">
+          <ExportPreviewSection />
           <MarksSection />
           <LexicalTreeViewSection />
           <Section title="Chat">

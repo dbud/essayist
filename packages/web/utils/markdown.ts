@@ -1,5 +1,9 @@
 import { buildEditorFromExtensions } from "@lexical/extension";
-import { $convertFromMarkdownString, TRANSFORMERS } from "@lexical/markdown";
+import {
+  $convertFromMarkdownString,
+  $convertToMarkdownString,
+  TRANSFORMERS,
+} from "@lexical/markdown";
 import { $getRoot, type EditorState } from "lexical";
 import { marked } from "marked";
 import editorExtension from "@/islands/editor/extension.ts";
@@ -36,4 +40,16 @@ export function markdownToEditorState(content: string): EditorState {
   );
 
   return editor.getEditorState();
+}
+
+/**
+ * Converts a Lexical editor state to a markdown string.
+ * Reads the editor state synchronously via editor.read().
+ */
+export function editorStateToMarkdown(state: EditorState): string {
+  let result = "";
+  state.read(() => {
+    result = $convertToMarkdownString(TRANSFORMERS, $getRoot());
+  });
+  return result;
 }
