@@ -13,6 +13,13 @@ export default function ExportPreviewSection() {
   );
 }
 
+function visualizeWhitespace(text: string): string {
+  return text
+    .replace(/ /g, "\u00B7")
+    .replace(/\t/g, "\u2192")
+    .replace(/\n/g, "\u00AC\n");
+}
+
 function MarkdownPreview({ path }: { path: string }) {
   const file = useFile(path);
   const md = file.markdown.value;
@@ -21,7 +28,7 @@ function MarkdownPreview({ path }: { path: string }) {
 
   return (
     <pre class="text-xs whitespace-pre-wrap break-words bg-base-200 p-2 rounded">
-      {md}
+      {visualizeWhitespace(md)}
     </pre>
   );
 }
