@@ -115,8 +115,9 @@ essayist/
 │       │   ├── FileBrowser.tsx     # File tree sidebar (fetches from /api/files)
 │       │   ├── FileViewer.tsx      # File content viewer (markdown or plain text)
 │       │   ├── LexicalTreeViewSection.tsx  # Debug panel showing active Lexical editor state
+│       │   ├── MarksSection.tsx    # Displays marks for the selected file, grouped by thread
 │       │   ├── Section.tsx         # Collapsible sidebar section (details/summary)
-│       │   ├── Tabs.tsx            # Open file tabs with close buttons
+│       │   └── Tabs.tsx            # Open file tabs with close buttons
 │       │   └── editor/
 │       │       ├── ActiveEditorRef.tsx  # EditorRefPlugin wrapper that sets/clears activeEditor
 │       │       ├── Editor.tsx           # Lexical rich text editor island component
@@ -131,18 +132,24 @@ essayist/
 │       │       ├── chat.ts         # GET /api/chat?message=… → SSE stream
 │       │       └── files/
 │       │           ├── index.ts    # GET /api/files → file list
-│       │           └── [path].ts   # GET /api/files/:path → file content
+│       │           └── [path]/
+│       │               ├── index.ts  # GET /api/files/:path → file content
+│       │               └── marks.ts  # GET /api/files/:path/marks → file marks
 │       ├── signals/
-│       │   ├── file.ts            # FileModel — per-file state (content, loading, dirty, etc.)
+│       │   ├── file.ts            # FileModel — per-file content, loading, dirty, editor state
 │       │   ├── fileTree.ts        # FileTreeModel + useFiles() + buildFileTree()
+│       │   ├── marks.ts           # MarksModel — per-file marks with reload support
 │       │   ├── openedFiles.ts     # OpenedFilesModel — selectedFile, openedFiles, fileHistory
 │       │   └── preferences.ts     # viewerFont, viewMode persistent signals
 │       ├── utils/
-│       │   ├── asyncState.ts      # createAsyncState() — loading/error state helper
-│       │   ├── markdown.ts        # renderMarkdown() + markdownToEditorState()
-│       │   ├── persistentSignal.ts  # persistentSignal() + usePersistentSignal()
-│       │   ├── sanitize.ts        # sanitizeHtml() — DOMPurify wrapper
-│       │   └── sse.ts             # SSE streaming helpers (parseSSE, streamModelResultSSE)
+│       │   ├── asyncState.ts         # createAsyncState() — loading/error state helper
+│       │   ├── markdown.ts           # renderMarkdown() + markdownToEditorState()
+│       │   ├── markMapping.ts        # buildMarkdownMapping(), findPosition(), findRange()
+│       │   ├── markMapping_test.ts   # Tests for markdown offset ↔ TextNode mapping
+│       │   ├── markSelection.ts      # resolveMarksForEditor(), createRangeSelection(), applyMarkToEditor()
+│       │   ├── persistentSignal.ts   # persistentSignal() + usePersistentSignal()
+│       │   ├── sanitize.ts           # sanitizeHtml() — DOMPurify wrapper
+│       │   └── sse.ts                # SSE streaming helpers (parseSSE, streamModelResultSSE)
 │       └── static/
 │           └── favicon.ico
 ```
@@ -192,6 +199,12 @@ essayist/
 - **`packages/web/islands/LexicalTreeViewSection.tsx`** — Debug panel that
   displays the active Lexical editor's JSON state. Renders inside a collapsible
   `Section` titled "Lexical Editor".
+- **`packages/web/islands/MarksSection.tsx`** — Displays marks for the
+  currently selected file. Reads from `useMarks(path)` (reactive signal),
+  groups by `thread_id`, and renders each group as a daisyUI card. Each mark
+  shows: label, status badge (resolved/stale), selected text, comment, offset,
+  and length. Includes its own `Section` wrapper titled "Marks". Returns
+  `null` when no file is selected, loading, or no marks exist.
 - **`packages/web/islands/editor/ActiveEditorRef.tsx`** — Wraps
   `EditorRefPlugin` and a `useEffect` cleanup into a single component. Sets
   `activeEditor.value` on mount and clears it on unmount, preventing stale
@@ -221,6 +234,10 @@ essayist/
 - **`packages/web/signals/file.ts`** — `FileModel` with per-file content,
   loading, error, dirty tracking, and Lexical editor state (`initialState`,
   `modifiedState`, `state`). Exports `useFile(path)` helper.
+- **`packages/web/signals/marks.ts`** — `MarksModel` with per-file marks,
+  loading, error, and a `reload()` method for refetching. Exports
+  `useMarks(path)` helper. Follows the same `createModel` + `Map` cache
+  pattern as `fileTree.ts`.
 - **`packages/web/signals/preferences.ts`** — `viewerFont` and `viewMode`
   persistent signals.
 - **`packages/web/vfs.ts`** — Server-side VFS instance seeded with sample files
@@ -239,6 +256,26 @@ essayist/
   `buildEditorFromExtensions` + `@lexical/markdown` transformers). Uses the
   shared `editorExtension` so the bootstrap editor has the same extensions as
   the React editor.
+- **`packages/web/utils/markMapping.ts`** — Offset mapping utilities for
+  converting plaintext character offsets to Lexical TextNode positions.
+  `buildMarkdownMapping()` exports the editor state to markdown, walks the
+  node tree in document order, and builds a sorted list of `TextNodeSpan`
+  entries (each with `key`, `text`, `mdStart`). `findPosition()` uses binary
+  search to convert a markdown offset to a `NodePosition` (TextNode key +
+  local offset). `findRange()` converts a markdown offset+length to a
+  `NodeRange` (anchor + focus). Returns `null` for offsets that fall in
+  markdown syntax gaps (e.g., `**`, `#`, `>`).
+- **`packages/web/utils/markSelection.ts`** — High-level mark resolution
+  pipeline. `resolveMarksForEditor()` ties together Lexical's
+  `$convertToMarkdownString`, core's `resolveMarks()`, and
+  `buildMarkdownMapping()` to convert VFS marks (with original-content
+  offsets) to Lexical node ranges. `createRangeSelection()` creates a
+  Lexical `RangeSelection` from a `NodeRange`. `applyMarkToEditor()` wraps
+  a range in a `MarkNode` via `$wrapSelectionInMarkNode` from `@lexical/mark`.
+- **`packages/web/utils/markMapping_test.ts`** — 6 tests covering simple
+  paragraphs, headings, bold text, two-paragraph documents, mixed content
+  (headings, lists, blockquotes, code blocks), and edge cases for
+  `findPosition()`.
 
 ### Key Dependencies
 
@@ -266,8 +303,9 @@ essayist/
 - **DOMPurify** (v3.4.9) — HTML sanitization for rendered markdown.
 - **Lexical** (v0.45.0) — Rich text editor framework. Used via `lexical`,
   `@lexical/react`, `@lexical/rich-text`, `@lexical/history`, `@lexical/link`,
-  `@lexical/list`, `@lexical/code`, `@lexical/extension`, and
-  `@lexical/markdown` (for markdown ↔ editor state conversion).
+  `@lexical/list`, `@lexical/code`, `@lexical/extension`,
+  `@lexical/markdown` (for markdown ↔ editor state conversion), and
+  `@lexical/mark` (for `MarkNode` / `$wrapSelectionInMarkNode`).
 - **lucide-preact** (v1.17.0) — Icon library (FileText, Folder, FolderOpen, X,
   Zap, etc.).
 - **@fontsource-variable/hanken-grotesk** — Sans-serif variable font.
