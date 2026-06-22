@@ -27,6 +27,7 @@ function MarkDetail({ mark }: { mark: Mark }) {
       <div class="text-xs text-base-content/60 mt-2 flex gap-3">
         <span>offset: {mark.offset}</span>
         <span>length: {mark.length}</span>
+        <span>thread_id: {mark.thread_id}</span>
       </div>
     </div>
   );
