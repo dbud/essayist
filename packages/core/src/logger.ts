@@ -1,7 +1,14 @@
 import pino from "pino";
 
-const isDevelopment = Deno.env.get("DENO_ENV") === "development";
-const level = Deno.env.get("LOG_LEVEL") ?? (isDevelopment ? "debug" : "info");
+function getEnv(key: string): string | undefined {
+  if (typeof Deno !== "undefined") {
+    return Deno.env.get(key);
+  }
+  return undefined;
+}
+
+const isDevelopment = getEnv("DENO_ENV") === "development";
+const level = getEnv("LOG_LEVEL") ?? (isDevelopment ? "debug" : "info");
 
 const instance = isDevelopment
   ? pino({
