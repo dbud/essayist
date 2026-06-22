@@ -31,7 +31,7 @@ Deno.test("buildMarkdownMapping -- simple paragraph", () => {
   const editor = createEditor();
   importMarkdown(editor, "Hello world");
 
-  const { spans, markdown } = buildMarkdownMapping(editor);
+  const { spans, markdown } = buildMarkdownMapping(editor.getEditorState());
 
   assertEquals(markdown, "Hello world");
   assertEquals(spans.length, 1);
@@ -47,7 +47,7 @@ Deno.test("buildMarkdownMapping -- heading syntax chars snap to nearest text", (
   const editor = createEditor();
   importMarkdown(editor, "# My Heading");
 
-  const { spans } = buildMarkdownMapping(editor);
+  const { spans } = buildMarkdownMapping(editor.getEditorState());
   const heading = spans.find((s) => s.text === "My Heading");
 
   assert(heading);
@@ -76,7 +76,7 @@ Deno.test("buildMarkdownMapping -- bold in paragraph produces 3 text nodes", () 
   const editor = createEditor();
   importMarkdown(editor, "This is **bold** text");
 
-  const { spans } = buildMarkdownMapping(editor);
+  const { spans } = buildMarkdownMapping(editor.getEditorState());
 
   assertEquals(spans.length, 3);
   assert(spans.find((s) => s.text === "bold"));
@@ -86,7 +86,7 @@ Deno.test("buildMarkdownMapping -- two paragraphs", () => {
   const editor = createEditor();
   importMarkdown(editor, "First.\n\nSecond.");
 
-  const { spans } = buildMarkdownMapping(editor);
+  const { spans } = buildMarkdownMapping(editor.getEditorState());
 
   assertEquals(spans.length, 2);
   assertEquals(spans[0].text, "First.");
@@ -113,7 +113,7 @@ code here
 \`\`\``,
   );
 
-  const { spans, markdown } = buildMarkdownMapping(editor);
+  const { spans, markdown } = buildMarkdownMapping(editor.getEditorState());
 
   assert(spans.length >= 5);
   for (let i = 1; i < spans.length; i++) {
@@ -132,7 +132,7 @@ Deno.test("findPosition -- past end snaps to last char", () => {
   const editor = createEditor();
   importMarkdown(editor, "AB");
 
-  const { spans } = buildMarkdownMapping(editor);
+  const { spans } = buildMarkdownMapping(editor.getEditorState());
 
   const pos0 = findPosition(spans, 0);
   const pos1 = findPosition(spans, 1);
@@ -154,7 +154,7 @@ Deno.test("findPosition -- gap between spans snaps forward", () => {
   const editor = createEditor();
   importMarkdown(editor, "Hello **world**");
 
-  const { spans } = buildMarkdownMapping(editor);
+  const { spans } = buildMarkdownMapping(editor.getEditorState());
   // Two spans: "Hello " at 0, "world" at 8 (after "**")
   // Offset 6 is "*" — in the gap between spans, snaps to "world" start
   const pos = findPosition(spans, 6);

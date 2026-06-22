@@ -1,7 +1,7 @@
 import type { Mark } from "@essayist/core";
 import { resolveMarks } from "@essayist/core";
 import { $wrapSelectionInMarkNode } from "@lexical/mark";
-import type { LexicalEditor, RangeSelection } from "lexical";
+import type { EditorState, RangeSelection } from "lexical";
 import { $createRangeSelection } from "lexical";
 import type { NodeRange } from "./markMapping.ts";
 import { buildMarkdownMapping, findRange } from "./markMapping.ts";
@@ -24,11 +24,11 @@ export interface MarkResolutionResult {
  * Stale and zero-length marks are included for visualization.
  */
 export function resolveMarksForEditor(
-  editor: LexicalEditor,
+  state: EditorState,
   originalContent: string,
   marks: Mark[],
 ): MarkResolutionResult {
-  const { spans, markdown } = buildMarkdownMapping(editor);
+  const { spans, markdown } = buildMarkdownMapping(state);
 
   const remappedMarks = resolveMarks({
     marks,

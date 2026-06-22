@@ -1,5 +1,5 @@
 import { $convertToMarkdownString, TRANSFORMERS } from "@lexical/markdown";
-import type { LexicalEditor, LexicalNode, TextNode } from "lexical";
+import type { EditorState, LexicalNode, TextNode } from "lexical";
 import { $getRoot, $isElementNode, $isTextNode } from "lexical";
 
 /**
@@ -45,11 +45,11 @@ export interface MarkdownMapping {
  * list is sorted by markdown position, enabling O(log n) binary search
  * for mark offset lookup.
  */
-export function buildMarkdownMapping(editor: LexicalEditor): MarkdownMapping {
+export function buildMarkdownMapping(state: EditorState): MarkdownMapping {
   const spans: TextNodeSpan[] = [];
   let markdown = "";
 
-  editor.getEditorState().read(() => {
+  state.read(() => {
     const root = $getRoot();
     // TODO: investigate "The selection is moved to the start after the operation."
     markdown = $convertToMarkdownString(TRANSFORMERS, root);
