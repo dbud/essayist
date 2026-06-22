@@ -1,6 +1,5 @@
 import type { Mark, MarkStatus } from "@essayist/core";
 import Section from "@/islands/Section.tsx";
-import type { MarkGroup } from "@/signals/marks.ts";
 import { useMarks } from "@/signals/marks.ts";
 import { openedFiles } from "@/signals/openedFiles.ts";
 
@@ -33,18 +32,6 @@ function MarkDetail({ mark }: { mark: Mark }) {
   );
 }
 
-function MarkGroupCard({ group }: { group: MarkGroup }) {
-  return (
-    <div class="card bg-base-200 shadow-sm">
-      <div class="card-body p-3">
-        {group.marks.map((mark) => (
-          <MarkDetail key={mark.id} mark={mark} />
-        ))}
-      </div>
-    </div>
-  );
-}
-
 export default function MarksSection() {
   const path = openedFiles.selected.value;
   if (!path) return null;
@@ -53,17 +40,17 @@ export default function MarksSection() {
 }
 
 function Marks({ path }: { path: string }) {
-  const { grouped, loading } = useMarks(path);
+  const { marks, loading } = useMarks(path);
 
-  if (loading.value || grouped.value.length === 0) {
+  if (loading.value || marks.value.length === 0) {
     return null;
   }
 
   return (
     <Section title="Marks">
       <div class="flex flex-col gap-3">
-        {grouped.value.map((group) => (
-          <MarkGroupCard key={group.thread_id} group={group} />
+        {marks.value.map((mark) => (
+          <MarkDetail key={mark.id} mark={mark} />
         ))}
       </div>
     </Section>
