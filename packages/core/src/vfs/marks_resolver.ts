@@ -79,8 +79,12 @@ function mapOffset(mark: Mark, hunks: DiffHunk[]): [boolean, number] {
       break;
     }
     if (markStart < hunk.oldEnd && markEnd > hunk.oldStart) {
-      // mark overlaps this hunk -- estimate based on position
-      const ratio = (markStart - hunk.oldStart) / (hunk.oldEnd - hunk.oldStart);
+      // mark overlaps this hunk
+      // Pure insertion (oldStart == oldEnd): insertion point is inside the mark,
+      // the mark text is split -- fall through to fuzzy matching below
+      // Modified region: estimate new offset based on position within the hunk
+      const oldSpan = hunk.oldEnd - hunk.oldStart;
+      const ratio = oldSpan > 0 ? (markStart - hunk.oldStart) / oldSpan : 0;
       const estimatedOffset =
         hunk.newStart +
         Math.round(ratio * (hunk.newEnd - hunk.newStart)) +

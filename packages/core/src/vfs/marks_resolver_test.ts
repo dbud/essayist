@@ -53,6 +53,39 @@ function resolve(
 
 // -- Arithmetic mapping (unchanged region) --
 
+Deno.test("resolveMarks -- pure insertion inside mark region (no division by zero)", () => {
+  /*
+    old: "It has been used as a typing test since the late 1800s."
+    new: "It has been used as a typing test since the aaaaaa late 1800s."
+                                                      ^^^^^^
+                                                      inserted "aaaaaa " inside the mark region
+
+    The diff hunk is a pure insertion (oldStart == oldEnd).
+    mapOffset must not divide by zero.
+  */
+  const oldContent = "It has been used as a typing test since the late 1800s.";
+  const newContent =
+    "It has been used as a typing test since the aaaaaa late 1800s.";
+  const marks = [
+    createMark({
+      selected_text: "since the late",
+      offset: oldContent.indexOf("since the late"),
+      before_context: "It has been used as a typing test ",
+      after_context: " 1800s.",
+    }),
+  ];
+
+  const result = resolve(marks, oldContent, newContent);
+
+  assertEquals(result.length, 1);
+  assertObjectMatch(result[0], {
+    status: "resolved",
+    offset: oldContent.indexOf("since the late"),
+    length: "since the aaaaaa late".length,
+    selected_text: "since the aaaaaa late",
+  });
+});
+
 Deno.test("resolveMarks -- insertion before mark shifts offset right", () => {
   /*
     "The fox jumps"
