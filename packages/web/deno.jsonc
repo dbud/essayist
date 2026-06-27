@@ -1,59 +1,63 @@
 {
-  "name": "@essayist/web",
-  "version": "0.1.0",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "jsxImportSource": "preact",
+    "lib": ["dom", "dom.asynciterable", "dom.iterable", "deno.ns"],
+    "types": ["vite/client"]
+  },
+  "exclude": ["**/_fresh/*"],
   "exports": "./main.ts",
-  "tasks": {
-    "check": "deno fmt --check . && deno lint . && deno check",
-    "dev": "DENO_ENV=development vite",
-    "build": "vite build",
-    "start": "deno serve -A _fresh/server.js",
-    "update": "deno run -A -r jsr:@fresh/update ."
-  },
-  "lint": {
-    "rules": {
-      "tags": ["fresh", "recommended"]
-    }
-  },
   "fmt": {
     "exclude": ["**/*.css"]
   },
-  "exclude": ["**/_fresh/*"],
   "imports": {
     "@/": "./",
     "@biomejs/biome": "npm:@biomejs/biome@^2.5.0",
     "@fontsource-variable/hanken-grotesk": "npm:@fontsource-variable/hanken-grotesk@^5.2.8",
     "@fontsource-variable/recursive": "npm:@fontsource-variable/recursive@^5.2.8",
     "@fontsource-variable/source-serif-4": "npm:@fontsource-variable/source-serif-4@^5.2.9",
-    "@lexical/extension": "npm:@lexical/extension@^0.45.0",
-    "@lexical/history": "npm:@lexical/history@^0.45.0",
-    "@lexical/markdown": "npm:@lexical/markdown@^0.45.0",
-    "@lexical/mark": "npm:@lexical/mark@^0.45.0",
-    "@lexical/react": "npm:@lexical/react@^0.45.0",
+    "@fresh/plugin-vite": "jsr:@fresh/plugin-vite@^1.1.2",
+    "@lexical/code": "npm:@lexical/code@^0.46.0",
+    "@lexical/extension": "npm:@lexical/extension@^0.46.0",
+    "@lexical/history": "npm:@lexical/history@^0.46.0",
+    "@lexical/link": "npm:@lexical/link@^0.46.0",
+    "@lexical/list": "npm:@lexical/list@^0.46.0",
+    "@lexical/mark": "npm:@lexical/mark@^0.46.0",
+    "@lexical/markdown": "npm:@lexical/markdown@^0.46.0",
+    "@lexical/react": "npm:@lexical/react@^0.46.0",
+    "@lexical/rich-text": "npm:@lexical/rich-text@^0.46.0",
     "@openrouter/agent": "npm:@openrouter/agent@^0.7.1",
+    "@preact/signals": "npm:@preact/signals@^2.9.0",
+    "@std/assert": "jsr:@std/assert@^1",
+    "@tailwindcss/typography": "npm:@tailwindcss/typography@^0.5.16",
+    "@tailwindcss/vite": "npm:@tailwindcss/vite@^4.1.12",
+    "@types/babel__core": "npm:@types/babel__core@^7.20.5",
+    "@types/node": "npm:@types/node@^24.0.0",
+    "daisyui": "npm:daisyui@^5.5.20",
+    "dompurify": "npm:dompurify@^3.4.9",
     "fresh": "jsr:@fresh/core@^2.3.3",
-    "lexical": "npm:lexical@^0.45.0",
+    "lexical": "npm:lexical@^0.46.0",
     "lucide-preact": "npm:lucide-preact@^1.17.0",
+    "marked": "npm:marked@^17.0.3",
+    "node:url": "node:url",
     "preact": "npm:preact@^10.29.1",
     "react": "npm:preact@^10.29.1/compat",
     "react-dom": "npm:preact@^10.29.1/compat",
-    "@preact/signals": "npm:@preact/signals@^2.9.0",
-    "@fresh/plugin-vite": "jsr:@fresh/plugin-vite@^1.1.2",
-    "node:url": "node:url",
-    "dompurify": "npm:dompurify@^3.4.9",
-    "vite": "npm:vite@^7.1.3",
-    "@types/babel__core": "npm:@types/babel__core@^7.20.5",
-    "@types/node": "npm:@types/node@^24.0.0",
     "tailwindcss": "npm:tailwindcss@^4.1.10",
-    "@tailwindcss/vite": "npm:@tailwindcss/vite@^4.1.12",
-    "daisyui": "npm:daisyui@^5.5.20",
-    "marked": "npm:marked@^17.0.3",
-    "@tailwindcss/typography": "npm:@tailwindcss/typography@^0.5.16",
-    "@std/assert": "jsr:@std/assert@^1"
+    "vite": "npm:vite@^7.1.3"
   },
-  "compilerOptions": {
-    "lib": ["dom", "dom.asynciterable", "dom.iterable", "deno.ns"],
-    "jsx": "react-jsx",
-    "jsxImportSource": "preact",
-    "types": ["vite/client"]
-  }
+  "lint": {
+    "rules": {
+      "tags": ["fresh", "recommended"]
+    }
+  },
+  "name": "@essayist/web",
+  "tasks": {
+    "build": "vite build",
+    "check": "deno fmt --check . && deno lint . && deno check",
+    "dev": "DENO_ENV=development vite",
+    "start": "deno serve -A _fresh/server.js",
+    "update": "deno run -A -r jsr:@fresh/update ."
+  },
+  "version": "0.1.0"
 }
