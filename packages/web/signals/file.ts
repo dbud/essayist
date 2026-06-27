@@ -3,7 +3,6 @@ import { computed, createModel, signal } from "@preact/signals";
 import type { EditorState } from "lexical";
 import { openedFiles } from "@/signals/openedFiles.ts";
 import createAsyncState from "@/utils/asyncState.ts";
-import { computedBy } from "@/utils/computedBy.ts";
 import {
   editorStateToMarkdown,
   markdownToEditorState,
@@ -32,12 +31,8 @@ export const FileModel = createModel((path: string) => {
 
   const state = computed(() => modifiedState.value ?? initialState.value);
 
-  const contentState = computedBy(
-    () => state.value,
-    (a) => a._nodeMap,
-  );
   const markdown = computed(() =>
-    contentState.value ? editorStateToMarkdown(contentState.value) : null,
+    state.value ? editorStateToMarkdown(state.value) : null,
   );
 
   async function load() {
