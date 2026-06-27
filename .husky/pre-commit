@@ -1,12 +1,16 @@
-staged_files=$(git diff --cached --name-only --diff-filter=ACMR -- \
+staged_ts=$(git diff --cached --name-only --diff-filter=ACMR -- \
+  '*.ts' '*.tsx' '*.js' '*.jsx' '*.mjs' '*.mts' '*.cjs' '*.cts')
+
+staged_biome=$(git diff --cached --name-only --diff-filter=ACMR -- \
   '*.ts' '*.tsx' '*.js' '*.jsx' '*.mjs' '*.mts' '*.cjs' '*.cts' \
   '*.json' '*.jsonc' '*.css')
 
-if [ -n "$staged_files" ]; then
-  echo "$staged_files" | xargs deno lint
-  echo "$staged_files" | xargs biome check
+if [ -n "$staged_ts" ]; then
+  echo "$staged_ts" | xargs deno lint
 fi
 
-deno check
+if [ -n "$staged_biome" ]; then
+  echo "$staged_biome" | xargs biome check
+fi
 
-deno test -A
+deno task fmt:check
