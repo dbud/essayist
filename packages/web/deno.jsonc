@@ -55,7 +55,7 @@
   "tasks": {
     "build": "vite build",
     "check": "deno fmt --check . && deno lint . && deno check",
-    "dev": "DENO_ENV=development vite",
+    "dev": "DENO_ENV=development vite | pino-pretty --colorize --translateTime SYS:standard --ignore pid,hostname",
     "start": "deno serve -A _fresh/server.js",
     "update": "deno run -A -r jsr:@fresh/update ."
   },

@@ -20,7 +20,7 @@
   "tasks": {
     "check": "deno fmt --check . && deno lint . && deno check",
     "test": "deno test -A --coverage",
-    "test:integration": "DENO_ENV=development deno test -A --env --coverage integration/",
+    "test:integration": "DENO_ENV=development deno test -A --env --coverage integration/ | pino-pretty --colorize --translateTime SYS:standard --ignore pid,hostname",
     "test:watch": "deno test -A --watch"
   },
   "version": "0.1.0"
