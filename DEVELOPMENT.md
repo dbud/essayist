@@ -32,135 +32,135 @@ essayist/
 ├── .github/workflows/
 │   └── deno.yml            # CI: fmt:check, lint, test
 ├── .husky/
-│   └── pre-commit          # Runs fmt:check + test before commit
+│   └── pre-commit          # Runs deno lint + biome check on staged files, then fmt:check
 ├── .zed/
 │   └── settings.json       # Zed editor config (Deno LSP + Biome)
 ├── DEVELOPMENT.md          # ← You are here
-├── vendor/                 # Vendored npm dependencies
 ├── node_modules/           # npm compatibility layer
 │
-├── packages/
-│   ├── core/               # @essayist/core — shared library
-│   │   ├── deno.json       # Package config, exports, tasks
-│   │   ├── mod.ts          # Public API
-│   │   ├── src/
-│   │   │   ├── agent.ts         # Agent class — OpenRouter client wrapper
-│   │   │   ├── agent_logger.ts  # logAgentCall(), logAgentResult() — stream logging
-│   │   │   ├── logger.ts        # Lazy pino logger (env-safe import)
-│   │   │   ├── schema.ts        # Zod→JSON-schema instruction generator + example builder
-│   │   │   ├── schema_test.ts
-│   │   │   ├── summarize.ts     # summarizeFile() — file summarizer via tool calls
-│   │   │   ├── summarize_test.ts
-│   │   │   ├── tools/
-│   │   │   │   ├── index.ts         # ToolPrompt interface + re-exports
-│   │   │   │   ├── read_file.ts     # createReadFileTool()
-│   │   │   │   ├── read_file_test.ts
-│   │   │   │   ├── list_files.ts    # createListFilesTool()
-│   │   │   │   ├── list_files_test.ts
-│   │   │   │   ├── grep.ts          # createGrepTool()
-│   │   │   │   ├── grep_test.ts
-│   │   │   │   ├── write_file.ts    # createWriteFileTool()
-│   │   │   │   ├── write_file_test.ts
-│   │   │   │   ├── mark.ts           # createMarkTool()
-│   │   │   │   └── mark_test.ts
-│   │   │   │   └── testing/
-│   │   │   │       └── mock_vfs.ts  # createMockVFS() helper for tool tests
-│   │   │   └── vfs/
-│   │   │       ├── types.ts         # VFS interface + all result types
-│   │   │       ├── vfs.ts           # VirtualFileSystem (full VFS impl)
-│   │   │       ├── vfs_test.ts      # Tests for read, write, list, grep, versioning
-│   │   │       ├── vfs_marks_test.ts # Tests for mark, getMarks, deleteMark, migration
-│   │   │       ├── persistence.ts   # PersistenceAdapter interface + InMemoryAdapter
-│   │   │       ├── persistence_test.ts
-│   │   │       ├── diff.ts          # Per-word diff
-│   │   │       ├── diff_test.ts
-│   │   │       ├── unified_diff.ts  # unifiedDiff() — unified diff formatter
-│   │   │       ├── unified_diff_test.ts
-│   │   │       ├── fuzzy.ts         # Fuzzy text matching for mark anchoring
-│   │   │       ├── fuzzy_test.ts
-│   │   │       ├── levenshtein.ts   # Levenshtein distance for fuzzy matching
-│   │   │       ├── levenshtein_test.ts
-│   │   │       ├── marks_resolver.ts   # Mark migration across versions + fuzzy find
-│   │   │       ├── marks_resolver_test.ts
-│   │   │       └── testing/
-│   │   │           └── helpers.ts       # createVFS(), createFile() test helpers
-│   │   └── integration/    # @essayist/core/integration — live API tests
-│   │       ├── deno.json
-│   │       ├── summarize_test.ts   # Hits real OpenRouter API (summarizeFile)
-│   │       ├── tools_test.ts       # Integration tests for list_files, grep, write_file
-│   │       └── utils.ts            # Reads OPENROUTER_API_KEY from env
-│   │
-│   └── web/                # @essayist/web — Fresh web app
-│       ├── deno.jsonc      # Package config, tasks, compiler options
-│       ├── main.ts         # App entry: wires middleware + fsRoutes
-│       ├── client.ts       # Imports global CSS (required by Fresh)
-│       ├── define.ts       # State type + createDefine helper
-│       ├── signals.ts      # activeEditor signal (Lexical editor instance)
-│       ├── vfs.ts          # Server-side VFS instance seeded with sample files
-│       ├── vite.config.ts  # Vite + Fresh + Tailwind + core watcher plugin
-│       ├── _fresh/         # Generated Fresh build output (gitignored)
-│       ├── assets/
-│       │   └── styles.css  # Tailwind import + custom "essayist" daisyUI theme
-│       ├── components/
-│       │   ├── FontSelect.tsx      # Font family toggle (serif/sans/mono) for file viewer
-│       │   ├── MarkdownView.tsx    # Renders markdown HTML (via marked + DOMPurify)
-│       │   ├── Toolbar.tsx         # Generic toolbar shell (accepts children)
-│       │   └── ViewModeSelect.tsx  # View mode toggle (auto/markdown/plain) for file viewer
-│       ├── hooks/
-│       │   └── useChat.ts          # useChat() hook — SSE chat for Preact islands
-│       ├── islands/
-│       │   ├── Chat.tsx            # Interactive Preact island (streaming chat UI)
-│       │   ├── ClearCache.tsx      # Button to clear localStorage + reload
-│       │   ├── ErrorBoundary.tsx   # Preact error boundary with reset button
-│       │   ├── FileBrowser.tsx     # File tree sidebar (fetches from /api/files)
-│       │   ├── FileViewer.tsx      # File content viewer (markdown or plain text)
-│       │   ├── LexicalTreeViewSection.tsx  # Debug panel showing active Lexical editor state
-│       │   ├── MarksSection.tsx    # Displays marks for the selected file, grouped by thread
-│       │   ├── Section.tsx         # Collapsible sidebar section (details/summary)
-│       │   └── Tabs.tsx            # Open file tabs with close buttons
-│       │   └── editor/
-│       │       ├── ActiveEditorRef.tsx  # EditorRefPlugin wrapper that sets/clears activeEditor
-│       │       ├── Editor.tsx           # Lexical rich text editor island component
-│       │       ├── extension.ts         # Shared editor extension (defineExtension with all deps)
-│       │       └── nodes.ts              # Lexical node registrations (heading, list, code, etc.)
-│       ├── middleware/
-│       │   └── agent.ts    # Creates Agent from OPENROUTER_API_KEY, attaches to state
-│       ├── routes/
-│       │   ├── _app.tsx    # HTML shell (navbar, h-dvh body, theme)
-│       │   ├── index.tsx   # Home page — three-column layout (browser, viewer, sidebar)
-│       │   └── api/
-│       │       ├── chat.ts         # GET /api/chat?message=… → SSE stream
-│       │       └── files/
-│       │           ├── index.ts    # GET /api/files → file list
-│       │           └── [path]/
-│       │               ├── index.ts  # GET /api/files/:path → file content
-│       │               └── marks.ts  # GET /api/files/:path/marks → file marks
-│       ├── signals/
-│       │   ├── file.ts            # FileModel — per-file content, loading, dirty, editor state
-│       │   ├── fileTree.ts        # FileTreeModel + useFiles() + buildFileTree()
-│       │   ├── marks.ts           # MarksModel — per-file marks with reload support
-│       │   ├── openedFiles.ts     # OpenedFilesModel — selectedFile, openedFiles, fileHistory
-│       │   └── preferences.ts     # viewerFont, viewMode persistent signals
-│       ├── utils/
-│       │   ├── asyncState.ts         # createAsyncState() — loading/error state helper
-│       │   ├── markdown.ts           # renderMarkdown() + markdownToEditorState()
-│       │   ├── markMapping.ts        # buildMarkdownMapping(), findPosition(), findRange()
-│       │   ├── markMapping_test.ts   # Tests for markdown offset ↔ TextNode mapping
-│       │   ├── markSelection.ts      # resolveMarksForEditor(), createRangeSelection(), applyMarkToEditor()
-│       │   ├── persistentSignal.ts   # persistentSignal() + usePersistentSignal()
-│       │   ├── sanitize.ts           # sanitizeHtml() — DOMPurify wrapper
-│       │   └── sse.ts                # SSE streaming helpers (parseSSE, streamModelResultSSE)
-│       └── static/
-│           └── favicon.ico
+└── packages/
+    ├── core/               # @essayist/core — shared library
+    │   ├── deno.json       # Package config, exports, tasks
+    │   ├── mod.ts          # Public API
+    │   ├── src/
+    │   │   ├── agent.ts         # Agent class — OpenRouter client wrapper
+    │   │   ├── agent_logger.ts  # logAgentCall(), logAgentResult() — stream logging
+    │   │   ├── logger.ts        # Lazy pino logger (env-safe import)
+    │   │   ├── schema.ts        # Zod→JSON-schema instruction generator + example builder
+    │   │   ├── schema_test.ts
+    │   │   ├── summarize.ts     # summarizeFile() — file summarizer via tool calls
+    │   │   ├── summarize_test.ts
+    │   │   ├── tools/
+    │   │   │   ├── index.ts         # ToolPrompt interface + re-exports
+    │   │   │   ├── read_file.ts     # createReadFileTool()
+    │   │   │   ├── read_file_test.ts
+    │   │   │   ├── list_files.ts    # createListFilesTool()
+    │   │   │   ├── list_files_test.ts
+    │   │   │   ├── grep.ts          # createGrepTool()
+    │   │   │   ├── grep_test.ts
+    │   │   │   ├── write_file.ts    # createWriteFileTool()
+    │   │   │   ├── write_file_test.ts
+    │   │   │   ├── mark.ts           # createMarkTool()
+    │   │   │   └── mark_test.ts
+    │   │   │   └── testing/
+    │   │   │       └── mock_vfs.ts  # createMockVFS() helper for tool tests
+    │   │   └── vfs/
+    │   │       ├── types.ts         # VFS interface + all result types
+    │   │       ├── vfs.ts           # VirtualFileSystem (full VFS impl)
+    │   │       ├── vfs_test.ts      # Tests for read, write, list, grep, versioning
+    │   │       ├── vfs_marks_test.ts # Tests for mark, getMarks, deleteMark, migration
+    │   │       ├── persistence.ts   # PersistenceAdapter interface + InMemoryAdapter
+    │   │       ├── persistence_test.ts
+    │   │       ├── diff.ts          # Per-word diff
+    │   │       ├── diff_test.ts
+    │   │       ├── unified_diff.ts  # unifiedDiff() — unified diff formatter
+    │   │       ├── unified_diff_test.ts
+    │   │       ├── fuzzy.ts         # Fuzzy text matching for mark anchoring
+    │   │       ├── fuzzy_test.ts
+    │   │       ├── levenshtein.ts   # Levenshtein distance for fuzzy matching
+    │   │       ├── levenshtein_test.ts
+    │   │       ├── marks_resolver.ts   # Mark migration across versions + fuzzy find
+    │   │       ├── marks_resolver_test.ts
+    │   │       └── testing/
+    │   │           └── helpers.ts       # createVFS(), createFile() test helpers
+    │   └── integration/    # @essayist/core/integration — live API tests
+    │       ├── deno.json
+    │       ├── summarize_test.ts   # Hits real OpenRouter API (summarizeFile)
+    │       ├── tools_test.ts       # Integration tests for list_files, grep, write_file
+    │       └── utils.ts            # Reads OPENROUTER_API_KEY from env
+    │
+    └── web/                # @essayist/web — Fresh web app
+        ├── deno.jsonc      # Package config, tasks, compiler options
+        ├── main.ts         # App entry: wires middleware + fsRoutes
+        ├── client.ts       # Imports global CSS (required by Fresh)
+        ├── define.ts       # State type + createDefine helper
+        ├── signals.ts      # activeEditor signal (Lexical editor instance)
+        ├── vfs.ts          # Server-side VFS instance seeded with sample files
+        ├── vite.config.ts  # Vite + Fresh + Tailwind + core watcher plugin
+        ├── _fresh/         # Generated Fresh build output (gitignored)
+        ├── assets/
+        │   └── styles.css  # Tailwind import + custom "essayist" daisyUI theme
+        ├── components/
+        │   ├── FontSelect.tsx      # Font family toggle (serif/sans/mono) for file viewer
+        │   ├── MarkdownView.tsx    # Renders markdown HTML (via marked + DOMPurify)
+        │   ├── Toolbar.tsx         # Generic toolbar shell (accepts children)
+        │   └── ViewModeSelect.tsx  # View mode toggle (auto/markdown/plain) for file viewer
+        ├── hooks/
+        │   └── useChat.ts          # useChat() hook — SSE chat for Preact islands
+        ├── islands/
+        │   ├── Chat.tsx            # Interactive Preact island (streaming chat UI)
+        │   ├── ClearCache.tsx      # Button to clear localStorage + reload
+        │   ├── ErrorBoundary.tsx   # Preact error boundary with reset button
+        │   ├── ExportPreviewSection.tsx  # Export preview with mark highlighting + whitespace viz
+        │   ├── FileBrowser.tsx     # File tree sidebar (fetches from /api/files)
+        │   ├── FileViewer.tsx      # File content viewer (markdown or plain text)
+        │   ├── LexicalTreeViewSection.tsx  # Debug panel showing active Lexical editor state
+        │   ├── MarkRangesSection.tsx  # Debug panel showing resolved mark ranges as JSON
+        │   ├── MarksSection.tsx    # Displays marks for the selected file, grouped by thread
+        │   ├── Section.tsx         # Collapsible sidebar section (details/summary)
+        │   ├── Tabs.tsx            # Open file tabs with close buttons
+        │   └── editor/
+        │       ├── ActiveEditorRef.tsx  # EditorRefPlugin wrapper that sets/clears activeEditor
+        │       ├── Editor.tsx           # Lexical rich text editor island component
+        │       └── extension.ts         # Shared editor extension (defineExtension with all deps)
+        ├── middleware/
+        │   └── agent.ts    # Creates Agent from OPENROUTER_API_KEY, attaches to state
+        ├── routes/
+        │   ├── _app.tsx    # HTML shell (navbar, h-dvh body, theme)
+        │   ├── index.tsx   # Home page — three-column layout (browser, viewer, sidebar)
+        │   └── api/
+        │       ├── chat.ts         # GET /api/chat?message=… → SSE stream
+        │       └── files/
+        │           ├── index.ts    # GET /api/files → file list
+        │           └── [path]/
+        │               ├── index.ts  # GET /api/files/:path → file content
+        │               └── marks.ts  # GET /api/files/:path/marks → file marks (with resolve status)
+        ├── signals/
+        │   ├── file.ts            # FileModel — per-file content, loading, dirty, editor state
+        │   ├── fileTree.ts        # FileTreeModel + useFiles() + buildFileTree()
+        │   ├── marks.ts           # MarksModel — per-file marks with reload support
+        │   ├── openedFiles.ts     # OpenedFilesModel — selectedFile, openedFiles, fileHistory
+        │   └── preferences.ts     # viewerFont, viewMode persistent signals
+        ├── utils/
+        │   ├── asyncState.ts            # createAsyncState() — loading/error state helper
+        │   ├── createRangeSelection.ts  # createRangeSelection() — NodeRange → RangeSelection
+        │   ├── markdown.ts              # renderMarkdown(), markdownToEditorState(), editorStateToMarkdown()
+        │   ├── persistentSignal.ts      # persistentSignal() + usePersistentSignal()
+        │   ├── sanitize.ts              # sanitizeHtml() — DOMPurify wrapper
+        │   ├── sse.ts                   # SSE streaming helpers (parseSSE, streamModelResultSSE)
+        │   ├── textNodeMapping.ts       # buildTextNodeSpans(), findPosition(), findRange()
+        │   └── textNodeMapping_test.ts  # Tests for markdown offset ↔ TextNode mapping
+        └── static/
+            └── favicon.ico
 ```
 
 ### Key Packages
 
-| Package                      | Path                         | Purpose                                                                     |
-| ---------------------------- | ---------------------------- | --------------------------------------------------------------------------- |
-| `@essayist/core`             | `packages/core/`             | Shared library: `Agent`, `summarizeFile`, VFS, tools, Zod schema utilities  |
-| `@essayist/core/integration` | `packages/core/integration/` | Live API tests (require `OPENROUTER_API_KEY`)                               |
-| `@essayist/web`              | `packages/web/`              | Fresh 2.x web app (Preact + Tailwind CSS + daisyUI) deployed to Deno Deploy |
+| Package                      | Path                         | Purpose                                                                                    |
+| ---------------------------- | ---------------------------- | ------------------------------------------------------------------------------------------ |
+| `@essayist/core`             | `packages/core/`             | Shared library: `Agent`, `summarizeFile`, VFS, tools, `resolveMarks`, Zod schema utilities |
+| `@essayist/core/integration` | `packages/core/integration/` | Live API tests (require `OPENROUTER_API_KEY`)                                              |
+| `@essayist/web`              | `packages/web/`              | Fresh 2.x web app (Preact + Tailwind CSS + daisyUI) deployed to Deno Deploy                |
 
 ### Important Entry Points
 
@@ -168,10 +168,11 @@ essayist/
   `agentMiddleware`, calls `fsRoutes()`.
 - **`packages/core/mod.ts`** — Core library public API. Exports `summarizeFile`,
   `Agent`, tool factories (`createReadFileTool`, `createListFilesTool`,
-  `createGrepTool`, `createWriteFileTool`, `createMarkTool`),
-  `VirtualFileSystem`, `InMemoryAdapter`, and VFS types (`DiffResult`,
-  `FileEntry`, `FileSnapshot`, `FileVersion`, `GrepOptions`, `GrepResult`,
-  `Mark`, `MarkOptions`, `MarkResult`, `ReadOptions`, `WriteResult`).
+  `createGrepTool`, `createWriteFileTool`, `createMarkTool`), `resolveMarks`
+  (mark migration resolver), `VirtualFileSystem`, `InMemoryAdapter`, and VFS
+  types (`DiffResult`, `FileEntry`, `FileSnapshot`, `FileVersion`,
+  `GrepOptions`, `GrepResult`, `Mark`, `MarkOptions`, `MarkResult`,
+  `MarkStatus`, `ReadOptions`, `WriteResult`).
 - **`packages/web/routes/api/chat.ts`** — SSE streaming chat endpoint. Uses the
   server-side VFS seeded with sample files, wires up read, list, grep, and write
   tools, and uses `Agent.callModelWithTools` to stream responses.
@@ -199,12 +200,22 @@ essayist/
 - **`packages/web/islands/LexicalTreeViewSection.tsx`** — Debug panel that
   displays the active Lexical editor's JSON state. Renders inside a collapsible
   `Section` titled "Lexical Editor".
-- **`packages/web/islands/MarksSection.tsx`** — Displays marks for the
-  currently selected file. Reads from `useMarks(path)` (reactive signal),
-  groups by `thread_id`, and renders each group as a daisyUI card. Each mark
-  shows: label, status badge (resolved/stale), selected text, comment, offset,
-  and length. Includes its own `Section` wrapper titled "Marks". Returns
-  `null` when no file is selected, loading, or no marks exist.
+- **`packages/web/islands/MarksSection.tsx`** — Displays marks for the currently
+  selected file. Reads from `useMarks(path)` (reactive signal), groups by
+  `thread_id`, and renders each group as a daisyUI card. Each mark shows: label,
+  status badge (resolved/stale), selected text, comment, offset, and length.
+  Includes its own `Section` wrapper titled "Marks". Returns `null` when no file
+  is selected, loading, or no marks exist.
+- **`packages/web/islands/MarkRangesSection.tsx`** — Debug panel that displays
+  the resolved mark ranges (`ranges` signal from `useMarks`) as JSON inside a
+  collapsible `Section` titled "Mark Regions". Shows the output of
+  `resolveMarksForEditor()` which maps VFS marks to Lexical `NodeRange`
+  positions.
+- **`packages/web/islands/ExportPreviewSection.tsx`** — Export preview panel
+  that renders the file's markdown content with active (non-stale) marks
+  highlighted in yellow. Visualizes whitespace (spaces as `·`, tabs as `→`,
+  newlines as `¬`). Lists stale marks separately below the preview. Uses
+  `useFile(path).markdown` and `useMarks(path).resolved` signals.
 - **`packages/web/islands/editor/ActiveEditorRef.tsx`** — Wraps
   `EditorRefPlugin` and a `useEffect` cleanup into a single component. Sets
   `activeEditor.value` on mount and clears it on unmount, preventing stale
@@ -215,12 +226,8 @@ essayist/
 - **`packages/web/islands/editor/extension.ts`** — Shared editor extension
   defined via `defineExtension` with dependencies: `RichTextExtension`,
   `HistoryExtension`, `AutoFocusExtension`, `LinkExtension`, `ListExtension`,
-  `CodeExtension`, `HorizontalRuleExtension`. Used by both `Editor.tsx` (React)
-  and `markdownToEditorState()` (headless).
-- **`packages/web/islands/editor/nodes.ts`** — Lexical node registrations
-  (`HeadingNode`, `LinkNode`, `ListNode`, `ListItemNode`, `QuoteNode`,
-  `CodeNode`). Note: nodes are now declared via extensions, not passed directly
-  to `createEditor`.
+  `CodeExtension`, `HorizontalRuleExtension`, `MarkExtension`. Used by both
+  `Editor.tsx` (React) and `markdownToEditorState()` (headless).
 - **`packages/web/middleware/agent.ts`** — Middleware. Instantiates `Agent` with
   `OPENROUTER_API_KEY` and attaches it to `ctx.state.agent`.
 - **`packages/web/signals.ts`** — Exports the `activeEditor` signal
@@ -232,12 +239,19 @@ essayist/
   loading, error state, and `buildFileTree()` tree builder. Exports `useFiles()`
   hook and `TreeNode` interface.
 - **`packages/web/signals/file.ts`** — `FileModel` with per-file content,
-  loading, error, dirty tracking, and Lexical editor state (`initialState`,
-  `modifiedState`, `state`). Exports `useFile(path)` helper.
+  loading, error, dirty tracking, Lexical editor state (`initialState`,
+  `modifiedState`, `state`), and a `markdown` computed signal (editor state →
+  markdown string via `editorStateToMarkdown()`). Also provides `isSelected`
+  computed and `setModifiedState()` for editor updates. Exports `useFile(path)`
+  helper.
 - **`packages/web/signals/marks.ts`** — `MarksModel` with per-file marks,
-  loading, error, and a `reload()` method for refetching. Exports
-  `useMarks(path)` helper. Follows the same `createModel` + `Map` cache
-  pattern as `fileTree.ts`.
+  loading, error, `reload()`, and two computed signals: `resolved` (marks
+  migrated from original content to current markdown via core's
+  `resolveMarks()`) and `ranges` (marks mapped to Lexical `NodeRange` positions
+  via `resolveMarksForEditor()`). Also has an `effect` that applies mark ranges
+  to the active Lexical editor via `$wrapSelectionInMarkNode`. Exports
+  `useMarks(path)` helper and `MarkWithRange` interface. Follows the same
+  `createModel` + `Map` cache pattern as `fileTree.ts`.
 - **`packages/web/signals/preferences.ts`** — `viewerFont` and `viewMode`
   persistent signals.
 - **`packages/web/vfs.ts`** — Server-side VFS instance seeded with sample files
@@ -252,27 +266,22 @@ essayist/
 - **`packages/web/hooks/useChat.ts`** and **`packages/web/utils/sse.ts`** —
   Helper utilities for managing the SSE connection and client-side state.
 - **`packages/web/utils/markdown.ts`** — `renderMarkdown()` (marked +
-  DOMPurify) and `markdownToEditorState()` (markdown → Lexical `EditorState` via
-  `buildEditorFromExtensions` + `@lexical/markdown` transformers). Uses the
-  shared `editorExtension` so the bootstrap editor has the same extensions as
-  the React editor.
-- **`packages/web/utils/markMapping.ts`** — Offset mapping utilities for
-  converting plaintext character offsets to Lexical TextNode positions.
-  `buildMarkdownMapping()` exports the editor state to markdown, walks the
-  node tree in document order, and builds a sorted list of `TextNodeSpan`
-  entries (each with `key`, `text`, `mdStart`). `findPosition()` uses binary
-  search to convert a markdown offset to a `NodePosition` (TextNode key +
-  local offset). `findRange()` converts a markdown offset+length to a
-  `NodeRange` (anchor + focus). Returns `null` for offsets that fall in
-  markdown syntax gaps (e.g., `**`, `#`, `>`).
-- **`packages/web/utils/markSelection.ts`** — High-level mark resolution
-  pipeline. `resolveMarksForEditor()` ties together Lexical's
-  `$convertToMarkdownString`, core's `resolveMarks()`, and
-  `buildMarkdownMapping()` to convert VFS marks (with original-content
-  offsets) to Lexical node ranges. `createRangeSelection()` creates a
-  Lexical `RangeSelection` from a `NodeRange`. `applyMarkToEditor()` wraps
-  a range in a `MarkNode` via `$wrapSelectionInMarkNode` from `@lexical/mark`.
-- **`packages/web/utils/markMapping_test.ts`** — 6 tests covering simple
+  DOMPurify), `markdownToEditorState()` (markdown → Lexical `EditorState`), and
+  `editorStateToMarkdown()` (Lexical `EditorState` → markdown string via
+  `$convertToMarkdownString`). Both conversion functions use the shared
+  `editorExtension`.
+- **`packages/web/utils/textNodeMapping.ts`** — Offset mapping utilities for
+  converting content character offsets to Lexical TextNode positions.
+  `buildTextNodeSpans()` walks all TextNodes in document order, finds each one's
+  text in the exported content string, and builds a sorted list of
+  `TextNodeSpan` entries (each with `key`, `text`, `offset`). `findPosition()`
+  uses binary search to convert a content offset to a `NodePosition` (TextNode
+  key + local offset). `findRange()` converts a content offset+length to a
+  `NodeRange` (anchor + focus). Offsets in syntax gaps snap to the nearest valid
+  text position.
+- **`packages/web/utils/createRangeSelection.ts`** — `createRangeSelection()`
+  creates a Lexical `RangeSelection` from a `NodeRange`.
+- **`packages/web/utils/textNodeMapping_test.ts`** — Tests covering simple
   paragraphs, headings, bold text, two-paragraph documents, mixed content
   (headings, lists, blockquotes, code blocks), and edge cases for
   `findPosition()`.
@@ -303,16 +312,16 @@ essayist/
 - **DOMPurify** (v3.4.9) — HTML sanitization for rendered markdown.
 - **Lexical** (v0.45.0) — Rich text editor framework. Used via `lexical`,
   `@lexical/react`, `@lexical/rich-text`, `@lexical/history`, `@lexical/link`,
-  `@lexical/list`, `@lexical/code`, `@lexical/extension`,
-  `@lexical/markdown` (for markdown ↔ editor state conversion), and
-  `@lexical/mark` (for `MarkNode` / `$wrapSelectionInMarkNode`).
+  `@lexical/list`, `@lexical/code`, `@lexical/extension`, `@lexical/markdown`
+  (for markdown ↔ editor state conversion), and `@lexical/mark` (for `MarkNode`
+  / `$wrapSelectionInMarkNode`).
 - **lucide-preact** (v1.17.0) — Icon library (FileText, Folder, FolderOpen, X,
   Zap, etc.).
 - **@fontsource-variable/hanken-grotesk** — Sans-serif variable font.
 - **@fontsource-variable/recursive** — Mono variable font.
 - **@fontsource-variable/source-serif-4** — Serif variable font.
-- **@biomejs/biome** (v2.5.0) — Formatter and linter (replaces deno fmt/lint
-  for code formatting; Biome handles JS/TS/JSON/CSS, Deno handles .ts fmt via
+- **@biomejs/biome** (v2.5.0) — Formatter and linter (replaces deno fmt/lint for
+  code formatting; Biome handles JS/TS/JSON/CSS, Deno handles .ts fmt via
   `deno fmt`).
 
 ## Commands
@@ -359,7 +368,8 @@ Without the key the tests skip gracefully.
 ### Web Development
 
 ```
-deno task -f web dev
+deno task -f web dev        # Dev server with pino-pretty logging
+deno task -f web build      # Production build (vite build → _fresh/)
 ```
 
 Production builds and serving are handled by Deno Deploy.
@@ -380,8 +390,8 @@ deno task -f web check
 3. `deno check`
 4. `deno test -A`
 
-The `.husky/pre-commit` hook runs `deno task fmt:check && deno test -A`
-automatically before each commit.
+The `.husky/pre-commit` hook runs `deno lint` and `biome check` on staged files,
+then `deno task fmt:check` before each commit.
 
 ## Conventions and Patterns
 
@@ -437,15 +447,20 @@ automatically before each commit.
   store. The VFS supports read (with line-range and numbering options), write,
   list (with directory prefix filtering), grep (regex), search (literal text),
   versioning (history, revert), and unified diff between versions. Marks are
-  text-span annotations
-  bound to specific versions, with automatic migration across versions via
-  diff-based offset mapping and fuzzy matching (`marks_resolver.ts`). `mark()`
-  accepts an optional `MarkOptions` bag (`label`, `lineHint`, `threadId`,
-  `contextRadius`). `lineHint` is a 1-based line number that is internally
-  converted to a character offset via a `lineToOffset()` helper before
-  disambiguating duplicate occurrences. `deleteMark(path, versionId, markId)`
-  removes a mark by ID from a specific version. Marks are stored per-version as
-  `Mark[]` under a single key `marks:{path}:{versionId}`.
+  text-span annotations bound to specific versions, with automatic migration
+  across versions via diff-based offset mapping and fuzzy matching
+  (`marks_resolver.ts`). `mark()` accepts an optional `MarkOptions` bag
+  (`label`, `lineHint`, `threadId`, `contextRadius`). `lineHint` is a 1-based
+  line number that is internally converted to a character offset via a
+  `lineToOffset()` helper before disambiguating duplicate occurrences.
+  `deleteMark(path, versionId, markId)` removes a mark by ID from a specific
+  version. Marks are stored per-version as `Mark[]` under a single key
+  `marks:{path}:{versionId}`.
+- **Mark resolution** — `resolveMarks({ marks, oldContent, newContent })` from
+  core migrates marks across content changes using diff-based offset mapping and
+  fuzzy matching. Returns marks with updated offsets and a `status`
+  (`"resolved"` or `"stale"`). The web app uses this in `MarksModel.resolved` to
+  track which marks still apply after editing.
 - **Agent logging** — `callModelWithTools` feeds the request to `logAgentCall()`
   and the result to `logAgentResult()`, which reads the items stream and logs
   completed tool calls, outputs, messages, and reasoning separately. Uses a lazy
@@ -454,7 +469,6 @@ automatically before each commit.
 - **Vite watches core** — `vite.config.ts` includes a custom `watchCore` plugin
   that adds `packages/core/` to Vite's file watcher so changes to core trigger
   web app reloads.
-- **Vendored dependencies** — npm packages are vendored locally in `vendor/`.
 - **Integration tests** — Live API tests are in a separate workspace member
   (`packages/core/integration/`) with their own `deno.json` and `.env` file.
   They skip gracefully without an API key.
@@ -509,16 +523,20 @@ automatically before each commit.
   (chat messages, file content).
 - **createModel singletons** — `OpenedFilesModel` and `FileTreeModel` use
   `createModel()` which returns a class. They are instantiated as module-level
-  singletons (`new OpenedFilesModel()`, `new FileTreeModel()`). `FileModel`
-  uses a `Map` cache keyed by path. Do not create multiple instances of these
-  models.
-- **Lexical markdown conversion** — `markdownToEditorState()` creates a
-  headless Lexical editor via `buildEditorFromExtensions()` on every call,
-  using the shared `editorExtension`. This ensures the bootstrap editor has
-  the same extensions (rich text, history, links, lists, code, etc.) as the
-  React-based `Editor` island. The bootstrap editor is discarded after its
-  state is extracted.
-- **createMarkTool not wired in chat** — The chat endpoint (`routes/api/chat.ts`)
-  only wires `createReadFileTool`, `createListFilesTool`, `createGrepTool`, and
-  `createWriteFileTool`. `createMarkTool` is exported from core but not included
-  in the chat tools array.
+  singletons (`new OpenedFilesModel()`, `new FileTreeModel()`). `FileModel` uses
+  a `Map` cache keyed by path. Do not create multiple instances of these models.
+- **Lexical markdown conversion** — `markdownToEditorState()` creates a headless
+  Lexical editor via `buildEditorFromExtensions()` on every call, using the
+  shared `editorExtension`. This ensures the bootstrap editor has the same
+  extensions (rich text, history, links, lists, code, etc.) as the React-based
+  `Editor` island. The bootstrap editor is discarded after its state is
+  extracted.
+- **createMarkTool not wired in chat** — The chat endpoint
+  (`routes/api/chat.ts`) only wires `createReadFileTool`, `createListFilesTool`,
+  `createGrepTool`, and `createWriteFileTool`. `createMarkTool` is exported from
+  core but not included in the chat tools array.
+- **MarkExtension in editor** — The shared `editorExtension` includes
+  `MarkExtension` from `@lexical/mark`, enabling `MarkNode` support. The
+  `MarksModel` effect uses `$wrapSelectionInMarkNode` to visually highlight mark
+  ranges in the active editor. This is a work in progress (see TODO in
+  `signals/marks.ts`).
