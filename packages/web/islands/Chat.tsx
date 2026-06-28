@@ -139,12 +139,12 @@ export default function Chat() {
             value={input.value}
             onInput={(e) => (input.value = e.currentTarget.value)}
             placeholder="Type a message..."
-            class="input input-bordered flex-1"
+            class="input input-bordered rounded-field flex-1"
             disabled={streaming.value}
           />
           <button
             type="submit"
-            class="btn btn-primary"
+            class="btn btn-primary rounded-field"
             disabled={streaming.value || !input.value.trim()}
           >
             {streaming.value ? (
