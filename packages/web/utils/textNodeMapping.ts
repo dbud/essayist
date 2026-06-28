@@ -1,4 +1,3 @@
-import { $convertToMarkdownString, TRANSFORMERS } from "@lexical/markdown";
 import type { EditorState, LexicalNode, TextNode } from "lexical";
 import { $getRoot, $isElementNode, $isTextNode } from "lexical";
 
@@ -19,22 +18,12 @@ export interface NodeRange {
 }
 
 /**
- * An entry mapping a TextNode to its position in the exported markdown.
+ * An entry mapping a TextNode to its position in the exported text.
  */
 export interface TextNodeSpan {
   key: string;
   text: string;
-  mdStart: number;
-}
-
-/**
- * Result of building the markdown-to-node mapping.
- * The spans list is sorted by markdown position, enabling binary search.
- */
-export interface MarkdownMapping {
-  spans: TextNodeSpan[];
-  /** The full exported markdown string */
-  markdown: string;
+  offset: number;
 }
 
 /**
@@ -45,33 +34,33 @@ export interface MarkdownMapping {
  * list is sorted by markdown position, enabling O(log n) binary search
  * for mark offset lookup.
  */
-export function buildMarkdownMapping(state: EditorState): MarkdownMapping {
+export function buildTextNodeSpans(
+  state: EditorState,
+  content: string,
+): TextNodeSpan[] {
   const spans: TextNodeSpan[] = [];
-  let markdown = "";
 
   state.read(() => {
     const root = $getRoot();
-    // TODO: investigate "The selection is moved to the start after the operation."
-    markdown = $convertToMarkdownString(TRANSFORMERS, root);
 
     let searchFrom = 0;
     for (const tn of walkTextNodes(root)) {
       const text = tn.getTextContent();
       if (text.length === 0) continue;
 
-      const idx = markdown.indexOf(text, searchFrom);
+      const idx = content.indexOf(text, searchFrom);
       if (idx === -1) continue;
 
-      spans.push({ key: tn.getKey(), text, mdStart: idx });
+      spans.push({ key: tn.getKey(), text, offset: idx });
       searchFrom = idx + text.length;
     }
   });
 
-  return { spans, markdown };
+  return spans;
 }
 
 /**
- * Finds the TextNode and local offset for a given markdown character offset.
+ * Finds the TextNode and local offset for a given content character offset.
  * Uses binary search on the sorted spans — O(log n).
  *
  * If the offset falls in a gap between TextNodes (e.g., markdown syntax
@@ -80,7 +69,7 @@ export function buildMarkdownMapping(state: EditorState): MarkdownMapping {
  */
 export function findPosition(
   spans: TextNodeSpan[],
-  mdOffset: number,
+  offset: number,
 ): NodePosition | null {
   if (spans.length === 0) return null;
 
@@ -90,7 +79,7 @@ export function findPosition(
 
   while (lo <= hi) {
     const mid = (lo + hi) >>> 1;
-    if (spans[mid].mdStart <= mdOffset) {
+    if (spans[mid].offset <= offset) {
       candidate = mid;
       lo = mid + 1;
     } else {
@@ -104,7 +93,7 @@ export function findPosition(
   }
 
   const span = spans[candidate];
-  const localOffset = mdOffset - span.mdStart;
+  const localOffset = offset - span.offset;
 
   if (localOffset < span.text.length) {
     return { key: span.key, offset: localOffset };
@@ -121,19 +110,19 @@ export function findPosition(
 }
 
 /**
- * Converts a markdown offset range to a NodeRange.
+ * Converts a content offset range to a NodeRange.
  * Returns null only if there are no spans at all.
  */
 export function findRange(
   spans: TextNodeSpan[],
-  mdOffset: number,
+  offset: number,
   length: number,
 ): NodeRange | null {
   // findPosition never returns null when spans is non-empty
-  const anchor = findPosition(spans, mdOffset);
+  const anchor = findPosition(spans, offset);
   if (!anchor) return null;
 
-  const focus = findPosition(spans, mdOffset + length - 1);
+  const focus = findPosition(spans, offset + length - 1);
   if (!focus) return null;
 
   return { anchor, focus };

@@ -1,15 +1,15 @@
 import { buildEditorFromExtensions } from "@lexical/extension";
 import { $convertFromMarkdownString, TRANSFORMERS } from "@lexical/markdown";
 import { assert, assertEquals } from "@std/assert";
-import { $getRoot, type LexicalEditor } from "lexical";
+import { $getRoot, type EditorState, type LexicalEditor } from "lexical";
 import editorExtension from "@/islands/editor/extension.ts";
 import {
-  buildMarkdownMapping,
+  buildTextNodeSpans,
   findPosition,
   findRange,
-} from "./markMapping.ts";
+} from "./textNodeMapping.ts";
 
-function createEditor() {
+function createEditor(): LexicalEditor {
   return buildEditorFromExtensions({
     ...editorExtension,
     $initialEditorState: undefined,
@@ -17,7 +17,8 @@ function createEditor() {
   });
 }
 
-function importMarkdown(editor: LexicalEditor, md: string) {
+function importMarkdown(md: string): EditorState {
+  const editor = createEditor();
   editor.update(
     () => {
       $getRoot().clear();
@@ -25,17 +26,15 @@ function importMarkdown(editor: LexicalEditor, md: string) {
     },
     { discrete: true },
   );
+  return editor.getEditorState();
 }
 
-Deno.test("buildMarkdownMapping -- simple paragraph", () => {
-  const editor = createEditor();
-  importMarkdown(editor, "Hello world");
+Deno.test("buildTextNodeSpans -- simple paragraph", () => {
+  const md = "Hello world";
+  const spans = buildTextNodeSpans(importMarkdown(md), md);
 
-  const { spans, markdown } = buildMarkdownMapping(editor.getEditorState());
-
-  assertEquals(markdown, "Hello world");
   assertEquals(spans.length, 1);
-  assertEquals(spans[0].mdStart, 0);
+  assertEquals(spans[0].offset, 0);
   assertEquals(spans[0].text, "Hello world");
 
   const range = findRange(spans, 6, 5);
@@ -43,15 +42,13 @@ Deno.test("buildMarkdownMapping -- simple paragraph", () => {
   assertEquals(range?.focus.offset, 10);
 });
 
-Deno.test("buildMarkdownMapping -- heading syntax chars snap to nearest text", () => {
-  const editor = createEditor();
-  importMarkdown(editor, "# My Heading");
-
-  const { spans } = buildMarkdownMapping(editor.getEditorState());
+Deno.test("buildTextNodeSpans -- heading syntax chars snap to nearest text", () => {
+  const md = "# My Heading";
+  const spans = buildTextNodeSpans(importMarkdown(md), md);
   const heading = spans.find((s) => s.text === "My Heading");
 
   assert(heading);
-  assertEquals(heading.mdStart, 2);
+  assertEquals(heading.offset, 2);
 
   // Offset 0 ("#") and 1 (" ") are in the gap before the heading text.
   // They snap to the start of the first span.
@@ -72,32 +69,25 @@ Deno.test("buildMarkdownMapping -- heading syntax chars snap to nearest text", (
   assertEquals(pos2.offset, 0);
 });
 
-Deno.test("buildMarkdownMapping -- bold in paragraph produces 3 text nodes", () => {
-  const editor = createEditor();
-  importMarkdown(editor, "This is **bold** text");
-
-  const { spans } = buildMarkdownMapping(editor.getEditorState());
+Deno.test("buildTextNodeSpans -- bold in paragraph produces 3 text nodes", () => {
+  const md = "This is **bold** text";
+  const spans = buildTextNodeSpans(importMarkdown(md), md);
 
   assertEquals(spans.length, 3);
   assert(spans.find((s) => s.text === "bold"));
 });
 
-Deno.test("buildMarkdownMapping -- two paragraphs", () => {
-  const editor = createEditor();
-  importMarkdown(editor, "First.\n\nSecond.");
-
-  const { spans } = buildMarkdownMapping(editor.getEditorState());
+Deno.test("buildTextNodeSpans -- two paragraphs", () => {
+  const md = "First.\n\nSecond.";
+  const spans = buildTextNodeSpans(importMarkdown(md), md);
 
   assertEquals(spans.length, 2);
   assertEquals(spans[0].text, "First.");
   assertEquals(spans[1].text, "Second.");
 });
 
-Deno.test("buildMarkdownMapping -- mixed content all spans valid and sorted", () => {
-  const editor = createEditor();
-  importMarkdown(
-    editor,
-    `# Title
+Deno.test("buildTextNodeSpans -- mixed content all spans valid and sorted", () => {
+  const md = `# Title
 
 This is a paragraph with **bold** text.
 
@@ -110,29 +100,26 @@ This is a paragraph with **bold** text.
 
 \`\`\`
 code here
-\`\`\``,
-  );
+\`\`\``;
 
-  const { spans, markdown } = buildMarkdownMapping(editor.getEditorState());
+  const spans = buildTextNodeSpans(importMarkdown(md), md);
 
   assert(spans.length >= 5);
   for (let i = 1; i < spans.length; i++) {
-    assert(spans[i].mdStart >= spans[i - 1].mdStart, "spans sorted");
+    assert(spans[i].offset >= spans[i - 1].offset, "spans sorted");
   }
   for (const s of spans) {
     assertEquals(
-      markdown.slice(s.mdStart, s.mdStart + s.text.length),
+      md.slice(s.offset, s.offset + s.text.length),
       s.text,
-      `span at ${s.mdStart} matches`,
+      `span at ${s.offset} matches`,
     );
   }
 });
 
 Deno.test("findPosition -- past end snaps to last char", () => {
-  const editor = createEditor();
-  importMarkdown(editor, "AB");
-
-  const { spans } = buildMarkdownMapping(editor.getEditorState());
+  const md = "AB";
+  const spans = buildTextNodeSpans(importMarkdown(md), md);
 
   const pos0 = findPosition(spans, 0);
   const pos1 = findPosition(spans, 1);
@@ -151,10 +138,8 @@ Deno.test("findPosition -- past end snaps to last char", () => {
 });
 
 Deno.test("findPosition -- gap between spans snaps forward", () => {
-  const editor = createEditor();
-  importMarkdown(editor, "Hello **world**");
-
-  const { spans } = buildMarkdownMapping(editor.getEditorState());
+  const md = "Hello **world**";
+  const spans = buildTextNodeSpans(importMarkdown(md), md);
   // Two spans: "Hello " at 0, "world" at 8 (after "**")
   // Offset 6 is "*" — in the gap between spans, snaps to "world" start
   const pos = findPosition(spans, 6);

@@ -1,55 +1,8 @@
-import type { Mark } from "@essayist/core";
-import { resolveMarks } from "@essayist/core";
 import { $wrapSelectionInMarkNode } from "@lexical/mark";
-import type { EditorState, RangeSelection } from "lexical";
+import type { RangeSelection } from "lexical";
 import { $createRangeSelection } from "lexical";
-import type { NodeRange } from "./markMapping.ts";
-import { buildMarkdownMapping, findRange } from "./markMapping.ts";
-
-export interface MarkWithRange {
-  mark: Mark;
-  range: NodeRange;
-}
-
-export interface MarkResolutionResult {
-  resolved: MarkWithRange[];
-  unmapped: Mark[];
-  markdown: string;
-}
-
-/**
- * Resolves VFS marks (plaintext offsets) to Lexical node ranges.
- * Exports editor to markdown, remaps offsets via resolveMarks(),
- * then maps each mark to a TextNode range using binary search.
- * Stale and zero-length marks are included for visualization.
- */
-export function resolveMarksForEditor(
-  state: EditorState,
-  originalContent: string,
-  marks: Mark[],
-): MarkResolutionResult {
-  const { spans, markdown } = buildMarkdownMapping(state);
-
-  const remappedMarks = resolveMarks({
-    marks,
-    oldContent: originalContent,
-    newContent: markdown,
-  });
-
-  const resolved: MarkWithRange[] = [];
-  const unmapped: Mark[] = [];
-
-  for (const mark of remappedMarks) {
-    const range = findRange(spans, mark.offset, mark.length);
-    if (range) {
-      resolved.push({ mark, range });
-    } else {
-      unmapped.push(mark);
-    }
-  }
-
-  return { resolved, unmapped, markdown };
-}
+import type { MarkWithRange } from "@/signals/marks.ts";
+import type { NodeRange } from "@/utils/textNodeMapping.ts";
 
 /**
  * Creates a Lexical RangeSelection from a node range.
