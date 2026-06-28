@@ -5,7 +5,16 @@ import MarkdownView from "@/components/MarkdownView.tsx";
 import { useChat } from "@/hooks/useChat.ts";
 
 function pprint<T>(a: string | T) {
-  const object = typeof a === "string" ? JSON.parse(a) : a;
+  let object: unknown;
+  if (typeof a === "string") {
+    try {
+      object = JSON.parse(a);
+    } catch {
+      return a;
+    }
+  } else {
+    object = a;
+  }
   return JSON.stringify(object, null, 2);
 }
 
