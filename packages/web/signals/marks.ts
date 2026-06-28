@@ -1,10 +1,13 @@
 import type { Mark } from "@essayist/core";
 import { resolveMarks } from "@essayist/core";
-import { computed, createModel, signal } from "@preact/signals";
+import { $wrapSelectionInMarkNode } from "@lexical/mark";
+import { computed, createModel, effect, signal } from "@preact/signals";
 import { assert } from "@std/assert/assert";
 import type { EditorState } from "lexical";
 import { useFile } from "@/signals/file.ts";
+import { activeEditor } from "@/signals.ts";
 import createAsyncState from "@/utils/asyncState.ts";
+import { createRangeSelection } from "@/utils/createRangeSelection.ts";
 import {
   buildTextNodeSpans,
   findRange,
@@ -29,6 +32,26 @@ export const MarksModel = createModel((path: string) => {
       ? resolveMarksForEditor(resolved.value, state.value, markdown.value)
       : [],
   );
+
+  // TODO: this is a rough test
+  effect(() => {
+    const editor = activeEditor.value;
+    if (!editor) return;
+    editor.update(
+      () => {
+        console.log("apply ranges");
+        ranges.value.forEach(({ mark, range }) => {
+          const selection = createRangeSelection(range);
+          $wrapSelectionInMarkNode(
+            selection,
+            /* isBackward */ false,
+            mark.thread_id,
+          );
+        });
+      },
+      { tag: "mark-range" },
+    );
+  });
 
   async function load() {
     const result = await run(async () => {

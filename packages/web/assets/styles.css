@@ -17,6 +17,10 @@
   html {
     font-size: 16.5px;
   }
+  mark {
+    background-color: var(--color-mark);
+    color: var(--color-mark-content);
+  }
 }
 
 @plugin "daisyui" {
@@ -48,6 +52,8 @@
   --color-warning-content: oklch(98% 0.026 102.212);
   --color-error: oklch(64% 0.246 16.439);
   --color-error-content: oklch(96% 0.015 12.422);
+  --color-mark: oklch(95% 0.1242 101.55);
+  --color-mark-content: oklch(25% 0.05 101.55);
   --radius-selector: 0.5rem;
   --radius-field: 0.5rem;
   --radius-box: 0.5rem;
