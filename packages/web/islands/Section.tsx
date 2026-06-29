@@ -1,5 +1,6 @@
-import { useSignal } from "@preact/signals";
+import { toKebabCase } from "@std/text/to-kebab-case";
 import type { ComponentChildren } from "preact";
+import { usePersistentSignal } from "@/utils/persistentSignal.ts";
 
 interface SectionProps {
   title: string;
@@ -12,7 +13,10 @@ export default function Section({
   children,
   defaultOpen = true,
 }: SectionProps) {
-  const open = useSignal(defaultOpen);
+  const open = usePersistentSignal(
+    `section:${toKebabCase(title)}`,
+    defaultOpen,
+  );
 
   return (
     <details
