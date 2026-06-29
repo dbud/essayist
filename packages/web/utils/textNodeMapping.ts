@@ -26,6 +26,11 @@ export interface TextNodeSpan {
   offset: number;
 }
 
+export interface Span {
+  offset: number;
+  length: number;
+}
+
 /**
  * Builds a sorted list of TextNode spans from the editor state.
  *
@@ -115,8 +120,7 @@ export function findPosition(
  */
 export function findRange(
   spans: TextNodeSpan[],
-  offset: number,
-  length: number,
+  { offset, length }: Span,
 ): NodeRange | null {
   // findPosition never returns null when spans is non-empty
   const anchor = findPosition(spans, offset);

@@ -37,7 +37,7 @@ Deno.test("buildTextNodeSpans -- simple paragraph", () => {
   assertEquals(spans[0].offset, 0);
   assertEquals(spans[0].text, "Hello world");
 
-  const range = findRange(spans, 6, 5);
+  const range = findRange(spans, { offset: 6, length: 5 });
   assertEquals(range?.anchor.offset, 6);
   assertEquals(range?.focus.offset, 10);
 });
