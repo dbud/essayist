@@ -41,16 +41,16 @@ export default function MarksSection() {
 }
 
 function Marks({ path }: { path: string }) {
-  const { marks, loading } = useMarks(path);
+  const { resolved, loading } = useMarks(path);
 
-  if (loading.value || marks.value.length === 0) {
+  if (loading.value || resolved.value.length === 0) {
     return null;
   }
 
   return (
     <Section title="Marks">
       <div class="flex flex-col gap-3">
-        {marks.value.map((mark) => (
+        {resolved.value.map((mark) => (
           <MarkDetail key={mark.id} mark={mark} />
         ))}
       </div>
