@@ -60,16 +60,18 @@ Deno.test("resolveMarks -- pure insertion inside mark region (no division by zer
                                                       ^^^^^^
                                                       inserted "aaaaaa " inside the mark region
 
-    The diff hunk is a pure insertion (oldStart == oldEnd).
-    mapOffset must not divide by zero.
+    The diff hunk is a pure insertion (oldStart == oldEnd) fully inside the mark.
+    The mark expands to include the inserted text.
   */
   const oldContent = "It has been used as a typing test since the late 1800s.";
   const newContent =
     "It has been used as a typing test since the aaaaaa late 1800s.";
+  const insertionLen = "aaaaaa ".length;
+  const markStart = oldContent.indexOf("since the late");
   const marks = [
     createMark({
       selected_text: "since the late",
-      offset: oldContent.indexOf("since the late"),
+      offset: markStart,
       before_context: "It has been used as a typing test ",
       after_context: " 1800s.",
     }),
@@ -80,9 +82,12 @@ Deno.test("resolveMarks -- pure insertion inside mark region (no division by zer
   assertEquals(result.length, 1);
   assertObjectMatch(result[0], {
     status: "resolved",
-    offset: oldContent.indexOf("since the late"),
-    length: "since the aaaaaa late".length,
-    selected_text: "since the aaaaaa late",
+    offset: markStart,
+    length: "since the late".length + insertionLen,
+    selected_text: newContent.slice(
+      markStart,
+      markStart + "since the late".length + insertionLen,
+    ),
   });
 });
 
@@ -715,4 +720,76 @@ Deno.test("resolveMarks -- separate contextFuzzyThreshold vs selectedTextFuzzyTh
 
   assertEquals(result.length, 1);
   assertObjectMatch(result[0], { status: "resolved", selected_text: "quik" });
+});
+
+Deno.test("resolveMarks -- insertion inside a mark spanning multiple lines", () => {
+  /*
+    Mark spans the entire content. A insertion (".     ") is made inside
+    the mark (after "fox"). The mark should expand to include the
+    inserted text.
+  */
+  const oldContent = [
+    "The quick brown fox jumps over the lazy dog.",
+    "This sentence contains every letter of the alphabet.",
+    "It has been used as a typing test since the late 1800s.",
+  ].join("\n");
+  const newContent =
+    "The quick brown fox.     jumps over the lazy dog." +
+    "\n" +
+    "This sentence contains every letter of the alphabet." +
+    "\n" +
+    "It has been used as a typing test since the late 1800s.";
+  const marks = [
+    createMark({
+      selected_text: oldContent,
+      offset: 0,
+      length: oldContent.length,
+      before_context: "",
+      after_context: "",
+    }),
+  ];
+
+  const result = resolve(marks, oldContent, newContent);
+
+  assertEquals(result.length, 1);
+  assertObjectMatch(result[0], {
+    status: "resolved",
+    offset: 0,
+    length: newContent.length,
+    selected_text: newContent,
+  });
+});
+
+Deno.test("resolveMarks -- deletion and insertion inside full-content mark", () => {
+  /*
+    old: "The quick brown fox jumps over a lazy dog"
+    new: "The quick fox jumps over a very lazy dog"
+                    ^^^^^^           ^^^^
+                    deleted "brown   inserted "very
+
+    Mark spans the entire old content. The mark should shrink by the
+    deletion and grow by the insertion.
+  */
+  const oldContent = "The quick brown fox jumps over a lazy dog";
+  const newContent = "The quick fox jumps over a very lazy dog";
+
+  const marks = [
+    createMark({
+      selected_text: oldContent,
+      offset: 0,
+      length: oldContent.length,
+      before_context: "",
+      after_context: "",
+    }),
+  ];
+
+  const result = resolve(marks, oldContent, newContent);
+
+  assertEquals(result.length, 1);
+  assertObjectMatch(result[0], {
+    status: "resolved",
+    offset: 0,
+    length: newContent.length,
+    selected_text: newContent,
+  });
 });

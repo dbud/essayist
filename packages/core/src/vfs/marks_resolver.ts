@@ -61,39 +61,53 @@ export function resolveMarks(
       return { ...mark, id: generateMarkId() };
     }
 
-    const [exact, newOffset] = mapOffset(mark, hunks);
+    const [exact, newOffset, newLength] = mapOffset(mark, hunks);
     if (exact) {
-      return { ...mark, id: generateMarkId(), offset: newOffset };
+      return {
+        ...mark,
+        id: generateMarkId(),
+        offset: newOffset,
+        length: newLength,
+        selected_text: newContent.slice(newOffset, newOffset + newLength),
+      };
     }
 
     return fuzzyResolveMark(mark, newContent, newOffset, options);
   });
 }
 
-function mapOffset(mark: Mark, hunks: DiffHunk[]): [boolean, number] {
+function mapOffset(mark: Mark, hunks: DiffHunk[]): [boolean, number, number] {
   const markStart = mark.offset;
   const markEnd = mark.offset + mark.length;
-  let delta = 0;
+  let offsetDelta = 0;
+  let lengthDelta = 0;
   for (const hunk of hunks) {
     if (markEnd <= hunk.oldStart) {
       break;
     }
     if (markStart < hunk.oldEnd && markEnd > hunk.oldStart) {
-      // mark overlaps this hunk
-      // Pure insertion (oldStart == oldEnd): insertion point is inside the mark,
-      // the mark text is split -- fall through to fuzzy matching below
-      // Modified region: estimate new offset based on position within the hunk
-      const oldSpan = hunk.oldEnd - hunk.oldStart;
-      const ratio = oldSpan > 0 ? (markStart - hunk.oldStart) / oldSpan : 0;
-      const estimatedOffset =
-        hunk.newStart +
-        Math.round(ratio * (hunk.newEnd - hunk.newStart)) +
-        delta;
-      return [false, estimatedOffset];
+      // Mark overlaps this hunk
+      const hunkIsStrictlyInsideMark =
+        markStart < hunk.oldStart && markEnd > hunk.oldEnd;
+      if (!hunkIsStrictlyInsideMark) {
+        // Mark boundary is at or inside the hunk — go fuzzy
+        const oldSpan = hunk.oldEnd - hunk.oldStart;
+        const ratio = oldSpan > 0 ? (markStart - hunk.oldStart) / oldSpan : 0;
+        const estimatedOffset =
+          hunk.newStart +
+          Math.round(ratio * (hunk.newEnd - hunk.newStart)) +
+          offsetDelta;
+        return [false, estimatedOffset, 0];
+      }
+      // Hunk is strictly inside the mark — offset stays, length expands
+      lengthDelta +=
+        hunk.newEnd - hunk.newStart - (hunk.oldEnd - hunk.oldStart);
+      continue;
     }
-    delta = hunk.newEnd - hunk.oldEnd;
+    // Hunk is before the mark — accumulate offset delta
+    offsetDelta += hunk.newEnd - hunk.oldEnd;
   }
-  return [true, markStart + delta];
+  return [true, markStart + offsetDelta, mark.length + lengthDelta];
 }
 
 /**
