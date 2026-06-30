@@ -1,3 +1,4 @@
+import { assert } from "@std/assert/assert";
 import type { EditorState, LexicalNode, TextNode } from "lexical";
 import { $getRoot, $isElementNode, $isTextNode } from "lexical";
 
@@ -100,18 +101,20 @@ export function findPosition(
   const span = spans[candidate];
   const localOffset = offset - span.offset;
 
-  if (localOffset < span.text.length) {
+  // Offset is within this span (or exactly at its end — caret after
+  // last char). Stay within the same TextNode.
+  if (localOffset <= span.text.length) {
     return { key: span.key, offset: localOffset };
   }
 
-  // Offset is past the end of this span — it's in a gap.
-  // Snap to the start of the next span, or the end of this one.
+  // Offset is past the end of this span and into a gap.
+  // Snap to the start of the next span if available.
   if (candidate + 1 < spans.length) {
     return { key: spans[candidate + 1].key, offset: 0 };
   }
 
-  // No next span — snap to end of this span
-  return { key: span.key, offset: span.text.length - 1 };
+  // No next span — caret after last char of this span.
+  return { key: span.key, offset: span.text.length };
 }
 
 /**
@@ -121,13 +124,19 @@ export function findPosition(
 export function findRange(
   spans: TextNodeSpan[],
   { offset, length }: Span,
-): NodeRange | null {
+): NodeRange {
   // findPosition never returns null when spans is non-empty
   const anchor = findPosition(spans, offset);
-  if (!anchor) return null;
+  assert(
+    anchor,
+    `span anchor @${offset} should resolve against spans ${JSON.stringify(spans)}`,
+  );
 
-  const focus = findPosition(spans, offset + length - 1);
-  if (!focus) return null;
+  const focus = findPosition(spans, offset + length);
+  assert(
+    focus,
+    `span anchor @${offset + length} should resolve against spans ${JSON.stringify(spans)}`,
+  );
 
   return { anchor, focus };
 }
