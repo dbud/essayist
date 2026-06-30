@@ -1,6 +1,6 @@
 import { TreeView } from "@lexical/react/LexicalTreeView";
 import Section from "@/islands/Section.tsx";
-import { activeEditor } from "@/signals.ts";
+import { activeEditor } from "@/signals/activeEditor.ts";
 
 export default function LexicalTreeViewSection() {
   if (!activeEditor.value) return null;
