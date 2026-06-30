@@ -1,12 +1,8 @@
 import type { Mark } from "@essayist/core";
 import { resolveMarks } from "@essayist/core";
-import { $wrapSelectionInMarkNode } from "@lexical/mark";
-import { createModel, effect, signal } from "@preact/signals";
-import { assert } from "@std/assert/assert";
+import { createModel, signal } from "@preact/signals";
 import { useFile } from "@/signals/file.ts";
-import { activeEditor } from "@/signals.ts";
 import createAsyncState from "@/utils/asyncState.ts";
-import { createRangeSelection } from "@/utils/createRangeSelection.ts";
 import { deepComputed } from "@/utils/deepComputed.ts";
 import type { NodeRange } from "@/utils/textNodeMapping.ts";
 
@@ -24,33 +20,43 @@ export const MarksModel = createModel((path: string) => {
   );
 
   const ranges = deepComputed(() =>
-    resolved.value.map((mark) => {
-      const range = getNodeRange(mark);
-      assert(range, "mark ranges should resolve");
-      return { mark, range };
-    }),
+    resolved.value.map((mark) => ({ mark, range: getNodeRange(mark) })),
   );
 
-  // TODO: this is a rough test
+  /* TODO -- migrate logic to editor/markExtension.ts
   effect(() => {
     const editor = activeEditor.value;
     if (!editor) return;
+    const markRanges = ranges.value; // capture dependency
     editor.update(
       () => {
-        console.log("apply ranges");
-        ranges.value.forEach(({ mark, range }) => {
+        const selection = $getSelection()?.clone() ?? null;
+        markRanges.forEach(({ mark, range }) => {
+          const anchorNode = $getNodeByKey(range.anchor.key);
+          const focusNode = $getNodeByKey(range.focus.key);
+          if (!anchorNode || !focusNode) return;
+
+          nodesBetweenWithParents(focusNode, anchorNode)
+            .filter((node) => $isMarkNode(node) && node.hasID(mark.thread_id))
+            .forEach((node) => {
+              $unwrapMarkNode(node as MarkNode);
+            });
+        });
+        markRanges.forEach(({ mark, range }) => {
           const selection = createRangeSelection(range);
-          console.log("range", range);
+          applied = true;
           $wrapSelectionInMarkNode(
             selection,
-            /* isBackward */ false,
+            false, // isBackward
             mark.thread_id,
           );
         });
+        $setSelection(selection);
       },
-      { tag: "mark-range" },
+      { tag: "mark-range", discrete: true },
     );
   });
+  */
 
   async function load() {
     const result = await run(async () => {

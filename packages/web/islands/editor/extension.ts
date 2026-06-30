@@ -6,9 +6,9 @@ import {
 import { HistoryExtension } from "@lexical/history";
 import { LinkExtension } from "@lexical/link";
 import { ListExtension } from "@lexical/list";
-import { MarkExtension } from "@lexical/mark";
 import { RichTextExtension } from "@lexical/rich-text";
 import { configExtension, defineExtension } from "lexical";
+import { MarksExtension } from "./markExtension.ts";
 
 const editorExtension = defineExtension({
   name: "[root]",
@@ -21,7 +21,7 @@ const editorExtension = defineExtension({
     ListExtension,
     CodeExtension,
     HorizontalRuleExtension,
-    MarkExtension,
+    MarksExtension,
   ],
 });
 
