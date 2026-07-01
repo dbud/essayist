@@ -6,6 +6,11 @@ import createAsyncState from "@/utils/asyncState.ts";
 import { deepComputed } from "@/utils/deepComputed.ts";
 import type { NodeRange } from "@/utils/textNodeMapping.ts";
 
+export interface RangedMark {
+  mark: Mark;
+  range: NodeRange;
+}
+
 export const MarksModel = createModel((path: string) => {
   const { content, markdown, getNodeRange } = useFile(path);
   const marks = signal<Mark[]>([]);
@@ -19,7 +24,7 @@ export const MarksModel = createModel((path: string) => {
     }),
   );
 
-  const ranges = deepComputed(() =>
+  const ranges = deepComputed((): RangedMark[] =>
     resolved.value.map((mark) => ({ mark, range: getNodeRange(mark) })),
   );
 

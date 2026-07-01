@@ -1,13 +1,16 @@
 import { defineExtension } from "@lexical/extension";
-import { $wrapSelectionInMarkNode, MarkNode } from "@lexical/mark";
+import { $isMarkNode, $wrapSelectionInMarkNode, MarkNode } from "@lexical/mark";
 import { effect } from "@preact/signals";
+import { assert } from "@std/assert/assert";
 import {
+  $getNodeByKey,
   $getSelection,
   $setSelection,
   type LexicalEditor,
   mergeRegister,
+  type NodeKey,
 } from "lexical";
-import { useMarks } from "@/signals/marks.ts";
+import { type RangedMark, useMarks } from "@/signals/marks.ts";
 import { openedFiles } from "@/signals/openedFiles.ts";
 import { createRangeSelection } from "@/utils/createRangeSelection.ts";
 
@@ -16,31 +19,60 @@ export const MARK_RANGE_TAG = "mark-range";
 export const MarksExtension = defineExtension({
   name: "mark",
   nodes: () => [MarkNode],
-  register: (editor: LexicalEditor) =>
-    mergeRegister(
-      editor.registerMutationListener(MarkNode, (nodes, payload) => {
-        console.log("MarkNode mutation", nodes, payload);
-      }),
+  register: (editor: LexicalEditor) => {
+    const nodeKeys = new Set<NodeKey>();
+
+    return mergeRegister(
+      editor.registerMutationListener(
+        MarkNode,
+        (mutations, { updateTags: _ }) => {
+          for (const [key, mutation] of mutations) {
+            if (mutation === "created" || mutation === "updated") {
+              nodeKeys.add(key);
+            } else {
+              nodeKeys.delete(key);
+            }
+          }
+        },
+      ),
+
       effect(() => {
         const path = openedFiles.selected.value;
         if (!path) return;
         const { ranges } = useMarks(path);
-        if (ranges.value.length > 0)
-          editor.update(
-            () => {
-              const selection = $getSelection()?.clone() ?? null;
-              ranges.value.forEach(({ mark, range }) => {
-                const selection = createRangeSelection(range);
-                $wrapSelectionInMarkNode(
-                  selection,
-                  false, // isBackward
-                  mark.thread_id,
-                );
-              });
-              $setSelection(selection);
-            },
-            { tag: MARK_RANGE_TAG },
-          );
+        if (ranges.value.length > 0) {
+          applyMarks(editor, ranges.value, nodeKeys);
+        }
       }),
-    ),
+    );
+  },
 });
+
+function applyMarks(
+  editor: LexicalEditor,
+  ranges: RangedMark[],
+  nodeKeys: Set<NodeKey>,
+) {
+  editor.update(
+    () => {
+      const nodes = Array.from(nodeKeys).map((key) => {
+        const node = $getNodeByKey(key);
+        assert($isMarkNode(node));
+        return node;
+      });
+      console.log("will apply mark ranges", ranges, nodes);
+
+      const selection = $getSelection()?.clone() ?? null;
+      ranges.forEach(({ mark, range }) => {
+        const selection = createRangeSelection(range);
+        $wrapSelectionInMarkNode(
+          selection,
+          false, // isBackward
+          mark.thread_id,
+        );
+      });
+      $setSelection(selection);
+    },
+    { tag: MARK_RANGE_TAG },
+  );
+}
