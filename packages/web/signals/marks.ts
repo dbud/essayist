@@ -23,41 +23,6 @@ export const MarksModel = createModel((path: string) => {
     resolved.value.map((mark) => ({ mark, range: getNodeRange(mark) })),
   );
 
-  /* TODO -- migrate logic to editor/markExtension.ts
-  effect(() => {
-    const editor = activeEditor.value;
-    if (!editor) return;
-    const markRanges = ranges.value; // capture dependency
-    editor.update(
-      () => {
-        const selection = $getSelection()?.clone() ?? null;
-        markRanges.forEach(({ mark, range }) => {
-          const anchorNode = $getNodeByKey(range.anchor.key);
-          const focusNode = $getNodeByKey(range.focus.key);
-          if (!anchorNode || !focusNode) return;
-
-          nodesBetweenWithParents(focusNode, anchorNode)
-            .filter((node) => $isMarkNode(node) && node.hasID(mark.thread_id))
-            .forEach((node) => {
-              $unwrapMarkNode(node as MarkNode);
-            });
-        });
-        markRanges.forEach(({ mark, range }) => {
-          const selection = createRangeSelection(range);
-          applied = true;
-          $wrapSelectionInMarkNode(
-            selection,
-            false, // isBackward
-            mark.thread_id,
-          );
-        });
-        $setSelection(selection);
-      },
-      { tag: "mark-range", discrete: true },
-    );
-  });
-  */
-
   async function load() {
     const result = await run(async () => {
       const res = await fetch(`/api/files/${encodeURIComponent(path)}/marks`);

@@ -7,6 +7,7 @@ import { useMemo } from "preact/hooks";
 import { viewerFont } from "@/signals/preferences.ts";
 import ActiveEditorRef from "./ActiveEditorRef.tsx";
 import { editorExtension } from "./extension.ts";
+import { MARK_RANGE_TAG } from "./markExtension.ts";
 
 interface EditorProps {
   state: EditorState;
@@ -39,7 +40,13 @@ export default function Editor({ state, onChange }: EditorProps) {
         extension={extension}
         contentEditable={contentEditable}
       >
-        {onChange && <OnChangePlugin onChange={onChange} />}
+        {onChange && (
+          <OnChangePlugin
+            onChange={(state, _, tags) => {
+              if (!tags.has(MARK_RANGE_TAG)) onChange(state);
+            }}
+          />
+        )}
         <MarkdownShortcutPlugin />
         <ActiveEditorRef />
       </LexicalExtensionComposer>
