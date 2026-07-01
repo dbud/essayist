@@ -41,7 +41,7 @@ export function $collectTextNodeSpans(content: string): TextNodeSpan[] {
   const spans: TextNodeSpan[] = [];
 
   let searchFrom = 0;
-  for (const tn of walkTextNodes($getRoot())) {
+  for (const tn of $walkTextNodes($getRoot())) {
     const text = tn.getTextContent();
     if (text.length === 0) continue;
 
@@ -159,12 +159,12 @@ export function findRange(
   return { anchor, focus };
 }
 
-function* walkTextNodes(node: LexicalNode): Generator<TextNode> {
+function* $walkTextNodes(node: LexicalNode): Generator<TextNode> {
   if ($isTextNode(node)) {
     yield node;
   } else if ($isElementNode(node)) {
     for (const child of node.getChildren()) {
-      yield* walkTextNodes(child);
+      yield* $walkTextNodes(child);
     }
   }
 }
