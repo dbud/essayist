@@ -30,6 +30,7 @@ export const FileModel = createModel((path: string) => {
   }
 
   const dirty = computed(
+    // TODO: fix
     () =>
       modifiedState.value !== null &&
       JSON.stringify(initialState.value) !==
@@ -70,6 +71,7 @@ export const FileModel = createModel((path: string) => {
     markdown,
     dirty,
     isSelected,
+    textNodeSpans,
     getNodeRange,
   };
 });

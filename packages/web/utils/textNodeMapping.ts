@@ -33,6 +33,29 @@ export interface Span {
 }
 
 /**
+ * Walks the active tree (`$getRoot()`) and maps each TextNode to its markdown
+ * offset. Runs in a $-context; during `editor.update` it sees the in-flight
+ * (mutated) state, unlike `buildTextNodeSpans(editor.getEditorState(), …)`.
+ */
+export function $collectTextNodeSpans(content: string): TextNodeSpan[] {
+  const spans: TextNodeSpan[] = [];
+
+  let searchFrom = 0;
+  for (const tn of walkTextNodes($getRoot())) {
+    const text = tn.getTextContent();
+    if (text.length === 0) continue;
+
+    const idx = content.indexOf(text, searchFrom);
+    if (idx === -1) continue;
+
+    spans.push({ key: tn.getKey(), text, offset: idx });
+    searchFrom = idx + text.length;
+  }
+
+  return spans;
+}
+
+/**
  * Builds a sorted list of TextNode spans from the editor state.
  *
  * Exports the editor to markdown, then walks all TextNodes in document
@@ -44,25 +67,7 @@ export function buildTextNodeSpans(
   state: EditorState,
   content: string,
 ): TextNodeSpan[] {
-  const spans: TextNodeSpan[] = [];
-
-  state.read(() => {
-    const root = $getRoot();
-
-    let searchFrom = 0;
-    for (const tn of walkTextNodes(root)) {
-      const text = tn.getTextContent();
-      if (text.length === 0) continue;
-
-      const idx = content.indexOf(text, searchFrom);
-      if (idx === -1) continue;
-
-      spans.push({ key: tn.getKey(), text, offset: idx });
-      searchFrom = idx + text.length;
-    }
-  });
-
-  return spans;
+  return state.read(() => $collectTextNodeSpans(content));
 }
 
 /**
@@ -118,6 +123,19 @@ export function findPosition(
 }
 
 /**
+ * Inverse of findPosition: maps a NodePosition back to an absolute markdown
+ * offset. Returns null when the position is not on a tracked TextNode (e.g.
+ * an element/root selection), so callers can fall back to a clone.
+ */
+export function positionToOffset(
+  spans: TextNodeSpan[],
+  { key, offset }: NodePosition,
+): number | null {
+  const span = spans.find((s) => s.key === key);
+  return span === undefined ? null : span.offset + offset;
+}
+
+/**
  * Converts a content offset range to a NodeRange.
  * Returns null only if there are no spans at all.
  */
@@ -132,7 +150,7 @@ export function findRange(
     `span anchor @${offset} should resolve against spans ${JSON.stringify(spans)}`,
   );
 
-  const focus = findPosition(spans, offset + length);
+  const focus = length === 0 ? anchor : findPosition(spans, offset + length);
   assert(
     focus,
     `span anchor @${offset + length} should resolve against spans ${JSON.stringify(spans)}`,

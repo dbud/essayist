@@ -143,10 +143,10 @@ essayist/
         │   └── preferences.ts     # viewerFont, viewMode persistent signals
         ├── utils/
         │   ├── asyncState.ts            # createAsyncState() — loading/error state helper
-        │   ├── createRangeSelection.ts  # createRangeSelection() — NodeRange → RangeSelection
         │   ├── markdown.ts              # renderMarkdown(), markdownToEditorState(), editorStateToMarkdown()
         │   ├── persistentSignal.ts      # persistentSignal() + usePersistentSignal()
         │   ├── sanitize.ts              # sanitizeHtml() — DOMPurify wrapper
+        │   ├── selection.ts             # $createSelection(), $saveSelection(), $restoreSelection()
         │   ├── sse.ts                   # SSE streaming helpers (parseSSE, streamModelResultSSE)
         │   ├── textNodeMapping.ts       # buildTextNodeSpans(), findPosition(), findRange()
         │   └── textNodeMapping_test.ts  # Tests for markdown offset ↔ TextNode mapping
@@ -279,8 +279,10 @@ essayist/
   key + local offset). `findRange()` converts a content offset+length to a
   `NodeRange` (anchor + focus). Offsets in syntax gaps snap to the nearest valid
   text position.
-- **`packages/web/utils/createRangeSelection.ts`** — `createRangeSelection()`
-  creates a Lexical `RangeSelection` from a `NodeRange`.
+- **`packages/web/utils/selection.ts`** — `$createSelection()`,
+  `$saveSelection()`, and `$restoreSelection()`: build a Lexical
+  `RangeSelection` from a `NodeRange`, and save/restore a selection across
+  mutations that reshuffle TextNodes (using absolute markdown offsets).
 - **`packages/web/utils/textNodeMapping_test.ts`** — Tests covering simple
   paragraphs, headings, bold text, two-paragraph documents, mixed content
   (headings, lists, blockquotes, code blocks), and edge cases for
