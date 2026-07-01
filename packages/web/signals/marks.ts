@@ -1,10 +1,10 @@
 import type { Mark } from "@essayist/core";
 import { resolveMarks } from "@essayist/core";
 import { createModel, signal } from "@preact/signals";
+import type { NodeRange } from "@/editor/textNodeSpans.ts";
 import { useFile } from "@/signals/file.ts";
 import createAsyncState from "@/utils/asyncState.ts";
 import { deepComputed } from "@/utils/deepComputed.ts";
-import type { NodeRange } from "@/utils/textNodeMapping.ts";
 
 export interface RangedMark {
   mark: Mark;

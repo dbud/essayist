@@ -7,7 +7,7 @@ import {
   buildTextNodeSpans,
   findPosition,
   findRange,
-} from "./textNodeMapping.ts";
+} from "./textNodeSpans.ts";
 
 function createEditor(): LexicalEditor {
   return buildEditorFromExtensions({

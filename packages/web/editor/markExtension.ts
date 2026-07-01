@@ -20,7 +20,7 @@ import {
   $createSelection,
   $restoreSelection,
   $saveSelection,
-} from "@/utils/selection.ts";
+} from "./selection.ts";
 
 export const MARK_RANGE_TAG = "mark-range";
 

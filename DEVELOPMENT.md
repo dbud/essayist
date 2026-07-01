@@ -105,6 +105,12 @@ essayist/
         │   ├── MarkdownView.tsx    # Renders markdown HTML (via marked + DOMPurify)
         │   ├── Toolbar.tsx         # Generic toolbar shell (accepts children)
         │   └── ViewModeSelect.tsx  # View mode toggle (auto/markdown/plain) for file viewer
+        ├── editor/
+        │   ├── extension.ts         # Shared editor extension (defineExtension with all deps)
+        │   ├── markExtension.ts     # MarksExtension — applies mark ranges to the editor
+        │   ├── selection.ts         # $createSelection(), $saveSelection(), $restoreSelection()
+        │   ├── textNodeSpans.ts     # buildTextNodeSpans(), findPosition(), findRange(), $collectTextNodeSpans()
+        │   └── textNodeSpans_test.ts  # Tests for markdown offset ↔ TextNode mapping
         ├── hooks/
         │   └── useChat.ts          # useChat() hook — SSE chat for Preact islands
         ├── islands/
@@ -121,8 +127,7 @@ essayist/
         │   ├── Tabs.tsx            # Open file tabs with close buttons
         │   └── editor/
         │       ├── ActiveEditorRef.tsx  # EditorRefPlugin wrapper that sets/clears activeEditor
-        │       ├── Editor.tsx           # Lexical rich text editor island component
-        │       └── extension.ts         # Shared editor extension (defineExtension with all deps)
+        │       └── Editor.tsx           # Lexical rich text editor island component
         ├── middleware/
         │   └── agent.ts    # Creates Agent from OPENROUTER_API_KEY, attaches to state
         ├── routes/
@@ -146,10 +151,7 @@ essayist/
         │   ├── markdown.ts              # renderMarkdown(), markdownToEditorState(), editorStateToMarkdown()
         │   ├── persistentSignal.ts      # persistentSignal() + usePersistentSignal()
         │   ├── sanitize.ts              # sanitizeHtml() — DOMPurify wrapper
-        │   ├── selection.ts             # $createSelection(), $saveSelection(), $restoreSelection()
-        │   ├── sse.ts                   # SSE streaming helpers (parseSSE, streamModelResultSSE)
-        │   ├── textNodeMapping.ts       # buildTextNodeSpans(), findPosition(), findRange()
-        │   └── textNodeMapping_test.ts  # Tests for markdown offset ↔ TextNode mapping
+        │   └── sse.ts                   # SSE streaming helpers (parseSSE, streamModelResultSSE)
         └── static/
             └── favicon.ico
 ```
@@ -270,7 +272,11 @@ essayist/
   `editorStateToMarkdown()` (Lexical `EditorState` → markdown string via
   `$convertToMarkdownString`). Both conversion functions use the shared
   `editorExtension`.
-- **`packages/web/utils/textNodeMapping.ts`** — Offset mapping utilities for
+- **`packages/web/editor/selection.ts`** — `$createSelection()`,
+  `$saveSelection()`, and `$restoreSelection()`: build a Lexical
+  `RangeSelection` from a `NodeRange`, and save/restore a selection across
+  mutations that reshuffle TextNodes (using absolute markdown offsets).
+- **`packages/web/editor/textNodeSpans.ts`** — Offset mapping utilities for
   converting content character offsets to Lexical TextNode positions.
   `buildTextNodeSpans()` walks all TextNodes in document order, finds each one's
   text in the exported content string, and builds a sorted list of
@@ -278,12 +284,9 @@ essayist/
   uses binary search to convert a content offset to a `NodePosition` (TextNode
   key + local offset). `findRange()` converts a content offset+length to a
   `NodeRange` (anchor + focus). Offsets in syntax gaps snap to the nearest valid
-  text position.
-- **`packages/web/utils/selection.ts`** — `$createSelection()`,
-  `$saveSelection()`, and `$restoreSelection()`: build a Lexical
-  `RangeSelection` from a `NodeRange`, and save/restore a selection across
-  mutations that reshuffle TextNodes (using absolute markdown offsets).
-- **`packages/web/utils/textNodeMapping_test.ts`** — Tests covering simple
+  text position. `$collectTextNodeSpans()` walks the active tree (in-flight
+  state during an update).
+- **`packages/web/editor/textNodeSpans_test.ts`** — Tests covering simple
   paragraphs, headings, bold text, two-paragraph documents, mixed content
   (headings, lists, blockquotes, code blocks), and edge cases for
   `findPosition()`.

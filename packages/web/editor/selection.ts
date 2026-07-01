@@ -14,7 +14,7 @@ import {
   type NodeRange,
   positionToOffset,
   type TextNodeSpan,
-} from "@/utils/textNodeMapping.ts";
+} from "./textNodeSpans.ts";
 
 /**
  * Creates a Lexical RangeSelection from a NodeRange, preserving direction

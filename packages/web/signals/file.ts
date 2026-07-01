@@ -1,6 +1,11 @@
 import type { FileSnapshot } from "@essayist/core";
 import { computed, createModel, signal } from "@preact/signals";
 import type { EditorState } from "lexical";
+import {
+  buildTextNodeSpans,
+  findRange,
+  type Span,
+} from "@/editor/textNodeSpans.ts";
 import { openedFiles } from "@/signals/openedFiles.ts";
 import createAsyncState from "@/utils/asyncState.ts";
 import { deepComputed } from "@/utils/deepComputed.ts";
@@ -8,11 +13,6 @@ import {
   editorStateToMarkdown,
   markdownToEditorState,
 } from "@/utils/markdown.ts";
-import {
-  buildTextNodeSpans,
-  findRange,
-  type Span,
-} from "@/utils/textNodeMapping.ts";
 
 export const FileModel = createModel((path: string) => {
   const snapshot = signal<FileSnapshot | null>(null);
