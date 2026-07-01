@@ -4,10 +4,10 @@ import { MarkdownShortcutPlugin } from "@lexical/react/LexicalMarkdownShortcutPl
 import { OnChangePlugin } from "@lexical/react/LexicalOnChangePlugin";
 import type { EditorState } from "lexical";
 import { useMemo } from "preact/hooks";
+import { editorExtension } from "@/editor/extension.ts";
+import { MARK_RANGE_TAG } from "@/editor/markExtension.ts";
 import { viewerFont } from "@/signals/preferences.ts";
 import ActiveEditorRef from "./ActiveEditorRef.tsx";
-import { editorExtension } from "./extension.ts";
-import { MARK_RANGE_TAG } from "./markExtension.ts";
 
 interface EditorProps {
   state: EditorState;

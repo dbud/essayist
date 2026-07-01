@@ -6,7 +6,7 @@ import {
 } from "@lexical/markdown";
 import { $getRoot, type EditorState } from "lexical";
 import { marked } from "marked";
-import { bootstrapEditorExtension } from "@/islands/editor/extension.ts";
+import { bootstrapEditorExtension } from "@/editor/extension.ts";
 import { sanitizeHtml } from "./sanitize.ts";
 
 marked.setOptions({

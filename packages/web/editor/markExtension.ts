@@ -1,5 +1,10 @@
 import { defineExtension } from "@lexical/extension";
-import { $isMarkNode, $wrapSelectionInMarkNode, MarkNode } from "@lexical/mark";
+import {
+  $isMarkNode,
+  $unwrapMarkNode,
+  $wrapSelectionInMarkNode,
+  MarkNode,
+} from "@lexical/mark";
 import { effect } from "@preact/signals";
 import { assert } from "@std/assert/assert";
 import {
@@ -10,7 +15,6 @@ import {
   mergeRegister,
   type NodeKey,
 } from "lexical";
-import { $unwrapMarkNode } from "@/_fresh/server/assets/LexicalMark.prod-B9sV1qJ3.mjs";
 import { type RangedMark, useMarks } from "@/signals/marks.ts";
 import { openedFiles } from "@/signals/openedFiles.ts";
 import { createRangeSelection } from "@/utils/createRangeSelection.ts";
