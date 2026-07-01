@@ -29,14 +29,6 @@ export const FileModel = createModel((path: string) => {
     modifiedState.value = state;
   }
 
-  const dirty = computed(
-    // TODO: fix
-    () =>
-      modifiedState.value !== null &&
-      JSON.stringify(initialState.value) !==
-        JSON.stringify(modifiedState.value),
-  );
-
   const state = computed(() => modifiedState.value ?? initialState.value);
 
   const markdown = computed(() => {
@@ -44,11 +36,23 @@ export const FileModel = createModel((path: string) => {
     return editorStateToMarkdown(state.value);
   });
 
+  const initialMarkdown = computed(() => {
+    if (!initialState.value) return "";
+    return editorStateToMarkdown(initialState.value);
+  });
+
+  const dirty = computed(
+    () =>
+      modifiedState.value !== null && markdown.value !== initialMarkdown.value,
+  );
+
   const textNodeSpans = deepComputed(() => {
     if (!state.value) return [];
     return buildTextNodeSpans(state.value, markdown.value);
   });
-  const getNodeRange = (span: Span) => findRange(textNodeSpans.value, span);
+  function getNodeRange(span: Span) {
+    return findRange(textNodeSpans.value, span);
+  }
 
   async function load() {
     const result = await run(async () => {
