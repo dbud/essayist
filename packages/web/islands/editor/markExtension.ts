@@ -10,6 +10,7 @@ import {
   mergeRegister,
   type NodeKey,
 } from "lexical";
+import { $unwrapMarkNode } from "@/_fresh/server/assets/LexicalMark.prod-B9sV1qJ3.mjs";
 import { type RangedMark, useMarks } from "@/signals/marks.ts";
 import { openedFiles } from "@/signals/openedFiles.ts";
 import { createRangeSelection } from "@/utils/createRangeSelection.ts";
@@ -60,17 +61,22 @@ function applyMarks(
         assert($isMarkNode(node));
         return node;
       });
-      console.log("will apply mark ranges", ranges, nodes);
 
       const selection = $getSelection()?.clone() ?? null;
-      ranges.forEach(({ mark, range }) => {
-        const selection = createRangeSelection(range);
-        $wrapSelectionInMarkNode(
-          selection,
-          false, // isBackward
-          mark.thread_id,
-        );
+
+      nodes.forEach((node) => {
+        $unwrapMarkNode(node);
       });
+
+      ranges
+        .map(({ mark, range }) => ({
+          id: mark.thread_id,
+          selection: createRangeSelection(range),
+        }))
+        .forEach(({ id, selection }) => {
+          $wrapSelectionInMarkNode(selection, false, id);
+        });
+
       $setSelection(selection);
     },
     { tag: MARK_RANGE_TAG },
