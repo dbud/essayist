@@ -6,7 +6,7 @@ import {
 } from "@lexical/markdown";
 import { $getRoot, type EditorState } from "lexical";
 import { marked } from "marked";
-import editorExtension from "@/islands/editor/extension.ts";
+import { bootstrapEditorExtension } from "@/islands/editor/extension.ts";
 import { sanitizeHtml } from "./sanitize.ts";
 
 marked.setOptions({
@@ -26,9 +26,8 @@ export function renderMarkdown(text: string): string {
  */
 export function markdownToEditorState(content: string): EditorState {
   const editor = buildEditorFromExtensions({
-    ...editorExtension,
+    ...bootstrapEditorExtension,
     $initialEditorState: undefined,
-    namespace: "bootstrap-markdown",
   });
 
   editor.update(

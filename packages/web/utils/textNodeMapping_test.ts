@@ -2,7 +2,7 @@ import { buildEditorFromExtensions } from "@lexical/extension";
 import { $convertFromMarkdownString, TRANSFORMERS } from "@lexical/markdown";
 import { assert, assertEquals } from "@std/assert";
 import { $getRoot, type EditorState, type LexicalEditor } from "lexical";
-import editorExtension from "@/islands/editor/extension.ts";
+import { bootstrapEditorExtension } from "@/islands/editor/extension.ts";
 import {
   buildTextNodeSpans,
   findPosition,
@@ -11,7 +11,7 @@ import {
 
 function createEditor(): LexicalEditor {
   return buildEditorFromExtensions({
-    ...editorExtension,
+    ...bootstrapEditorExtension,
     $initialEditorState: undefined,
     namespace: "test",
   });

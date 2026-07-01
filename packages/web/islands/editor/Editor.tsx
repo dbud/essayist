@@ -6,7 +6,7 @@ import type { EditorState } from "lexical";
 import { useMemo } from "preact/hooks";
 import { viewerFont } from "@/signals/preferences.ts";
 import ActiveEditorRef from "./ActiveEditorRef.tsx";
-import editorExtension from "./extension.ts";
+import { editorExtension } from "./extension.ts";
 
 interface EditorProps {
   state: EditorState;
