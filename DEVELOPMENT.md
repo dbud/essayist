@@ -223,13 +223,15 @@ essayist/
   `activeEditor.value` on mount and clears it on unmount, preventing stale
   editor references after the island is removed from the DOM.
 - **`packages/web/islands/editor/Editor.tsx`** — Lexical rich text editor
-  component. Imports the shared `editorExtension` and spreads it with
+  component. Builds a per-file extension via `createEditorExtension(path)`
+  (binding `MarksExtension` to the editor's own `path`) and spreads in
   `$initialEditorState` per render. Uses `@lexical/react` runtime plugins.
-- **`packages/web/islands/editor/extension.ts`** — Shared editor extension
-  defined via `defineExtension` with dependencies: `RichTextExtension`,
+- **`packages/web/islands/editor/extension.ts`** — `createEditorExtension(path)`
+  builds the runtime editor extension with dependencies: `RichTextExtension`,
   `HistoryExtension`, `AutoFocusExtension`, `LinkExtension`, `ListExtension`,
-  `CodeExtension`, `HorizontalRuleExtension`, `MarkExtension`. Used by both
-  `Editor.tsx` (React) and `markdownToEditorState()` (headless).
+  `CodeExtension`, `HorizontalRuleExtension`, and `configExtension(MarksExtension,
+  { path })`. `bootstrapEditorExtension` is the path-less variant used by the
+  headless `markdownToEditorState()`.
 - **`packages/web/middleware/agent.ts`** — Middleware. Instantiates `Agent` with
   `OPENROUTER_API_KEY` and attaches it to `ctx.state.agent`.
 - **`packages/web/signals.ts`** — Exports the `activeEditor` signal
@@ -271,7 +273,7 @@ essayist/
   DOMPurify), `markdownToEditorState()` (markdown → Lexical `EditorState`), and
   `editorStateToMarkdown()` (Lexical `EditorState` → markdown string via
   `$convertToMarkdownString`). Both conversion functions use the shared
-  `editorExtension`.
+    `bootstrapEditorExtension`.
 - **`packages/web/editor/selection.ts`** — `$createSelection()`,
   `$saveSelection()`, and `$restoreSelection()`: build a Lexical
   `RangeSelection` from a `NodeRange`, and save/restore a selection across

@@ -15,7 +15,6 @@ import {
 } from "lexical";
 import { useFile } from "@/signals/file.ts";
 import { type RangedMark, useMarks } from "@/signals/marks.ts";
-import { openedFiles } from "@/signals/openedFiles.ts";
 import {
   $createSelection,
   $restoreSelection,
@@ -24,10 +23,20 @@ import {
 
 export const MARK_RANGE_TAG = "mark-range";
 
+export interface MarksExtensionConfig {
+  path: string;
+}
+
 export const MarksExtension = defineExtension({
   name: "mark",
   nodes: () => [MarkNode],
-  register: (editor: LexicalEditor) => {
+  config: { path: "" },
+  // afterRegistration runs after $initialEditorState is committed; the effect's
+  // first run is synchronous, so register() would run it against an empty tree.
+  afterRegistration: (
+    editor: LexicalEditor,
+    { path }: MarksExtensionConfig,
+  ) => {
     const nodeKeys = new Set<NodeKey>();
 
     return mergeRegister(
@@ -45,7 +54,6 @@ export const MarksExtension = defineExtension({
       ),
 
       effect(() => {
-        const path = openedFiles.selected.value;
         if (!path) return;
         const { ranges } = useMarks(path);
         if (ranges.value.length === 0) return;

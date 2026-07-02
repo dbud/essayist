@@ -36,7 +36,11 @@ function FileViewerBody({ path }: { path: string }) {
         </Toolbar>
         <div class="flex-1 min-h-0 flex flex-col overflow-x-auto overflow-y-auto p-4">
           {editorState && (
-            <Editor state={editorState} onChange={setModifiedState} />
+            <Editor
+              path={path}
+              state={editorState}
+              onChange={setModifiedState}
+            />
           )}
           <div class="shrink-0 h-32" />
         </div>

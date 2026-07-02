@@ -4,12 +4,13 @@ import { MarkdownShortcutPlugin } from "@lexical/react/LexicalMarkdownShortcutPl
 import { OnChangePlugin } from "@lexical/react/LexicalOnChangePlugin";
 import type { EditorState } from "lexical";
 import { useMemo } from "preact/hooks";
-import { editorExtension } from "@/editor/extension.ts";
+import { createEditorExtension } from "@/editor/extension.ts";
 import { MARK_RANGE_TAG } from "@/editor/markExtension.ts";
 import { viewerFont } from "@/signals/preferences.ts";
 import ActiveEditorRef from "./ActiveEditorRef.tsx";
 
 interface EditorProps {
+  path: string;
   state: EditorState;
   onChange?: (state: EditorState) => void;
 }
@@ -25,13 +26,13 @@ const contentEditable = (
   />
 );
 
-export default function Editor({ state, onChange }: EditorProps) {
+export default function Editor({ path, state, onChange }: EditorProps) {
   const extension = useMemo(
     () => ({
-      ...editorExtension,
+      ...createEditorExtension(path),
       $initialEditorState: state,
     }),
-    [state],
+    [path, state],
   );
 
   return (

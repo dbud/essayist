@@ -11,20 +11,22 @@ import { RichTextExtension } from "@lexical/rich-text";
 import { configExtension, defineExtension } from "lexical";
 import { MarksExtension } from "./markExtension.ts";
 
-export const editorExtension = defineExtension({
-  name: "[root]",
-  namespace: "essayist-editor",
-  dependencies: [
-    RichTextExtension,
-    HistoryExtension,
-    configExtension(AutoFocusExtension, { defaultSelection: "rootStart" }),
-    LinkExtension,
-    ListExtension,
-    CodeExtension,
-    HorizontalRuleExtension,
-    MarksExtension,
-  ],
-});
+export function createEditorExtension(path: string) {
+  return defineExtension({
+    name: "[root]",
+    namespace: "essayist-editor",
+    dependencies: [
+      RichTextExtension,
+      HistoryExtension,
+      configExtension(AutoFocusExtension, { defaultSelection: "rootStart" }),
+      LinkExtension,
+      ListExtension,
+      CodeExtension,
+      HorizontalRuleExtension,
+      configExtension(MarksExtension, { path }),
+    ],
+  });
+}
 
 export const bootstrapEditorExtension = defineExtension({
   name: "[bootstrap]",
