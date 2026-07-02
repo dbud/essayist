@@ -9,6 +9,7 @@ import { effect, untracked } from "@preact/signals";
 import { assert } from "@std/assert/assert";
 import {
   $getNodeByKey,
+  HISTORIC_TAG,
   type LexicalEditor,
   mergeRegister,
   type NodeKey,
@@ -75,7 +76,7 @@ export const MarksExtension = defineExtension({
             $applyMarks(ranges.value, nodeKeys);
             $restoreSelection(saved, content);
           },
-          { tag: MARK_RANGE_TAG },
+          { tag: [MARK_RANGE_TAG, HISTORIC_TAG] },
         );
       }),
     );
