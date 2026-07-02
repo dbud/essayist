@@ -1,4 +1,3 @@
-import { useSignal } from "@preact/signals";
 import {
   ChevronDown,
   CodeXml,
@@ -11,7 +10,7 @@ import {
   Quote,
 } from "lucide-preact";
 import type { VNode } from "preact";
-import { useEffect, useRef } from "preact/hooks";
+import Dropdown from "@/components/Dropdown.tsx";
 import type { BlockType } from "@/editor/blockFormat.ts";
 
 interface BlockOption {
@@ -40,55 +39,40 @@ export default function BlockTypeSelect({
   block,
   onChange,
 }: BlockTypeSelectProps) {
-  const open = useSignal(false);
-  const ref = useRef<HTMLDetailsElement>(null);
   const current = OPTIONS.find((o) => o.value === block) ?? OPTIONS[0];
 
-  useEffect(() => {
-    if (!open.value) return;
-    const onDocClick = (e: MouseEvent) => {
-      if (ref.current !== null && !ref.current.contains(e.target as Node)) {
-        open.value = false;
-      }
-    };
-    document.addEventListener("click", onDocClick);
-    return () => document.removeEventListener("click", onDocClick);
-  }, [open.value]);
-
   return (
-    <details class="dropdown" open={open.value} ref={ref}>
-      {/** biome-ignore lint/a11y/useSemanticElements: summary is clickable */}
-      <summary
-        role="button"
-        class="btn btn-sm btn-ghost gap-2"
-        onClick={(e) => {
-          e.preventDefault();
-          open.value = !open.value;
-        }}
-      >
-        {current.icon}
-        <span>{current.label}</span>
-        <ChevronDown size={14} />
-      </summary>
-      <ul class="dropdown-content menu bg-base-100 rounded-box z-1 w-48 p-2 shadow-sm">
-        {OPTIONS.map((o) => (
-          <li>
-            <button
-              type="button"
-              class={`gap-2 ${
-                o.value === block ? "bg-primary/10 text-primary rounded" : ""
-              }`}
-              onClick={() => {
-                onChange(o.value);
-                open.value = false;
-              }}
-            >
-              {o.icon}
-              <span>{o.label}</span>
-            </button>
-          </li>
-        ))}
-      </ul>
-    </details>
+    <Dropdown
+      buttonClass="btn btn-sm btn-ghost gap-2"
+      button={
+        <>
+          {current.icon}
+          <span>{current.label}</span>
+          <ChevronDown size={14} />
+        </>
+      }
+    >
+      {(close) => (
+        <ul class="dropdown-content menu bg-base-100 rounded-box z-1 w-48 p-2 shadow-sm">
+          {OPTIONS.map((o) => (
+            <li>
+              <button
+                type="button"
+                class={`gap-2 ${
+                  o.value === block ? "bg-primary/10 text-primary rounded" : ""
+                }`}
+                onClick={() => {
+                  onChange(o.value);
+                  close();
+                }}
+              >
+                {o.icon}
+                <span>{o.label}</span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Dropdown>
   );
 }

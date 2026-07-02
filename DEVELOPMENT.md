@@ -101,9 +101,10 @@ essayist/
         ├── assets/
         │   └── styles.css  # Tailwind import + custom "essayist" daisyUI theme
         ├── components/
-        │   ├── BlockTypeSelect.tsx  # Styled daisyUI dropdown for block type (icons per option)
+        │   ├── BlockTypeSelect.tsx  # Block-type dropdown (icons per option) using Dropdown
+        │   ├── Dropdown.tsx         # Reusable dropdown shell (open/outside-click/close)
         │   ├── EditorToolbar.tsx    # Bold/italic/strike/code toggles + block-type select
-        │   ├── FontSelect.tsx      # Font family toggle (serif/sans/mono) for file viewer
+        │   ├── FontSelect.tsx       # Font family dropdown (Serif/Sans/Mono) using Dropdown
         │   ├── MarkdownView.tsx    # Renders markdown HTML (via marked + DOMPurify)
         │   ├── Toolbar.tsx         # Generic toolbar shell (accepts children)
         │   ├── ToolbarButton.tsx   # Presentational toggle button for EditorToolbar
