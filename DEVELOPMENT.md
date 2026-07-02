@@ -106,7 +106,7 @@ essayist/
         │   ├── Toolbar.tsx         # Generic toolbar shell (accepts children)
         │   └── ViewModeSelect.tsx  # View mode toggle (auto/markdown/plain) for file viewer
         ├── editor/
-        │   ├── extension.ts         # Shared editor extension (defineExtension with all deps)
+        │   ├── extension.ts         # createEditorExtension(path) + bootstrapEditorExtension
         │   ├── markExtension.ts     # MarksExtension — applies mark ranges to the editor
         │   ├── selection.ts         # $createSelection(), $saveSelection(), $restoreSelection()
         │   ├── textNodeSpans.ts     # buildTextNodeSpans(), findPosition(), findRange(), $collectTextNodeSpans()
@@ -542,8 +542,11 @@ then `deno task fmt:check` before each commit.
   (`routes/api/chat.ts`) only wires `createReadFileTool`, `createListFilesTool`,
   `createGrepTool`, and `createWriteFileTool`. `createMarkTool` is exported from
   core but not included in the chat tools array.
-- **MarkExtension in editor** — The shared `editorExtension` includes
-  `MarkExtension` from `@lexical/mark`, enabling `MarkNode` support. The
-  `MarksModel` effect uses `$wrapSelectionInMarkNode` to visually highlight mark
-  ranges in the active editor. This is a work in progress (see TODO in
+- **MarkExtension in editor** — `MarksExtension` (in `editor/markExtension.ts`)
+  registers `MarkNode` (from `@lexical/mark`). The effect, run from
+  `afterRegistration` and bound to the editor's own `path` via
+  `configExtension(MarksExtension, { path })`, applies mark ranges to the active
+  editor with `$wrapSelectionInMarkNode`. Zero-length marks (text deleted) are
+  skipped in the editor since MarkNode can't be empty; they are still surfaced
+  in the export preview / sidebar. This is a work in progress (see TODO in
   `signals/marks.ts`).

@@ -98,6 +98,7 @@ function $applyMarks(ranges: RangedMark[], nodeKeys: Set<NodeKey>) {
   });
 
   ranges
+    .filter(({ mark }) => mark.length > 0)
     .map(({ mark, range }) => ({
       id: mark.thread_id,
       selection: $createSelection(range),
