@@ -1,4 +1,5 @@
 import { useMemo } from "preact/hooks";
+import EditorToolbar from "@/components/EditorToolbar.tsx";
 import FontSelect from "@/components/FontSelect.tsx";
 import Toolbar from "@/components/Toolbar.tsx";
 import Editor from "@/islands/editor/Editor.tsx";
@@ -30,6 +31,7 @@ function FileViewerBody({ path }: { path: string }) {
         ${loading.value || !state.value ? "loading-border" : ""}`}
       >
         <Toolbar>
+          <EditorToolbar />
           <div class="flex items-center gap-4">
             <FontSelect />
           </div>

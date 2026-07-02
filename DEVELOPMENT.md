@@ -101,16 +101,22 @@ essayist/
         ├── assets/
         │   └── styles.css  # Tailwind import + custom "essayist" daisyUI theme
         ├── components/
+        │   ├── BlockTypeSelect.tsx  # Styled daisyUI dropdown for block type (icons per option)
+        │   ├── EditorToolbar.tsx    # Bold/italic/strike/code toggles + block-type select
         │   ├── FontSelect.tsx      # Font family toggle (serif/sans/mono) for file viewer
         │   ├── MarkdownView.tsx    # Renders markdown HTML (via marked + DOMPurify)
         │   ├── Toolbar.tsx         # Generic toolbar shell (accepts children)
+        │   ├── ToolbarButton.tsx   # Presentational toggle button for EditorToolbar
         │   └── ViewModeSelect.tsx  # View mode toggle (auto/markdown/plain) for file viewer
         ├── editor/
+        │   ├── blockFormat.ts        # $getBlockType() + $setBlocksType() for the toolbar
+        │   ├── blockFormat_test.ts   # Tests for block type detection/conversion
         │   ├── extension.ts         # createEditorExtension(path) + bootstrapEditorExtension
         │   ├── markExtension.ts     # MarksExtension — applies mark ranges to the editor
         │   ├── selection.ts         # $createSelection(), $saveSelection(), $restoreSelection()
         │   ├── textNodeSpans.ts     # buildTextNodeSpans(), findPosition(), findRange(), $collectTextNodeSpans()
-        │   └── textNodeSpans_test.ts  # Tests for markdown offset ↔ TextNode mapping
+        │   ├── textNodeSpans_test.ts  # Tests for markdown offset ↔ TextNode mapping
+        │   └── toolbarStateExtension.ts # ToolbarStateExtension — selection-driven toolbar state
         ├── hooks/
         │   └── useChat.ts          # useChat() hook — SSE chat for Preact islands
         ├── islands/
@@ -145,7 +151,8 @@ essayist/
         │   ├── fileTree.ts        # FileTreeModel + useFiles() + buildFileTree()
         │   ├── marks.ts           # MarksModel — per-file marks with reload support
         │   ├── openedFiles.ts     # OpenedFilesModel — selectedFile, openedFiles, fileHistory
-        │   └── preferences.ts     # viewerFont, viewMode persistent signals
+        │   ├── preferences.ts     # viewerFont, viewMode persistent signals
+        │   └── toolbar.ts         # toolbarState — selection-driven toolbar state
         ├── utils/
         │   ├── asyncState.ts            # createAsyncState() — loading/error state helper
         │   ├── markdown.ts              # renderMarkdown(), markdownToEditorState(), editorStateToMarkdown()
@@ -229,9 +236,10 @@ essayist/
 - **`packages/web/islands/editor/extension.ts`** — `createEditorExtension(path)`
   builds the runtime editor extension with dependencies: `RichTextExtension`,
   `HistoryExtension`, `AutoFocusExtension`, `LinkExtension`, `ListExtension`,
-  `CodeExtension`, `HorizontalRuleExtension`, and `configExtension(MarksExtension,
-  { path })`. `bootstrapEditorExtension` is the path-less variant used by the
-  headless `markdownToEditorState()`.
+  `CodeExtension`, `HorizontalRuleExtension`, and
+  `configExtension(MarksExtension,
+  { path })`. `bootstrapEditorExtension` is
+  the path-less variant used by the headless `markdownToEditorState()`.
 - **`packages/web/middleware/agent.ts`** — Middleware. Instantiates `Agent` with
   `OPENROUTER_API_KEY` and attaches it to `ctx.state.agent`.
 - **`packages/web/signals.ts`** — Exports the `activeEditor` signal
@@ -258,6 +266,18 @@ essayist/
   `createModel` + `Map` cache pattern as `fileTree.ts`.
 - **`packages/web/signals/preferences.ts`** — `viewerFont` and `viewMode`
   persistent signals.
+- **`packages/web/components/EditorToolbar.tsx`** — Toolbar for the active
+  editor: bold/italic/strikethrough/inline-code toggle buttons plus a block-type
+  `<select>` (normal, heading 1-3, quote, code block, bullet/numbered list).
+  Reads `activeEditor` (to dispatch commands) and `toolbarState` (for active
+  state). Inline formats use `FORMAT_TEXT_COMMAND`; lists use Lexical's list
+  commands; block conversions use `$setBlocksType` (`editor/blockFormat.ts`).
+  Inline buttons are disabled inside a code block.
+- **`packages/web/editor/toolbarStateExtension.ts`** — `ToolbarStateExtension`,
+  registered in `afterRegistration`, writes the selection-derived toolbar state
+  (block type, inline format flags, `inCodeBlock`) into the `toolbarState`
+  signal on every update / selection change. Runs from `afterRegistration` so
+  the first read sees the committed initial state.
 - **`packages/web/vfs.ts`** — Server-side VFS instance seeded with sample files
   (essay.txt, report.txt, notes/ideas.md, notes/todo.md, notes/archive/,
   src/main.ts, src/utils.ts, markdown-showcase.md).
@@ -273,7 +293,7 @@ essayist/
   DOMPurify), `markdownToEditorState()` (markdown → Lexical `EditorState`), and
   `editorStateToMarkdown()` (Lexical `EditorState` → markdown string via
   `$convertToMarkdownString`). Both conversion functions use the shared
-    `bootstrapEditorExtension`.
+  `bootstrapEditorExtension`.
 - **`packages/web/editor/selection.ts`** — `$createSelection()`,
   `$saveSelection()`, and `$restoreSelection()`: build a Lexical
   `RangeSelection` from a `NodeRange`, and save/restore a selection across

@@ -10,6 +10,7 @@ import { MarkExtension } from "@lexical/mark";
 import { RichTextExtension } from "@lexical/rich-text";
 import { configExtension, defineExtension } from "lexical";
 import { MarksExtension } from "./markExtension.ts";
+import { ToolbarStateExtension } from "./toolbarStateExtension.ts";
 
 export function createEditorExtension(path: string) {
   return defineExtension({
@@ -24,6 +25,7 @@ export function createEditorExtension(path: string) {
       CodeExtension,
       HorizontalRuleExtension,
       configExtension(MarksExtension, { path }),
+      ToolbarStateExtension,
     ],
   });
 }
