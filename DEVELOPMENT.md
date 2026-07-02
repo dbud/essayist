@@ -106,6 +106,7 @@ essayist/
         │   ├── EditorToolbar.tsx    # Bold/italic/strike/code toggles + block-type select
         │   ├── FontSelect.tsx       # Font family dropdown (Serif/Sans/Mono) using Dropdown
         │   ├── MarkdownView.tsx    # Renders markdown HTML (via marked + DOMPurify)
+        │   ├── Tabs.tsx           # Generic scrollable tab strip with overflow buttons
         │   ├── Toolbar.tsx         # Generic toolbar shell (accepts children)
         │   ├── ToolbarButton.tsx   # Presentational toggle button for EditorToolbar
         │   └── ViewModeSelect.tsx  # View mode toggle (auto/markdown/plain) for file viewer
@@ -131,7 +132,7 @@ essayist/
         │   ├── MarkRangesSection.tsx  # Debug panel showing resolved mark ranges as JSON
         │   ├── MarksSection.tsx    # Displays marks for the selected file, grouped by thread
         │   ├── Section.tsx         # Collapsible sidebar section (details/summary)
-        │   ├── Tabs.tsx            # Open file tabs with close buttons
+        │   ├── FileViewerTabs.tsx # Open file tabs (close buttons) using Tabs
         │   └── editor/
         │       ├── ActiveEditorRef.tsx  # EditorRefPlugin wrapper that sets/clears activeEditor
         │       └── Editor.tsx           # Lexical rich text editor island component
@@ -200,8 +201,12 @@ essayist/
 - **`packages/web/islands/FileBrowser.tsx`** — File tree sidebar island. Fetches
   file list from `/api/files`, renders a collapsible tree with folders and
   files. Uses `FileTreeModel` from `signals/fileTree.ts`.
-- **`packages/web/islands/Tabs.tsx`** — Open file tabs with close buttons. Uses
-  `openedFiles` and `selectedFile` signals from `signals/openedFiles.ts`.
+- **`packages/web/components/Tabs.tsx`** — Generic horizontal tab strip: hides
+  the native scrollbar, shows ◀/▶ only on overflow (disabled when the direction
+  isn't available), and keeps the active tab scrolled into view.
+- **`packages/web/islands/FileViewerTabs.tsx`** — Open file tabs with close
+  buttons, rendered via `Tabs`. Uses `openedFiles` and `selectedFile` signals
+  from `signals/openedFiles.ts`.
 - **`packages/web/islands/Section.tsx`** — Collapsible sidebar section using
   `<details>`/`<summary>` with daisyUI `collapse` styling.
 - **`packages/web/islands/ErrorBoundary.tsx`** — Preact error boundary island

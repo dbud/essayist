@@ -1,4 +1,5 @@
 import { FileText, X } from "lucide-preact";
+import Tabs from "@/components/Tabs.tsx";
 import { useFile } from "@/signals/file.ts";
 import { openedFiles } from "@/signals/openedFiles.ts";
 
@@ -9,7 +10,7 @@ function Tab({ path }: { path: string }) {
   return (
     <button
       type="button"
-      class={`tab shrink-0 ${
+      class={`tab shrink-0 rounded-t ${
         isSelected.value ? "tab-active bg-primary/10 shadow" : ""
       }`}
       onClick={() => openedFiles.open(path)}
@@ -37,18 +38,17 @@ function Tab({ path }: { path: string }) {
   );
 }
 
-export default function Tabs() {
+export default function FileViewerTabs() {
   const files = openedFiles.opened.value;
+  const selected = openedFiles.selected.value;
 
-  if (files.length === 0) {
-    return null;
-  }
+  if (files.length === 0) return null;
 
   return (
-    <div class="tabs bg-base-200 flex-nowrap overflow-x-auto">
+    <Tabs activeIndex={files.indexOf(selected)}>
       {files.map((path) => (
         <Tab key={path} path={path} />
       ))}
-    </div>
+    </Tabs>
   );
 }
