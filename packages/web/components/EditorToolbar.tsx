@@ -63,7 +63,6 @@ export default function EditorToolbar() {
   return (
     <div class="flex items-center gap-1">
       <BlockTypeSelect block={state.block} onChange={setBlock} />
-      <div class="divider divider-horizontal mx-1" />
       {inlineButtons.map(({ fmt, title, icon }) => (
         <ToolbarButton
           active={state[fmt]}
