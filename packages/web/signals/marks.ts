@@ -54,13 +54,6 @@ export function useMarks(path: string) {
   return marksMap.getOrInsertComputed(path, () => new MarksModel(path));
 }
 
-/**
- * Thread ids of the marks at the current caret/selection anchor, written by
- * `MarksAtCursorExtension`. Empty when no editor is mounted or the caret is
- * not inside any mark.
- */
-export const marksAtCursor = signal<Set<string>>(new Set());
-
 export interface MarkWithRange {
   mark: Mark;
   range: NodeRange;

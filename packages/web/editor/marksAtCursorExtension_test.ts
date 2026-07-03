@@ -7,17 +7,26 @@ import {
   $createRangeSelection,
   $createTextNode,
   $getRoot,
+  configExtension,
   defineExtension,
   type LexicalEditor,
   type LexicalNode,
 } from "lexical";
-import { marksAtCursor } from "@/signals/marks.ts";
+import {
+  type EditorSelection,
+  EditorSelectionModel,
+} from "@/signals/editorSelection.ts";
 import { MarksAtCursorExtension } from "./marksAtCursorExtension.ts";
+
+const selection: EditorSelection = new EditorSelectionModel("");
 
 const testExtension = defineExtension({
   name: "marks-at-cursor-test",
   nodes: () => [MarkNode],
-  dependencies: [RichTextExtension, MarksAtCursorExtension],
+  dependencies: [
+    RichTextExtension,
+    configExtension(MarksAtCursorExtension, { selection }),
+  ],
 });
 
 function createEditor(): LexicalEditor {
@@ -63,19 +72,19 @@ function caretIn(
 }
 
 Deno.test("marksAtCursor -- contains the mark id when caret is inside it", () => {
-  marksAtCursor.value = new Set();
+  selection.markIds.value = new Set();
   const editor = createEditor();
   buildMarkedEditor(editor, "t1");
   caretIn(editor, (n) => n.getParent() !== null && $isMarkNode(n.getParent()));
 
-  assert(marksAtCursor.value.has("t1"));
+  assert(selection.markIds.value.has("t1"));
 });
 
 Deno.test("marksAtCursor -- empty when caret is outside any mark", () => {
-  marksAtCursor.value = new Set();
+  selection.markIds.value = new Set();
   const editor = createEditor();
   buildMarkedEditor(editor, "t2");
   caretIn(editor, (n) => n.getParent() !== null && !$isMarkNode(n.getParent()));
 
-  assertEquals(marksAtCursor.value.size, 0);
+  assertEquals(selection.markIds.value.size, 0);
 });

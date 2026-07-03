@@ -11,12 +11,10 @@ import {
   mergeRegister,
   SELECTION_CHANGE_COMMAND,
 } from "lexical";
-import { marksAtCursor } from "@/signals/marks.ts";
+import { defaultEditorSelection } from "@/signals/editorSelection.ts";
+import type { SelectionExtensionConfig } from "./toolbarStateExtension.ts";
 
-/**
- * Collects the ids of every MarkNode on the ancestor chain of the selection
- * anchor (handles nested/overlapping marks). Runs in a $-context.
- */
+/** Collects the ids of every MarkNode on the anchor's ancestor chain. */
 function $markIdsAtAnchor(): Set<string> {
   const selection = $getSelection();
   if (!$isRangeSelection(selection)) return new Set();
@@ -34,16 +32,20 @@ function $markIdsAtAnchor(): Set<string> {
 
 export const MarksAtCursorExtension = defineExtension({
   name: "marks-at-cursor",
-  afterRegistration: (editor: LexicalEditor) => {
+  config: { selection: defaultEditorSelection },
+  afterRegistration: (
+    editor: LexicalEditor,
+    { selection }: SelectionExtensionConfig,
+  ) => {
     const read = (editorState: EditorState) => {
       editorState.read(() => {
-        marksAtCursor.value = $markIdsAtAnchor();
+        selection.markIds.value = $markIdsAtAnchor();
       });
     };
 
     read(editor.getEditorState());
 
-    const disposers = mergeRegister(
+    return mergeRegister(
       editor.registerUpdateListener(({ editorState }) => read(editorState)),
       editor.registerCommand(
         SELECTION_CHANGE_COMMAND,
@@ -54,10 +56,5 @@ export const MarksAtCursorExtension = defineExtension({
         COMMAND_PRIORITY_LOW,
       ),
     );
-
-    return () => {
-      disposers();
-      marksAtCursor.value = new Set();
-    };
   },
 });

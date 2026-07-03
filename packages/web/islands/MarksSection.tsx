@@ -1,10 +1,11 @@
 import type { Mark, MarkStatus } from "@essayist/core";
 import type { LexicalEditor } from "lexical";
 import { Crosshair } from "lucide-preact";
-import { selectMark } from "@/editor/markNavigation.ts";
+import { SELECT_MARK_COMMAND } from "@/editor/markExtension.ts";
 import Section from "@/islands/Section.tsx";
 import { activeEditor } from "@/signals/activeEditor.ts";
-import { marksAtCursor, useMarks } from "@/signals/marks.ts";
+import { useEditorSelection } from "@/signals/editorSelection.ts";
+import { useMarks } from "@/signals/marks.ts";
 import { openedFiles } from "@/signals/openedFiles.ts";
 
 function statusBadge(status: MarkStatus) {
@@ -41,7 +42,8 @@ function MarkDetail({
           title="Go to mark in editor"
           disabled={editor === null}
           onClick={() => {
-            if (editor) selectMark(editor, mark.thread_id);
+            if (editor)
+              editor.dispatchCommand(SELECT_MARK_COMMAND, mark.thread_id);
           }}
         >
           <Crosshair size={14} />
@@ -69,7 +71,7 @@ export default function MarksSection() {
 
 function Marks({ path }: { path: string }) {
   const { resolved, loading } = useMarks(path);
-  const active = marksAtCursor.value;
+  const markIds = useEditorSelection(path).markIds.value;
   const editor = activeEditor.value;
 
   if (loading.value || resolved.value.length === 0) {
@@ -83,7 +85,7 @@ function Marks({ path }: { path: string }) {
           <MarkDetail
             key={mark.id}
             mark={mark}
-            active={active.has(mark.thread_id)}
+            active={markIds.has(mark.thread_id)}
             editor={editor}
           />
         ))}

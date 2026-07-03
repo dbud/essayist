@@ -5,45 +5,48 @@ import {
   $wrapSelectionInMarkNode,
   MarkNode,
 } from "@lexical/mark";
-import { effect, untracked } from "@preact/signals";
+import { effect, type Signal, untracked } from "@preact/signals";
 import { assert } from "@std/assert/assert";
 import {
   $getNodeByKey,
+  COMMAND_PRIORITY_LOW,
+  createCommand,
   HISTORIC_TAG,
+  type LexicalCommand,
   type LexicalEditor,
   mergeRegister,
   type NodeKey,
 } from "lexical";
-import { useFile } from "@/signals/file.ts";
-import { type RangedMark, useMarks } from "@/signals/marks.ts";
-import {
-  registerMarkNodeKeys,
-  unregisterMarkNodeKeys,
-} from "./markNodeRegistry.ts";
+import type { RangedMark } from "@/signals/marks.ts";
 import {
   $createSelection,
   $restoreSelection,
   $saveSelection,
 } from "./selection.ts";
+import type { TextNodeSpan } from "./textNodeSpans.ts";
 
 export const MARK_RANGE_TAG = "mark-range";
 
+/** Dispatch with a mark's thread id to place the caret at that mark. */
+export const SELECT_MARK_COMMAND: LexicalCommand<string> = createCommand();
+
 export interface MarksExtensionConfig {
   path: string;
+  ranges: Signal<RangedMark[]>;
+  textNodeSpans: Signal<TextNodeSpan[]>;
+  markdown: Signal<string>;
 }
 
 export const MarksExtension = defineExtension({
   name: "mark",
   nodes: () => [MarkNode],
-  config: { path: "" },
   // afterRegistration runs after $initialEditorState is committed; the effect's
   // first run is synchronous, so register() would run it against an empty tree.
   afterRegistration: (
     editor: LexicalEditor,
-    { path }: MarksExtensionConfig,
+    { path, ranges, textNodeSpans, markdown }: MarksExtensionConfig,
   ) => {
     const nodeKeys = new Set<NodeKey>();
-    registerMarkNodeKeys(editor, nodeKeys);
 
     return mergeRegister(
       editor.registerMutationListener(
@@ -59,21 +62,41 @@ export const MarksExtension = defineExtension({
         },
       ),
 
+      // Jump-to-mark: find the MarkNode by thread id among the tracked keys and
+      // place the caret at its start.
+      editor.registerCommand(
+        SELECT_MARK_COMMAND,
+        (threadId: string) => {
+          editor.focus();
+          editor.update(() => {
+            for (const key of nodeKeys) {
+              const node = $getNodeByKey(key);
+              if (
+                node !== null &&
+                $isMarkNode(node) &&
+                node.getIDs().includes(threadId)
+              ) {
+                node.selectStart();
+                break;
+              }
+            }
+          });
+          return true;
+        },
+        COMMAND_PRIORITY_LOW,
+      ),
+
       effect(() => {
         if (!path) return;
-        const { ranges } = useMarks(path);
         if (ranges.value.length === 0) return;
 
         // Untracked snapshot (ranges drives the effect): spans describe the
         // caret's tree; markdown is the stable offset space for restore since
         // marks don't change the exported markdown.
-        const { preSpans, content } = untracked(() => {
-          const file = useFile(path);
-          return {
-            preSpans: file.textNodeSpans.value,
-            content: file.markdown.value,
-          };
-        });
+        const { preSpans, content } = untracked(() => ({
+          preSpans: textNodeSpans.value,
+          content: markdown.value,
+        }));
 
         editor.update(
           () => {
@@ -84,8 +107,6 @@ export const MarksExtension = defineExtension({
           { tag: [MARK_RANGE_TAG, HISTORIC_TAG] },
         );
       }),
-
-      () => unregisterMarkNodeKeys(editor),
     );
   },
 });

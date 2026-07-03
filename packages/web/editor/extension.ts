@@ -8,12 +8,26 @@ import { LinkExtension } from "@lexical/link";
 import { ListExtension } from "@lexical/list";
 import { MarkExtension } from "@lexical/mark";
 import { RichTextExtension } from "@lexical/rich-text";
+import type { Signal } from "@preact/signals";
 import { configExtension, defineExtension } from "lexical";
+import type { EditorSelection } from "@/signals/editorSelection.ts";
+import type { RangedMark } from "@/signals/marks.ts";
 import { MarksExtension } from "./markExtension.ts";
 import { MarksAtCursorExtension } from "./marksAtCursorExtension.ts";
+import type { TextNodeSpan } from "./textNodeSpans.ts";
 import { ToolbarStateExtension } from "./toolbarStateExtension.ts";
 
-export function createEditorExtension(path: string) {
+interface EditorDeps {
+  ranges: Signal<RangedMark[]>;
+  textNodeSpans: Signal<TextNodeSpan[]>;
+  markdown: Signal<string>;
+  selection: EditorSelection;
+}
+
+export function createEditorExtension(
+  path: string,
+  { ranges, textNodeSpans, markdown, selection }: EditorDeps,
+) {
   return defineExtension({
     name: "[root]",
     namespace: "essayist-editor",
@@ -25,9 +39,14 @@ export function createEditorExtension(path: string) {
       ListExtension,
       CodeExtension,
       HorizontalRuleExtension,
-      configExtension(MarksExtension, { path }),
-      MarksAtCursorExtension,
-      ToolbarStateExtension,
+      configExtension(MarksExtension, {
+        path,
+        ranges,
+        textNodeSpans,
+        markdown,
+      }),
+      configExtension(ToolbarStateExtension, { selection }),
+      configExtension(MarksAtCursorExtension, { selection }),
     ],
   });
 }

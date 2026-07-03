@@ -35,7 +35,7 @@ function FileViewerBody({ path }: { path: string }) {
     >
       <Toolbar>
         <FontSelect />
-        <EditorToolbar />
+        <EditorToolbar path={path} />
       </Toolbar>
       <div class="flex-1 min-h-0 flex flex-col overflow-x-auto overflow-y-auto p-4">
         {editorState && (

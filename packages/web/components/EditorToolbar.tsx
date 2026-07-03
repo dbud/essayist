@@ -10,12 +10,16 @@ import BlockTypeSelect from "@/components/BlockTypeSelect.tsx";
 import ToolbarButton from "@/components/ToolbarButton.tsx";
 import { $setBlocksType, type BlockType } from "@/editor/blockFormat.ts";
 import { activeEditor } from "@/signals/activeEditor.ts";
-import { toolbarState } from "@/signals/toolbar.ts";
+import { useEditorSelection } from "@/signals/editorSelection.ts";
 
-export default function EditorToolbar() {
+interface EditorToolbarProps {
+  path: string;
+}
+
+export default function EditorToolbar({ path }: EditorToolbarProps) {
   const editor = activeEditor.value;
-  const state = toolbarState.value;
-  if (editor === null || state === null) return null;
+  const sel = useEditorSelection(path);
+  if (editor === null) return null;
 
   const format = (fmt: "bold" | "italic" | "strikethrough" | "code") => {
     editor.focus();
@@ -35,7 +39,7 @@ export default function EditorToolbar() {
     // Leaving a list for "normal": Lexical's list command unwraps the items.
     if (
       type === "normal" &&
-      (state.block === "bullet" || state.block === "number")
+      (sel.block.value === "bullet" || sel.block.value === "number")
     ) {
       editor.dispatchCommand(REMOVE_LIST_COMMAND, undefined);
       return;
@@ -43,7 +47,7 @@ export default function EditorToolbar() {
     editor.update(() => $setBlocksType(type));
   };
 
-  const inlineDisabled = state.inCodeBlock;
+  const inlineDisabled = sel.inCodeBlock.value;
 
   const inlineButtons: {
     fmt: "bold" | "italic" | "strikethrough" | "code";
@@ -62,10 +66,10 @@ export default function EditorToolbar() {
 
   return (
     <div class="flex items-center gap-1">
-      <BlockTypeSelect block={state.block} onChange={setBlock} />
+      <BlockTypeSelect block={sel.block.value} onChange={setBlock} />
       {inlineButtons.map(({ fmt, title, icon }) => (
         <ToolbarButton
-          active={state[fmt]}
+          active={sel[fmt].value}
           disabled={inlineDisabled}
           title={title}
           onClick={() => format(fmt)}

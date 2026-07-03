@@ -155,7 +155,7 @@ essayist/
         │   ├── marks.ts           # MarksModel — per-file marks with reload support
         │   ├── openedFiles.ts     # OpenedFilesModel — selectedFile, openedFiles, fileHistory
         │   ├── preferences.ts     # viewerFont, viewMode persistent signals
-        │   └── toolbar.ts         # toolbarState — selection-driven toolbar state
+        │   └── editorSelection.ts # Per-path editor-selection signals (block/formats/markIds)
         ├── utils/
         │   ├── asyncState.ts            # createAsyncState() — loading/error state helper
         │   ├── markdown.ts              # renderMarkdown(), markdownToEditorState(), editorStateToMarkdown()
@@ -270,28 +270,38 @@ essayist/
   via `resolveMarksForEditor()`). Also has an `effect` that applies mark ranges
   to the active Lexical editor via `$wrapSelectionInMarkNode`. Exports
   `useMarks(path)` helper and `MarkWithRange` interface. Follows the same
-  `createModel` + `Map` cache pattern as `fileTree.ts`. Also exports
-  `marksAtCursor`, a global signal holding the set of mark `thread_id`s at the
-  caret, written by `MarksAtCursorExtension`.
+  `createModel` + `Map` cache pattern as `fileTree.ts`.
 - **`packages/web/signals/preferences.ts`** — `viewerFont` and `viewMode`
   persistent signals.
+- **`packages/web/signals/editorSelection.ts`** — `EditorSelectionModel`, a
+  per-path (`createModel` + `Map` cache) set of signals for editor-selection
+  state: `block`, `bold`, `italic`, `strikethrough`, `code`, `inCodeBlock`, and
+  `markIds`. Written by `ToolbarStateExtension` and `MarksAtCursorExtension`
+  (injected via extension config); read by `EditorToolbar` and `MarksSection`.
+  `useEditorSelection(path)` accessor.
 - **`packages/web/components/EditorToolbar.tsx`** — Toolbar for the active
   editor: bold/italic/strikethrough/inline-code toggle buttons plus a block-type
-  `<select>` (normal, heading 1-3, quote, code block, bullet/numbered list).
-  Reads `activeEditor` (to dispatch commands) and `toolbarState` (for active
-  state). Inline formats use `FORMAT_TEXT_COMMAND`; lists use Lexical's list
-  commands; block conversions use `$setBlocksType` (`editor/blockFormat.ts`).
-  Inline buttons are disabled inside a code block.
+  dropdown (normal, heading 1-3, quote, code block, bullet/numbered list).
+  Reads `activeEditor` (to dispatch commands) and `useEditorSelection(path)`
+  (for active state). Inline formats use `FORMAT_TEXT_COMMAND`; lists use
+  Lexical's list commands; block conversions use `$setBlocksType`
+  (`editor/blockFormat.ts`). Inline buttons are disabled inside a code block.
 - **`packages/web/editor/marksAtCursorExtension.ts`** — `MarksAtCursorExtension`,
   registered in `afterRegistration`, writes the set of mark `thread_id`s at the
-  selection anchor into the `marksAtCursor` signal on every update / selection
-  change. Walks the anchor's ancestor chain collecting `MarkNode` ids (handles
-  nested/overlapping marks).
+  selection anchor into the injected `EditorSelection.markIds` signal on every
+  update / selection change. Walks the anchor's ancestor chain collecting
+  `MarkNode` ids (handles nested/overlapping marks). Kept separate from
+  `ToolbarStateExtension`; both subscribe to selection changes independently.
 - **`packages/web/editor/toolbarStateExtension.ts`** — `ToolbarStateExtension`,
-  registered in `afterRegistration`, writes the selection-derived toolbar state
-  (block type, inline format flags, `inCodeBlock`) into the `toolbarState`
-  signal on every update / selection change. Runs from `afterRegistration` so
-  the first read sees the committed initial state.
+  registered in `afterRegistration`, writes the selection-derived block type,
+  inline format flags, and `inCodeBlock` into the injected `EditorSelection`
+  model on every update / selection change.
+- **`packages/web/editor/markExtension.ts`** — `MarksExtension` applies mark
+  ranges to the editor (signals for `ranges`/`textNodeSpans`/`markdown` are
+  injected via config from `Editor.tsx`, the composition root) and registers
+  `SELECT_MARK_COMMAND` (dispatch a thread id to place the caret at that mark).
+  `Editor.tsx` calls `useMarks`/`useFile`/`useEditorSelection` and injects the
+  signals into `createEditorExtension(path, deps)`.
 - **`packages/web/vfs.ts`** — Server-side VFS instance seeded with sample files
   (essay.txt, report.txt, notes/ideas.md, notes/todo.md, notes/archive/,
   src/main.ts, src/utils.ts, markdown-showcase.md).
@@ -577,10 +587,14 @@ then `deno task fmt:check` before each commit.
   `createGrepTool`, and `createWriteFileTool`. `createMarkTool` is exported from
   core but not included in the chat tools array.
 - **MarkExtension in editor** — `MarksExtension` (in `editor/markExtension.ts`)
-  registers `MarkNode` (from `@lexical/mark`). The effect, run from
-  `afterRegistration` and bound to the editor's own `path` via
-  `configExtension(MarksExtension, { path })`, applies mark ranges to the active
-  editor with `$wrapSelectionInMarkNode`. Zero-length marks (text deleted) are
-  skipped in the editor since MarkNode can't be empty; they are still surfaced
-  in the export preview / sidebar. This is a work in progress (see TODO in
+  registers `MarkNode` (from `@lexical/mark`). Run from `afterRegistration`, it
+  applies mark ranges to the active editor with `$wrapSelectionInMarkNode`.
+  The mark/file signals (`ranges`, `textNodeSpans`, `markdown`) are injected via
+  config from `Editor.tsx` (the composition root) rather than imported as
+  `useX` accessors inside the extension — this keeps the editor layer decoupled
+  from the signal/store layer and avoids `react-rules-of-hooks` friction. It
+  also registers `SELECT_MARK_COMMAND` (dispatch a thread id to jump the caret
+  to that mark). Zero-length marks (text deleted) are skipped in the editor
+  since MarkNode can't be empty; they are still surfaced in the export preview
+  / sidebar. This is a work in progress (see TODO in
   `signals/marks.ts`).
