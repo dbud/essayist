@@ -19,7 +19,6 @@ export default function HomePage() {
       <aside class="flex-1 max-w-lg shrink-0 min-h-0 overflow-y-auto flex flex-col">
         <div class="join join-vertical">
           <ExportPreviewSection />
-          <MarkRangesSection />
           <MarksSection />
           <LexicalTreeViewSection />
           <Section title="Chat">
@@ -31,6 +30,7 @@ export default function HomePage() {
           <Section title="File History">
             <div class="text-sm text-base-content/50">Coming soon</div>
           </Section>
+          <MarkRangesSection />
         </div>
       </aside>
     </main>

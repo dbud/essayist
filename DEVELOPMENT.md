@@ -118,6 +118,7 @@ essayist/
         │   ├── selection.ts         # $createSelection(), $saveSelection(), $restoreSelection()
         │   ├── textNodeSpans.ts     # buildTextNodeSpans(), findPosition(), findRange(), $collectTextNodeSpans()
         │   ├── textNodeSpans_test.ts  # Tests for markdown offset ↔ TextNode mapping
+        │   ├── marksAtCursorExtension.ts # MarksAtCursorExtension — marks at the caret
         │   └── toolbarStateExtension.ts # ToolbarStateExtension — selection-driven toolbar state
         ├── hooks/
         │   └── useChat.ts          # useChat() hook — SSE chat for Preact islands
@@ -270,6 +271,9 @@ essayist/
   to the active Lexical editor via `$wrapSelectionInMarkNode`. Exports
   `useMarks(path)` helper and `MarkWithRange` interface. Follows the same
   `createModel` + `Map` cache pattern as `fileTree.ts`.
+- **`packages/web/signals/marksAtCursor.ts`** — `marksAtCursor` signal: the set of
+  mark `thread_id`s at the current caret, written by
+  `MarksAtCursorExtension`.
 - **`packages/web/signals/preferences.ts`** — `viewerFont` and `viewMode`
   persistent signals.
 - **`packages/web/components/EditorToolbar.tsx`** — Toolbar for the active
@@ -279,6 +283,11 @@ essayist/
   state). Inline formats use `FORMAT_TEXT_COMMAND`; lists use Lexical's list
   commands; block conversions use `$setBlocksType` (`editor/blockFormat.ts`).
   Inline buttons are disabled inside a code block.
+- **`packages/web/editor/marksAtCursorExtension.ts`** — `MarksAtCursorExtension`,
+  registered in `afterRegistration`, writes the set of mark `thread_id`s at the
+  selection anchor into the `marksAtCursor` signal on every update / selection
+  change. Walks the anchor's ancestor chain collecting `MarkNode` ids (handles
+  nested/overlapping marks).
 - **`packages/web/editor/toolbarStateExtension.ts`** — `ToolbarStateExtension`,
   registered in `afterRegistration`, writes the selection-derived toolbar state
   (block type, inline format flags, `inCodeBlock`) into the `toolbarState`
