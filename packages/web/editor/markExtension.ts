@@ -17,6 +17,10 @@ import {
 import { useFile } from "@/signals/file.ts";
 import { type RangedMark, useMarks } from "@/signals/marks.ts";
 import {
+  registerMarkNodeKeys,
+  unregisterMarkNodeKeys,
+} from "./markNodeRegistry.ts";
+import {
   $createSelection,
   $restoreSelection,
   $saveSelection,
@@ -39,6 +43,7 @@ export const MarksExtension = defineExtension({
     { path }: MarksExtensionConfig,
   ) => {
     const nodeKeys = new Set<NodeKey>();
+    registerMarkNodeKeys(editor, nodeKeys);
 
     return mergeRegister(
       editor.registerMutationListener(
@@ -79,6 +84,8 @@ export const MarksExtension = defineExtension({
           { tag: [MARK_RANGE_TAG, HISTORIC_TAG] },
         );
       }),
+
+      () => unregisterMarkNodeKeys(editor),
     );
   },
 });

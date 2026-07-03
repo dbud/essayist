@@ -1,5 +1,9 @@
 import type { Mark, MarkStatus } from "@essayist/core";
+import type { LexicalEditor } from "lexical";
+import { Crosshair } from "lucide-preact";
+import { selectMark } from "@/editor/markNavigation.ts";
 import Section from "@/islands/Section.tsx";
+import { activeEditor } from "@/signals/activeEditor.ts";
 import { marksAtCursor, useMarks } from "@/signals/marks.ts";
 import { openedFiles } from "@/signals/openedFiles.ts";
 
@@ -11,7 +15,15 @@ function statusBadge(status: MarkStatus) {
   return <span class={classes}>{status}</span>;
 }
 
-function MarkDetail({ mark, active }: { mark: Mark; active: boolean }) {
+function MarkDetail({
+  mark,
+  active,
+  editor,
+}: {
+  mark: Mark;
+  active: boolean;
+  editor: LexicalEditor | null;
+}) {
   return (
     <div
       class={`text-sm p-2 rounded ${
@@ -23,6 +35,17 @@ function MarkDetail({ mark, active }: { mark: Mark; active: boolean }) {
           {mark.label || "Mark"}
         </span>
         {statusBadge(mark.status)}
+        <button
+          type="button"
+          class="btn btn-ghost btn-xs btn-square ml-auto"
+          title="Go to mark in editor"
+          disabled={editor === null}
+          onClick={() => {
+            if (editor) selectMark(editor, mark.thread_id);
+          }}
+        >
+          <Crosshair size={14} />
+        </button>
       </div>
       <div class="text-base-content/50 italic">
         &ldquo;{mark.selected_text}&rdquo;
@@ -47,6 +70,7 @@ export default function MarksSection() {
 function Marks({ path }: { path: string }) {
   const { resolved, loading } = useMarks(path);
   const active = marksAtCursor.value;
+  const editor = activeEditor.value;
 
   if (loading.value || resolved.value.length === 0) {
     return null;
@@ -60,6 +84,7 @@ function Marks({ path }: { path: string }) {
             key={mark.id}
             mark={mark}
             active={active.has(mark.thread_id)}
+            editor={editor}
           />
         ))}
       </div>
