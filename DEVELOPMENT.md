@@ -270,10 +270,9 @@ essayist/
   via `resolveMarksForEditor()`). Also has an `effect` that applies mark ranges
   to the active Lexical editor via `$wrapSelectionInMarkNode`. Exports
   `useMarks(path)` helper and `MarkWithRange` interface. Follows the same
-  `createModel` + `Map` cache pattern as `fileTree.ts`.
-- **`packages/web/signals/marksAtCursor.ts`** — `marksAtCursor` signal: the set of
-  mark `thread_id`s at the current caret, written by
-  `MarksAtCursorExtension`.
+  `createModel` + `Map` cache pattern as `fileTree.ts`. Also exports
+  `marksAtCursor`, a global signal holding the set of mark `thread_id`s at the
+  caret, written by `MarksAtCursorExtension`.
 - **`packages/web/signals/preferences.ts`** — `viewerFont` and `viewMode`
   persistent signals.
 - **`packages/web/components/EditorToolbar.tsx`** — Toolbar for the active

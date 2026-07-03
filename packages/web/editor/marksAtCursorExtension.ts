@@ -11,7 +11,7 @@ import {
   mergeRegister,
   SELECTION_CHANGE_COMMAND,
 } from "lexical";
-import { marksAtCursor } from "@/signals/marksAtCursor.ts";
+import { marksAtCursor } from "@/signals/marks.ts";
 
 /**
  * Collects the ids of every MarkNode on the ancestor chain of the selection

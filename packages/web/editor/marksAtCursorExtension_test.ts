@@ -11,7 +11,7 @@ import {
   type LexicalEditor,
   type LexicalNode,
 } from "lexical";
-import { marksAtCursor } from "@/signals/marksAtCursor.ts";
+import { marksAtCursor } from "@/signals/marks.ts";
 import { MarksAtCursorExtension } from "./marksAtCursorExtension.ts";
 
 const testExtension = defineExtension({
