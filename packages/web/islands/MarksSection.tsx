@@ -1,6 +1,6 @@
 import type { Mark, MarkStatus } from "@essayist/core";
 import Section from "@/islands/Section.tsx";
-import { useMarks } from "@/signals/marks.ts";
+import { marksAtCursor, useMarks } from "@/signals/marks.ts";
 import { openedFiles } from "@/signals/openedFiles.ts";
 
 function statusBadge(status: MarkStatus) {
@@ -11,9 +11,13 @@ function statusBadge(status: MarkStatus) {
   return <span class={classes}>{status}</span>;
 }
 
-function MarkDetail({ mark }: { mark: Mark }) {
+function MarkDetail({ mark, active }: { mark: Mark; active: boolean }) {
   return (
-    <div class="text-sm">
+    <div
+      class={`text-sm p-2 rounded ${
+        active ? "bg-primary/10 ring-1 ring-primary/30" : ""
+      }`}
+    >
       <div class="flex items-center gap-2 mb-1">
         <span class="font-semibold text-base-content/70">
           {mark.label || "Mark"}
@@ -42,6 +46,7 @@ export default function MarksSection() {
 
 function Marks({ path }: { path: string }) {
   const { resolved, loading } = useMarks(path);
+  const active = marksAtCursor.value;
 
   if (loading.value || resolved.value.length === 0) {
     return null;
@@ -51,7 +56,11 @@ function Marks({ path }: { path: string }) {
     <Section title="Marks">
       <div class="flex flex-col gap-3">
         {resolved.value.map((mark) => (
-          <MarkDetail key={mark.id} mark={mark} />
+          <MarkDetail
+            key={mark.id}
+            mark={mark}
+            active={active.has(mark.thread_id)}
+          />
         ))}
       </div>
     </Section>
