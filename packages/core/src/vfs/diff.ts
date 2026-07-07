@@ -20,8 +20,10 @@ const tokenize = createTokenizer(DIFF_TOKEN_REGEX);
 /**
  * Compute a token-level diff between two texts.
  *
- * Uses Myers' LCS algorithm on word tokens, then maps back
- * to character offsets in the original texts.
+ * Uses Myers' O((N+M)*D) shortest-edit-script algorithm on word tokens, then
+ * maps the edit script back to character offsets in the original texts. D is
+ * the edit distance (insertions + deletions); for a small edit in a long
+ * document D is tiny and this is far faster than an O(N*M) LCS DP table.
  */
 export function computeDiff(oldText: string, newText: string): DiffHunk[] {
   if (oldText === "" && newText === "") return [];
@@ -67,41 +69,96 @@ interface DiffOp {
 }
 
 function myersDiff(oldTokens: Token[], newTokens: Token[]): DiffOp[] {
-  const N = oldTokens.length;
-  const M = newTokens.length;
+  const n = oldTokens.length;
+  const m = newTokens.length;
+  if (n === 0 && m === 0) return [];
+  if (n === 0)
+    return newTokens.map((_, j) => ({ type: "insert", newIdx: j }) as DiffOp);
+  if (m === 0)
+    return oldTokens.map((_, i) => ({ type: "delete", oldIdx: i }) as DiffOp);
 
-  const dp: number[][] = Array.from({ length: N + 1 }, () =>
-    new Array(M + 1).fill(0),
-  );
+  // Myers' O((N+M)*D) shortest-edit-script, where D is the edit distance
+  // (number of insertions + deletions).
+  //
+  // We search the edit graph of oldTokens (x axis, 0..n) against newTokens
+  // (y axis, 0..m). A diagonal k = x - y groups all points whose x-y is
+  // constant; advancing along a diagonal (x+1, y+1) is a free match on a
+  // common token, while stepping right (x+1, y) is a deletion and stepping
+  // down (x, y+1) is an insertion. Each D iteration reaches points that need
+  // exactly D edits; the answer is the smallest D that reaches (n, m).
+  //
+  // v[k + offset] holds the furthest x reached on diagonal k so far. k can
+  // be negative, so we offset by `max` to keep indices non-negative. The
+  // trace snapshots v at the start of each D iteration so we can backtrack
+  // the edit script once (n, m) is reached. On ties (v[k+1] == v[k-1]) we
+  // prefer the down/insert edge, which keeps insertions before deletions in
+  // a run of adjacent edits.
+  const max = n + m;
+  const offset = max;
+  const v = new Int32Array(2 * max + 1).fill(-1);
+  v[offset + 1] = 0;
+  const trace: Int32Array[] = [];
 
-  for (let i = 1; i <= N; i++) {
-    for (let j = 1; j <= M; j++) {
-      if (oldTokens[i - 1].text === newTokens[j - 1].text) {
-        dp[i][j] = dp[i - 1][j - 1] + 1;
+  let finalD = -1;
+  for (let d = 0; d <= max; d++) {
+    // Snapshot the relevant slice [-d, d] of v for backtracking.
+    trace.push(v.subarray(offset - d, offset + d + 1).slice());
+    for (let k = -d; k <= d; k += 2) {
+      let x: number;
+      if (k === -d || (k !== d && v[offset + k + 1] > v[offset + k - 1])) {
+        x = v[offset + k + 1]; // down (insert)
       } else {
-        dp[i][j] = Math.max(dp[i - 1][j], dp[i][j - 1]);
+        x = v[offset + k - 1] + 1; // right (delete)
+      }
+      let y = x - k;
+      while (x < n && y < m && oldTokens[x].text === newTokens[y].text) {
+        x++;
+        y++;
+      }
+      v[offset + k] = x;
+      if (x >= n && y >= m) {
+        finalD = d;
+        break;
       }
     }
+    if (finalD !== -1) break;
   }
+  if (finalD === -1) finalD = max; // defensive; should not happen
 
+  // Backtrack from (n, m) to (0, 0) using the trace.
   const ops: DiffOp[] = [];
-  let i = N,
-    j = M;
-
-  while (i > 0 || j > 0) {
-    if (i > 0 && j > 0 && oldTokens[i - 1].text === newTokens[j - 1].text) {
-      ops.push({ type: "equal", oldIdx: i - 1, newIdx: j - 1 });
-      i--;
-      j--;
-    } else if (j > 0 && (i === 0 || dp[i][j - 1] >= dp[i - 1][j])) {
-      ops.push({ type: "insert", newIdx: j - 1 });
-      j--;
+  let x = n;
+  let y = m;
+  for (let d = finalD; d > 0; d--) {
+    const snap = trace[d];
+    const k = x - y;
+    let prevK: number;
+    if (k === -d || (k !== d && snap[k + 1 + d] > snap[k - 1 + d])) {
+      prevK = k + 1; // came from above (insert)
     } else {
-      ops.push({ type: "delete", oldIdx: i - 1 });
-      i--;
+      prevK = k - 1; // came from the left (delete)
+    }
+    const prevX = snap[prevK + d];
+    const prevY = prevX - prevK;
+    while (x > prevX && y > prevY) {
+      ops.push({ type: "equal", oldIdx: x - 1, newIdx: y - 1 });
+      x--;
+      y--;
+    }
+    if (x === prevX) {
+      ops.push({ type: "insert", newIdx: y - 1 });
+      y--;
+    } else {
+      ops.push({ type: "delete", oldIdx: x - 1 });
+      x--;
     }
   }
-
+  // Remaining leading diagonal (D = 0): pure matches from (x, y) to (0, 0).
+  while (x > 0 && y > 0) {
+    ops.push({ type: "equal", oldIdx: x - 1, newIdx: y - 1 });
+    x--;
+    y--;
+  }
   ops.reverse();
   return ops;
 }

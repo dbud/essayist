@@ -132,10 +132,10 @@ Deno.test("computeDiff -- prose: sentence deleted", () => {
   assertEquals(result.length, 1);
   assertObjectMatch(result[0], {
     type: "delete",
-    oldText: "sentence. Second ",
+    oldText: "Second sentence. ",
   });
-  // LCS matches the second "sentence. " in old with the first in new
-  // so the first "sentence. " and "Second " are deleted
+  // Myers matches the first "sentence. " in old with the first in new,
+  // deleting the whole middle sentence "Second sentence. ".
 });
 
 Deno.test("computeDiff -- prose: sentence inserted", () => {
@@ -145,9 +145,10 @@ Deno.test("computeDiff -- prose: sentence inserted", () => {
   assertEquals(result.length, 1);
   assertObjectMatch(result[0], {
     type: "insert",
-    newText: "sentence. Second ",
+    newText: "Second sentence. ",
   });
-  // LCS matches the first "sentence. " in new with old
+  // Myers matches the first "sentence. " in new with old, inserting the
+  // whole middle sentence "Second sentence. ".
 });
 
 Deno.test("computeDiff -- prose: multiple paragraph changes", () => {
