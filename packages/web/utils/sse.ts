@@ -1,3 +1,4 @@
+import { extractProviderError } from "@essayist/core";
 import type { ModelResult, Tool } from "@openrouter/agent";
 
 async function* chunks(stream: ReadableStream<Uint8Array>) {
@@ -79,9 +80,20 @@ export function streamModelResultSSE<TTools extends readonly Tool[]>(
         }
       })();
 
-      await Promise.all([textPromise, itemsPromise]);
-      send("done", {});
-      controller.close();
+      // If either stream rejects (e.g. the provider returns a 429),
+      // surface a structured error event to the client instead of
+      // letting the response stream terminate abruptly. The generic
+      // SDK message ("Provider returned error") is not useful to
+      // users; extractProviderError pulls out the provider's raw
+      // explanation from err.error.metadata.raw.
+      try {
+        await Promise.all([textPromise, itemsPromise]);
+      } catch (err) {
+        send("error", extractProviderError(err));
+      } finally {
+        send("done", {});
+        controller.close();
+      }
     },
     async cancel() {
       await result.cancel();

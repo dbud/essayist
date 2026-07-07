@@ -1,3 +1,5 @@
+import type { ProviderError } from "@essayist/core";
+import { providerErrorDetail, providerErrorLabel } from "@essayist/core";
 import type { StreamableOutputItem } from "@openrouter/agent";
 import { useComputed, useSignal } from "@preact/signals";
 import { useEffect, useRef } from "preact/hooks";
@@ -16,6 +18,20 @@ function pprint<T>(a: string | T) {
     object = a;
   }
   return JSON.stringify(object, null, 2);
+}
+
+function ErrorMessage({ error }: { error: ProviderError }) {
+  const label = providerErrorLabel(error);
+  const detail = providerErrorDetail(error);
+  return (
+    <div class="alert alert-error text-xs flex flex-col items-start gap-1 py-2 px-3">
+      <div class="font-semibold">{label}</div>
+      <div class="whitespace-pre-wrap break-words">{detail}</div>
+      {error.providerName && (
+        <div class="opacity-70">provider: {error.providerName}</div>
+      )}
+    </div>
+  );
 }
 
 function renderItem(item: StreamableOutputItem) {
@@ -101,6 +117,9 @@ export default function Chat() {
                         )}
                       </div>
 
+                      {/* Provider error */}
+                      {message.error && <ErrorMessage error={message.error} />}
+
                       {/* Text content */}
                       {message.text &&
                         (isUser ? (
@@ -115,7 +134,8 @@ export default function Chat() {
                       {/* Streaming indicator */}
                       {i === messages.value.length - 1 &&
                         streaming.value &&
-                        !message.text && (
+                        !message.text &&
+                        !message.error && (
                           <span class="loading loading-dots loading-sm"></span>
                         )}
                     </div>

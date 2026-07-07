@@ -1,4 +1,10 @@
 export { Agent } from "@/agent.ts";
+export type { ProviderError } from "@/provider_error.ts";
+export {
+  extractProviderError,
+  providerErrorDetail,
+  providerErrorLabel,
+} from "@/provider_error.ts";
 export { summarizeFile } from "@/summarize.ts";
 export {
   createGrepTool,

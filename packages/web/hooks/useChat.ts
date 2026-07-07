@@ -1,3 +1,4 @@
+import type { ProviderError } from "@essayist/core";
 import type { StreamableOutputItem } from "@openrouter/agent";
 import type { Signal } from "@preact/signals";
 import { signal, useSignal } from "@preact/signals";
@@ -8,6 +9,7 @@ export interface ChatMessage {
   role: "user" | "assistant";
   text: string;
   items: Map<string, StreamableOutputItem>;
+  error?: ProviderError;
 }
 
 function itemKey(item: StreamableOutputItem): string {
@@ -58,13 +60,24 @@ export function useChat(apiUrl: string, initial?: ChatMessage[]) {
             ...reply.value,
             items: new Map(reply.value.items).set(itemKey(item), item),
           };
+        } else if (event === "error") {
+          reply.value = {
+            ...reply.value,
+            error: data as ProviderError,
+          };
         }
       }
     } catch (err) {
       if ((err as Error).name !== "AbortError") {
+        // If the stream itself fails (network error, aborted response,
+        // etc.) rather than an explicit SSE error event, still surface
+        // something useful instead of appending to the message text.
         reply.value = {
           ...reply.value,
-          text: `${reply.value.text}\n\nError: ${String(err)}`,
+          error: {
+            name: (err as Error).name,
+            message: (err as Error).message ?? String(err),
+          },
         };
       }
     } finally {
