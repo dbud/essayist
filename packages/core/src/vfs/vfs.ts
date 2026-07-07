@@ -18,7 +18,7 @@ import type {
   WriteResult,
 } from "./types.ts";
 
-const DEFAULT_CONTEXT_RADIUS = 60;
+const DEFAULT_CONTEXT_SPAN = 60;
 
 const FILE_LATEST_PREFIX = "file:latest:";
 const FILE_VERSIONS_PREFIX = "file:versions:";
@@ -202,7 +202,7 @@ export class VirtualFileSystem implements VFS {
       label,
       lineHint,
       threadId,
-      contextRadius = DEFAULT_CONTEXT_RADIUS,
+      contextSpan = DEFAULT_CONTEXT_SPAN,
     }: MarkOptions = {},
   ): Promise<MarkResult> {
     const latest = await this.#getFile(path);
@@ -212,21 +212,16 @@ export class VirtualFileSystem implements VFS {
     const { content, version_id } = latest;
     const offsetHint =
       lineHint !== undefined ? lineToOffset(content, lineHint) : 0;
-    const offset = new TokenizedText(content).findExactNear(
-      selectedText,
-      offsetHint,
-    );
+    const tt = new TokenizedText(content);
+    const offset = tt.findExactNear(selectedText, offsetHint);
     if (offset === null) {
       return { mark_id: "", thread_id: "", marked: false };
     }
 
-    const beforeContext = content.slice(
-      Math.max(0, offset - contextRadius),
-      offset,
-    );
-    const afterContext = content.slice(
+    const beforeContext = tt.captureBeforeContext(offset, contextSpan);
+    const afterContext = tt.captureAfterContext(
       offset + selectedText.length,
-      offset + selectedText.length + contextRadius,
+      contextSpan,
     );
 
     const mark: Mark = {

@@ -50,7 +50,7 @@ export interface MarkOptions {
   label?: string;
   lineHint?: number;
   threadId?: string;
-  contextRadius?: number;
+  contextSpan?: number;
 }
 
 /**

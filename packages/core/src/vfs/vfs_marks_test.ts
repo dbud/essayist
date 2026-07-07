@@ -90,6 +90,9 @@ Deno.test("VFS.mark -- accepts explicit threadId", async () => {
 });
 
 Deno.test("VFS.mark -- captures context around selection", async () => {
+  // With no intervening word boundaries (a single long token run on each
+  // side), the whole long word is included in full -- there is no cap, so a
+  // pathological long token yields a large context.
   const content = `${"A".repeat(100)}TARGET${"B".repeat(100)}`;
   const { vfs, versionId } = await createFile("f.txt", content);
   await vfs.mark("f.txt", "TARGET", "middle");
@@ -97,8 +100,24 @@ Deno.test("VFS.mark -- captures context around selection", async () => {
   const marks = await vfs.getMarks("f.txt", versionId);
   assertEquals(marks.length, 1);
   assertObjectMatch(marks[0], {
-    before_context: "A".repeat(60),
-    after_context: "B".repeat(60),
+    before_context: "A".repeat(100),
+    after_context: "B".repeat(100),
+  });
+});
+
+Deno.test("VFS.mark -- context snapped to word boundaries", async () => {
+  // Small contextSpan so snapping is observable: before_context starts at a
+  // word start, after_context ends at a word end, instead of an arbitrary char
+  // window. Trailing punctuation after a word is not included.
+  const content = "One. Two. MARK Three. Four.";
+  const { vfs, versionId } = await createFile("f.txt", content);
+  await vfs.mark("f.txt", "MARK", "snap", { contextSpan: 5 });
+
+  const marks = await vfs.getMarks("f.txt", versionId);
+  assertEquals(marks.length, 1);
+  assertObjectMatch(marks[0], {
+    before_context: "Two. ",
+    after_context: " Three",
   });
 });
 
@@ -114,18 +133,18 @@ Deno.test("VFS.mark -- context truncated at file boundaries", async () => {
   });
 });
 
-Deno.test("VFS.mark -- uses custom contextRadius", async () => {
-  const content = `${"A".repeat(100)}TARGET${"B".repeat(100)}`;
+Deno.test("VFS.mark -- uses custom contextSpan", async () => {
+  // A larger span captures more words, confirming the option controls the
+  // window (distinct from the contextSpan: 5 case above).
+  const content = "One. Two. MARK Three. Four.";
   const { vfs, versionId } = await createFile("f.txt", content);
-  await vfs.mark("f.txt", "TARGET", "custom radius", {
-    contextRadius: 10,
-  });
+  await vfs.mark("f.txt", "MARK", "custom span", { contextSpan: 8 });
 
   const marks = await vfs.getMarks("f.txt", versionId);
   assertEquals(marks.length, 1);
   assertObjectMatch(marks[0], {
-    before_context: "A".repeat(10),
-    after_context: "B".repeat(10),
+    before_context: "One. Two. ",
+    after_context: " Three. Four",
   });
 });
 

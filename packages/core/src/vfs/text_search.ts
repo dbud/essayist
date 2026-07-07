@@ -39,7 +39,7 @@ export interface TokenFuzzyMatch {
   score: number;
 }
 
-/** A text plus its word-tokenization, with search methods in word units. */
+/** A text plus its word-tokenization, with search and context-capture methods in word units. */
 export class TokenizedText {
   readonly #text: string;
   readonly #tokens: Token[];
@@ -202,6 +202,51 @@ export class TokenizedText {
     }
 
     return best;
+  }
+
+  /**
+   * Capture text before `anchor` (the selection start) as whole words. Reaches
+   * back `span` chars to `anchor - span`, then snaps outward to the word start
+   * at or before that point, so the window starts on a word boundary and
+   * never splits a word at the left edge. A word straddling `anchor - span` is
+   * included in full. If no word start is that far back (selection near the
+   * document start), the window runs to the start of the text.
+   */
+  captureBeforeContext(anchor: number, span: number): string {
+    if (anchor <= 0) return "";
+    const target = anchor - span;
+    // Largest word start at or before `target`; falls back to the text start.
+    let p = 0;
+    for (let k = this.#tokens.length - 1; k >= 0; k--) {
+      if (this.#tokens[k].offset <= target) {
+        p = this.#tokens[k].offset;
+        break;
+      }
+    }
+    return this.#text.slice(p, anchor);
+  }
+
+  /**
+   * Capture text after `anchor` (the selection end) as whole words. Reaches
+   * forward `span` chars to `anchor + span`, then snaps outward to the word end
+   * at or after that point, so the window ends on a word boundary. A word
+   * straddling `anchor + span` is included in full. If no word end is that far
+   * (selection near the document end), the window runs to the end of the text.
+   */
+  captureAfterContext(anchor: number, span: number): string {
+    const n = this.#text.length;
+    if (anchor >= n) return "";
+
+    const target = anchor + span;
+    // Smallest word end at or after `target`; falls back to the text end.
+    let e = n;
+    for (const t of this.#tokens) {
+      if (t.endOffset >= target) {
+        e = t.endOffset;
+        break;
+      }
+    }
+    return this.#text.slice(anchor, e);
   }
 
   #nearestTokenIndex(charOffset: number): number {

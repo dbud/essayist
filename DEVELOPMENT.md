@@ -503,7 +503,7 @@ then `deno task fmt:check` before each commit.
   text-span annotations bound to specific versions, with automatic migration
   across versions via diff-based offset mapping and fuzzy matching
   (`marks_resolver.ts`). `mark()` accepts an optional `MarkOptions` bag
-  (`label`, `lineHint`, `threadId`, `contextRadius`). `lineHint` is a 1-based
+  (`label`, `lineHint`, `threadId`, `contextSpan`). `lineHint` is a 1-based
   line number that is internally converted to a character offset via a
   `lineToOffset()` helper before disambiguating duplicate occurrences.
   `deleteMark(path, versionId, markId)` removes a mark by ID from a specific

@@ -201,3 +201,70 @@ Deno.test("TokenizedText.findFuzzyInTokenWindow -- below threshold returns null"
   });
   assertEquals(result, null);
 });
+
+// TokenizedText.captureBeforeContext -- whole-word context before a selection
+
+Deno.test("TokenizedText.captureBeforeContext -- empty at start of document", () => {
+  const tt = new TokenizedText("Hello world");
+  assertEquals(tt.captureBeforeContext(0, 60), "");
+});
+
+Deno.test("TokenizedText.captureBeforeContext -- snaps to the word start at or before offset - span", () => {
+  const content = "alpha beta gamma delta MARK";
+  const tt = new TokenizedText(content);
+  const offset = content.indexOf("MARK");
+  assertEquals(tt.captureBeforeContext(offset, 5), "delta ");
+});
+
+Deno.test("TokenizedText.captureBeforeContext -- larger span reaches further back", () => {
+  const content = "alpha beta gamma delta MARK";
+  const tt = new TokenizedText(content);
+  const offset = content.indexOf("MARK");
+  assertEquals(tt.captureBeforeContext(offset, 7), "gamma delta ");
+});
+
+Deno.test("TokenizedText.captureBeforeContext -- includes a long preceding word in full (no cap)", () => {
+  const content = `${"A".repeat(100)}MARK`;
+  const tt = new TokenizedText(content);
+  assertEquals(tt.captureBeforeContext(100, 10), "A".repeat(100));
+});
+
+Deno.test("TokenizedText.captureBeforeContext -- near document start captures from the beginning", () => {
+  const content = "hi MARK";
+  const tt = new TokenizedText(content);
+  const offset = content.indexOf("MARK");
+  assertEquals(tt.captureBeforeContext(offset, 60), "hi ");
+});
+
+// TokenizedText.captureAfterContext -- whole-word context after a selection
+
+Deno.test("TokenizedText.captureAfterContext -- empty at end of document", () => {
+  const tt = new TokenizedText("Hello world");
+  assertEquals(tt.captureAfterContext(11, 60), "");
+});
+
+Deno.test("TokenizedText.captureAfterContext -- snaps to the word end at or after start + span", () => {
+  const content = "MARK alpha beta";
+  const tt = new TokenizedText(content);
+  const start = content.indexOf("MARK") + 4;
+  assertEquals(tt.captureAfterContext(start, 5), " alpha");
+});
+
+Deno.test("TokenizedText.captureAfterContext -- ends at word boundary, excludes trailing punct", () => {
+  const content = "MARK First. Second.";
+  const tt = new TokenizedText(content);
+  const start = content.indexOf("MARK") + 4;
+  assertEquals(tt.captureAfterContext(start, 5), " First");
+});
+
+Deno.test("TokenizedText.captureAfterContext -- includes a long following word in full (no cap)", () => {
+  const content = `MARK${"B".repeat(100)}`;
+  const tt = new TokenizedText(content);
+  assertEquals(tt.captureAfterContext(4, 10), "B".repeat(100));
+});
+
+Deno.test("TokenizedText.captureAfterContext -- near document end captures to the end of text", () => {
+  const content = "MARK end";
+  const tt = new TokenizedText(content);
+  assertEquals(tt.captureAfterContext(4, 60), " end");
+});
