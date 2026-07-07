@@ -1,5 +1,6 @@
 import type { FileSnapshot } from "@essayist/core";
-import { findNearestOccurrence, resolveMarks } from "@/vfs/marks_resolver.ts";
+import { resolveMarks } from "@/vfs/marks_resolver.ts";
+import { TokenizedText } from "@/vfs/text_search.ts";
 import { unifiedDiff } from "@/vfs/unified_diff.ts";
 import type { PersistenceAdapter } from "./persistence.ts";
 import type {
@@ -211,7 +212,10 @@ export class VirtualFileSystem implements VFS {
     const { content, version_id } = latest;
     const offsetHint =
       lineHint !== undefined ? lineToOffset(content, lineHint) : 0;
-    const offset = findNearestOccurrence(content, selectedText, offsetHint);
+    const offset = new TokenizedText(content).findExactNear(
+      selectedText,
+      offsetHint,
+    );
     if (offset === null) {
       return { mark_id: "", thread_id: "", marked: false };
     }

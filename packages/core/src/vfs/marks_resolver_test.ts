@@ -315,10 +315,10 @@ Deno.test("resolveMarks -- paragraph rewritten, context fuzzy-matches at boundar
   assertEquals(result.length, 1);
   assertObjectMatch(result[0], {
     status: "resolved",
-    offset: 70,
-    length: 62,
-    selected_text: // trailing "d. " because of fuzzy-matching
-      "d. The entire paragraph was completely rewritten from scratch.",
+    offset: 73,
+    length: 59,
+    selected_text:
+      "The entire paragraph was completely rewritten from scratch.",
   });
 });
 
@@ -464,7 +464,7 @@ Deno.test("resolveMarks -- only after_context matches, stale zero-length at star
   assertObjectMatch(result[0], {
     status: "stale",
     length: 0,
-    offset: newContent.indexOf(" leaps over the lazy dog"),
+    offset: newContent.indexOf("leaps"),
   });
 });
 
@@ -552,9 +552,11 @@ Deno.test("resolveMarks -- both contexts empty (selected_text is entire content)
     selected_text:  "Hello world"
     after_context: "" (empty)
 
-    Phase 1: "Hello world" not found -> fails
-    Phase 2: no contexts to match -> fails
-    Phase 3: "Hello world" not found anywhere -> stale
+    The mark covers the entire content and the edit ("Hello " -> "Goodbye ")
+    is inside the mark region, so the mark stays resolved and covers the
+    new content. This is consistent with the "insertion inside a mark
+    spanning multiple lines" and "deletion and insertion inside
+    full-content mark" tests above.
   */
   const oldContent = "Hello world";
   const newContent = "Goodbye world";
@@ -570,7 +572,12 @@ Deno.test("resolveMarks -- both contexts empty (selected_text is entire content)
   const result = resolve(marks, oldContent, newContent);
 
   assertEquals(result.length, 1);
-  assertObjectMatch(result[0], { status: "stale", offset: 0, length: 0 });
+  assertObjectMatch(result[0], {
+    status: "resolved",
+    offset: 0,
+    length: newContent.length,
+    selected_text: newContent,
+  });
 });
 
 // -- Phase 3: full-content exact match (moved text) --
@@ -619,8 +626,8 @@ Deno.test("resolveMarks -- Phase 3 finds moved text when contexts become adjacen
     Phase 3 full-content scan finds the nearest occurrence.
   */
   const selected = "selected_text";
-  const before = "BEFORE";
-  const after = "AFTER";
+  const before = "before ";
+  const after = " after ";
   const filler = "filler. ";
 
   const oldContent =
@@ -637,9 +644,9 @@ Deno.test("resolveMarks -- Phase 3 finds moved text when contexts become adjacen
     }),
   ];
 
-  // With tiny search radius, Phase 1 can't reach selected_text at offset 0.
-  // Phase 2 finds BEFORE/AFTER adjacent -> empty gap -> fall through.
-  // Phase 3 finds selected_text at offset 0.
+  // With a small search radius, Phase 1 can't reach selected_text at
+  // offset 0. Phase 2 finds before/after adjacent -> empty gap -> fall
+  // through. Phase 3 finds selected_text at offset 0.
   const result = resolve(marks, oldContent, newContent, {
     minSearchRadius: 2,
     searchRadiusMultiplier: 1,
@@ -685,22 +692,16 @@ Deno.test("resolveMarks -- marked region and all context deleted entirely", () =
 
 // -- Options/parameters --
 
-Deno.test("resolveMarks -- separate contextFuzzyThreshold vs selectedTextFuzzyThreshold", () => {
+Deno.test("resolveMarks -- selected text with 1-char edit resolves via context", () => {
   /*
     old: "The quick brown fox jumps over the lazy dog."
     new: "The quik brown fox leaps over the lazy dog."
 
     before_context: "The "
-    selected_text:  "quick"
+    selected_text:  "quick"  (Phase 1 exact-only -> "quick" not in new -> fails)
     after_context: " brown"
 
-    selected_text "quick" -> "quik" = 80% similarity
-    context "The " -> "The " = 100% (unchanged)
-    context " brown" -> " brown" = 100% (unchanged)
-
-    With selectedTextFuzzyThreshold = 0.85 and contextFuzzyThreshold = 0.7:
-    Phase 1: 80% < 85% -> fails
-    Phase 2: contexts match at 100% > 70% -> resolves to "quik"
+    Phase 2: contexts match; gap = "quik" -> resolves to "quik".
   */
   const oldContent = "The quick brown fox jumps over the lazy dog.";
   const newContent = "The quik brown fox leaps over the lazy dog.";
@@ -714,7 +715,6 @@ Deno.test("resolveMarks -- separate contextFuzzyThreshold vs selectedTextFuzzyTh
   ];
 
   const result = resolve(marks, oldContent, newContent, {
-    selectedTextFuzzyThreshold: 0.85,
     contextFuzzyThreshold: 0.7,
   });
 
@@ -791,5 +791,321 @@ Deno.test("resolveMarks -- deletion and insertion inside full-content mark", () 
     offset: 0,
     length: newContent.length,
     selected_text: newContent,
+  });
+});
+
+// -- Corner cases (previously mishandled) --
+//
+// These cover edge cases the resolver used to get wrong. Each fix is
+// described inline.
+
+// Bug 1: mapOffset double-counts the accumulated shift when several
+// separated hunks come before the mark. `offsetDelta += hunk.newEnd -
+// hunk.oldEnd` re-adds the prior hunks' shift that is already baked
+// into `hunk.newEnd`. The correct delta is the hunk's own net length
+// change: `(newEnd - newStart) - (oldEnd - oldStart)`.
+Deno.test({
+  name: "resolveMarks -- multiple separated hunks before mark apply only their own net delta",
+  fn() {
+    /*
+      old: "A B C MARK"
+      new: "AAAA B Y MARK"
+             ^^^^         (A -> AAAA, +3)
+                    ^      (C -> Y, net 0)
+      Two separated replace hunks; only the first changes length (+3).
+      Mark "MARK" at old offset 6 should move to new offset 9.
+      Current code returns offset 12 with selected_text "K".
+    */
+    const oldContent = "A B C MARK";
+    const newContent = "AAAA B Y MARK";
+    const marks = [createMark({ selected_text: "MARK", offset: 6 })];
+
+    const result = resolve(marks, oldContent, newContent);
+
+    assertEquals(result.length, 1);
+    assertObjectMatch(result[0], {
+      status: "resolved",
+      offset: 9,
+      length: 4,
+      selected_text: "MARK",
+    });
+  },
+});
+
+// Bug 2: a mark whose start coincides with a hunk's start (e.g. a
+// whole-document mark with an edit at offset 0) is NOT treated as
+// "strictly inside" -- `markStart < hunk.oldStart` is strict -- so it
+// falls through to fuzzy matching, which shrinks and shifts the mark.
+Deno.test({
+  name: "resolveMarks -- whole-content mark with edit at start boundary stays resolved",
+  fn() {
+    /*
+      old: "Hello world."
+      new: "Jello world."
+      Mark spans the whole content. A 1-char edit at offset 0 is inside
+      the mark, so the mark should cover the whole new content.
+      Current code returns offset 1, length 11, selected_text "ello world.".
+    */
+    const oldContent = "Hello world.";
+    const newContent = "Jello world.";
+    const marks = [
+      createMark({
+        selected_text: oldContent,
+        offset: 0,
+        length: oldContent.length,
+      }),
+    ];
+
+    const result = resolve(marks, oldContent, newContent);
+
+    assertEquals(result.length, 1);
+    assertObjectMatch(result[0], {
+      status: "resolved",
+      offset: 0,
+      length: newContent.length,
+      selected_text: newContent,
+    });
+  },
+});
+
+// Bug 3: same boundary issue at the END of a whole-content mark.
+// `markEnd > hunk.oldEnd` is strict, so an edit whose hunk ends exactly
+// at markEnd goes fuzzy and the mark shrinks.
+Deno.test({
+  name: "resolveMarks -- whole-content mark with edit at end boundary stays resolved",
+  fn() {
+    /*
+      old: "Hello world foo"
+      new: "Hello world FOO"
+      Mark spans the whole content; only the last word changes case.
+      Mark should cover the whole new content.
+      Current code returns length 14, selected_text "Hello world FO".
+    */
+    const oldContent = "Hello world foo";
+    const newContent = "Hello world FOO";
+    const marks = [
+      createMark({
+        selected_text: oldContent,
+        offset: 0,
+        length: oldContent.length,
+      }),
+    ];
+
+    const result = resolve(marks, oldContent, newContent);
+
+    assertEquals(result.length, 1);
+    assertObjectMatch(result[0], {
+      status: "resolved",
+      offset: 0,
+      length: newContent.length,
+      selected_text: newContent,
+    });
+  },
+});
+
+// Bug 4: the word-token diff drops leading whitespace (the tokenizer
+// `\S+\s*` only captures trailing whitespace per token). Inserting
+// whitespace at the very start of the document produces NO hunks, so
+// marks keep their old offsets and selected_text drifts.
+Deno.test({
+  name: "resolveMarks -- leading-whitespace insertion migrates mark offsets",
+  fn() {
+    /*
+      old: "Hello world"
+      new: "  Hello world"
+      Two spaces inserted at the start. Mark on "Hello" should shift to
+      offset 2. Current code keeps offset 0 and yields selected_text "  Hel".
+    */
+    const oldContent = "Hello world";
+    const newContent = "  Hello world";
+    const marks = [createMark({ selected_text: "Hello", offset: 0 })];
+
+    const result = resolve(marks, oldContent, newContent);
+
+    assertEquals(result.length, 1);
+    assertObjectMatch(result[0], {
+      status: "resolved",
+      offset: 2,
+      length: 5,
+      selected_text: "Hello",
+    });
+  },
+});
+
+// Bug 5: in fuzzyResolveMark, Phase 1's exact-match step used
+// `text.indexOf(pattern, start)`, which returns the LEFTMOST occurrence
+// in the search window -- not the one nearest `expectedNewOffset`. With
+// repeated text the mark could latch onto the wrong copy.
+Deno.test({
+  name: "resolveMarks -- Phase 1 exact match picks nearest occurrence among duplicates",
+  fn() {
+    /*
+      old: "word   word"
+      new: "word word"
+      Mark is on the SECOND "word" (old offset 6). The inter-word spaces
+      collapse, producing a replace hunk that overlaps the mark, so the
+      mark goes through fuzzy resolution. "word" occurs twice in the new
+      content (offsets 0 and 5); Phase 1's exact match must pick the one
+      nearest the expected offset (5), not the leftmost (0).
+    */
+    const oldContent = "word   word";
+    const newContent = "word word";
+    const marks = [createMark({ selected_text: "word", offset: 6 })];
+
+    const result = resolve(marks, oldContent, newContent);
+
+    assertEquals(result.length, 1);
+    assertObjectMatch(result[0], {
+      status: "resolved",
+      offset: 5,
+      length: 4,
+      selected_text: "word",
+    });
+  },
+});
+
+// Bug 6: when Phase 1 fails and both before/after contexts match but
+// in reversed order (after_context appears BEFORE before_context in
+// the new text), `beforeEnd = beforeResult.nextOffset` ends up GREATER
+// than `afterStart = afterResult.startOffset`. The code still resolves
+// (to a zero-length, out-of-bounds mark) instead of going stale.
+Deno.test({
+  name: "resolveMarks -- reversed contexts produce a stale mark",
+  fn() {
+    /*
+      old: "BEFORE XXX AFTER"
+      new: "AFTER YYY BEFORE"
+      The selected text "XXX" is gone, and the surrounding contexts were
+      swapped. The mark should be stale. Current code returns
+      status "resolved", offset 16 (== newContent.length), length 0.
+    */
+    const oldContent = "BEFORE XXX AFTER";
+    const newContent = "AFTER YYY BEFORE";
+    const marks = [
+      createMark({
+        selected_text: "XXX",
+        offset: oldContent.indexOf("XXX"),
+        before_context: "BEFORE ",
+        after_context: " AFTER",
+      }),
+    ];
+
+    const result = resolve(marks, oldContent, newContent);
+
+    assertEquals(result.length, 1);
+    assertObjectMatch(result[0], { status: "stale", length: 0 });
+  },
+});
+
+// -- Token-based context matching (Phase 2 robustness) --
+
+Deno.test("resolveMarks -- clause reorder within after_context stays resolved", () => {
+  /*
+    before_context is intact, the marked word is rewritten, and the
+    after_context has its clauses reordered ("she needed milk and eggs"
+    -> "milk and eggs were needed"). Token-based context matching treats
+    the moved words as a few token edits and resolves.
+  */
+  const oldContent =
+    "She quickly ran to the store MARKED because she needed milk and eggs for the cake recipe.";
+  const newContent =
+    "She quickly ran to the store CHANGED because milk and eggs were needed for the cake recipe.";
+  const marks = [
+    createMark({
+      selected_text: "MARKED",
+      offset: oldContent.indexOf("MARKED"),
+      before_context: "She quickly ran to the store ",
+      after_context: " because she needed milk and eggs for the cake recipe.",
+    }),
+  ];
+
+  const result = resolve(marks, oldContent, newContent);
+
+  assertEquals(result.length, 1);
+  assertObjectMatch(result[0], {
+    status: "resolved",
+    offset: newContent.indexOf("CHANGED"),
+    selected_text: "CHANGED",
+  });
+});
+
+Deno.test("resolveMarks -- punctuation tweak in context does not break Phase 2", () => {
+  /*
+    The marked word is rewritten (Phase 2 invoked) and a comma in the
+    before_context is removed. Token matching ignores punctuation, so
+    the context still anchors and the mark resolves to the rewritten word.
+  */
+  const oldContent = "She said, hello there friend.";
+  const newContent = "She said hi there friend.";
+  const marks = [
+    createMark({
+      selected_text: "hello",
+      offset: oldContent.indexOf("hello"),
+      before_context: "She said, ",
+      after_context: " there friend.",
+    }),
+  ];
+
+  const result = resolve(marks, oldContent, newContent);
+
+  assertEquals(result.length, 1);
+  assertObjectMatch(result[0], {
+    status: "resolved",
+    selected_text: "hi",
+  });
+});
+
+Deno.test("resolveMarks -- paragraph reflow (newline to space) in context stays resolved", () => {
+  /*
+    The marked word is rewritten and the paragraph break before it is
+    joined into a space. Token matching is blind to whitespace shape,
+    so the context still anchors.
+  */
+  const oldContent =
+    "First paragraph ends here.\n\nSecond paragraph has the MARKED word in it.";
+  const newContent =
+    "First paragraph ends here. Second paragraph has the REWRITTEN word in it.";
+  const marks = [
+    createMark({
+      selected_text: "MARKED",
+      offset: oldContent.indexOf("MARKED"),
+      before_context: "First paragraph ends here.\n\nSecond paragraph has the ",
+      after_context: " word in it.",
+    }),
+  ];
+
+  const result = resolve(marks, oldContent, newContent);
+
+  assertEquals(result.length, 1);
+  assertObjectMatch(result[0], {
+    status: "resolved",
+    selected_text: "REWRITTEN",
+  });
+});
+
+Deno.test("resolveMarks -- resolved selected_text excludes surrounding whitespace", () => {
+  /*
+    A word mark resolved via context matching should not pick up the
+    spaces around the selected word (the contexts own those separators).
+  */
+  const oldContent = "The quick brown fox jumps.";
+  const newContent = "The slow brown fox jumps.";
+  const marks = [
+    createMark({
+      selected_text: "quick",
+      offset: oldContent.indexOf("quick"),
+      before_context: "The ",
+      after_context: " brown",
+    }),
+  ];
+
+  const result = resolve(marks, oldContent, newContent);
+
+  assertEquals(result.length, 1);
+  assertObjectMatch(result[0], {
+    status: "resolved",
+    offset: newContent.indexOf("slow"),
+    length: 4,
+    selected_text: "slow",
   });
 });

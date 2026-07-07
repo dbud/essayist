@@ -75,8 +75,10 @@ essayist/
     │   │       ├── diff_test.ts
     │   │       ├── unified_diff.ts  # unifiedDiff() — unified diff formatter
     │   │       ├── unified_diff_test.ts
-    │   │       ├── fuzzy.ts         # Fuzzy text matching for mark anchoring
-    │   │       ├── fuzzy_test.ts
+    │   │       ├── text_search.ts   # Exact + token-multiset text search for mark anchoring
+    │   │       ├── text_search_test.ts
+    │   │       ├── text_utils.ts     # createTokenizer + trimContextSeparators helpers
+    │   │       ├── text_utils_test.ts
     │   │       ├── levenshtein.ts   # Levenshtein distance for fuzzy matching
     │   │       ├── levenshtein_test.ts
     │   │       ├── marks_resolver.ts   # Mark migration across versions + fuzzy find

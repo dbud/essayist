@@ -1,8 +1,4 @@
-interface Token {
-  text: string;
-  offset: number;
-  endOffset: number;
-}
+import { createTokenizer, type Token } from "@/vfs/text_utils.ts";
 
 export interface DiffHunk {
   type: "insert" | "delete" | "replace";
@@ -14,27 +10,12 @@ export interface DiffHunk {
   newText: string;
 }
 
-/**
- * Split text into word tokens on word boundaries.
- * Each token is a word plus any trailing whitespace.
- * Punctuation stays attached to the word.
- */
-function tokenize(text: string): Token[] {
-  const tokens: Token[] = [];
-  const regex = /\S+\s*/g;
-  let match: RegExpExecArray | null;
-  while (true) {
-    match = regex.exec(text);
-    if (match === null) break;
-    const offset = match.index;
-    tokens.push({
-      text: match[0],
-      offset,
-      endOffset: offset + match[0].length,
-    });
-  }
-  return tokens;
-}
+// The \s+ alternative captures leading whitespace; without it \S+\s*
+// would skip it and leading-whitespace changes would be invisible to the
+// diff. Punctuation stays attached to the word.
+const DIFF_TOKEN_REGEX = /(\s+)|(\S+\s*)/g;
+
+const tokenize = createTokenizer(DIFF_TOKEN_REGEX);
 
 /**
  * Compute a token-level diff between two texts.
