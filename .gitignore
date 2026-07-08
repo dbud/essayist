@@ -11,6 +11,10 @@ _fresh/
 node_modules/
 vendor/
 
+# Rust build outputs
+target/
+crates/*/pkg/
+
 coverage/
 
 TODO*

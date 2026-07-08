@@ -35,6 +35,10 @@
       "formatter": "language_server",
       "language_servers": ["biome"]
     },
+    "Rust": {
+      "formatter": "language_server",
+      "language_servers": ["rust-analyzer"]
+    },
     "TSX": {
       "code_actions_on_format": {
         "source.fixAll.biome": true,
