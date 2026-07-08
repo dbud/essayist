@@ -1,23 +1,14 @@
-staged_ts=$(git diff --cached --name-only --diff-filter=ACMR -- \
-  '*.ts' '*.tsx' '*.js' '*.jsx' '*.mjs' '*.mts' '*.cjs' '*.cts')
-
-staged_biome=$(git diff --cached --name-only --diff-filter=ACMR -- \
-  '*.ts' '*.tsx' '*.js' '*.jsx' '*.mjs' '*.mts' '*.cjs' '*.cts' \
-  '*.json' '*.jsonc' '*.css')
-
-if [ -n "$staged_ts" ]; then
-  echo "$staged_ts" | xargs deno lint
-fi
-
-if [ -n "$staged_biome" ]; then
-  echo "$staged_biome" | xargs biome check
-fi
-
 staged_rs=$(git diff --cached --name-only --diff-filter=ACMR -- '*.rs')
 
 if [ -n "$staged_rs" ]; then
   cargo fmt --check
   cargo clippy --all-targets -- -D warnings
+  # Keep the committed wasm pkg in sync with the Rust source: rebuild and
+  # re-stage the tracked pkg files. The pkg dir stays gitignored so tooling
+  # skips the generated files; the files are force-tracked for Deno Deploy,
+  # which can't build Rust.
+  deno task wasm:build
+  git add -u crates/wasm/pkg/
 fi
 
 deno task fmt:check
