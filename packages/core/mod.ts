@@ -1,4 +1,5 @@
 export { Agent } from "@/agent.ts";
+export { measure } from "@/measure.ts";
 export type { ProviderError } from "@/provider_error.ts";
 export {
   extractProviderError,

@@ -1,3 +1,4 @@
+import { measure } from "@/measure.ts";
 import { createTokenizer, type Token } from "@/vfs/text_utils.ts";
 
 export interface DiffHunk {
@@ -55,11 +56,15 @@ export function computeDiff(oldText: string, newText: string): DiffHunk[] {
   }
   if (oldText === newText) return [];
 
-  const oldTokens = tokenize(oldText);
-  const newTokens = tokenize(newText);
+  const oldTokens = measure(() => tokenize(oldText), "tokenize.old");
+  const newTokens = measure(() => tokenize(newText), "tokenize.new");
 
-  const ops = myersDiff(oldTokens, newTokens);
-  return buildHunks(ops, oldTokens, newTokens, oldText, newText);
+  const ops = measure(() => myersDiff(oldTokens, newTokens), "myersDiff");
+  const hunks = measure(
+    () => buildHunks(ops, oldTokens, newTokens, oldText, newText),
+    "buildHunks",
+  );
+  return hunks;
 }
 
 interface DiffOp {
@@ -102,7 +107,7 @@ function myersDiff(oldTokens: Token[], newTokens: Token[]): DiffOp[] {
   let finalD = -1;
   for (let d = 0; d <= max; d++) {
     // Snapshot the relevant slice [-d, d] of v for backtracking.
-    trace.push(v.subarray(offset - d, offset + d + 1).slice());
+    trace.push(v.slice(offset - d, offset + d + 1));
     for (let k = -d; k <= d; k += 2) {
       let x: number;
       if (k === -d || (k !== d && v[offset + k + 1] > v[offset + k - 1])) {
