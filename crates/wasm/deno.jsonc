@@ -1,0 +1,8 @@
+{
+  "exports": "./pkg/wasm.js",
+  "imports": {
+    "@std/assert": "jsr:@std/assert@^1.0.19"
+  },
+  "name": "@essayist/wasm",
+  "version": "0.1.0"
+}
