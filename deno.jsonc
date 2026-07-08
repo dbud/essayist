@@ -12,7 +12,9 @@
   "nodeModulesDir": "auto",
   "tasks": {
     "fmt": "deno run -A npm:@biomejs/biome check --write",
-    "fmt:check": "deno lint && deno check && deno run -A npm:@biomejs/biome check"
+    "fmt:check": "deno lint && deno check && deno run -A npm:@biomejs/biome check",
+    "wasm:build": "wasm-pack build crates/wasm --target web --out-dir pkg --out-name wasm",
+    "wasm:build:dev": "wasm-pack build crates/wasm --target web --out-dir pkg --out-name wasm --dev"
   },
   "workspace": [
     "./packages/web",

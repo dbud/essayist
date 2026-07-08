@@ -13,4 +13,11 @@ if [ -n "$staged_biome" ]; then
   echo "$staged_biome" | xargs biome check
 fi
 
+staged_rs=$(git diff --cached --name-only --diff-filter=ACMR -- '*.rs')
+
+if [ -n "$staged_rs" ]; then
+  cargo fmt --check
+  cargo clippy --all-targets -- -D warnings
+fi
+
 deno task fmt:check

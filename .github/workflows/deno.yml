@@ -32,6 +32,29 @@ jobs:
       - name: Install dependencies
         run: deno install
 
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+          components: rustfmt,clippy
+
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@v2
+
+      - name: Install wasm-pack
+        uses: taiki-e/install-action@v2
+        with:
+          tool: wasm-pack
+
+      - name: Verify rust formatting
+        run: cargo fmt --check
+
+      - name: Rust linter
+        run: cargo clippy --all-targets -- -D warnings
+
+      - name: Build wasm package
+        run: deno task wasm:build
+
       - name: Verify formatting
         run: deno task fmt:check
 

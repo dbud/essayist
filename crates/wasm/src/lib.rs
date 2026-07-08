@@ -1,9 +1,14 @@
 //! Essayist WASM crate.
 //!
-//! Currently a placeholder; the wasm-bindgen boundary and exported functions
-//! arrive in later commits (build wiring, then a sort example, then Myers).
+//! The JS-facing surface is exposed via `#[wasm_bindgen]`. For now this only
+//! carries a trivial smoke export to prove the boundary end-to-end; the array
+//! sort example (step 3) and Myers (step 5) land in later commits.
 
-/// Toolchain smoke check callable from JS once the bindgen glue is wired up.
-pub fn version() -> &'static str {
-    env!("CARGO_PKG_VERSION")
+use wasm_bindgen::prelude::*;
+
+/// Trivial smoke export: add two i32s. Verifies the bindgen glue and the
+/// build pipeline before anything algorithmic goes in.
+#[wasm_bindgen]
+pub fn add(a: i32, b: i32) -> i32 {
+    a + b
 }
