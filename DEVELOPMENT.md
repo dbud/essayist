@@ -373,9 +373,9 @@ essayist/
 - **@fontsource-variable/hanken-grotesk** — Sans-serif variable font.
 - **@fontsource-variable/recursive** — Mono variable font.
 - **@fontsource-variable/source-serif-4** — Serif variable font.
-- **@biomejs/biome** (v2.5.0) — Formatter and linter (replaces deno fmt/lint for
-  code formatting; Biome handles JS/TS/JSON/CSS, Deno handles .ts fmt via
-  `deno fmt`).
+- **@biomejs/biome** (v2.5.0) — Formatter and linter for JS/TS/JSON/CSS. The
+  project uses Biome exclusively for formatting (`deno task fmt` / `deno task
+  fmt:check`); do not use `deno fmt`.
 
 ## Commands
 

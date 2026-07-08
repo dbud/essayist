@@ -18,7 +18,7 @@
     "include": ["mod.ts", "src/**/*.ts", "deno.json"]
   },
   "tasks": {
-    "check": "deno fmt --check . && deno lint . && deno check",
+    "check": "deno run -A npm:@biomejs/biome check && deno lint . && deno check",
     "test": "deno test -A --coverage",
     "test:integration": "DENO_ENV=development deno test -A --env --coverage integration/ | pino-pretty --colorize --translateTime SYS:standard --ignore pid,hostname",
     "test:watch": "deno test -A --watch"

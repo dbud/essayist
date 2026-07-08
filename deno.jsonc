@@ -14,6 +14,8 @@
   "tasks": {
     "fmt": "deno run -A npm:@biomejs/biome check --write",
     "fmt:check": "deno lint && deno check && deno run -A npm:@biomejs/biome check",
+    "rust:check": "cargo check",
+    "rust:clippy": "cargo clippy --all-targets -- -D warnings",
     "wasm:build": "wasm-pack build crates/wasm --target web --out-dir pkg --out-name wasm",
     "wasm:build:dev": "wasm-pack build crates/wasm --target web --out-dir pkg --out-name wasm --dev"
   },
