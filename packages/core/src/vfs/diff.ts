@@ -18,15 +18,34 @@ const DIFF_TOKEN_REGEX = /(\s+)|(\S+\s*)/g;
 
 const tokenize = createTokenizer(DIFF_TOKEN_REGEX);
 
-/**
- * Compute a token-level diff between two texts.
- *
- * Uses Myers' O((N+M)*D) shortest-edit-script algorithm on word tokens, then
- * maps the edit script back to character offsets in the original texts. D is
- * the edit distance (insertions + deletions); for a small edit in a long
- * document D is tiny and this is far faster than an O(N*M) LCS DP table.
- */
+// Two interchangeable Myers implementations share the encode/decode boundary
+// (tokens -> integer ids -> flat op Int32Array -> DiffOp[]): the pure-JS
+// `jsMyers` (default) and a faster Rust one injected via `setMyers`.
+// `diff.ts` never imports the Rust crate, so the browser bundle only pulls in
+// the wasm glue when it's explicitly enabled.
+export type MyersFn = (
+  oldTokenIds: Int32Array,
+  newTokenIds: Int32Array,
+) => Int32Array;
+
+let myersFn: MyersFn = jsMyers;
+
+/** Install the Myers fn (defaults to `jsMyers`). */
+export function setMyers(fn: MyersFn): void {
+  myersFn = fn;
+}
+
+/** Compute a token-level diff between two texts. */
 export function computeDiff(oldText: string, newText: string): DiffHunk[] {
+  return computeDiffWith(oldText, newText, myersFn);
+}
+
+/** Compute a token-level diff with an explicit Myers fn. */
+export function computeDiffWith(
+  oldText: string,
+  newText: string,
+  fn: MyersFn,
+): DiffHunk[] {
   if (oldText === "" && newText === "") return [];
   if (oldText === "") {
     return [
@@ -59,7 +78,7 @@ export function computeDiff(oldText: string, newText: string): DiffHunk[] {
   const oldTokens = measure(() => tokenize(oldText), "tokenize.old");
   const newTokens = measure(() => tokenize(newText), "tokenize.new");
 
-  const ops = measure(() => myersDiff(oldTokens, newTokens), "myersDiff");
+  const ops = measure(() => myersDiff(fn, oldTokens, newTokens), "myers");
   const hunks = measure(
     () => buildHunks(ops, oldTokens, newTokens, oldText, newText),
     "buildHunks",
@@ -73,99 +92,220 @@ interface DiffOp {
   newIdx?: number;
 }
 
-function myersDiff(oldTokens: Token[], newTokens: Token[]): DiffOp[] {
-  const n = oldTokens.length;
-  const m = newTokens.length;
-  if (n === 0 && m === 0) return [];
-  if (n === 0)
-    return newTokens.map((_, j) => ({ type: "insert", newIdx: j }) as DiffOp);
-  if (m === 0)
-    return oldTokens.map((_, i) => ({ type: "delete", oldIdx: i }) as DiffOp);
+// Each distinct token text maps to one integer id shared across old/new so the
+// core compares ids with `==` (equivalent to `oldTokens[x].text ===
+// newTokens[y].text`). The core returns a flat Int32Array of
+// `[type, oldIdx, newIdx, ...]` triples where type is 0=equal, 1=insert,
+// 2=delete (matching `DiffOp.type`); the unused index is -1.
 
-  // Myers' O((N+M)*D) shortest-edit-script, where D is the edit distance
-  // (number of insertions + deletions).
-  //
-  // We search the edit graph of oldTokens (x axis, 0..n) against newTokens
-  // (y axis, 0..m). A diagonal k = x - y groups all points whose x-y is
-  // constant; advancing along a diagonal (x+1, y+1) is a free match on a
-  // common token, while stepping right (x+1, y) is a deletion and stepping
-  // down (x, y+1) is an insertion. Each D iteration reaches points that need
-  // exactly D edits; the answer is the smallest D that reaches (n, m).
-  //
-  // v[k + offset] holds the furthest x reached on diagonal k so far. k can
-  // be negative, so we offset by `max` to keep indices non-negative. The
-  // trace snapshots v at the start of each D iteration so we can backtrack
-  // the edit script once (n, m) is reached. On ties (v[k+1] == v[k-1]) we
-  // prefer the down/insert edge, which keeps insertions before deletions in
-  // a run of adjacent edits.
-  const max = n + m;
-  const offset = max;
-  const v = new Int32Array(2 * max + 1).fill(-1);
-  v[offset + 1] = 0;
-  const trace: Int32Array[] = [];
+const EQ = 0;
+const INS = 1;
+const DEL = 2;
 
-  let finalD = -1;
-  for (let d = 0; d <= max; d++) {
-    // Snapshot the relevant slice [-d, d] of v for backtracking.
-    trace.push(v.slice(offset - d, offset + d + 1));
-    for (let k = -d; k <= d; k += 2) {
-      let x: number;
-      if (k === -d || (k !== d && v[offset + k + 1] > v[offset + k - 1])) {
-        x = v[offset + k + 1]; // down (insert)
-      } else {
-        x = v[offset + k - 1] + 1; // right (delete)
+/** Assign integer ids to tokens, deduping identical text to the same id. */
+function assignTokenIds(
+  oldTokens: Token[],
+  newTokens: Token[],
+): { oldIds: Int32Array; newIds: Int32Array } {
+  const map = new Map<string, number>();
+  let nextId = 0;
+  const oldIds = new Int32Array(oldTokens.length);
+  const newIds = new Int32Array(newTokens.length);
+
+  for (const [tokens, ids] of [
+    [oldTokens, oldIds],
+    [newTokens, newIds],
+  ] as [Token[], Int32Array][]) {
+    for (let i = 0; i < tokens.length; i++) {
+      const text = tokens[i].text;
+      let id = map.get(text);
+      if (id === undefined) {
+        id = nextId++;
+        map.set(text, id);
       }
+      ids[i] = id;
+    }
+  }
+  return { oldIds, newIds };
+}
+
+/** Translate the flat op Int32Array back into `DiffOp[]`. */
+function decodeOps(flat: Int32Array): DiffOp[] {
+  const ops: DiffOp[] = [];
+  for (let i = 0; i < flat.length; i += 3) {
+    const type = flat[i];
+    const oldIdx = flat[i + 1];
+    const newIdx = flat[i + 2];
+    if (type === EQ) {
+      ops.push({ type: "equal", oldIdx, newIdx });
+    } else if (type === INS) {
+      ops.push({ type: "insert", newIdx });
+    } else if (type === DEL) {
+      ops.push({ type: "delete", oldIdx });
+    } else {
+      throw new Error(`decodeOps: unknown op type ${type}`);
+    }
+  }
+  return ops;
+}
+
+/** Encode tokens to ids, run the core, decode the ops. */
+function myersDiff(
+  fn: MyersFn,
+  oldTokens: Token[],
+  newTokens: Token[],
+): DiffOp[] {
+  const { oldIds, newIds } = measure(
+    () => assignTokenIds(oldTokens, newTokens),
+    `assignTokenIds ${oldTokens.length} ${newTokens.length}`,
+  );
+  const flat = measure(() => fn(oldIds, newIds), "myers-core");
+  return measure(() => decodeOps(flat), "decode");
+}
+
+export function jsMyers(a: Int32Array, b: Int32Array): Int32Array {
+  const ops: number[] = [];
+  diffRec(a, b, 0, 0, ops);
+  return Int32Array.from(ops);
+}
+
+function diffRec(
+  a: Int32Array,
+  b: Int32Array,
+  aOff: number,
+  bOff: number,
+  ops: number[],
+): void {
+  const n = a.length;
+  const m = b.length;
+  if (n === 0) {
+    for (let j = 0; j < m; j++) ops.push(INS, -1, bOff + j);
+    return;
+  }
+  if (m === 0) {
+    for (let i = 0; i < n; i++) ops.push(DEL, aOff + i, -1);
+    return;
+  }
+
+  const [x, y, u, v] = findMiddleSnake(a, b);
+
+  // The search only fails to split when the optimal path's middle is a
+  // zero-length snake at an endpoint, which happens exactly for a single edit
+  // at the very start or end (D <= 1). Recover those directly so the recursion
+  // always makes progress; everything else splits cleanly.
+  if (x === 0 && y === 0 && u === 0 && v === 0) {
+    for (let i = 0; i < n; i++) ops.push(DEL, aOff + i, -1);
+    for (let j = 0; j < m; j++) ops.push(INS, -1, bOff + j);
+    return;
+  }
+  // Single edit at the very end: matches are a common prefix, then the trailing
+  // edit (one side is empty after the prefix).
+  if (x === n && y === m) {
+    const p = commonPrefixLen(a, b);
+    for (let k = 0; k < p; k++) ops.push(EQ, aOff + k, bOff + k);
+    diffRec(a.subarray(p), b.subarray(p), aOff + p, bOff + p, ops);
+    return;
+  }
+  // Single edit at the very start: a leading edit, then a common suffix.
+  if (u === 0 && v === 0) {
+    const s = commonSuffixLen(a, b);
+    diffRec(a.subarray(0, n - s), b.subarray(0, m - s), aOff, bOff, ops);
+    for (let k = 0; k < s; k++) {
+      ops.push(EQ, aOff + (n - s) + k, bOff + (m - s) + k);
+    }
+    return;
+  }
+
+  // Normal split: left half, the middle snake (matched run), right half.
+  diffRec(a.subarray(0, x), b.subarray(0, y), aOff, bOff, ops);
+  const snake = u - x; // == v - y
+  for (let k = 0; k < snake; k++) ops.push(EQ, aOff + x + k, bOff + y + k);
+  diffRec(a.subarray(u), b.subarray(v), aOff + u, bOff + v, ops);
+}
+
+/** Find a middle snake: a matched run `(x,y) -> (u,v)` on an optimal edit
+ * path, with `a[x..u] == b[y..v]`. Forward search from `(0,0)`, reverse from
+ * `(n,m)`, increasing `d` until they overlap. */
+function findMiddleSnake(
+  a: Int32Array,
+  b: Int32Array,
+): [number, number, number, number] {
+  const n = a.length;
+  const m = b.length;
+  const delta = n - m;
+  const maxD = Math.floor((n + m + 1) / 2);
+  // Generous offset/size so every diagonal we touch stays in bounds.
+  const off = 2 * (n + m);
+  const sz = 4 * (n + m) + 1;
+  const vf = new Int32Array(sz);
+  const vr = new Int32Array(sz);
+  vf[off + 1] = 0;
+  vr[off + delta - 1] = n;
+
+  for (let d = 0; d <= maxD; d++) {
+    // Forward: extend furthest-reaching x on each diagonal from (0,0).
+    for (let k = -d; k <= d; k += 2) {
+      const xIn =
+        k === -d || (k !== d && vf[off + k + 1] > vf[off + k - 1])
+          ? vf[off + k + 1]
+          : vf[off + k - 1] + 1;
+      let x = xIn;
       let y = x - k;
-      while (x < n && y < m && oldTokens[x].text === newTokens[y].text) {
+      while (x < n && y < m && a[x] === b[y]) {
         x++;
         y++;
       }
-      v[offset + k] = x;
-      if (x >= n && y >= m) {
-        finalD = d;
-        break;
+      vf[off + k] = x;
+      // delta odd: forward at distance d meets reverse at distance d-1.
+      if (
+        delta % 2 !== 0 &&
+        d >= 1 &&
+        k >= delta - (d - 1) &&
+        k <= delta + (d - 1) &&
+        x >= vr[off + k]
+      ) {
+        // Middle snake = the forward snake on diagonal k.
+        return [xIn, xIn - k, x, x - k];
       }
     }
-    if (finalD !== -1) break;
+    // Reverse: extend furthest-back x on each diagonal from (n,m).
+    for (let k = delta + d; k >= delta - d; k -= 2) {
+      const xIn =
+        k === delta + d ||
+        (k !== delta - d && vr[off + k - 1] < vr[off + k + 1])
+          ? vr[off + k - 1]
+          : vr[off + k + 1] - 1;
+      let x = xIn;
+      let y = x - k;
+      while (x > 0 && y > 0 && a[x - 1] === b[y - 1]) {
+        x--;
+        y--;
+      }
+      vr[off + k] = x;
+      // delta even: reverse at distance d meets forward at distance d.
+      if (delta % 2 === 0 && k >= -d && k <= d && x <= vf[off + k]) {
+        // Middle snake = the reverse snake on diagonal k, oriented forward.
+        return [x, x - k, xIn, xIn - k];
+      }
+    }
   }
-  if (finalD === -1) finalD = max; // defensive; should not happen
+  return [0, 0, 0, 0];
+}
 
-  // Backtrack from (n, m) to (0, 0) using the trace.
-  const ops: DiffOp[] = [];
-  let x = n;
-  let y = m;
-  for (let d = finalD; d > 0; d--) {
-    const snap = trace[d];
-    const k = x - y;
-    let prevK: number;
-    if (k === -d || (k !== d && snap[k + 1 + d] > snap[k - 1 + d])) {
-      prevK = k + 1; // came from above (insert)
-    } else {
-      prevK = k - 1; // came from the left (delete)
-    }
-    const prevX = snap[prevK + d];
-    const prevY = prevX - prevK;
-    while (x > prevX && y > prevY) {
-      ops.push({ type: "equal", oldIdx: x - 1, newIdx: y - 1 });
-      x--;
-      y--;
-    }
-    if (x === prevX) {
-      ops.push({ type: "insert", newIdx: y - 1 });
-      y--;
-    } else {
-      ops.push({ type: "delete", oldIdx: x - 1 });
-      x--;
-    }
-  }
-  // Remaining leading diagonal (D = 0): pure matches from (x, y) to (0, 0).
-  while (x > 0 && y > 0) {
-    ops.push({ type: "equal", oldIdx: x - 1, newIdx: y - 1 });
-    x--;
-    y--;
-  }
-  ops.reverse();
-  return ops;
+function commonPrefixLen(a: Int32Array, b: Int32Array): number {
+  const max = Math.min(a.length, b.length);
+  let p = 0;
+  while (p < max && a[p] === b[p]) p++;
+  return p;
+}
+
+function commonSuffixLen(a: Int32Array, b: Int32Array): number {
+  const n = a.length;
+  const m = b.length;
+  const max = Math.min(n, m);
+  let s = 0;
+  while (s < max && a[n - 1 - s] === b[m - 1 - s]) s++;
+  return s;
 }
 
 function buildHunks(
