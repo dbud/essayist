@@ -1,16 +1,29 @@
 /// <reference lib="webworker" />
-import init, { sort_ints } from "@essayist/wasm";
+import type { Mark, ResolveInput } from "@essayist/core";
+import { resolveMarks, setMyers } from "@essayist/core";
+import init, { myers } from "@essayist/wasm";
 
-interface SortRequest {
+interface MarksRequest {
   id: number;
-  arr: Int32Array;
+  marks: Mark[];
+  oldContent: string;
+  newContent: string;
 }
 
-const ready = init();
+interface MarksResponse {
+  id: number;
+  result: Mark[];
+}
 
-self.onmessage = async (e: MessageEvent<SortRequest>) => {
+// The worker owns the wasm Myers core for the marks path; the main thread
+// never loads wasm. `setMyers` mutates this worker's own module instance, so
+// `resolveMarks` -> `computeDiff` runs the wasm core here, off the main thread.
+const ready = init().then(() => setMyers(myers));
+
+self.onmessage = async (e: MessageEvent<MarksRequest>) => {
   await ready;
-  const { id, arr } = e.data;
-  const result = sort_ints(arr);
-  self.postMessage({ id, result }, [result.buffer]);
+  const { id, marks, oldContent, newContent } = e.data;
+  const input: ResolveInput = { marks, oldContent, newContent };
+  const result = resolveMarks(input);
+  self.postMessage({ id, result } satisfies MarksResponse);
 };
