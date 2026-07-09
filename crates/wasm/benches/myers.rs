@@ -4,7 +4,7 @@
 //!
 //! Workloads span the regime we care about: large-D disjoint (the worst case
 //! for time), a medium scattered-D case, and the realistic small-D case for
-//! contrast. `myers_ops` is the linear-space (O(ND) time, O(N+M) memory)
+//! contrast. `myers_ops` is the linear-space (O((N+M)D) time, O(N+M) memory)
 //! implementation.
 
 use criterion::{BenchmarkId, Criterion, black_box, criterion_group, criterion_main};
@@ -42,7 +42,7 @@ fn scattered_changes(n: i32, changes: i32) -> (Vec<i32>, Vec<i32>) {
 fn bench_myers(c: &mut Criterion) {
     let mut group = c.benchmark_group("myers");
 
-    // Large-D: scale n to see the O(ND) time / O(N+M) memory behaviour.
+    // Large-D: scale n to see the O((N+M)D) time / O(N+M) memory behaviour.
     for n in [500, 1000, 2000] {
         let (old, new) = worst_case_disjoint(n);
         group.bench_with_input(BenchmarkId::new("worst_disjoint", n), &n, |b, _| {

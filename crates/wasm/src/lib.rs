@@ -1,9 +1,8 @@
 //! Essayist WASM crate.
 //!
-//! Exposes a linear-space Myers diff via `#[wasm_bindgen]`, plus the smoke
-//! exports (`add`, `sort_ints`) used by the worker demo. The diff runs in
-//! `O(ND)` time and `O(N+M)` memory (Hirschberg-style middle-snake), replacing
-//! the forward-only `O(D^2)`-trace variant.
+//! Exposes a linear-space Myers diff via `#[wasm_bindgen]`, plus the
+//! `sort_ints` export used by the worker demo. The diff runs in
+//! `O((N+M)D)` time and `O(N+M)` memory (Hirschberg-style middle-snake).
 
 use js_sys::Int32Array;
 use wasm_bindgen::prelude::*;
@@ -13,13 +12,6 @@ use wasm_bindgen::prelude::*;
 const EQ: i32 = 0;
 const INS: i32 = 1;
 const DEL: i32 = 2;
-
-/// Trivial smoke export: add two i32s. Verifies the bindgen glue and the
-/// build pipeline before anything algorithmic goes in.
-#[wasm_bindgen]
-pub fn add(a: i32, b: i32) -> i32 {
-    a + b
-}
 
 /// Sort an Int32Array and return a new, sorted Int32Array. Used by the wasm
 /// worker demo; the input is borrowed read-only and the result is a fresh
@@ -42,7 +34,7 @@ pub fn sort_ints(arr: &[i32]) -> Int32Array {
 /// 0=equal, 1=insert, 2=delete; the unused index is -1 (inserts: oldIdx=-1,
 /// deletes: newIdx=-1).
 ///
-/// `O(ND)` time, `O(N+M)` memory via the middle-snake divide-and-conquer: find
+/// `O((N+M)D)` time, `O(N+M)` memory via the middle-snake divide-and-conquer: find
 /// a matched diagonal run on an optimal path, recurse on the two halves. The
 /// edit script is minimal; its tie-break on repeated-token inputs can differ
 /// from a forward-only Myers, but the diff is always a valid minimal

@@ -2,12 +2,6 @@
 /* eslint-disable */
 
 /**
- * Trivial smoke export: add two i32s. Verifies the bindgen glue and the
- * build pipeline before anything algorithmic goes in.
- */
-export function add(a: number, b: number): number;
-
-/**
  * Myers' shortest-edit-script on integer token ids, linear-space variant.
  *
  * `old_token_ids` / `new_token_ids` carry per-token integer ids assigned in JS
@@ -17,7 +11,7 @@ export function add(a: number, b: number): number;
  * 0=equal, 1=insert, 2=delete; the unused index is -1 (inserts: oldIdx=-1,
  * deletes: newIdx=-1).
  *
- * `O(ND)` time, `O(N+M)` memory via the middle-snake divide-and-conquer: find
+ * `O((N+M)D)` time, `O(N+M)` memory via the middle-snake divide-and-conquer: find
  * a matched diagonal run on an optimal path, recurse on the two halves. The
  * edit script is minimal; its tie-break on repeated-token inputs can differ
  * from a forward-only Myers, but the diff is always a valid minimal
@@ -36,7 +30,6 @@ export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembl
 
 export interface InitOutput {
     readonly memory: WebAssembly.Memory;
-    readonly add: (a: number, b: number) => number;
     readonly myers: (a: number, b: number, c: number, d: number) => any;
     readonly sort_ints: (a: number, b: number) => any;
     readonly __wbindgen_externrefs: WebAssembly.Table;
