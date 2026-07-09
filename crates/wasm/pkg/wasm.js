@@ -13,12 +13,42 @@ export function add(a, b) {
 }
 
 /**
+ * Myers' O((N+M)*D) shortest-edit-script on integer token ids.
+ *
+ * `old_token_ids` / `new_token_ids` carry per-token integer ids assigned in JS
+ * so identical token strings share an id; Rust then compares ids with `==`,
+ * matching the JS `oldTokens[x].text === newTokens[y].text` check. Returns a
+ * flat `Int32Array` of `[type, oldIdx, newIdx, ...]` triples where `type` is
+ * 0=equal, 1=insert, 2=delete; the unused index is -1 (inserts: oldIdx=-1,
+ * deletes: newIdx=-1). The edit script is identical to the JS `myersDiff`
+ * output, including the tie-break: the JS forward condition uses strict `>`
+ * (`v[k+1] > v[k-1]`), so on a tie the right/delete edge (k-1) is taken. The
+ * backtracking step mirrors that exactly.
+ *
+ * This is the full-trace variant (same as the JS implementation): each `d`
+ * iteration snapshots the `[-d, d]` slice of `v` for backtracking, which is
+ * O(D^2) memory. A linear-space (Hirschberg-style) upgrade that reproduces
+ * the exact same edit script is tracked as a follow-up; correctness and
+ * matching `diff_test.ts` took priority over the memory win.
+ * @param {Int32Array} old_token_ids
+ * @param {Int32Array} new_token_ids
+ * @returns {Int32Array}
+ */
+export function myers(old_token_ids, new_token_ids) {
+    const ptr0 = passArray32ToWasm0(old_token_ids, wasm.__wbindgen_malloc);
+    const len0 = WASM_VECTOR_LEN;
+    const ptr1 = passArray32ToWasm0(new_token_ids, wasm.__wbindgen_malloc);
+    const len1 = WASM_VECTOR_LEN;
+    const ret = wasm.myers(ptr0, len0, ptr1, len1);
+    return ret;
+}
+
+/**
  * Sort an Int32Array and return a new, sorted Int32Array.
  *
- * This is the boundary shape Myers will use: Int32Array in (token ids),
+ * This is the boundary shape Myers uses: Int32Array in (token ids),
  * Int32Array out (ops). The input is borrowed read-only, so the caller's
- * array is not mutated and the result is a fresh typed array of the same
- * length.
+ * array is not mutated and the result is a fresh typed array.
  * @param {Int32Array} arr
  * @returns {Int32Array}
  */
