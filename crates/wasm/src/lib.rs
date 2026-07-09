@@ -1,8 +1,9 @@
 //! Essayist WASM crate.
 //!
-//! Exposes a linear-space Myers diff via `#[wasm_bindgen]`, plus the
-//! `sort_ints` export used by the worker demo. The diff runs in
-//! `O((N+M)D)` time and `O(N+M)` memory (Hirschberg-style middle-snake).
+//! Exposes a linear-space Myers diff via the `myers` `#[wasm_bindgen]`
+//! export, backed by the pure-Rust `myers_ops` core. The diff runs in
+//! `O((N+M)D)` time and `O(N+M)` memory via a Hirschberg-style
+//! middle-snake divide-and-conquer.
 
 use js_sys::Int32Array;
 use wasm_bindgen::prelude::*;
@@ -12,18 +13,6 @@ use wasm_bindgen::prelude::*;
 const EQ: i32 = 0;
 const INS: i32 = 1;
 const DEL: i32 = 2;
-
-/// Sort an Int32Array and return a new, sorted Int32Array. Used by the wasm
-/// worker demo; the input is borrowed read-only and the result is a fresh
-/// typed array.
-#[wasm_bindgen]
-pub fn sort_ints(arr: &[i32]) -> Int32Array {
-    let mut v = arr.to_vec();
-    v.sort_unstable();
-    let out = Int32Array::new_with_length(v.len() as u32);
-    out.copy_from(&v);
-    out
-}
 
 /// Myers' shortest-edit-script on integer token ids, linear-space variant.
 ///

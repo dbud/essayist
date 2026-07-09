@@ -27,20 +27,6 @@ export function myers(old_token_ids, new_token_ids) {
     const ret = wasm.myers(ptr0, len0, ptr1, len1);
     return ret;
 }
-
-/**
- * Sort an Int32Array and return a new, sorted Int32Array. Used by the wasm
- * worker demo; the input is borrowed read-only and the result is a fresh
- * typed array.
- * @param {Int32Array} arr
- * @returns {Int32Array}
- */
-export function sort_ints(arr) {
-    const ptr0 = passArray32ToWasm0(arr, wasm.__wbindgen_malloc);
-    const len0 = WASM_VECTOR_LEN;
-    const ret = wasm.sort_ints(ptr0, len0);
-    return ret;
-}
 function __wbg_get_imports() {
     const import0 = {
         __proto__: null,

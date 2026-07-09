@@ -19,19 +19,11 @@
  */
 export function myers(old_token_ids: Int32Array, new_token_ids: Int32Array): Int32Array;
 
-/**
- * Sort an Int32Array and return a new, sorted Int32Array. Used by the wasm
- * worker demo; the input is borrowed read-only and the result is a fresh
- * typed array.
- */
-export function sort_ints(arr: Int32Array): Int32Array;
-
 export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembly.Module;
 
 export interface InitOutput {
     readonly memory: WebAssembly.Memory;
     readonly myers: (a: number, b: number, c: number, d: number) => any;
-    readonly sort_ints: (a: number, b: number) => any;
     readonly __wbindgen_externrefs: WebAssembly.Table;
     readonly __wbindgen_malloc: (a: number, b: number) => number;
     readonly __wbindgen_start: () => void;
