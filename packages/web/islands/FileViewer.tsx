@@ -5,6 +5,7 @@ import Toolbar from "@/components/Toolbar.tsx";
 import Editor from "@/islands/editor/Editor.tsx";
 import FileViewerTabs from "@/islands/FileViewerTabs.tsx";
 import { useFile } from "@/signals/file.ts";
+import { useMarks } from "@/signals/marks.ts";
 import { openedFiles } from "@/signals/openedFiles.ts";
 
 export default function FileViewer() {
@@ -21,6 +22,7 @@ export default function FileViewer() {
 function FileViewerBody({ path }: { path: string }) {
   const { state, initialState, setModifiedState, loading, error } =
     useFile(path);
+  const { resolving } = useMarks(path);
   const editorState = useMemo(() => state.value, [path, initialState.value]);
 
   if (error.value) {
@@ -31,7 +33,7 @@ function FileViewerBody({ path }: { path: string }) {
     <div
       class={`text-sm bg-base-100 rounded-box rounded-tl-none
         flex-1 min-h-0 overflow-x-auto flex flex-col shadow
-        ${loading.value || !state.value ? "loading-border" : ""}`}
+        ${loading.value || !state.value || resolving.value ? "loading-border" : ""}`}
     >
       <Toolbar>
         <FontSelect />
