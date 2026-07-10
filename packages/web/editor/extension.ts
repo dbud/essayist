@@ -10,6 +10,7 @@ import { MarkExtension } from "@lexical/mark";
 import { RichTextExtension } from "@lexical/rich-text";
 import type { Signal } from "@preact/signals";
 import { configExtension, defineExtension } from "lexical";
+import { PartialUpdateExtension } from "@/editor/partialUpdateExtension.ts";
 import type { EditorSelection } from "@/signals/editorSelection.ts";
 import type { RangedMark } from "@/signals/marks.ts";
 import { MarksExtension } from "./markExtension.ts";
@@ -47,6 +48,7 @@ export function createEditorExtension(
       }),
       configExtension(ToolbarStateExtension, { selection }),
       configExtension(MarksAtCursorExtension, { selection }),
+      PartialUpdateExtension,
     ],
   });
 }
