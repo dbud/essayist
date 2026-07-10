@@ -17,14 +17,13 @@ export const MarksModel = createModel((path: string) => {
   const marks = signal<Mark[]>([]);
   const [run, { loading, error }] = createAsyncState();
 
-  // Resolve marks in the wasm worker (off the main thread), debounced so a
-  // burst of edits coalesces into one `resolveMarks` call. `resolveMarks`
-  // itself stays synchronous -- it runs in the worker. `value` holds the
-  // latest resolved marks; `stale` is true while a recompute is pending.
+  // Resolve marks in the wasm worker, debounced so a burst of edits
+  // coalesces into one call. A new edit aborts the in-flight resolve and
+  // terminates the blocked worker, so stale computes don't block the latest.
   const { value: resolved, stale: resolving } = asyncComputed(
     () => [marks.value, content.value, markdown.value] as const,
-    ([m, oldContent, newContent]) =>
-      resolveMarksViaWorker(m, oldContent, newContent),
+    ([marks, oldContent, newContent], signal) =>
+      resolveMarksViaWorker(marks, oldContent, newContent, signal),
     { debounce: 60, initial: [] as Mark[] },
   );
 

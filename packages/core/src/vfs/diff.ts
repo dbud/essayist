@@ -159,8 +159,8 @@ function myersDiff(
     () => assignTokenIds(oldTokens, newTokens),
     `assignTokenIds ${oldTokens.length} ${newTokens.length}`,
   );
-  const flat = measure(() => fn(oldIds, newIds), "myers-core");
-  return measure(() => decodeOps(flat), "decode");
+  const flat = fn(oldIds, newIds);
+  return decodeOps(flat);
 }
 
 export function jsMyers(a: Int32Array, b: Int32Array): Int32Array {

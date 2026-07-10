@@ -92,6 +92,36 @@ Deno.test("asyncComputed -- drops stale responses", async () => {
   assertEquals(c.value.value, 2); // not the stale "1"
 });
 
+Deno.test("asyncComputed -- aborts in-flight compute when superseded", async () => {
+  const s = signal(0);
+  const aborted: number[] = [];
+
+  const c = asyncComputed(
+    () => s.value,
+    (n, signal) =>
+      new Promise<number>((resolve, reject) => {
+        const t = setTimeout(() => resolve(n), 50);
+        signal.addEventListener(
+          "abort",
+          () => {
+            clearTimeout(t);
+            aborted.push(n);
+            reject(new DOMException("aborted", "AbortError"));
+          },
+          { once: true },
+        );
+      }),
+    { initial: -1, debounce: 0 },
+  );
+
+  await tick(5); // let compute(0) start
+  s.value = 1; // supersede while compute(0) is in-flight
+  await tick(60);
+  assertEquals(c.value.value, 1);
+  assertEquals(aborted, [0]);
+  assertEquals(c.stale.value, false);
+});
+
 Deno.test("asyncComputed -- downstream deep-equality suppression", async () => {
   const s = signal([1, 2]);
   const c = asyncComputed(

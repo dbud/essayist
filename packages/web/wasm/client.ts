@@ -1,13 +1,4 @@
-// Client for the marks-resolution worker. Posts `{marks, oldContent,
-// newContent}`, awaits the resolved `Mark[]`. The worker runs `resolveMarks`
-// (sync, in `@essayist/core`) on its own thread, so the main thread never
-// blocks on the diff and never loads wasm.
-//
-// On the server (SSR) there is no Worker / no wasm fetch, so `resolveMarks`
-// runs inline with the JS core -- the same byte-identical result the browser
-// worker produces, so there's no SSR/client divergence.
-
-import type { Mark, ResolveInput } from "@essayist/core";
+import type { Mark } from "@essayist/core";
 import { resolveMarks } from "@essayist/core";
 
 let worker: Worker | null = null;
@@ -18,10 +9,15 @@ interface MarksResponse {
   result: Mark[];
 }
 
-const pending = new Map<
-  number,
-  { resolve: (r: Mark[]) => void; reject: (e: unknown) => void }
->();
+let inFlight: {
+  id: number;
+  resolve: (r: Mark[]) => void;
+  reject: (e: unknown) => void;
+} | null = null;
+
+function abortError(): DOMException {
+  return new DOMException("The operation was aborted.", "AbortError");
+}
 
 function ensureWorker(): Worker {
   if (worker) return worker;
@@ -30,35 +26,60 @@ function ensureWorker(): Worker {
   });
   worker.onmessage = (e: MessageEvent<MarksResponse>) => {
     const { id, result } = e.data;
-    const p = pending.get(id);
-    if (p) {
-      pending.delete(id);
-      p.resolve(result);
+    if (inFlight?.id === id) {
+      inFlight.resolve(result);
+      inFlight = null;
     }
   };
   worker.onerror = (err) => {
-    for (const p of pending.values()) p.reject(err);
-    pending.clear();
-    worker = null; // a later call will spin up a fresh worker
+    if (inFlight) {
+      inFlight.reject(err);
+      inFlight = null;
+    }
+    worker = null;
   };
   return worker;
+}
+
+function cancelInFlight(reason: unknown): void {
+  inFlight?.reject(reason);
+  inFlight = null;
+  if (worker) {
+    worker.terminate();
+    worker = null;
+  }
 }
 
 export function resolveMarksViaWorker(
   marks: Mark[],
   oldContent: string,
   newContent: string,
+  signal?: AbortSignal,
 ): Promise<Mark[]> {
-  // SSR: no Worker / wasm on the server -- run the sync JS-core `resolveMarks`
-  // inline. The browser uses the worker below.
   if (typeof window === "undefined") {
-    const input: ResolveInput = { marks, oldContent, newContent };
-    return Promise.resolve(resolveMarks(input));
+    return Promise.resolve(resolveMarks({ marks, oldContent, newContent }));
   }
+
+  // Only one request is in-flight at a time. The wasm `myers` call is a single
+  // blocking native function, so cancelling it means terminating the worker.
+  if (inFlight) cancelInFlight(abortError());
+  if (signal?.aborted) return Promise.reject(abortError());
+
   const w = ensureWorker();
   const id = nextId++;
   return new Promise<Mark[]>((resolve, reject) => {
-    pending.set(id, { resolve, reject });
+    inFlight = { id, resolve, reject };
+    if (signal) {
+      signal.addEventListener(
+        "abort",
+        () => {
+          // Only act if this request is still the one in-flight; otherwise it
+          // already settled and there is nothing to do.
+          if (inFlight?.id === id) cancelInFlight(abortError());
+        },
+        { once: true },
+      );
+    }
     w.postMessage({ id, marks, oldContent, newContent });
   });
 }
