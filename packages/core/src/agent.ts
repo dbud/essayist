@@ -4,7 +4,11 @@ import { logAgentCall, logAgentResult } from "@/agent_logger.ts";
 import { generateInstructions, stripMarkdownFences } from "@/schema.ts";
 import type { ToolPrompt } from "@/tools/index.ts";
 
-const MODELS = ["openai/gpt-oss-120b:free", "openrouter/owl-alpha"];
+const MODELS = [
+  "poolside/laguna-m.1:free",
+  // "openai/gpt-oss-120b:free",
+  // "openrouter/owl-alpha"
+];
 
 export class Agent {
   #client: OpenRouter;
