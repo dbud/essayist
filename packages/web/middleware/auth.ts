@@ -11,7 +11,7 @@ import { demoUser, store } from "@/store.ts";
  * This is a placeholder: real auth (OAuth / magic-link / API-key) lands in a
  * later stage and will replace this middleware.
  */
-export const authMiddleware = define.middleware(async (ctx) => {
+export default define.middleware(async (ctx) => {
   const headerId = ctx.req.headers.get("X-User-Id");
   if (headerId) {
     const user = await store.getUser(headerId);
