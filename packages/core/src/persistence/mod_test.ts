@@ -4,7 +4,7 @@ import {
   type Entry,
   InMemoryAdapter,
   type Key,
-} from "./persistence.ts";
+} from "./mod.ts";
 
 // get / set / delete
 

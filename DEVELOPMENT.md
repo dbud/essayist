@@ -66,13 +66,16 @@ essayist/
     │   │   │   └── mark_test.ts
     │   │   │   └── testing/
     │   │   │       └── mock_vfs.ts  # createMockVFS() helper for tool tests
-    │   │   └── vfs/
+    │   │   ├── persistence/
+    │   │   │   ├── mod.ts            # PersistenceAdapter (tuple keys, batch, checks) + InMemoryAdapter
+    │   │   │   ├── mod_test.ts
+    │   │   │   ├── kv_adapter.ts     # KvAdapter — Deno KV backing (needs --unstable-kv)
+    │   │   │   └── kv_adapter_test.ts
+    │   │   ├── vfs/
     │   │       ├── types.ts         # VFS interface + all result types
     │   │       ├── vfs.ts           # VirtualFileSystem (full VFS impl)
     │   │       ├── vfs_test.ts      # Tests for read, write, list, grep, versioning
     │   │       ├── vfs_marks_test.ts # Tests for mark, getMarks, deleteMark, migration
-    │   │       ├── persistence.ts   # PersistenceAdapter (tuple keys, batch, checks) + InMemoryAdapter
-    │   │       ├── persistence_test.ts
     │   │       ├── diff.ts          # Per-word diff
     │   │       ├── diff_test.ts
     │   │       ├── unified_diff.ts  # unifiedDiff() — unified diff formatter
@@ -200,9 +203,10 @@ essayist/
 - **`packages/core/mod.ts`** — Core library public API. Exports `summarizeFile`,
   `Agent`, tool factories (`createReadFileTool`, `createListFilesTool`,
   `createGrepTool`, `createWriteFileTool`, `createMarkTool`), `resolveMarks`
-  (mark migration resolver), `VirtualFileSystem`, `InMemoryAdapter`, the
-  `PersistenceAdapter` interface + tuple-key helpers, `WorkspaceStore`, and
-  workspace/User types (`User`, `Workspace`, `WorkspaceMember`, `Role`).
+  (mark migration resolver), `VirtualFileSystem`, the persistence layer
+  (`PersistenceAdapter`, `InMemoryAdapter`, `KvAdapter`, tuple-key helpers),
+  `WorkspaceStore`, and workspace/User types (`User`, `Workspace`,
+  `WorkspaceMember`, `Role`).
 - **`packages/web/store.ts`** — Shared `InMemoryAdapter` + `WorkspaceStore`
   for the web app, and the dev-mode seed: a demo user, `demoUser2`, and a demo
   workspace (with sample files via `seedDemoFiles`). Exports `adapter`,
@@ -539,8 +543,10 @@ then `deno task fmt:check` before each commit.
   a 1-based line number from the numbered read output, used to disambiguate
   duplicate text occurrences.
 - **Virtual File System** — `VirtualFileSystem` implements the `VFS` interface
-  backed by a `PersistenceAdapter`. `InMemoryAdapter` is the default in-memory
-  store. The VFS supports read (with line-range and numbering options), write,
+  backed by a `PersistenceAdapter` (in `src/persistence/`). `InMemoryAdapter` is
+  the in-memory store used in tests/dev; `KvAdapter` backs it with Deno KV in
+  production (requires `--unstable-kv`). The VFS supports read (with line-range
+  and numbering options), write,
   list (with directory prefix filtering), grep (regex), search (literal text),
   versioning (history, revert), and unified diff between versions. Marks are
   text-span annotations bound to specific versions, with automatic migration

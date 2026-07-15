@@ -1,4 +1,4 @@
-import { InMemoryAdapter } from "../persistence.ts";
+import { InMemoryAdapter } from "../../persistence/mod.ts";
 import { VirtualFileSystem } from "../vfs.ts";
 
 export async function createVFS(

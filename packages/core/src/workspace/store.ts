@@ -2,7 +2,7 @@ import {
   ConcurrentModificationError,
   type Key,
   type PersistenceAdapter,
-} from "../vfs/persistence.ts";
+} from "@/persistence/mod.ts";
 import type { Role, User, Workspace, WorkspaceMember } from "./types.ts";
 import { LastOwnerError, UserEmailTakenError } from "./types.ts";
 

@@ -10,9 +10,9 @@ export interface Entry<T = unknown> {
   versionstamp: string;
 }
 
-/** Read consistency. In-memory ignores it; KV maps it to `strong`/`eventually`. */
+/** Read consistency. In-memory ignores it; KV maps it to `strong`/`eventual`. */
 export interface ReadOptions {
-  consistency?: "strong" | "eventually";
+  consistency?: "strong" | "eventual";
 }
 
 /** Options for paginated scans. */

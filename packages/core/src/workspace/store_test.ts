@@ -1,5 +1,5 @@
 import { assertEquals, assertRejects } from "@std/assert";
-import { InMemoryAdapter } from "../vfs/persistence.ts";
+import { InMemoryAdapter } from "@/persistence/mod.ts";
 import { WorkspaceStore } from "./store.ts";
 import { LastOwnerError, UserEmailTakenError } from "./types.ts";
 

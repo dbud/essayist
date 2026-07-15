@@ -1,13 +1,13 @@
 import type { FileSnapshot } from "@essayist/core";
-import { resolveMarks } from "@/vfs/marks_resolver.ts";
-import { TokenizedText } from "@/vfs/text_search.ts";
-import { unifiedDiff } from "@/vfs/unified_diff.ts";
 import {
   ConcurrentModificationError,
   type Key,
   type PersistenceAdapter,
   type WriteOp,
-} from "./persistence.ts";
+} from "@/persistence/mod.ts";
+import { resolveMarks } from "@/vfs/marks_resolver.ts";
+import { TokenizedText } from "@/vfs/text_search.ts";
+import { unifiedDiff } from "@/vfs/unified_diff.ts";
 import type {
   DiffResult,
   FileEntry,

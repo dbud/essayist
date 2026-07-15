@@ -1,5 +1,5 @@
 import { assertEquals } from "@std/assert";
-import { InMemoryAdapter } from "./persistence.ts";
+import { InMemoryAdapter } from "../persistence/mod.ts";
 import { createVFS } from "./testing/helpers.ts";
 import { VirtualFileSystem } from "./vfs.ts";
 
