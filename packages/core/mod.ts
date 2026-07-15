@@ -46,3 +46,11 @@ export type {
   WriteResult,
 } from "@/vfs/types.ts";
 export { VirtualFileSystem } from "@/vfs/vfs.ts";
+export { WorkspaceStore } from "@/workspace/store.ts";
+export {
+  type Role,
+  type User,
+  UserEmailTakenError,
+  type Workspace,
+  type WorkspaceMember,
+} from "@/workspace/types.ts";
