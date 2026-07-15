@@ -4,11 +4,9 @@ export { KvAdapter } from "@/persistence/kv_adapter.ts";
 export {
   type BatchOptions,
   ConcurrentModificationError,
-  compareKeys,
   type Entry,
   InMemoryAdapter,
   type Key,
-  keyStartsWith,
   type ListOptions,
   type ListResult,
   type PersistenceAdapter,
