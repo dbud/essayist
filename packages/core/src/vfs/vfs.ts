@@ -2,7 +2,12 @@ import type { FileSnapshot } from "@essayist/core";
 import { resolveMarks } from "@/vfs/marks_resolver.ts";
 import { TokenizedText } from "@/vfs/text_search.ts";
 import { unifiedDiff } from "@/vfs/unified_diff.ts";
-import type { Key, PersistenceAdapter } from "./persistence.ts";
+import {
+  ConcurrentModificationError,
+  type Key,
+  type PersistenceAdapter,
+  type WriteOp,
+} from "./persistence.ts";
 import type {
   DiffResult,
   FileEntry,
@@ -78,7 +83,12 @@ export class VirtualFileSystem implements VFS {
     };
   }
 
+  // deno-lint-ignore require-await
   async write(path: string, content: string): Promise<WriteResult> {
+    return this.#retry(() => this.#writeAttempt(path, content));
+  }
+
+  async #writeAttempt(path: string, content: string): Promise<WriteResult> {
     const timestamp = Date.now();
     const lines = content.split("\n").length;
     const versionId = `${timestamp}_${++versionCounter}`;
@@ -88,8 +98,8 @@ export class VirtualFileSystem implements VFS {
       lines,
     };
     const versionsKey = this.#versionsKey(path);
-    const versions =
-      (await this.#adapter.get<FileVersion[]>(versionsKey))?.value ?? [];
+    const versionsEntry = await this.#adapter.get<FileVersion[]>(versionsKey);
+    const versions = versionsEntry?.value ?? [];
 
     const previousVersionId =
       versions.length > 0
@@ -99,16 +109,17 @@ export class VirtualFileSystem implements VFS {
       ? await this.#getVersionContent(path, previousVersionId)
       : "";
 
-    versions.push(version);
-    await Promise.all([
-      this.#adapter.set(this.#versionsKey(path), versions),
-      this.#adapter.set(this.#contentKey(path, versionId), content),
-      this.#adapter.set(this.#latestKey(path), {
-        content,
-        ...version,
-      } as FileSnapshot),
-    ]);
+    const ops: WriteOp[] = [
+      { type: "set", key: versionsKey, value: [...versions, version] },
+      { type: "set", key: this.#contentKey(path, versionId), value: content },
+      {
+        type: "set",
+        key: this.#latestKey(path),
+        value: { content, ...version } as FileSnapshot,
+      },
+    ];
 
+    // Migrate marks from the previous version into the new version.
     if (previousVersionId) {
       const oldMarks = await this.#getMarksList(path, previousVersionId);
       if (oldMarks.length > 0) {
@@ -117,14 +128,29 @@ export class VirtualFileSystem implements VFS {
           oldContent,
           newContent: content,
         });
-        await this.#saveMarks(path, versionId, newMarks);
+        ops.push({
+          type: "set",
+          key: this.#marksKey(path, versionId),
+          value: newMarks,
+        });
       }
     }
+
+    // Guard against a concurrent write to the same file: if the versions list
+    // changed since we read it, the whole batch is rejected and retried.
+    await this.#adapter.batch(ops, {
+      checks: [
+        {
+          key: versionsKey,
+          versionstamp: versionsEntry?.versionstamp ?? null,
+        },
+      ],
+    });
 
     return {
       path,
       lines,
-      created: versions.length === 1,
+      created: versions.length === 0,
     };
   }
 
@@ -249,16 +275,28 @@ export class VirtualFileSystem implements VFS {
     return await this.#getMarksList(path, versionId);
   }
 
+  // deno-lint-ignore require-await
   async deleteMark(
     path: string,
     versionId: string,
     markId: string,
   ): Promise<boolean> {
+    return this.#retry(() => this.#deleteMarkAttempt(path, versionId, markId));
+  }
+
+  async #deleteMarkAttempt(
+    path: string,
+    versionId: string,
+    markId: string,
+  ): Promise<boolean> {
     const key = this.#marksKey(path, versionId);
-    const marks = await this.#getMarksList(path, versionId);
+    const entry = await this.#adapter.get<Mark[]>(key);
+    const marks = entry?.value ?? [];
     const filtered = marks.filter((m) => m.id !== markId);
     if (filtered.length === marks.length) return false;
-    await this.#adapter.set(key, filtered);
+    await this.#adapter.batch([{ type: "set", key, value: filtered }], {
+      checks: [{ key, versionstamp: entry?.versionstamp ?? null }],
+    });
     return true;
   }
 
@@ -330,18 +368,34 @@ export class VirtualFileSystem implements VFS {
     return [MARKS, path, versionId];
   }
 
+  // deno-lint-ignore require-await
   async #saveMark(mark: Mark): Promise<void> {
-    const marks = await this.#getMarksList(mark.path, mark.version_id);
-    marks.push(mark);
-    await this.#adapter.set(this.#marksKey(mark.path, mark.version_id), marks);
+    return this.#retry(() => this.#saveMarkAttempt(mark));
   }
 
-  async #saveMarks(
-    path: string,
-    versionId: string,
-    marks: Mark[],
-  ): Promise<void> {
-    await this.#adapter.set(this.#marksKey(path, versionId), marks);
+  async #saveMarkAttempt(mark: Mark): Promise<void> {
+    const key = this.#marksKey(mark.path, mark.version_id);
+    const entry = await this.#adapter.get<Mark[]>(key);
+    const marks = entry?.value ?? [];
+    await this.#adapter.batch([{ type: "set", key, value: [...marks, mark] }], {
+      checks: [{ key, versionstamp: entry?.versionstamp ?? null }],
+    });
+  }
+
+  /** Retry an optimistic-concurrency attempt on ConcurrentModificationError. */
+  async #retry<T>(fn: () => Promise<T>, maxAttempts = 10): Promise<T> {
+    for (let attempt = 1; ; attempt++) {
+      try {
+        return await fn();
+      } catch (error) {
+        if (
+          !(error instanceof ConcurrentModificationError) ||
+          attempt >= maxAttempts
+        ) {
+          throw error;
+        }
+      }
+    }
   }
 
   #generateMarkId(): string {
