@@ -1,5 +1,7 @@
 import { assertEquals } from "@std/assert";
+import { InMemoryAdapter } from "./persistence.ts";
 import { createVFS } from "./testing/helpers.ts";
+import { VirtualFileSystem } from "./vfs.ts";
 
 const sampleEssay = [
   "The quick brown fox jumps over the lazy dog.",
@@ -390,4 +392,49 @@ Deno.test("VFS.diff -- identical content produces empty diff", async () => {
     );
     assertEquals(diffResult.diff, "");
   }
+});
+
+// Workspace scoping
+
+Deno.test("VFS -- workspaces share an adapter but keep files isolated", async () => {
+  const adapter = new InMemoryAdapter();
+  const a = new VirtualFileSystem(adapter, "ws-a");
+  const b = new VirtualFileSystem(adapter, "ws-b");
+  await a.write("notes.md", "from workspace A");
+  await b.write("notes.md", "from workspace B");
+
+  assertEquals((await a.read("notes.md")).content, "from workspace A");
+  assertEquals((await b.read("notes.md")).content, "from workspace B");
+
+  // Each workspace only sees its own files.
+  assertEquals(
+    (await a.list()).map((f) => f.path),
+    ["notes.md"],
+  );
+  assertEquals(
+    (await b.list()).map((f) => f.path),
+    ["notes.md"],
+  );
+});
+
+Deno.test("VFS -- marks are scoped per workspace", async () => {
+  const adapter = new InMemoryAdapter();
+  const a = new VirtualFileSystem(adapter, "ws-a");
+  const b = new VirtualFileSystem(adapter, "ws-b");
+  await a.write("f.txt", "the quick brown fox");
+  await b.write("f.txt", "the quick brown fox");
+
+  await a.mark("f.txt", "quick brown", "comment in A");
+  const aHistory = await a.getHistory("f.txt");
+  const bHistory = await b.getHistory("f.txt");
+  assertEquals(
+    (await a.getMarks("f.txt", aHistory[aHistory.length - 1].version_id))
+      .length,
+    1,
+  );
+  assertEquals(
+    (await b.getMarks("f.txt", bHistory[bHistory.length - 1].version_id))
+      .length,
+    0,
+  );
 });

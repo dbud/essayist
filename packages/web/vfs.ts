@@ -1,7 +1,7 @@
 import { InMemoryAdapter, VirtualFileSystem } from "@essayist/core";
 
 const adapter = new InMemoryAdapter();
-export const vfs = new VirtualFileSystem(adapter);
+export const vfs = new VirtualFileSystem(adapter, "default");
 
 const files: Record<string, string> = {
   "essay.txt": `The quick brown fox jumps over the lazy dog.

@@ -29,6 +29,7 @@ const FILE_LATEST = "file:latest";
 const FILE_VERSIONS = "file:versions";
 const FILE_CONTENT = "file:content";
 const MARKS = "marks";
+const WORKSPACES = "ws";
 const GREP_CONTEXT_LINES = 2;
 
 function escapeRegex(text: string): string {
@@ -40,9 +41,16 @@ let versionCounter = 0;
 
 export class VirtualFileSystem implements VFS {
   #adapter: PersistenceAdapter;
+  #workspaceId: string;
 
-  constructor(adapter: PersistenceAdapter) {
+  /**
+   * @param adapter      Backing key/value store.
+   * @param workspaceId  All file/mark keys are scoped under `["ws", workspaceId, ...]`,
+   *   so multiple workspaces can share one adapter without colliding.
+   */
+  constructor(adapter: PersistenceAdapter, workspaceId: string) {
     this.#adapter = adapter;
+    this.#workspaceId = workspaceId;
   }
 
   async read(
@@ -155,10 +163,14 @@ export class VirtualFileSystem implements VFS {
   }
 
   async list(prefix?: string): Promise<FileEntry[]> {
-    const { entries } = await this.#adapter.list<FileSnapshot>([FILE_LATEST]);
+    const { entries } = await this.#adapter.list<FileSnapshot>([
+      WORKSPACES,
+      this.#workspaceId,
+      FILE_LATEST,
+    ]);
     const result: FileEntry[] = [];
     for (const entry of entries) {
-      const [, path] = entry.key;
+      const path = String(entry.key[entry.key.length - 1]);
       if (prefix !== undefined && !path.startsWith(prefix)) continue;
       const latest = entry.value;
       if (latest) result.push({ path, lines: latest.lines });
@@ -353,19 +365,19 @@ export class VirtualFileSystem implements VFS {
   }
 
   #latestKey(path: string): Key {
-    return [FILE_LATEST, path];
+    return [WORKSPACES, this.#workspaceId, FILE_LATEST, path];
   }
 
   #contentKey(path: string, versionId: string): Key {
-    return [FILE_CONTENT, path, versionId];
+    return [WORKSPACES, this.#workspaceId, FILE_CONTENT, path, versionId];
   }
 
   #versionsKey(path: string): Key {
-    return [FILE_VERSIONS, path];
+    return [WORKSPACES, this.#workspaceId, FILE_VERSIONS, path];
   }
 
   #marksKey(path: string, versionId: string): Key {
-    return [MARKS, path, versionId];
+    return [WORKSPACES, this.#workspaceId, MARKS, path, versionId];
   }
 
   // deno-lint-ignore require-await

@@ -9,7 +9,7 @@ import { createAgent, require } from "./utils.ts";
 const agent = createAgent();
 
 const adapter = new InMemoryAdapter();
-const vfs = new VirtualFileSystem(adapter);
+const vfs = new VirtualFileSystem(adapter, "default");
 
 await vfs.write(
   "pangram.txt",
