@@ -34,3 +34,13 @@ export class UserEmailTakenError extends Error {
     super(`User with email ${email} already exists`);
   }
 }
+
+/**
+ * Thrown when an operation would leave a workspace with no owner
+ * (removing or demoting the last owner).
+ */
+export class LastOwnerError extends Error {
+  constructor(public readonly workspaceId: string) {
+    super(`Cannot remove the last owner of workspace ${workspaceId}`);
+  }
+}

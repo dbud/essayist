@@ -1,7 +1,7 @@
 import { assertEquals, assertRejects } from "@std/assert";
 import { InMemoryAdapter } from "../vfs/persistence.ts";
 import { WorkspaceStore } from "./store.ts";
-import { UserEmailTakenError } from "./types.ts";
+import { LastOwnerError, UserEmailTakenError } from "./types.ts";
 
 function createStore() {
   return new WorkspaceStore(new InMemoryAdapter());
@@ -130,4 +130,43 @@ Deno.test("WorkspaceStore -- hasAccess", async () => {
   // owner requirement: only owners satisfy it.
   assertEquals(await store.hasAccess(ws.id, owner.id, "owner"), true);
   assertEquals(await store.hasAccess(ws.id, editor.id, "owner"), false);
+});
+
+// -- last-owner guard --
+
+Deno.test("WorkspaceStore -- cannot remove the last owner", async () => {
+  const store = createStore();
+  const owner = await store.createUser("owner@example.com");
+  const ws = await store.createWorkspace("WS", owner.id);
+
+  await assertRejects(
+    () => store.removeMember(ws.id, owner.id),
+    LastOwnerError,
+  );
+  // Owner is still a member.
+  assertEquals((await store.getMembership(ws.id, owner.id))?.role, "owner");
+});
+
+Deno.test("WorkspaceStore -- cannot demote the last owner via addMember", async () => {
+  const store = createStore();
+  const owner = await store.createUser("owner@example.com");
+  const ws = await store.createWorkspace("WS", owner.id);
+
+  await assertRejects(
+    () => store.addMember(ws.id, owner.id, "editor"),
+    LastOwnerError,
+  );
+  assertEquals((await store.getMembership(ws.id, owner.id))?.role, "owner");
+});
+
+Deno.test("WorkspaceStore -- can remove an owner when another owner exists", async () => {
+  const store = createStore();
+  const a = await store.createUser("a@example.com");
+  const b = await store.createUser("b@example.com");
+  const ws = await store.createWorkspace("WS", a.id);
+  await store.addMember(ws.id, b.id, "owner");
+
+  assertEquals(await store.removeMember(ws.id, a.id), true);
+  assertEquals(await store.getMembership(ws.id, a.id), undefined);
+  assertEquals((await store.getMembership(ws.id, b.id))?.role, "owner");
 });

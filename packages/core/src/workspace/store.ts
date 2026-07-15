@@ -4,7 +4,7 @@ import {
   type PersistenceAdapter,
 } from "../vfs/persistence.ts";
 import type { Role, User, Workspace, WorkspaceMember } from "./types.ts";
-import { UserEmailTakenError } from "./types.ts";
+import { LastOwnerError, UserEmailTakenError } from "./types.ts";
 
 // Key layout (all top-level parts are distinct to avoid prefix collisions):
 //   ["users", userId]                        -> User
@@ -128,6 +128,12 @@ export class WorkspaceStore {
   ): Promise<WorkspaceMember> {
     const memberKey: Key = [MEMBERS_BY_WS, workspaceId, userId];
     const existing = await this.#adapter.get<WorkspaceMember>(memberKey);
+
+    // Refuse to demote the last owner.
+    if (existing?.value.role === "owner" && role !== "owner") {
+      await this.#assertMultipleOwners(workspaceId);
+    }
+
     const member: WorkspaceMember = {
       workspaceId,
       userId,
@@ -158,6 +164,12 @@ export class WorkspaceStore {
     const memberKey: Key = [MEMBERS_BY_WS, workspaceId, userId];
     const existing = await this.#adapter.get<WorkspaceMember>(memberKey);
     if (!existing) return false;
+
+    // Refuse to remove the last owner.
+    if (existing.value.role === "owner") {
+      await this.#assertMultipleOwners(workspaceId);
+    }
+
     await this.#adapter.batch(
       [
         { type: "delete", key: memberKey },
@@ -166,6 +178,13 @@ export class WorkspaceStore {
       { checks: [{ key: memberKey, versionstamp: existing.versionstamp }] },
     );
     return true;
+  }
+
+  /** Throw {@link LastOwnerError} if the workspace has only one owner. */
+  async #assertMultipleOwners(workspaceId: string): Promise<void> {
+    const members = await this.getMembers(workspaceId);
+    const owners = members.filter((m) => m.role === "owner");
+    if (owners.length <= 1) throw new LastOwnerError(workspaceId);
   }
 
   /** List all members of a workspace. */

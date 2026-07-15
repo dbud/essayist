@@ -48,6 +48,7 @@ export type {
 export { VirtualFileSystem } from "@/vfs/vfs.ts";
 export { WorkspaceStore } from "@/workspace/store.ts";
 export {
+  LastOwnerError,
   type Role,
   type User,
   UserEmailTakenError,
