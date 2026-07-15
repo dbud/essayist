@@ -10,8 +10,10 @@ file current over leaving stale notes elsewhere.
 Essayist is a Deno monorepo that wraps the OpenRouter API to build AI-powered
 writing tools. The core library provides an `Agent` class that calls LLMs via
 OpenRouter, a virtual file system with versioning and annotation support, and a
-set of file-manipulation tools the LLM can invoke. A Fresh web app exposes a
-chat interface backed by these tools, a file browser, and a file viewer with
+set of file-manipulation tools the LLM can invoke. It also provides a
+workspace/user model (`WorkspaceStore`) so files are scoped per workspace and
+workspaces can be shared between users. A Fresh web app exposes a chat
+interface backed by these tools, a file browser, and a file viewer with
 markdown rendering. The app also includes a Lexical-based rich text editor.
 
 ## Monorepo Structure
@@ -69,7 +71,7 @@ essayist/
     │   │       ├── vfs.ts           # VirtualFileSystem (full VFS impl)
     │   │       ├── vfs_test.ts      # Tests for read, write, list, grep, versioning
     │   │       ├── vfs_marks_test.ts # Tests for mark, getMarks, deleteMark, migration
-    │   │       ├── persistence.ts   # PersistenceAdapter interface + InMemoryAdapter
+    │   │       ├── persistence.ts   # PersistenceAdapter (tuple keys, batch, checks) + InMemoryAdapter
     │   │       ├── persistence_test.ts
     │   │       ├── diff.ts          # Per-word diff
     │   │       ├── diff_test.ts
@@ -85,6 +87,10 @@ essayist/
     │   │       ├── marks_resolver_test.ts
     │   │       └── testing/
     │   │           └── helpers.ts       # createVFS(), createFile() test helpers
+    │   │   └── workspace/
+    │   │       ├── types.ts       # User, Workspace, WorkspaceMember, Role, errors
+    │   │       ├── store.ts       # WorkspaceStore — users/workspaces/members over PersistenceAdapter
+    │   │       └── store_test.ts
     │   └── integration/    # @essayist/core/integration — live API tests
     │       ├── deno.json
     │       ├── summarize_test.ts   # Hits real OpenRouter API (summarizeFile)
@@ -93,11 +99,12 @@ essayist/
     │
     └── web/                # @essayist/web — Fresh web app
         ├── deno.jsonc      # Package config, tasks, compiler options
-        ├── main.ts         # App entry: wires middleware + fsRoutes
+        ├── main.ts         # App entry: wires agent + auth middleware, fsRoutes
         ├── client.ts       # Imports global CSS (required by Fresh)
-        ├── define.ts       # State type + createDefine helper
+        ├── define.ts       # State type (agent, user, vfs, workspaceId) + createDefine helper
         ├── signals.ts      # activeEditor signal (Lexical editor instance)
-        ├── vfs.ts          # Server-side VFS instance seeded with sample files
+        ├── store.ts        # Shared InMemoryAdapter + WorkspaceStore; seeds demo user/workspace
+        ├── seed.ts         # seedDemoFiles() — demo workspace file/mark content
         ├── vite.config.ts  # Vite + Fresh + Tailwind + core watcher plugin
         ├── _fresh/         # Generated Fresh build output (gitignored)
         ├── assets/
@@ -123,13 +130,13 @@ essayist/
         │   ├── marksAtCursorExtension.ts # MarksAtCursorExtension — marks at the caret
         │   └── toolbarStateExtension.ts # ToolbarStateExtension — selection-driven toolbar state
         ├── hooks/
-        │   └── useChat.ts          # useChat() hook — SSE chat for Preact islands
+        │   └── useChat.ts          # useChat() hook — SSE chat for Preact islands (takes a URL getter)
         ├── islands/
         │   ├── Chat.tsx            # Interactive Preact island (streaming chat UI)
         │   ├── ClearCache.tsx      # Button to clear localStorage + reload
         │   ├── ErrorBoundary.tsx   # Preact error boundary with reset button
         │   ├── ExportPreviewSection.tsx  # Export preview with mark highlighting + whitespace viz
-        │   ├── FileBrowser.tsx     # File tree sidebar (fetches from /api/files)
+        │   ├── FileBrowser.tsx     # File tree sidebar (fetches from /api/workspaces/:wsId/files)
         │   ├── FileViewer.tsx      # File content viewer (markdown or plain text)
         │   ├── LexicalTreeViewSection.tsx  # Debug panel showing active Lexical editor state
         │   ├── MarkRangesSection.tsx  # Debug panel showing resolved mark ranges as JSON
@@ -140,23 +147,33 @@ essayist/
         │       ├── ActiveEditorRef.tsx  # EditorRefPlugin wrapper that sets/clears activeEditor
         │       └── Editor.tsx           # Lexical rich text editor island component
         ├── middleware/
-        │   └── agent.ts    # Creates Agent from OPENROUTER_API_KEY, attaches to state
+        │   ├── agent.ts    # Creates Agent from OPENROUTER_API_KEY, attaches to state
+        │   └── auth.ts    # Dev-mode identity stub — resolves ctx.state.user (X-User-Id header or demo user)
         ├── routes/
         │   ├── _app.tsx    # HTML shell (navbar, h-dvh body, theme)
         │   ├── index.tsx   # Home page — three-column layout (browser, viewer, sidebar)
         │   └── api/
-        │       ├── chat.ts         # GET /api/chat?message=… → SSE stream
-        │       └── files/
-        │           ├── index.ts    # GET /api/files → file list
-        │           └── [path]/
-        │               ├── index.ts  # GET /api/files/:path → file content
-        │               └── marks.ts  # GET /api/files/:path/marks → file marks (with resolve status)
+        │       └── workspaces/
+        │           ├── index.ts                  # GET /api/workspaces (list mine), POST (create)
+        │           └── [wsId]/
+        │               ├── _middleware.ts        # Resolve workspace, access check, scoped VFS on state (403)
+        │               ├── index.ts              # GET /api/workspaces/:wsId (detail)
+        │               ├── chat.ts               # GET .../chat?message=… → SSE stream (tools per-request)
+        │               ├── files/
+        │               │   ├── index.ts          # GET .../files → file list
+        │               │   ├── [path].ts         # GET .../files/:path → file content
+        │               │   └── [path]/
+        │               │       └── marks.ts      # GET .../files/:path/marks → file marks
+        │               └── members/
+        │                   ├── index.ts          # GET .../members (list), POST (add/update, owner-only)
+        │                   └── [userId].ts       # DELETE .../members/:userId (remove, owner-only)
         ├── signals/
         │   ├── file.ts            # FileModel — per-file content, loading, dirty, editor state
         │   ├── fileTree.ts        # FileTreeModel + useFiles() + buildFileTree()
         │   ├── marks.ts           # MarksModel — per-file marks with reload support
         │   ├── openedFiles.ts     # OpenedFilesModel — selectedFile, openedFiles, fileHistory
         │   ├── preferences.ts     # viewerFont, viewMode persistent signals
+        │   ├── workspace.ts       # currentWorkspaceId + workspaces signals; bootstraps from /api/workspaces
         │   └── editorSelection.ts # Per-path editor-selection signals (block/formats/markIds)
         ├── utils/
         │   ├── asyncState.ts            # createAsyncState() — loading/error state helper
@@ -172,38 +189,61 @@ essayist/
 
 | Package                      | Path                         | Purpose                                                                                    |
 | ---------------------------- | ---------------------------- | ------------------------------------------------------------------------------------------ |
-| `@essayist/core`             | `packages/core/`             | Shared library: `Agent`, `summarizeFile`, VFS, tools, `resolveMarks`, Zod schema utilities |
+| `@essayist/core`             | `packages/core/`             | Shared library: `Agent`, `summarizeFile`, VFS, tools, `resolveMarks`, `WorkspaceStore` (users/workspaces/members), Zod schema utilities |
 | `@essayist/core/integration` | `packages/core/integration/` | Live API tests (require `OPENROUTER_API_KEY`)                                              |
 | `@essayist/web`              | `packages/web/`              | Fresh 2.x web app (Preact + Tailwind CSS + daisyUI) deployed to Deno Deploy                |
 
 ### Important Entry Points
 
 - **`packages/web/main.ts`** — Web app boot. Creates `App`, attaches
-  `agentMiddleware`, calls `fsRoutes()`.
+  `agentMiddleware` and `authMiddleware`, calls `fsRoutes()`.
 - **`packages/core/mod.ts`** — Core library public API. Exports `summarizeFile`,
   `Agent`, tool factories (`createReadFileTool`, `createListFilesTool`,
   `createGrepTool`, `createWriteFileTool`, `createMarkTool`), `resolveMarks`
-  (mark migration resolver), `VirtualFileSystem`, `InMemoryAdapter`, and VFS
-  types (`DiffResult`, `FileEntry`, `FileSnapshot`, `FileVersion`,
-  `GrepOptions`, `GrepResult`, `Mark`, `MarkOptions`, `MarkResult`,
-  `MarkStatus`, `ReadOptions`, `WriteResult`).
-- **`packages/web/routes/api/chat.ts`** — SSE streaming chat endpoint. Uses the
-  server-side VFS seeded with sample files, wires up read, list, grep, and write
-  tools, and uses `Agent.callModelWithTools` to stream responses.
-- **`packages/web/routes/api/files/index.ts`** — GET `/api/files`. Lists all
-  files from the server-side VFS.
-- **`packages/web/routes/api/files/[path].ts`** — GET `/api/files/:path`. Reads
-  a single file from the VFS.
+  (mark migration resolver), `VirtualFileSystem`, `InMemoryAdapter`, the
+  `PersistenceAdapter` interface + tuple-key helpers, `WorkspaceStore`, and
+  workspace/User types (`User`, `Workspace`, `WorkspaceMember`, `Role`).
+- **`packages/web/store.ts`** — Shared `InMemoryAdapter` + `WorkspaceStore`
+  for the web app, and the dev-mode seed: a demo user, `demoUser2`, and a demo
+  workspace (with sample files via `seedDemoFiles`). Exports `adapter`,
+  `store`, `demoUser`, `demoUser2`, `demoWorkspace`.
+- **`packages/web/middleware/auth.ts`** — Dev-mode identity stub. Resolves
+  `ctx.state.user` from an `X-User-Id` header (401 if unknown) or defaults to
+  the demo user. Real auth replaces this later.
+- **`packages/web/routes/api/workspaces/[wsId]/_middleware.ts`** — Workspace
+  middleware. Reads `ctx.params.wsId`, runs `store.hasAccess`, returns 403 on
+  no access, and constructs a per-request `VirtualFileSystem(adapter, wsId)` on
+  `ctx.state.vfs` + `ctx.state.workspaceId`.
+- **`packages/web/routes/api/workspaces/index.ts`** — `GET /api/workspaces`
+  (list the current user's workspaces) and `POST` (create a workspace owned by
+  the current user).
+- **`packages/web/routes/api/workspaces/[wsId]/chat.ts`** — SSE streaming chat
+  endpoint. Builds read/list/grep/write tools per request against
+  `ctx.state.vfs` and uses `Agent.callModelWithTools` to stream responses.
+- **`packages/web/routes/api/workspaces/[wsId]/files/index.ts`** — GET
+  `.../files`. Lists all files in the resolved workspace VFS.
+- **`packages/web/routes/api/workspaces/[wsId]/files/[path].ts`** — GET
+  `.../files/:path`. Reads a single file from the workspace VFS.
+- **`packages/web/routes/api/workspaces/[wsId]/members/index.ts`** — GET
+  `.../members` (list) and POST (add/update a member; owner-only, 404 on
+  unknown user, 409 on last-owner demote).
+- **`packages/web/routes/api/workspaces/[wsId]/members/[userId].ts`** — DELETE
+  `.../members/:userId` (remove a member; owner-only, 409 on last-owner
+  removal).
+- **`packages/web/signals/workspace.ts`** — `currentWorkspaceId` (persistent)
+  and `workspaces` signals; `loadWorkspaces()` bootstraps from
+  `GET /api/workspaces` on the client. Data models gate their loads on
+  `currentWorkspaceId` becoming non-empty.
 - **`packages/web/islands/Chat.tsx`** — Interactive Preact island that consumes
   the SSE stream via `useChat`. Renders chat bubbles, tool calls, reasoning, and
   a message input form.
 - **`packages/web/islands/FileViewer.tsx`** — File content viewer island.
-  Fetches file content from `/api/files/:path`, renders as markdown or plain
-  text based on view mode. Includes `FontSelect` and `ViewModeSelect` in a
-  `Toolbar`.
+  Fetches file content from `/api/workspaces/:wsId/files/:path`, renders as
+  markdown or plain text based on view mode. Includes `FontSelect` and
+  `ViewModeSelect` in a `Toolbar`.
 - **`packages/web/islands/FileBrowser.tsx`** — File tree sidebar island. Fetches
-  file list from `/api/files`, renders a collapsible tree with folders and
-  files. Uses `FileTreeModel` from `signals/fileTree.ts`.
+  the file list from `/api/workspaces/:wsId/files`, renders a collapsible tree
+  with folders and files. Uses `FileTreeModel` from `signals/fileTree.ts`.
 - **`packages/web/components/Tabs.tsx`** — Generic horizontal tab strip: hides
   the native scrollbar, shows ◀/▶ only on overflow (disabled when the direction
   isn't available), and keeps the active tab scrolled into view.
@@ -304,9 +344,12 @@ essayist/
   `SELECT_MARK_COMMAND` (dispatch a thread id to place the caret at that mark).
   `Editor.tsx` calls `useMarks`/`useFile`/`useEditorSelection` and injects the
   signals into `createEditorExtension(path, deps)`.
-- **`packages/web/vfs.ts`** — Server-side VFS instance seeded with sample files
-  (essay.txt, report.txt, notes/ideas.md, notes/todo.md, notes/archive/,
-  src/main.ts, src/utils.ts, markdown-showcase.md).
+- **`packages/web/seed.ts`** — `seedDemoFiles(vfs)` seeds a workspace VFS with
+  the sample files (essay.txt, report.txt, notes/ideas.md, notes/todo.md,
+  notes/archive/, src/main.ts, src/utils.ts, markdown-showcase.md) and a few
+  marks. Called from `store.ts` against the demo workspace. There is no global
+  VFS singleton; a `VirtualFileSystem` is constructed per request, scoped by
+  workspace id, in the `[wsId]/_middleware.ts`.
 - **`packages/web/utils/persistentSignal.ts`** — `persistentSignal()` (global
   singleton signals synced to localStorage) and `usePersistentSignal()` (hook
   version for island components).
@@ -547,8 +590,22 @@ then `deno task fmt:check` before each commit.
 - **Models are hardcoded** — `Agent` uses a fixed list of models:
   `["openai/gpt-oss-120b:free", "openrouter/owl-alpha"]`. This is not
   configurable via constructor or env var.
+- **Dev-mode identity + seeding** — Auth is currently a stub
+  (`middleware/auth.ts`): it resolves `ctx.state.user` from an optional
+  `X-User-Id` header, defaulting to the seeded demo user. `store.ts` seeds a
+  demo user, a second demo user (`demoUser2`) for sharing tests, and a demo
+  workspace (with sample files) on every startup, using random ids. The client
+  discovers the workspace id via `GET /api/workspaces`. All of this is
+  in-memory (`InMemoryAdapter`) and reseeded per restart; real auth and a
+  `KvAdapter`-backed store replace it later.
 - **Fresh build output** — `_fresh/` is gitignored. Production builds are
   handled by Deno Deploy (`deno deploy` org: `dbud`, app: `essayist`).
+- **Route files aren't in `main.ts`'s type-check graph** — `app.fsRoutes()`
+  loads route files via dynamic import, so `deno check packages/web/main.ts`
+  does **not** type-check them. A bad import in a route can pass `deno check
+  main.ts` yet throw at runtime. Always validate with the full `deno task
+  fmt:check` (which runs `deno check` with no args, walking the whole tree) or
+  `deno check packages/web/routes`, not `deno check <entry>`.
 - **JSX runtime** — `jsx: "react-jsx"` with `jsxImportSource: "preact"` uses the
   automatic JSX runtime. This is required for `@prefresh/vite` HMR to work in
   dev. Do **not** use `jsx: "precompile"` — it transforms JSX before Vite sees
@@ -585,9 +642,10 @@ then `deno task fmt:check` before each commit.
   `Editor` island. The bootstrap editor is discarded after its state is
   extracted.
 - **createMarkTool not wired in chat** — The chat endpoint
-  (`routes/api/chat.ts`) only wires `createReadFileTool`, `createListFilesTool`,
-  `createGrepTool`, and `createWriteFileTool`. `createMarkTool` is exported from
-  core but not included in the chat tools array.
+  (`routes/api/workspaces/[wsId]/chat.ts`) only wires `createReadFileTool`,
+  `createListFilesTool`, `createGrepTool`, and `createWriteFileTool`.
+  `createMarkTool` is exported from core but not included in the chat tools
+  array.
 - **MarkExtension in editor** — `MarksExtension` (in `editor/markExtension.ts`)
   registers `MarkNode` (from `@lexical/mark`). Run from `afterRegistration`, it
   applies mark ranges to the active editor with `$wrapSelectionInMarkNode`.
