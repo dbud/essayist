@@ -6,14 +6,6 @@ import {
 } from "@essayist/core";
 import { define } from "@/define.ts";
 import { streamModelResultSSE } from "@/utils/sse.ts";
-import { vfs } from "@/vfs.ts";
-
-const tools = [
-  createReadFileTool(vfs),
-  createListFilesTool(vfs),
-  createGrepTool(vfs),
-  createWriteFileTool(vfs),
-];
 
 export const handler = {
   GET: define.handlers((ctx) => {
@@ -26,6 +18,14 @@ export const handler = {
         { status: 400 },
       );
     }
+
+    // Build tools per request against the resolved workspace VFS.
+    const tools = [
+      createReadFileTool(ctx.state.vfs),
+      createListFilesTool(ctx.state.vfs),
+      createGrepTool(ctx.state.vfs),
+      createWriteFileTool(ctx.state.vfs),
+    ];
 
     const result = ctx.state.agent.callModelWithTools(message, tools);
     const stream = streamModelResultSSE(result);

@@ -1,5 +1,12 @@
 import type { FileSnapshot } from "@essayist/core";
-import { computed, createModel, signal } from "@preact/signals";
+import {
+  computed,
+  createModel,
+  effect,
+  signal,
+  untracked,
+} from "@preact/signals";
+import { IS_BROWSER } from "fresh/runtime";
 import type { EditorState } from "lexical";
 import {
   buildTextNodeSpans,
@@ -7,6 +14,7 @@ import {
   type Span,
 } from "@/editor/textNodeSpans.ts";
 import { openedFiles } from "@/signals/openedFiles.ts";
+import { currentWorkspaceId } from "@/signals/workspace.ts";
 import createAsyncState from "@/utils/asyncState.ts";
 import { deepComputed } from "@/utils/deepComputed.ts";
 import {
@@ -55,14 +63,21 @@ export const FileModel = createModel((path: string) => {
   }
 
   async function load() {
+    const wsId = currentWorkspaceId.value;
+    if (!wsId) return;
     const result = await run(async () => {
-      const res = await fetch(`/api/files/${encodeURIComponent(path)}`);
+      const res = await fetch(
+        `/api/workspaces/${encodeURIComponent(wsId)}/files/${encodeURIComponent(path)}`,
+      );
       return (await res.json()) as FileSnapshot;
     });
     if (result) snapshot.value = result;
   }
 
-  load();
+  if (IS_BROWSER)
+    effect(() => {
+      if (currentWorkspaceId.value) untracked(load);
+    });
 
   return {
     snapshot,

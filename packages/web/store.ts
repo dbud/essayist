@@ -1,5 +1,10 @@
 import type { User, Workspace } from "@essayist/core";
-import { InMemoryAdapter, WorkspaceStore } from "@essayist/core";
+import {
+  InMemoryAdapter,
+  VirtualFileSystem,
+  WorkspaceStore,
+} from "@essayist/core";
+import { seedDemoFiles } from "@/seed.ts";
 
 /**
  * Shared backing store for the web app. In production this adapter is backed by
@@ -25,3 +30,7 @@ export const demoWorkspace: Workspace = await store.createWorkspace(
   "Demo",
   demoUser.id,
 );
+
+// Seed the demo workspace's VFS with sample files and marks.
+const demoVfs = new VirtualFileSystem(adapter, demoWorkspace.id);
+await seedDemoFiles(demoVfs);

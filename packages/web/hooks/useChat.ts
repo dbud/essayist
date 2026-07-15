@@ -23,7 +23,7 @@ function newMessage(role: ChatMessage["role"], text = ""): Signal<ChatMessage> {
   return signal<ChatMessage>({ role, text, items: new Map() });
 }
 
-export function useChat(apiUrl: string, initial?: ChatMessage[]) {
+export function useChat(getApiUrl: () => string, initial?: ChatMessage[]) {
   const messages = useSignal<Signal<ChatMessage>[]>(
     (initial ?? []).map((m) => signal<ChatMessage>(m)),
   );
@@ -43,9 +43,12 @@ export function useChat(apiUrl: string, initial?: ChatMessage[]) {
     abortRef.current = controller;
 
     try {
-      const res = await fetch(`${apiUrl}?message=${encodeURIComponent(text)}`, {
-        signal: controller.signal,
-      });
+      const res = await fetch(
+        `${getApiUrl()}?message=${encodeURIComponent(text)}`,
+        {
+          signal: controller.signal,
+        },
+      );
       if (!res.ok || !res.body) throw new Error(`HTTP ${res.status}`);
 
       for await (const { event, data } of parseSSE(res.body)) {
