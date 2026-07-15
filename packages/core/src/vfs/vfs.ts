@@ -2,7 +2,7 @@ import type { FileSnapshot } from "@essayist/core";
 import { resolveMarks } from "@/vfs/marks_resolver.ts";
 import { TokenizedText } from "@/vfs/text_search.ts";
 import { unifiedDiff } from "@/vfs/unified_diff.ts";
-import type { PersistenceAdapter } from "./persistence.ts";
+import type { Key, PersistenceAdapter } from "./persistence.ts";
 import type {
   DiffResult,
   FileEntry,
@@ -20,10 +20,10 @@ import type {
 
 const DEFAULT_CONTEXT_SPAN = 60;
 
-const FILE_LATEST_PREFIX = "file:latest:";
-const FILE_VERSIONS_PREFIX = "file:versions:";
-const FILE_CONTENT_PREFIX = "file:content:";
-const MARKS_PREFIX = "marks:";
+const FILE_LATEST = "file:latest";
+const FILE_VERSIONS = "file:versions";
+const FILE_CONTENT = "file:content";
+const MARKS = "marks";
 const GREP_CONTEXT_LINES = 2;
 
 function escapeRegex(text: string): string {
@@ -89,8 +89,7 @@ export class VirtualFileSystem implements VFS {
     };
     const versionsKey = this.#versionsKey(path);
     const versions =
-      ((await this.#adapter.get(versionsKey)) as FileVersion[] | undefined) ??
-      [];
+      (await this.#adapter.get<FileVersion[]>(versionsKey))?.value ?? [];
 
     const previousVersionId =
       versions.length > 0
@@ -102,7 +101,7 @@ export class VirtualFileSystem implements VFS {
 
     versions.push(version);
     await Promise.all([
-      this.#adapter.set(versionsKey, versions),
+      this.#adapter.set(this.#versionsKey(path), versions),
       this.#adapter.set(this.#contentKey(path, versionId), content),
       this.#adapter.set(this.#latestKey(path), {
         content,
@@ -130,19 +129,16 @@ export class VirtualFileSystem implements VFS {
   }
 
   async list(prefix?: string): Promise<FileEntry[]> {
-    const searchPrefix = FILE_LATEST_PREFIX + (prefix ?? "");
-    const entries: FileEntry[] = [];
-
-    for await (const key of this.#adapter.list(searchPrefix)) {
-      const path = key.slice(FILE_LATEST_PREFIX.length);
-      const latest = await this.#getFile(path);
-      if (latest) {
-        entries.push({ path, lines: latest.lines });
-      }
+    const { entries } = await this.#adapter.list<FileSnapshot>([FILE_LATEST]);
+    const result: FileEntry[] = [];
+    for (const entry of entries) {
+      const [, path] = entry.key;
+      if (prefix !== undefined && !path.startsWith(prefix)) continue;
+      const latest = entry.value;
+      if (latest) result.push({ path, lines: latest.lines });
     }
-
-    entries.sort((a, b) => a.path.localeCompare(b.path));
-    return entries;
+    result.sort((a, b) => a.path.localeCompare(b.path));
+    return result;
   }
 
   async grep(pattern: string, options?: GrepOptions): Promise<GrepResult> {
@@ -268,9 +264,8 @@ export class VirtualFileSystem implements VFS {
 
   async getHistory(path: string): Promise<FileVersion[]> {
     const versions =
-      ((await this.#adapter.get(this.#versionsKey(path))) as
-        | FileVersion[]
-        | undefined) ?? [];
+      (await this.#adapter.get<FileVersion[]>(this.#versionsKey(path)))
+        ?.value ?? [];
     return versions.sort((a, b) => a.timestamp - b.timestamp);
   }
 
@@ -298,9 +293,8 @@ export class VirtualFileSystem implements VFS {
   }
 
   async #getFile(path: string): Promise<FileSnapshot | undefined> {
-    return (await this.#adapter.get(this.#latestKey(path))) as
-      | FileSnapshot
-      | undefined;
+    return (await this.#adapter.get<FileSnapshot>(this.#latestKey(path)))
+      ?.value;
   }
 
   async #getVersion(
@@ -308,34 +302,32 @@ export class VirtualFileSystem implements VFS {
     versionId: string,
   ): Promise<FileVersion | undefined> {
     const versions =
-      ((await this.#adapter.get(this.#versionsKey(path))) as
-        | FileVersion[]
-        | undefined) ?? [];
+      (await this.#adapter.get<FileVersion[]>(this.#versionsKey(path)))
+        ?.value ?? [];
     return versions.find((version) => version.version_id === versionId);
   }
 
   async #getVersionContent(path: string, versionId: string): Promise<string> {
     return (
-      ((await this.#adapter.get(
-        this.#contentKey(path, versionId),
-      )) as string) ?? ""
+      (await this.#adapter.get<string>(this.#contentKey(path, versionId)))
+        ?.value ?? ""
     );
   }
 
-  #latestKey(path: string): string {
-    return `${FILE_LATEST_PREFIX}${path}`;
+  #latestKey(path: string): Key {
+    return [FILE_LATEST, path];
   }
 
-  #contentKey(path: string, versionId: string): string {
-    return `${FILE_CONTENT_PREFIX}${path}:${versionId}`;
+  #contentKey(path: string, versionId: string): Key {
+    return [FILE_CONTENT, path, versionId];
   }
 
-  #versionsKey(path: string): string {
-    return `${FILE_VERSIONS_PREFIX}${path}`;
+  #versionsKey(path: string): Key {
+    return [FILE_VERSIONS, path];
   }
 
-  #marksKey(path: string, versionId: string): string {
-    return `${MARKS_PREFIX}${path}:${versionId}`;
+  #marksKey(path: string, versionId: string): Key {
+    return [MARKS, path, versionId];
   }
 
   async #saveMark(mark: Mark): Promise<void> {
@@ -358,9 +350,8 @@ export class VirtualFileSystem implements VFS {
 
   async #getMarksList(path: string, versionId: string): Promise<Mark[]> {
     return (
-      ((await this.#adapter.get(this.#marksKey(path, versionId))) as
-        | Mark[]
-        | undefined) ?? []
+      (await this.#adapter.get<Mark[]>(this.#marksKey(path, versionId)))
+        ?.value ?? []
     );
   }
 }

@@ -17,7 +17,20 @@ export {
 export { setMyers } from "@/vfs/diff.ts";
 export type { ResolveInput, ResolveOptions } from "@/vfs/marks_resolver.ts";
 export { resolveMarks } from "@/vfs/marks_resolver.ts";
-export { InMemoryAdapter } from "@/vfs/persistence.ts";
+export {
+  type BatchOptions,
+  ConcurrentModificationError,
+  compareKeys,
+  type Entry,
+  InMemoryAdapter,
+  type Key,
+  keyStartsWith,
+  type ListOptions,
+  type ListResult,
+  type PersistenceAdapter,
+  type ReadOptions as AdapterReadOptions,
+  type WriteOp,
+} from "@/vfs/persistence.ts";
 export type {
   DiffResult,
   FileEntry,
