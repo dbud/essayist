@@ -1,6 +1,6 @@
 import type { PageProps } from "fresh";
 import type { State } from "@/define.ts";
-import ClearCache from "@/islands/ClearCache.tsx";
+import UserMenu from "@/islands/UserMenu.tsx";
 
 export default function App({ Component, state }: PageProps<unknown, State>) {
   const user = state.user;
@@ -18,19 +18,7 @@ export default function App({ Component, state }: PageProps<unknown, State>) {
               Essayist
             </a>
           </div>
-          <div class="navbar-end gap-2">
-            {user && (
-              <>
-                <span class="hidden sm:inline text-sm text-base-content/60">
-                  {user.email}
-                </span>
-                <a href="/oauth/signout" class="btn btn-ghost btn-sm">
-                  Sign out
-                </a>
-              </>
-            )}
-            <ClearCache />
-          </div>
+          <div class="navbar-end">{user && <UserMenu user={user} />}</div>
         </nav>
         <Component />
       </body>

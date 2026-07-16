@@ -7,6 +7,8 @@ interface DropdownProps {
   buttonClass?: string;
   /** Content rendered inside the `<summary>` trigger. */
   button: VNode;
+  /** Extra classes for the `<details class="dropdown ...">` wrapper (e.g. `dropdown-end`). */
+  dropdownClass?: string;
   /** Menu content; `close` dismisses the dropdown (call it from item clicks). */
   children: (close: () => void) => VNode;
 }
@@ -19,6 +21,7 @@ interface DropdownProps {
 export default function Dropdown({
   buttonClass = "btn btn-sm",
   button,
+  dropdownClass,
   children,
 }: DropdownProps) {
   const open = useSignal(false);
@@ -38,7 +41,11 @@ export default function Dropdown({
   const close = () => (open.value = false);
 
   return (
-    <details class="dropdown" open={open.value} ref={ref}>
+    <details
+      class={`dropdown ${dropdownClass ?? ""}`}
+      open={open.value}
+      ref={ref}
+    >
       {/** biome-ignore lint/a11y/useSemanticElements: summary is clickable */}
       <summary
         role="button"

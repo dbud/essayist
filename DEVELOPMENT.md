@@ -136,7 +136,7 @@ essayist/
         │   └── useChat.ts          # useChat() hook — SSE chat for Preact islands (takes a URL getter)
         ├── islands/
         │   ├── Chat.tsx            # Interactive Preact island (streaming chat UI)
-        │   ├── ClearCache.tsx      # Button to clear localStorage + reload
+        │   ├── UserMenu.tsx      # Navbar account dropdown (email, clear cache, sign out)
         │   ├── ErrorBoundary.tsx   # Preact error boundary with reset button
         │   ├── ExportPreviewSection.tsx  # Export preview with mark highlighting + whitespace viz
         │   ├── FileBrowser.tsx     # File tree sidebar (fetches from /api/workspaces/:wsId/files)
