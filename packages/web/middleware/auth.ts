@@ -10,11 +10,13 @@ const isDev = Deno.env.get("DENO_ENV") === "development";
  * Resolves `ctx.state.user` for each request.
  *
  * Resolution order:
- *  1. `X-User-Id` header (dev bypass for scripting / multi-user tests).
+ *  1. `X-User-Id` header, dev only — lets local scripts/tests act as a
+ *     specific seeded user (e.g. demoUser2 for sharing tests). Disabled in
+ *     production, where trusting a client-supplied id would be an auth bypass.
  *  2. Valid Google OAuth session cookie (see routes/oauth/*).
  *  3. The seeded demo user, in dev only.
  *  4. Otherwise unauthenticated: API routes get 401 JSON, browser routes
- *     redirect to /oauth/signin.
+ *     redirect to /login.
  *
  * The /oauth/* routes and /login page are skipped so sign-in / sign-out /
  * callback and the login page itself can run before a user is resolved.
@@ -25,15 +27,18 @@ const authMiddleware: Middleware<State> = define.middleware(async (ctx) => {
     return ctx.next();
   }
 
-  // TODO: remove after testing
-  const headerId = ctx.req.headers.get("X-User-Id");
-  if (headerId) {
-    const user = await store.getUser(headerId);
-    if (!user) {
-      return Response.json({ error: "Unknown user" }, { status: 401 });
+  // Dev only: lets local scripts/tests act as a specific seeded user
+  // (e.g. demoUser2 for sharing tests). Disabled in production.
+  if (isDev) {
+    const headerId = ctx.req.headers.get("X-User-Id");
+    if (headerId) {
+      const user = await store.getUser(headerId);
+      if (!user) {
+        return Response.json({ error: "Unknown user" }, { status: 401 });
+      }
+      ctx.state.user = user;
+      return ctx.next();
     }
-    ctx.state.user = user;
-    return ctx.next();
   }
 
   try {

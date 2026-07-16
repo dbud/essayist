@@ -151,7 +151,7 @@ essayist/
         │       └── Editor.tsx           # Lexical rich text editor island component
         ├── middleware/
         │   ├── agent.ts    # Creates Agent from OPENROUTER_API_KEY, attaches to state
-        │   └── auth.ts    # Resolves ctx.state.user: X-User-Id header, OAuth session, or dev demo user
+        │   └── auth.ts    # Resolves ctx.state.user: X-User-Id header (dev only), OAuth session, or dev demo user
         ├── routes/
         │   ├── _app.tsx    # HTML shell (navbar, h-dvh body, theme, sign-out link)
         │   ├── index.tsx   # Home page — three-column layout (browser, viewer, sidebar)
@@ -217,11 +217,12 @@ essayist/
   workspace (with sample files via `seedDemoFiles`). Exports `adapter`,
   `store`, `demoUser`, `demoUser2`, `demoWorkspace`.
 - **`packages/web/middleware/auth.ts`** — Auth middleware. Resolves
-  `ctx.state.user` per request in this order: `X-User-Id` header (dev/test
-  bypass), a Google OAuth session cookie (see `routes/oauth/`), the seeded
-  demo user (dev only), or 401 (API) / redirect-to-`/login` (pages). The
-  `/oauth/*` routes and `/login` page are skipped so sign-in / callback /
-  sign-out / the login page can run without a resolved user.
+  `ctx.state.user` per request in this order: `X-User-Id` header (dev only
+  — local scripting/sharing tests; disabled in production), a Google OAuth
+  session cookie (see `routes/oauth/`), the seeded demo user (dev only), or
+  401 (API) / redirect-to-`/login` (pages). The `/oauth/*` routes and `/login`
+  page are skipped so sign-in / callback / sign-out / the login page can run
+  without a resolved user.
 - **`packages/web/routes/api/workspaces/[wsId]/_middleware.ts`** — Workspace
   middleware. Reads `ctx.params.wsId`, runs `store.hasAccess`, returns 403 on
   no access, and constructs a per-request `VirtualFileSystem(adapter, wsId)` on
@@ -605,10 +606,12 @@ then `deno task fmt:check` before each commit.
   `["openai/gpt-oss-120b:free", "openrouter/owl-alpha"]`. This is not
   configurable via constructor or env var.
 - **Auth (Google OAuth) + seeding** — `middleware/auth.ts` resolves
-  `ctx.state.user` from, in order: an `X-User-Id` header (dev/test bypass), a
-  Google OAuth session cookie (`routes/oauth/`, backed by `@deno/kv-oauth` and
-  the app session map in `utils/sessions.ts`), the seeded demo user (dev only),
-  or 401/redirect-to-`/oauth/signin`. Requires `GOOGLE_CLIENT_ID` and
+  `ctx.state.user` from, in order: an `X-User-Id` header (dev only — a
+  client-supplied id is not authentication, so this is gated behind `isDev`
+  and is dead code in production), a Google OAuth session cookie
+  (`routes/oauth/`, backed by `@deno/kv-oauth` and the app session map in
+  `utils/sessions.ts`), the seeded demo user (dev only), or
+  401/redirect-to-`/login`. Requires `GOOGLE_CLIENT_ID` and
   `GOOGLE_CLIENT_SECRET` env vars to actually sign in; without them, dev falls
   back to the demo user. `store.ts` seeds a demo user, a second demo user
   (`demoUser2`) for sharing tests, and a demo workspace (with sample files) on
