@@ -13,9 +13,13 @@ export default function App({ Component, state }: PageProps<unknown, State>) {
       </head>
       <body class="h-dvh bg-base-200 text-base-content flex flex-col">
         <nav class="navbar bg-base-100 shadow-sm z-10">
-          <div class="navbar-start">
-            <a href="/" class="btn btn-ghost text-xl">
-              Essayist
+          <div class="navbar-start"></div>
+          <div class="navbar-center">
+            <a
+              href="/"
+              class="text-2xl font-serif italic tracking-widest font-light"
+            >
+              essayist
             </a>
           </div>
           <div class="navbar-end">{user && <UserMenu user={user} />}</div>
