@@ -60,6 +60,8 @@
     "build": "vite build",
     "check": "deno run -A npm:@biomejs/biome check && deno lint . && deno check",
     "dev": "DENO_ENV=development vite | pino-pretty --colorize --translateTime SYS:standard --ignore pid,hostname",
+    "kv:explore": "deno run -A explore_kv.ts",
+    "kv:wipe": "deno run -A wipe_kv.ts",
     "start": "deno serve -A _fresh/server.js",
     "update": "deno run -A -r jsr:@fresh/update ."
   },

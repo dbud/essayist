@@ -7,6 +7,10 @@
 
 # Fresh build directory
 _fresh/
+
+# Local Deno KV dev database
+local-kv.sqlite3*
+
 # npm + other dependencies
 node_modules/
 vendor/

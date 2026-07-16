@@ -18,6 +18,7 @@
     "wasm:build": "wasm-pack build crates/wasm --target web --out-dir pkg --out-name wasm",
     "wasm:build:dev": "wasm-pack build crates/wasm --target web --out-dir pkg --out-name wasm --dev"
   },
+  "unstable": ["kv"],
   "workspace": [
     "./crates/wasm",
     "./packages/web",
