@@ -16,12 +16,12 @@ const isDev = Deno.env.get("DENO_ENV") === "development";
  *  4. Otherwise unauthenticated: API routes get 401 JSON, browser routes
  *     redirect to /oauth/signin.
  *
- * The /oauth/* routes are skipped so sign-in / sign-out / callback can run
- * before a user is resolved.
+ * The /oauth/* routes and /login page are skipped so sign-in / sign-out /
+ * callback and the login page itself can run before a user is resolved.
  */
 const authMiddleware: Middleware<State> = define.middleware(async (ctx) => {
   const path = ctx.url.pathname;
-  if (path.startsWith("/oauth/")) {
+  if (path.startsWith("/oauth/") || path === "/login") {
     return ctx.next();
   }
 
@@ -62,7 +62,7 @@ const authMiddleware: Middleware<State> = define.middleware(async (ctx) => {
   if (path.startsWith("/api/")) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
-  return ctx.redirect("/oauth/signin");
+  return ctx.redirect("/login");
 });
 
 export default authMiddleware;

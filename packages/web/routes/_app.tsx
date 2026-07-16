@@ -20,13 +20,15 @@ export default function App({ Component, state }: PageProps<unknown, State>) {
           </div>
           <div class="navbar-end gap-2">
             {user && (
-              <span class="hidden sm:inline text-sm text-base-content/60">
-                {user.email}
-              </span>
+              <>
+                <span class="hidden sm:inline text-sm text-base-content/60">
+                  {user.email}
+                </span>
+                <a href="/oauth/signout" class="btn btn-ghost btn-sm">
+                  Sign out
+                </a>
+              </>
             )}
-            <a href="/oauth/signout" class="btn btn-ghost btn-sm">
-              Sign out
-            </a>
             <ClearCache />
           </div>
         </nav>

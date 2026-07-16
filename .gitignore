@@ -5,8 +5,9 @@
 .env.production.local
 .env.local
 
-# Fresh build directory
+# build directories
 _fresh/
+.vite/
 
 # Local Deno KV dev database
 local-kv.sqlite3*

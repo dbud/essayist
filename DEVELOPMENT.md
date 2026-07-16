@@ -155,6 +155,7 @@ essayist/
         ├── routes/
         │   ├── _app.tsx    # HTML shell (navbar, h-dvh body, theme, sign-out link)
         │   ├── index.tsx   # Home page — three-column layout (browser, viewer, sidebar)
+        │   ├── login.tsx    # Sign-in landing page (Sign in with Google button)
         │   ├── oauth/
         │   │   ├── signin.ts    # GET — redirects to Google consent
         │   │   ├── callback.ts  # GET — exchanges code, upserts User by email, stores session
@@ -218,8 +219,9 @@ essayist/
 - **`packages/web/middleware/auth.ts`** — Auth middleware. Resolves
   `ctx.state.user` per request in this order: `X-User-Id` header (dev/test
   bypass), a Google OAuth session cookie (see `routes/oauth/`), the seeded
-  demo user (dev only), or 401/redirect-to-sign-in. The `/oauth/*` routes are
-  skipped so sign-in / callback / sign-out can run without a resolved user.
+  demo user (dev only), or 401 (API) / redirect-to-`/login` (pages). The
+  `/oauth/*` routes and `/login` page are skipped so sign-in / callback /
+  sign-out / the login page can run without a resolved user.
 - **`packages/web/routes/api/workspaces/[wsId]/_middleware.ts`** — Workspace
   middleware. Reads `ctx.params.wsId`, runs `store.hasAccess`, returns 403 on
   no access, and constructs a per-request `VirtualFileSystem(adapter, wsId)` on
