@@ -3,7 +3,6 @@ import ExportPreviewSection from "@/islands/ExportPreviewSection.tsx";
 import FileBrowser from "@/islands/FileBrowser.tsx";
 import FileViewer from "@/islands/FileViewer.tsx";
 import LexicalTreeViewSection from "@/islands/LexicalTreeViewSection.tsx";
-import MarkRangesSection from "@/islands/MarkRangesSection.tsx";
 import MarksSection from "@/islands/MarksSection.tsx";
 import Section from "@/islands/Section.tsx";
 
@@ -30,7 +29,6 @@ export default function HomePage() {
           <Section title="File History">
             <div class="text-sm text-base-content/50">Coming soon</div>
           </Section>
-          <MarkRangesSection />
         </div>
       </aside>
     </main>
