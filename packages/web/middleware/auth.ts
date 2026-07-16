@@ -1,4 +1,5 @@
-import { define } from "@/define.ts";
+import type { Middleware } from "fresh";
+import { define, type State } from "@/define.ts";
 import { demoUser, store } from "@/store.ts";
 
 /**
@@ -11,7 +12,7 @@ import { demoUser, store } from "@/store.ts";
  * In production `demoUser` is undefined, so requests without `X-User-Id` are
  * rejected until real auth (OAuth / magic-link / API-key) replaces this.
  */
-export default define.middleware(async (ctx) => {
+const authMiddleware: Middleware<State> = define.middleware(async (ctx) => {
   const headerId = ctx.req.headers.get("X-User-Id");
   if (headerId) {
     const user = await store.getUser(headerId);
@@ -26,3 +27,5 @@ export default define.middleware(async (ctx) => {
   }
   return ctx.next();
 });
+
+export default authMiddleware;
