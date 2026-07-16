@@ -9,14 +9,14 @@ import Section from "@/islands/Section.tsx";
 
 export default function HomePage() {
   return (
-    <main class="w-full p-4 flex-1 flex gap-8 min-h-0">
-      <aside class="w-64 shrink-0">
+    <main class="w-full flex-1 flex gap-8 px-4 min-h-0">
+      <aside class="w-64 shrink-0 min-h-0 overflow-y-auto">
         <FileBrowser />
       </aside>
-      <div class="flex-1 min-w-0 min-h-0 h-full flex flex-col">
+      <div class="flex-1 min-w-0 min-h-0 h-full flex flex-col py-4">
         <FileViewer />
       </div>
-      <aside class="flex-1 max-w-lg shrink-0 min-h-0 overflow-y-auto flex flex-col">
+      <aside class="flex-1 max-w-lg shrink-0 min-h-0 overflow-y-auto flex flex-col py-4">
         <div class="join join-vertical">
           <ExportPreviewSection />
           <MarksSection />
