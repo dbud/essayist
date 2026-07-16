@@ -4,7 +4,8 @@
 //   deno task kv:wipe                                     # wipe local dev db (./local-kv.sqlite3)
 //   deno task kv:wipe "https://api.deno.com/v2/databases/<id>/connect"
 //
-// For a remote instance, set DENO_KV_ACCESS_TOKEN=ddo_... in your environment.
+// For a remote instance, set DENO_KV_ACCESS_TOKEN=ddo_... in .env (loaded
+// automatically by the kv:wipe task via --env-file=.env).
 
 const target = Deno.args[0] ?? "./local-kv.sqlite3";
 
