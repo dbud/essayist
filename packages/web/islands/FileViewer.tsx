@@ -4,6 +4,7 @@ import FontSelect from "@/components/FontSelect.tsx";
 import Toolbar from "@/components/Toolbar.tsx";
 import Editor from "@/islands/editor/Editor.tsx";
 import FileViewerTabs from "@/islands/FileViewerTabs.tsx";
+import SidebarToggle from "@/islands/SidebarToggle.tsx";
 import { useFile } from "@/signals/file.ts";
 import { useMarks } from "@/signals/marks.ts";
 import { openedFiles } from "@/signals/openedFiles.ts";
@@ -14,7 +15,12 @@ export default function FileViewer() {
   if (!path) return null;
   return (
     <div class="flex flex-col h-full min-h-0">
-      <FileViewerTabs />
+      <div class="flex items-center gap-1">
+        <SidebarToggle />
+        <div class="flex-1 min-w-0">
+          <FileViewerTabs />
+        </div>
+      </div>
       <FileViewerBody key={path} path={path} />
     </div>
   );

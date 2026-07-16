@@ -5,13 +5,14 @@ import FileViewer from "@/islands/FileViewer.tsx";
 import LexicalTreeViewSection from "@/islands/LexicalTreeViewSection.tsx";
 import MarksSection from "@/islands/MarksSection.tsx";
 import Section from "@/islands/Section.tsx";
+import Sidebar from "@/islands/Sidebar.tsx";
 
 export default function HomePage() {
   return (
     <main class="w-full flex-1 flex gap-8 px-4 min-h-0">
-      <aside class="w-64 shrink-0 min-h-0 overflow-y-auto">
+      <Sidebar closeLabel="Close file browser">
         <FileBrowser />
-      </aside>
+      </Sidebar>
       <div class="flex-1 min-w-0 min-h-0 h-full flex flex-col py-4">
         <FileViewer />
       </div>
