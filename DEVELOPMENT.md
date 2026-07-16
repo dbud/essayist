@@ -151,10 +151,14 @@ essayist/
         │       └── Editor.tsx           # Lexical rich text editor island component
         ├── middleware/
         │   ├── agent.ts    # Creates Agent from OPENROUTER_API_KEY, attaches to state
-        │   └── auth.ts    # Dev-mode identity stub — resolves ctx.state.user (X-User-Id header or demo user)
+        │   └── auth.ts    # Resolves ctx.state.user: X-User-Id header, OAuth session, or dev demo user
         ├── routes/
-        │   ├── _app.tsx    # HTML shell (navbar, h-dvh body, theme)
+        │   ├── _app.tsx    # HTML shell (navbar, h-dvh body, theme, sign-out link)
         │   ├── index.tsx   # Home page — three-column layout (browser, viewer, sidebar)
+        │   ├── oauth/
+        │   │   ├── signin.ts    # GET — redirects to Google consent
+        │   │   ├── callback.ts  # GET — exchanges code, upserts User by email, stores session
+        │   │   └── signout.ts   # GET — clears session cookie + app session, redirects home
         │   └── api/
         │       └── workspaces/
         │           ├── index.ts                  # GET /api/workspaces (list mine), POST (create)
@@ -211,9 +215,11 @@ essayist/
   for the web app, and the dev-mode seed: a demo user, `demoUser2`, and a demo
   workspace (with sample files via `seedDemoFiles`). Exports `adapter`,
   `store`, `demoUser`, `demoUser2`, `demoWorkspace`.
-- **`packages/web/middleware/auth.ts`** — Dev-mode identity stub. Resolves
-  `ctx.state.user` from an `X-User-Id` header (401 if unknown) or defaults to
-  the demo user. Real auth replaces this later.
+- **`packages/web/middleware/auth.ts`** — Auth middleware. Resolves
+  `ctx.state.user` per request in this order: `X-User-Id` header (dev/test
+  bypass), a Google OAuth session cookie (see `routes/oauth/`), the seeded
+  demo user (dev only), or 401/redirect-to-sign-in. The `/oauth/*` routes are
+  skipped so sign-in / callback / sign-out can run without a resolved user.
 - **`packages/web/routes/api/workspaces/[wsId]/_middleware.ts`** — Workspace
   middleware. Reads `ctx.params.wsId`, runs `store.hasAccess`, returns 403 on
   no access, and constructs a per-request `VirtualFileSystem(adapter, wsId)` on
@@ -596,14 +602,17 @@ then `deno task fmt:check` before each commit.
 - **Models are hardcoded** — `Agent` uses a fixed list of models:
   `["openai/gpt-oss-120b:free", "openrouter/owl-alpha"]`. This is not
   configurable via constructor or env var.
-- **Dev-mode identity + seeding** — Auth is currently a stub
-  (`middleware/auth.ts`): it resolves `ctx.state.user` from an optional
-  `X-User-Id` header, defaulting to the seeded demo user. `store.ts` seeds a
-  demo user, a second demo user (`demoUser2`) for sharing tests, and a demo
-  workspace (with sample files) on every startup, using random ids. The client
-  discovers the workspace id via `GET /api/workspaces`. All of this is
-  in-memory (`InMemoryAdapter`) and reseeded per restart; real auth and a
-  `KvAdapter`-backed store replace it later.
+- **Auth (Google OAuth) + seeding** — `middleware/auth.ts` resolves
+  `ctx.state.user` from, in order: an `X-User-Id` header (dev/test bypass), a
+  Google OAuth session cookie (`routes/oauth/`, backed by `@deno/kv-oauth` and
+  the app session map in `utils/sessions.ts`), the seeded demo user (dev only),
+  or 401/redirect-to-`/oauth/signin`. Requires `GOOGLE_CLIENT_ID` and
+  `GOOGLE_CLIENT_SECRET` env vars to actually sign in; without them, dev falls
+  back to the demo user. `store.ts` seeds a demo user, a second demo user
+  (`demoUser2`) for sharing tests, and a demo workspace (with sample files) on
+  every startup, using random ids. The client discovers the workspace id via
+  `GET /api/workspaces`. The store uses a `KvAdapter` backed by Deno KV
+  (`local-kv.sqlite3` in dev, platform KV on Deno Deploy).
 - **Fresh build output** — `_fresh/` is gitignored. Production builds are
   handled by Deno Deploy (`deno deploy` org: `dbud`, app: `essayist`).
 - **Route files aren't in `main.ts`'s type-check graph** — `app.fsRoutes()`

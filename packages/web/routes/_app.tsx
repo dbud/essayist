@@ -1,7 +1,9 @@
 import type { PageProps } from "fresh";
+import type { State } from "@/define.ts";
 import ClearCache from "@/islands/ClearCache.tsx";
 
-export default function App({ Component }: PageProps) {
+export default function App({ Component, state }: PageProps<unknown, State>) {
+  const user = state.user;
   return (
     <html lang="en" data-theme="essayist">
       <head>
@@ -16,7 +18,15 @@ export default function App({ Component }: PageProps) {
               Essayist
             </a>
           </div>
-          <div class="navbar-end">
+          <div class="navbar-end gap-2">
+            {user && (
+              <span class="hidden sm:inline text-sm text-base-content/60">
+                {user.email}
+              </span>
+            )}
+            <a href="/oauth/signout" class="btn btn-ghost btn-sm">
+              Sign out
+            </a>
             <ClearCache />
           </div>
         </nav>

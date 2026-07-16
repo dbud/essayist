@@ -16,6 +16,7 @@
   "imports": {
     "@/": "./",
     "@biomejs/biome": "npm:@biomejs/biome@^2.5.3",
+    "@deno/kv-oauth": "jsr:@deno/kv-oauth@^0.11",
     "@fontsource-variable/hanken-grotesk": "npm:@fontsource-variable/hanken-grotesk@^5.2.8",
     "@fontsource-variable/recursive": "npm:@fontsource-variable/recursive@^5.2.8",
     "@fontsource-variable/source-serif-4": "npm:@fontsource-variable/source-serif-4@^5.2.9",

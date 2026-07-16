@@ -16,11 +16,11 @@ import { seedDemo } from "@/seed.ts";
  */
 const isDev = Deno.env.get("DENO_ENV") === "development";
 
-const denoKv = isDev
+export const kv = isDev
   ? await Deno.openKv("./local-kv.sqlite3")
   : await Deno.openKv();
 
-export const adapter = new KvAdapter(denoKv);
+export const adapter = new KvAdapter(kv);
 export const store = new WorkspaceStore(adapter);
 
 /**
