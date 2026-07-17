@@ -129,11 +129,28 @@ console.log(greet('World'));
 That's all folks!`,
 };
 
-/** Seed the demo workspace with sample files and a few marks. */
-export async function seedDemoFiles(vfs: VirtualFileSystem): Promise<void> {
+/** Seed the given workspace with sample files, a few marks, and a
+ * workspace-specific readme (`workspace-{id}.md`) that records the
+ * workspace's name and id. */
+export async function seedDemoFiles(
+  vfs: VirtualFileSystem,
+  workspace: Workspace,
+): Promise<void> {
   for (const [path, content] of Object.entries(files)) {
     await vfs.write(path, content);
   }
+
+  await vfs.write(
+    `workspace-${workspace.id}.md`,
+    `# ${workspace.name}
+
+Welcome to the "${workspace.name}" workspace.
+
+- Name: ${workspace.name}
+- ID: ${workspace.id}
+
+This file was created automatically when the workspace was set up. Feel free to edit or delete it.`,
+  );
 
   await vfs.mark(
     "essay.txt",
@@ -189,7 +206,10 @@ export async function seedDemo(
   });
   const demoWorkspace = await store.createWorkspace("Demo", demoUser.id);
 
-  await seedDemoFiles(new VirtualFileSystem(adapter, demoWorkspace.id));
+  await seedDemoFiles(
+    new VirtualFileSystem(adapter, demoWorkspace.id),
+    demoWorkspace,
+  );
 
   await adapter.batch([{ type: "set", key: SEED_SENTINEL, value: true }]);
   return { demoUser, demoUser2, demoWorkspace };
