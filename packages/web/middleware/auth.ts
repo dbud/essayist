@@ -67,7 +67,10 @@ const authMiddleware: Middleware<State> = define.middleware(async (ctx) => {
   if (path.startsWith("/api/")) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
-  return ctx.redirect("/login");
+  // Preserve the page they were trying to reach so /login can send them back
+  // after sign-in (see routes/login.tsx).
+  const next = `${ctx.url.pathname}${ctx.url.search}`;
+  return ctx.redirect(`/login?next=${encodeURIComponent(next)}`);
 });
 
 export default authMiddleware;
