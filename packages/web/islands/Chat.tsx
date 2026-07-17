@@ -5,7 +5,7 @@ import { useComputed, useSignal } from "@preact/signals";
 import { useEffect, useRef } from "preact/hooks";
 import MarkdownView from "@/components/MarkdownView.tsx";
 import { useChat } from "@/hooks/useChat.ts";
-import { currentWorkspaceId } from "@/signals/workspace.ts";
+import { workspaces } from "@/signals/workspace.ts";
 
 function pprint<T>(a: string | T) {
   let object: unknown;
@@ -72,7 +72,7 @@ function renderItem(item: StreamableOutputItem) {
 export default function Chat() {
   const { messages, streaming, send } = useChat(
     () =>
-      `/api/workspaces/${encodeURIComponent(currentWorkspaceId.value)}/chat`,
+      `/api/workspaces/${encodeURIComponent(workspaces.currentWorkspaceId.value)}/chat`,
   );
   const input = useSignal("");
   const scrollRef = useRef<HTMLDivElement>(null);

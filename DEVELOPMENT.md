@@ -181,7 +181,7 @@ essayist/
         │   ├── marks.ts           # MarksModel — per-file marks with reload support
         │   ├── openedFiles.ts     # OpenedFilesModel — selectedFile, openedFiles, fileHistory
         │   ├── preferences.ts     # viewerFont, viewMode persistent signals
-        │   ├── workspace.ts       # currentWorkspaceId + workspaces signals; bootstraps from /api/workspaces
+        │   ├── workspace.ts       # WorkspaceModel singleton (workspaces): currentWorkspaceId + list + load/select/create
         │   └── editorSelection.ts # Per-path editor-selection signals (block/formats/markIds)
         ├── utils/
         │   ├── asyncState.ts            # createAsyncState() — loading/error state helper
@@ -243,10 +243,14 @@ essayist/
 - **`packages/web/routes/api/workspaces/[wsId]/members/[userId].ts`** — DELETE
   `.../members/:userId` (remove a member; owner-only, 409 on last-owner
   removal).
-- **`packages/web/signals/workspace.ts`** — `currentWorkspaceId` (persistent)
-  and `workspaces` signals; `loadWorkspaces()` bootstraps from
-  `GET /api/workspaces` on the client. Data models gate their loads on
-  `currentWorkspaceId` becoming non-empty.
+- **`packages/web/signals/workspace.ts`** — `WorkspaceModel` (a
+  `createModel` singleton exported as `workspaces`) owning the persistent
+  `currentWorkspaceId` signal, the `list` signal (workspace array), a `current`
+  computed signal, and `loading`/`error` async state. Methods: `load()` bootstraps
+  from `GET /api/workspaces` on the client; `select(id)` switches the active
+  workspace; `create(name)` POSTs and selects the new workspace. Data models
+  gate their loads on `workspaces.currentWorkspaceId` becoming non-empty.
+  Follows the same `createModel` + singleton pattern as `OpenedFilesModel`.
 - **`packages/web/islands/Chat.tsx`** — Interactive Preact island that consumes
   the SSE stream via `useChat`. Renders chat bubbles, tool calls, reasoning, and
   a message input form.

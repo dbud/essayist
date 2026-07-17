@@ -1,6 +1,7 @@
 import type { PageProps } from "fresh";
 import type { State } from "@/define.ts";
 import UserMenu from "@/islands/UserMenu.tsx";
+import WorkspaceMenu from "@/islands/WorkspaceMenu.tsx";
 
 export default function App({ Component, state }: PageProps<unknown, State>) {
   const user = state.user;
@@ -13,7 +14,9 @@ export default function App({ Component, state }: PageProps<unknown, State>) {
       </head>
       <body class="h-dvh bg-base-200 text-base-content flex flex-col">
         <nav class="navbar bg-base-100 shadow-sm z-10">
-          <div class="navbar-start"></div>
+          <div class="navbar-start gap-2">
+            <WorkspaceMenu />
+          </div>
           <div class="navbar-center">
             <a
               href="/"

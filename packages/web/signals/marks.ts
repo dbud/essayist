@@ -1,9 +1,8 @@
 import type { Mark } from "@essayist/core";
-import { createModel, effect, signal, untracked } from "@preact/signals";
-import { IS_BROWSER } from "fresh/runtime";
+import { createModel, signal } from "@preact/signals";
 import type { NodeRange } from "@/editor/textNodeSpans.ts";
 import { useFile } from "@/signals/file.ts";
-import { currentWorkspaceId } from "@/signals/workspace.ts";
+import { onWorkspaceChange, workspaces } from "@/signals/workspace.ts";
 import { asyncComputed } from "@/utils/asyncComputed.ts";
 import createAsyncState from "@/utils/asyncState.ts";
 import { deepComputed } from "@/utils/deepComputed.ts";
@@ -34,7 +33,7 @@ export const MarksModel = createModel((path: string) => {
   );
 
   async function load() {
-    const wsId = currentWorkspaceId.value;
+    const wsId = workspaces.currentWorkspaceId.value;
     if (!wsId) return;
     const result = await run(async () => {
       const res = await fetch(
@@ -45,10 +44,7 @@ export const MarksModel = createModel((path: string) => {
     if (result) marks.value = result;
   }
 
-  if (IS_BROWSER)
-    effect(() => {
-      if (currentWorkspaceId.value) untracked(load);
-    });
+  onWorkspaceChange(load);
 
   return {
     marks,
