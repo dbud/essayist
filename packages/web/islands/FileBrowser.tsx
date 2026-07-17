@@ -12,13 +12,18 @@ function FolderItem({ node }: { node: TreeNode }) {
         {/** biome-ignore lint/a11y/useSemanticElements: summary is clickable */}
         <summary
           role="button"
+          class="w-full"
           onClick={(e) => {
             e.preventDefault();
             open.value = !open.value;
           }}
         >
-          {open.value ? <FolderOpen size={16} /> : <Folder size={16} />}
-          {node.name}
+          {open.value ? (
+            <FolderOpen size={16} class="shrink-0" />
+          ) : (
+            <Folder size={16} class="shrink-0" />
+          )}
+          <span class="break-all min-w-0">{node.name}</span>
         </summary>
         <ul>
           {node.children.map((child) =>
@@ -39,11 +44,11 @@ function FileItem({ node }: { node: TreeNode }) {
     <li>
       <button
         type="button"
-        class={node.isSelected.value ? "bg-primary/10" : ""}
+        class={`${node.isSelected.value ? "bg-primary/10" : ""} w-full`}
         onClick={() => openedFiles.open(node.path)}
       >
-        <FileText size={16} />
-        {node.name}
+        <FileText size={16} class="shrink-0" />
+        <span class="break-all min-w-0">{node.name}</span>
       </button>
     </li>
   );
