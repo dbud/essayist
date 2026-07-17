@@ -13,7 +13,7 @@ import { persistentSignal } from "@/utils/persistentSignal.ts";
 export const WorkspacesModel = createModel(() => {
   const currentWorkspaceId = persistentSignal<string>("workspaceId", "");
   const list = signal<Workspace[]>([]);
-  const [run, { loading, error }] = createAsyncState();
+  const [run, { loading, error }] = createAsyncState(true);
 
   const current = computed(() =>
     list.value.find((w) => w.id === currentWorkspaceId.value),

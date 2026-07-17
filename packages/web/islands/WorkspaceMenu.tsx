@@ -6,7 +6,17 @@ import { workspaces } from "@/signals/workspace.ts";
 
 export default function WorkspaceMenu() {
   const dialogOpen = useSignal(false);
-  const { list, current, currentWorkspaceId, select } = workspaces;
+  const { list, current, currentWorkspaceId, select, loading } = workspaces;
+
+  if (loading.value) {
+    return (
+      <button type="button" class="btn btn-sm btn-ghost gap-2" disabled>
+        <span class="loading loading-spinner loading-sm" />
+        <span>Loading…</span>
+      </button>
+    );
+  }
+
   const label = current.value?.name ?? "Select project";
 
   return (
