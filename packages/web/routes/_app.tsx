@@ -14,9 +14,7 @@ export default function App({ Component, state }: PageProps<unknown, State>) {
       </head>
       <body class="h-dvh bg-base-200 text-base-content flex flex-col">
         <nav class="navbar bg-base-100 shadow-sm z-10">
-          <div class="navbar-start gap-2">
-            <WorkspaceMenu />
-          </div>
+          <div class="navbar-start gap-2">{user && <WorkspaceMenu />}</div>
           <div class="navbar-center">
             <a
               href="/"
