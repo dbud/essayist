@@ -18,12 +18,17 @@ export const OpenedFilesModel = createModel(() => {
     [],
   );
 
-  // Close the sidebar overlay once a file is selected (small-screen UX).
+  // Auto-manage the sidebar based on whether any files are open.
   if (IS_BROWSER) {
     effect(() => {
       selected.value;
-      sidebarOverlayOpen.value = false;
-      if (opened.value.length === 0) sidebarCollapsed.value = false;
+      const empty = opened.value.length === 0;
+      // Desktop: auto-expand the sidebar when there are no files to show.
+      if (empty) sidebarCollapsed.value = false;
+      // Mobile: keep the file browser overlay open when there are no opened
+      // files so the user can pick one; close it once a file is selected so
+      // the viewer is visible.
+      sidebarOverlayOpen.value = empty;
     });
   }
 
