@@ -7,6 +7,17 @@ export interface User {
   createdAt: number;
 }
 
+/** Editable profile fields shared by {@link User}. Used for create/update. */
+export interface UserProfile {
+  name?: string;
+  picture?: string;
+}
+
+/** Input for creating a user: the unique email plus optional profile fields. */
+export interface UserInput extends UserProfile {
+  email: string;
+}
+
 /**
  * Membership role within a workspace. `owner` >= `editor`: an owner can do
  * everything an editor can, plus manage members and delete the workspace.

@@ -11,11 +11,11 @@ function createStore() {
 
 Deno.test("WorkspaceStore -- create + get user", async () => {
   const store = createStore();
-  const user = await store.createUser(
-    "alice@example.com",
-    "Alice",
-    "https://example.com/a.png",
-  );
+  const user = await store.createUser({
+    email: "alice@example.com",
+    name: "Alice",
+    picture: "https://example.com/a.png",
+  });
   assertEquals(user.email, "alice@example.com");
   assertEquals(user.name, "Alice");
   assertEquals(user.picture, "https://example.com/a.png");
@@ -26,7 +26,7 @@ Deno.test("WorkspaceStore -- create + get user", async () => {
 
 Deno.test("WorkspaceStore -- updateUser patches profile fields", async () => {
   const store = createStore();
-  const created = await store.createUser("alice@example.com");
+  const created = await store.createUser({ email: "alice@example.com" });
   const updated = await store.updateUser(created.id, {
     name: "Alice",
     picture: "https://example.com/a.png",
@@ -49,9 +49,9 @@ Deno.test("WorkspaceStore -- getUser missing returns undefined", async () => {
 
 Deno.test("WorkspaceStore -- duplicate email is rejected", async () => {
   const store = createStore();
-  await store.createUser("bob@example.com");
+  await store.createUser({ email: "bob@example.com" });
   await assertRejects(
-    () => store.createUser("bob@example.com"),
+    () => store.createUser({ email: "bob@example.com" }),
     UserEmailTakenError,
   );
 });
@@ -60,7 +60,7 @@ Deno.test("WorkspaceStore -- duplicate email is rejected", async () => {
 
 Deno.test("WorkspaceStore -- createWorkspace adds owner membership", async () => {
   const store = createStore();
-  const owner = await store.createUser("owner@example.com");
+  const owner = await store.createUser({ email: "owner@example.com" });
   const ws = await store.createWorkspace("Essays", owner.id);
 
   assertEquals(ws.name, "Essays");
@@ -73,8 +73,8 @@ Deno.test("WorkspaceStore -- createWorkspace adds owner membership", async () =>
 
 Deno.test("WorkspaceStore -- listWorkspacesForUser returns memberships", async () => {
   const store = createStore();
-  const alice = await store.createUser("alice@example.com");
-  const bob = await store.createUser("bob@example.com");
+  const alice = await store.createUser({ email: "alice@example.com" });
+  const bob = await store.createUser({ email: "bob@example.com" });
 
   const ws1 = await store.createWorkspace("One", alice.id);
   const ws2 = await store.createWorkspace("Two", alice.id);
@@ -94,8 +94,8 @@ Deno.test("WorkspaceStore -- getWorkspace missing returns undefined", async () =
 
 Deno.test("WorkspaceStore -- addMember + getMembers", async () => {
   const store = createStore();
-  const owner = await store.createUser("owner@example.com");
-  const editor = await store.createUser("editor@example.com");
+  const owner = await store.createUser({ email: "owner@example.com" });
+  const editor = await store.createUser({ email: "editor@example.com" });
   const ws = await store.createWorkspace("WS", owner.id);
 
   await store.addMember(ws.id, editor.id, "editor");
@@ -106,8 +106,8 @@ Deno.test("WorkspaceStore -- addMember + getMembers", async () => {
 
 Deno.test("WorkspaceStore -- addMember upserts role", async () => {
   const store = createStore();
-  const owner = await store.createUser("owner@example.com");
-  const user = await store.createUser("user@example.com");
+  const owner = await store.createUser({ email: "owner@example.com" });
+  const user = await store.createUser({ email: "user@example.com" });
   const ws = await store.createWorkspace("WS", owner.id);
 
   await store.addMember(ws.id, user.id, "editor");
@@ -119,8 +119,8 @@ Deno.test("WorkspaceStore -- addMember upserts role", async () => {
 
 Deno.test("WorkspaceStore -- removeMember", async () => {
   const store = createStore();
-  const owner = await store.createUser("owner@example.com");
-  const user = await store.createUser("user@example.com");
+  const owner = await store.createUser({ email: "owner@example.com" });
+  const user = await store.createUser({ email: "user@example.com" });
   const ws = await store.createWorkspace("WS", owner.id);
   await store.addMember(ws.id, user.id, "editor");
 
@@ -133,9 +133,9 @@ Deno.test("WorkspaceStore -- removeMember", async () => {
 
 Deno.test("WorkspaceStore -- hasAccess", async () => {
   const store = createStore();
-  const owner = await store.createUser("owner@example.com");
-  const editor = await store.createUser("editor@example.com");
-  const outsider = await store.createUser("outsider@example.com");
+  const owner = await store.createUser({ email: "owner@example.com" });
+  const editor = await store.createUser({ email: "editor@example.com" });
+  const outsider = await store.createUser({ email: "outsider@example.com" });
   const ws = await store.createWorkspace("WS", owner.id);
   await store.addMember(ws.id, editor.id, "editor");
 
@@ -158,7 +158,7 @@ Deno.test("WorkspaceStore -- hasAccess", async () => {
 
 Deno.test("WorkspaceStore -- cannot remove the last owner", async () => {
   const store = createStore();
-  const owner = await store.createUser("owner@example.com");
+  const owner = await store.createUser({ email: "owner@example.com" });
   const ws = await store.createWorkspace("WS", owner.id);
 
   await assertRejects(
@@ -171,7 +171,7 @@ Deno.test("WorkspaceStore -- cannot remove the last owner", async () => {
 
 Deno.test("WorkspaceStore -- cannot demote the last owner via addMember", async () => {
   const store = createStore();
-  const owner = await store.createUser("owner@example.com");
+  const owner = await store.createUser({ email: "owner@example.com" });
   const ws = await store.createWorkspace("WS", owner.id);
 
   await assertRejects(
@@ -183,8 +183,8 @@ Deno.test("WorkspaceStore -- cannot demote the last owner via addMember", async 
 
 Deno.test("WorkspaceStore -- can remove an owner when another owner exists", async () => {
   const store = createStore();
-  const a = await store.createUser("a@example.com");
-  const b = await store.createUser("b@example.com");
+  const a = await store.createUser({ email: "a@example.com" });
+  const b = await store.createUser({ email: "b@example.com" });
   const ws = await store.createWorkspace("WS", a.id);
   await store.addMember(ws.id, b.id, "owner");
 

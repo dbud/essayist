@@ -179,8 +179,14 @@ export async function seedDemo(
     return loadDemo(store);
   }
 
-  const demoUser = await store.createUser("demo@example.com", "Demo User");
-  const demoUser2 = await store.createUser("demo2@example.com", "Demo User 2");
+  const demoUser = await store.createUser({
+    email: "demo@example.com",
+    name: "Demo User",
+  });
+  const demoUser2 = await store.createUser({
+    email: "demo2@example.com",
+    name: "Demo User 2",
+  });
   const demoWorkspace = await store.createWorkspace("Demo", demoUser.id);
 
   await seedDemoFiles(new VirtualFileSystem(adapter, demoWorkspace.id));

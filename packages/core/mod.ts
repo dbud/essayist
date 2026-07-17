@@ -51,6 +51,8 @@ export {
   type Role,
   type User,
   UserEmailTakenError,
+  type UserInput,
+  type UserProfile,
   type Workspace,
   type WorkspaceMember,
 } from "@/workspace/types.ts";

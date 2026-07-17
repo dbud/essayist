@@ -19,8 +19,7 @@ export const handler = define.handlers(async (ctx) => {
   let user = await store.getUserByEmail(info.email);
   if (!user) {
     try {
-      // TODO change createUser signature to accept options bag
-      user = await store.createUser(info.email, info.name, info.picture);
+      user = await store.createUser(info);
     } catch (error) {
       // Race: another concurrent login created the same email first.
       if (error instanceof UserEmailTakenError) {

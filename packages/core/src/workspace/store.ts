@@ -3,7 +3,14 @@ import {
   type Key,
   type PersistenceAdapter,
 } from "@/persistence/mod.ts";
-import type { Role, User, Workspace, WorkspaceMember } from "./types.ts";
+import type {
+  Role,
+  User,
+  UserInput,
+  UserProfile,
+  Workspace,
+  WorkspaceMember,
+} from "./types.ts";
 import { LastOwnerError, UserEmailTakenError } from "./types.ts";
 
 // Key layout (all top-level parts are distinct to avoid prefix collisions):
@@ -38,22 +45,16 @@ export class WorkspaceStore {
 
   /**
    * Create a user with a unique email. Throws {@link UserEmailTakenError} on
-   * conflict. `name` and `picture` are optional profile fields (e.g. from
-   * OAuth).
+   * conflict. `data` carries the email plus optional display fields (e.g.
+   * from OAuth).
    */
-  async createUser(
-    email: string,
-    name?: string,
-    picture?: string,
-  ): Promise<User> {
+  async createUser(data: UserInput): Promise<User> {
     const user: User = {
       id: crypto.randomUUID(),
-      email,
-      name,
-      picture,
+      ...data,
       createdAt: Date.now(),
     };
-    const emailKey: Key = [USER_EMAILS, email];
+    const emailKey: Key = [USER_EMAILS, data.email];
     try {
       await this.#adapter.batch(
         [
@@ -65,7 +66,7 @@ export class WorkspaceStore {
       );
     } catch (error) {
       if (error instanceof ConcurrentModificationError) {
-        throw new UserEmailTakenError(email);
+        throw new UserEmailTakenError(data.email);
       }
       throw error;
     }
@@ -90,7 +91,7 @@ export class WorkspaceStore {
    */
   async updateUser(
     id: string,
-    changes: { name?: string; picture?: string },
+    changes: UserProfile,
   ): Promise<User | undefined> {
     const key: Key = [USERS, id];
     const entry = await this.#adapter.get<User>(key);

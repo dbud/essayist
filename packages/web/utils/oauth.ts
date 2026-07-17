@@ -3,6 +3,7 @@ import {
   createHelpers,
   type Helpers,
 } from "@deno/kv-oauth";
+import type { UserInput } from "@essayist/core";
 
 /**
  * Google OAuth helpers
@@ -25,13 +26,7 @@ export function getOAuthHelpers(request: Request): Helpers {
   return helpers;
 }
 
-export interface GoogleUserInfo {
-  sub: string;
-  email: string;
-  email_verified?: boolean;
-  name?: string;
-  picture?: string;
-}
+export type GoogleUserInfo = UserInput;
 
 /** Fetch the authenticated user's profile from Google's userinfo endpoint. */
 export async function getGoogleUserInfo(
@@ -43,5 +38,10 @@ export async function getGoogleUserInfo(
   if (!res.ok) {
     throw new Error(`google userinfo request failed: ${res.status}`);
   }
-  return await res.json();
+  const body = (await res.json()) as {
+    email: string;
+    name?: string;
+    picture?: string;
+  };
+  return { email: body.email, name: body.name, picture: body.picture };
 }
