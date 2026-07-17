@@ -11,12 +11,34 @@ function createStore() {
 
 Deno.test("WorkspaceStore -- create + get user", async () => {
   const store = createStore();
-  const user = await store.createUser("alice@example.com", "Alice");
+  const user = await store.createUser(
+    "alice@example.com",
+    "Alice",
+    "https://example.com/a.png",
+  );
   assertEquals(user.email, "alice@example.com");
   assertEquals(user.name, "Alice");
+  assertEquals(user.picture, "https://example.com/a.png");
 
   assertEquals((await store.getUser(user.id))?.email, "alice@example.com");
   assertEquals((await store.getUserByEmail("alice@example.com"))?.id, user.id);
+});
+
+Deno.test("WorkspaceStore -- updateUser patches profile fields", async () => {
+  const store = createStore();
+  const created = await store.createUser("alice@example.com");
+  const updated = await store.updateUser(created.id, {
+    name: "Alice",
+    picture: "https://example.com/a.png",
+  });
+  assertEquals(updated?.name, "Alice");
+  assertEquals(updated?.picture, "https://example.com/a.png");
+  assertEquals((await store.getUser(created.id))?.name, "Alice");
+});
+
+Deno.test("WorkspaceStore -- updateUser returns undefined for unknown id", async () => {
+  const store = createStore();
+  assertEquals(await store.updateUser("nope", { name: "x" }), undefined);
 });
 
 Deno.test("WorkspaceStore -- getUser missing returns undefined", async () => {

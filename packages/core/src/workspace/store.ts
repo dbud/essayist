@@ -36,12 +36,21 @@ export class WorkspaceStore {
 
   // -- users --
 
-  /** Create a user with a unique email. Throws {@link UserEmailTakenError} on conflict. */
-  async createUser(email: string, name?: string): Promise<User> {
+  /**
+   * Create a user with a unique email. Throws {@link UserEmailTakenError} on
+   * conflict. `name` and `picture` are optional profile fields (e.g. from
+   * OAuth).
+   */
+  async createUser(
+    email: string,
+    name?: string,
+    picture?: string,
+  ): Promise<User> {
     const user: User = {
       id: crypto.randomUUID(),
       email,
       name,
+      picture,
       createdAt: Date.now(),
     };
     const emailKey: Key = [USER_EMAILS, email];
@@ -71,6 +80,26 @@ export class WorkspaceStore {
     const userId = (await this.#adapter.get<string>([USER_EMAILS, email]))
       ?.value;
     return userId ? await this.getUser(userId) : undefined;
+  }
+
+  /**
+   * Patch a user's profile fields (name / picture). Uses optimistic
+   * concurrency on the user record; throws {@link ConcurrentModificationError}
+   * if the user was modified concurrently. Returns the updated user, or
+   * `undefined` if the id is unknown.
+   */
+  async updateUser(
+    id: string,
+    changes: { name?: string; picture?: string },
+  ): Promise<User | undefined> {
+    const key: Key = [USERS, id];
+    const entry = await this.#adapter.get<User>(key);
+    if (entry === undefined) return undefined;
+    const user: User = { ...entry.value, ...changes };
+    await this.#adapter.batch([{ type: "set", key, value: user }], {
+      checks: [{ key, versionstamp: entry.versionstamp }],
+    });
+    return user;
   }
 
   // -- workspaces --

@@ -19,7 +19,8 @@ export const handler = define.handlers(async (ctx) => {
   let user = await store.getUserByEmail(info.email);
   if (!user) {
     try {
-      user = await store.createUser(info.email, info.name);
+      // TODO change createUser signature to accept options bag
+      user = await store.createUser(info.email, info.name, info.picture);
     } catch (error) {
       // Race: another concurrent login created the same email first.
       if (error instanceof UserEmailTakenError) {
@@ -31,6 +32,15 @@ export const handler = define.handlers(async (ctx) => {
   }
   if (!user) {
     throw new Error(`failed to resolve user for ${info.email}`);
+  }
+
+  // Refresh name/picture from Google on each login (they can change).
+  if (info.name !== user.name || info.picture !== user.picture) {
+    const updated = await store.updateUser(user.id, {
+      name: info.name,
+      picture: info.picture,
+    });
+    if (updated) user = updated;
   }
 
   await createSession(sessionId, user.id);

@@ -1,16 +1,12 @@
 import type { User } from "@essayist/core";
-import { LogOut, RotateCcw, User as UserIcon } from "lucide-preact";
+import { LogOut, RotateCcw } from "lucide-preact";
+import Avatar from "@/components/Avatar.tsx";
 import Dropdown from "@/components/Dropdown.tsx";
 
 interface UserMenuProps {
   user: User;
 }
 
-/**
- * Navbar account menu: a single icon trigger opening a dropdown with the
- * signed-in user's email, a clear-cache action, and a sign-out link. Lives in
- * the navbar only when a user is resolved (see routes/_app.tsx).
- */
 export default function UserMenu({ user }: UserMenuProps) {
   const clearCache = () => {
     localStorage.clear();
@@ -19,14 +15,21 @@ export default function UserMenu({ user }: UserMenuProps) {
 
   return (
     <Dropdown
-      buttonClass="btn btn-ghost btn-circle"
+      buttonClass="btn btn-ghost btn-circle p-0 overflow-hidden"
       dropdownClass="dropdown-end"
-      button={<UserIcon size={18} />}
+      button={<Avatar user={user} />}
     >
       {(close) => (
         <ul class="dropdown-content menu bg-base-100 rounded-box z-1 w-56 p-2 shadow-sm">
-          <li class="pointer-events-none px-2 py-1 truncate text-sm text-base-content/60">
-            {user.email}
+          <li class="pointer-events-none">
+            <div class="flex flex-col items-start px-2 py-2">
+              <div class="truncate text-sm font-medium">
+                {user.name ?? user.email}
+              </div>
+              <div class="truncate text-xs text-base-content/60">
+                {user.email}
+              </div>
+            </div>
           </li>
           <li>
             <button
