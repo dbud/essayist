@@ -1,12 +1,22 @@
 import { createModel, effect } from "@preact/signals";
 import { IS_BROWSER } from "fresh/runtime";
 import { sidebarCollapsed, sidebarOverlayOpen } from "@/signals/sidebar.ts";
-import { persistentSignal } from "@/utils/persistentSignal.ts";
+import { workspaces } from "@/signals/workspace.ts";
+import { scopedPersistentSignal } from "@/utils/persistentSignal.ts";
 
 export const OpenedFilesModel = createModel(() => {
-  const selected = persistentSignal("selectedFile", "");
-  const opened = persistentSignal<string[]>("openedFiles", []);
-  const history = persistentSignal<string[]>("fileHistory", []);
+  const selected = scopedPersistentSignal(
+    () => `selectedFile:${workspaces.currentWorkspaceId.value}`,
+    "",
+  );
+  const opened = scopedPersistentSignal<string[]>(
+    () => `openedFiles:${workspaces.currentWorkspaceId.value}`,
+    [],
+  );
+  const history = scopedPersistentSignal<string[]>(
+    () => `fileHistory:${workspaces.currentWorkspaceId.value}`,
+    [],
+  );
 
   // Close the sidebar overlay once a file is selected (small-screen UX).
   if (IS_BROWSER) {

@@ -33,6 +33,51 @@ export function persistentSignal<T>(key: string, fallback: T): Signal<T> {
   return s;
 }
 
+/**
+ * A persistent signal whose storage key is derived from other signals. When
+ * the key changes (because a signal `buildKey` reads changed), the signal
+ * re-reads from the new key; subsequent writes go to the new key. This lets
+ * per-scope state (e.g. per-workspace opened files) emerge from a scope signal
+ * like `currentWorkspaceId` without manual reset effects.
+ *
+ * The load effect tracks the scope (via `buildKey`); the persist effect
+ * tracks only the value, reading the current key from a closure var the load
+ * effect keeps fresh. This avoids the race where a scope change would otherwise
+ * clobber the newly-keyed storage with the old value.
+ */
+export function scopedPersistentSignal<T>(
+  buildKey: () => string,
+  fallback: T,
+): Signal<T> {
+  const s = signal<T>(IS_BROWSER ? readStored(buildKey(), fallback) : fallback);
+
+  if (!IS_BROWSER) return s;
+
+  let currentKey = buildKey();
+
+  // Re-load when the key changes (tracks whatever buildKey reads).
+  effect(() => {
+    currentKey = buildKey();
+    s.value = readStored(currentKey, fallback);
+  });
+
+  // Persist on value change. Tracks ONLY s.value; the key comes from the
+  // closure var above (untracked), so a scope change doesn't trigger a write.
+  let lastValue = s.value;
+  effect(() => {
+    const v = s.value;
+    if (v === lastValue) return;
+    lastValue = v;
+    try {
+      localStorage.setItem(currentKey, JSON.stringify(v));
+    } catch {
+      // ignore storage/serialisation errors
+    }
+  });
+
+  return s;
+}
+
 export function usePersistentSignal<T>(key: string, fallback: T) {
   const s = useSignal<T>(fallback);
   const skipNextPersist = useRef(false);
