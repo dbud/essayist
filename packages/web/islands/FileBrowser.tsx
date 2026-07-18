@@ -1,6 +1,6 @@
 import { useSignal } from "@preact/signals";
 import { FileText, Folder, FolderOpen } from "lucide-preact";
-import { type TreeNode, useFiles } from "@/signals/fileTree.ts";
+import { getFileTree, type TreeNode } from "@/signals/fileTree.ts";
 import { getOpenedFiles } from "@/signals/openedFiles.ts";
 
 function FolderItem({ node }: { node: TreeNode }) {
@@ -56,7 +56,9 @@ function FileItem({ node }: { node: TreeNode }) {
 }
 
 export default function FileBrowser() {
-  const { tree, loading, error } = useFiles();
+  const files = getFileTree();
+  if (!files) return null;
+  const { tree, loading, error } = files;
 
   if (error.value) {
     return <div class="text-error">{error.value}</div>;

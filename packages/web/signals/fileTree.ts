@@ -1,40 +1,47 @@
 import type { FileEntry } from "@essayist/core";
 import { computed, createModel, type Signal, signal } from "@preact/signals";
-import { useMemo } from "preact/hooks";
-import { getOpenedFiles } from "@/signals/openedFiles.ts";
-import { onWorkspaceChange, workspaces } from "@/signals/workspace.ts";
+import { IS_BROWSER } from "fresh/runtime";
+import { getOpenedFilesFor } from "@/signals/openedFiles.ts";
+import { workspaces } from "@/signals/workspace.ts";
 import createAsyncState from "@/utils/asyncState.ts";
 
-export const FileTreeModel = createModel(() => {
+export const FileTreeModel = createModel((workspaceId: string) => {
   const files = signal<FileEntry[]>([]);
-  const [run, { loading, error }] = createAsyncState();
+  const [run, { loading, error }] = createAsyncState(true);
 
-  const tree = computed(() => buildFileTree(files.value));
+  const tree = computed(() => buildFileTree(files.value, workspaceId));
 
   async function load() {
-    const wsId = workspaces.currentWorkspaceId.value;
-    if (!wsId) return;
     const result = await run(async () => {
       const res = await fetch(
-        `/api/workspaces/${encodeURIComponent(wsId)}/files`,
+        `/api/workspaces/${encodeURIComponent(workspaceId)}/files`,
       );
+      if (!res.ok) throw new Error(`Request failed (${res.status})`);
       return (await res.json()) as FileEntry[];
     });
     if (result) files.value = result;
   }
 
-  onWorkspaceChange(load);
+  if (IS_BROWSER) void load();
 
-  return {
-    files,
-    loading,
-    error,
-    tree,
-  };
+  return { files, loading, error, tree };
 });
 
-export function useFiles() {
-  return useMemo(() => new FileTreeModel(), []);
+const cache = new Map<string, FileTree>();
+
+export type FileTree = InstanceType<typeof FileTreeModel>;
+
+export function getFileTreeFor(workspaceId: string): FileTree {
+  return cache.getOrInsertComputed(
+    workspaceId,
+    () => new FileTreeModel(workspaceId),
+  );
+}
+
+// Returns `null` while no workspace is selected (bootstrap, login page).
+export function getFileTree(): FileTree | null {
+  const wsId = workspaces.currentWorkspaceId.value;
+  return wsId ? getFileTreeFor(wsId) : null;
 }
 
 export interface TreeNode {
@@ -45,7 +52,7 @@ export interface TreeNode {
   children: TreeNode[];
 }
 
-function buildFileTree(files: FileEntry[]): TreeNode {
+function buildFileTree(files: FileEntry[], workspaceId: string): TreeNode {
   const root: TreeNode = {
     name: "",
     path: "",
@@ -69,7 +76,9 @@ function buildFileTree(files: FileEntry[]): TreeNode {
           name: part,
           path,
           isFile,
-          isSelected: computed(() => getOpenedFiles()?.selected.value === path),
+          isSelected: computed(
+            () => getOpenedFilesFor(workspaceId).selected.value === path,
+          ),
           children: [],
         };
         current.children.push(child);
