@@ -1,11 +1,5 @@
 import type { Workspace } from "@essayist/core";
-import {
-  computed,
-  createModel,
-  effect,
-  signal,
-  untracked,
-} from "@preact/signals";
+import { computed, createModel, signal } from "@preact/signals";
 import { IS_BROWSER } from "fresh/runtime";
 import createAsyncState from "@/utils/asyncState.ts";
 import { persistentSignal } from "@/utils/persistentSignal.ts";
@@ -71,10 +65,3 @@ export const WorkspacesModel = createModel(() => {
 });
 
 export const workspaces = new WorkspacesModel();
-
-export function onWorkspaceChange(fn: () => void | Promise<void>): void {
-  if (!IS_BROWSER) return;
-  effect(() => {
-    if (workspaces.currentWorkspaceId.value) untracked(fn);
-  });
-}
