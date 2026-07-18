@@ -4,10 +4,14 @@ import { IS_BROWSER } from "fresh/runtime";
 import { getOpenedFilesFor } from "@/signals/openedFiles.ts";
 import { workspaces } from "@/signals/workspace.ts";
 import createAsyncState from "@/utils/asyncState.ts";
+import type { UploadedFile } from "@/utils/fileUpload.ts";
+import createProgressState from "@/utils/progressState.ts";
 
 export const FileTreeModel = createModel((workspaceId: string) => {
   const files = signal<FileEntry[]>([]);
   const [run, { loading, error }] = createAsyncState(true);
+  const [runUpload, { progress: uploadProgress, clear: clearUploadProgress }] =
+    createProgressState();
 
   const tree = computed(() => buildFileTree(files.value, workspaceId));
 
@@ -41,9 +45,49 @@ export const FileTreeModel = createModel((workspaceId: string) => {
     await load();
   }
 
+  /**
+   * Upsert files via PUT. Used by uploads where replacing existing content
+   * is expected. Files are uploaded in parallel; the runner's
+   * `uploadProgress` signal updates as each file settles so the caller can
+   * subscribe via `effect()`. The tree is reloaded once after all uploads settle.
+   */
+  async function uploadFiles(items: UploadedFile[]): Promise<void> {
+    if (items.length === 0) return;
+
+    await runUpload(items, async ({ path, content }) => {
+      const res = await fetch(
+        `/api/workspaces/${encodeURIComponent(workspaceId)}/files/${encodeURIComponent(path)}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ content }),
+        },
+      );
+      if (!res.ok) {
+        const body = (await res.json().catch(() => null)) as {
+          error?: string;
+        } | null;
+        throw new Error(
+          `${path}: ${body?.error ?? `Request failed (${res.status})`}`,
+        );
+      }
+    });
+
+    await load();
+  }
+
   if (IS_BROWSER) void load();
 
-  return { files, loading, error, tree, createFile };
+  return {
+    files,
+    loading,
+    error,
+    tree,
+    createFile,
+    uploadFiles,
+    uploadProgress,
+    clearUploadProgress,
+  };
 });
 
 const cache = new Map<string, FileTree>();

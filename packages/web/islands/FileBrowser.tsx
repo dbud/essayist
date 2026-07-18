@@ -1,6 +1,7 @@
 import { useSignal } from "@preact/signals";
 import { FileText, Folder, FolderOpen, Plus } from "lucide-preact";
 import CreateFileDialog from "@/islands/CreateFileDialog.tsx";
+import FileUploader from "@/islands/FileUploader.tsx";
 import { getFileTree, type TreeNode } from "@/signals/fileTree.ts";
 import { getOpenedFiles } from "@/signals/openedFiles.ts";
 
@@ -89,6 +90,7 @@ export default function FileBrowser() {
           <Plus size={16} />
           New file
         </button>
+        <FileUploader />
       </div>
       <CreateFileDialog open={dialogOpen} />
     </div>
