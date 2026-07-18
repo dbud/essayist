@@ -1,6 +1,6 @@
 import { FileText, X } from "lucide-preact";
 import Tabs from "@/components/Tabs.tsx";
-import { useFile } from "@/signals/file.ts";
+import { getFile } from "@/signals/file.ts";
 import { getOpenedFiles, type OpenedFiles } from "@/signals/openedFiles.ts";
 
 function Tab({
@@ -11,7 +11,7 @@ function Tab({
   openedFiles: OpenedFiles;
 }) {
   const name = path.split("/").pop() ?? path;
-  const { dirty, isSelected } = useFile(path);
+  const { dirty, isSelected } = getFile(path);
 
   return (
     <button

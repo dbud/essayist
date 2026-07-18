@@ -1,7 +1,7 @@
 import type { Mark } from "@essayist/core";
 import { createModel, signal } from "@preact/signals";
 import type { NodeRange } from "@/editor/textNodeSpans.ts";
-import { useFile } from "@/signals/file.ts";
+import { getFile } from "@/signals/file.ts";
 import { onWorkspaceChange, workspaces } from "@/signals/workspace.ts";
 import { asyncComputed } from "@/utils/asyncComputed.ts";
 import createAsyncState from "@/utils/asyncState.ts";
@@ -14,7 +14,7 @@ export interface RangedMark {
 }
 
 export const MarksModel = createModel((path: string) => {
-  const { content, markdown, getNodeRange } = useFile(path);
+  const { content, markdown, getNodeRange } = getFile(path);
   const marks = signal<Mark[]>([]);
   const [run, { loading, error }] = createAsyncState();
 
@@ -59,7 +59,7 @@ export const MarksModel = createModel((path: string) => {
 
 const marksMap = new Map<string, InstanceType<typeof MarksModel>>();
 
-export function useMarks(path: string) {
+export function getMarks(path: string) {
   return marksMap.getOrInsertComputed(path, () => new MarksModel(path));
 }
 

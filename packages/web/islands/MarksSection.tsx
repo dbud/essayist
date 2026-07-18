@@ -4,8 +4,8 @@ import { Crosshair } from "lucide-preact";
 import { SELECT_MARK_COMMAND } from "@/editor/markExtension.ts";
 import Section from "@/islands/Section.tsx";
 import { activeEditor } from "@/signals/activeEditor.ts";
-import { useEditorSelection } from "@/signals/editorSelection.ts";
-import { useMarks } from "@/signals/marks.ts";
+import { getEditorSelection } from "@/signals/editorSelection.ts";
+import { getMarks } from "@/signals/marks.ts";
 import { getOpenedFiles } from "@/signals/openedFiles.ts";
 
 function statusBadge(status: MarkStatus) {
@@ -71,8 +71,8 @@ export default function MarksSection() {
 }
 
 function Marks({ path }: { path: string }) {
-  const { resolved, loading } = useMarks(path);
-  const markIds = useEditorSelection(path).markIds.value;
+  const { resolved, loading } = getMarks(path);
+  const markIds = getEditorSelection(path).markIds.value;
   const editor = activeEditor.value;
 
   if (loading.value || resolved.value.length === 0) {

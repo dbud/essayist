@@ -5,8 +5,8 @@ import Toolbar from "@/components/Toolbar.tsx";
 import Editor from "@/islands/editor/Editor.tsx";
 import FileViewerTabs from "@/islands/FileViewerTabs.tsx";
 import SidebarToggle from "@/islands/SidebarToggle.tsx";
-import { useFile } from "@/signals/file.ts";
-import { useMarks } from "@/signals/marks.ts";
+import { getFile } from "@/signals/file.ts";
+import { getMarks } from "@/signals/marks.ts";
 import { getOpenedFiles } from "@/signals/openedFiles.ts";
 import { delayedRise } from "@/utils/delayedRise.ts";
 
@@ -29,8 +29,8 @@ export default function FileViewer() {
 
 function FileViewerBody({ path }: { path: string }) {
   const { state, initialState, setModifiedState, loading, error } =
-    useFile(path);
-  const { resolving } = useMarks(path);
+    getFile(path);
+  const { resolving } = getMarks(path);
   const resolvingVisible = useMemo(
     () => delayedRise(resolving, 150),
     [resolving],

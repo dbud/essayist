@@ -87,6 +87,6 @@ export const FileModel = createModel((path: string) => {
 
 const fileMap = new Map<string, InstanceType<typeof FileModel>>();
 
-export function useFile(path: string) {
+export function getFile(path: string) {
   return fileMap.getOrInsertComputed(path, () => new FileModel(path));
 }

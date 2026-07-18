@@ -6,9 +6,9 @@ import type { EditorState } from "lexical";
 import { useMemo } from "preact/hooks";
 import { createEditorExtension } from "@/editor/extension.ts";
 import { MARK_RANGE_TAG } from "@/editor/markExtension.ts";
-import { useEditorSelection } from "@/signals/editorSelection.ts";
-import { useFile } from "@/signals/file.ts";
-import { useMarks } from "@/signals/marks.ts";
+import { getEditorSelection } from "@/signals/editorSelection.ts";
+import { getFile } from "@/signals/file.ts";
+import { getMarks } from "@/signals/marks.ts";
 import { viewerFont } from "@/signals/preferences.ts";
 import ActiveEditorRef from "./ActiveEditorRef.tsx";
 
@@ -30,9 +30,9 @@ const contentEditable = (
 );
 
 export default function Editor({ path, state, onChange }: EditorProps) {
-  const { ranges } = useMarks(path);
-  const { textNodeSpans, markdown } = useFile(path);
-  const selection = useEditorSelection(path);
+  const { ranges } = getMarks(path);
+  const { textNodeSpans, markdown } = getFile(path);
+  const selection = getEditorSelection(path);
 
   const extension = useMemo(
     () => ({

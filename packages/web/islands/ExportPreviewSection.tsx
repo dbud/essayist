@@ -1,7 +1,7 @@
 import type { Mark } from "@essayist/core";
 import Section from "@/islands/Section.tsx";
-import { useFile } from "@/signals/file.ts";
-import { useMarks } from "@/signals/marks.ts";
+import { getFile } from "@/signals/file.ts";
+import { getMarks } from "@/signals/marks.ts";
 import { getOpenedFiles } from "@/signals/openedFiles.ts";
 
 export default function ExportPreviewSection() {
@@ -29,8 +29,8 @@ function visualizeWhitespace(text: string): string {
 }
 
 function MarkdownPreview({ path }: { path: string }) {
-  const file = useFile(path);
-  const marks = useMarks(path);
+  const file = getFile(path);
+  const marks = getMarks(path);
   const md = file.markdown.value;
   const resolved = marks.resolved.value;
 

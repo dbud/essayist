@@ -27,6 +27,6 @@ export const defaultEditorSelection: EditorSelection = new EditorSelectionModel(
 
 const map = new Map<string, EditorSelection>();
 
-export function useEditorSelection(path: string): EditorSelection {
+export function getEditorSelection(path: string): EditorSelection {
   return map.getOrInsertComputed(path, () => new EditorSelectionModel(path));
 }

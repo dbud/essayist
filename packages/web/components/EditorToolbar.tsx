@@ -10,7 +10,7 @@ import BlockTypeSelect from "@/components/BlockTypeSelect.tsx";
 import ToolbarButton from "@/components/ToolbarButton.tsx";
 import { $setBlocksType, type BlockType } from "@/editor/blockFormat.ts";
 import { activeEditor } from "@/signals/activeEditor.ts";
-import { useEditorSelection } from "@/signals/editorSelection.ts";
+import { getEditorSelection } from "@/signals/editorSelection.ts";
 
 interface EditorToolbarProps {
   path: string;
@@ -18,7 +18,7 @@ interface EditorToolbarProps {
 
 export default function EditorToolbar({ path }: EditorToolbarProps) {
   const editor = activeEditor.value;
-  const sel = useEditorSelection(path);
+  const sel = getEditorSelection(path);
   if (editor === null) return null;
 
   const format = (fmt: "bold" | "italic" | "strikethrough" | "code") => {
