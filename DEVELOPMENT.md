@@ -106,14 +106,16 @@ essayist/
         ├── client.ts       # Imports global CSS (required by Fresh)
         ├── define.ts       # State type (agent, user, vfs, workspaceId) + createDefine helper
         ├── signals.ts      # activeEditor signal (Lexical editor instance)
-        ├── store.ts        # Shared InMemoryAdapter + WorkspaceStore; seeds demo user/workspace
-        ├── seed.ts         # seedDemoFiles() — demo workspace file/mark content
+        ├── store.ts        # Shared KvAdapter + WorkspaceStore; seeds demo user/workspace
+        ├── seed.ts         # seedDemoFiles(vfs, workspace) — sample files, marks, workspace-{id}.md readme
         ├── vite.config.ts  # Vite + Fresh + Tailwind + core watcher plugin
         ├── _fresh/         # Generated Fresh build output (gitignored)
         ├── assets/
         │   └── styles.css  # Tailwind import + custom "essayist" daisyUI theme
         ├── components/
+        │   ├── Avatar.tsx         # User avatar (picture or fallback icon)
         │   ├── BlockTypeSelect.tsx  # Block-type dropdown (icons per option) using Dropdown
+        │   ├── Dialog.tsx         # Reusable daisyUI modal shell (native <dialog>, Signal-driven open)
         │   ├── Dropdown.tsx         # Reusable dropdown shell (open/outside-click/close)
         │   ├── EditorToolbar.tsx    # Bold/italic/strike/code toggles + block-type select
         │   ├── FontSelect.tsx       # Font family dropdown (Serif/Sans/Mono) using Dropdown
@@ -136,16 +138,20 @@ essayist/
         │   └── useChat.ts          # useChat() hook — SSE chat for Preact islands (takes a URL getter)
         ├── islands/
         │   ├── Chat.tsx            # Interactive Preact island (streaming chat UI)
+        │   ├── CreateWorkspaceDialog.tsx # "New project" modal body (uses Dialog)
         │   ├── UserMenu.tsx      # Navbar account dropdown (email, clear cache, sign out)
         │   ├── ErrorBoundary.tsx   # Preact error boundary with reset button
         │   ├── ExportPreviewSection.tsx  # Export preview with mark highlighting + whitespace viz
         │   ├── FileBrowser.tsx     # File tree sidebar (fetches from /api/workspaces/:wsId/files)
         │   ├── FileViewer.tsx      # File content viewer (markdown or plain text)
+        │   ├── FileViewerTabs.tsx # Open file tabs
         │   ├── LexicalTreeViewSection.tsx  # Debug panel showing active Lexical editor state
         │   ├── MarkRangesSection.tsx  # Debug panel showing resolved mark ranges as JSON
         │   ├── MarksSection.tsx    # Displays marks for the selected file, grouped by thread
         │   ├── Section.tsx         # Collapsible sidebar section (details/summary)
-        │   ├── FileViewerTabs.tsx # Open file tabs (close buttons) using Tabs
+        │   ├── Sidebar.tsx       # File-browser sidebar shell (responsive overlay/column)
+        │   ├── SidebarToggle.tsx # Button to collapse/expand the file-browser sidebar
+        │   ├── WorkspaceMenu.tsx   # Navbar project switcher + creator ("Project:" dropdown)
         │   └── editor/
         │       ├── ActiveEditorRef.tsx  # EditorRefPlugin wrapper that sets/clears activeEditor
         │       └── Editor.tsx           # Lexical rich text editor island component
@@ -153,7 +159,7 @@ essayist/
         │   ├── agent.ts    # Creates Agent from OPENROUTER_API_KEY, attaches to state
         │   └── auth.ts    # Resolves ctx.state.user: X-User-Id header (dev only), OAuth session, or dev demo user
         ├── routes/
-        │   ├── _app.tsx    # HTML shell (navbar, h-dvh body, theme, sign-out link)
+        │   ├── _app.tsx    # HTML shell (navbar w/ WorkspaceMenu + UserMenu, h-dvh body, theme)
         │   ├── index.tsx   # Home page — three-column layout (browser, viewer, sidebar)
         │   ├── login.tsx    # Sign-in landing page (Sign in with Google button)
         │   ├── oauth/
@@ -162,7 +168,7 @@ essayist/
         │   │   └── signout.ts   # GET — clears session cookie + app session, redirects home
         │   └── api/
         │       └── workspaces/
-        │           ├── index.ts                  # GET /api/workspaces (list mine), POST (create)
+        │           ├── index.ts                  # GET /api/workspaces (list mine), POST (create + seed sample files)
         │           └── [wsId]/
         │               ├── _middleware.ts        # Resolve workspace, access check, scoped VFS on state (403)
         │               ├── index.ts              # GET /api/workspaces/:wsId (detail)
@@ -176,15 +182,15 @@ essayist/
         │                   ├── index.ts          # GET .../members (list), POST (add/update, owner-only)
         │                   └── [userId].ts       # DELETE .../members/:userId (remove, owner-only)
         ├── signals/
-        │   ├── file.ts            # FileModel — per-file content, loading, dirty, editor state
-        │   ├── fileTree.ts        # FileTreeModel + useFiles() + buildFileTree()
-        │   ├── marks.ts           # MarksModel — per-file marks with reload support
-        │   ├── openedFiles.ts     # OpenedFilesModel — selectedFile, openedFiles, fileHistory
+        │   ├── file.ts            # FileModel(wsId, path) — per-(ws,path) file content + editor state
+        │   ├── fileTree.ts        # FileTreeModel(wsId) + getFileTree/getFileTreeFor + buildFileTree()
+        │   ├── marks.ts           # MarksModel(wsId, path) — per-(ws,path) marks + resolve/ranges
+        │   ├── openedFiles.ts     # OpenedFilesModel(wsId) — per-workspace selected/opened/history
         │   ├── preferences.ts     # viewerFont, viewMode persistent signals
-        │   ├── workspace.ts       # WorkspaceModel singleton (workspaces): currentWorkspaceId + list + load/select/create
-        │   └── editorSelection.ts # Per-path editor-selection signals (block/formats/markIds)
+        │   ├── workspace.ts       # WorkspacesModel singleton (workspaces): currentWorkspaceId + list + load/select/create
+        │   └── editorSelection.ts # EditorSelectionModel(wsId, path) — per-(ws,path) toolbar/cursor state
         ├── utils/
-        │   ├── asyncState.ts            # createAsyncState() — loading/error state helper
+        │   ├── asyncState.ts            # createAsyncState(initialLoading?) — loading/error state helper
         │   ├── markdown.ts              # renderMarkdown(), markdownToEditorState(), editorStateToMarkdown()
         │   ├── persistentSignal.ts      # persistentSignal() + usePersistentSignal()
         │   ├── sanitize.ts              # sanitizeHtml() — DOMPurify wrapper
@@ -243,30 +249,46 @@ essayist/
 - **`packages/web/routes/api/workspaces/[wsId]/members/[userId].ts`** — DELETE
   `.../members/:userId` (remove a member; owner-only, 409 on last-owner
   removal).
-- **`packages/web/signals/workspace.ts`** — `WorkspaceModel` (a
+- **`packages/web/signals/workspace.ts`** — `WorkspacesModel` (a
   `createModel` singleton exported as `workspaces`) owning the persistent
   `currentWorkspaceId` signal, the `list` signal (workspace array), a `current`
   computed signal, and `loading`/`error` async state. Methods: `load()` bootstraps
   from `GET /api/workspaces` on the client; `select(id)` switches the active
-  workspace; `create(name)` POSTs and selects the new workspace. Data models
-  gate their loads on `workspaces.currentWorkspaceId` becoming non-empty.
-  Follows the same `createModel` + singleton pattern as `OpenedFilesModel`.
+  workspace; `create(name)` POSTs and selects the new workspace. UI copy calls
+  workspaces "projects"; the underlying API/types stay `Workspace`.
+- **`packages/web/islands/WorkspaceMenu.tsx`** — Navbar project switcher.
+  Dropdown (reusing `components/Dropdown`) showing the active project name with
+  a `BriefcaseBusiness` icon; lists all projects to switch via `workspaces.select`,
+  and a "New project" item that opens `CreateWorkspaceDialog`. Returns a disabled
+  spinner button while `workspaces.loading` (no dropdown). Not rendered when
+  `state.user` is unset (see `_app.tsx`).
+- **`packages/web/islands/CreateWorkspaceDialog.tsx`** — Body of the "New project"
+  modal: name input, inline error, loading spinner, calls `workspaces.create`.
+  Uses the reusable `components/Dialog` shell.
+- **`packages/web/components/Dialog.tsx`** — Reusable daisyUI modal backed by a
+  native `<dialog>`. Parent owns an `open: Signal<boolean>`; the component mirrors
+  it into `showModal()`/`close()` via an effect. Caller provides the body
+  (forms / `modal-action` buttons) as children; `title` is optional. Used by
+  `CreateWorkspaceDialog` and ready for confirm dialogs (e.g. member removal).
 - **`packages/web/islands/Chat.tsx`** — Interactive Preact island that consumes
   the SSE stream via `useChat`. Renders chat bubbles, tool calls, reasoning, and
   a message input form.
-- **`packages/web/islands/FileViewer.tsx`** — File content viewer island.
-  Fetches file content from `/api/workspaces/:wsId/files/:path`, renders as
-  markdown or plain text based on view mode. Includes `FontSelect` and
-  `ViewModeSelect` in a `Toolbar`.
-- **`packages/web/islands/FileBrowser.tsx`** — File tree sidebar island. Fetches
-  the file list from `/api/workspaces/:wsId/files`, renders a collapsible tree
-  with folders and files. Uses `FileTreeModel` from `signals/fileTree.ts`.
+- **`packages/web/islands/FileViewer.tsx`** — File content viewer island. Gets
+  `wsId` + `path` from `getOpenedFiles()` + `workspaces.currentWorkspaceId`, gates
+  on both, and passes them down to `FileViewerBody` which calls `getFile(wsId, path)`
+  and `getMarks(wsId, path)`. Renders the Lexical `Editor` plus a `Toolbar` with
+  `FontSelect` and `EditorToolbar`. Per-(workspace, path) so the right file shows
+  after a switch (no stale-content race).
+- **`packages/web/islands/FileBrowser.tsx`** — File tree sidebar island. Calls
+  `getFileTree()` (current workspace or `null`), reads the `tree`/`loading`/`error`
+  signals from the per-workspace `FileTreeModel`, and renders a collapsible tree
+  with folders and files. Long names wrap mid-word (`break-all min-w-0`).
 - **`packages/web/components/Tabs.tsx`** — Generic horizontal tab strip: hides
   the native scrollbar, shows ◀/▶ only on overflow (disabled when the direction
   isn't available), and keeps the active tab scrolled into view.
 - **`packages/web/islands/FileViewerTabs.tsx`** — Open file tabs with close
-  buttons, rendered via `Tabs`. Uses `openedFiles` and `selectedFile` signals
-  from `signals/openedFiles.ts`.
+  buttons, rendered via `Tabs`. Calls `getOpenedFiles()` and threads `wsId` to
+  each `Tab`, which calls `getFile(wsId, path)` for `dirty`/`isSelected`.
 - **`packages/web/islands/Section.tsx`** — Collapsible sidebar section using
   `<details>`/`<summary>` with daisyUI `collapse` styling.
 - **`packages/web/islands/ErrorBoundary.tsx`** — Preact error boundary island
@@ -276,9 +298,10 @@ essayist/
   displays the active Lexical editor's JSON state. Renders inside a collapsible
   `Section` titled "Lexical Editor".
 - **`packages/web/islands/MarksSection.tsx`** — Displays marks for the currently
-  selected file. Reads from `useMarks(path)` (reactive signal), groups by
-  `thread_id`, and renders each group as a daisyUI card. Each mark shows: label,
-  status badge (resolved/stale), selected text, comment, offset, and length.
+  selected file. Gets `wsId` + `path` from `getOpenedFiles()` + `workspaces.currentWorkspaceId`,
+  reads `getMarks(wsId, path)` and `getEditorSelection(wsId, path).markIds`, groups
+  marks by `thread_id`, and renders each group as a daisyUI card. Each mark shows:
+  label, status badge (resolved/stale), selected text, comment, offset, length.
   Includes its own `Section` wrapper titled "Marks". Returns `null` when no file
   is selected, loading, or no marks exist.
 - **`packages/web/islands/MarkRangesSection.tsx`** — Debug panel that displays
@@ -289,8 +312,9 @@ essayist/
 - **`packages/web/islands/ExportPreviewSection.tsx`** — Export preview panel
   that renders the file's markdown content with active (non-stale) marks
   highlighted in yellow. Visualizes whitespace (spaces as `·`, tabs as `→`,
-  newlines as `¬`). Lists stale marks separately below the preview. Uses
-  `useFile(path).markdown` and `useMarks(path).resolved` signals.
+  newlines as `¬`). Lists stale marks separately below the preview. `MarkdownPreview`
+  takes `wsId` + `path` and reads `getFile(wsId, path).markdown` and
+  `getMarks(wsId, path).resolved`.
 - **`packages/web/islands/editor/ActiveEditorRef.tsx`** — Wraps
   `EditorRefPlugin` and a `useEffect` cleanup into a single component. Sets
   `activeEditor.value` on mount and clears it on unmount, preventing stale
@@ -310,34 +334,42 @@ essayist/
   `OPENROUTER_API_KEY` and attaches it to `ctx.state.agent`.
 - **`packages/web/signals.ts`** — Exports the `activeEditor` signal
   (`LexicalEditor | null`), used by `LexicalTreeViewSection`.
-- **`packages/web/signals/openedFiles.ts`** — `OpenedFilesModel` with
-  `selectedFile`, `openedFiles`, `fileHistory` persistent signals and `open()`/
-  `close()` helpers. Instantiated as the global `openedFiles` singleton.
-- **`packages/web/signals/fileTree.ts`** — `FileTreeModel` with file list
-  loading, error state, and `buildFileTree()` tree builder. Exports `useFiles()`
-  hook and `TreeNode` interface.
-- **`packages/web/signals/file.ts`** — `FileModel` with per-file content,
-  loading, error, dirty tracking, Lexical editor state (`initialState`,
-  `modifiedState`, `state`), and a `markdown` computed signal (editor state →
-  markdown string via `editorStateToMarkdown()`). Also provides `isSelected`
-  computed and `setModifiedState()` for editor updates. Exports `useFile(path)`
-  helper.
-- **`packages/web/signals/marks.ts`** — `MarksModel` with per-file marks,
-  loading, error, `reload()`, and two computed signals: `resolved` (marks
-  migrated from original content to current markdown via core's
-  `resolveMarks()`) and `ranges` (marks mapped to Lexical `NodeRange` positions
-  via `resolveMarksForEditor()`). Also has an `effect` that applies mark ranges
-  to the active Lexical editor via `$wrapSelectionInMarkNode`. Exports
-  `useMarks(path)` helper and `MarkWithRange` interface. Follows the same
-  `createModel` + `Map` cache pattern as `fileTree.ts`.
+- **`packages/web/signals/openedFiles.ts`** — `OpenedFilesModel` is
+  per-workspace: `createModel((workspaceId) => {…})` with persistent signals
+  keyed `selectedFile:<wsId>` / `openedFiles:<wsId>` / `fileHistory:<wsId>`
+  and `open()`/`close()` helpers. Cached by workspace id (`Map`); accessors
+  `getOpenedFilesFor(wsId)` and `getOpenedFiles()` (current workspace or `null`).
+  A module-level effect auto-manages the sidebar based on the current
+  workspace's opened files (expand when empty, close overlay once a file is
+  selected).
+- **`packages/web/signals/fileTree.ts`** — `FileTreeModel` is per-workspace
+  (`createModel((workspaceId) => {…})`), fetching `/api/workspaces/:wsId/files`
+  on construction (`if (IS_BROWSER) void load()`). `createAsyncState(true)` so
+  SSR shows the loading state. Cache keyed `<wsId>`; accessors `getFileTreeFor(wsId)`
+  and `getFileTree()` (current or `null`). `buildFileTree(files, workspaceId)`
+  builds the `TreeNode` tree; `isSelected` reads `getOpenedFilesFor(workspaceId).selected`.
+- **`packages/web/signals/file.ts`** — `FileModel` is per-(workspace, path):
+  `createModel((workspaceId, path) => {…})` fetching
+  `/api/workspaces/:wsId/files/:path` on construction. Owns `snapshot`, `content`,
+  `initialState`, `modifiedState`, `state`, `markdown`, `initialMarkdown`, `dirty`,
+  `isSelected` (via `getOpenedFilesFor(workspaceId)`), `textNodeSpans`, and
+  `getNodeRange(span)`. Cache keyed `<wsId>:<path>`; accessor `getFile(wsId, path)`.
+- **`packages/web/signals/marks.ts`** — `MarksModel` is per-(workspace, path):
+  `createModel((workspaceId, path) => {…})` calling `getFile(workspaceId, path)`
+  for content/markdown/getNodeRange, fetching `…/files/:path/marks` on construction,
+  and resolving marks in the wasm worker (`asyncComputed`, debounced). Exposes
+  `marks`, `resolved`, `ranges`, `loading`, `error`, `reload`, `resolving`. Cache
+  keyed `<wsId>:<path>`; accessor `getMarks(wsId, path)`. `RangedMark` and
+  `MarkWithRange` interfaces.
 - **`packages/web/signals/preferences.ts`** — `viewerFont` and `viewMode`
   persistent signals.
-- **`packages/web/signals/editorSelection.ts`** — `EditorSelectionModel`, a
-  per-path (`createModel` + `Map` cache) set of signals for editor-selection
-  state: `block`, `bold`, `italic`, `strikethrough`, `code`, `inCodeBlock`, and
-  `markIds`. Written by `ToolbarStateExtension` and `MarksAtCursorExtension`
-  (injected via extension config); read by `EditorToolbar` and `MarksSection`.
-  `useEditorSelection(path)` accessor.
+- **`packages/web/signals/editorSelection.ts`** — `EditorSelectionModel` is
+  per-(workspace, path): `createModel((workspaceId, path) => {…})` holding the
+  toolbar/cursor state (`block`, `bold`, `italic`, `strikethrough`, `code`,
+  `inCodeBlock`, `markIds`). Written by `ToolbarStateExtension` and
+  `MarksAtCursorExtension` (injected via extension config); read by `EditorToolbar`
+  and `MarksSection`. `defaultEditorSelection` is a sink used as default config.
+  Cache keyed `<wsId>:<path>`; accessor `getEditorSelection(wsId, path)`.
 - **`packages/web/components/EditorToolbar.tsx`** — Toolbar for the active
   editor: bold/italic/strikethrough/inline-code toggle buttons plus a block-type
   dropdown (normal, heading 1-3, quote, code block, bullet/numbered list).
@@ -361,12 +393,14 @@ essayist/
   `SELECT_MARK_COMMAND` (dispatch a thread id to place the caret at that mark).
   `Editor.tsx` calls `useMarks`/`useFile`/`useEditorSelection` and injects the
   signals into `createEditorExtension(path, deps)`.
-- **`packages/web/seed.ts`** — `seedDemoFiles(vfs)` seeds a workspace VFS with
-  the sample files (essay.txt, report.txt, notes/ideas.md, notes/todo.md,
-  notes/archive/, src/main.ts, src/utils.ts, markdown-showcase.md) and a few
-  marks. Called from `store.ts` against the demo workspace. There is no global
-  VFS singleton; a `VirtualFileSystem` is constructed per request, scoped by
-  workspace id, in the `[wsId]/_middleware.ts`.
+- **`packages/web/seed.ts`** — `seedDemoFiles(vfs, workspace)` seeds a workspace
+  VFS with the sample files (essay.txt, report.txt, notes/ideas.md, notes/todo.md,
+  notes/archive/, src/main.ts, src/utils.ts, markdown-showcase.md), a few marks,
+  and a per-workspace `workspace-<wsId>.md` readme recording the workspace's name
+  and id. Called from `store.ts` for the demo workspace AND from
+  `routes/api/workspaces/index.ts` for every newly created workspace so it isn't
+  empty on first open. There is no global VFS singleton; a `VirtualFileSystem` is
+  constructed per request, scoped by workspace id, in the `[wsId]/_middleware.ts`.
 - **`packages/web/utils/persistentSignal.ts`** — `persistentSignal()` (global
   singleton signals synced to localStorage) and `usePersistentSignal()` (hook
   version for island components).
@@ -412,8 +446,9 @@ essayist/
   except islands).
 - **@preact/signals** (v2.9.0) — Reactive signals for Preact islands (used by
   `Chat`, `FileViewer`, `FileBrowser`, `Tabs`, and `useChat`). Also provides
-  `createModel()` for stateful model patterns (`FileModel`, `FileTreeModel`,
-  `OpenedFilesModel`).
+  `createModel()` for the per-key stateful model pattern (`WorkspacesModel`,
+  `OpenedFilesModel`, `FileTreeModel`, `FileModel`, `MarksModel`,
+  `EditorSelectionModel`).
 - **Tailwind CSS** (v4.1.10) — Styling via `@tailwindcss/vite` plugin.
 - **@tailwindcss/typography** (v0.5.16) — Typography plugin for prose styling.
 - **daisyUI** (v5.5.20) — Component library built on Tailwind. Custom "essayist"
@@ -517,8 +552,22 @@ then `deno task fmt:check` before each commit.
   a typed `define` helper; middleware populates `ctx.state.agent`. Client-side
   state uses `@preact/signals` via `persistentSignal()` (global) and
   `usePersistentSignal()` (per-island hook), both synced to localStorage.
-  Stateful models use `createModel()` from `@preact/signals` (`FileModel`,
-  `FileTreeModel`, `OpenedFilesModel`).
+  Stateful models use `createModel()` from `@preact/signals`.
+- **Per-workspace models** — Most signal models are scoped per workspace (and
+  per path where relevant): `OpenedFilesModel(wsId)`, `FileTreeModel(wsId)`,
+  `FileModel(wsId, path)`, `MarksModel(wsId, path)`, `EditorSelectionModel(wsId,
+  path)`. Each instance closes over its key(s) and loads itself on construction
+  (`if (IS_BROWSER) void load()`), so switching workspaces looks up a different
+  cached instance rather than re-fetching into shared signals (which avoids a
+  mid-load race where the old workspace's fetch would clobber the new one's
+  state). `WorkspacesModel` is the one true singleton (one list of workspaces per
+  app). Cache keys are flat strings: `<wsId>` or `<wsId>:<path>`.
+- **Accessor naming** — Cached model accessors use a `get*` prefix (not `use*`,
+  which is reserved for real hooks and would trip `react-rules-of-hooks`). Forms:
+  `get<Model>(wsId, path)` / `get<Model>For(wsId)` for explicit keys,
+  `get<Model>()` (e.g. `getOpenedFiles`, `getFileTree`) for the current
+  workspace (returns `null` while no workspace is selected). Real hooks keep
+  `use*` (`useChat`, `useMediaQuery`, `useSmallScreen`, `usePersistentSignal`).
 - **Three-column layout** — The home page (`routes/index.tsx`) uses a horizontal
   flex layout: file browser (`w-64`), file viewer (`flex-1`), and right sidebar
   (`flex-1 max-w-lg`). The body uses `h-dvh` to constrain to the viewport. The
@@ -651,14 +700,20 @@ then `deno task fmt:check` before each commit.
   wrap the `join` group in a separate scrollable container div rather than
   applying `overflow` directly to the `join` parent.
 - **Persistent signals** — `persistentSignal()` creates global singleton signals
-  shared across the app. `usePersistentSignal()` is a hook that creates
-  per-island signals synced to localStorage. Use the global version for app-wide
-  state (selectedFile, openedFiles) and the hook version for island-local state
-  (chat messages, file content).
-- **createModel singletons** — `OpenedFilesModel` and `FileTreeModel` use
-  `createModel()` which returns a class. They are instantiated as module-level
-  singletons (`new OpenedFilesModel()`, `new FileTreeModel()`). `FileModel` uses
-  a `Map` cache keyed by path. Do not create multiple instances of these models.
+  shared across the app, keyed by a fixed string. `usePersistentSignal()` is a
+  hook that creates per-island signals synced to localStorage. Per-workspace
+  persistent state (selected file, opened files, history) does NOT use a
+  dynamic-key signal helper; instead it lives inside `OpenedFilesModel(wsId)`,
+  which closes over a fixed `wsId` and uses `persistentSignal(`key:${wsId}`, …)`
+  so each workspace has its own localStorage slot.
+- **Per-workspace model caches** — `WorkspacesModel` is a true singleton
+  (`new WorkspacesModel()` at module load). The per-workspace / per-(workspace,
+  path) models (`OpenedFilesModel`, `FileTreeModel`, `FileModel`, `MarksModel`,
+  `EditorSelectionModel`) are NOT instantiated directly by consumers; they go
+  through the `get*` accessors, which cache instances in a `Map` keyed by
+  `<wsId>` or `<wsId>:<path>`. Each instance loads itself on construction
+  (`if (IS_BROWSER) void load()`), so the `onWorkspaceChange(load)` pattern that
+  used to re-fire a shared model's `load` on switch is gone (helper removed).
 - **Lexical markdown conversion** — `markdownToEditorState()` creates a headless
   Lexical editor via `buildEditorFromExtensions()` on every call, using the
   shared `editorExtension`. This ensures the bootstrap editor has the same
