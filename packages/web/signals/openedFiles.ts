@@ -2,35 +2,12 @@ import { createModel, effect } from "@preact/signals";
 import { IS_BROWSER } from "fresh/runtime";
 import { sidebarCollapsed, sidebarOverlayOpen } from "@/signals/sidebar.ts";
 import { workspaces } from "@/signals/workspace.ts";
-import { scopedPersistentSignal } from "@/utils/persistentSignal.ts";
+import { persistentSignal } from "@/utils/persistentSignal.ts";
 
-export const OpenedFilesModel = createModel(() => {
-  const selected = scopedPersistentSignal(
-    () => `selectedFile:${workspaces.currentWorkspaceId.value}`,
-    "",
-  );
-  const opened = scopedPersistentSignal<string[]>(
-    () => `openedFiles:${workspaces.currentWorkspaceId.value}`,
-    [],
-  );
-  const history = scopedPersistentSignal<string[]>(
-    () => `fileHistory:${workspaces.currentWorkspaceId.value}`,
-    [],
-  );
-
-  // Auto-manage the sidebar based on whether any files are open.
-  if (IS_BROWSER) {
-    effect(() => {
-      selected.value;
-      const empty = opened.value.length === 0;
-      // Desktop: auto-expand the sidebar when there are no files to show.
-      if (empty) sidebarCollapsed.value = false;
-      // Mobile: keep the file browser overlay open when there are no opened
-      // files so the user can pick one; close it once a file is selected so
-      // the viewer is visible.
-      sidebarOverlayOpen.value = empty;
-    });
-  }
+export const OpenedFilesModel = createModel((workspaceId: string) => {
+  const selected = persistentSignal(`selectedFile:${workspaceId}`, "");
+  const opened = persistentSignal<string[]>(`openedFiles:${workspaceId}`, []);
+  const history = persistentSignal<string[]>(`fileHistory:${workspaceId}`, []);
 
   function open(path: string) {
     selected.value = path;
@@ -51,12 +28,36 @@ export const OpenedFilesModel = createModel(() => {
     }
   }
 
-  return {
-    opened,
-    selected,
-    open,
-    close,
-  };
+  return { opened, selected, open, close };
 });
 
-export const openedFiles = new OpenedFilesModel();
+const cache = new Map<string, OpenedFiles>();
+
+export type OpenedFiles = InstanceType<typeof OpenedFilesModel>;
+
+export function getOpenedFilesFor(workspaceId: string): OpenedFiles {
+  return cache.getOrInsertComputed(
+    workspaceId,
+    () => new OpenedFilesModel(workspaceId),
+  );
+}
+
+// Returns `null` while no workspace is selected (bootstrap, login page).
+export function getOpenedFiles(): OpenedFiles | null {
+  const wsId = workspaces.currentWorkspaceId.value;
+  return wsId ? getOpenedFilesFor(wsId) : null;
+}
+
+// Module-level (not per-instance) so multiple workspace instances don't fight
+// over the global sidebar signals.
+if (IS_BROWSER) {
+  effect(() => {
+    const wsId = workspaces.currentWorkspaceId.value;
+    if (!wsId) return;
+    const of = getOpenedFilesFor(wsId);
+    of.selected.value; // track selection so tapping a file closes the overlay
+    const empty = of.opened.value.length === 0;
+    if (empty) sidebarCollapsed.value = false;
+    sidebarOverlayOpen.value = empty;
+  });
+}

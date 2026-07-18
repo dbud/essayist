@@ -6,7 +6,7 @@ import {
   findRange,
   type Span,
 } from "@/editor/textNodeSpans.ts";
-import { openedFiles } from "@/signals/openedFiles.ts";
+import { getOpenedFiles } from "@/signals/openedFiles.ts";
 import { onWorkspaceChange, workspaces } from "@/signals/workspace.ts";
 import createAsyncState from "@/utils/asyncState.ts";
 import { deepComputed } from "@/utils/deepComputed.ts";
@@ -18,7 +18,7 @@ import {
 export const FileModel = createModel((path: string) => {
   const snapshot = signal<FileSnapshot | null>(null);
   const [run, { loading, error }] = createAsyncState();
-  const isSelected = computed(() => path === openedFiles.selected.value);
+  const isSelected = computed(() => getOpenedFiles()?.selected.value === path);
 
   const initialState = computed(() =>
     snapshot.value ? markdownToEditorState(snapshot.value.content) : null,

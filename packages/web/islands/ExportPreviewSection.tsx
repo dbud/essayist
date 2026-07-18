@@ -2,10 +2,11 @@ import type { Mark } from "@essayist/core";
 import Section from "@/islands/Section.tsx";
 import { useFile } from "@/signals/file.ts";
 import { useMarks } from "@/signals/marks.ts";
-import { openedFiles } from "@/signals/openedFiles.ts";
+import { getOpenedFiles } from "@/signals/openedFiles.ts";
 
 export default function ExportPreviewSection() {
-  const path = openedFiles.selected.value;
+  const openedFiles = getOpenedFiles();
+  const path = openedFiles?.selected.value ?? "";
   if (!path) return null;
 
   return (

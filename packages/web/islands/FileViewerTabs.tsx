@@ -1,9 +1,15 @@
 import { FileText, X } from "lucide-preact";
 import Tabs from "@/components/Tabs.tsx";
 import { useFile } from "@/signals/file.ts";
-import { openedFiles } from "@/signals/openedFiles.ts";
+import { getOpenedFiles, type OpenedFiles } from "@/signals/openedFiles.ts";
 
-function Tab({ path }: { path: string }) {
+function Tab({
+  path,
+  openedFiles,
+}: {
+  path: string;
+  openedFiles: OpenedFiles;
+}) {
   const name = path.split("/").pop() ?? path;
   const { dirty, isSelected } = useFile(path);
 
@@ -39,6 +45,8 @@ function Tab({ path }: { path: string }) {
 }
 
 export default function FileViewerTabs() {
+  const openedFiles = getOpenedFiles();
+  if (!openedFiles) return null;
   const files = openedFiles.opened.value;
   const selected = openedFiles.selected.value;
 
@@ -47,7 +55,7 @@ export default function FileViewerTabs() {
   return (
     <Tabs activeIndex={files.indexOf(selected)}>
       {files.map((path) => (
-        <Tab key={path} path={path} />
+        <Tab key={path} path={path} openedFiles={openedFiles} />
       ))}
     </Tabs>
   );

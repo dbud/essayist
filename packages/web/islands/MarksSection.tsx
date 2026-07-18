@@ -6,7 +6,7 @@ import Section from "@/islands/Section.tsx";
 import { activeEditor } from "@/signals/activeEditor.ts";
 import { useEditorSelection } from "@/signals/editorSelection.ts";
 import { useMarks } from "@/signals/marks.ts";
-import { openedFiles } from "@/signals/openedFiles.ts";
+import { getOpenedFiles } from "@/signals/openedFiles.ts";
 
 function statusBadge(status: MarkStatus) {
   const classes =
@@ -63,7 +63,8 @@ function MarkDetail({
 }
 
 export default function MarksSection() {
-  const path = openedFiles.selected.value;
+  const openedFiles = getOpenedFiles();
+  const path = openedFiles?.selected.value ?? "";
   if (!path) return null;
 
   return <Marks path={path} />;

@@ -1,7 +1,7 @@
 import { useSignal } from "@preact/signals";
 import { FileText, Folder, FolderOpen } from "lucide-preact";
 import { type TreeNode, useFiles } from "@/signals/fileTree.ts";
-import { openedFiles } from "@/signals/openedFiles.ts";
+import { getOpenedFiles } from "@/signals/openedFiles.ts";
 
 function FolderItem({ node }: { node: TreeNode }) {
   const open = useSignal(true);
@@ -40,12 +40,13 @@ function FolderItem({ node }: { node: TreeNode }) {
 }
 
 function FileItem({ node }: { node: TreeNode }) {
+  const openedFiles = getOpenedFiles();
   return (
     <li>
       <button
         type="button"
         class={`${node.isSelected.value ? "bg-primary/10" : ""} w-full`}
-        onClick={() => openedFiles.open(node.path)}
+        onClick={() => openedFiles?.open(node.path)}
       >
         <FileText size={16} class="shrink-0" />
         <span class="break-all min-w-0">{node.name}</span>

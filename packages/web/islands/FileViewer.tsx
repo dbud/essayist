@@ -7,11 +7,12 @@ import FileViewerTabs from "@/islands/FileViewerTabs.tsx";
 import SidebarToggle from "@/islands/SidebarToggle.tsx";
 import { useFile } from "@/signals/file.ts";
 import { useMarks } from "@/signals/marks.ts";
-import { openedFiles } from "@/signals/openedFiles.ts";
+import { getOpenedFiles } from "@/signals/openedFiles.ts";
 import { delayedRise } from "@/utils/delayedRise.ts";
 
 export default function FileViewer() {
-  const path = openedFiles.selected.value;
+  const openedFiles = getOpenedFiles();
+  const path = openedFiles?.selected.value ?? "";
   if (!path) return null;
   return (
     <div class="flex flex-col h-full min-h-0">
