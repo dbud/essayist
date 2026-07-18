@@ -10,8 +10,7 @@ import createProgressState from "@/utils/progressState.ts";
 export const FileTreeModel = createModel((workspaceId: string) => {
   const files = signal<FileEntry[]>([]);
   const [run, { loading, error }] = createAsyncState(true);
-  const [runUpload, { progress: uploadProgress, clear: clearUploadProgress }] =
-    createProgressState();
+  const [runUpload, { progress: uploadProgress }] = createProgressState();
 
   const tree = computed(() => buildFileTree(files.value, workspaceId));
 
@@ -86,7 +85,6 @@ export const FileTreeModel = createModel((workspaceId: string) => {
     createFile,
     uploadFiles,
     uploadProgress,
-    clearUploadProgress,
   };
 });
 

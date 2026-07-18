@@ -15,10 +15,7 @@ export interface Progress {
  */
 export default function createProgressState(): [
   <I>(items: I[], task: (item: I) => Promise<void>) => Promise<void>,
-  {
-    progress: Signal<Progress | null>;
-    clear: () => void;
-  },
+  { progress: Signal<Progress | null> },
 ] {
   const progress = signal<Progress | null>(null);
 
@@ -55,9 +52,5 @@ export default function createProgressState(): [
     );
   }
 
-  function clear(): void {
-    progress.value = null;
-  }
-
-  return [run, { progress, clear }];
+  return [run, { progress }];
 }
