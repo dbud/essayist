@@ -1,8 +1,8 @@
 import type { Mark } from "@essayist/core";
 import { createModel, signal } from "@preact/signals";
+import { IS_BROWSER } from "fresh/runtime";
 import type { NodeRange } from "@/editor/textNodeSpans.ts";
 import { getFile } from "@/signals/file.ts";
-import { onWorkspaceChange, workspaces } from "@/signals/workspace.ts";
 import { asyncComputed } from "@/utils/asyncComputed.ts";
 import createAsyncState from "@/utils/asyncState.ts";
 import { deepComputed } from "@/utils/deepComputed.ts";
@@ -13,10 +13,10 @@ export interface RangedMark {
   range: NodeRange;
 }
 
-export const MarksModel = createModel((path: string) => {
-  const { content, markdown, getNodeRange } = getFile(path);
+export const MarksModel = createModel((workspaceId: string, path: string) => {
+  const { content, markdown, getNodeRange } = getFile(workspaceId, path);
   const marks = signal<Mark[]>([]);
-  const [run, { loading, error }] = createAsyncState();
+  const [run, { loading, error }] = createAsyncState(true);
 
   // Resolve marks in the wasm worker, debounced so a burst of edits
   // coalesces into one call. A new edit aborts the in-flight resolve and
@@ -33,18 +33,17 @@ export const MarksModel = createModel((path: string) => {
   );
 
   async function load() {
-    const wsId = workspaces.currentWorkspaceId.value;
-    if (!wsId) return;
     const result = await run(async () => {
       const res = await fetch(
-        `/api/workspaces/${encodeURIComponent(wsId)}/files/${encodeURIComponent(path)}/marks`,
+        `/api/workspaces/${encodeURIComponent(workspaceId)}/files/${encodeURIComponent(path)}/marks`,
       );
+      if (!res.ok) throw new Error(`Request failed (${res.status})`);
       return (await res.json()) as Mark[];
     });
     if (result) marks.value = result;
   }
 
-  onWorkspaceChange(load);
+  if (IS_BROWSER) void load();
 
   return {
     marks,
@@ -57,10 +56,14 @@ export const MarksModel = createModel((path: string) => {
   };
 });
 
-const marksMap = new Map<string, InstanceType<typeof MarksModel>>();
+const cache = new Map<string, InstanceType<typeof MarksModel>>();
 
-export function getMarks(path: string) {
-  return marksMap.getOrInsertComputed(path, () => new MarksModel(path));
+export function getMarks(workspaceId: string, path: string) {
+  const key = `${workspaceId}:${path}`;
+  return cache.getOrInsertComputed(
+    key,
+    () => new MarksModel(workspaceId, path),
+  );
 }
 
 export interface MarkWithRange {

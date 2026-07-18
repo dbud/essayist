@@ -71,7 +71,7 @@ export default function MarksSection() {
 }
 
 function Marks({ wsId, path }: { wsId: string; path: string }) {
-  const { resolved, loading } = getMarks(path);
+  const { resolved, loading } = getMarks(wsId, path);
   const markIds = getEditorSelection(wsId, path).markIds.value;
   const editor = activeEditor.value;
 

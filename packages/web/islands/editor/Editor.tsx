@@ -31,8 +31,8 @@ const contentEditable = (
 );
 
 export default function Editor({ wsId, path, state, onChange }: EditorProps) {
-  const { ranges } = getMarks(path);
-  const { textNodeSpans, markdown } = getFile(path);
+  const { ranges } = getMarks(wsId, path);
+  const { textNodeSpans, markdown } = getFile(wsId, path);
   const selection = getEditorSelection(wsId, path);
 
   const extension = useMemo(

@@ -3,15 +3,15 @@ import Section from "@/islands/Section.tsx";
 import { getFile } from "@/signals/file.ts";
 import { getMarks } from "@/signals/marks.ts";
 import { getOpenedFiles } from "@/signals/openedFiles.ts";
+import { workspaces } from "@/signals/workspace.ts";
 
 export default function ExportPreviewSection() {
   const openedFiles = getOpenedFiles();
   const path = openedFiles?.selected.value ?? "";
-  if (!path) return null;
-
+  if (!openedFiles || !path) return null;
   return (
     <Section title="Export Preview">
-      <MarkdownPreview path={path} />
+      <MarkdownPreview wsId={workspaces.currentWorkspaceId.value} path={path} />
     </Section>
   );
 }
@@ -28,9 +28,9 @@ function visualizeWhitespace(text: string): string {
     .replace(/\n/g, "\u00AC\n");
 }
 
-function MarkdownPreview({ path }: { path: string }) {
-  const file = getFile(path);
-  const marks = getMarks(path);
+function MarkdownPreview({ wsId, path }: { wsId: string; path: string }) {
+  const file = getFile(wsId, path);
+  const marks = getMarks(wsId, path);
   const md = file.markdown.value;
   const resolved = marks.resolved.value;
 

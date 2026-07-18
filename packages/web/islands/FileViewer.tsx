@@ -30,9 +30,11 @@ export default function FileViewer() {
 }
 
 function FileViewerBody({ wsId, path }: { wsId: string; path: string }) {
-  const { state, initialState, setModifiedState, loading, error } =
-    getFile(path);
-  const { resolving } = getMarks(path);
+  const { state, initialState, setModifiedState, loading, error } = getFile(
+    wsId,
+    path,
+  );
+  const { resolving } = getMarks(wsId, path);
   const resolvingVisible = useMemo(
     () => delayedRise(resolving, 150),
     [resolving],

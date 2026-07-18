@@ -1,13 +1,13 @@
 import type { FileSnapshot } from "@essayist/core";
 import { computed, createModel, signal } from "@preact/signals";
+import { IS_BROWSER } from "fresh/runtime";
 import type { EditorState } from "lexical";
 import {
   buildTextNodeSpans,
   findRange,
   type Span,
 } from "@/editor/textNodeSpans.ts";
-import { getOpenedFiles } from "@/signals/openedFiles.ts";
-import { onWorkspaceChange, workspaces } from "@/signals/workspace.ts";
+import { getOpenedFilesFor } from "@/signals/openedFiles.ts";
 import createAsyncState from "@/utils/asyncState.ts";
 import { deepComputed } from "@/utils/deepComputed.ts";
 import {
@@ -15,10 +15,12 @@ import {
   markdownToEditorState,
 } from "@/utils/markdown.ts";
 
-export const FileModel = createModel((path: string) => {
+export const FileModel = createModel((workspaceId: string, path: string) => {
   const snapshot = signal<FileSnapshot | null>(null);
-  const [run, { loading, error }] = createAsyncState();
-  const isSelected = computed(() => getOpenedFiles()?.selected.value === path);
+  const [run, { loading, error }] = createAsyncState(true);
+  const isSelected = computed(
+    () => getOpenedFilesFor(workspaceId).selected.value === path,
+  );
 
   const initialState = computed(() =>
     snapshot.value ? markdownToEditorState(snapshot.value.content) : null,
@@ -56,18 +58,17 @@ export const FileModel = createModel((path: string) => {
   }
 
   async function load() {
-    const wsId = workspaces.currentWorkspaceId.value;
-    if (!wsId) return;
     const result = await run(async () => {
       const res = await fetch(
-        `/api/workspaces/${encodeURIComponent(wsId)}/files/${encodeURIComponent(path)}`,
+        `/api/workspaces/${encodeURIComponent(workspaceId)}/files/${encodeURIComponent(path)}`,
       );
+      if (!res.ok) throw new Error(`Request failed (${res.status})`);
       return (await res.json()) as FileSnapshot;
     });
     if (result) snapshot.value = result;
   }
 
-  onWorkspaceChange(load);
+  if (IS_BROWSER) void load();
 
   return {
     snapshot,
@@ -85,8 +86,9 @@ export const FileModel = createModel((path: string) => {
   };
 });
 
-const fileMap = new Map<string, InstanceType<typeof FileModel>>();
+const cache = new Map<string, InstanceType<typeof FileModel>>();
 
-export function getFile(path: string) {
-  return fileMap.getOrInsertComputed(path, () => new FileModel(path));
+export function getFile(workspaceId: string, path: string) {
+  const key = `${workspaceId}:${path}`;
+  return cache.getOrInsertComputed(key, () => new FileModel(workspaceId, path));
 }
