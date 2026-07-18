@@ -1,5 +1,6 @@
 import type { PageProps } from "fresh";
 import type { State } from "@/define.ts";
+import Toaster from "@/islands/Toaster.tsx";
 import UserMenu from "@/islands/UserMenu.tsx";
 import WorkspaceMenu from "@/islands/WorkspaceMenu.tsx";
 
@@ -26,6 +27,7 @@ export default function App({ Component, state }: PageProps<unknown, State>) {
           <div class="navbar-end">{user && <UserMenu user={user} />}</div>
         </nav>
         <Component />
+        <Toaster />
       </body>
     </html>
   );
