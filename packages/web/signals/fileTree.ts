@@ -22,9 +22,28 @@ export const FileTreeModel = createModel((workspaceId: string) => {
     if (result) files.value = result;
   }
 
+  /** Create a new file via POST to the files endpoint, then reload the tree. */
+  async function createFile(path: string, content = ""): Promise<void> {
+    const res = await fetch(
+      `/api/workspaces/${encodeURIComponent(workspaceId)}/files/${encodeURIComponent(path)}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content }),
+      },
+    );
+    if (!res.ok) {
+      const body = (await res.json().catch(() => null)) as {
+        error?: string;
+      } | null;
+      throw new Error(body?.error ?? `Request failed (${res.status})`);
+    }
+    await load();
+  }
+
   if (IS_BROWSER) void load();
 
-  return { files, loading, error, tree };
+  return { files, loading, error, tree, createFile };
 });
 
 const cache = new Map<string, FileTree>();

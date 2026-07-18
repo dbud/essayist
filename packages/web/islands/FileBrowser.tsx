@@ -1,5 +1,6 @@
 import { useSignal } from "@preact/signals";
-import { FileText, Folder, FolderOpen } from "lucide-preact";
+import { FileText, Folder, FolderOpen, Plus } from "lucide-preact";
+import CreateFileDialog from "@/islands/CreateFileDialog.tsx";
 import { getFileTree, type TreeNode } from "@/signals/fileTree.ts";
 import { getOpenedFiles } from "@/signals/openedFiles.ts";
 
@@ -56,6 +57,7 @@ function FileItem({ node }: { node: TreeNode }) {
 }
 
 export default function FileBrowser() {
+  const dialogOpen = useSignal(false);
   const files = getFileTree();
   if (!files) return null;
   const { tree, loading, error } = files;
@@ -65,16 +67,30 @@ export default function FileBrowser() {
   }
 
   return (
-    <ul
-      class={`menu bg-base-200 w-full ${loading.value ? "loading-border" : ""}`}
-    >
-      {tree.value.children.map((node) =>
-        node.isFile ? (
-          <FileItem key={node.path} node={node} />
-        ) : (
-          <FolderItem key={node.path} node={node} />
-        ),
-      )}
-    </ul>
+    <div class="flex flex-col gap-1">
+      <ul
+        class={`menu bg-base-200 w-full ${loading.value ? "loading-border" : ""}`}
+      >
+        {tree.value.children.map((node) =>
+          node.isFile ? (
+            <FileItem key={node.path} node={node} />
+          ) : (
+            <FolderItem key={node.path} node={node} />
+          ),
+        )}
+      </ul>
+      <div class="flex items-center justify-between px-2">
+        <button
+          type="button"
+          class="btn btn-sm"
+          onClick={() => (dialogOpen.value = true)}
+          title="New file"
+        >
+          <Plus size={16} />
+          New file
+        </button>
+      </div>
+      <CreateFileDialog open={dialogOpen} />
+    </div>
   );
 }

@@ -57,7 +57,7 @@ export default function WorkspaceMenu() {
                 </button>
               </li>
             ))}
-            <li class="border-t border-base-300 mt-1 pt-1">
+            <li class="border-t border-base-300 mt-2 pt-2">
               <button
                 type="button"
                 class="gap-2"

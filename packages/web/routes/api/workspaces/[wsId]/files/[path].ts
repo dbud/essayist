@@ -6,4 +6,27 @@ export const handler = {
     const result = await ctx.state.vfs.read(decodeURIComponent(path));
     return Response.json(result);
   }),
+
+  POST: define.handlers(async (ctx) => {
+    const filePath = decodeURIComponent(ctx.params.path);
+    if (!filePath.trim()) {
+      return Response.json({ error: "Missing 'path'" }, { status: 400 });
+    }
+
+    // Refuse to overwrite an existing file -- this endpoint is for creating
+    // new files only. Writes/updates go through the existing save flow.
+    const existing = (await ctx.state.vfs.list(filePath)).some(
+      (f) => f.path === filePath,
+    );
+    if (existing) {
+      return Response.json({ error: "File already exists" }, { status: 409 });
+    }
+
+    const body = (await ctx.req.json().catch(() => null)) as {
+      content?: string;
+    } | null;
+    const content = body?.content ?? "";
+    const result = await ctx.state.vfs.write(filePath, content);
+    return Response.json(result, { status: 201 });
+  }),
 };
