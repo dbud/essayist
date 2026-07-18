@@ -13,6 +13,7 @@ import { viewerFont } from "@/signals/preferences.ts";
 import ActiveEditorRef from "./ActiveEditorRef.tsx";
 
 interface EditorProps {
+  wsId: string;
   path: string;
   state: EditorState;
   onChange?: (state: EditorState) => void;
@@ -29,10 +30,10 @@ const contentEditable = (
   />
 );
 
-export default function Editor({ path, state, onChange }: EditorProps) {
+export default function Editor({ wsId, path, state, onChange }: EditorProps) {
   const { ranges } = getMarks(path);
   const { textNodeSpans, markdown } = getFile(path);
-  const selection = getEditorSelection(path);
+  const selection = getEditorSelection(wsId, path);
 
   const extension = useMemo(
     () => ({

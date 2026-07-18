@@ -13,12 +13,13 @@ import { activeEditor } from "@/signals/activeEditor.ts";
 import { getEditorSelection } from "@/signals/editorSelection.ts";
 
 interface EditorToolbarProps {
+  wsId: string;
   path: string;
 }
 
-export default function EditorToolbar({ path }: EditorToolbarProps) {
+export default function EditorToolbar({ wsId, path }: EditorToolbarProps) {
   const editor = activeEditor.value;
-  const sel = getEditorSelection(path);
+  const sel = getEditorSelection(wsId, path);
   if (editor === null) return null;
 
   const format = (fmt: "bold" | "italic" | "strikethrough" | "code") => {

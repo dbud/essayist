@@ -7,6 +7,7 @@ import { activeEditor } from "@/signals/activeEditor.ts";
 import { getEditorSelection } from "@/signals/editorSelection.ts";
 import { getMarks } from "@/signals/marks.ts";
 import { getOpenedFiles } from "@/signals/openedFiles.ts";
+import { workspaces } from "@/signals/workspace.ts";
 
 function statusBadge(status: MarkStatus) {
   const classes =
@@ -65,14 +66,13 @@ function MarkDetail({
 export default function MarksSection() {
   const openedFiles = getOpenedFiles();
   const path = openedFiles?.selected.value ?? "";
-  if (!path) return null;
-
-  return <Marks path={path} />;
+  if (!openedFiles || !path) return null;
+  return <Marks wsId={workspaces.currentWorkspaceId.value} path={path} />;
 }
 
-function Marks({ path }: { path: string }) {
+function Marks({ wsId, path }: { wsId: string; path: string }) {
   const { resolved, loading } = getMarks(path);
-  const markIds = getEditorSelection(path).markIds.value;
+  const markIds = getEditorSelection(wsId, path).markIds.value;
   const editor = activeEditor.value;
 
   if (loading.value || resolved.value.length === 0) {

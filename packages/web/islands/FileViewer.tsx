@@ -8,12 +8,14 @@ import SidebarToggle from "@/islands/SidebarToggle.tsx";
 import { getFile } from "@/signals/file.ts";
 import { getMarks } from "@/signals/marks.ts";
 import { getOpenedFiles } from "@/signals/openedFiles.ts";
+import { workspaces } from "@/signals/workspace.ts";
 import { delayedRise } from "@/utils/delayedRise.ts";
 
 export default function FileViewer() {
   const openedFiles = getOpenedFiles();
   const path = openedFiles?.selected.value ?? "";
-  if (!path) return null;
+  if (!openedFiles || !path) return null;
+  const wsId = workspaces.currentWorkspaceId.value;
   return (
     <div class="flex flex-col h-full min-h-0">
       <div class="flex items-center gap-1">
@@ -22,12 +24,12 @@ export default function FileViewer() {
           <FileViewerTabs />
         </div>
       </div>
-      <FileViewerBody key={path} path={path} />
+      <FileViewerBody key={path} wsId={wsId} path={path} />
     </div>
   );
 }
 
-function FileViewerBody({ path }: { path: string }) {
+function FileViewerBody({ wsId, path }: { wsId: string; path: string }) {
   const { state, initialState, setModifiedState, loading, error } =
     getFile(path);
   const { resolving } = getMarks(path);
@@ -49,11 +51,16 @@ function FileViewerBody({ path }: { path: string }) {
     >
       <Toolbar>
         <FontSelect />
-        <EditorToolbar path={path} />
+        <EditorToolbar wsId={wsId} path={path} />
       </Toolbar>
       <div class="flex-1 min-h-0 flex flex-col overflow-x-auto overflow-y-auto p-4">
         {editorState && (
-          <Editor path={path} state={editorState} onChange={setModifiedState} />
+          <Editor
+            wsId={wsId}
+            path={path}
+            state={editorState}
+            onChange={setModifiedState}
+          />
         )}
         <div class="shrink-0 h-32" />
       </div>
