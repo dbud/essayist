@@ -4,10 +4,10 @@ import { getOAuthHelpers } from "@/utils/oauth.ts";
 export const handler = define.handlers(async (ctx) => {
   try {
     const helpers = getOAuthHelpers(ctx.req);
+    // access_type=offline so Google issues a refresh token.
     return await helpers.signIn(ctx.req, {
       urlParams: {
         access_type: "offline",
-        prompt: "consent",
       },
     });
   } catch (error) {

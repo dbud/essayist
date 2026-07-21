@@ -1,6 +1,7 @@
 import { useSignal } from "@preact/signals";
 import { Download } from "lucide-preact";
 import { getFileTree } from "@/signals/fileTree.ts";
+import { getOpenedFiles } from "@/signals/openedFiles.ts";
 import { dismissToast, showToast } from "@/signals/toast.ts";
 import { workspaces } from "@/signals/workspace.ts";
 import { openGooglePicker, type PickerDoc } from "@/utils/googlePicker.ts";
@@ -46,6 +47,7 @@ export default function GoogleDocImporter() {
       `Importing ${docs.length} doc${docs.length === 1 ? "" : "s"}…`,
     );
     const errors: string[] = [];
+    let firstPath: string | null = null;
 
     for (let i = 0; i < docs.length; i++) {
       const doc = docs[i];
@@ -64,10 +66,14 @@ export default function GoogleDocImporter() {
           error?: string;
         } | null;
         errors.push(`${doc.name}: ${body?.error ?? `failed (${res.status})`}`);
+      } else {
+        const body = (await res.json()) as { path: string };
+        if (firstPath === null) firstPath = body.path;
       }
     }
 
     await getFileTree()?.load();
+    if (firstPath) getOpenedFiles()?.open(firstPath);
 
     toast.value = {
       message:

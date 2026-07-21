@@ -6,6 +6,7 @@ import { kv } from "@/store.ts";
 // callback but does not persist them; without this row they'd be discarded.
 // Refresh logic lives in utils/googleToken.ts.
 const APP_SESSIONS = "app_sessions";
+const USER_REFRESH_TOKENS = "user_refresh_tokens";
 
 // Sliding TTL re-applied by updateSessionTokens on each refresh.
 const SESSION_TTL_MS = 90 * 24 * 60 * 60 * 1000;
@@ -72,4 +73,24 @@ export async function updateSessionTokens(
 
 export async function deleteSession(sessionId: string): Promise<void> {
   await kv.delete([APP_SESSIONS, sessionId]);
+}
+
+export async function setUserRefreshToken(
+  userId: string,
+  refreshToken: string,
+): Promise<void> {
+  await kv.set([USER_REFRESH_TOKENS, userId], {
+    refreshToken,
+    updatedAt: Date.now(),
+  });
+}
+
+export async function getUserRefreshToken(
+  userId: string,
+): Promise<string | undefined> {
+  const res = await kv.get<{ refreshToken: string }>([
+    USER_REFRESH_TOKENS,
+    userId,
+  ]);
+  return res.value?.refreshToken;
 }

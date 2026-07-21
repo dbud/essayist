@@ -1,6 +1,8 @@
 import {
   getSession,
+  getUserRefreshToken,
   type SessionTokens,
+  setUserRefreshToken,
   updateSessionTokens,
 } from "@/utils/sessions.ts";
 
@@ -23,12 +25,21 @@ export async function getValidAccessToken(
   const session = await getSession(sessionId);
   if (!session?.tokens) return null;
 
-  const { accessToken, refreshToken, expiresAt } = session.tokens;
+  const { accessToken, expiresAt } = session.tokens;
   if (expiresAt - Date.now() > REFRESH_BUFFER_MS) return accessToken;
+
+  // Prefer the session's refresh token; fall back to the user-level store
+  // for sessions created without one (Google only returns a refresh token on
+  // the first authorization, not on subsequent sign-ins).
+  const refreshToken =
+    session.tokens.refreshToken ?? (await getUserRefreshToken(session.userId));
   if (!refreshToken) return accessToken; // can't refresh; let Google reject it
 
   const refreshed = await refreshWithGoogle(refreshToken);
   await updateSessionTokens(sessionId, refreshed);
+  if (refreshed.refreshToken) {
+    await setUserRefreshToken(session.userId, refreshed.refreshToken);
+  }
   return refreshed.accessToken;
 }
 
