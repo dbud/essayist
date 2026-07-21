@@ -5,7 +5,6 @@ import {
   sanitizeDocTitle,
 } from "@/utils/googleDrive.ts";
 import { getValidAccessToken } from "@/utils/googleToken.ts";
-import { getOAuthHelpers } from "@/utils/oauth.ts";
 
 // POST { docId, name? } -> exports the Google Doc as markdown and writes it
 // into the workspace VFS at `google-docs/<sanitized title>.md`. Sits under
@@ -21,8 +20,7 @@ export const handler = {
       return Response.json({ error: "Missing 'docId'" }, { status: 400 });
     }
 
-    const helpers = getOAuthHelpers(ctx.req);
-    const sessionId = await helpers.getSessionId(ctx.req);
+    const sessionId = ctx.state.sessionId;
     if (!sessionId) {
       return Response.json({ error: "No session" }, { status: 401 });
     }

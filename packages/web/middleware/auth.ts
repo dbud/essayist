@@ -50,6 +50,7 @@ const authMiddleware: Middleware<State> = define.middleware(async (ctx) => {
         const user = await store.getUser(userId);
         if (user) {
           ctx.state.user = user;
+          ctx.state.sessionId = sessionId;
           return ctx.next();
         }
       }

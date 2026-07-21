@@ -6,6 +6,7 @@ export interface State {
   user: User;
   vfs: VirtualFileSystem;
   workspaceId: string;
+  sessionId?: string;
 }
 
 export const define = createDefine<State>();
