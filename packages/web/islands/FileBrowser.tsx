@@ -2,6 +2,7 @@ import { useSignal } from "@preact/signals";
 import { FileText, Folder, FolderOpen, Plus } from "lucide-preact";
 import CreateFileDialog from "@/islands/CreateFileDialog.tsx";
 import FileUploader from "@/islands/FileUploader.tsx";
+import GoogleDocImporter from "@/islands/GoogleDocImporter.tsx";
 import { getFileTree, type TreeNode } from "@/signals/fileTree.ts";
 import { getOpenedFiles } from "@/signals/openedFiles.ts";
 
@@ -80,7 +81,7 @@ export default function FileBrowser() {
           ),
         )}
       </ul>
-      <div class="flex items-center justify-between px-2">
+      <div class="flex items-center justify-between px-2 gap-2">
         <button
           type="button"
           class="btn btn-sm"
@@ -90,6 +91,7 @@ export default function FileBrowser() {
           <Plus size={16} />
           New file
         </button>
+        <GoogleDocImporter />
         <FileUploader />
       </div>
       <CreateFileDialog open={dialogOpen} />

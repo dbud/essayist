@@ -85,6 +85,7 @@ export const FileTreeModel = createModel((workspaceId: string) => {
     createFile,
     uploadFiles,
     uploadProgress,
+    load,
   };
 });
 

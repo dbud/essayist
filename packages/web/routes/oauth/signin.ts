@@ -4,7 +4,12 @@ import { getOAuthHelpers } from "@/utils/oauth.ts";
 export const handler = define.handlers(async (ctx) => {
   try {
     const helpers = getOAuthHelpers(ctx.req);
-    return await helpers.signIn(ctx.req);
+    return await helpers.signIn(ctx.req, {
+      urlParams: {
+        access_type: "offline",
+        prompt: "consent",
+      },
+    });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     return new Response(
