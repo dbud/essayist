@@ -19,7 +19,15 @@ export function getOAuthHelpers(request: Request): Helpers {
   if (cached && cached.origin === origin) return cached.helpers;
   const oauthConfig = createGoogleOAuthConfig({
     redirectUri: `${origin}/oauth/callback`,
-    scope: ["openid", "email", "profile"],
+    // `drive.file` grants access only to files the user explicitly picks via
+    // the Google Picker in our app -- never their whole Drive. See
+    // islands/GoogleDocImporter.tsx and the import route.
+    scope: [
+      "openid",
+      "email",
+      "profile",
+      "https://www.googleapis.com/auth/drive.file",
+    ],
   });
   const helpers = createHelpers(oauthConfig);
   cached = { origin, helpers };

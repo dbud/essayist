@@ -2,14 +2,15 @@ import { UserEmailTakenError } from "@essayist/core";
 import { define } from "@/define.ts";
 import { store } from "@/store.ts";
 import { getGoogleUserInfo, getOAuthHelpers } from "@/utils/oauth.ts";
-import { createSession } from "@/utils/sessions.ts";
+import { createSession, toSessionTokens } from "@/utils/sessions.ts";
 
 /**
  * Google OAuth callback. The @deno/kv-oauth helper validates the callback,
  * exchanges the code for tokens, sets the session cookie, and returns a
  * redirect to the success URL captured at sign-in. We then use the access
- * token to fetch the user's Google profile, upsert an essayist `User` keyed
- * by email, and record the session -> user id mapping.
+ * token to fetch the user's Google profile, upsert an essayist User keyed
+ * by email, and record the session -> user id mapping with the OAuth tokens
+ * attached so server-side Drive calls can re-use the grant.
  */
 export const handler = define.handlers(async (ctx) => {
   const helpers = getOAuthHelpers(ctx.req);
@@ -42,6 +43,8 @@ export const handler = define.handlers(async (ctx) => {
     if (updated) user = updated;
   }
 
-  await createSession(sessionId, user.id);
+  // Persist the OAuth tokens onto the app session so server-side Google API
+  // calls (Drive export) can re-use the grant; see utils/googleToken.ts.
+  await createSession(sessionId, user.id, toSessionTokens(tokens));
   return response;
 });
