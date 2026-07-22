@@ -1,10 +1,16 @@
 import type { FileSnapshot } from "@essayist/core";
 import {
   ConcurrentModificationError,
+  type Entry,
   type Key,
   type PersistenceAdapter,
   type WriteOp,
 } from "@/persistence/mod.ts";
+import {
+  type ContentManifest,
+  chunkContent,
+  reassemble,
+} from "@/vfs/chunked_content.ts";
 import { resolveMarks } from "@/vfs/marks_resolver.ts";
 import { TokenizedText } from "@/vfs/text_search.ts";
 import { unifiedDiff } from "@/vfs/unified_diff.ts";
@@ -25,9 +31,14 @@ import type {
 
 const DEFAULT_CONTEXT_SPAN = 60;
 
+/** Stored at file:latest — version metadata plus chunked content (chunk 0 inline). */
+type StoredSnapshot = FileVersion & ContentManifest;
+
 const FILE_LATEST = "file:latest";
 const FILE_VERSIONS = "file:versions";
 const FILE_CONTENT = "file:content";
+const FILE_MANIFEST = "file:manifest";
+const FILE_CHUNK = "file:chunk";
 const MARKS = "marks";
 const WORKSPACES = "ws";
 const GREP_CONTEXT_LINES = 2;
@@ -117,13 +128,33 @@ export class VirtualFileSystem implements VFS {
       ? await this.#getVersionContent(path, previousVersionId)
       : "";
 
+    const { manifest, extraChunks } = chunkContent(content);
+
+    // Write extra chunks individually before the metadata batch. Deno KV caps
+    // total atomic mutation size at 800 KiB, so large files can't fit all
+    // chunks in one batch. Chunks are keyed by versionId (unique per write),
+    // so if the metadata batch below fails, these are harmless orphans --
+    // never referenced until the manifest commits.
+    for (let i = 0; i < extraChunks.length; i++) {
+      await this.#adapter.set(
+        this.#contentChunkKey(path, versionId, i + 1),
+        extraChunks[i],
+      );
+    }
+
+    // Metadata batch: versions, manifest, latest, marks -- atomic with
+    // optimistic concurrency check on the versions list.
     const ops: WriteOp[] = [
       { type: "set", key: versionsKey, value: [...versions, version] },
-      { type: "set", key: this.#contentKey(path, versionId), value: content },
+      {
+        type: "set",
+        key: this.#contentManifestKey(path, versionId),
+        value: manifest,
+      },
       {
         type: "set",
         key: this.#latestKey(path),
-        value: { content, ...version } as FileSnapshot,
+        value: { ...version, ...manifest },
       },
     ];
 
@@ -163,7 +194,7 @@ export class VirtualFileSystem implements VFS {
   }
 
   async list(prefix?: string): Promise<FileEntry[]> {
-    const { entries } = await this.#adapter.list<FileSnapshot>([
+    const { entries } = await this.#adapter.list<StoredSnapshot>([
       WORKSPACES,
       this.#workspaceId,
       FILE_LATEST,
@@ -342,9 +373,38 @@ export class VirtualFileSystem implements VFS {
     };
   }
 
+  /** Reassemble content from a manifest, fetching extra chunks if needed. */
+  async #reassembleContent(
+    path: string,
+    versionId: string,
+    manifest: ContentManifest,
+  ): Promise<string> {
+    if (manifest.chunkCount === 1) {
+      return reassemble(manifest, []);
+    }
+    const keys = Array.from({ length: manifest.chunkCount - 1 }, (_, i) =>
+      this.#contentChunkKey(path, versionId, i + 1),
+    );
+    const entries = await this.#getManyBatched<Uint8Array>(keys);
+    const extraChunks: Uint8Array[] = [];
+    for (const e of entries) {
+      if (e) extraChunks.push(e.value);
+    }
+    return reassemble(manifest, extraChunks);
+  }
+
   async #getFile(path: string): Promise<FileSnapshot | undefined> {
-    return (await this.#adapter.get<FileSnapshot>(this.#latestKey(path)))
-      ?.value;
+    const entry = await this.#adapter.get<StoredSnapshot>(
+      this.#latestKey(path),
+    );
+    if (entry) {
+      const { version_id, chunkCount, firstChunk, ...rest } = entry.value;
+      const content = await this.#reassembleContent(path, version_id, {
+        chunkCount,
+        firstChunk,
+      });
+      return { version_id, content, ...rest };
+    }
   }
 
   async #getVersion(
@@ -358,18 +418,38 @@ export class VirtualFileSystem implements VFS {
   }
 
   async #getVersionContent(path: string, versionId: string): Promise<string> {
-    return (
-      (await this.#adapter.get<string>(this.#contentKey(path, versionId)))
-        ?.value ?? ""
+    const manifestEntry = await this.#adapter.get<ContentManifest>(
+      this.#contentManifestKey(path, versionId),
     );
+    if (!manifestEntry) return "";
+    return this.#reassembleContent(path, versionId, manifestEntry.value);
   }
 
   #latestKey(path: string): Key {
     return [WORKSPACES, this.#workspaceId, FILE_LATEST, path];
   }
 
-  #contentKey(path: string, versionId: string): Key {
-    return [WORKSPACES, this.#workspaceId, FILE_CONTENT, path, versionId];
+  #contentManifestKey(path: string, versionId: string): Key {
+    return [
+      WORKSPACES,
+      this.#workspaceId,
+      FILE_CONTENT,
+      path,
+      versionId,
+      FILE_MANIFEST,
+    ];
+  }
+
+  #contentChunkKey(path: string, versionId: string, index: number): Key {
+    return [
+      WORKSPACES,
+      this.#workspaceId,
+      FILE_CONTENT,
+      path,
+      versionId,
+      FILE_CHUNK,
+      String(index),
+    ];
   }
 
   #versionsKey(path: string): Key {
@@ -408,6 +488,18 @@ export class VirtualFileSystem implements VFS {
         }
       }
     }
+  }
+
+  /** Fetch many keys, batching around Deno KV's 10-key getMany limit. */
+  async #getManyBatched<T>(keys: Key[]): Promise<(Entry<T> | undefined)[]> {
+    const MAX_GET_MANY = 10;
+    const results: (Entry<T> | undefined)[] = [];
+    for (let i = 0; i < keys.length; i += MAX_GET_MANY) {
+      const batch = keys.slice(i, i + MAX_GET_MANY);
+      const entries = await this.#adapter.getMany<T>(batch);
+      results.push(...entries);
+    }
+    return results;
   }
 
   #generateMarkId(): string {

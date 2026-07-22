@@ -438,3 +438,22 @@ Deno.test("VFS -- marks are scoped per workspace", async () => {
     0,
   );
 });
+
+// Inline manifest optimization: small files inline content in the manifest
+// with no separate chunk keys.
+
+Deno.test("VFS -- small file inlines content in manifest (no chunk keys)", async () => {
+  const adapter = new InMemoryAdapter();
+  const vfs = new VirtualFileSystem(adapter, "ws");
+  await vfs.write("small.txt", "hello world");
+
+  const { entries } = await adapter.list(["ws", "ws", "file:content"]);
+  const manifestKeys = entries.filter(
+    (e) => e.key[e.key.length - 1] === "file:manifest",
+  );
+  const chunkKeys = entries.filter(
+    (e) => e.key[e.key.length - 2] === "file:chunk",
+  );
+  assertEquals(manifestKeys.length, 1);
+  assertEquals(chunkKeys.length, 0, "small file must not write chunk keys");
+});
