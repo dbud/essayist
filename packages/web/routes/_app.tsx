@@ -2,7 +2,6 @@ import type { PageProps } from "fresh";
 import type { State } from "@/define.ts";
 import Toaster from "@/islands/Toaster.tsx";
 import UserMenu from "@/islands/UserMenu.tsx";
-import WorkspaceMenu from "@/islands/WorkspaceMenu.tsx";
 
 export default function App({ Component, state }: PageProps<unknown, State>) {
   const user = state.user;
@@ -14,18 +13,9 @@ export default function App({ Component, state }: PageProps<unknown, State>) {
         <title>Essayist &mdash; AI-powered writing tools</title>
       </head>
       <body class="h-dvh bg-base-200 text-base-content flex flex-col">
-        <nav class="navbar bg-base-100 shadow-sm z-10">
-          <div class="navbar-start gap-2">{user && <WorkspaceMenu />}</div>
-          <div class="navbar-center">
-            <a
-              href="/"
-              class="text-2xl font-serif italic tracking-widest font-light"
-            >
-              essayist
-            </a>
-          </div>
-          <div class="navbar-end">{user && <UserMenu user={user} />}</div>
-        </nav>
+        <div class="fixed top-3 right-3 z-50">
+          <UserMenu user={user} />
+        </div>
         <Component />
         <Toaster />
       </body>
