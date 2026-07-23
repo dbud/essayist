@@ -1,14 +1,15 @@
 import { useMemo } from "preact/hooks";
 import EditorToolbar from "@/components/EditorToolbar.tsx";
 import FontSelect from "@/components/FontSelect.tsx";
+import Sidenote from "@/components/Sidenote.tsx";
 import Toolbar from "@/components/Toolbar.tsx";
 import Editor from "@/islands/editor/Editor.tsx";
 import FileViewerTabs from "@/islands/FileViewerTabs.tsx";
 import SidebarToggle from "@/islands/SidebarToggle.tsx";
+import { activeEditor } from "@/signals/activeEditor.ts";
 import { getFile } from "@/signals/file.ts";
 import { getMarks } from "@/signals/marks.ts";
 import { getOpenedFiles } from "@/signals/openedFiles.ts";
-import { sidenotePositions } from "@/signals/sidenotePositions.ts";
 import { workspaces } from "@/signals/workspace.ts";
 import { delayedRise } from "@/utils/delayedRise.ts";
 
@@ -36,7 +37,7 @@ function FileViewerBody({ wsId, path }: { wsId: string; path: string }) {
     wsId,
     path,
   );
-  const { resolving } = getMarks(wsId, path);
+  const { resolving, sidenotes } = getMarks(wsId, path);
   const resolvingVisible = useMemo(
     () => delayedRise(resolving, 150),
     [resolving],
@@ -74,18 +75,18 @@ function FileViewerBody({ wsId, path }: { wsId: string; path: string }) {
               />
             )}
           </div>
-          {/* Debug: render each measured mark position so we can verify
-              alignment before building the real Sidenote UI. */}
-          <div class="relative min-w-0 bg-base-200/50">
-            {[...sidenotePositions.value.entries()].map(([id, top]) => (
-              <div
-                key={id}
-                class="absolute left-0 right-0 text-xs bg-base-100 px-1"
-                style={{ top: `${top}px` }}
-              >
-                {id}@{Math.round(top)}
-              </div>
-            ))}
+          <div class="min-w-0 pr-16">
+            <div class="relative">
+              {sidenotes.value.map((s) => (
+                <Sidenote
+                  key={s.mark.thread_id}
+                  mark={s.mark}
+                  top={s.top}
+                  active={s.active}
+                  editor={activeEditor.value}
+                />
+              ))}
+            </div>
           </div>
         </div>
       </div>

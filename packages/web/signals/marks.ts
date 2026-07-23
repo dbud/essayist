@@ -1,8 +1,10 @@
 import type { Mark } from "@essayist/core";
-import { createModel, signal } from "@preact/signals";
+import { computed, createModel, signal } from "@preact/signals";
 import { IS_BROWSER } from "fresh/runtime";
 import type { NodeRange } from "@/editor/textNodeSpans.ts";
+import { getEditorSelection } from "@/signals/editorSelection.ts";
 import { getFile } from "@/signals/file.ts";
+import { sidenotePositions } from "@/signals/sidenotePositions.ts";
 import { asyncComputed } from "@/utils/asyncComputed.ts";
 import createAsyncState from "@/utils/asyncState.ts";
 import { deepComputed } from "@/utils/deepComputed.ts";
@@ -11,6 +13,12 @@ import { resolveMarksViaWorker } from "@/wasm/client.ts";
 export interface RangedMark {
   mark: Mark;
   range: NodeRange;
+}
+
+export interface SidenoteEntry {
+  mark: Mark;
+  top: number;
+  active: boolean;
 }
 
 export const MarksModel = createModel((workspaceId: string, path: string) => {
@@ -32,6 +40,22 @@ export const MarksModel = createModel((workspaceId: string, path: string) => {
     resolved.value.map((mark) => ({ mark, range: getNodeRange(mark) })),
   );
 
+  // Marks joined with their measured top offset (from the active editor) and
+  // the cursor's active flag, ready for the sidenote column to render without
+  // any per-component signal joining.
+  const { markIds } = getEditorSelection(workspaceId, path);
+  const sidenotes = computed((): SidenoteEntry[] => {
+    const positions = sidenotePositions.value;
+    const out: SidenoteEntry[] = [];
+    for (const mark of resolved.value) {
+      const top = positions.get(mark.thread_id);
+      if (top === undefined) continue;
+      out.push({ mark, top, active: markIds.value.has(mark.thread_id) });
+    }
+    out.sort((a, b) => a.top - b.top);
+    return out;
+  });
+
   async function load() {
     const result = await run(async () => {
       const res = await fetch(
@@ -49,6 +73,7 @@ export const MarksModel = createModel((workspaceId: string, path: string) => {
     marks,
     resolved,
     ranges,
+    sidenotes,
     loading,
     error,
     reload: load,
