@@ -13,9 +13,11 @@ export default function App({ Component, state }: PageProps<unknown, State>) {
         <title>Essayist &mdash; AI-powered writing tools</title>
       </head>
       <body class="h-dvh bg-base-200 text-base-content flex flex-col">
-        <div class="fixed top-3 right-3 z-50">
-          <UserMenu user={user} />
-        </div>
+        {user && (
+          <div class="fixed top-3 right-3 z-50">
+            <UserMenu user={user} />
+          </div>
+        )}
         <Component />
         <Toaster />
       </body>
