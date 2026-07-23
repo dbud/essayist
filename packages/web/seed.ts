@@ -167,6 +167,26 @@ This file was created automatically when the workspace was set up. Feel free to 
     "Build a writing assistant",
     "Core product idea -- prioritize this.",
   );
+  await vfs.mark(
+    "markdown-showcase.md",
+    "Writing is a form of art that has been practiced for thousands of years",
+    "Strong opening -- sets the historical stakes for the whole section.",
+  );
+  await vfs.mark(
+    "markdown-showcase.md",
+    "Writing is thinking on paper.",
+    "Zinsser quote worth pulling out -- could anchor the intro.",
+  );
+  await vfs.mark(
+    "markdown-showcase.md",
+    "code is read far more often than it is written",
+    "Key principle -- reuse as a guiding maxim for the craftsmanship chapter.",
+  );
+  await vfs.mark(
+    "markdown-showcase.md",
+    "That's all folks!",
+    "Closing line -- consider a stronger send-off.",
+  );
 }
 
 /** Sentinel key marking that the demo seed has already been applied. */
