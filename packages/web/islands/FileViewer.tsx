@@ -56,16 +56,16 @@ function FileViewerBody({ wsId, path }: { wsId: string; path: string }) {
         <FontSelect />
         <EditorToolbar wsId={wsId} path={path} />
       </Toolbar>
-      <div class="flex-1 min-h-0 flex flex-col overflow-x-auto overflow-y-auto p-4">
+      <div class="flex-1 min-h-0 flex flex-col overflow-x-auto overflow-y-auto">
         {editorState && (
           <Editor
             wsId={wsId}
             path={path}
             state={editorState}
             onChange={setModifiedState}
+            className="p-16 pb-32"
           />
         )}
-        <div class="shrink-0 h-32" />
       </div>
     </div>
   );

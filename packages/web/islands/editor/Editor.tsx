@@ -17,20 +17,16 @@ interface EditorProps {
   path: string;
   state: EditorState;
   onChange?: (state: EditorState) => void;
+  className?: string;
 }
 
-const contentEditable = (
-  <ContentEditable
-    class={`prose whitespace-pre-wrap editor-input outline-none max-w-none`}
-    placeholder={
-      <span class="text-base-content/40 pointer-events-none">
-        Start writing...
-      </span>
-    }
-  />
-);
-
-export default function Editor({ wsId, path, state, onChange }: EditorProps) {
+export default function Editor({
+  wsId,
+  path,
+  state,
+  onChange,
+  className,
+}: EditorProps) {
   const { ranges } = getMarks(wsId, path);
   const { textNodeSpans, markdown } = getFile(wsId, path);
   const selection = getEditorSelection(wsId, path);
@@ -47,6 +43,20 @@ export default function Editor({ wsId, path, state, onChange }: EditorProps) {
     }),
     // Signals/model are stable per path, so the memo effectively keys on path/state.
     [path, state, ranges, textNodeSpans, markdown, selection],
+  );
+
+  const contentEditable = useMemo(
+    () => (
+      <ContentEditable
+        class={`prose whitespace-pre-wrap editor-input outline-none max-w-none ${className}`}
+        placeholder={
+          <span class="text-base-content/40 pointer-events-none">
+            Start writing...
+          </span>
+        }
+      />
+    ),
+    [className],
   );
 
   return (
