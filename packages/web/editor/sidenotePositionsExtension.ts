@@ -1,16 +1,18 @@
 import { defineExtension } from "@lexical/extension";
 import { $isMarkNode, MarkNode } from "@lexical/mark";
-import type { Signal } from "@preact/signals";
+import { effect, type Signal } from "@preact/signals";
 import {
   $getNodeByKey,
   type LexicalEditor,
   mergeRegister,
   type NodeKey,
 } from "lexical";
+import type { MarkNumbers } from "@/signals/marks.ts";
 import type { SidenotePositions } from "@/signals/sidenotePositions.ts";
 
 interface SidenotePositionsConfig {
   sidenotePositions: Signal<SidenotePositions>;
+  markNumbers: Signal<MarkNumbers>;
 }
 
 // Publishes thread_id -> MarkNode.offsetTop (relative to the editor column,
@@ -19,30 +21,51 @@ interface SidenotePositionsConfig {
 // stable under scroll. A mark spanning a paragraph break yields several
 // MarkNodes sharing one id; we keep the minimum so the sidenote aligns with
 // the first fragment.
+//
+// Also badges every MarkNode fragment's DOM with a `data-number` attribute
+// holding its ordinal (from markNumbers), which CSS renders as a superscript
+// via `mark[data-number]::after`. Re-badges when markNumbers changes.
 export const SidenotePositionsExtension = defineExtension({
   name: "sidenote-positions",
   afterRegistration: (
     editor: LexicalEditor,
-    { sidenotePositions }: SidenotePositionsConfig,
+    { sidenotePositions, markNumbers }: SidenotePositionsConfig,
   ) => {
     const nodeKeys = new Set<NodeKey>();
 
     const measure = () => {
-      const tops: SidenotePositions = new Map();
+      const numbers = markNumbers.value;
+      const fragments: Array<{
+        el: HTMLElement;
+        ids: string[];
+        top: number;
+      }> = [];
       editor.getEditorState().read(() => {
         for (const key of nodeKeys) {
           const node = $getNodeByKey(key);
           if (node === null || !$isMarkNode(node)) continue;
           const el = editor.getElementByKey(key);
           if (el === null) continue;
-          const top = el.offsetTop;
-          for (const id of node.getIDs()) {
-            const prev = tops.get(id);
-            if (prev === undefined || top < prev) tops.set(id, top);
-          }
+          fragments.push({ el, ids: node.getIDs(), top: el.offsetTop });
         }
       });
+
+      const tops: SidenotePositions = new Map();
+      for (const { ids, top } of fragments) {
+        for (const id of ids) {
+          const prev = tops.get(id);
+          if (prev === undefined || top < prev) tops.set(id, top);
+        }
+      }
       sidenotePositions.value = tops;
+
+      for (const { el, ids } of fragments) {
+        const nums = ids
+          .map((id) => numbers.get(id))
+          .filter((n): n is number => n !== undefined);
+        if (nums.length) el.dataset.number = nums.join(",");
+        else delete el.dataset.number;
+      }
     };
 
     let rafId = 0;
@@ -84,6 +107,11 @@ export const SidenotePositionsExtension = defineExtension({
         scheduleMeasure();
       }),
       editor.registerUpdateListener(scheduleMeasure),
+      // Re-badge when ordinals change even without an editor reflow.
+      effect(() => {
+        markNumbers.value;
+        scheduleMeasure();
+      }),
     );
 
     return () => {

@@ -81,6 +81,7 @@ function FileViewerBody({ wsId, path }: { wsId: string; path: string }) {
                 <Sidenote
                   key={s.mark.thread_id}
                   mark={s.mark}
+                  number={s.number}
                   top={s.top}
                   active={s.active}
                   editor={activeEditor.value}

@@ -21,6 +21,14 @@
     background-color: var(--color-mark);
     color: var(--color-mark-content);
   }
+  mark[data-number]::after {
+    content: attr(data-number);
+    vertical-align: super;
+    font-size: 0.75em;
+    font-weight: 600;
+    color: var(--color-primary);
+    margin-inline-start: 0.25em;
+  }
 }
 
 @plugin "daisyui" {

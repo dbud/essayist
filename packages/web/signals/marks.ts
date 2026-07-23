@@ -19,7 +19,11 @@ export interface SidenoteEntry {
   mark: Mark;
   top: number;
   active: boolean;
+  number: number;
 }
+
+// thread_id -> 1-based ordinal in document order (by mark.offset).
+export type MarkNumbers = Map<string, number>;
 
 export const MarksModel = createModel((workspaceId: string, path: string) => {
   const { content, markdown, getNodeRange } = getFile(workspaceId, path);
@@ -40,17 +44,34 @@ export const MarksModel = createModel((workspaceId: string, path: string) => {
     resolved.value.map((mark) => ({ mark, range: getNodeRange(mark) })),
   );
 
-  // Marks joined with their measured top offset (from the active editor) and
-  // the cursor's active flag, ready for the sidenote column to render without
-  // any per-component signal joining.
+  // 1-based ordinal per thread id, in document order. Shared by the editor
+  // (data-number badges) and the sidenote column so the numbers always match.
+  const markNumbers = computed((): MarkNumbers => {
+    const sorted = [...resolved.value].sort((a, b) => a.offset - b.offset);
+    const map: MarkNumbers = new Map();
+    for (let i = 0; i < sorted.length; i++) {
+      map.set(sorted[i].thread_id, i + 1);
+    }
+    return map;
+  });
+
+  // Marks joined with their measured top offset (from the active editor), the
+  // cursor's active flag, and their ordinal -- ready for the sidenote column
+  // to render without any per-component signal joining.
   const { markIds } = getEditorSelection(workspaceId, path);
   const sidenotes = computed((): SidenoteEntry[] => {
     const positions = sidenotePositions.value;
+    const numbers = markNumbers.value;
     const out: SidenoteEntry[] = [];
     for (const mark of resolved.value) {
       const top = positions.get(mark.thread_id);
       if (top === undefined) continue;
-      out.push({ mark, top, active: markIds.value.has(mark.thread_id) });
+      out.push({
+        mark,
+        top,
+        active: markIds.value.has(mark.thread_id),
+        number: numbers.get(mark.thread_id) ?? 0,
+      });
     }
     out.sort((a, b) => a.top - b.top);
     return out;
@@ -73,6 +94,7 @@ export const MarksModel = createModel((workspaceId: string, path: string) => {
     marks,
     resolved,
     ranges,
+    markNumbers,
     sidenotes,
     loading,
     error,

@@ -12,7 +12,7 @@ import type { Signal } from "@preact/signals";
 import { configExtension, defineExtension } from "lexical";
 import { PartialUpdateExtension } from "@/editor/partialUpdateExtension.ts";
 import type { EditorSelection } from "@/signals/editorSelection.ts";
-import type { RangedMark } from "@/signals/marks.ts";
+import type { MarkNumbers, RangedMark } from "@/signals/marks.ts";
 import type { SidenotePositions } from "@/signals/sidenotePositions.ts";
 import { MarksExtension } from "./markExtension.ts";
 import { MarksAtCursorExtension } from "./marksAtCursorExtension.ts";
@@ -26,11 +26,19 @@ interface EditorDeps {
   markdown: Signal<string>;
   selection: EditorSelection;
   sidenotePositions: Signal<SidenotePositions>;
+  markNumbers: Signal<MarkNumbers>;
 }
 
 export function createEditorExtension(
   path: string,
-  { ranges, textNodeSpans, markdown, selection, sidenotePositions }: EditorDeps,
+  {
+    ranges,
+    textNodeSpans,
+    markdown,
+    selection,
+    sidenotePositions,
+    markNumbers,
+  }: EditorDeps,
 ) {
   return defineExtension({
     name: "[root]",
@@ -49,7 +57,10 @@ export function createEditorExtension(
         textNodeSpans,
         markdown,
       }),
-      configExtension(SidenotePositionsExtension, { sidenotePositions }),
+      configExtension(SidenotePositionsExtension, {
+        sidenotePositions,
+        markNumbers,
+      }),
       configExtension(ToolbarStateExtension, { selection }),
       configExtension(MarksAtCursorExtension, { selection }),
       PartialUpdateExtension,

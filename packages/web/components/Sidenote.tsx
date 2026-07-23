@@ -4,12 +4,19 @@ import { SELECT_MARK_COMMAND } from "@/editor/markExtension.ts";
 
 interface SidenoteProps {
   mark: Mark;
+  number: number;
   top: number;
   active: boolean;
   editor: LexicalEditor | null;
 }
 
-export default function Sidenote({ mark, top, active, editor }: SidenoteProps) {
+export default function Sidenote({
+  mark,
+  number,
+  top,
+  active,
+  editor,
+}: SidenoteProps) {
   return (
     <button
       type="button"
@@ -23,6 +30,7 @@ export default function Sidenote({ mark, top, active, editor }: SidenoteProps) {
       }
     >
       <div class="flex items-center gap-2 mb-1">
+        <span class="font-semibold text-primary">{number}</span>
         <span class="font-semibold text-base-content/70">
           {mark.label || "Mark"}
         </span>

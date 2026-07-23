@@ -28,7 +28,7 @@ export default function Editor({
   onChange,
   className,
 }: EditorProps) {
-  const { ranges } = getMarks(wsId, path);
+  const { ranges, markNumbers } = getMarks(wsId, path);
   const { textNodeSpans, markdown } = getFile(wsId, path);
   const selection = getEditorSelection(wsId, path);
 
@@ -40,11 +40,12 @@ export default function Editor({
         markdown,
         selection,
         sidenotePositions,
+        markNumbers,
       }),
       $initialEditorState: state,
     }),
     // Signals/model are stable per path, so the memo effectively keys on path/state.
-    [path, state, ranges, textNodeSpans, markdown, selection],
+    [path, state, ranges, textNodeSpans, markdown, selection, markNumbers],
   );
 
   const contentEditable = useMemo(
