@@ -8,6 +8,7 @@ import SidebarToggle from "@/islands/SidebarToggle.tsx";
 import { getFile } from "@/signals/file.ts";
 import { getMarks } from "@/signals/marks.ts";
 import { getOpenedFiles } from "@/signals/openedFiles.ts";
+import { sidenotePositions } from "@/signals/sidenotePositions.ts";
 import { workspaces } from "@/signals/workspace.ts";
 import { delayedRise } from "@/utils/delayedRise.ts";
 
@@ -73,7 +74,19 @@ function FileViewerBody({ wsId, path }: { wsId: string; path: string }) {
               />
             )}
           </div>
-          <div class="relative min-w-0 bg-base-200/50" />
+          {/* Debug: render each measured mark position so we can verify
+              alignment before building the real Sidenote UI. */}
+          <div class="relative min-w-0 bg-base-200/50">
+            {[...sidenotePositions.value.entries()].map(([id, top]) => (
+              <div
+                key={id}
+                class="absolute left-0 right-0 text-xs bg-base-100 px-1"
+                style={{ top: `${top}px` }}
+              >
+                {id}@{Math.round(top)}
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>

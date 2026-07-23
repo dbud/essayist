@@ -10,6 +10,7 @@ import { getEditorSelection } from "@/signals/editorSelection.ts";
 import { getFile } from "@/signals/file.ts";
 import { getMarks } from "@/signals/marks.ts";
 import { viewerFont } from "@/signals/preferences.ts";
+import { sidenotePositions } from "@/signals/sidenotePositions.ts";
 import ActiveEditorRef from "./ActiveEditorRef.tsx";
 
 interface EditorProps {
@@ -38,6 +39,7 @@ export default function Editor({
         textNodeSpans,
         markdown,
         selection,
+        sidenotePositions,
       }),
       $initialEditorState: state,
     }),
