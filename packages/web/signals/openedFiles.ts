@@ -1,6 +1,6 @@
 import { createModel, effect } from "@preact/signals";
 import { IS_BROWSER } from "fresh/runtime";
-import { sidebarCollapsed, sidebarOverlayOpen } from "@/signals/sidebar.ts";
+import { leftSidebarCollapsed } from "@/signals/sidebar.ts";
 import { workspaces } from "@/signals/workspace.ts";
 import { persistentSignal } from "@/utils/persistentSignal.ts";
 
@@ -49,15 +49,14 @@ export function getOpenedFiles(): OpenedFiles | null {
 }
 
 // Module-level (not per-instance) so multiple workspace instances don't fight
-// over the global sidebar signals.
+// over the global sidebar signal. When a workspace has no opened files, expand
+// the left sidebar so the file browser is visible to pick one.
 if (IS_BROWSER) {
   effect(() => {
     const wsId = workspaces.currentWorkspaceId.value;
     if (!wsId) return;
     const of = getOpenedFilesFor(wsId);
-    of.selected.value; // track selection so tapping a file closes the overlay
-    const empty = of.opened.value.length === 0;
-    if (empty) sidebarCollapsed.value = false;
-    sidebarOverlayOpen.value = empty;
+    of.opened.value; // track so opening the first file can re-collapse it
+    if (of.opened.value.length === 0) leftSidebarCollapsed.value = false;
   });
 }

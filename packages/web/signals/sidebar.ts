@@ -1,5 +1,10 @@
-import { signal } from "@preact/signals";
 import { persistentSignal } from "@/utils/persistentSignal.ts";
 
-export const sidebarCollapsed = persistentSignal("sidebarCollapsed", false);
-export const sidebarOverlayOpen = signal(false);
+export const leftSidebarCollapsed = persistentSignal(
+  "leftSidebarCollapsed",
+  false,
+);
+export const rightSidebarCollapsed = persistentSignal(
+  "rightSidebarCollapsed",
+  false,
+);

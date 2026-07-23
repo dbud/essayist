@@ -18,11 +18,12 @@ export default function FileViewer() {
   const wsId = workspaces.currentWorkspaceId.value;
   return (
     <div class="flex flex-col h-full min-h-0">
-      <div class="flex items-center gap-1">
-        <SidebarToggle />
+      <div class="flex items-center gap-1 pr-10">
+        <SidebarToggle side="left" label="Toggle file browser" />
         <div class="flex-1 min-w-0">
           <FileViewerTabs />
         </div>
+        <SidebarToggle side="right" label="Toggle inspector" />
       </div>
       <FileViewerBody key={path} wsId={wsId} path={path} />
     </div>
@@ -47,7 +48,7 @@ function FileViewerBody({ wsId, path }: { wsId: string; path: string }) {
 
   return (
     <div
-      class={`text-sm bg-base-100 rounded-box rounded-tl-none
+      class={`text-sm bg-base-100 rounded-box
         flex-1 min-h-0 overflow-x-auto flex flex-col shadow
         ${loading.value || !state.value || resolvingVisible.value ? "loading-border" : ""}`}
     >

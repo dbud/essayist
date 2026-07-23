@@ -1,33 +1,41 @@
-import { PanelLeftClose, PanelLeftOpen } from "lucide-preact";
-import { useSmallScreen } from "@/hooks/useSmallScreen.ts";
-import { sidebarCollapsed, sidebarOverlayOpen } from "@/signals/sidebar.ts";
+import {
+  PanelLeftClose,
+  PanelLeftOpen,
+  PanelRightClose,
+  PanelRightOpen,
+} from "lucide-preact";
+import {
+  leftSidebarCollapsed,
+  rightSidebarCollapsed,
+} from "@/signals/sidebar.ts";
 
-export default function SidebarToggle() {
-  const isSmallScreen = useSmallScreen();
+interface SidebarToggleProps {
+  side: "left" | "right";
+  label: string;
+}
 
-  const columnVisible = !isSmallScreen.value && !sidebarCollapsed.value;
-  const opened =
-    columnVisible || (isSmallScreen.value && sidebarOverlayOpen.value);
-
-  function toggle() {
-    if (columnVisible) {
-      sidebarCollapsed.value = true;
-    } else if (isSmallScreen.value) {
-      sidebarOverlayOpen.value = !sidebarOverlayOpen.value;
-    } else {
-      sidebarCollapsed.value = false;
-    }
-  }
+export default function SidebarToggle({ side, label }: SidebarToggleProps) {
+  const collapsed =
+    side === "left" ? leftSidebarCollapsed : rightSidebarCollapsed;
+  const isOpen = !collapsed.value;
+  const Icon =
+    side === "left"
+      ? isOpen
+        ? PanelLeftClose
+        : PanelLeftOpen
+      : isOpen
+        ? PanelRightClose
+        : PanelRightOpen;
 
   return (
     <button
       type="button"
       class="btn btn-ghost btn-sm btn-square"
-      onClick={toggle}
-      aria-label={opened ? "Hide file browser" : "Show file browser"}
-      title={opened ? "Hide file browser" : "Show file browser"}
+      onClick={() => (collapsed.value = !collapsed.value)}
+      aria-label={label}
+      title={label}
     >
-      {opened ? <PanelLeftClose size={18} /> : <PanelLeftOpen size={18} />}
+      <Icon size={18} />
     </button>
   );
 }

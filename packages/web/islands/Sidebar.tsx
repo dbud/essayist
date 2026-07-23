@@ -1,36 +1,32 @@
+import { IS_BROWSER } from "fresh/runtime";
 import type { ComponentChildren } from "preact";
-import { useSmallScreen } from "@/hooks/useSmallScreen.ts";
-import { sidebarCollapsed, sidebarOverlayOpen } from "@/signals/sidebar.ts";
+import {
+  leftSidebarCollapsed,
+  rightSidebarCollapsed,
+} from "@/signals/sidebar.ts";
+
+interface SidebarProps {
+  side: "left" | "right";
+  className?: string;
+  children: ComponentChildren;
+}
 
 export default function Sidebar({
+  side,
+  className = "w-64 py-2",
   children,
-  closeLabel,
-}: {
-  children: ComponentChildren;
-  closeLabel: string;
-}) {
-  const isSmallScreen = useSmallScreen();
-
-  const overlay = isSmallScreen.value;
-  const open = overlay ? sidebarOverlayOpen.value : !sidebarCollapsed.value;
-
-  const asideClass = overlay
-    ? "fixed inset-y-0 left-0 z-50 w-64 pr-4 overflow-y-auto bg-base-200 shadow-xl"
-    : "w-64 shrink-0 min-h-0 overflow-y-auto py-2";
+}: SidebarProps) {
+  const collapsed =
+    side === "left" ? leftSidebarCollapsed : rightSidebarCollapsed;
+  const hidden = collapsed.value || !IS_BROWSER;
 
   return (
-    <>
-      {overlay && open && (
-        <button
-          type="button"
-          class="fixed inset-0 z-40 bg-black/40 cursor-default"
-          aria-label={closeLabel}
-          onClick={() => {
-            sidebarOverlayOpen.value = false;
-          }}
-        />
-      )}
-      <aside class={`${asideClass} ${open ? "" : "hidden"}`}>{children}</aside>
-    </>
+    <aside
+      class={`shrink-0 min-h-0 overflow-y-auto ${className} ${
+        hidden ? "hidden" : ""
+      }`}
+    >
+      {children}
+    </aside>
   );
 }
