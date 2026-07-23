@@ -6,11 +6,15 @@ import LexicalTreeViewSection from "@/islands/LexicalTreeViewSection.tsx";
 import MarksSection from "@/islands/MarksSection.tsx";
 import Section from "@/islands/Section.tsx";
 import Sidebar from "@/islands/Sidebar.tsx";
+import WorkspaceMenu from "@/islands/WorkspaceMenu.tsx";
 
 export default function HomePage() {
   return (
     <main class="w-full flex-1 flex gap-8 px-4 min-h-0">
       <Sidebar closeLabel="Close file browser">
+        <div class="px-1 pt-1 pb-2 border-b border-base-300">
+          <WorkspaceMenu />
+        </div>
         <FileBrowser />
       </Sidebar>
       <div class="flex-1 min-w-0 min-h-0 h-full flex flex-col py-4">

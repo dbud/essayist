@@ -33,7 +33,7 @@ export default function WorkspaceMenu() {
         }
       >
         {(close) => (
-          <ul class="dropdown-content menu bg-base-100 rounded-box z-1 w-64 p-2 shadow-sm">
+          <ul class="dropdown-content menu bg-base-100 rounded-box z-1 w-60 p-2 shadow-sm">
             {list.value.length === 0 && (
               <li class="pointer-events-none">
                 <span class="text-base-content/50">No projects yet</span>
