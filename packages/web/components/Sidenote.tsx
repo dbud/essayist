@@ -33,7 +33,7 @@ export default function Sidenote({
       }
     >
       <div class="flex items-center gap-2 mb-1">
-        <sup class="font-semibold text-primary">{number}</sup>
+        <span class="font-semibold text-primary">{number}</span>
         <span class="font-semibold text-base-content/70">
           {mark.label || "Mark"}
         </span>

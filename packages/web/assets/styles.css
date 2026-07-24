@@ -23,7 +23,8 @@
   }
   mark[data-number]::after {
     content: attr(data-number);
-    vertical-align: super;
+    position: relative;
+    top: -0.5em;
     font-size: 0.75em;
     font-weight: 600;
     color: var(--color-primary);
