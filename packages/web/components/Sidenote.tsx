@@ -34,15 +34,21 @@ export default function Sidenote({
         editor?.dispatchCommand(SELECT_MARK_COMMAND, mark.thread_id)
       }
     >
-      <div class="flex items-start gap-2 mb-1">
+      <div class="flex items-start gap-2">
         <span class="font-semibold text-primary">{number}</span>
-        <span class="text-base-content/80">{mark.comment}</span>
-      </div>
-      {mark.selected_text && (
-        <div class="italic text-base-content/50 line-clamp-2">
-          &ldquo;{mark.selected_text}&rdquo;
+        <div class="min-w-0">
+          <div class="text-base-content/80 mb-1">{mark.comment}</div>
+          {mark.selected_text && (
+            <div
+              class={`font-serif italic text-base-content/70 line-clamp-2 ${
+                mark.status === "stale" ? "line-through" : ""
+              }`}
+            >
+              &ldquo;{mark.selected_text}&rdquo;
+            </div>
+          )}
         </div>
-      )}
+      </div>
     </button>
   );
 }
