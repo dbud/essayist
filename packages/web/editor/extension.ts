@@ -16,7 +16,7 @@ import type { RangedMark } from "@/signals/marks.ts";
 import type { MarkNumbers, SidenotePositions } from "@/signals/sidenotes.ts";
 import { MarksExtension } from "./markExtension.ts";
 import { MarksAtCursorExtension } from "./marksAtCursorExtension.ts";
-import { SidenotePositionsExtension } from "./sidenotePositionsExtension.ts";
+import { SidenoteExtension } from "./sidenoteExtension.ts";
 import type { TextNodeSpan } from "./textNodeSpans.ts";
 import { ToolbarStateExtension } from "./toolbarStateExtension.ts";
 
@@ -57,9 +57,10 @@ export function createEditorExtension(
         textNodeSpans,
         markdown,
       }),
-      configExtension(SidenotePositionsExtension, {
+      configExtension(SidenoteExtension, {
         sidenotePositions,
         markNumbers,
+        activeMarkIds: selection.markIds,
       }),
       configExtension(ToolbarStateExtension, { selection }),
       configExtension(MarksAtCursorExtension, { selection }),
