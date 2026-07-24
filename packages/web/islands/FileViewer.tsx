@@ -42,7 +42,7 @@ function FileViewerBody({ wsId, path }: { wsId: string; path: string }) {
     wsId,
     path,
   );
-  const { resolving } = getMarks(wsId, path);
+  const { resolving, resolved } = getMarks(wsId, path);
   const sidenotes = getSidenotes(wsId, path);
   const resolvingVisible = useMemo(
     () => delayedRise(resolving, 150),
@@ -66,10 +66,20 @@ function FileViewerBody({ wsId, path }: { wsId: string; path: string }) {
       </Toolbar>
       {/* Editor and marks share one scroll context so a sidenote at `top: X`
           stays aligned with its mark at `offsetTop: X` while scrolling. */}
-      <div class="flex-1 min-h-0 overflow-y-auto">
+      <div class="flex-1 min-h-0 overflow-y-auto @container">
         {/* 2:1 proportional split (Tufte-style margin). `relative` columns so
-            mark anchors (MarkNode DOM) measure offsetTop against the editor. */}
-        <div class="grid grid-cols-[2fr_1fr] gap-4 lg:gap-8 mx-auto 2xl:max-w-[1400px]">
+            mark anchors (MarkNode DOM) measure offsetTop against the editor.
+            Responsive variants are container queries (@container on the scroll
+            container above), keyed on pane width: @[64rem]=1024px,
+            @[96rem]=1536px. With no marks the sidenote column collapses on
+            narrow panes (1fr_0fr) to give the editor the full width. */}
+        <div
+          class={`grid ${
+            resolved.value.length > 0
+              ? "grid-cols-[2fr_1fr] gap-4 @[64rem]:gap-8"
+              : "grid-cols-[1fr_0fr] gap-0 @[64rem]:grid-cols-[2fr_1fr] @[64rem]:gap-8"
+          } mx-auto @[96rem]:max-w-[1400px]`}
+        >
           <div class="relative min-w-0">
             {editorState && (
               <Editor
@@ -77,14 +87,14 @@ function FileViewerBody({ wsId, path }: { wsId: string; path: string }) {
                 path={path}
                 state={editorState}
                 onChange={setModifiedState}
-                className="px-4 lg:px-16 pt-16 pb-32"
+                className="px-4 @[64rem]:px-16 pt-16 pb-32"
               />
             )}
           </div>
-          {/* `pr-4 lg:pr-16` on the column + inner `relative` so the padding insets the
+          {/* `pr-4 @[64rem]:pr-16` on the column + inner `relative` so the padding insets the
               absolutely-positioned sidenotes (a `relative` parent's padding box
               would otherwise let `right-0` reach the pane edge). */}
-          <div class="min-w-0 pr-4 lg:pr-16">
+          <div class="min-w-0 pr-4 @[64rem]:pr-16">
             <Sidenotes
               heights={sidenotes.heights}
               entries={sidenotes.entries}
