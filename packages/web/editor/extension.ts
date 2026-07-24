@@ -43,6 +43,11 @@ export function createEditorExtension(
   return defineExtension({
     name: "[root]",
     namespace: "essayist-editor",
+    theme: {
+      text: {
+        strikethrough: "line-through",
+      },
+    },
     dependencies: [
       RichTextExtension,
       HistoryExtension,
