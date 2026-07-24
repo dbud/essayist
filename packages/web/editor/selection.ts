@@ -81,7 +81,14 @@ export function $saveSelection(spans: TextNodeSpan[]): SavedSelection {
  * `$getRoot()` (the in-flight state), not `editor.getEditorState()` (committed,
  * pre-mutation mid-update). Pass `content` when the caller already has the
  * markdown to avoid recomputing it; otherwise it's derived from the tree.
- * Falls back to the cloned selection when offsets are missing/unresolvable.
+ *
+ * When the saved offsets are missing (an endpoint wasn't on a tracked text
+ * node, or its key went stale after a mark (re)wrap), falls back to the cloned
+ * selection -- unless that clone is itself a text selection, in which case its
+ * (key, offset) may no longer be valid against the mutated tree and restoring
+ * it could set an out-of-bounds offset. That only happens in the rare case
+ * where an apply runs before onChange refreshes the spans, so the selection is
+ * dropped rather than risk a crash.
  */
 export function $restoreSelection(
   saved: SavedSelection,
@@ -97,5 +104,15 @@ export function $restoreSelection(
       return;
     }
   }
-  $setSelection(saved.selection);
+  const clone = saved.selection;
+  if (
+    clone !== null &&
+    $isRangeSelection(clone) &&
+    (clone.anchor.type === "text" || clone.focus.type === "text")
+  ) {
+    // Stale text selection: can't safely restore. Drop it.
+    $setSelection(null);
+    return;
+  }
+  $setSelection(clone);
 }

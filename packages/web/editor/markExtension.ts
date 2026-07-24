@@ -92,7 +92,10 @@ export const MarksExtension = defineExtension({
 
         // Untracked snapshot (ranges drives the effect): spans describe the
         // caret's tree; markdown is the stable offset space for restore since
-        // marks don't change the exported markdown.
+        // marks don't change the exported markdown. `preSpans` may lag the live
+        // tree by one apply (OnChangePlugin skips MARK_RANGE_TAG, and wrapping
+        // mints new fragment keys); `$restoreSelection` degrades gracefully
+        // when it can't re-resolve against them.
         const { preSpans, content } = untracked(() => ({
           preSpans: textNodeSpans.value,
           content: markdown.value,
