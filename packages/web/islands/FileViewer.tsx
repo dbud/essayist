@@ -69,7 +69,7 @@ function FileViewerBody({ wsId, path }: { wsId: string; path: string }) {
       <div class="flex-1 min-h-0 overflow-y-auto">
         {/* 2:1 proportional split (Tufte-style margin). `relative` columns so
             mark anchors (MarkNode DOM) measure offsetTop against the editor. */}
-        <div class="grid grid-cols-[2fr_1fr] gap-8">
+        <div class="grid grid-cols-[2fr_1fr] gap-4 lg:gap-8 mx-auto 2xl:max-w-[1400px]">
           <div class="relative min-w-0">
             {editorState && (
               <Editor
@@ -77,14 +77,14 @@ function FileViewerBody({ wsId, path }: { wsId: string; path: string }) {
                 path={path}
                 state={editorState}
                 onChange={setModifiedState}
-                className="p-16 pb-32"
+                className="px-4 lg:px-16 pt-16 pb-32"
               />
             )}
           </div>
-          {/* `pr-16` on the column + inner `relative` so the padding insets the
+          {/* `pr-4 lg:pr-16` on the column + inner `relative` so the padding insets the
               absolutely-positioned sidenotes (a `relative` parent's padding box
               would otherwise let `right-0` reach the pane edge). */}
-          <div class="min-w-0 pr-16">
+          <div class="min-w-0 pr-4 lg:pr-16">
             <Sidenotes
               heights={sidenotes.heights}
               entries={sidenotes.entries}
