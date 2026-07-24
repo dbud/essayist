@@ -1,3 +1,5 @@
+import type { ReadonlySignal, Signal } from "@preact/signals";
+import type { LexicalEditor } from "lexical";
 import { useMemo } from "preact/hooks";
 import EditorToolbar from "@/components/EditorToolbar.tsx";
 import FontSelect from "@/components/FontSelect.tsx";
@@ -11,6 +13,7 @@ import { activeEditor } from "@/signals/activeEditor.ts";
 import { getFile } from "@/signals/file.ts";
 import { getMarks } from "@/signals/marks.ts";
 import { getOpenedFiles } from "@/signals/openedFiles.ts";
+import type { SidenoteEntry, SidenoteHeights } from "@/signals/sidenotes.ts";
 import { getSidenotes } from "@/signals/sidenotes.ts";
 import { workspaces } from "@/signals/workspace.ts";
 import { delayedRise } from "@/utils/delayedRise.ts";
@@ -40,23 +43,12 @@ function FileViewerBody({ wsId, path }: { wsId: string; path: string }) {
     path,
   );
   const { resolving } = getMarks(wsId, path);
-  const { heights, entries } = getSidenotes(wsId, path);
+  const sidenotes = getSidenotes(wsId, path);
   const resolvingVisible = useMemo(
     () => delayedRise(resolving, 150),
     [resolving],
   );
   const editorState = useMemo(() => state.value, [path, initialState.value]);
-
-  // Measure rendered sidenote heights for stacking. Re-measures when the
-  // entries change and on marks-column width changes. Sidenotes stay
-  // visibility:hidden until measured so the unstacked first paint never shows
-  // overlap.
-  const innerRef = useElementHeights<HTMLDivElement>(heights, {
-    selector: "[data-thread-id]",
-    key: "threadId",
-    deps: [entries.value],
-  });
-  console.log("heights", heights.value);
 
   if (error.value) {
     return <div class="text-error p-4 flex-1 min-h-0">{error.value}</div>;
@@ -93,22 +85,51 @@ function FileViewerBody({ wsId, path }: { wsId: string; path: string }) {
               absolutely-positioned sidenotes (a `relative` parent's padding box
               would otherwise let `right-0` reach the pane edge). */}
           <div class="min-w-0 pr-16">
-            <div class="relative" ref={innerRef}>
-              {entries.value.map(({ mark, number, top, active }) => (
-                <Sidenote
-                  key={mark.thread_id}
-                  mark={mark}
-                  number={number}
-                  top={top}
-                  active={active}
-                  hidden={!heights.value.has(mark.thread_id)}
-                  editor={activeEditor.value}
-                />
-              ))}
-            </div>
+            <Sidenotes
+              heights={sidenotes.heights}
+              entries={sidenotes.entries}
+              layout={sidenotes.layout}
+              editor={activeEditor.value}
+            />
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+interface SidenotesProps {
+  heights: Signal<SidenoteHeights>;
+  entries: ReadonlySignal<SidenoteEntry[]>;
+  layout: ReadonlySignal<Map<string, number>>;
+  editor: LexicalEditor | null;
+}
+
+function Sidenotes({ heights, entries, layout, editor }: SidenotesProps) {
+  // Measure rendered sidenote heights for stacking. Re-measures when the
+  // entries change and on marks-column width changes. `entries` is independent
+  // of `heights`, so this can't cycle with its own output. Sidenotes stay
+  // visibility:hidden until measured so the unstacked first paint never shows
+  // overlap.
+  const innerRef = useElementHeights<HTMLDivElement>(heights, {
+    selector: "[data-thread-id]",
+    key: "threadId",
+    deps: [entries.value],
+  });
+
+  return (
+    <div class="relative" ref={innerRef}>
+      {entries.value.map((e) => (
+        <Sidenote
+          key={e.mark.thread_id}
+          mark={e.mark}
+          number={e.number}
+          top={layout.value.get(e.mark.thread_id) ?? e.markTop}
+          active={e.active}
+          hidden={!heights.value.has(e.mark.thread_id)}
+          editor={editor}
+        />
+      ))}
     </div>
   );
 }

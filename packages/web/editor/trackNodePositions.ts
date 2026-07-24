@@ -1,4 +1,5 @@
 import { effect, type Signal } from "@preact/signals";
+import { equal } from "@std/assert/equal";
 import {
   $getNodeByKey,
   type Klass,
@@ -73,7 +74,7 @@ export function trackNodePositions<T extends LexicalNode>(
         if (prev === undefined || top < prev) tops.set(id, top);
       }
     }
-    output.value = tops;
+    if (!equal(output.value, tops)) output.value = tops;
     onFragments?.(fragments);
   };
 

@@ -13,7 +13,7 @@ export type MarkNumbers = Map<string, number>;
 export interface SidenoteEntry {
   mark: Mark;
   number: number;
-  top: number; // stacked top (px)
+  markTop: number; // raw mark position, before stacking
   active: boolean;
 }
 
@@ -24,9 +24,11 @@ const SIDENOTE_GAP = 8;
  * Sidenote presentation for a file. Owns the measured positions (written by
  * the editor extension via trackNodePositions) and heights (written by the
  * FileViewer layout hook via useElementHeights), and derives the ordinal per
- * mark, the cursor's active flag, and the final stacked, sorted entries the
- * sidenote column renders. Per (workspace, path) so each file keeps its own
- * measured state.
+ * mark, the cursor's active flag, the raw sorted entries, and the stacked
+ * tops. Per (workspace, path) so each file keeps its own measured state.
+ *
+ * `entries` is independent of `heights`; `layout` is the only reader of
+ * `heights`.
  */
 export const SidenotesModel = createModel(
   (workspaceId: string, path: string) => {
@@ -38,51 +40,48 @@ export const SidenotesModel = createModel(
 
     // 1-based ordinal per thread id, in document order. Shared by the editor
     // (data-number badges) and the sidenote column so the numbers always match.
-    const numbers = computed((): MarkNumbers => {
-      const sorted = [...resolved.value].sort((a, b) => a.offset - b.offset);
-      return new Map(sorted.map((item, i) => [item.thread_id, i + 1] as const));
-    });
+    const numbers = computed(
+      (): MarkNumbers =>
+        new Map(
+          [...resolved.value]
+            .sort((a, b) => a.offset - b.offset)
+            .map((item, i) => [item.thread_id, i + 1] as const),
+        ),
+    );
 
-    // Final presentation: marks with stacked top (so notes never overlap),
-    // ordinal, and active flag, in mark order. Entries with no measured position
-    // are absent; entries with no measured height stack at their mark top
-    // (height 0) until measured.
+    // Raw sidenotes: mark + ordinal + active flag + mark position, sorted by
+    // position. Independent of measured heights.
     const entries = computed((): SidenoteEntry[] => {
-      const pos = positions.value;
-      const nums = numbers.value;
-      const h = heights.value;
-      const active = activeMarkIds.value;
-
-      const keyed: Array<{
-        mark: Mark;
-        markTop: number;
-        number: number;
-        active: boolean;
-      }> = [];
+      const out: SidenoteEntry[] = [];
       for (const mark of resolved.value) {
-        const markTop = pos.get(mark.thread_id);
+        const markTop = positions.value.get(mark.thread_id);
         if (markTop === undefined) continue; // TODO -- handle stale marks?
-        keyed.push({
+        out.push({
           mark,
           markTop,
-          number: nums.get(mark.thread_id) ?? 0,
-          active: active.has(mark.thread_id),
+          number: numbers.value.get(mark.thread_id) ?? 0,
+          active: activeMarkIds.value.has(mark.thread_id),
         });
       }
-      keyed.sort((a, b) => a.markTop - b.markTop);
+      return out.sort((a, b) => a.markTop - b.markTop);
+    });
 
-      const out: SidenoteEntry[] = [];
+    // Stacked tops so sidenotes never overlap: walk in mark order, pushing each
+    // down to clear the previous one's measured height. Unmeasured entries
+    // (height 0) stack at their mark top until measured.
+    const layout = computed((): Map<string, number> => {
+      const out = new Map<string, number>();
       let prevBottom = -Infinity;
-      for (const { mark, markTop, number, active } of keyed) {
-        const height = h.get(mark.thread_id) ?? 0;
+      for (const { mark, markTop } of entries.value) {
+        const height = heights.value.get(mark.thread_id) ?? 0;
         const top = Math.max(markTop, prevBottom + SIDENOTE_GAP);
-        out.push({ mark, number, top, active });
+        out.set(mark.thread_id, top);
         prevBottom = top + height;
       }
       return out;
     });
 
-    return { positions, heights, numbers, entries };
+    return { positions, heights, numbers, entries, layout };
   },
 );
 
