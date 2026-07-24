@@ -2,8 +2,8 @@
   "exports": "./mod.ts",
   "imports": {
     "@/": "./src/",
-    "@openrouter/agent": "npm:@openrouter/agent@^0.7.2",
-    "@openrouter/sdk": "npm:@openrouter/sdk@^0.13.21",
+    "@openrouter/agent": "npm:@openrouter/agent@^0.8.0",
+    "@openrouter/sdk": "npm:@openrouter/sdk@^0.13.67",
     "@std/assert": "jsr:@std/assert@^1.0.19",
     "zod": "npm:zod@^4.4.3"
   },
