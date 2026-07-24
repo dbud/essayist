@@ -10,7 +10,7 @@ import { getEditorSelection } from "@/signals/editorSelection.ts";
 import { getFile } from "@/signals/file.ts";
 import { getMarks } from "@/signals/marks.ts";
 import { viewerFont } from "@/signals/preferences.ts";
-import { sidenotePositions } from "@/signals/sidenotePositions.ts";
+import { getSidenotes } from "@/signals/sidenotes.ts";
 import ActiveEditorRef from "./ActiveEditorRef.tsx";
 
 interface EditorProps {
@@ -28,7 +28,11 @@ export default function Editor({
   onChange,
   className,
 }: EditorProps) {
-  const { ranges, markNumbers } = getMarks(wsId, path);
+  const { ranges } = getMarks(wsId, path);
+  const { positions: sidenotePositions, numbers: markNumbers } = getSidenotes(
+    wsId,
+    path,
+  );
   const { textNodeSpans, markdown } = getFile(wsId, path);
   const selection = getEditorSelection(wsId, path);
 

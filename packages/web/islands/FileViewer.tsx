@@ -3,6 +3,7 @@ import EditorToolbar from "@/components/EditorToolbar.tsx";
 import FontSelect from "@/components/FontSelect.tsx";
 import Sidenote from "@/components/Sidenote.tsx";
 import Toolbar from "@/components/Toolbar.tsx";
+import { useElementHeights } from "@/hooks/useElementHeights.ts";
 import Editor from "@/islands/editor/Editor.tsx";
 import FileViewerTabs from "@/islands/FileViewerTabs.tsx";
 import SidebarToggle from "@/islands/SidebarToggle.tsx";
@@ -10,6 +11,7 @@ import { activeEditor } from "@/signals/activeEditor.ts";
 import { getFile } from "@/signals/file.ts";
 import { getMarks } from "@/signals/marks.ts";
 import { getOpenedFiles } from "@/signals/openedFiles.ts";
+import { getSidenotes } from "@/signals/sidenotes.ts";
 import { workspaces } from "@/signals/workspace.ts";
 import { delayedRise } from "@/utils/delayedRise.ts";
 
@@ -37,12 +39,24 @@ function FileViewerBody({ wsId, path }: { wsId: string; path: string }) {
     wsId,
     path,
   );
-  const { resolving, sidenotes } = getMarks(wsId, path);
+  const { resolving } = getMarks(wsId, path);
+  const { heights, entries } = getSidenotes(wsId, path);
   const resolvingVisible = useMemo(
     () => delayedRise(resolving, 150),
     [resolving],
   );
   const editorState = useMemo(() => state.value, [path, initialState.value]);
+
+  // Measure rendered sidenote heights for stacking. Re-measures when the
+  // entries change and on marks-column width changes. Sidenotes stay
+  // visibility:hidden until measured so the unstacked first paint never shows
+  // overlap.
+  const innerRef = useElementHeights<HTMLDivElement>(heights, {
+    selector: "[data-thread-id]",
+    key: "threadId",
+    deps: [entries.value],
+  });
+  console.log("heights", heights.value);
 
   if (error.value) {
     return <div class="text-error p-4 flex-1 min-h-0">{error.value}</div>;
@@ -75,15 +89,19 @@ function FileViewerBody({ wsId, path }: { wsId: string; path: string }) {
               />
             )}
           </div>
+          {/* `pr-16` on the column + inner `relative` so the padding insets the
+              absolutely-positioned sidenotes (a `relative` parent's padding box
+              would otherwise let `right-0` reach the pane edge). */}
           <div class="min-w-0 pr-16">
-            <div class="relative">
-              {sidenotes.value.map((s) => (
+            <div class="relative" ref={innerRef}>
+              {entries.value.map(({ mark, number, top, active }) => (
                 <Sidenote
-                  key={s.mark.thread_id}
-                  mark={s.mark}
-                  number={s.number}
-                  top={s.top}
-                  active={s.active}
+                  key={mark.thread_id}
+                  mark={mark}
+                  number={number}
+                  top={top}
+                  active={active}
+                  hidden={!heights.value.has(mark.thread_id)}
                   editor={activeEditor.value}
                 />
               ))}
