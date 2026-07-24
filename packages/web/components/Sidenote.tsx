@@ -36,14 +36,10 @@ export default function Sidenote({
     >
       <div class="flex items-start gap-2">
         <span class="font-semibold text-primary">{number}</span>
-        <div class="min-w-0">
-          <div class="text-base-content/80 mb-1">{mark.comment}</div>
-          {mark.selected_text && (
-            <div
-              class={`font-serif italic text-base-content/70 line-clamp-2 ${
-                mark.status === "stale" ? "line-through" : ""
-              }`}
-            >
+        <div class="min-w-0 flex flex-col gap-1">
+          <div class="text-base-content/80">{mark.comment}</div>
+          {mark.status === "stale" && mark.selected_text && (
+            <div class="font-serif italic text-base-content/70 line-clamp-2 line-through">
               &ldquo;{mark.selected_text}&rdquo;
             </div>
           )}
