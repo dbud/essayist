@@ -18,12 +18,11 @@
     font-size: 16.5px;
   }
   mark {
-    background-color: var(--color-mark-bg);
-    color: var(--color-mark-content);
+    background-color: color-mix(in oklch, var(--color-mark) 60%, transparent);
     border-radius: 2px;
     transition: background-color 200ms ease;
   }
-  mark[data-active] {
+  mark.mark-active {
     background-color: var(--color-mark-active);
   }
   mark[data-number]::after {
@@ -67,8 +66,6 @@
   --color-error: oklch(64% 0.246 16.439);
   --color-error-content: oklch(96% 0.015 12.422);
   --color-mark: oklch(95% 0.1242 101.55);
-  --color-mark-content: oklch(25% 0.05 101.55);
-  --color-mark-bg: oklch(95% 0.1242 101.55 / 0.6);
   --color-mark-active: oklch(93% 0.15 101.55 / 0.9);
   --radius-selector: 0.5rem;
   --radius-field: 0.5rem;
@@ -78,15 +75,6 @@
   --border: 2px;
   --depth: 1;
   --noise: 1;
-}
-
-.sidenote {
-  transition:
-    background-color 200ms ease,
-    box-shadow 200ms ease;
-}
-.sidenote[data-active] {
-  background-color: var(--color-mark-active);
 }
 
 .loading-border {

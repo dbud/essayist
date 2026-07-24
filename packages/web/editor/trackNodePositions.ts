@@ -28,6 +28,20 @@ export interface TrackNodePositionsOptions<T extends LexicalNode> {
   remeasureOn?: ReadonlyArray<Signal<unknown>>;
   /** Extra per-fragment work after measuring (e.g. DOM badging). */
   onFragments?: (fragments: TrackedFragment[]) => void;
+  /**
+   * Positions to measure for ids with no tracked node (e.g. zero-length
+   * marks, which wrap no text and so produce no MarkNode). Each spec maps an
+   * id to a TextNode key + local offset; the line top is derived from a
+   * collapsed Range at that offset, in the same coordinate space as the
+   * fragment offsetTop (relative to the root's offsetParent).
+   */
+  points?: () => PointSpec[];
+}
+
+export interface PointSpec {
+  id: string;
+  key: NodeKey;
+  offset: number;
 }
 
 /**
@@ -51,6 +65,7 @@ export function trackNodePositions<T extends LexicalNode>(
     output,
     remeasureOn,
     onFragments,
+    points,
   }: TrackNodePositionsOptions<T>,
 ): () => void {
   const nodeKeys = new Set<NodeKey>();
@@ -74,6 +89,7 @@ export function trackNodePositions<T extends LexicalNode>(
         if (prev === undefined || top < prev) tops.set(id, top);
       }
     }
+    measurePoints(editor, points?.(), tops);
     if (!equal(output.value, tops)) output.value = tops;
     onFragments?.(fragments);
   };
@@ -130,4 +146,38 @@ export function trackNodePositions<T extends LexicalNode>(
     resizeObserver?.disconnect();
     cleanup();
   };
+}
+
+/**
+ * Measures point specs (ids with no tracked node) into `tops`, in the same
+ * coordinate space as fragment offsetTop: relative to the root element's
+ * offsetParent. Uses a collapsed Range at the TextNode offset so the line top
+ * is correct even inside a multi-line paragraph (where the TextNode element's
+ * own offsetTop would point at its first line).
+ */
+function measurePoints(
+  editor: LexicalEditor,
+  specs: PointSpec[] | undefined,
+  tops: Map<string, number>,
+) {
+  if (!specs || specs.length === 0) return;
+  const root = editor.getRootElement();
+  const container = root?.offsetParent as HTMLElement | null;
+  if (root === null || container === null) return;
+  const containerTop = container.getBoundingClientRect().top;
+  const doc = root.ownerDocument ?? document;
+  for (const { id, key, offset } of specs) {
+    if (tops.has(id)) continue; // a tracked node already covers this id
+    const el = editor.getElementByKey(key);
+    if (el === null) continue;
+    const textNode = el.firstChild;
+    if (textNode === null || textNode.nodeType !== doc.TEXT_NODE) continue;
+    const text = textNode as Text;
+    const range = doc.createRange();
+    range.setStart(text, Math.min(offset, text.length));
+    range.collapse(true);
+    const rect = range.getBoundingClientRect();
+    if (rect.top === 0 && rect.height === 0) continue;
+    tops.set(id, rect.top - containerTop);
+  }
 }

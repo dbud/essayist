@@ -55,7 +55,7 @@ export const SidenotesModel = createModel(
       const out: SidenoteEntry[] = [];
       for (const mark of resolved.value) {
         const markTop = positions.value.get(mark.thread_id);
-        if (markTop === undefined) continue; // TODO -- handle stale marks?
+        if (markTop === undefined) continue; // not yet measured
         out.push({
           mark,
           markTop,

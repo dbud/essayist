@@ -61,6 +61,7 @@ export function createEditorExtension(
         sidenotePositions,
         markNumbers,
         activeMarkIds: selection.markIds,
+        ranges,
       }),
       configExtension(ToolbarStateExtension, { selection }),
       configExtension(MarksAtCursorExtension, { selection }),
