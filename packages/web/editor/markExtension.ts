@@ -3,7 +3,6 @@ import {
   $isMarkNode,
   $unwrapMarkNode,
   $wrapSelectionInMarkNode,
-  MarkNode,
 } from "@lexical/mark";
 import { effect, type Signal, untracked } from "@preact/signals";
 import { assert } from "@std/assert/assert";
@@ -18,6 +17,7 @@ import {
   type NodeKey,
 } from "lexical";
 import type { RangedMark } from "@/signals/marks.ts";
+import { $createMarkNode, MarkNode } from "./markNode.ts";
 import {
   $createSelection,
   $restoreSelection,
@@ -136,6 +136,8 @@ function $applyMarks(ranges: RangedMark[], nodeKeys: Set<NodeKey>) {
       selection: $createSelection(range),
     }))
     .forEach(({ id, selection }) => {
-      $wrapSelectionInMarkNode(selection, false, id);
+      $wrapSelectionInMarkNode(selection, false, id, (ids) =>
+        $createMarkNode(ids),
+      );
     });
 }

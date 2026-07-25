@@ -1,34 +1,17 @@
 import { defineExtension } from "@lexical/extension";
-import { $isMarkNode, type MarkNode } from "@lexical/mark";
+import { $isMarkNode } from "@lexical/mark";
 import {
-  $findMatchingParent,
-  $getSelection,
-  $isRangeSelection,
+  $getNodeByKey,
   COMMAND_PRIORITY_LOW,
   type EditorState,
   type LexicalEditor,
-  type LexicalNode,
   mergeRegister,
+  type NodeKey,
   SELECTION_CHANGE_COMMAND,
 } from "lexical";
 import { defaultEditorSelection } from "@/signals/editorSelection.ts";
+import { $markIdsAtAnchor, MarkNode } from "./markNode.ts";
 import type { SelectionExtensionConfig } from "./toolbarStateExtension.ts";
-
-/** Collects the ids of every MarkNode on the anchor's ancestor chain. */
-function $markIdsAtAnchor(): Set<string> {
-  const selection = $getSelection();
-  if (!$isRangeSelection(selection)) return new Set();
-
-  const ids = new Set<string>();
-  let node: LexicalNode | null = selection.anchor.getNode();
-  while (node !== null) {
-    const mark: MarkNode | null = $findMatchingParent(node, $isMarkNode);
-    if (mark === null) break;
-    for (const id of mark.getIDs()) ids.add(id);
-    node = mark.getParent();
-  }
-  return ids;
-}
 
 export const MarksAtCursorExtension = defineExtension({
   name: "marks-at-cursor",
@@ -37,16 +20,47 @@ export const MarksAtCursorExtension = defineExtension({
     editor: LexicalEditor,
     { selection }: SelectionExtensionConfig,
   ) => {
+    // Tracked MarkNode keys, kept in sync by the mutation listener.
+    const nodeKeys = new Set<NodeKey>();
+
+    // Toggles `mark-active` on existing MarkNode elements when the caret
+    // moves into/out of them. New elements get the class from MarkNode.createDOM.
+    const applyActive = (active: Set<string>) => {
+      editor.getEditorState().read(() => {
+        for (const key of nodeKeys) {
+          const node = $getNodeByKey(key);
+          if (!$isMarkNode(node)) continue;
+          const el = editor.getElementByKey(key);
+          if (el === null) continue;
+          el.classList.toggle(
+            "mark-active",
+            node.getIDs().some((id) => active.has(id)),
+          );
+        }
+      });
+    };
+
     const read = (editorState: EditorState) => {
       editorState.read(() => {
-        selection.markIds.value = $markIdsAtAnchor();
+        const ids = $markIdsAtAnchor();
+        selection.markIds.value = ids;
+        applyActive(ids);
       });
     };
 
     read(editor.getEditorState());
 
     return mergeRegister(
+      editor.registerMutationListener(MarkNode, (mutations) => {
+        for (const [key, mutation] of mutations) {
+          if (mutation === "destroyed") nodeKeys.delete(key);
+          else nodeKeys.add(key);
+        }
+        applyActive(selection.markIds.value);
+      }),
+
       editor.registerUpdateListener(({ editorState }) => read(editorState)),
+
       editor.registerCommand(
         SELECTION_CHANGE_COMMAND,
         () => {
