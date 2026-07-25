@@ -8,6 +8,7 @@ import {
   mergeRegister,
   type NodeKey,
 } from "lexical";
+import { registerNodeKeyTracker } from "./nodeKeyTracker.ts";
 
 export interface TrackedFragment {
   el: HTMLElement;
@@ -122,13 +123,7 @@ export function trackNodePositions<T extends LexicalNode>(
       attach(next);
       if (next) scheduleMeasure();
     }),
-    editor.registerMutationListener(nodeClass, (mutations) => {
-      for (const [key, mutation] of mutations) {
-        if (mutation === "destroyed") nodeKeys.delete(key);
-        else nodeKeys.add(key);
-      }
-      scheduleMeasure();
-    }),
+    registerNodeKeyTracker(editor, nodeClass, nodeKeys, scheduleMeasure),
     editor.registerUpdateListener(scheduleMeasure),
   ];
   for (const s of remeasureOn ?? []) {

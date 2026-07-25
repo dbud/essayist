@@ -11,6 +11,7 @@ import {
 } from "lexical";
 import { defaultEditorSelection } from "@/signals/editorSelection.ts";
 import { $markIdsAtAnchor, MarkNode } from "./markNode.ts";
+import { registerNodeKeyTracker } from "./nodeKeyTracker.ts";
 import type { SelectionExtensionConfig } from "./toolbarStateExtension.ts";
 
 export const MarksAtCursorExtension = defineExtension({
@@ -51,13 +52,9 @@ export const MarksAtCursorExtension = defineExtension({
     read(editor.getEditorState());
 
     return mergeRegister(
-      editor.registerMutationListener(MarkNode, (mutations) => {
-        for (const [key, mutation] of mutations) {
-          if (mutation === "destroyed") nodeKeys.delete(key);
-          else nodeKeys.add(key);
-        }
-        applyActive(selection.markIds.value);
-      }),
+      registerNodeKeyTracker(editor, MarkNode, nodeKeys, () =>
+        applyActive(selection.markIds.value),
+      ),
 
       editor.registerUpdateListener(({ editorState }) => read(editorState)),
 

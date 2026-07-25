@@ -18,6 +18,7 @@ import {
 } from "lexical";
 import type { RangedMark } from "@/signals/marks.ts";
 import { $createMarkNode, MarkNode } from "./markNode.ts";
+import { registerNodeKeyTracker } from "./nodeKeyTracker.ts";
 import {
   $createSelection,
   $restoreSelection,
@@ -49,18 +50,7 @@ export const MarksExtension = defineExtension({
     const nodeKeys = new Set<NodeKey>();
 
     return mergeRegister(
-      editor.registerMutationListener(
-        MarkNode,
-        (mutations, { updateTags: _ }) => {
-          for (const [key, mutation] of mutations) {
-            if (mutation === "created" || mutation === "updated") {
-              nodeKeys.add(key);
-            } else {
-              nodeKeys.delete(key);
-            }
-          }
-        },
-      ),
+      registerNodeKeyTracker(editor, MarkNode, nodeKeys),
 
       // Jump-to-mark: find the MarkNode by thread id among the tracked keys and
       // place the caret at its start.
