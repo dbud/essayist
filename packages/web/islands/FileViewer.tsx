@@ -3,6 +3,7 @@ import type { LexicalEditor } from "lexical";
 import { useMemo } from "preact/hooks";
 import EditorToolbar from "@/components/EditorToolbar.tsx";
 import FontSelect from "@/components/FontSelect.tsx";
+import { MarkBadges } from "@/components/MarkBadges.tsx";
 import Sidenote from "@/components/Sidenote.tsx";
 import Toolbar from "@/components/Toolbar.tsx";
 import { useElementHeights } from "@/hooks/useElementHeights.ts";
@@ -90,6 +91,7 @@ function FileViewerBody({ wsId, path }: { wsId: string; path: string }) {
                 className="px-4 @[64rem]:px-16 pt-16 pb-32"
               />
             )}
+            <MarkBadges badges={sidenotes.markBadges.value} />
           </div>
           {/* `pr-4 @[64rem]:pr-16` on the column + inner `relative` so the padding insets the
               absolutely-positioned sidenotes (a `relative` parent's padding box

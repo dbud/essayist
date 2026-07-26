@@ -13,7 +13,11 @@ import { configExtension, defineExtension } from "lexical";
 import { PartialUpdateExtension } from "@/editor/partialUpdateExtension.ts";
 import type { EditorSelection } from "@/signals/editorSelection.ts";
 import type { RangedMark } from "@/signals/marks.ts";
-import type { MarkNumbers, SidenotePositions } from "@/signals/sidenotes.ts";
+import type {
+  MarkBadge,
+  MarkNumbers,
+  SidenotePositions,
+} from "@/signals/sidenotes.ts";
 import { MarksExtension } from "./markExtension.ts";
 import { MarksAtCursorExtension } from "./marksAtCursorExtension.ts";
 import { SidenoteExtension } from "./sidenoteExtension.ts";
@@ -27,6 +31,7 @@ interface EditorDeps {
   selection: EditorSelection;
   sidenotePositions: Signal<SidenotePositions>;
   markNumbers: Signal<MarkNumbers>;
+  markBadges: Signal<MarkBadge[]>;
 }
 
 export function createEditorExtension(
@@ -38,6 +43,7 @@ export function createEditorExtension(
     selection,
     sidenotePositions,
     markNumbers,
+    markBadges,
   }: EditorDeps,
 ) {
   return defineExtension({
@@ -65,6 +71,7 @@ export function createEditorExtension(
       configExtension(SidenoteExtension, {
         sidenotePositions,
         markNumbers,
+        markBadges,
         ranges,
       }),
       configExtension(ToolbarStateExtension, { selection }),

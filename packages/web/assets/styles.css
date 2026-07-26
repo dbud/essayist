@@ -25,14 +25,11 @@
   mark.mark-active {
     background-color: var(--color-mark-active);
   }
-  mark[data-number]::after {
-    content: attr(data-number);
-    position: relative;
-    top: -0.5em;
+  .mark-badge {
     font-size: 0.75em;
-    font-weight: 600;
-    color: var(--color-primary);
+    line-height: 1;
     margin-inline-start: 0.25em;
+    transform: translateY(-0.5em);
   }
 }
 

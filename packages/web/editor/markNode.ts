@@ -31,10 +31,8 @@ export function $markIdsAtAnchor(): Set<string> {
 
 const NO_IDS: readonly string[] = [];
 
-// Adds `mark-active` during createDOM so recreated <mark> elements are born
-// with the class. Lexical forces a style recalc (via $updateDOMSelection)
-// before mutation listeners fire, so applying the class in a listener would
-// trigger the background-color transition.
+// Adds `mark-active` in createDOM; a listener would run after
+// $updateDOMSelection forces a style recalc and trigger the transition.
 export class MarkNode extends BaseMarkNode {
   static override getType(): string {
     return "mark";

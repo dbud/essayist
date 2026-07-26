@@ -1,5 +1,6 @@
 import type { Mark } from "@essayist/core";
 import { computed, createModel, signal } from "@preact/signals";
+import type { NodeKey } from "lexical";
 import { getEditorSelection } from "@/signals/editorSelection.ts";
 import { getMarks } from "@/signals/marks.ts";
 
@@ -9,6 +10,15 @@ export type SidenotePositions = Map<string, number>;
 export type SidenoteHeights = Map<string, number>;
 // thread_id -> 1-based ordinal in document order (by mark.offset).
 export type MarkNumbers = Map<string, number>;
+
+// One per MarkNode fragment: ordinal label rendered at the end of the
+// fragment's text, positioned over the editor (not in the contentEditable).
+export interface MarkBadge {
+  key: NodeKey;
+  left: number; // end-x of the fragment's text, relative to the editor column
+  top: number; // line top at that end, relative to the editor column
+  label: string; // comma-joined ordinals (overlapping marks)
+}
 
 export interface SidenoteEntry {
   mark: Mark;
@@ -34,6 +44,7 @@ export const SidenotesModel = createModel(
   (workspaceId: string, path: string) => {
     const positions = signal<SidenotePositions>(new Map());
     const heights = signal<SidenoteHeights>(new Map());
+    const markBadges = signal<MarkBadge[]>([]);
 
     const { resolved } = getMarks(workspaceId, path);
     const { markIds: activeMarkIds } = getEditorSelection(workspaceId, path);
@@ -81,7 +92,7 @@ export const SidenotesModel = createModel(
       return out;
     });
 
-    return { positions, heights, numbers, entries, layout };
+    return { positions, heights, numbers, entries, layout, markBadges };
   },
 );
 

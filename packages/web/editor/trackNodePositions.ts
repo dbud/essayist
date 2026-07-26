@@ -8,12 +8,14 @@ import {
   mergeRegister,
   type NodeKey,
 } from "lexical";
+import { getMeasureContext, hasRect, textPointRect } from "./domMeasure.ts";
 import { registerNodeKeyTracker } from "./nodeKeyTracker.ts";
 
 export interface TrackedFragment {
   el: HTMLElement;
   ids: string[];
   top: number;
+  key: NodeKey;
 }
 
 export interface TrackNodePositionsOptions<T extends LexicalNode> {
@@ -79,7 +81,7 @@ export function trackNodePositions<T extends LexicalNode>(
         if (!isNode(node)) continue;
         const el = editor.getElementByKey(key);
         if (el === null) continue;
-        fragments.push({ el, ids: getIds(node), top: el.offsetTop });
+        fragments.push({ el, ids: getIds(node), top: el.offsetTop, key });
       }
     });
 
@@ -156,23 +158,15 @@ function measurePoints(
   tops: Map<string, number>,
 ) {
   if (!specs || specs.length === 0) return;
-  const root = editor.getRootElement();
-  const container = root?.offsetParent as HTMLElement | null;
-  if (root === null || container === null) return;
-  const containerTop = container.getBoundingClientRect().top;
-  const doc = root.ownerDocument ?? document;
+  const ctx = getMeasureContext(editor.getRootElement());
+  if (ctx === null) return;
+  const { containerRect, doc } = ctx;
   for (const { id, key, offset } of specs) {
     if (tops.has(id)) continue; // a tracked node already covers this id
     const el = editor.getElementByKey(key);
     if (el === null) continue;
-    const textNode = el.firstChild;
-    if (textNode === null || textNode.nodeType !== doc.TEXT_NODE) continue;
-    const text = textNode as Text;
-    const range = doc.createRange();
-    range.setStart(text, Math.min(offset, text.length));
-    range.collapse(true);
-    const rect = range.getBoundingClientRect();
-    if (rect.top === 0 && rect.height === 0) continue;
-    tops.set(id, rect.top - containerTop);
+    const rect = textPointRect(el, offset, doc);
+    if (!hasRect(rect)) continue;
+    tops.set(id, rect.top - containerRect.top);
   }
 }
