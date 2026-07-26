@@ -1,4 +1,3 @@
-import { measure } from "@/measure.ts";
 import { createTokenizer, type Token } from "@/vfs/text_utils.ts";
 
 export interface DiffHunk {
@@ -75,15 +74,11 @@ export function computeDiffWith(
   }
   if (oldText === newText) return [];
 
-  const oldTokens = measure(() => tokenize(oldText), "tokenize.old");
-  const newTokens = measure(() => tokenize(newText), "tokenize.new");
+  const oldTokens = tokenize(oldText);
+  const newTokens = tokenize(newText);
 
-  const ops = measure(() => myersDiff(fn, oldTokens, newTokens), "myers");
-  const hunks = measure(
-    () => buildHunks(ops, oldTokens, newTokens, oldText, newText),
-    "buildHunks",
-  );
-  return hunks;
+  const ops = myersDiff(fn, oldTokens, newTokens);
+  return buildHunks(ops, oldTokens, newTokens, oldText, newText);
 }
 
 interface DiffOp {
@@ -155,10 +150,7 @@ function myersDiff(
   oldTokens: Token[],
   newTokens: Token[],
 ): DiffOp[] {
-  const { oldIds, newIds } = measure(
-    () => assignTokenIds(oldTokens, newTokens),
-    `assignTokenIds ${oldTokens.length} ${newTokens.length}`,
-  );
+  const { oldIds, newIds } = assignTokenIds(oldTokens, newTokens);
   const flat = fn(oldIds, newIds);
   return decodeOps(flat);
 }
