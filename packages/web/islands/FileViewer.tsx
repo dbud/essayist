@@ -55,32 +55,43 @@ function FileViewerBody({ wsId, path }: { wsId: string; path: string }) {
     return <div class="text-error p-4 flex-1 min-h-0">{error.value}</div>;
   }
 
+  // Toolbar and body grids share these so their columns stay aligned.
+  // No marks: sidenote column collapses on narrow panes (1fr_0fr), expands at
+  // @[64rem]=1024px; @[96rem]=1536px caps the grid width at 1400px.
+  const gridCols =
+    resolved.value.length > 0
+      ? "grid-cols-[2fr_1fr] gap-4 @[64rem]:gap-8"
+      : "grid-cols-[1fr_0fr] gap-0 @[64rem]:grid-cols-[2fr_1fr] @[64rem]:gap-8";
+  // Editor-pane horizontal inset (body keeps vertical padding on contentEditable).
+  const editorPad = "px-4 @[64rem]:px-16";
+  // Side-pane column.
+  const sidePane = "min-w-0 pr-4 @[64rem]:pr-16";
+
   return (
     <div
       class={`text-sm bg-base-100 rounded-box overflow-hidden
-        flex-1 min-h-0 flex flex-col shadow
+        flex-1 min-h-0 flex flex-col shadow @container
         ${loading.value || !state.value || resolvingVisible.value ? "loading-border" : ""}`}
     >
+      {/* Toolbar mirrors the body grid split so editor controls align with the
+          editor content and the right column reserves space for future mark /
+          sidenote controls. */}
       <Toolbar>
-        <FontSelect />
-        <EditorToolbar wsId={wsId} path={path} />
+        <div class={`grid w-full mx-auto @[96rem]:max-w-[1400px] ${gridCols}`}>
+          <div class={`min-w-0 ${editorPad} flex items-center gap-2`}>
+            <FontSelect />
+            <EditorToolbar wsId={wsId} path={path} />
+          </div>
+          <div class={sidePane} />
+        </div>
       </Toolbar>
-      {/* Editor and marks share one scroll context so a sidenote at `top: X`
-          stays aligned with its mark at `offsetTop: X` while scrolling. */}
-      <div class="flex-1 min-h-0 overflow-y-auto @container">
-        {/* 2:1 proportional split (Tufte-style margin). `relative` columns so
-            mark anchors (MarkNode DOM) measure offsetTop against the editor.
-            Responsive variants are container queries (@container on the scroll
-            container above), keyed on pane width: @[64rem]=1024px,
-            @[96rem]=1536px. With no marks the sidenote column collapses on
-            narrow panes (1fr_0fr) to give the editor the full width. */}
-        <div
-          class={`grid ${
-            resolved.value.length > 0
-              ? "grid-cols-[2fr_1fr] gap-4 @[64rem]:gap-8"
-              : "grid-cols-[1fr_0fr] gap-0 @[64rem]:grid-cols-[2fr_1fr] @[64rem]:gap-8"
-          } mx-auto @[96rem]:max-w-[1400px]`}
-        >
+      {/* Editor and marks share one scroll context so a sidenote stays aligned
+          with its mark while scrolling. */}
+      <div class="flex-1 min-h-0 overflow-y-auto">
+        {/* Tufte-style 2:1 split. `relative` columns so mark anchors measure
+            offsetTop against the editor. @container on the root keys the
+            @[64rem]/@[96rem] variants on pane width. */}
+        <div class={`grid ${gridCols} mx-auto @[96rem]:max-w-[1400px]`}>
           <div class="relative min-w-0">
             {editorState && (
               <Editor
@@ -88,15 +99,14 @@ function FileViewerBody({ wsId, path }: { wsId: string; path: string }) {
                 path={path}
                 state={editorState}
                 onChange={setModifiedState}
-                className="px-4 @[64rem]:px-16 pt-16 pb-32"
+                className={`${editorPad} pt-16 pb-32`}
               />
             )}
             <MarkBadges badges={sidenotes.markBadges.value} />
           </div>
-          {/* `pr-4 @[64rem]:pr-16` on the column + inner `relative` so the padding insets the
-              absolutely-positioned sidenotes (a `relative` parent's padding box
-              would otherwise let `right-0` reach the pane edge). */}
-          <div class="min-w-0 pr-4 @[64rem]:pr-16">
+          {/* Inner `relative` so the column's pr-4 insets the absolutely-positioned
+              sidenotes (otherwise right-0 would reach the pane edge). */}
+          <div class={sidePane}>
             <Sidenotes
               heights={sidenotes.heights}
               entries={sidenotes.entries}
