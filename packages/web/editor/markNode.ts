@@ -10,6 +10,7 @@ import {
   $isRangeSelection,
   type EditorConfig,
   type LexicalNode,
+  type RangeSelection,
 } from "lexical";
 
 /** MarkNode ids on the selection anchor's ancestor chain (empty when unset). */
@@ -53,6 +54,15 @@ export class MarkNode extends BaseMarkNode {
       el.classList.add("mark-active");
     }
     return el;
+  }
+
+  override insertNewAfter(
+    _selection: RangeSelection,
+    restoreSelection = true,
+  ): MarkNode {
+    const markNode = $createMarkNode(this.__ids);
+    this.insertAfter(markNode, restoreSelection);
+    return markNode;
   }
 }
 
