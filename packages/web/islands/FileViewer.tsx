@@ -7,6 +7,10 @@ import { MarkBadges } from "@/components/MarkBadges.tsx";
 import Sidenote from "@/components/Sidenote.tsx";
 import Toolbar from "@/components/Toolbar.tsx";
 import { useElementHeights } from "@/hooks/useElementHeights.ts";
+import {
+  type ScrollContainerRef,
+  useScrollViewport,
+} from "@/hooks/useScrollViewport.ts";
 import Editor from "@/islands/editor/Editor.tsx";
 import FileViewerTabs from "@/islands/FileViewerTabs.tsx";
 import SidebarToggle from "@/islands/SidebarToggle.tsx";
@@ -14,7 +18,11 @@ import { activeEditor } from "@/signals/activeEditor.ts";
 import { getFile } from "@/signals/file.ts";
 import { getMarks } from "@/signals/marks.ts";
 import { getOpenedFiles } from "@/signals/openedFiles.ts";
-import type { SidenoteEntry, SidenoteHeights } from "@/signals/sidenotes.ts";
+import type {
+  SidenoteEntry,
+  SidenoteHeights,
+  SidenoteView,
+} from "@/signals/sidenotes.ts";
 import { getSidenotes } from "@/signals/sidenotes.ts";
 import { workspaces } from "@/signals/workspace.ts";
 import { delayedRise } from "@/utils/delayedRise.ts";
@@ -50,6 +58,10 @@ function FileViewerBody({ wsId, path }: { wsId: string; path: string }) {
     [resolving],
   );
   const editorState = useMemo(() => state.value, [path, initialState.value]);
+  const scrollRef = useScrollViewport(
+    sidenotes.scrollTop,
+    sidenotes.viewportHeight,
+  );
 
   if (error.value) {
     return <div class="text-error p-4 flex-1 min-h-0">{error.value}</div>;
@@ -87,7 +99,7 @@ function FileViewerBody({ wsId, path }: { wsId: string; path: string }) {
       </Toolbar>
       {/* Editor and marks share one scroll context so a sidenote stays aligned
           with its mark while scrolling. */}
-      <div class="flex-1 min-h-0 overflow-y-auto">
+      <div class="flex-1 min-h-0 overflow-y-auto" ref={scrollRef}>
         {/* Tufte-style 2:1 split. `relative` columns so mark anchors measure
             offsetTop against the editor. @container on the root keys the
             @[64rem]/@[96rem] variants on pane width. */}
@@ -110,8 +122,9 @@ function FileViewerBody({ wsId, path }: { wsId: string; path: string }) {
             <Sidenotes
               heights={sidenotes.heights}
               entries={sidenotes.entries}
-              layout={sidenotes.layout}
+              views={sidenotes.viewportLayout}
               editor={activeEditor.value}
+              scrollContainerRef={scrollRef}
             />
           </div>
         </div>
@@ -123,16 +136,23 @@ function FileViewerBody({ wsId, path }: { wsId: string; path: string }) {
 interface SidenotesProps {
   heights: Signal<SidenoteHeights>;
   entries: ReadonlySignal<SidenoteEntry[]>;
-  layout: ReadonlySignal<Map<string, number>>;
+  views: ReadonlySignal<SidenoteView[]>;
   editor: LexicalEditor | null;
+  scrollContainerRef: ScrollContainerRef;
 }
 
-function Sidenotes({ heights, entries, layout, editor }: SidenotesProps) {
-  // Measure rendered sidenote heights for stacking. Re-measures when the
+function Sidenotes({
+  heights,
+  entries,
+  views,
+  editor,
+  scrollContainerRef,
+}: SidenotesProps) {
+  // Measure rendered sidenote heights for stacking. Re-measure when the
   // entries change and on marks-column width changes. `entries` is independent
   // of `heights`, so this can't cycle with its own output. Sidenotes stay
   // visibility:hidden until measured so the unstacked first paint never shows
-  // overlap.
+  // overlap. Ghosts omit data-thread-id so they aren't measured.
   const innerRef = useElementHeights<HTMLDivElement>(heights, {
     selector: "[data-thread-id]",
     key: "threadId",
@@ -141,15 +161,18 @@ function Sidenotes({ heights, entries, layout, editor }: SidenotesProps) {
 
   return (
     <div class="relative" ref={innerRef}>
-      {entries.value.map((e) => (
+      {views.value.map((v) => (
         <Sidenote
-          key={e.mark.thread_id}
-          mark={e.mark}
-          number={e.number}
-          top={layout.value.get(e.mark.thread_id) ?? e.markTop}
-          active={e.active}
-          hidden={!heights.value.has(e.mark.thread_id)}
+          key={v.key}
+          mark={v.entry.mark}
+          number={v.entry.number}
+          top={v.top}
+          active={v.entry.active}
+          hidden={!heights.value.has(v.entry.mark.thread_id)}
           editor={editor}
+          ghost={v.ghost}
+          trueTop={v.trueTop}
+          scrollContainerRef={scrollContainerRef}
         />
       ))}
     </div>

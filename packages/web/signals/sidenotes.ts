@@ -27,6 +27,19 @@ export interface SidenoteEntry {
   active: boolean;
 }
 
+// One render slot for the sidenote column. `top` is the render position
+// (pinned to the viewport edge for ghosts); `trueTop` is the stacked layout
+// position (scroll target). `ghost` is set only for offscreen sidenotes
+// pulled to the viewport edge.
+export interface SidenoteView {
+  key: string;
+  entry: SidenoteEntry;
+  top: number;
+  trueTop: number;
+  height: number;
+  ghost?: "up" | "down";
+}
+
 // Vertical gap (px) between stacked sidenotes.
 const SIDENOTE_GAP = 8;
 
@@ -45,6 +58,9 @@ export const SidenotesModel = createModel(
     const positions = signal<SidenotePositions>(new Map());
     const heights = signal<SidenoteHeights>(new Map());
     const markBadges = signal<MarkBadge[]>([]);
+    // Scroll container viewport, written by `useScrollViewport` in FileViewer.
+    const scrollTop = signal(0);
+    const viewportHeight = signal(0);
 
     const { resolved } = getMarks(workspaceId, path);
     const { markIds: activeMarkIds } = getEditorSelection(workspaceId, path);
@@ -92,7 +108,78 @@ export const SidenotesModel = createModel(
       return out;
     });
 
-    return { positions, heights, numbers, entries, layout, markBadges };
+    // Render slots: each entry at its stacked top, plus up to two ghosts for
+    // the nearest sidenotes entirely offscreen above/below, pulled to the
+    // viewport edge. A ghost is skipped if its pinned slot would overlap an
+    // on-screen sidenote (no room) or its height is unmeasured.
+    const viewportLayout = computed((): SidenoteView[] => {
+      // Real views: one per entry at its stacked top. Ghosts are appended after
+      // the offscreen/overlap checks, so this is exactly the real-view set
+      // while those run.
+      const out: SidenoteView[] = entries.value.map((entry) => {
+        const top = layout.value.get(entry.mark.thread_id) ?? entry.markTop;
+        const height = heights.value.get(entry.mark.thread_id) ?? 0;
+        return { key: entry.mark.thread_id, entry, top, trueTop: top, height };
+      });
+      const vh = viewportHeight.value;
+      if (vh <= 0) return out;
+      const vTop = scrollTop.value;
+      const vBottom = vTop + vh;
+
+      // Does [lo, hi) overlap any real view's box (other than skipTid)?
+      const overlaps = (lo: number, hi: number, skipTid: string): boolean =>
+        out.some(
+          (v) =>
+            v.entry.mark.thread_id !== skipTid &&
+            v.height > 0 &&
+            v.top < hi &&
+            v.top + v.height > lo,
+        );
+
+      // Pull an offscreen view to a viewport edge as a ghost, if there's room.
+      // The ghost renders one clamped line, so its rendered height is less than
+      // the real `height`; we pin by edge (bottom for down, top for up) and let
+      // the component translate the down ghost up by its own height. The fit
+      // check uses the real height (conservative: taller than the ghost).
+      const ghost = (
+        { entry, top, height }: SidenoteView,
+        direction: "up" | "down",
+      ): SidenoteView | undefined => {
+        if (height <= 0) return undefined;
+        const pinnedTop = direction === "down" ? vBottom : vTop;
+        const lo = direction === "down" ? vBottom - height : vTop;
+        const hi = direction === "down" ? vBottom : vTop + height;
+        if (overlaps(lo, hi, entry.mark.thread_id)) return undefined;
+        return {
+          key: `${entry.mark.thread_id}:ghost-${direction}`,
+          entry,
+          top: pinnedTop,
+          trueTop: top,
+          height,
+          ghost: direction,
+        };
+      };
+
+      const down = out.find((v) => v.top >= vBottom);
+      const up = out.findLast((v) => v.top + v.height <= vTop);
+      const downGhost = down && ghost(down, "down");
+      if (downGhost) out.push(downGhost);
+      const upGhost = up && ghost(up, "up");
+      if (upGhost) out.push(upGhost);
+      return out;
+    });
+
+    return {
+      positions,
+      heights,
+      numbers,
+      entries,
+      layout,
+      viewportLayout,
+      markBadges,
+      scrollTop,
+      viewportHeight,
+    };
   },
 );
 
