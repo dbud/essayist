@@ -35,6 +35,10 @@ const NO_IDS: readonly string[] = [];
 // before mutation listeners fire, so applying the class in a listener would
 // trigger the background-color transition.
 export class MarkNode extends BaseMarkNode {
+  static override getType(): string {
+    return "mark";
+  }
+
   static override clone(node: MarkNode): MarkNode {
     return new MarkNode(node.__ids, node.__key);
   }
