@@ -1,4 +1,5 @@
 import type { Mark } from "@essayist/core";
+import { segmentMarks } from "@/editor/markSegments.ts";
 import Section from "@/islands/Section.tsx";
 import { getFile } from "@/signals/file.ts";
 import { getMarks } from "@/signals/marks.ts";
@@ -18,7 +19,7 @@ export default function ExportPreviewSection() {
 
 interface TextSegment {
   text: string;
-  mark?: Mark;
+  marks: Mark[];
 }
 
 function visualizeWhitespace(text: string): string {
@@ -43,15 +44,20 @@ function MarkdownPreview({ wsId, path }: { wsId: string; path: string }) {
   return (
     <>
       <pre class="text-xs whitespace-pre-wrap break-words bg-base-200 p-2 rounded">
-        {segments.map((seg, i) =>
-          seg.mark ? (
-            <span key={i} class="bg-yellow-200" title={seg.mark.comment}>
+        {segments.map((seg, i) => {
+          if (seg.marks.length === 0) {
+            return <span key={i}>{visualizeWhitespace(seg.text)}</span>;
+          }
+          const title = seg.marks
+            .map((m) => (m.label ? `${m.label}: ${m.comment}` : m.comment))
+            .join(" | ");
+          const cls = `bg-amber-${Math.min(Math.max(seg.marks.length + 1, 2), 9)}00`;
+          return (
+            <span key={i} class={cls} title={title}>
               {seg.text ? visualizeWhitespace(seg.text) : "\u250A"}
             </span>
-          ) : (
-            <span key={i}>{visualizeWhitespace(seg.text)}</span>
-          ),
-        )}
+          );
+        })}
       </pre>
       {stale.length > 0 && (
         <div class="mt-2 text-xs">
@@ -72,28 +78,46 @@ function MarkdownPreview({ wsId, path }: { wsId: string; path: string }) {
   );
 }
 
+/**
+ * Splits the markdown into a gap/marked segment list, using `segmentMarks` so
+ * overlapping/nested marks produce one segment carrying every covering mark
+ * (mirroring the editor's multi-id MarkNodes). Zero-length marks (which
+ * `segmentMarks` drops) are kept as point segments rendered as a marker glyph.
+ */
 function buildSegments(markdown: string, marks: Mark[]): TextSegment[] {
-  const sorted = [...marks].sort((a, b) => a.offset - b.offset);
+  if (marks.length === 0) return [{ text: markdown, marks: [] }];
 
-  if (sorted.length === 0) return [{ text: markdown }];
+  const byThread = new Map(marks.map((m) => [m.thread_id, m]));
+  const resolve = (ids: readonly string[]): Mark[] =>
+    ids.map((id) => byThread.get(id)).filter((m): m is Mark => m !== undefined);
+
+  // Non-zero marks -> non-overlapping intervals via segmentMarks; zero-length
+  // marks -> point intervals at their offset. Merge by offset and walk with a
+  // cursor, emitting gap segments between.
+  const intervals = segmentMarks(marks.filter((m) => m.length > 0)).map(
+    ({ offset, length, ids }) => ({ offset, length, marks: resolve(ids) }),
+  );
+  const points = marks
+    .filter((m) => m.length === 0)
+    .map((m) => ({ offset: m.offset, length: 0, marks: [m] }));
+  const anchored = [...intervals, ...points].sort(
+    (a, b) => a.offset - b.offset,
+  );
 
   const segments: TextSegment[] = [];
   let cursor = 0;
-
-  for (const mark of sorted) {
-    if (mark.offset > cursor) {
-      segments.push({ text: markdown.slice(cursor, mark.offset) });
+  for (const seg of anchored) {
+    if (seg.offset > cursor) {
+      segments.push({ text: markdown.slice(cursor, seg.offset), marks: [] });
     }
     segments.push({
-      text: markdown.slice(mark.offset, mark.offset + mark.length),
-      mark,
+      text: markdown.slice(seg.offset, seg.offset + seg.length),
+      marks: seg.marks,
     });
-    cursor = mark.offset + mark.length;
+    cursor = Math.max(cursor, seg.offset + seg.length);
   }
-
   if (cursor < markdown.length) {
-    segments.push({ text: markdown.slice(cursor) });
+    segments.push({ text: markdown.slice(cursor), marks: [] });
   }
-
   return segments;
 }
