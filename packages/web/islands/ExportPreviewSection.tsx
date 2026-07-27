@@ -22,6 +22,17 @@ interface TextSegment {
   marks: Mark[];
 }
 
+const AMBER_BY_COUNT: Record<number, string> = {
+  1: "bg-amber-200",
+  2: "bg-amber-300",
+  3: "bg-amber-400",
+  4: "bg-amber-500",
+  5: "bg-amber-600",
+  6: "bg-amber-700",
+  7: "bg-amber-800",
+  8: "bg-amber-900",
+};
+
 function visualizeWhitespace(text: string): string {
   return text
     .replace(/ /g, "\u00B7")
@@ -51,7 +62,7 @@ function MarkdownPreview({ wsId, path }: { wsId: string; path: string }) {
           const title = seg.marks
             .map((m) => (m.label ? `${m.label}: ${m.comment}` : m.comment))
             .join(" | ");
-          const cls = `bg-amber-${Math.min(Math.max(seg.marks.length + 1, 2), 9)}00`;
+          const cls = AMBER_BY_COUNT[Math.min(seg.marks.length, 8)] ?? "";
           return (
             <span key={i} class={cls} title={title}>
               {seg.text ? visualizeWhitespace(seg.text) : "\u250A"}
