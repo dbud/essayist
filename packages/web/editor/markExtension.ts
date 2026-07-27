@@ -18,13 +18,18 @@ import {
 } from "lexical";
 import type { RangedMark } from "@/signals/marks.ts";
 import { $createMarkNode, MarkNode } from "./markNode.ts";
+import { type MarkSpan, segmentMarks } from "./markSegments.ts";
 import { registerNodeKeyTracker } from "./nodeKeyTracker.ts";
 import {
   $createSelection,
   $restoreSelection,
   $saveSelection,
 } from "./selection.ts";
-import type { TextNodeSpan } from "./textNodeSpans.ts";
+import {
+  $collectTextNodeSpans,
+  findRange,
+  type TextNodeSpan,
+} from "./textNodeSpans.ts";
 
 export const MARK_RANGE_TAG = "mark-range";
 
@@ -34,7 +39,6 @@ export const SELECT_MARK_COMMAND: LexicalCommand<string> = createCommand();
 export interface MarksExtensionConfig {
   path: string;
   ranges: Signal<RangedMark[]>;
-  textNodeSpans: Signal<TextNodeSpan[]>;
   markdown: Signal<string>;
 }
 
@@ -45,7 +49,7 @@ export const MarksExtension = defineExtension({
   // first run is synchronous, so register() would run it against an empty tree.
   afterRegistration: (
     editor: LexicalEditor,
-    { path, ranges, textNodeSpans, markdown }: MarksExtensionConfig,
+    { path, ranges, markdown }: MarksExtensionConfig,
   ) => {
     const nodeKeys = new Set<NodeKey>();
 
@@ -80,21 +84,25 @@ export const MarksExtension = defineExtension({
         if (!path) return;
         if (ranges.value.length === 0) return;
 
-        // Untracked snapshot (ranges drives the effect): spans describe the
-        // caret's tree; markdown is the stable offset space for restore since
-        // marks don't change the exported markdown. `preSpans` may lag the live
-        // tree by one apply (OnChangePlugin skips MARK_RANGE_TAG, and wrapping
-        // mints new fragment keys); `$restoreSelection` degrades gracefully
-        // when it can't re-resolve against them.
-        const { preSpans, content } = untracked(() => ({
-          preSpans: textNodeSpans.value,
-          content: markdown.value,
-        }));
+        // `ranges` drives the effect (it re-derives on both mark resolution and
+        // tree edits). `markdown` is read untracked: it's the stable offset
+        // space for save/restore, since marks don't change the exported
+        // markdown.
+        const content = untracked(() => markdown.value);
 
         editor.update(
           () => {
-            const saved = $saveSelection(preSpans);
-            $applyMarks(ranges.value, nodeKeys);
+            // One fresh span collection from the in-flight tree, shared with
+            // $applyMarks (unwrap preserves keys/text/order, so it stays valid
+            // post-unwrap). The `textNodeSpans` signal lags the live tree by one
+            // apply, so reading it here would give stale (key, offset) refs.
+            const spans = $collectTextNodeSpans(content);
+            const saved = $saveSelection(spans);
+            $applyMarks(
+              ranges.value.map((r) => r.mark),
+              nodeKeys,
+              spans,
+            );
             $restoreSelection(saved, content);
           },
           { tag: [MARK_RANGE_TAG, HISTORIC_TAG] },
@@ -105,29 +113,45 @@ export const MarksExtension = defineExtension({
 });
 
 /**
- * Unwraps existing MarkNodes and wraps the current ranges. No selection
- * handling -- the caller saves/restores around it. Runs in a $-context.
+ * Unwraps existing MarkNodes and wraps the given mark spans as non-overlapping
+ * multi-id segments. `spans` is collected once by the caller from the in-flight
+ * tree before unwrapping (unwrap preserves keys/text/order, so the same span
+ * list is valid post-unwrap). Segments are wrapped right-to-left: each wrap
+ * splits text nodes but keeps the original key on the left portion, so
+ * leftward (not-yet-processed) segments' pre-resolved (key, offset) references
+ * stay valid -- no re-collection per wrap. Runs in a $-context; no selection
+ * handling (the caller saves/restores around it).
  */
-function $applyMarks(ranges: RangedMark[], nodeKeys: Set<NodeKey>) {
-  const nodes = Array.from(nodeKeys).map((key) => {
+export function $applyMarks(
+  marks: ReadonlyArray<MarkSpan>,
+  nodeKeys: Set<NodeKey>,
+  spans: TextNodeSpan[],
+): void {
+  for (const key of nodeKeys) {
     const node = $getNodeByKey(key);
     assert($isMarkNode(node));
-    return node;
-  });
-
-  nodes.forEach((node) => {
     $unwrapMarkNode(node);
-  });
+  }
 
-  ranges
-    .filter(({ mark }) => mark.length > 0)
-    .map(({ mark, range }) => ({
-      id: mark.thread_id,
-      selection: $createSelection(range),
+  const segments = segmentMarks(marks);
+  if (segments.length === 0) return;
+
+  // Resolve every segment against the single span list up front. Right-to-left
+  // wrapping (below) keeps these references valid; see the header comment.
+  const resolved = segments
+    .map((seg) => ({
+      seg,
+      range: findRange(spans, { offset: seg.offset, length: seg.length }),
     }))
-    .forEach(({ id, selection }) => {
-      $wrapSelectionInMarkNode(selection, false, id, (ids) =>
-        $createMarkNode(ids),
-      );
-    });
+    .reverse();
+
+  for (const { seg, range } of resolved) {
+    const selection = $createSelection(range);
+    // $wrapSelectionInMarkNode always invokes createNode with [id] (the single
+    // id argument); ignore that and close over the segment's full id-set so a
+    // shared interval becomes one MarkNode carrying every covering mark's id.
+    $wrapSelectionInMarkNode(selection, false, seg.ids[0], () =>
+      $createMarkNode(seg.ids),
+    );
+  }
 }

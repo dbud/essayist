@@ -34,14 +34,13 @@ export default function Editor({
     numbers: markNumbers,
     markBadges,
   } = getSidenotes(wsId, path);
-  const { textNodeSpans, markdown } = getFile(wsId, path);
+  const { markdown } = getFile(wsId, path);
   const selection = getEditorSelection(wsId, path);
 
   const extension = useMemo(
     () => ({
       ...createEditorExtension(path, {
         ranges,
-        textNodeSpans,
         markdown,
         selection,
         sidenotePositions,
@@ -51,16 +50,7 @@ export default function Editor({
       $initialEditorState: state,
     }),
     // Signals/model are stable per path, so the memo effectively keys on path/state.
-    [
-      path,
-      state,
-      ranges,
-      textNodeSpans,
-      markdown,
-      selection,
-      markNumbers,
-      markBadges,
-    ],
+    [path, state, ranges, markdown, selection, markNumbers, markBadges],
   );
 
   const contentEditable = useMemo(
