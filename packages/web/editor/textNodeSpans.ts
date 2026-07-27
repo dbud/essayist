@@ -1,6 +1,15 @@
+import { $isCodeNode } from "@lexical/code";
 import { assert } from "@std/assert/assert";
 import type { EditorState, LexicalNode, TextNode } from "lexical";
 import { $getRoot, $isElementNode, $isTextNode } from "lexical";
+
+// Chars `@lexical/markdown`'s `exportTextFormat` escapes with a `\` prefix in
+// non-code text nodes. Used to pre-escape a text-node needle so `indexOf`
+// matches the exported content (which has `\X` where the editor has `X`).
+const ESCAPE_SET = /([*_`~\\])/g;
+// True if a text node contains any escape-set char (so its verbatim text won't
+// appear in `content` and the needle must be pre-escaped).
+const HAS_ESCAPE = /[*_`~\\]/;
 
 /**
  * A position within a specific Lexical TextNode.
@@ -36,20 +45,47 @@ export interface Span {
  * Walks the active tree (`$getRoot()`) and maps each TextNode to its markdown
  * offset. Runs in a $-context; during `editor.update` it sees the in-flight
  * (mutated) state, unlike `buildTextNodeSpans(editor.getEditorState(), …)`.
+ *
+ * The markdown export escapes `* _ ` ~ \` as `\X` inside non-code text nodes,
+ * so a text node containing one of those chars no longer appears verbatim in
+ * `content` and a bare `indexOf` would drop it. To stay on the fast native
+ * `indexOf` path, only the needle is pre-escaped when needed:
+ *   - code text nodes (inline `code` format, or block-code `CodeHighlightNode`)
+ *     are emitted raw by the export, so they match verbatim;
+ *   - prose nodes containing an escape-set char are matched via their escaped
+ *     needle (`\X`);
+ *   - plain prose matches verbatim.
+ * All branches are native string ops (`indexOf` + `replace`); no regex match,
+ * no per-char JS loop.
  */
 export function $collectTextNodeSpans(content: string): TextNodeSpan[] {
   const spans: TextNodeSpan[] = [];
 
   let searchFrom = 0;
-  for (const tn of $walkTextNodes($getRoot())) {
+  for (const { node: tn, inCode } of $walkTextNodes($getRoot())) {
     const text = tn.getTextContent();
     if (text.length === 0) continue;
 
-    const idx = content.indexOf(text, searchFrom);
-    if (idx === -1) continue;
+    const isCode = inCode;
+    let needle: string;
+    let offsetShift: number;
+    if (isCode || !HAS_ESCAPE.test(text)) {
+      needle = text;
+      offsetShift = 0;
+    } else {
+      needle = text.replace(ESCAPE_SET, "\\$1");
+      // `indexOf` lands on the `\` of a leading `\X`; the text node's first
+      // char is the `X` after it, so shift by 1 to match the offset a bare
+      // `indexOf(X)` (and the mark resolver) would land on. `\\` (a literal
+      // backslash) is the exception -- its first char IS the first `\`.
+      offsetShift = needle[0] === "\\" && needle[1] !== "\\" ? 1 : 0;
+    }
 
-    spans.push({ key: tn.getKey(), text, offset: idx });
-    searchFrom = idx + text.length;
+    const idx = content.indexOf(needle, searchFrom);
+    if (idx === -1) continue; // dropped (graceful, as before)
+
+    spans.push({ key: tn.getKey(), text, offset: idx + offsetShift });
+    searchFrom = idx + needle.length;
   }
 
   return spans;
@@ -159,12 +195,19 @@ export function findRange(
   return { anchor, focus };
 }
 
-function* $walkTextNodes(node: LexicalNode): Generator<TextNode> {
+function* $walkTextNodes(
+  node: LexicalNode,
+  inCode = false,
+): Generator<{ node: TextNode; inCode: boolean }> {
+  // Block code (`CodeNode`) is emitted raw by the export -- no escaping -- so
+  // every text node under it is code-context. Inline code is a `TextNode` with
+  // the `code` format flag (not under a `CodeNode`); folded into `inCode` below.
+  if ($isCodeNode(node)) inCode = true;
   if ($isTextNode(node)) {
-    yield node;
+    yield { node, inCode: inCode || node.hasFormat("code") };
   } else if ($isElementNode(node)) {
     for (const child of node.getChildren()) {
-      yield* $walkTextNodes(child);
+      yield* $walkTextNodes(child, inCode);
     }
   }
 }

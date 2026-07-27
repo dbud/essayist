@@ -171,3 +171,85 @@ Deno.test("findPosition -- gap between spans snaps forward", () => {
   assertEquals(pos.key, spans[1].key);
   assertEquals(pos.offset, 0);
 });
+
+// The export escapes `* _ ` ~ \` as `\X` inside non-code text nodes. A bare
+// `indexOf(textNodeText)` fails when the node contains one of those chars, so
+// the node would be dropped from the span list. These cover the pre-escape
+// path and the code-context (verbatim) path.
+
+Deno.test("buildTextNodeSpans -- literal escaped asterisk in prose is found", () => {
+  // md "a\*b" imports as one text node "a*b" (literal *); export re-escapes to
+  // "a\*b". A bare indexOf("a*b") would fail and drop the node.
+  const md = "a\\*b";
+  const spans = buildTextNodeSpans(importMarkdown(md), md);
+  assertEquals(spans.length, 1);
+  assertEquals(spans[0].text, "a*b");
+  assertEquals(spans[0].offset, 0);
+});
+
+Deno.test("buildTextNodeSpans -- multi-char prose with * is not dropped", () => {
+  // The reported bug: a multi-char text node containing an escaped char was
+  // dropped entirely (caret save/restore then snapped to end of document).
+  const md = "before \\* after";
+  const spans = buildTextNodeSpans(importMarkdown(md), md);
+  assertEquals(spans.length, 1);
+  assertEquals(spans[0].text, "before * after");
+  assertEquals(spans[0].offset, 0);
+  // Caret positions round-trip within the node.
+  const range = findRange(spans, { offset: 7, length: 1 });
+  assert(range);
+  assertEquals(range.anchor.key, spans[0].key);
+  assertEquals(range.anchor.offset, 7);
+  assertEquals(range.focus.offset, 8);
+});
+
+Deno.test("buildTextNodeSpans -- literal * after bold matches the \\* form, not the bold marker", () => {
+  // content "x**y**\*" — the literal "*" (\*) is at offset 7; the bold close
+  // markers are at 4-5. A bare indexOf("*", 4) would land on the bold close (4).
+  const md = "x**y**\\*";
+  const spans = buildTextNodeSpans(importMarkdown(md), md);
+  // Spans: "x" at 0, "y" at 3, "*" (literal) at 7.
+  assertEquals(
+    spans.map((s) => s.text),
+    ["x", "y", "*"],
+  );
+  assertEquals(spans[2].offset, 7);
+});
+
+Deno.test("buildTextNodeSpans -- inline code with * stays verbatim (raw)", () => {
+  // Code is emitted raw (no escaping): content is "`a*b`".
+  const md = "`a*b`";
+  const spans = buildTextNodeSpans(importMarkdown(md), md);
+  assertEquals(spans.length, 1);
+  assertEquals(spans[0].text, "a*b");
+  assertEquals(spans[0].offset, 1);
+});
+
+Deno.test("buildTextNodeSpans -- block code with * stays verbatim (raw)", () => {
+  const md = "```\na*b\n```";
+  const spans = buildTextNodeSpans(importMarkdown(md), md);
+  const span = spans.find((s) => s.text === "a*b");
+  assert(span, "code-highlight text node should be found, not dropped");
+});
+
+Deno.test("buildTextNodeSpans -- literal backslash in prose", () => {
+  // md "a\\b" (markdown "a\\b") imports as "a\b"; export re-escapes to "a\\b".
+  // The node's first char is "\", escaped to "\\": offsetShift stays 0 (matches
+  // a bare indexOf("\\") landing on the first backslash).
+  const md = "a\\\\b";
+  const spans = buildTextNodeSpans(importMarkdown(md), md);
+  assertEquals(spans.length, 1);
+  assertEquals(spans[0].text, "a\\b");
+  assertEquals(spans[0].offset, 0);
+});
+
+Deno.test("buildTextNodeSpans -- literal underscore / backtick / tilde in prose", () => {
+  for (const ch of ["_", "`", "~"]) {
+    const md = `a${ch}b`.replace(/[_`~]/g, (c) => `\\${c}`);
+    // e.g. "a\_b", "a\`b", "a\~b"
+    const spans = buildTextNodeSpans(importMarkdown(md), md);
+    assertEquals(spans.length, 1, `node with ${ch} should not be dropped`);
+    assertEquals(spans[0].text, `a${ch}b`);
+    assertEquals(spans[0].offset, 0);
+  }
+});
