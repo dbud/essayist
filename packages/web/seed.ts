@@ -129,6 +129,11 @@ console.log(greet('World'));
 That's all folks!`,
 };
 
+// Second showcase file shares the same content as the first; the seed marks
+// it with simple + long overlapping marks, while the first file gets only the
+// simple marks -- a side-by-side repro for nested/overlapping mark rendering.
+files["markdown-showcase-overlap.md"] = files["markdown-showcase.md"];
+
 /** Seed the given workspace with sample files, a few marks, and a
  * workspace-specific readme (`workspace-{id}.md`) that records the
  * workspace's name and id. */
@@ -167,25 +172,62 @@ This file was created automatically when the workspace was set up. Feel free to 
     "Build a writing assistant",
     "Core product idea -- prioritize this.",
   );
-  await vfs.mark(
+  // Simple marks applied to both showcase files. The first file keeps only
+  // these; the second additionally gets the long overlapping marks below.
+  const showcasePaths = [
     "markdown-showcase.md",
-    "Writing is a form of art that has been practiced for thousands of years",
-    "Strong opening -- sets the historical stakes for the whole section.",
+    "markdown-showcase-overlap.md",
+  ];
+  const simpleShowcaseMarks: ReadonlyArray<[string, string]> = [
+    [
+      "Writing is a form of art that has been practiced for thousands of years",
+      "Strong opening -- sets the historical stakes for the whole section.",
+    ],
+    [
+      "Writing is thinking on paper.",
+      "Zinsser quote worth pulling out -- could anchor the intro.",
+    ],
+    [
+      "code is read far more often than it is written",
+      "Key principle -- reuse as a guiding maxim for the craftsmanship chapter.",
+    ],
+    ["That's all folks!", "Closing line -- consider a stronger send-off."],
+  ];
+  for (const path of showcasePaths) {
+    for (const [selected, comment] of simpleShowcaseMarks) {
+      await vfs.mark(path, selected, comment);
+    }
+  }
+
+  // Long multiline marks on the overlap showcase only: selections spanning
+  // whole paragraphs (and multiline comments) that fully contain the short
+  // marks above, to exercise overlapping/nested mark rendering and ghosting.
+  await vfs.mark(
+    "markdown-showcase-overlap.md",
+    `Writing is a form of art that has been practiced for thousands of years, evolving from ancient cave paintings and cuneiform tablets to the digital documents we create today. At its core, writing is about communication -- the transfer of ideas, emotions, and knowledge from one mind to another across time and space. The best writing makes the reader feel something, whether it's the thrill of a suspenseful narrative, the clarity of a well-explained concept, or the comfort of a familiar voice.
+
+Good writing doesn't happen by accident. It requires careful thought about structure, word choice, rhythm, and purpose. Every sentence should serve a function, every paragraph should build upon the last, and every section should guide the reader toward a deeper understanding of the subject at hand. As the famous author William Zinsser once wrote, "Writing is thinking on paper." The act of putting words into sentences and paragraphs forces clarity of thought that mere contemplation cannot achieve.`,
+    `This opening is doing a lot of work.
+Consider splitting it: the historical framing could stand on its own,
+and the Zinsser pull-quote deserves a callout rather than a buried cite.`,
   );
   await vfs.mark(
-    "markdown-showcase.md",
-    "Writing is thinking on paper.",
-    "Zinsser quote worth pulling out -- could anchor the intro.",
+    "markdown-showcase-overlap.md",
+    `Building software is remarkably similar to writing. Both activities require the creator to balance structure with creativity, precision with expressiveness, and simplicity with completeness. A well-crafted codebase tells a story -- it has a beginning (the entry point), a middle (the core logic), and an end (the output or response). Just as a rambling essay loses its reader, a tangled codebase loses its maintainers.
+
+The best software engineers, like the best writers, revise relentlessly. They refactor for clarity, rename for precision, and delete for simplicity. They understand that code is read far more often than it is written, and they optimize accordingly. Comments serve as annotations, function names act as chapter headings, and module boundaries provide the structural paragraphs that organize complex systems into comprehensible wholes.`,
+    `The analogy holds but runs long.
+Tighten the second paragraph; "revise relentlessly" is the line to keep.
+The trailing metaphor catalog (annotations, headings, paragraphs) could move to a sidebar.`,
   );
   await vfs.mark(
-    "markdown-showcase.md",
-    "code is read far more often than it is written",
-    "Key principle -- reuse as a guiding maxim for the craftsmanship chapter.",
-  );
-  await vfs.mark(
-    "markdown-showcase.md",
-    "That's all folks!",
-    "Closing line -- consider a stronger send-off.",
+    "markdown-showcase-overlap.md",
+    `Markdown was designed to be as readable as possible in its raw form. The syntax is minimal by intention -- it provides just enough structure to convey meaning without overwhelming the writer with formatting concerns. Headings use hash marks, emphasis uses asterisks, and lists use simple dashes or numbers. This simplicity is why Markdown has become the de facto standard for documentation, README files, blog posts, and even entire books.
+
+What makes Markdown particularly powerful is its portability. A Markdown file can be rendered as HTML, converted to PDF, transformed into a presentation, or displayed directly in a web browser with minimal tooling. The plain-text format ensures that your content is never locked into a proprietary system, and the human-readable syntax means you'll never need special software to edit your files.`,
+    `Two paragraphs, one point each.
+Portability is the real selling point -- lead with it.
+The "raw form" readability is worth a code-block example.`,
   );
 }
 
