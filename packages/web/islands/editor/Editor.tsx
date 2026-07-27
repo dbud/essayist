@@ -28,7 +28,7 @@ export default function Editor({
   onChange,
   className,
 }: EditorProps) {
-  const { ranges } = getMarks(wsId, path);
+  const { resolved } = getMarks(wsId, path);
   const {
     positions: sidenotePositions,
     numbers: markNumbers,
@@ -40,7 +40,7 @@ export default function Editor({
   const extension = useMemo(
     () => ({
       ...createEditorExtension(path, {
-        ranges,
+        resolved,
         markdown,
         selection,
         sidenotePositions,
@@ -50,7 +50,7 @@ export default function Editor({
       $initialEditorState: state,
     }),
     // Signals/model are stable per path, so the memo effectively keys on path/state.
-    [path, state, ranges, markdown, selection, markNumbers, markBadges],
+    [path, state, resolved, markdown, selection, markNumbers, markBadges],
   );
 
   const contentEditable = useMemo(

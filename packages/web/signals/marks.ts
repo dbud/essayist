@@ -1,20 +1,13 @@
 import type { Mark } from "@essayist/core";
 import { createModel, signal } from "@preact/signals";
 import { IS_BROWSER } from "fresh/runtime";
-import type { NodeRange } from "@/editor/textNodeSpans.ts";
 import { getFile } from "@/signals/file.ts";
 import { asyncComputed } from "@/utils/asyncComputed.ts";
 import createAsyncState from "@/utils/asyncState.ts";
-import { deepComputed } from "@/utils/deepComputed.ts";
 import { resolveMarksViaWorker } from "@/wasm/client.ts";
 
-export interface RangedMark {
-  mark: Mark;
-  range: NodeRange;
-}
-
 export const MarksModel = createModel((workspaceId: string, path: string) => {
-  const { content, markdown, getNodeRange } = getFile(workspaceId, path);
+  const { content, markdown } = getFile(workspaceId, path);
   const marks = signal<Mark[]>([]);
   const [run, { loading, error }] = createAsyncState(true);
 
@@ -26,10 +19,6 @@ export const MarksModel = createModel((workspaceId: string, path: string) => {
     ([marks, oldContent, newContent], signal) =>
       resolveMarksViaWorker(marks, oldContent, newContent, signal),
     { debounce: 60, initial: [] as Mark[] },
-  );
-
-  const ranges = deepComputed((): RangedMark[] =>
-    resolved.value.map((mark) => ({ mark, range: getNodeRange(mark) })),
   );
 
   async function load() {
@@ -48,7 +37,6 @@ export const MarksModel = createModel((workspaceId: string, path: string) => {
   return {
     marks,
     resolved,
-    ranges,
     loading,
     error,
     reload: load,
@@ -64,9 +52,4 @@ export function getMarks(workspaceId: string, path: string) {
     key,
     () => new MarksModel(workspaceId, path),
   );
-}
-
-export interface MarkWithRange {
-  mark: Mark;
-  range: NodeRange;
 }

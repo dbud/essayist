@@ -1,3 +1,4 @@
+import type { Mark } from "@essayist/core";
 import { defineExtension } from "@lexical/extension";
 import {
   $isMarkNode,
@@ -16,7 +17,6 @@ import {
   mergeRegister,
   type NodeKey,
 } from "lexical";
-import type { RangedMark } from "@/signals/marks.ts";
 import { $createMarkNode, MarkNode } from "./markNode.ts";
 import { type MarkSpan, segmentMarks } from "./markSegments.ts";
 import { registerNodeKeyTracker } from "./nodeKeyTracker.ts";
@@ -38,7 +38,7 @@ export const SELECT_MARK_COMMAND: LexicalCommand<string> = createCommand();
 
 export interface MarksExtensionConfig {
   path: string;
-  ranges: Signal<RangedMark[]>;
+  resolved: Signal<Mark[]>;
   markdown: Signal<string>;
 }
 
@@ -49,7 +49,7 @@ export const MarksExtension = defineExtension({
   // first run is synchronous, so register() would run it against an empty tree.
   afterRegistration: (
     editor: LexicalEditor,
-    { path, ranges, markdown }: MarksExtensionConfig,
+    { path, resolved, markdown }: MarksExtensionConfig,
   ) => {
     const nodeKeys = new Set<NodeKey>();
 
@@ -82,27 +82,25 @@ export const MarksExtension = defineExtension({
 
       effect(() => {
         if (!path) return;
-        if (ranges.value.length === 0) return;
+        const marks = resolved.value;
+        // Skip only when there's nothing to do: no marks to wrap and no
+        // existing MarkNodes to unwrap.
+        if (marks.length === 0 && nodeKeys.size === 0) return;
 
-        // `ranges` drives the effect (it re-derives on both mark resolution and
-        // tree edits). `markdown` is read untracked: it's the stable offset
-        // space for save/restore, since marks don't change the exported
-        // markdown.
+        // `resolved` drives the effect (it re-emits on mark resolution and on
+        // edits, debounced by the worker). `markdown` is read untracked: it's
+        // the stable offset space for save/restore, since marks don't change
+        // the exported markdown.
         const content = untracked(() => markdown.value);
 
         editor.update(
           () => {
             // One fresh span collection from the in-flight tree, shared with
             // $applyMarks (unwrap preserves keys/text/order, so it stays valid
-            // post-unwrap). The `textNodeSpans` signal lags the live tree by one
-            // apply, so reading it here would give stale (key, offset) refs.
+            // post-unwrap).
             const spans = $collectTextNodeSpans(content);
             const saved = $saveSelection(spans);
-            $applyMarks(
-              ranges.value.map((r) => r.mark),
-              nodeKeys,
-              spans,
-            );
+            $applyMarks(marks, nodeKeys, spans);
             $restoreSelection(saved, content);
           },
           { tag: [MARK_RANGE_TAG, HISTORIC_TAG] },

@@ -2,14 +2,8 @@ import type { FileSnapshot } from "@essayist/core";
 import { computed, createModel, signal } from "@preact/signals";
 import { IS_BROWSER } from "fresh/runtime";
 import type { EditorState } from "lexical";
-import {
-  buildTextNodeSpans,
-  findRange,
-  type Span,
-} from "@/editor/textNodeSpans.ts";
 import { getOpenedFilesFor } from "@/signals/openedFiles.ts";
 import createAsyncState from "@/utils/asyncState.ts";
-import { deepComputed } from "@/utils/deepComputed.ts";
 import {
   editorStateToMarkdown,
   markdownToEditorState,
@@ -49,14 +43,6 @@ export const FileModel = createModel((workspaceId: string, path: string) => {
       modifiedState.value !== null && markdown.value !== initialMarkdown.value,
   );
 
-  const textNodeSpans = deepComputed(() => {
-    if (!state.value) return [];
-    return buildTextNodeSpans(state.value, markdown.value);
-  });
-  function getNodeRange(span: Span) {
-    return findRange(textNodeSpans.value, span);
-  }
-
   async function load() {
     const result = await run(async () => {
       const res = await fetch(
@@ -81,8 +67,6 @@ export const FileModel = createModel((workspaceId: string, path: string) => {
     markdown,
     dirty,
     isSelected,
-    textNodeSpans,
-    getNodeRange,
   };
 });
 

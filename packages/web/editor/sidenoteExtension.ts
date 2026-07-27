@@ -1,22 +1,28 @@
+import type { Mark } from "@essayist/core";
 import { defineExtension } from "@lexical/extension";
 import { $isMarkNode } from "@lexical/mark";
 import type { Signal } from "@preact/signals";
 import type { LexicalEditor } from "lexical";
-import type { RangedMark } from "@/signals/marks.ts";
 import type {
   MarkBadge,
   MarkNumbers,
   SidenotePositions,
 } from "@/signals/sidenotes.ts";
+import { editorStateToMarkdown } from "@/utils/markdown.ts";
 import { contentEndRect, getMeasureContext, hasRect } from "./domMeasure.ts";
 import { MarkNode } from "./markNode.ts";
+import {
+  $collectTextNodeSpans,
+  findPosition,
+  type TextNodeSpan,
+} from "./textNodeSpans.ts";
 import { trackNodePositions } from "./trackNodePositions.ts";
 
 interface SidenoteConfig {
   sidenotePositions: Signal<SidenotePositions>;
   markNumbers: Signal<MarkNumbers>;
   markBadges: Signal<MarkBadge[]>;
-  ranges: Signal<RangedMark[]>;
+  resolved: Signal<Mark[]>;
 }
 
 // Publishes mark positions and ordinal badges. Non-empty marks are tracked
@@ -28,22 +34,37 @@ export const SidenoteExtension = defineExtension({
   name: "sidenote",
   afterRegistration: (
     editor: LexicalEditor,
-    { sidenotePositions, markNumbers, markBadges, ranges }: SidenoteConfig,
+    { sidenotePositions, markNumbers, markBadges, resolved }: SidenoteConfig,
   ) => {
     return trackNodePositions(editor, {
       nodeClass: MarkNode,
       isNode: $isMarkNode,
       getIds: (node) => node.getIDs(),
       output: sidenotePositions,
-      remeasureOn: [markNumbers, ranges],
-      points: () =>
-        ranges.value
-          .filter(({ mark }) => mark.length === 0) // no MarkNode
-          .map(({ mark, range }) => ({
-            id: mark.thread_id,
-            key: range.anchor.key,
-            offset: range.anchor.offset,
-          })),
+      remeasureOn: [markNumbers],
+      // Zero-length marks wrap no text and produce no MarkNode, so measure them
+      // from a collapsed Range at their anchor. Resolve the anchor against the
+      // fresh committed tree (not a lagging signal) so the position tracks the
+      // live editor; short-circuit when there are no zero-length marks to skip
+      // the span collection. Runs in the rAF-deferred `measure()` callback.
+      points: () => {
+        const marks = resolved.value;
+        if (!marks.some((m) => m.length === 0)) return [];
+        const state = editor.getEditorState();
+        const content = editorStateToMarkdown(state);
+        let spans: TextNodeSpan[] = [];
+        state.read(() => {
+          spans = $collectTextNodeSpans(content);
+        });
+        return marks
+          .filter((m) => m.length === 0)
+          .flatMap((m) => {
+            const pos = findPosition(spans, m.offset);
+            return pos === null
+              ? []
+              : [{ id: m.thread_id, key: pos.key, offset: pos.offset }];
+          });
+      },
       onFragments: (fragments) => {
         const numbers = markNumbers.value;
         const ctx = getMeasureContext(editor.getRootElement());

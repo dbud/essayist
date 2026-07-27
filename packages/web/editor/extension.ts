@@ -1,3 +1,4 @@
+import type { Mark } from "@essayist/core";
 import { CodeExtension } from "@lexical/code";
 import {
   AutoFocusExtension,
@@ -12,7 +13,6 @@ import type { Signal } from "@preact/signals";
 import { configExtension, defineExtension } from "lexical";
 import { PartialUpdateExtension } from "@/editor/partialUpdateExtension.ts";
 import type { EditorSelection } from "@/signals/editorSelection.ts";
-import type { RangedMark } from "@/signals/marks.ts";
 import type {
   MarkBadge,
   MarkNumbers,
@@ -24,7 +24,7 @@ import { SidenoteExtension } from "./sidenoteExtension.ts";
 import { ToolbarStateExtension } from "./toolbarStateExtension.ts";
 
 interface EditorDeps {
-  ranges: Signal<RangedMark[]>;
+  resolved: Signal<Mark[]>;
   markdown: Signal<string>;
   selection: EditorSelection;
   sidenotePositions: Signal<SidenotePositions>;
@@ -35,7 +35,7 @@ interface EditorDeps {
 export function createEditorExtension(
   path: string,
   {
-    ranges,
+    resolved,
     markdown,
     selection,
     sidenotePositions,
@@ -61,14 +61,14 @@ export function createEditorExtension(
       HorizontalRuleExtension,
       configExtension(MarksExtension, {
         path,
-        ranges,
+        resolved,
         markdown,
       }),
       configExtension(SidenoteExtension, {
         sidenotePositions,
         markNumbers,
         markBadges,
-        ranges,
+        resolved,
       }),
       configExtension(ToolbarStateExtension, { selection }),
       configExtension(MarksAtCursorExtension, { selection }),
