@@ -7,13 +7,13 @@ export function MarkBadges({ badges }: { badges: MarkBadge[] }) {
   if (badges.length === 0) return null;
   return (
     <div class="pointer-events-none absolute inset-0">
-      {badges.map((b) => (
+      {badges.map(({ key, left, top, numbers }) => (
         <span
-          key={b.key}
+          key={key}
           class="mark-badge absolute font-semibold text-[var(--color-primary)]"
-          style={`left:${b.left}px;top:${b.top}px`}
+          style={`left:${left}px;top:${top}px`}
         >
-          {b.label}
+          {numbers.join(", ")}
         </span>
       ))}
     </div>

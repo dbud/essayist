@@ -17,7 +17,7 @@ export interface MarkBadge {
   key: NodeKey;
   left: number; // end-x of the fragment's text, relative to the editor column
   top: number; // line top at that end, relative to the editor column
-  label: string; // comma-joined ordinals (overlapping marks)
+  numbers: number[]; // ordinals of the marks covering this fragment, ascending
 }
 
 export interface SidenoteEntry {

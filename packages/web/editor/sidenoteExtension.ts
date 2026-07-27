@@ -85,7 +85,7 @@ export const SidenoteExtension = defineExtension({
             key,
             left: rect.right - containerRect.left,
             top: rect.top - containerRect.top,
-            label: nums.join(","),
+            numbers: nums.sort((a, b) => a - b),
           });
         }
         markBadges.value = badges;
