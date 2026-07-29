@@ -5,6 +5,7 @@ import EditorToolbar from "@/components/EditorToolbar.tsx";
 import FontSelect from "@/components/FontSelect.tsx";
 import { MarkBadges } from "@/components/MarkBadges.tsx";
 import { MarkHighlights } from "@/components/MarkHighlights.tsx";
+import { MarkSwatches } from "@/components/MarkSwatches.tsx";
 import Sidenote from "@/components/Sidenote.tsx";
 import Toolbar from "@/components/Toolbar.tsx";
 import { useElementHeights } from "@/hooks/useElementHeights.ts";
@@ -139,6 +140,8 @@ function FileViewerBody({ wsId, path }: { wsId: string; path: string }) {
           </div>
         </div>
       </div>
+      {/* TEMPORARY palette preview. */}
+      <MarkSwatches />
     </div>
   );
 }

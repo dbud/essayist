@@ -5,7 +5,7 @@ import type { Mark } from "@essayist/core";
 // touching call sites; it hashes thread_id (stable across versions) today.
 
 // CSS custom property names; values are defined in `assets/styles.css`.
-const MARK_PALETTE = [
+export const MARK_PALETTE = [
   "var(--color-mark-0)",
   "var(--color-mark-1)",
   "var(--color-mark-2)",
