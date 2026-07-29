@@ -1,6 +1,7 @@
 import type { Mark } from "@essayist/core";
 import type { LexicalEditor } from "lexical";
 import { ChevronDown, ChevronUp } from "lucide-preact";
+import { colorForMark } from "@/editor/markColors.ts";
 import { SELECT_MARK_COMMAND } from "@/editor/markExtension.ts";
 import type { ScrollContainerRef } from "@/hooks/useScrollViewport.ts";
 
@@ -37,12 +38,13 @@ export default function Sidenote({
       data-thread-id={isGhost ? undefined : mark.thread_id}
       class={`absolute left-0 right-0 text-left text-sm p-2 rounded cursor-pointer border-0 appearance-none transition-[background-color,box-shadow] duration-200 ${
         isGhost
-          ? "bg-base-100/50 ring-1 ring-base-300/60"
+          ? "sidenote-ghost"
           : active
-            ? "bg-[var(--color-mark-active)] ring-1 ring-[var(--color-mark)]"
-            : "bg-base-100/60"
+            ? "sidenote-active"
+            : "sidenote-inactive"
       }`}
       style={{
+        "--mark-color": colorForMark(mark),
         top: `${top}px`,
         visibility: hidden ? "hidden" : "visible",
         opacity: isGhost ? 0.65 : undefined,

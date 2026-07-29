@@ -1,13 +1,11 @@
-// Color + band-order policy for overlapping marks.
-//
-// Today there are no categories, so color is derived deterministically from
-// each mark's thread id (hash -> palette index) and band order is the id order
-// already produced by `segmentMarks` (outer/earliest mark first). Both policies
-// live here so that when categories arrive, swapping to category-based color
-// and priority ordering is a one-file change.
+import type { Mark } from "@essayist/core";
+
+// Color + band-order policy for overlapping marks. `colorForMark` takes the
+// whole mark so the derivation can change (e.g. to mark.category) without
+// touching call sites; it hashes thread_id (stable across versions) today.
 
 // CSS custom property names; values are defined in `assets/styles.css`.
-export const MARK_PALETTE = [
+const MARK_PALETTE = [
   "var(--color-mark-0)",
   "var(--color-mark-1)",
   "var(--color-mark-2)",
@@ -17,16 +15,16 @@ export const MARK_PALETTE = [
 ] as const;
 
 // djb2 -- stable, small, good enough distribution for palette assignment.
-function hashId(id: string): number {
+function colorForKey(key: string): string {
   let h = 5381;
-  for (let i = 0; i < id.length; i++) {
-    h = ((h << 5) + h + id.charCodeAt(i)) | 0;
+  for (let i = 0; i < key.length; i++) {
+    h = ((h << 5) + h + key.charCodeAt(i)) | 0;
   }
-  return Math.abs(h);
+  return MARK_PALETTE[Math.abs(h) % MARK_PALETTE.length];
 }
 
-export function colorForId(id: string): string {
-  return MARK_PALETTE[hashId(id) % MARK_PALETTE.length];
+export function colorForMark(mark: Mark): string {
+  return colorForKey(mark.thread_id);
 }
 
 export interface MarkBand {
@@ -36,10 +34,16 @@ export interface MarkBand {
 }
 
 /**
- * Assigns a color and band order to each id in a segment. `ids` must arrive in
- * segment order (as produced by `segmentMarks` / `MarkNode.getIDs`); band 0 is
- * the top band.
+ * Color + band order for each id in a segment. `ids` are thread ids in segment
+ * order (outer/earliest mark first -> band 0). A missing mark (transient) falls
+ * back to hashing the thread id, which matches the current derivation.
  */
-export function assignBands(ids: readonly string[]): MarkBand[] {
-  return ids.map((id, order) => ({ id, color: colorForId(id), order }));
+export function assignBands(
+  marks: ReadonlyMap<string, Mark>,
+  ids: readonly string[],
+): MarkBand[] {
+  return ids.map((id, order) => {
+    const mark = marks.get(id);
+    return { id, color: mark ? colorForMark(mark) : colorForKey(id), order };
+  });
 }

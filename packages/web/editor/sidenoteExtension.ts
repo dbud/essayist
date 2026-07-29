@@ -109,7 +109,11 @@ export const SidenoteExtension = defineExtension({
           // Banded highlights: one rect per visual line of the fragment,
           // split vertically into one band per covering id (in segment order:
           // outer/earliest mark on top).
-          const bands = assignBands(ids);
+          const byThread = new Map(
+            // TODO -- move to model?
+            resolved.value.map((m) => [m.thread_id, m] as const),
+          );
+          const bands = assignBands(byThread, ids);
           const n = bands.length;
           if (n > 0) {
             for (const lineRect of el.getClientRects()) {
