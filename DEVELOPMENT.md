@@ -130,7 +130,7 @@ essayist/
         │   ├── extension.ts         # createEditorExtension(path) + bootstrapEditorExtension
         │   ├── markExtension.ts     # MarksExtension — applies mark ranges to the editor
         │   ├── selection.ts         # $createSelection(), $saveSelection(), $restoreSelection()
-        │   ├── textNodeSpans.ts     # buildTextNodeSpans(), findPosition(), findRange(), $collectTextNodeSpans()
+        │   ├── textNodeSpans.ts     # findPosition(), findRange(), $collectTextNodeSpans()
         │   ├── textNodeSpans_test.ts  # Tests for markdown offset ↔ TextNode mapping
         │   ├── marksAtCursorExtension.ts # MarksAtCursorExtension — marks at the caret
         │   └── toolbarStateExtension.ts # ToolbarStateExtension — selection-driven toolbar state
@@ -420,14 +420,11 @@ essayist/
   mutations that reshuffle TextNodes (using absolute markdown offsets).
 - **`packages/web/editor/textNodeSpans.ts`** — Offset mapping utilities for
   converting content character offsets to Lexical TextNode positions.
-  `buildTextNodeSpans()` walks all TextNodes in document order, finds each one's
-  text in the exported content string, and builds a sorted list of
-  `TextNodeSpan` entries (each with `key`, `text`, `offset`). `findPosition()`
-  uses binary search to convert a content offset to a `NodePosition` (TextNode
-  key + local offset). `findRange()` converts a content offset+length to a
-  `NodeRange` (anchor + focus). Offsets in syntax gaps snap to the nearest valid
-  text position. `$collectTextNodeSpans()` walks the active tree (in-flight
-  state during an update).
+  `findPosition()` uses binary search to convert a content offset to a
+  `NodePosition` (TextNode key + local offset). `findRange()` converts a
+  content offset+length to a `NodeRange` (anchor + focus). Offsets in syntax
+  gaps snap to the nearest valid text position. `$collectTextNodeSpans()` walks
+  the active tree (in-flight state during an update).
 - **`packages/web/editor/textNodeSpans_test.ts`** — Tests covering simple
   paragraphs, headings, bold text, two-paragraph documents, mixed content
   (headings, lists, blockquotes, code blocks), and edge cases for

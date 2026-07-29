@@ -1,14 +1,13 @@
 import { $isCodeNode } from "@lexical/code";
 import { assert } from "@std/assert/assert";
-import type { EditorState, LexicalNode, TextNode } from "lexical";
+import type { LexicalNode, TextNode } from "lexical";
 import { $getRoot, $isElementNode, $isTextNode } from "lexical";
 
-// Chars `@lexical/markdown`'s `exportTextFormat` escapes with a `\` prefix in
-// non-code text nodes. Used to pre-escape a text-node needle so `indexOf`
-// matches the exported content (which has `\X` where the editor has `X`).
+// Chars `@lexical/markdown` escapes with a `\` prefix in non-code text nodes.
+// `/g` for `.replace`; use `HAS_ESCAPE` for `.test`.
 const ESCAPE_SET = /([*_`~\\])/g;
-// True if a text node contains any escape-set char (so its verbatim text won't
-// appear in `content` and the needle must be pre-escaped).
+// Non-global form of `ESCAPE_SET` for stateless `.test` (single-char and
+// "contains any" checks).
 const HAS_ESCAPE = /[*_`~\\]/;
 
 /**
@@ -28,12 +27,18 @@ export interface NodeRange {
 }
 
 /**
- * An entry mapping a TextNode to its position in the exported text.
+ * Maps a Lexical TextNode to a substring of the exported markdown.
+ *
+ * `text` is the editor-space text. `offset` is the markdown-space index where
+ * the node's footprint begins. `markdown` is the markdown-space form of `text`
+ * -- what the export wrote at `offset` -- stored only when it differs from
+ * `text` (non-code prose containing an escape-set char).
  */
 export interface TextNodeSpan {
   key: string;
   text: string;
   offset: number;
+  markdown?: string;
 }
 
 export interface Span {
@@ -42,21 +47,9 @@ export interface Span {
 }
 
 /**
- * Walks the active tree (`$getRoot()`) and maps each TextNode to its markdown
- * offset. Runs in a $-context; during `editor.update` it sees the in-flight
- * (mutated) state, unlike `buildTextNodeSpans(editor.getEditorState(), …)`.
- *
- * The markdown export escapes `* _ ` ~ \` as `\X` inside non-code text nodes,
- * so a text node containing one of those chars no longer appears verbatim in
- * `content` and a bare `indexOf` would drop it. To stay on the fast native
- * `indexOf` path, only the needle is pre-escaped when needed:
- *   - code text nodes (inline `code` format, or block-code `CodeHighlightNode`)
- *     are emitted raw by the export, so they match verbatim;
- *   - prose nodes containing an escape-set char are matched via their escaped
- *     needle (`\X`);
- *   - plain prose matches verbatim.
- * All branches are native string ops (`indexOf` + `replace`); no regex match,
- * no per-char JS loop.
+ * Walks the active tree (`$getRoot()`) and maps each TextNode to its position
+ * in the exported markdown. Runs in a $-context, so during `editor.update` it
+ * sees the in-flight (mutated) state.
  */
 export function $collectTextNodeSpans(content: string): TextNodeSpan[] {
   const spans: TextNodeSpan[] = [];
@@ -66,25 +59,20 @@ export function $collectTextNodeSpans(content: string): TextNodeSpan[] {
     const text = tn.getTextContent();
     if (text.length === 0) continue;
 
-    const isCode = inCode;
-    let needle: string;
-    let offsetShift: number;
-    if (isCode || !HAS_ESCAPE.test(text)) {
-      needle = text;
-      offsetShift = 0;
-    } else {
-      needle = text.replace(ESCAPE_SET, "\\$1");
-      // `indexOf` lands on the `\` of a leading `\X`; the text node's first
-      // char is the `X` after it, so shift by 1 to match the offset a bare
-      // `indexOf(X)` (and the mark resolver) would land on. `\\` (a literal
-      // backslash) is the exception -- its first char IS the first `\`.
-      offsetShift = needle[0] === "\\" && needle[1] !== "\\" ? 1 : 0;
-    }
+    const needle =
+      inCode || !HAS_ESCAPE.test(text)
+        ? text
+        : text.replace(ESCAPE_SET, "\\$1");
 
     const idx = content.indexOf(needle, searchFrom);
     if (idx === -1) continue; // dropped (graceful, as before)
 
-    spans.push({ key: tn.getKey(), text, offset: idx + offsetShift });
+    spans.push({
+      key: tn.getKey(),
+      text,
+      offset: idx,
+      markdown: needle === text ? undefined : needle,
+    });
     searchFrom = idx + needle.length;
   }
 
@@ -92,27 +80,10 @@ export function $collectTextNodeSpans(content: string): TextNodeSpan[] {
 }
 
 /**
- * Builds a sorted list of TextNode spans from the editor state.
- *
- * Exports the editor to markdown, then walks all TextNodes in document
- * order, finding each one's text in the exported markdown. The resulting
- * list is sorted by markdown position, enabling O(log n) binary search
- * for mark offset lookup.
- */
-export function buildTextNodeSpans(
-  state: EditorState,
-  content: string,
-): TextNodeSpan[] {
-  return state.read(() => $collectTextNodeSpans(content));
-}
-
-/**
- * Finds the TextNode and local offset for a given content character offset.
- * Uses binary search on the sorted spans — O(log n).
- *
- * If the offset falls in a gap between TextNodes (e.g., markdown syntax
- * characters like #, >, **), snaps to the nearest valid text position:
- * either the end of the preceding span or the start of the following span.
+ * Finds the TextNode and local editor offset for a markdown-space offset.
+ * Binary search on the sorted spans -- O(log n). An offset in a gap between
+ * spans (markdown syntax like `#`, `>`, `**`) snaps to the nearest valid text
+ * position: end of the preceding span or start of the next.
  */
 export function findPosition(
   spans: TextNodeSpan[],
@@ -134,41 +105,44 @@ export function findPosition(
     }
   }
 
-  if (candidate === null) {
-    // Offset is before all spans — snap to start of first span
-    return { key: spans[0].key, offset: 0 };
-  }
+  // Offset is before all spans -- snap to start of first span.
+  if (candidate === null) return { key: spans[0].key, offset: 0 };
 
   const span = spans[candidate];
-  const localOffset = offset - span.offset;
+  const markdown = span.markdown ?? span.text;
+  const mdLocal = offset - span.offset;
 
-  // Offset is within this span (or exactly at its end — caret after
-  // last char). Stay within the same TextNode.
-  if (localOffset <= span.text.length) {
-    return { key: span.key, offset: localOffset };
+  // Past this span's markdown range and into a gap. Snap to the start of the
+  // next span if available, otherwise caret after this span's last char.
+  if (mdLocal > markdown.length) {
+    if (candidate + 1 < spans.length) {
+      return { key: spans[candidate + 1].key, offset: 0 };
+    }
+    return { key: span.key, offset: span.text.length };
   }
 
-  // Offset is past the end of this span and into a gap.
-  // Snap to the start of the next span if available.
-  if (candidate + 1 < spans.length) {
-    return { key: spans[candidate + 1].key, offset: 0 };
-  }
-
-  // No next span — caret after last char of this span.
-  return { key: span.key, offset: span.text.length };
+  // Within the span (or exactly at its end -- caret after last char).
+  if (span.markdown === undefined) return { key: span.key, offset: mdLocal };
+  return { key: span.key, offset: markdownOffsetToEditor(markdown, mdLocal) };
 }
 
 /**
- * Inverse of findPosition: maps a NodePosition back to an absolute markdown
- * offset. Returns null when the position is not on a tracked TextNode (e.g.
- * an element/root selection), so callers can fall back to a clone.
+ * Inverse of `findPosition`: maps a NodePosition to its markdown-space offset,
+ * or null when the position isn't on a tracked TextNode (e.g. an element/root
+ * selection), so callers can fall back to a clone.
+ *
+ * A caret "before X" round-trips to the markdown offset of `X` (skipping the
+ * `\` of `\X`), so editor offsets map back to the visible char, not the
+ * escape prefix.
  */
 export function positionToOffset(
   spans: TextNodeSpan[],
   { key, offset }: NodePosition,
 ): number | null {
   const span = spans.find((s) => s.key === key);
-  return span === undefined ? null : span.offset + offset;
+  if (span === undefined) return null;
+  if (span.markdown === undefined) return span.offset + offset;
+  return span.offset + editorOffsetToMarkdown(span.markdown, offset);
 }
 
 /**
@@ -193,6 +167,55 @@ export function findRange(
   );
 
   return { anchor, focus };
+}
+
+/**
+ * Converts a markdown-space local offset to an editor-space local offset,
+ * walking `\X` escapes. Each `\X` is 2 markdown chars / 1 editor char. A
+ * target landing on the `X` (between `\` and `X`) maps to "before X" -- the
+ * `\` has no editor char. Inverse of `editorOffsetToMarkdown`.
+ */
+function markdownOffsetToEditor(markdown: string, mOffset: number): number {
+  let m = 0; // markdown offset
+  let e = 0; // editor offset
+  while (m < mOffset) {
+    if (markdown[m] === "\\" && HAS_ESCAPE.test(markdown[m + 1] ?? "")) {
+      if (m + 2 <= mOffset) {
+        m += 2;
+        e += 1;
+      } else {
+        // `mdLocal` is the `X` of this `\X` -- caret before X.
+        m = mOffset;
+      }
+    } else {
+      m += 1;
+      e += 1;
+    }
+  }
+  return e;
+}
+
+/**
+ * Inverse of `markdownOffsetToEditor`. A caret "before X" maps to the markdown
+ * offset of `X` (skipping the `\`), not the escape prefix.
+ */
+function editorOffsetToMarkdown(markdown: string, eOffset: number): number {
+  let m = 0;
+  let e = 0;
+  while (e < eOffset) {
+    if (markdown[m] === "\\" && HAS_ESCAPE.test(markdown[m + 1] ?? "")) {
+      m += 2;
+      e += 1;
+    } else {
+      m += 1;
+      e += 1;
+    }
+  }
+  // Caret at `ep` sitting before the `X` of a `\X` -- markdown offset of `X`.
+  if (markdown[m] === "\\" && HAS_ESCAPE.test(markdown[m + 1] ?? "")) {
+    m += 1;
+  }
+  return m;
 }
 
 function* $walkTextNodes(
