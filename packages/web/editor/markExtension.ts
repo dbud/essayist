@@ -131,6 +131,9 @@ export function $applyMarks(
     $unwrapMarkNode(node);
   }
 
+  // No text nodes -> nothing to wrap (e.g. empty document).
+  if (spans.length === 0) return;
+
   const segments = segmentMarks(marks);
   if (segments.length === 0) return;
 

@@ -35,16 +35,18 @@ export function contentEndRect(el: HTMLElement, doc: Document): DOMRect | null {
   return rects[rects.length - 1];
 }
 
-// Collapsed Range rect at `offset` within `el`'s first text child; null when
-// `el` has no text child. Measures a point inside a text node (e.g. a
-// zero-length mark's anchor).
+// Collapsed Range rect at `offset` within `el`'s first text child, falling
+// back to `el`'s own rect when it has no text child (e.g. an empty paragraph),
+// so a zero-length mark still anchors at the paragraph.
 export function textPointRect(
   el: HTMLElement,
   offset: number,
   doc: Document,
-): DOMRect | null {
+): DOMRect {
   const textNode = el.firstChild;
-  if (textNode === null || textNode.nodeType !== doc.TEXT_NODE) return null;
+  if (textNode === null || textNode.nodeType !== doc.TEXT_NODE) {
+    return el.getBoundingClientRect();
+  }
   const text = textNode as Text;
   const range = doc.createRange();
   range.setStart(text, Math.min(offset, text.length));

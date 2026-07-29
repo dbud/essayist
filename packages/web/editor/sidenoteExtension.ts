@@ -3,6 +3,7 @@ import { defineExtension } from "@lexical/extension";
 import { $isMarkNode } from "@lexical/mark";
 import type { Signal } from "@preact/signals";
 import type { LexicalEditor } from "lexical";
+import { $getRoot } from "lexical";
 import type {
   MarkBadge,
   MarkNumbers,
@@ -53,16 +54,22 @@ export const SidenoteExtension = defineExtension({
         const state = editor.getEditorState();
         const content = editorStateToMarkdown(state);
         let spans: TextNodeSpan[] = [];
+        let fallbackKey = "";
         state.read(() => {
           spans = $collectTextNodeSpans(content);
+          if (spans.length === 0)
+            fallbackKey =
+              $getRoot().getFirstChild()?.getKey() ?? $getRoot().getKey();
         });
         return marks
           .filter((m) => m.length === 0)
-          .flatMap((m) => {
+          .map((m) => {
             const pos = findPosition(spans, m.offset);
-            return pos === null
-              ? []
-              : [{ id: m.thread_id, key: pos.key, offset: pos.offset }];
+            return {
+              id: m.thread_id,
+              key: pos?.key ?? fallbackKey,
+              offset: pos?.offset ?? 0,
+            };
           });
       },
       onFragments: (fragments) => {
