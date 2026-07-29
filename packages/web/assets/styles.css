@@ -18,12 +18,19 @@
     font-size: 16.5px;
   }
   mark {
-    background-color: color-mix(in oklch, var(--color-mark) 60%, transparent);
-    border-radius: 2px;
-    transition: background-color 200ms ease;
+    background-color: transparent;
   }
-  mark.mark-active {
-    background-color: var(--color-mark-active);
+  .mark-band {
+    position: absolute;
+    border-radius: 1px;
+    opacity: 0.4;
+    transition:
+      opacity 200ms ease,
+      box-shadow 200ms ease;
+  }
+  .mark-band-active {
+    opacity: 0.7;
+    box-shadow: 0 0 0 1.5px currentColor;
   }
   .mark-badge {
     font-size: 0.75em;
@@ -31,6 +38,17 @@
     margin-inline-start: 0.25em;
     transform: translateY(-0.5em);
   }
+}
+
+:root {
+  --mark-l: 93%;
+  --mark-c: 0.13;
+  --color-mark-0: oklch(var(--mark-l) var(--mark-c) 101);
+  --color-mark-1: oklch(var(--mark-l) var(--mark-c) 145);
+  --color-mark-2: oklch(var(--mark-l) var(--mark-c) 210);
+  --color-mark-3: oklch(var(--mark-l) var(--mark-c) 260);
+  --color-mark-4: oklch(var(--mark-l) var(--mark-c) 35);
+  --color-mark-5: oklch(var(--mark-l) var(--mark-c) 350);
 }
 
 @plugin "daisyui" {

@@ -16,6 +16,7 @@ import type { EditorSelection } from "@/signals/editorSelection.ts";
 import type {
   MarkBadge,
   MarkNumbers,
+  MarkRect,
   SidenotePositions,
 } from "@/signals/sidenotes.ts";
 import { MarksExtension } from "./markExtension.ts";
@@ -30,6 +31,7 @@ interface EditorDeps {
   sidenotePositions: Signal<SidenotePositions>;
   markNumbers: Signal<MarkNumbers>;
   markBadges: Signal<MarkBadge[]>;
+  markRects: Signal<MarkRect[]>;
 }
 
 export function createEditorExtension(
@@ -41,6 +43,7 @@ export function createEditorExtension(
     sidenotePositions,
     markNumbers,
     markBadges,
+    markRects,
   }: EditorDeps,
 ) {
   return defineExtension({
@@ -68,6 +71,7 @@ export function createEditorExtension(
         sidenotePositions,
         markNumbers,
         markBadges,
+        markRects,
         resolved,
       }),
       configExtension(ToolbarStateExtension, { selection }),

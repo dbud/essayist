@@ -20,6 +20,17 @@ export interface MarkBadge {
   numbers: number[]; // ordinals of the marks covering this fragment, ascending
 }
 
+// One band of a marked segment on a single visual line. A segment carrying N
+// ids yields N bands stacked vertically within each of its line-rects.
+export interface MarkRect {
+  id: string; // thread id this band belongs to
+  color: string; // CSS color (a var(--color-mark-*))
+  left: number; // editor-column-local
+  top: number;
+  width: number;
+  height: number;
+}
+
 export interface SidenoteEntry {
   mark: Mark;
   number: number;
@@ -58,6 +69,7 @@ export const SidenotesModel = createModel(
     const positions = signal<SidenotePositions>(new Map());
     const heights = signal<SidenoteHeights>(new Map());
     const markBadges = signal<MarkBadge[]>([]);
+    const markRects = signal<MarkRect[]>([]);
     // Scroll container viewport, written by `useScrollViewport` in FileViewer.
     const scrollTop = signal(0);
     const viewportHeight = signal(0);
@@ -177,6 +189,7 @@ export const SidenotesModel = createModel(
       layout,
       viewportLayout,
       markBadges,
+      markRects,
       scrollTop,
       viewportHeight,
     };

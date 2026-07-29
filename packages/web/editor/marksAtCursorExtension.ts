@@ -1,17 +1,13 @@
 import { defineExtension } from "@lexical/extension";
-import { $isMarkNode } from "@lexical/mark";
 import {
-  $getNodeByKey,
   COMMAND_PRIORITY_LOW,
   type EditorState,
   type LexicalEditor,
   mergeRegister,
-  type NodeKey,
   SELECTION_CHANGE_COMMAND,
 } from "lexical";
 import { defaultEditorSelection } from "@/signals/editorSelection.ts";
-import { $markIdsAtAnchor, MarkNode } from "./markNode.ts";
-import { registerNodeKeyTracker } from "./nodeKeyTracker.ts";
+import { $markIdsAtAnchor } from "./markNode.ts";
 import type { SelectionExtensionConfig } from "./toolbarStateExtension.ts";
 
 export const MarksAtCursorExtension = defineExtension({
@@ -21,41 +17,18 @@ export const MarksAtCursorExtension = defineExtension({
     editor: LexicalEditor,
     { selection }: SelectionExtensionConfig,
   ) => {
-    // Tracked MarkNode keys, kept in sync by the mutation listener.
-    const nodeKeys = new Set<NodeKey>();
-
-    // Toggles `mark-active` on existing MarkNode elements when the caret
-    // moves into/out of them. New elements get the class from MarkNode.createDOM.
-    const applyActive = (active: Set<string>) => {
-      editor.getEditorState().read(() => {
-        for (const key of nodeKeys) {
-          const node = $getNodeByKey(key);
-          if (!$isMarkNode(node)) continue;
-          const el = editor.getElementByKey(key);
-          if (el === null) continue;
-          el.classList.toggle(
-            "mark-active",
-            node.getIDs().some((id) => active.has(id)),
-          );
-        }
-      });
-    };
-
+    // Publish the mark ids at the caret into `selection.markIds`. The active
+    // highlighting is rendered by the MarkHighlights overlay, which reads this
+    // signal; the <mark> element stays transparent.
     const read = (editorState: EditorState) => {
       editorState.read(() => {
-        const ids = $markIdsAtAnchor();
-        selection.markIds.value = ids;
-        applyActive(ids);
+        selection.markIds.value = $markIdsAtAnchor();
       });
     };
 
     read(editor.getEditorState());
 
     return mergeRegister(
-      registerNodeKeyTracker(editor, MarkNode, nodeKeys, () =>
-        applyActive(selection.markIds.value),
-      ),
-
       editor.registerUpdateListener(({ editorState }) => read(editorState)),
 
       editor.registerCommand(

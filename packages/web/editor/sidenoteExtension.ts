@@ -7,10 +7,12 @@ import { $getRoot } from "lexical";
 import type {
   MarkBadge,
   MarkNumbers,
+  MarkRect,
   SidenotePositions,
 } from "@/signals/sidenotes.ts";
 import { editorStateToMarkdown } from "@/utils/markdown.ts";
 import { contentEndRect, getMeasureContext, hasRect } from "./domMeasure.ts";
+import { assignBands } from "./markColors.ts";
 import { MarkNode } from "./markNode.ts";
 import {
   $collectTextNodeSpans,
@@ -23,6 +25,7 @@ interface SidenoteConfig {
   sidenotePositions: Signal<SidenotePositions>;
   markNumbers: Signal<MarkNumbers>;
   markBadges: Signal<MarkBadge[]>;
+  markRects: Signal<MarkRect[]>;
   resolved: Signal<Mark[]>;
 }
 
@@ -35,7 +38,13 @@ export const SidenoteExtension = defineExtension({
   name: "sidenote",
   afterRegistration: (
     editor: LexicalEditor,
-    { sidenotePositions, markNumbers, markBadges, resolved }: SidenoteConfig,
+    {
+      sidenotePositions,
+      markNumbers,
+      markBadges,
+      markRects,
+      resolved,
+    }: SidenoteConfig,
   ) => {
     return trackNodePositions(editor, {
       nodeClass: MarkNode,
@@ -77,25 +86,53 @@ export const SidenoteExtension = defineExtension({
         const ctx = getMeasureContext(editor.getRootElement());
         if (ctx === null) {
           if (markBadges.value.length > 0) markBadges.value = [];
+          if (markRects.value.length > 0) markRects.value = [];
           return;
         }
         const { containerRect, doc } = ctx;
         const badges: MarkBadge[] = [];
+        const rects: MarkRect[] = [];
         for (const { el, ids, key } of fragments) {
           const nums = ids
             .map((id) => numbers.get(id))
             .filter((n): n is number => n !== undefined);
-          if (nums.length === 0) continue;
-          const rect = contentEndRect(el, doc);
-          if (!hasRect(rect)) continue;
-          badges.push({
-            key,
-            left: rect.right - containerRect.left,
-            top: rect.top - containerRect.top,
-            numbers: nums.sort((a, b) => a - b),
-          });
+          if (nums.length > 0) {
+            const rect = contentEndRect(el, doc);
+            if (hasRect(rect)) {
+              badges.push({
+                key,
+                left: rect.right - containerRect.left,
+                top: rect.top - containerRect.top,
+                numbers: nums.sort((a, b) => a - b),
+              });
+            }
+          }
+          // Banded highlights: one rect per visual line of the fragment,
+          // split vertically into one band per covering id (in segment order:
+          // outer/earliest mark on top).
+          const bands = assignBands(ids);
+          const n = bands.length;
+          if (n > 0) {
+            for (const lineRect of el.getClientRects()) {
+              const bandHeight = lineRect.height / n;
+              const left = lineRect.left - containerRect.left;
+              const top = lineRect.top - containerRect.top;
+              const width = lineRect.width;
+              for (const { id, color, order } of bands) {
+                rects.push({
+                  id,
+                  color,
+                  left,
+                  top: top + order * bandHeight,
+                  width,
+                  height: bandHeight,
+                });
+              }
+            }
+          }
         }
         markBadges.value = badges;
+        markRects.value = rects;
       },
     });
   },

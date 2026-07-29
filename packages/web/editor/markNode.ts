@@ -9,7 +9,6 @@ import {
   $getSelection,
   $isRangeSelection,
   $isTextNode,
-  type EditorConfig,
   type LexicalNode,
   type RangeSelection,
 } from "lexical";
@@ -62,8 +61,6 @@ export function $markIdsAtAnchor(): Set<string> {
 
 const NO_IDS: readonly string[] = [];
 
-// Adds `mark-active` in createDOM; a listener would run after
-// $updateDOMSelection forces a style recalc and trigger the transition.
 export class MarkNode extends BaseMarkNode {
   static override getType(): string {
     return "mark";
@@ -75,14 +72,6 @@ export class MarkNode extends BaseMarkNode {
 
   static override importJSON(serializedNode: SerializedMarkNode): MarkNode {
     return $createMarkNode().updateFromJSON(serializedNode);
-  }
-
-  override createDOM(config: EditorConfig): HTMLElement {
-    const el = super.createDOM(config);
-    if (this.getIDs().some((id) => $markIdsAtAnchor().has(id))) {
-      el.classList.add("mark-active");
-    }
-    return el;
   }
 
   override insertNewAfter(

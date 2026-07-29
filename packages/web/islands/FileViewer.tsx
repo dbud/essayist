@@ -4,6 +4,7 @@ import { useMemo } from "preact/hooks";
 import EditorToolbar from "@/components/EditorToolbar.tsx";
 import FontSelect from "@/components/FontSelect.tsx";
 import { MarkBadges } from "@/components/MarkBadges.tsx";
+import { MarkHighlights } from "@/components/MarkHighlights.tsx";
 import Sidenote from "@/components/Sidenote.tsx";
 import Toolbar from "@/components/Toolbar.tsx";
 import { useElementHeights } from "@/hooks/useElementHeights.ts";
@@ -15,6 +16,7 @@ import Editor from "@/islands/editor/Editor.tsx";
 import FileViewerTabs from "@/islands/FileViewerTabs.tsx";
 import SidebarToggle from "@/islands/SidebarToggle.tsx";
 import { activeEditor } from "@/signals/activeEditor.ts";
+import { getEditorSelection } from "@/signals/editorSelection.ts";
 import { getFile } from "@/signals/file.ts";
 import { getMarks } from "@/signals/marks.ts";
 import { getOpenedFiles } from "@/signals/openedFiles.ts";
@@ -104,7 +106,11 @@ function FileViewerBody({ wsId, path }: { wsId: string; path: string }) {
             offsetTop against the editor. @container on the root keys the
             @[64rem]/@[96rem] variants on pane width. */}
         <div class={`grid ${gridCols} mx-auto @[96rem]:max-w-[1400px]`}>
-          <div class="relative min-w-0">
+          {/* `isolate` makes the column a stacking context so the MarkHighlights
+            overlay can use a negative z-index to paint behind the in-flow editor
+            text while MarkBadges (z auto) stays above it. Does not position the
+            column, so it remains the offsetParent for mark-rect coordinates. */}
+          <div class="relative min-w-0 isolate">
             {editorState && (
               <Editor
                 wsId={wsId}
@@ -115,6 +121,10 @@ function FileViewerBody({ wsId, path }: { wsId: string; path: string }) {
               />
             )}
             <MarkBadges badges={sidenotes.markBadges.value} />
+            <MarkHighlights
+              rects={sidenotes.markRects.value}
+              activeIds={getEditorSelection(wsId, path).markIds.value}
+            />
           </div>
           {/* Inner `relative` so the column's pr-4 insets the absolutely-positioned
               sidenotes (otherwise right-0 would reach the pane edge). */}
