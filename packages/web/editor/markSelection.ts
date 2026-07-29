@@ -1,16 +1,10 @@
+import { $isMarkNode, type MarkNode } from "@lexical/mark";
 import {
-  $isMarkNode,
-  MarkNode as BaseMarkNode,
-  type SerializedMarkNode,
-} from "@lexical/mark";
-import {
-  $applyNodeReplacement,
   $findMatchingParent,
   $getSelection,
   $isRangeSelection,
   $isTextNode,
   type LexicalNode,
-  type RangeSelection,
 } from "lexical";
 
 /**
@@ -32,7 +26,7 @@ export function $markIdsAtAnchor(): Set<string> {
   // Walk the anchor's ancestor chain.
   let current: LexicalNode | null = node;
   while (current !== null) {
-    const mark: BaseMarkNode | null = $findMatchingParent(current, $isMarkNode);
+    const mark: MarkNode | null = $findMatchingParent(current, $isMarkNode);
     if (mark === null) break;
     for (const id of mark.getIDs()) ids.add(id);
     current = mark.getParent();
@@ -57,33 +51,4 @@ export function $markIdsAtAnchor(): Set<string> {
   }
 
   return ids;
-}
-
-const NO_IDS: readonly string[] = [];
-
-export class MarkNode extends BaseMarkNode {
-  static override getType(): string {
-    return "mark";
-  }
-
-  static override clone(node: MarkNode): MarkNode {
-    return new MarkNode(node.__ids, node.__key);
-  }
-
-  static override importJSON(serializedNode: SerializedMarkNode): MarkNode {
-    return $createMarkNode().updateFromJSON(serializedNode);
-  }
-
-  override insertNewAfter(
-    _selection: RangeSelection,
-    restoreSelection = true,
-  ): MarkNode {
-    const markNode = $createMarkNode(this.__ids);
-    this.insertAfter(markNode, restoreSelection);
-    return markNode;
-  }
-}
-
-export function $createMarkNode(ids: readonly string[] = NO_IDS): MarkNode {
-  return $applyNodeReplacement(new MarkNode(ids));
 }

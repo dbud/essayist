@@ -7,7 +7,7 @@ import {
   SELECTION_CHANGE_COMMAND,
 } from "lexical";
 import { defaultEditorSelection } from "@/signals/editorSelection.ts";
-import { $markIdsAtAnchor } from "./markNode.ts";
+import { $markIdsAtAnchor } from "./markSelection.ts";
 import type { SelectionExtensionConfig } from "./toolbarStateExtension.ts";
 
 export const MarksAtCursorExtension = defineExtension({

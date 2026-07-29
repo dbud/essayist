@@ -1,5 +1,5 @@
 import { buildEditorFromExtensions } from "@lexical/extension";
-import { $isMarkNode } from "@lexical/mark";
+import { $isMarkNode, MarkNode } from "@lexical/mark";
 import { $convertToMarkdownString, TRANSFORMERS } from "@lexical/markdown";
 import { RichTextExtension } from "@lexical/rich-text";
 import { assertEquals } from "@std/assert";
@@ -14,7 +14,6 @@ import {
   type LexicalNode,
 } from "lexical";
 import { $applyMarks } from "./markExtension.ts";
-import { MarkNode } from "./markNode.ts";
 import { $collectTextNodeSpans, type TextNodeSpan } from "./textNodeSpans.ts";
 
 // Minimal extension that just contributes MarkNode.

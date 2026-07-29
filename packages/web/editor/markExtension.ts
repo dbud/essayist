@@ -1,9 +1,11 @@
 import type { Mark } from "@essayist/core";
 import { defineExtension } from "@lexical/extension";
 import {
+  $createMarkNode,
   $isMarkNode,
   $unwrapMarkNode,
   $wrapSelectionInMarkNode,
+  MarkNode,
 } from "@lexical/mark";
 import { effect, type Signal, untracked } from "@preact/signals";
 import { assert } from "@std/assert/assert";
@@ -17,7 +19,6 @@ import {
   mergeRegister,
   type NodeKey,
 } from "lexical";
-import { $createMarkNode, MarkNode } from "./markNode.ts";
 import { type MarkSpan, segmentMarks } from "./markSegments.ts";
 import { registerNodeKeyTracker } from "./nodeKeyTracker.ts";
 import {

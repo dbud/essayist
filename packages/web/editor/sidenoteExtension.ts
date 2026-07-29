@@ -1,6 +1,6 @@
 import type { Mark } from "@essayist/core";
 import { defineExtension } from "@lexical/extension";
-import { $isMarkNode } from "@lexical/mark";
+import { $isMarkNode, MarkNode } from "@lexical/mark";
 import type { Signal } from "@preact/signals";
 import type { LexicalEditor } from "lexical";
 import { $getRoot } from "lexical";
@@ -13,7 +13,6 @@ import type {
 import { editorStateToMarkdown } from "@/utils/markdown.ts";
 import { contentEndRect, getMeasureContext, hasRect } from "./domMeasure.ts";
 import { assignBands } from "./markColors.ts";
-import { MarkNode } from "./markNode.ts";
 import {
   $collectTextNodeSpans,
   findPosition,
