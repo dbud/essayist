@@ -24,6 +24,7 @@
     position: absolute;
     border-radius: 1px;
     opacity: 0.4;
+    animation: mark-band-in 400ms ease;
     transition:
       opacity 200ms ease,
       box-shadow 200ms ease;
@@ -37,6 +38,12 @@
     line-height: 1;
     margin-inline-start: 0.25em;
     transform: translateY(-0.5em);
+  }
+}
+
+@keyframes mark-band-in {
+  from {
+    opacity: 0;
   }
 }
 
