@@ -2,17 +2,42 @@ import type { User } from "@essayist/core";
 import { LogOut, RotateCcw } from "lucide-preact";
 import Avatar from "@/components/Avatar.tsx";
 import Dropdown from "@/components/Dropdown.tsx";
+import ThemeSwitcher from "@/components/ThemeSwitcher.tsx";
 
 interface UserMenuProps {
   user: User;
 }
 
-export default function UserMenu({ user }: UserMenuProps) {
-  const clearCache = () => {
-    localStorage.clear();
-    location.reload();
-  };
+function ClearCacheButton({ close }: { close: () => void }) {
+  return (
+    <button
+      type="button"
+      class="btn btn-ghost btn-sm w-full justify-start gap-2"
+      onClick={() => {
+        localStorage.clear();
+        location.reload();
+        close();
+      }}
+    >
+      <RotateCcw size={16} />
+      <span>Clear cache</span>
+    </button>
+  );
+}
 
+function SignOutButton() {
+  return (
+    <a
+      href="/oauth/signout"
+      class="btn btn-ghost btn-sm w-full justify-start gap-2"
+    >
+      <LogOut size={16} />
+      <span>Sign out</span>
+    </a>
+  );
+}
+
+export default function UserMenu({ user }: UserMenuProps) {
   return (
     <Dropdown
       buttonClass="btn btn-ghost btn-circle p-0 overflow-hidden"
@@ -20,37 +45,19 @@ export default function UserMenu({ user }: UserMenuProps) {
       button={<Avatar user={user} />}
     >
       {(close) => (
-        <ul class="dropdown-content menu bg-base-100 rounded-box z-1 w-56 p-2 shadow-sm">
-          <li class="pointer-events-none">
-            <div class="flex flex-col items-start px-2 py-2">
-              <div class="truncate text-sm font-medium">
-                {user.name ?? user.email}
-              </div>
-              <div class="truncate text-xs text-base-content/60">
-                {user.email}
-              </div>
+        <div class="dropdown-content bg-base-100 rounded-box z-1 w-64 p-2 shadow-sm flex flex-col gap-1">
+          <div class="flex flex-col items-start px-2 py-2">
+            <div class="truncate text-sm font-medium">
+              {user.name ?? user.email}
             </div>
-          </li>
-          <li>
-            <button
-              type="button"
-              class="gap-2"
-              onClick={() => {
-                clearCache();
-                close();
-              }}
-            >
-              <RotateCcw size={16} />
-              <span>Clear cache</span>
-            </button>
-          </li>
-          <li>
-            <a href="/oauth/signout" class="gap-2">
-              <LogOut size={16} />
-              <span>Sign out</span>
-            </a>
-          </li>
-        </ul>
+            <div class="truncate text-xs text-base-content/60">
+              {user.email}
+            </div>
+          </div>
+          <ThemeSwitcher />
+          <ClearCacheButton close={close} />
+          <SignOutButton />
+        </div>
       )}
     </Dropdown>
   );
