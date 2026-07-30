@@ -15,7 +15,7 @@
 
 @layer base {
   html {
-    font-size: 16.5px;
+    font-size: 18px;
   }
   mark {
     background-color: transparent;
@@ -120,9 +120,9 @@
   --color-error-content: oklch(96% 0.015 12.422);
   --color-mark: oklch(95% 0.1242 101.55);
   --color-mark-active: oklch(93% 0.15 101.55 / 0.9);
-  --radius-selector: 0.5rem;
-  --radius-field: 0.5rem;
-  --radius-box: 0.5rem;
+  --radius-selector: 0.3rem;
+  --radius-field: 0.3rem;
+  --radius-box: 0.3rem;
   --size-selector: 0.25rem;
   --size-field: 0.21875rem;
   --border: 2px;
