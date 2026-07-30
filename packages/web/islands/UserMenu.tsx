@@ -12,7 +12,7 @@ function ClearCacheButton({ close }: { close: () => void }) {
   return (
     <button
       type="button"
-      class="btn btn-ghost btn-sm w-full justify-start gap-2"
+      class="gap-2 py-1"
       onClick={() => {
         localStorage.clear();
         location.reload();
@@ -20,19 +20,16 @@ function ClearCacheButton({ close }: { close: () => void }) {
       }}
     >
       <RotateCcw size={16} />
-      <span>Clear cache</span>
+      Clear cache
     </button>
   );
 }
 
 function SignOutButton() {
   return (
-    <a
-      href="/oauth/signout"
-      class="btn btn-ghost btn-sm w-full justify-start gap-2"
-    >
+    <a href="/oauth/signout" class="gap-2 py-1">
       <LogOut size={16} />
-      <span>Sign out</span>
+      Sign out
     </a>
   );
 }
@@ -55,8 +52,14 @@ export default function UserMenu({ user }: UserMenuProps) {
             </div>
           </div>
           <ThemeSwitcher />
-          <ClearCacheButton close={close} />
-          <SignOutButton />
+          <ul class="menu w-full p-0 gap-1">
+            <li>
+              <ClearCacheButton close={close} />
+            </li>
+            <li>
+              <SignOutButton />
+            </li>
+          </ul>
         </div>
       )}
     </Dropdown>
