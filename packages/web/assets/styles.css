@@ -235,3 +235,13 @@
   --tw-prose-th-borders: var(--color-base-300);
   --tw-prose-td-borders: var(--color-base-300);
 }
+
+.menu-divider {
+  display: block;
+  border-top: 1px solid var(--color-base-300);
+  height: 0;
+  padding: 0;
+  margin-block: 0.25rem;
+  border-radius: 0;
+  pointer-events: none;
+}

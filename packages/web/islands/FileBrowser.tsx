@@ -1,5 +1,6 @@
 import { useSignal } from "@preact/signals";
 import { FileText, Folder, FolderOpen, Plus } from "lucide-preact";
+import MenuItem from "@/components/MenuItem.tsx";
 import CreateFileDialog from "@/islands/CreateFileDialog.tsx";
 import FileUploader from "@/islands/FileUploader.tsx";
 import GoogleDocImporter from "@/islands/GoogleDocImporter.tsx";
@@ -15,7 +16,7 @@ function FolderItem({ node }: { node: TreeNode }) {
         {/** biome-ignore lint/a11y/useSemanticElements: summary is clickable */}
         <summary
           role="button"
-          class="w-full"
+          class="w-full py-1"
           onClick={(e) => {
             e.preventDefault();
             open.value = !open.value;
@@ -28,7 +29,7 @@ function FolderItem({ node }: { node: TreeNode }) {
           )}
           <span class="break-all min-w-0">{node.name}</span>
         </summary>
-        <ul>
+        <ul class="flex flex-col gap-1 mt-1">
           {node.children.map((child) =>
             child.isFile ? (
               <FileItem key={child.path} node={child} />
@@ -45,16 +46,13 @@ function FolderItem({ node }: { node: TreeNode }) {
 function FileItem({ node }: { node: TreeNode }) {
   const openedFiles = getOpenedFiles();
   return (
-    <li>
-      <button
-        type="button"
-        class={`${node.isSelected.value ? "bg-primary/10" : ""} w-full`}
-        onClick={() => openedFiles?.open(node.path)}
-      >
-        <FileText size={16} class="shrink-0" />
-        <span class="break-all min-w-0">{node.name}</span>
-      </button>
-    </li>
+    <MenuItem
+      selected={node.isSelected.value}
+      onClick={() => openedFiles?.open(node.path)}
+    >
+      <FileText size={16} class="shrink-0" />
+      <span class="break-all min-w-0">{node.name}</span>
+    </MenuItem>
   );
 }
 
@@ -71,7 +69,9 @@ export default function FileBrowser() {
   return (
     <div class="flex flex-col gap-1">
       <ul
-        class={`menu bg-base-200 w-full ${loading.value ? "loading-border" : ""}`}
+        class={`menu bg-base-200 w-full gap-1 ${
+          loading.value ? "loading-border" : ""
+        }`}
       >
         {tree.value.children.map((node) =>
           node.isFile ? (

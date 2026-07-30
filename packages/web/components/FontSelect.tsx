@@ -1,5 +1,7 @@
 import { ChevronDown } from "lucide-preact";
 import Dropdown from "@/components/Dropdown.tsx";
+import MenuItem from "@/components/MenuItem.tsx";
+import MenuList from "@/components/MenuList.tsx";
 import { viewerFont } from "@/signals/preferences.ts";
 
 const OPTIONS = [
@@ -23,26 +25,20 @@ export default function FontSelect() {
       }
     >
       {(close) => (
-        <ul class="dropdown-content menu bg-base-100 rounded-box z-1 w-40 p-2 shadow-sm">
+        <MenuList>
           {OPTIONS.map((o) => (
-            <li>
-              <button
-                type="button"
-                class={`gap-2 ${
-                  o.value === viewerFont.value
-                    ? "bg-primary/10 text-primary rounded"
-                    : ""
-                }`}
-                onClick={() => {
-                  viewerFont.value = o.value;
-                  close();
-                }}
-              >
-                <span class={o.value}>Aa&nbsp;{o.label}</span>
-              </button>
-            </li>
+            <MenuItem
+              key={o.value}
+              selected={o.value === viewerFont.value}
+              onClick={() => {
+                viewerFont.value = o.value;
+                close();
+              }}
+            >
+              <span class={o.value}>Aa&nbsp;{o.label}</span>
+            </MenuItem>
           ))}
-        </ul>
+        </MenuList>
       )}
     </Dropdown>
   );

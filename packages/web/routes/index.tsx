@@ -12,7 +12,7 @@ export default function HomePage() {
   return (
     <main class="w-full flex-1 flex gap-8 px-4 min-h-0">
       <Sidebar side="left">
-        <div class="px-1 pt-1 pb-2 border-b border-base-300">
+        <div class="p-2">
           <WorkspaceMenu />
         </div>
         <FileBrowser />

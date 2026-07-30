@@ -11,6 +11,8 @@ import {
 } from "lucide-preact";
 import type { VNode } from "preact";
 import Dropdown from "@/components/Dropdown.tsx";
+import MenuItem from "@/components/MenuItem.tsx";
+import MenuList from "@/components/MenuList.tsx";
 import type { BlockType } from "@/editor/blockFormat.ts";
 
 interface BlockOption {
@@ -53,25 +55,21 @@ export default function BlockTypeSelect({
       }
     >
       {(close) => (
-        <ul class="dropdown-content menu bg-base-100 rounded-box z-1 w-48 p-2 shadow-sm">
+        <MenuList>
           {OPTIONS.map((o) => (
-            <li>
-              <button
-                type="button"
-                class={`gap-2 ${
-                  o.value === block ? "bg-primary/10 text-primary rounded" : ""
-                }`}
-                onClick={() => {
-                  onChange(o.value);
-                  close();
-                }}
-              >
-                {o.icon}
-                <span>{o.label}</span>
-              </button>
-            </li>
+            <MenuItem
+              key={o.value}
+              selected={o.value === block}
+              onClick={() => {
+                onChange(o.value);
+                close();
+              }}
+            >
+              {o.icon}
+              <span>{o.label}</span>
+            </MenuItem>
           ))}
-        </ul>
+        </MenuList>
       )}
     </Dropdown>
   );

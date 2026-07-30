@@ -13,7 +13,7 @@ interface SidebarProps {
 
 export default function Sidebar({
   side,
-  className = "w-64 py-2",
+  className = "w-72 py-2",
   children,
 }: SidebarProps) {
   const collapsed =

@@ -1,6 +1,8 @@
 import { useSignal } from "@preact/signals";
 import { BriefcaseBusiness, ChevronDown, Plus } from "lucide-preact";
 import Dropdown from "@/components/Dropdown.tsx";
+import MenuItem from "@/components/MenuItem.tsx";
+import MenuList from "@/components/MenuList.tsx";
 import CreateWorkspaceDialog from "@/islands/CreateWorkspaceDialog.tsx";
 import { workspaces } from "@/signals/workspace.ts";
 
@@ -33,44 +35,37 @@ export default function WorkspaceMenu() {
         }
       >
         {(close) => (
-          <ul class="dropdown-content menu bg-base-100 rounded-box z-1 w-60 p-2 shadow-sm">
+          <MenuList>
             {list.value.length === 0 && (
               <li class="pointer-events-none">
                 <span class="text-base-content/50">No projects yet</span>
               </li>
             )}
             {list.value.map((w) => (
-              <li key={w.id}>
-                <button
-                  type="button"
-                  class={`gap-2 ${
-                    w.id === currentWorkspaceId.value
-                      ? "bg-primary/10 text-primary rounded"
-                      : ""
-                  }`}
-                  onClick={() => {
-                    select(w.id);
-                    close();
-                  }}
-                >
-                  {w.name}
-                </button>
-              </li>
-            ))}
-            <li class="border-t border-base-300 mt-2 pt-2">
-              <button
-                type="button"
-                class="gap-2"
+              <MenuItem
+                key={w.id}
+                selected={w.id === currentWorkspaceId.value}
                 onClick={() => {
+                  select(w.id);
                   close();
-                  dialogOpen.value = true;
                 }}
               >
-                <Plus size={16} />
-                New project
-              </button>
+                {w.name}
+              </MenuItem>
+            ))}
+            <li aria-hidden="true">
+              <div class="menu-divider" />
             </li>
-          </ul>
+            <MenuItem
+              onClick={() => {
+                close();
+                dialogOpen.value = true;
+              }}
+            >
+              <Plus size={16} />
+              New project
+            </MenuItem>
+          </MenuList>
         )}
       </Dropdown>
       <CreateWorkspaceDialog open={dialogOpen} />
