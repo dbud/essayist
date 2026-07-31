@@ -2,7 +2,6 @@ import type { User } from "@essayist/core";
 import { LogOut, RotateCcw } from "lucide-preact";
 import Avatar from "@/components/Avatar.tsx";
 import Dropdown from "@/components/Dropdown.tsx";
-import ThemeSwitcher from "@/components/ThemeSwitcher.tsx";
 
 interface UserMenuProps {
   user: User;
@@ -51,7 +50,6 @@ export default function UserMenu({ user }: UserMenuProps) {
               {user.email}
             </div>
           </div>
-          <ThemeSwitcher />
           <ul class="menu w-full p-0 gap-1">
             <li>
               <ClearCacheButton close={close} />
