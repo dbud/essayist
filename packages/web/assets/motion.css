@@ -1,0 +1,62 @@
+/* Generic staggered-children entrance. Mark a child with [data-stagger-children]
+   and toggle .is-open / .is-closed on an ancestor; direct children cascade
+   in by position. Entrance-only (plays on open + SSR first load). */
+
+:root {
+  --motion-stagger-step: 50ms;
+  --motion-stagger-cap: calc(10 * var(--motion-stagger-step));
+  --motion-stagger-item-offset: 0.5rem;
+  --motion-stagger-item-duration: 100ms;
+}
+
+@keyframes stagger-in {
+  from {
+    opacity: 0;
+    transform: translateY(var(--motion-stagger-item-offset));
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.is-open [data-stagger-children] > * {
+  animation: stagger-in var(--motion-stagger-item-duration) ease-out both;
+}
+.is-closed [data-stagger-children] > * {
+  opacity: 1;
+  transform: translateY(0);
+  animation: none;
+}
+[data-stagger-children] > *:nth-child(1) {
+  animation-delay: calc(1 * var(--motion-stagger-step));
+}
+[data-stagger-children] > *:nth-child(2) {
+  animation-delay: calc(2 * var(--motion-stagger-step));
+}
+[data-stagger-children] > *:nth-child(3) {
+  animation-delay: calc(3 * var(--motion-stagger-step));
+}
+[data-stagger-children] > *:nth-child(4) {
+  animation-delay: calc(4 * var(--motion-stagger-step));
+}
+[data-stagger-children] > *:nth-child(5) {
+  animation-delay: calc(5 * var(--motion-stagger-step));
+}
+[data-stagger-children] > *:nth-child(6) {
+  animation-delay: calc(6 * var(--motion-stagger-step));
+}
+[data-stagger-children] > *:nth-child(7) {
+  animation-delay: calc(7 * var(--motion-stagger-step));
+}
+[data-stagger-children] > *:nth-child(8) {
+  animation-delay: calc(8 * var(--motion-stagger-step));
+}
+[data-stagger-children] > *:nth-child(9) {
+  animation-delay: calc(9 * var(--motion-stagger-step));
+}
+[data-stagger-children] > *:nth-child(10) {
+  animation-delay: calc(10 * var(--motion-stagger-step));
+}
+[data-stagger-children] > *:nth-child(n + 11) {
+  animation-delay: var(--motion-stagger-cap);
+}

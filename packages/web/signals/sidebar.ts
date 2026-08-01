@@ -6,5 +6,5 @@ export const leftSidebarCollapsed = persistentSignal(
 );
 export const rightSidebarCollapsed = persistentSignal(
   "rightSidebarCollapsed",
-  false,
+  true,
 );
