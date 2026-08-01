@@ -1,0 +1,39 @@
+/* Sidebar component. See components/ui/Sidebar.tsx. */
+:root {
+  --motion-sidebar-duration: 500ms;
+  --motion-sidebar-clip-duration: 200ms;
+  --motion-sidebar-offset: 1rem;
+  --sidebar-width: 18rem;
+}
+
+.sidebar {
+  transition-property: width;
+  transition-duration: var(--motion-sidebar-clip-duration);
+}
+.sidebar.is-open {
+  width: var(--sidebar-width);
+  transition-timing-function: ease-out;
+}
+.sidebar.is-closed {
+  width: 0;
+  transition-timing-function: ease-in;
+}
+
+.sidebar-clip {
+  width: var(--sidebar-width);
+  height: 100%;
+  overflow: hidden;
+}
+
+.pane-content {
+  transition-property: transform;
+  transition-duration: var(--motion-sidebar-duration);
+}
+.pane-content.is-open {
+  transform: translateY(0);
+  transition-timing-function: ease-out;
+}
+.pane-content.is-closed {
+  transform: translateY(var(--motion-sidebar-offset));
+  transition-timing-function: ease-in;
+}
