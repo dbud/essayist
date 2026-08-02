@@ -44,7 +44,7 @@
     background: var(--btn-bg);
     transition: background-color var(--btn-duration) ease-out;
     pointer-events: none;
-    z-index: 0;
+    z-index: -1;
   }
   &::before {
     left: 0;
