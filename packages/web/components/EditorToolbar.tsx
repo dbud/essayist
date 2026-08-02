@@ -7,7 +7,6 @@ import { FORMAT_TEXT_COMMAND } from "lexical";
 import { Bold, Code, Italic, Strikethrough } from "lucide-preact";
 import type { VNode } from "preact";
 import BlockTypeSelect from "@/components/BlockTypeSelect.tsx";
-import ToolbarButton from "@/components/ToolbarButton.tsx";
 import { $setBlocksType, type BlockType } from "@/editor/blockFormat.ts";
 import { activeEditor } from "@/signals/activeEditor.ts";
 import { getEditorSelection } from "@/signals/editorSelection.ts";
@@ -69,14 +68,15 @@ export default function EditorToolbar({ wsId, path }: EditorToolbarProps) {
     <div class="flex items-center gap-1">
       <BlockTypeSelect block={sel.block.value} onChange={setBlock} />
       {inlineButtons.map(({ fmt, title, icon }) => (
-        <ToolbarButton
-          active={sel[fmt].value}
+        <button
+          type="button"
+          class={`btn ${sel[fmt].value ? "btn-accent" : ""}`}
           disabled={inlineDisabled}
           title={title}
           onClick={() => format(fmt)}
         >
           {icon}
-        </ToolbarButton>
+        </button>
       ))}
     </div>
   );
