@@ -19,7 +19,7 @@
     transform: translateY(0);
   }
 }
-.is-open [data-stagger-children] > * {
+.is-open [data-stagger-children] > *:where(:not([data-no-motion])) {
   animation: stagger-in var(--motion-stagger-item-duration) ease-out both;
 }
 .is-closed [data-stagger-children] > * {
@@ -59,4 +59,121 @@
 }
 [data-stagger-children] > *:nth-child(n + 11) {
   animation-delay: var(--motion-stagger-cap);
+}
+
+/* Swappable: animated content swap via CSS grid stacking.
+   Wraps outgoing + incoming layers in a 1x1 grid so they overlap,
+   then plays a one-shot animation on each. Controlled by
+   the <Swappable> Preact component.
+
+   Choose the animation by adding a swap-* utility class:
+     <Swappable class="swap-rotate">
+     <Swappable class="swap-slide">  (default)
+
+   Override duration with --swap-duration on the container or any ancestor. */
+
+@keyframes swap-slide-out {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+
+  to {
+    opacity: 0;
+    transform: translateX(50%);
+  }
+}
+
+@keyframes swap-slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(-50%);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@utility swap-slide {
+  --swap-out: swap-slide-out;
+  --swap-in: swap-slide-in;
+}
+
+@keyframes swap-rotate-out {
+  from {
+    opacity: 1;
+    transform: rotate(0deg) scale(1);
+  }
+
+  to {
+    opacity: 0;
+    transform: rotate(90deg) scale(0.5);
+  }
+}
+
+@keyframes swap-rotate-in {
+  from {
+    opacity: 0;
+    transform: rotate(-90deg) scale(0.5);
+  }
+
+  to {
+    opacity: 1;
+    transform: rotate(0deg) scale(1);
+  }
+}
+
+@utility swap-rotate {
+  --swap-out: swap-rotate-out;
+  --swap-in: swap-rotate-in;
+}
+
+@keyframes swap-shift-out {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  to {
+    opacity: 0;
+    transform: translateY(50%);
+  }
+}
+
+@keyframes swap-shift-in {
+  from {
+    opacity: 0;
+    transform: translateY(-50%);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@utility swap-shift {
+  --swap-out: swap-shift-out;
+  --swap-in: swap-shift-in;
+}
+
+.swappable {
+  display: inline-grid;
+  place-items: center;
+  vertical-align: middle;
+}
+
+.swappable-out,
+.swappable-in {
+  grid-area: 1 / 1;
+}
+
+.swappable-out {
+  animation: var(--swap-out) var(--swap-duration, 200ms) ease-out forwards;
+}
+
+.swappable-in {
+  animation: var(--swap-in) var(--swap-duration, 200ms) ease-out forwards;
 }
