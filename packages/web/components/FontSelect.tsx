@@ -21,7 +21,10 @@ export default function FontSelect() {
       trigger={
         <>
           <Swappable swapKey={current.value} class="swap-shift">
-            <span class={current.value}>Aa&nbsp;{current.label}</span>
+            <span class={`inline-flex gap-1 ${current.value}`}>
+              <span>Aa</span>
+              {current.label}
+            </span>
           </Swappable>
           <ChevronDown size={14} />
         </>
@@ -38,7 +41,10 @@ export default function FontSelect() {
                 close();
               }}
             >
-              <span class={o.value}>Aa&nbsp;{o.label}</span>
+              <span class={`inline-flex gap-1 ${o.value}`}>
+                <span>Aa</span>
+                {o.label}
+              </span>
             </DropdownItem>
           ))}
         </DropdownMenu>
