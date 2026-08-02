@@ -1,4 +1,5 @@
 import type { PageProps } from "fresh";
+import { PillClipDefs } from "@/components/ui/PillClipDefs.tsx";
 import type { State } from "@/define.ts";
 import Toaster from "@/islands/Toaster.tsx";
 
@@ -14,6 +15,7 @@ export default function App({ Component }: PageProps<unknown, State>) {
         <title>Essayist &mdash; AI-powered writing tools</title>
       </head>
       <body class="h-dvh bg-base-200 text-base-content flex flex-col">
+        <PillClipDefs />
         <Component />
         <Toaster />
       </body>
