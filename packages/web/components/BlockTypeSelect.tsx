@@ -9,16 +9,18 @@ import {
   Pilcrow,
   Quote,
 } from "lucide-preact";
-import type { VNode } from "preact";
-import Dropdown from "@/components/Dropdown.tsx";
-import MenuItem from "@/components/MenuItem.tsx";
-import MenuList from "@/components/MenuList.tsx";
+import type { ComponentChild } from "preact";
+import Dropdown, {
+  DropdownItem,
+  DropdownMenu,
+} from "@/components/ui/Dropdown.tsx";
+import Swappable from "@/components/ui/Swappable.tsx";
 import type { BlockType } from "@/editor/blockFormat.ts";
 
 interface BlockOption {
   value: BlockType;
   label: string;
-  icon: VNode;
+  icon: ComponentChild;
 }
 
 const OPTIONS: BlockOption[] = [
@@ -45,19 +47,22 @@ export default function BlockTypeSelect({
 
   return (
     <Dropdown
-      buttonClass="btn btn-sm btn-ghost gap-2"
-      button={
+      trigger={
         <>
-          {current.icon}
-          <span>{current.label}</span>
+          <Swappable swapKey={current.value} class="swap-rotate">
+            {current.icon}
+          </Swappable>
+          <Swappable swapKey={current.value} class="swap-shift">
+            {current.label}
+          </Swappable>
           <ChevronDown size={14} />
         </>
       }
     >
       {(close) => (
-        <MenuList>
+        <DropdownMenu>
           {OPTIONS.map((o) => (
-            <MenuItem
+            <DropdownItem
               key={o.value}
               selected={o.value === block}
               onClick={() => {
@@ -67,9 +72,9 @@ export default function BlockTypeSelect({
             >
               {o.icon}
               <span>{o.label}</span>
-            </MenuItem>
+            </DropdownItem>
           ))}
-        </MenuList>
+        </DropdownMenu>
       )}
     </Dropdown>
   );

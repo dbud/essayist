@@ -1,7 +1,9 @@
 import { ChevronDown } from "lucide-preact";
-import Dropdown from "@/components/Dropdown.tsx";
-import MenuItem from "@/components/MenuItem.tsx";
-import MenuList from "@/components/MenuList.tsx";
+import Dropdown, {
+  DropdownItem,
+  DropdownMenu,
+} from "@/components/ui/Dropdown.tsx";
+import Swappable from "@/components/ui/Swappable.tsx";
 import { viewerFont } from "@/signals/preferences.ts";
 
 const OPTIONS = [
@@ -16,18 +18,19 @@ export default function FontSelect() {
 
   return (
     <Dropdown
-      buttonClass="btn btn-sm btn-ghost gap-2"
-      button={
+      trigger={
         <>
-          <span class={current.value}>Aa&nbsp;{current.label}</span>
+          <Swappable swapKey={current.value} class="swap-shift">
+            <span class={current.value}>Aa&nbsp;{current.label}</span>
+          </Swappable>
           <ChevronDown size={14} />
         </>
       }
     >
       {(close) => (
-        <MenuList>
+        <DropdownMenu>
           {OPTIONS.map((o) => (
-            <MenuItem
+            <DropdownItem
               key={o.value}
               selected={o.value === viewerFont.value}
               onClick={() => {
@@ -36,9 +39,9 @@ export default function FontSelect() {
               }}
             >
               <span class={o.value}>Aa&nbsp;{o.label}</span>
-            </MenuItem>
+            </DropdownItem>
           ))}
-        </MenuList>
+        </DropdownMenu>
       )}
     </Dropdown>
   );
