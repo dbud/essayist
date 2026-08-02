@@ -1,0 +1,90 @@
+@utility btn {
+  --btn-line-height: 2.2;
+  --btn-cap-bleed: 0.3rem;
+  --btn-bg: var(--color-panel);
+  --btn-duration: 120ms;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  background: var(--btn-bg);
+  border-radius: calc(var(--btn-line-height) / 2 * 1em);
+  box-shadow: 0 1px 2px 0px rgba(0, 0, 0, 0.3);
+  color: var(--color-panel-content);
+  font-family: var(--font-sans);
+  font-size: 0.8rem;
+  font-weight: 500;
+  line-height: var(--btn-line-height);
+  text-decoration: none;
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+  transition:
+    background-color var(--btn-duration) ease-out,
+    border-radius var(--btn-duration) ease-out,
+    box-shadow var(--btn-duration) ease-out,
+    color var(--btn-duration) ease-out,
+    transform var(--btn-duration) ease-out;
+
+  padding-inline: calc(var(--btn-line-height) / 2 * 1em - var(--btn-cap-bleed));
+  min-height: calc(var(--btn-line-height) * 1em);
+  position: relative;
+  isolation: isolate;
+  & > * {
+    position: relative;
+    z-index: 1;
+  }
+  &::before,
+  &::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    height: 100%;
+    width: calc(var(--btn-line-height) / 2 * 1em);
+    background: var(--btn-bg);
+    transition: background-color var(--btn-duration) ease-out;
+    pointer-events: none;
+    z-index: 0;
+  }
+  &::before {
+    left: 0;
+    clip-path: url(#pill-cap-left);
+  }
+  &::after {
+    right: 0;
+    clip-path: url(#pill-cap-right);
+  }
+
+  &:hover {
+    /*--btn-bg: color-mix(in oklch, var(--color-ink) 80%, var(--color-panel) 20%);*/
+  }
+  &:active {
+    transform: scale(0.98) translateY(1px);
+  }
+  &:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+  &:disabled {
+    opacity: 0.4;
+    pointer-events: none;
+  }
+}
+
+@utility btn-accent {
+  --btn-bg: var(--color-accent);
+  /*color: var(--color-ink);*/
+
+  /*&:hover {
+    --btn-bg: color-mix(
+      in oklch,
+      var(--color-accent) 88%,
+      var(--color-ink) 12%
+    );
+    border-color: color-mix(
+      in oklch,
+      var(--color-accent) 88%,
+      var(--color-ink) 12%
+    );
+  }*/
+}

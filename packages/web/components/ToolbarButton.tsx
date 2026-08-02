@@ -21,9 +21,7 @@ export default function ToolbarButton({
       title={title}
       disabled={disabled}
       onClick={onClick}
-      class={`btn btn-ghost btn-sm btn-square ${
-        active ? "bg-primary/15 text-primary" : ""
-      }`}
+      class={`btn ${active ? "btn-accent" : ""}`}
     >
       {children}
     </button>
