@@ -2,6 +2,7 @@
 @import "./motion.css";
 @import "./sidebar.css";
 @import "./buttons.css";
+@import "./dropdown.css";
 @plugin "@tailwindcss/typography";
 
 :root {
