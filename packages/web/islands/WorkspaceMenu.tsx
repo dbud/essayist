@@ -1,8 +1,9 @@
 import { useSignal } from "@preact/signals";
 import { BriefcaseBusiness, ChevronDown, Plus } from "lucide-preact";
-import Dropdown from "@/components/Dropdown.tsx";
-import MenuItem from "@/components/MenuItem.tsx";
-import MenuList from "@/components/MenuList.tsx";
+import Dropdown, {
+  DropdownItem,
+  DropdownMenu,
+} from "@/components/ui/Dropdown.tsx";
 import CreateWorkspaceDialog from "@/islands/CreateWorkspaceDialog.tsx";
 import { workspaces } from "@/signals/workspace.ts";
 
@@ -24,9 +25,8 @@ export default function WorkspaceMenu() {
   return (
     <>
       <Dropdown
-        buttonClass="btn btn-sm btn-ghost gap-2 max-w-[14rem]"
-        dropdownClass="dropdown-start"
-        button={
+        // triggerClass="btn btn-sm btn-ghost gap-2 max-w-[14rem]"
+        trigger={
           <>
             <BriefcaseBusiness size={16} />
             <span class="truncate">{label}</span>
@@ -35,14 +35,14 @@ export default function WorkspaceMenu() {
         }
       >
         {(close) => (
-          <MenuList>
+          <DropdownMenu>
             {list.value.length === 0 && (
               <li class="pointer-events-none">
                 <span class="text-base-content/50">No projects yet</span>
               </li>
             )}
             {list.value.map((w) => (
-              <MenuItem
+              <DropdownItem
                 key={w.id}
                 selected={w.id === currentWorkspaceId.value}
                 onClick={() => {
@@ -51,12 +51,12 @@ export default function WorkspaceMenu() {
                 }}
               >
                 {w.name}
-              </MenuItem>
+              </DropdownItem>
             ))}
             <li aria-hidden="true">
               <div class="menu-divider" />
             </li>
-            <MenuItem
+            <DropdownItem
               onClick={() => {
                 close();
                 dialogOpen.value = true;
@@ -64,8 +64,8 @@ export default function WorkspaceMenu() {
             >
               <Plus size={16} />
               New project
-            </MenuItem>
-          </MenuList>
+            </DropdownItem>
+          </DropdownMenu>
         )}
       </Dropdown>
       <CreateWorkspaceDialog open={dialogOpen} />
