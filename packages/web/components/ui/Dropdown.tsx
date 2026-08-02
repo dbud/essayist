@@ -51,7 +51,7 @@ export function DropdownMenu({ children }: { children: ComponentChildren }) {
   return (
     <ul class="dropdown-menu no-tl" data-stagger-children>
       {children}
-      <div class="dropdown-corner is-tl" data-no-motion />
+      {/*<div class="dropdown-corner is-tl" data-no-motion />*/}
       <div class="dropdown-corner is-tr" data-no-motion />
       <div class="dropdown-corner is-bl" data-no-motion />
       <div class="dropdown-corner is-br" data-no-motion />

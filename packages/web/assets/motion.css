@@ -109,14 +109,14 @@
 
   to {
     opacity: 0;
-    transform: rotate(90deg) scale(0.5);
+    transform: rotate(-90deg) scale(0.5);
   }
 }
 
 @keyframes swap-rotate-in {
   from {
     opacity: 0;
-    transform: rotate(-90deg) scale(0.5);
+    transform: rotate(90deg) scale(0.5);
   }
 
   to {
@@ -138,14 +138,14 @@
 
   to {
     opacity: 0;
-    transform: translateY(50%);
+    transform: translateY(-50%);
   }
 }
 
 @keyframes swap-shift-in {
   from {
     opacity: 0;
-    transform: translateY(-50%);
+    transform: translateY(50%);
   }
 
   to {
