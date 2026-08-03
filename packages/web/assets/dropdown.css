@@ -2,7 +2,7 @@
   from {
     clip-path: inset(0 0 100% 0);
   }
-  50% {
+  20% {
     clip-path: inset(0 0 100% 0);
   }
   to {

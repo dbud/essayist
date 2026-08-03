@@ -9,9 +9,9 @@
   --color-paper: oklch(0.98 0 0);
   --color-ink: oklch(22% 0.01 60);
   --color-rule: oklch(82% 0.005 85);
-  --color-accent: oklch(0.69 0.21 29);
+  --color-accent: oklch(0.69 0.24 29);
   --color-panel: oklch(20% 0.01 60);
-  --color-panel-content: oklch(98% 0.005 85);
+  --color-panel-content: oklch(100% 0.005 85);
 }
 
 @theme inline {

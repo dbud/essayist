@@ -9,6 +9,7 @@
 .sidebar {
   transition-property: width;
   transition-duration: var(--motion-sidebar-clip-duration);
+  overflow: hidden;
 }
 .sidebar.is-open {
   width: var(--sidebar-width);

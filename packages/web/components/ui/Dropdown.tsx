@@ -37,7 +37,7 @@ export default function Dropdown({
     >
       <button
         type="button"
-        class={`${triggerClass}${open.value ? " dropdown-open" : ""}`}
+        class={`${triggerClass} ${open.value ? "dropdown-open" : ""}`}
         onClick={() => (open.value = !open.value)}
       >
         {trigger}
