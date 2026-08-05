@@ -14,7 +14,7 @@ export default function App({ Component }: PageProps<unknown, State>) {
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>Essayist &mdash; AI-powered writing tools</title>
       </head>
-      <body class="h-dvh bg-base-200 text-base-content flex flex-col">
+      <body class="h-dvh flex flex-col">
         <PillClipDefs />
         <Component />
         <Toaster />

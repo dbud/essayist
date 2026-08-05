@@ -1,9 +1,6 @@
 import { IS_BROWSER } from "fresh/runtime";
 import type { ComponentChildren } from "preact";
-import {
-  leftSidebarCollapsed,
-  rightSidebarCollapsed,
-} from "@/signals/sidebar.ts";
+import { leftSidebarOpened, rightSidebarOpened } from "@/signals/sidebar.ts";
 
 interface SidebarProps {
   side: "left" | "right";
@@ -16,9 +13,8 @@ export default function Sidebar({
   className = "w-72 py-2",
   children,
 }: SidebarProps) {
-  const collapsed =
-    side === "left" ? leftSidebarCollapsed : rightSidebarCollapsed;
-  const hidden = collapsed.value || !IS_BROWSER;
+  const opened = side === "left" ? leftSidebarOpened : rightSidebarOpened;
+  const hidden = !opened.value || !IS_BROWSER;
 
   return (
     <aside

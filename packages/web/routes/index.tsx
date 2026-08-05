@@ -1,26 +1,24 @@
+import Sidebar from "@/components/ui/Sidebar.tsx";
 import Chat from "@/islands/Chat.tsx";
 import ExportPreviewSection from "@/islands/ExportPreviewSection.tsx";
-import FileBrowser from "@/islands/FileBrowser.tsx";
 import FileViewer from "@/islands/FileViewer.tsx";
 import LexicalTreeViewSection from "@/islands/LexicalTreeViewSection.tsx";
 import MarksSection from "@/islands/MarksSection.tsx";
 import Section from "@/islands/Section.tsx";
-import Sidebar from "@/islands/Sidebar.tsx";
-import WorkspaceMenu from "@/islands/WorkspaceMenu.tsx";
+import { rightSidebarOpened } from "@/signals/sidebar.ts";
 
 export default function HomePage() {
   return (
-    <main class="w-full flex-1 flex gap-8 px-4 min-h-0">
-      <Sidebar side="left">
-        <div class="p-2">
-          <WorkspaceMenu />
-        </div>
-        <FileBrowser />
-      </Sidebar>
-      <div class="flex-1 min-w-0 min-h-0 h-full flex flex-col py-4">
+    <div class="flex flex-1 min-h-0">
+      <main class="flex flex-1 flex-col min-h-0 @container bg-paper text-ink">
         <FileViewer />
-      </div>
-      <Sidebar side="right" className="flex-1 max-w-lg flex flex-col py-4">
+      </main>
+
+      <Sidebar
+        width="24rem"
+        open={rightSidebarOpened.value}
+        class="bg-pane text-pane-content"
+      >
         <div class="join join-vertical">
           <ExportPreviewSection />
           <MarksSection />
@@ -36,6 +34,6 @@ export default function HomePage() {
           </Section>
         </div>
       </Sidebar>
-    </main>
+    </div>
   );
 }

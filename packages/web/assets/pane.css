@@ -1,0 +1,86 @@
+/* Pane: collapsible container that clips its size and slides its content.
+   Three layers: .pane (clip) > .pane-clip (full-size inner) > .pane-content (slides).
+   Direction modifiers: pane--sidebar (horizontal) and pane--panel (vertical).
+   State toggled by .is-open / .is-closed on both .pane and .pane-content. */
+
+:root {
+  --motion-pane-duration: 500ms;
+  --motion-pane-clip-duration: 200ms;
+  --motion-pane-offset: 1rem;
+  --pane-size: 18rem;
+}
+
+@utility pane {
+  overflow: hidden;
+  transition-property: width, height;
+  transition-duration: var(--motion-pane-clip-duration);
+
+  &.is-open {
+    transition-timing-function: ease-out;
+  }
+  &.is-closed {
+    transition-timing-function: ease-in;
+  }
+
+  &.pane--sidebar {
+    &.is-open {
+      width: var(--pane-size);
+    }
+    &.is-closed {
+      width: 0;
+    }
+  }
+
+  &.pane--panel {
+    &.is-open {
+      height: var(--pane-size);
+    }
+    &.is-closed {
+      height: 0;
+    }
+  }
+}
+
+@utility pane-clip {
+  overflow: hidden;
+
+  .pane--sidebar & {
+    width: var(--pane-size);
+    height: 100%;
+  }
+
+  .pane--panel & {
+    height: var(--pane-size);
+    width: 100%;
+  }
+}
+
+@utility pane-content {
+  transition-property: transform;
+  transition-duration: var(--motion-pane-duration);
+
+  &.is-open {
+    transition-timing-function: ease-out;
+  }
+  &.is-closed {
+    transition-timing-function: ease-in;
+  }
+
+  .pane--sidebar & {
+    &.is-open {
+      transform: translateX(0);
+    }
+    &.is-closed {
+      transform: translateX(calc(-1 * var(--motion-pane-offset)));
+    }
+  }
+
+  .pane--panel & {
+    &.is-open {
+      transform: translateY(0);
+    }
+    &.is-closed {
+      transform: translateY(calc(-1 * var(--motion-pane-offset)));
+    }
+  }
+}

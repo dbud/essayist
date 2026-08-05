@@ -15,80 +15,86 @@
   position: absolute;
   top: 100%;
   left: 0;
-  margin-top: 2px;
+  margin-top: 0.25rem;
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
+  width: max-content;
   min-width: 12rem;
   padding: 0.5rem;
-  background: var(--color-panel);
+  background: var(--color-pane);
   border-radius: var(--dropdown-radius);
-  color: var(--color-panel-content);
+  color: var(--color-pane-content);
   box-shadow: 0 4px 8px -4px rgba(0, 0, 0, 0.8);
   font-family: var(--font-sans);
   font-size: 0.8rem;
   font-weight: 500;
   line-height: 1.5;
   z-index: 50;
-  --dropdown-duration: 200ms;
+  --dropdown-duration: 120ms;
   animation: dropdown-in var(--dropdown-duration) ease-out;
   isolation: isolate;
 
-  &.no-tl {
+  &.dropdown-menu--no-tl {
     border-top-left-radius: 0;
   }
-  &.no-tr {
+  &.dropdown-menu--no-tr {
     border-top-right-radius: 0;
   }
-  &.no-bl {
+  &.dropdown-menu--no-bl {
     border-bottom-left-radius: 0;
   }
-  &.no-br {
+  &.dropdown-menu--no-br {
     border-bottom-right-radius: 0;
   }
-
-  &.no-tl .is-tl,
-  &.no-tr .is-tr,
-  &.no-bl .is-bl,
-  &.no-br .is-br {
+  &.dropdown-menu--no-tl .dropdown-corner--tl,
+  &.dropdown-menu--no-tr .dropdown-corner--tr,
+  &.dropdown-menu--no-bl .dropdown-corner--bl,
+  &.dropdown-menu--no-br .dropdown-corner--br {
     display: none;
   }
 
-  --motion-stagger-step: 40ms;
+  --motion-stagger-step: 20ms;
+  --motion-stagger-cap: calc(10 * var(--motion-stagger-step));
 }
 
-/* Applied to the trigger button when the dropdown is open. Zeroes the
-   bottom corners so the trigger visually connects to the menu below. */
+/* Dropdown: animated dropdown menu with pill-cap corners.
+   Naming: dropdown-menu, dropdown-item, dropdown-corner = elements.
+   dropdown-open = state class on the trigger.
+   dropdown-menu--no-tl etc. = corner-removal modifiers.
+   dropdown-corner--tl etc. = corner-position modifiers. */
 .dropdown-open {
   border-bottom-left-radius: 0;
   border-bottom-right-radius: 0;
-  transform: translateY(2px);
+  border-bottom: solid 0.25rem var(--color-pane);
+  margin-bottom: -0.25rem;
+  transform: translateY(1.5px);
 }
 
 .dropdown-corner {
   position: absolute;
   width: var(--dropdown-radius);
   height: var(--dropdown-radius);
-  background: var(--color-panel);
+  background: var(--color-pane);
   pointer-events: none;
   z-index: -1;
 }
-.dropdown-corner.is-tl {
+.dropdown-corner--tl {
   top: 0;
   left: 0;
   clip-path: url(#corner-tl);
 }
-.dropdown-corner.is-tr {
+.dropdown-corner--tr {
   top: 0;
   right: 0;
   clip-path: url(#corner-tr);
 }
-.dropdown-corner.is-bl {
+.dropdown-corner--bl {
   bottom: 0;
   left: 0;
   clip-path: url(#corner-bl);
 }
-.dropdown-corner.is-br {
+.dropdown-corner--br {
   bottom: 0;
   right: 0;
   clip-path: url(#corner-br);
@@ -113,7 +119,7 @@
   transition: background-color 80ms ease-out;
 
   &:hover {
-    background: color-mix(in oklch, var(--color-panel-content) 8%, transparent);
+    background: color-mix(in oklch, var(--color-pane-content) 8%, transparent);
   }
 
   &.is-selected {

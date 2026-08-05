@@ -24,7 +24,7 @@ interface BlockOption {
 }
 
 const OPTIONS: BlockOption[] = [
-  { value: "normal", label: "Normal", icon: <Pilcrow size={16} /> },
+  { value: "normal", label: "Paragraph", icon: <Pilcrow size={16} /> },
   { value: "h1", label: "Heading 1", icon: <Heading1 size={16} /> },
   { value: "h2", label: "Heading 2", icon: <Heading2 size={16} /> },
   { value: "h3", label: "Heading 3", icon: <Heading3 size={16} /> },

@@ -4,10 +4,7 @@ import {
   PanelRightClose,
   PanelRightOpen,
 } from "lucide-preact";
-import {
-  leftSidebarCollapsed,
-  rightSidebarCollapsed,
-} from "@/signals/sidebar.ts";
+import { leftSidebarOpened, rightSidebarOpened } from "@/signals/sidebar.ts";
 
 interface SidebarToggleProps {
   side: "left" | "right";
@@ -15,9 +12,8 @@ interface SidebarToggleProps {
 }
 
 export default function SidebarToggle({ side, label }: SidebarToggleProps) {
-  const collapsed =
-    side === "left" ? leftSidebarCollapsed : rightSidebarCollapsed;
-  const isOpen = !collapsed.value;
+  const opened = side === "left" ? leftSidebarOpened : rightSidebarOpened;
+  const isOpen = opened.value;
   const Icon =
     side === "left"
       ? isOpen
@@ -31,7 +27,7 @@ export default function SidebarToggle({ side, label }: SidebarToggleProps) {
     <button
       type="button"
       class="btn btn-ghost btn-sm btn-square"
-      onClick={() => (collapsed.value = !collapsed.value)}
+      onClick={() => (opened.value = !opened.value)}
       aria-label={label}
       title={label}
     >

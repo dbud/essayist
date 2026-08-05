@@ -23,10 +23,10 @@ export default function Sidebar({
   const state = open ? "is-open" : "is-closed";
   return (
     <aside
-      class={`sidebar ${state} shrink-0 ${className ?? ""}`}
-      style={{ "--sidebar-width": width }}
+      class={`pane pane--sidebar ${state} shrink-0 ${className ?? ""}`}
+      style={{ "--pane-size": width }}
     >
-      <div class="sidebar-clip">
+      <div class="pane-clip">
         <div class={`pane-content ${state} h-full overflow-y-auto`}>
           {children}
         </div>

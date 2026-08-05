@@ -1,6 +1,6 @@
 @import "tailwindcss";
 @import "./motion.css";
-@import "./sidebar.css";
+@import "./pane.css";
 @import "./buttons.css";
 @import "./dropdown.css";
 @plugin "@tailwindcss/typography";
@@ -10,8 +10,8 @@
   --color-ink: oklch(22% 0.01 60);
   --color-rule: oklch(82% 0.005 85);
   --color-accent: oklch(0.69 0.24 29);
-  --color-panel: oklch(20% 0.01 60);
-  --color-panel-content: oklch(100% 0.005 85);
+  --color-pane: oklch(20% 0.01 60);
+  --color-pane-content: oklch(100% 0.005 85);
 }
 
 @theme inline {
@@ -19,8 +19,8 @@
   --color-ink: var(--color-ink);
   --color-rule: var(--color-rule);
   --color-accent: var(--color-accent);
-  --color-panel: var(--color-panel);
-  --color-panel-content: var(--color-panel-content);
+  --color-pane: var(--color-pane);
+  --color-pane-content: var(--color-pane-content);
 }
 
 @theme {
@@ -99,7 +99,7 @@
   --color-mark-5: oklch(var(--mark-l) var(--mark-c) 350);
 }
 
-.loading-border {
+@utility loading-border {
   position: relative;
 }
 
@@ -154,7 +154,7 @@
   --tw-prose-td-borders: var(--color-rule);
 }
 
-.menu-divider {
+@utility menu-divider {
   display: block;
   border-top: 1px solid var(--color-rule);
   height: 0;

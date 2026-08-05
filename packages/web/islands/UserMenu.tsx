@@ -50,7 +50,7 @@ export default function UserMenu({ user }: UserMenuProps) {
               {user.email}
             </div>
           </div>
-          <ul class="menu w-full p-0 gap-1">
+          <ul class="w-full p-0 gap-1">
             <li>
               <ClearCacheButton close={close} />
             </li>

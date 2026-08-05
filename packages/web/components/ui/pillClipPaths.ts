@@ -35,7 +35,7 @@ export function capPath(side: "left" | "right"): string {
 export const LEFT_PATH = capPath("left");
 export const RIGHT_PATH = capPath("right");
 
-const M = 3;
+const M = 4;
 
 /** SVG path for one corner of a rounded rect, in 0..1 objectBoundingBox coords.
  *  The corner pseudo-element is a r x r square, so objectBoundingBox maps the

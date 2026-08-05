@@ -49,12 +49,12 @@ export default function Dropdown({
 
 export function DropdownMenu({ children }: { children: ComponentChildren }) {
   return (
-    <ul class="dropdown-menu no-tl" data-stagger-children>
+    <ul class="dropdown-menu dropdown-menu--no-tl" data-stagger-children>
       {children}
-      {/*<div class="dropdown-corner is-tl" data-no-motion />*/}
-      <div class="dropdown-corner is-tr" data-no-motion />
-      <div class="dropdown-corner is-bl" data-no-motion />
-      <div class="dropdown-corner is-br" data-no-motion />
+      {/*<div class="dropdown-corner dropdown-corner--tl" data-no-motion />*/}
+      <div class="dropdown-corner dropdown-corner--tr" data-no-motion />
+      <div class="dropdown-corner dropdown-corner--bl" data-no-motion />
+      <div class="dropdown-corner dropdown-corner--br" data-no-motion />
     </ul>
   );
 }

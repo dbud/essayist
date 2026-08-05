@@ -1,6 +1,7 @@
 import { createModel, effect } from "@preact/signals";
 import { IS_BROWSER } from "fresh/runtime";
-import { leftSidebarCollapsed } from "@/signals/sidebar.ts";
+import { getFileTreeFor } from "@/signals/fileTree.ts";
+import { leftSidebarOpened } from "@/signals/sidebar.ts";
 import { workspaces } from "@/signals/workspace.ts";
 import { persistentSignal } from "@/utils/persistentSignal.ts";
 
@@ -57,6 +58,18 @@ if (IS_BROWSER) {
     if (!wsId) return;
     const of = getOpenedFilesFor(wsId);
     of.opened.value; // track so opening the first file can re-collapse it
-    if (of.opened.value.length === 0) leftSidebarCollapsed.value = false;
+    if (of.opened.value.length === 0) leftSidebarOpened.value = true;
+  });
+
+  // Auto-select the first file when no file is selected and files are available.
+  // TODO -- simplify?
+  effect(() => {
+    const wsId = workspaces.currentWorkspaceId.value;
+    if (!wsId) return;
+    const of = getOpenedFilesFor(wsId);
+    if (of.selected.value) return;
+    const ft = getFileTreeFor(wsId);
+    const files = ft.files.value;
+    if (files.length > 0) of.open(files[0].path);
   });
 }
