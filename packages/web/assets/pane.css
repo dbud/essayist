@@ -1,42 +1,47 @@
 /* Pane: collapsible container that clips its size and slides its content.
-   Three layers: .pane (clip) > .pane-clip (full-size inner) > .pane-content (slides).
-   Direction modifiers: pane--sidebar (horizontal) and pane--panel (vertical).
-   State toggled by .is-open / .is-closed on both .pane and .pane-content. */
+   Three layers: .pane (outer) > .pane-clip (inner) > .pane-content (slides).
+   Both variants use grid fr animation for auto-sizing.
+   State toggled by .is-open / .is-closed on .pane only; .pane-content
+   derives its state via descendant selectors. */
 
 :root {
   --motion-pane-duration: 500ms;
   --motion-pane-clip-duration: 200ms;
   --motion-pane-offset: 1rem;
-  --pane-size: 18rem;
 }
 
 @utility pane {
-  overflow: hidden;
-  transition-property: width, height;
-  transition-duration: var(--motion-pane-clip-duration);
-
-  &.is-open {
-    transition-timing-function: ease-out;
-  }
-  &.is-closed {
-    transition-timing-function: ease-in;
-  }
+  flex-shrink: 0;
 
   &.pane--sidebar {
+    display: grid;
+    grid-template-columns: 0fr;
+    transition-property: grid-template-columns;
+    transition-duration: var(--motion-pane-clip-duration);
+
     &.is-open {
-      width: var(--pane-size);
+      grid-template-columns: 1fr;
+      transition-timing-function: ease-out;
     }
     &.is-closed {
-      width: 0;
+      grid-template-columns: 0fr;
+      transition-timing-function: ease-in;
     }
   }
 
   &.pane--panel {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition-property: grid-template-rows;
+    transition-duration: var(--motion-pane-clip-duration);
+
     &.is-open {
-      height: var(--pane-size);
+      grid-template-rows: 1fr;
+      transition-timing-function: ease-out;
     }
     &.is-closed {
-      height: 0;
+      grid-template-rows: 0fr;
+      transition-timing-function: ease-in;
     }
   }
 }
@@ -45,12 +50,12 @@
   overflow: hidden;
 
   .pane--sidebar & {
-    width: var(--pane-size);
+    min-width: 0;
     height: 100%;
   }
 
   .pane--panel & {
-    height: var(--pane-size);
+    min-height: 0;
     width: 100%;
   }
 }
@@ -59,28 +64,21 @@
   transition-property: transform;
   transition-duration: var(--motion-pane-duration);
 
-  &.is-open {
+  .pane--sidebar.is-open & {
+    transform: translateX(0);
     transition-timing-function: ease-out;
   }
-  &.is-closed {
+  .pane--sidebar.is-closed & {
+    transform: translateX(calc(-1 * var(--motion-pane-offset)));
     transition-timing-function: ease-in;
   }
 
-  .pane--sidebar & {
-    &.is-open {
-      transform: translateX(0);
-    }
-    &.is-closed {
-      transform: translateX(calc(-1 * var(--motion-pane-offset)));
-    }
+  .pane--panel.is-open & {
+    transform: translateY(0);
+    transition-timing-function: ease-out;
   }
-
-  .pane--panel & {
-    &.is-open {
-      transform: translateY(0);
-    }
-    &.is-closed {
-      transform: translateY(calc(-1 * var(--motion-pane-offset)));
-    }
+  .pane--panel.is-closed & {
+    transform: translateY(calc(-1 * var(--motion-pane-offset)));
+    transition-timing-function: ease-in;
   }
 }
