@@ -10,6 +10,49 @@
   }
 }
 
+/* Dropdown: animated dropdown menu with pill-cap corners.
+   Naming: dropdown-menu, dropdown-item, dropdown-corner = elements.
+   dropdown-open = state class on the trigger.
+   dropdown-menu--no-tl etc. = corner-removal modifiers.
+   dropdown-corner--tl etc. = corner-position modifiers. */
+
+.dropdown-corner {
+  position: absolute;
+  width: var(--dropdown-radius);
+  height: var(--dropdown-radius);
+  background: var(--color-pane);
+  pointer-events: none;
+  z-index: -1;
+}
+.dropdown-corner--tl {
+  top: 0;
+  left: 0;
+  clip-path: url(#corner-tl);
+}
+.dropdown-corner--tr {
+  top: 0;
+  right: 0;
+  clip-path: url(#corner-tr);
+}
+.dropdown-corner--bl {
+  bottom: 0;
+  left: 0;
+  clip-path: url(#corner-bl);
+}
+.dropdown-corner--br {
+  bottom: 0;
+  right: 0;
+  clip-path: url(#corner-br);
+}
+
+.dropdown-open {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+  border-bottom: solid 0.25rem var(--color-pane);
+  margin-bottom: -0.25rem;
+  transform: translateY(1.5px);
+}
+
 @utility dropdown-menu {
   --dropdown-radius: 1rem;
   position: absolute;
@@ -56,48 +99,6 @@
 
   --motion-stagger-step: 20ms;
   --motion-stagger-cap: calc(10 * var(--motion-stagger-step));
-}
-
-/* Dropdown: animated dropdown menu with pill-cap corners.
-   Naming: dropdown-menu, dropdown-item, dropdown-corner = elements.
-   dropdown-open = state class on the trigger.
-   dropdown-menu--no-tl etc. = corner-removal modifiers.
-   dropdown-corner--tl etc. = corner-position modifiers. */
-.dropdown-open {
-  border-bottom-left-radius: 0;
-  border-bottom-right-radius: 0;
-  border-bottom: solid 0.25rem var(--color-pane);
-  margin-bottom: -0.25rem;
-  transform: translateY(1.5px);
-}
-
-.dropdown-corner {
-  position: absolute;
-  width: var(--dropdown-radius);
-  height: var(--dropdown-radius);
-  background: var(--color-pane);
-  pointer-events: none;
-  z-index: -1;
-}
-.dropdown-corner--tl {
-  top: 0;
-  left: 0;
-  clip-path: url(#corner-tl);
-}
-.dropdown-corner--tr {
-  top: 0;
-  right: 0;
-  clip-path: url(#corner-tr);
-}
-.dropdown-corner--bl {
-  bottom: 0;
-  left: 0;
-  clip-path: url(#corner-bl);
-}
-.dropdown-corner--br {
-  bottom: 0;
-  right: 0;
-  clip-path: url(#corner-br);
 }
 
 @utility dropdown-item {
