@@ -11,6 +11,8 @@
 }
 
 @utility pane {
+  position: relative;
+  z-index: var(--z-panel);
   flex-shrink: 0;
 
   &.pane--sidebar {
@@ -57,6 +59,10 @@
   .pane--panel & {
     min-height: 0;
     width: 100%;
+  }
+
+  .pane.is-open & {
+    overflow: visible;
   }
 }
 

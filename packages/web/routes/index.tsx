@@ -15,7 +15,6 @@ export default function HomePage() {
       </main>
 
       <Sidebar
-        width="24rem"
         open={rightSidebarOpened.value}
         class="bg-pane text-pane-content"
       >

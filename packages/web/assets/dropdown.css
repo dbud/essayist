@@ -73,7 +73,7 @@
   font-size: 0.8rem;
   font-weight: 500;
   line-height: 1.5;
-  z-index: 50;
+  z-index: var(--z-dropdown);
   --dropdown-duration: 120ms;
   animation: dropdown-in var(--dropdown-duration) ease-out;
   isolation: isolate;

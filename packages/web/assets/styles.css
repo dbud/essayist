@@ -1,6 +1,7 @@
 @import "tailwindcss";
 @import "./motion.css";
 @import "./pane.css";
+@import "./layers.css";
 @import "./buttons.css";
 @import "./dropdown.css";
 @plugin "@tailwindcss/typography";

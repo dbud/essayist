@@ -20,7 +20,10 @@ export function MarkHighlights({
 }) {
   if (rects.length === 0) return null;
   return (
-    <div class="pointer-events-none absolute inset-0 -z-10">
+    <div
+      class="pointer-events-none absolute inset-0"
+      style={`z-index: var(--z-mark)`}
+    >
       {rects.map(({ id, left, top, width, height, color }, i) => (
         <div
           key={i}

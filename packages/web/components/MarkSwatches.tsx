@@ -6,7 +6,7 @@ import { MARK_PALETTE } from "@/editor/markColors.ts";
 // so it tracks styles.css exactly.
 export function MarkSwatches() {
   return (
-    <div class="fixed bottom-8 right-8 z-50 flex flex-col gap-2 rounded bg-base-100 p-2 text-xs shadow">
+    <div class="fixed bottom-8 right-8 z-toast flex flex-col gap-2 rounded bg-base-100 p-2 text-xs shadow">
       {(["regular", "active"] as const).map((variant) => (
         <div key={variant} class="flex items-center gap-1">
           <span class="w-14 capitalize text-base-content/70">{variant}</span>

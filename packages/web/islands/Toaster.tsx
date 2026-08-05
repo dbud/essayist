@@ -39,7 +39,7 @@ function ToastView({ toast }: { toast: Signal<Toast> }) {
 
 export default function Toaster() {
   return (
-    <div class="toast toast-end toast-bottom z-50">
+    <div class="toast toast-end toast-bottom z-toast">
       {toasts.value.map((toast, i) => (
         <ToastView key={i} toast={toast} />
       ))}
