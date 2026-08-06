@@ -5,8 +5,8 @@
    derives its state via descendant selectors. */
 
 :root {
-  --motion-pane-duration: 500ms;
-  --motion-pane-clip-duration: 200ms;
+  --motion-pane-duration: 400ms;
+  --motion-pane-clip-duration: 300ms;
   --motion-pane-offset: 1rem;
 }
 
@@ -59,10 +59,6 @@
   .pane--panel & {
     min-height: 0;
     width: 100%;
-  }
-
-  .pane.is-open & {
-    overflow: visible;
   }
 }
 
