@@ -1,8 +1,8 @@
 import { useEffect, useRef } from "preact/hooks";
 
-/** After the pane open-transition settles, set overflow:visible on the
- *  clip element so dropdowns can escape. Clear it immediately when open
- *  becomes false so content is clipped during the close animation. */
+/** Toggle overflow:visible on the clip after open transitions settle, and
+ *  on mount if already open. Clear it on close so content clips during the
+ *  collapse animation. */
 export function usePaneClip(
   open: boolean,
   transitionProp: "grid-template-rows" | "grid-template-columns",
@@ -10,10 +10,18 @@ export function usePaneClip(
   const clipRef = useRef<HTMLDivElement>(null);
   const openRef = useRef(open);
   openRef.current = open;
+  const isFirstRender = useRef(true);
 
   useEffect(() => {
     const clip = clipRef.current;
     if (!clip) return;
+
+    if (isFirstRender.current) {
+      if (open) clip.style.overflow = "visible";
+      isFirstRender.current = false;
+      return;
+    }
+
     if (!open) clip.style.overflow = "";
   }, [open]);
 
