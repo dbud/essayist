@@ -1,6 +1,6 @@
 :root {
   --z-base: 0;
-  --z-mark: 10;
+  --z-mark: -10;
   --z-toolbar: 20;
   --z-panel: 30;
   --z-dropdown: 40;
