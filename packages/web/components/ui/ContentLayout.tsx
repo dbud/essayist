@@ -10,9 +10,9 @@ export interface ContentLayoutProps {
   }) => ComponentChildren;
 }
 
-/** Two-column grid that keeps toolbar and body columns aligned.
- *  Computes responsive column template from withSidePane, applies max-width
- *  and auto margins. Passes mainClass and sideClass to children. */
+/** Two-column grid. `relative` columns let mark anchors measure offsetTop
+ *  against the editor. @container keys the @[64rem]/@[96rem] variants on pane
+ *  width. */
 export default function ContentLayout({
   withSidePane = false,
   children,
