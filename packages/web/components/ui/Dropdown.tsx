@@ -1,6 +1,6 @@
 import { useSignal } from "@preact/signals";
 import type { ComponentChildren } from "preact";
-import { useEffect, useRef } from "preact/hooks";
+import { useClickOutside } from "@/hooks/useClickOutside.ts";
 
 interface DropdownProps {
   triggerClass?: string;
@@ -15,20 +15,8 @@ export default function Dropdown({
   children,
 }: DropdownProps) {
   const open = useSignal(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open.value) return;
-    const onDocClick = (e: MouseEvent) => {
-      if (ref.current !== null && !ref.current.contains(e.target as Node)) {
-        open.value = false;
-      }
-    };
-    document.addEventListener("click", onDocClick);
-    return () => document.removeEventListener("click", onDocClick);
-  }, [open.value]);
-
   const close = () => (open.value = false);
+  const ref = useClickOutside(open.value ? close : undefined);
 
   return (
     <div
