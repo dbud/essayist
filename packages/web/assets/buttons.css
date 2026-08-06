@@ -1,3 +1,7 @@
+@utility btn--size {
+  font-size: 0.8rem;
+}
+
 @utility btn {
   --btn-line-height: 2.2;
   --btn-cap-bleed: 0.2rem;
@@ -13,7 +17,7 @@
   box-shadow: 0 1.5px 2px -1px rgba(0, 0, 0, 0.3);
   color: var(--color-pane-content);
   font-family: var(--font-sans);
-  font-size: 0.8rem;
+  @apply btn--size;
   font-weight: 500;
   line-height: var(--btn-line-height);
   text-decoration: none;

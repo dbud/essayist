@@ -1,12 +1,5 @@
 import { useSignal } from "@preact/signals";
-import {
-  Briefcase,
-  ChevronDown,
-  FileText,
-  FolderOpen,
-  Plus,
-  Slash,
-} from "lucide-preact";
+import { Briefcase, ChevronDown, FileText, Plus, Slash } from "lucide-preact";
 import ContentLayout from "@/components/ui/ContentLayout.tsx";
 import Panel from "@/components/ui/Panel.tsx";
 
@@ -16,17 +9,43 @@ import { getOpenedFiles } from "@/signals/openedFiles.ts";
 import { navigationOpened } from "@/signals/sidebar.ts";
 import { workspaces } from "@/signals/workspace.ts";
 
-function flattenTree(
-  nodes: TreeNode[],
-  depth = 0,
-): Array<TreeNode & { depth: number }> {
-  const result: Array<TreeNode & { depth: number }> = [];
-  for (const node of nodes) {
-    result.push({ ...node, depth });
-    if (!node.isFile) {
-      result.push(...flattenTree(node.children, depth + 1));
+interface PathPart {
+  segment: string;
+  redundant: boolean;
+}
+
+interface FileEntry {
+  parts: PathPart[];
+  name: string;
+  path: string;
+  selected: boolean;
+}
+
+function buildFileEntries(nodes: TreeNode[]): FileEntry[] {
+  const result: FileEntry[] = [];
+  let prevSegments: string[] = [];
+
+  function walk(nodes: TreeNode[], segments: string[]) {
+    for (const { name, path, isFile, isSelected, children } of nodes) {
+      if (isFile) {
+        const parts: PathPart[] = segments.map((segment, i) => ({
+          segment,
+          redundant: prevSegments.length > i && prevSegments[i] === segment,
+        }));
+        prevSegments = [...segments];
+        result.push({
+          parts,
+          name,
+          path,
+          selected: isSelected.value,
+        });
+      } else {
+        walk(children, [...segments, name]);
+      }
     }
   }
+
+  walk(nodes, []);
   return result;
 }
 
@@ -41,8 +60,8 @@ export default function FileNavigation() {
     return <div class="text-error">{error.value}</div>;
   }
 
-  const items = flattenTree(tree.value.children);
   const selectedPath = getOpenedFiles()?.selected.value ?? "";
+  const entries = buildFileEntries(tree.value.children);
 
   const wsTrigger = (
     <button
@@ -105,32 +124,29 @@ export default function FileNavigation() {
     <div class="flex flex-col py-4 gap-4">
       <h3 class="text-lg font-thin">Files</h3>
       <ul class="flex flex-col">
-        {items.filter((n) => n.isFile).length > 1 &&
-          items.map(({ isFile, isSelected, path, depth, name }) => (
-            <li key={path} style={{ paddingInlineStart: `${1.5 * depth}rem` }}>
-              {isFile ? (
-                <button
-                  type="button"
-                  class={`font-normal btn btn--ghost ${isSelected.value ? "is-selected" : ""}`}
-                  onClick={() => {
-                    getOpenedFiles()?.open(path);
-                    navigationOpened.value = false;
-                  }}
-                >
-                  <span class="break-all min-w-0">{name}</span>
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  class="font-normal btn btn--ghost"
-                  disabled
-                >
-                  <FolderOpen size={14} />
-                  <span class="break-all min-w-0">{name}</span>
-                </button>
-              )}
-            </li>
-          ))}
+        {entries.map((entry) => (
+          <li key={entry.path} class="group w-fit">
+            {entry.parts.map((p, i) => (
+              <span
+                key={i}
+                class={`btn--size transition-opacity ${p.redundant ? "opacity-0 group-hover:opacity-100" : ""}`}
+              >
+                {p.segment}
+                <span class="px-1">/</span>
+              </span>
+            ))}
+            <button
+              type="button"
+              class={`font-normal btn btn--ghost ${entry.selected ? "is-selected" : ""}`}
+              onClick={() => {
+                getOpenedFiles()?.open(entry.path);
+                navigationOpened.value = false;
+              }}
+            >
+              <span class="break-all min-w-0">{entry.name}</span>
+            </button>
+          </li>
+        ))}
       </ul>
     </div>
   );
