@@ -99,9 +99,16 @@
   }
   color: inherit;
   box-shadow: none;
-  text-decoration: underline 1.5px solid
-    color-mix(in oklch, transparent 40%, currentColor);
-  text-underline-offset: 0.2rem;
+  padding-inline: 0;
+  line-height: 1rem;
+  min-height: auto;
+  border-radius: 0;
+
+  &:not(:disabled) {
+    text-decoration: underline 1.5px solid
+      color-mix(in oklch, transparent 40%, currentColor);
+    text-underline-offset: 0.2rem;
+  }
   &:hover {
     text-decoration-color: var(--color-accent);
   }
@@ -109,7 +116,6 @@
   &.is-selected {
     color: var(--color-accent);
     text-decoration: none;
-    border-radius: 0.5rem;
     font-weight: 500;
   }
 }
