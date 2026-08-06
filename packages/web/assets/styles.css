@@ -11,7 +11,7 @@
   --color-ink: oklch(22% 0.01 60);
   --color-rule: oklch(82% 0.005 85);
   --color-accent: oklch(0.69 0.24 29);
-  --color-pane: oklch(20% 0.01 60);
+  --color-pane: oklch(25% 0.01 60);
   --color-pane-content: oklch(100% 0.005 85);
 }
 
@@ -102,24 +102,24 @@
 
 @utility loading-border {
   position: relative;
-}
 
-.loading-border::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 2px;
-  border-radius: 2px;
-  background: linear-gradient(
-    90deg,
-    transparent 40%,
-    var(--color-accent) 50%,
-    transparent 60%
-  );
-  background-size: 200% 100%;
-  animation: loading-slide 3s ease-in-out infinite;
+  &::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    border-radius: 2px;
+    background: linear-gradient(
+      90deg,
+      transparent 40%,
+      var(--color-accent) 50%,
+      transparent 60%
+    );
+    background-size: 200% 100%;
+    animation: loading-slide 3s ease-in-out infinite;
+  }
 }
 
 @keyframes loading-slide {
