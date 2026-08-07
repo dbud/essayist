@@ -57,7 +57,7 @@ export default function FileNavigation() {
 
   const files = getFileTree();
   if (!files) return null;
-  const { tree, error, loading } = files;
+  const { tree, error } = files;
 
   if (error.value) {
     return <div class="text-error">{error.value}</div>;
@@ -85,7 +85,7 @@ export default function FileNavigation() {
       onClick={() => (navigationOpened.value = !navigationOpened.value)}
     >
       <FileText size={14} />
-      {selectedPath || "..." /* TODO placeholder */}
+      {selectedPath || ""}
       <ChevronDown size={14} />
     </button>
   );
@@ -157,12 +157,14 @@ export default function FileNavigation() {
   return (
     <Panel
       open
-      class={`flex items-center gap-2 py-2 bg-pane text-pane-content ${loading.value ? "loading-border" : ""}`}
+      class={`flex items-center gap-2 py-2 bg-pane text-pane-content`}
       onClickOutside={() => (navigationOpened.value = false)}
     >
       <ContentLayout>
         {({ mainClass }) => (
-          <div class={mainClass}>
+          <div
+            class={`${mainClass} ${files.loading.value || workspaces.loading.value ? "loading" : ""}`}
+          >
             <div class="flex flex-col">
               <Panel open={!navigationOpened.value}>
                 <div class="flex gap-2">

@@ -100,6 +100,26 @@
   --color-mark-5: oklch(var(--mark-l) var(--mark-c) 350);
 }
 
+@utility loading {
+  position: relative;
+  animation: loading-blur 2s ease-in-out infinite;
+  & * {
+    pointer-events: none;
+  }
+  cursor: wait;
+}
+
+@keyframes loading-blur {
+  0%,
+  100% {
+    filter: blur(1px);
+  }
+  50% {
+    filter: blur(2px);
+    opacity: 50%;
+  }
+}
+
 @utility loading-border {
   position: relative;
 
@@ -124,7 +144,7 @@
 
 @keyframes loading-slide {
   0% {
-    background-position: 200% 0;
+    background-position: 0% 0;
   }
 
   100% {

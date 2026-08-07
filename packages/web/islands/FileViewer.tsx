@@ -15,7 +15,6 @@ import {
   useScrollViewport,
 } from "@/hooks/useScrollViewport.ts";
 import Editor from "@/islands/editor/Editor.tsx";
-import FileNavigation from "@/islands/FileNavigation.tsx";
 import { activeEditor } from "@/signals/activeEditor.ts";
 import { getEditorSelection } from "@/signals/editorSelection.ts";
 import { getFile } from "@/signals/file.ts";
