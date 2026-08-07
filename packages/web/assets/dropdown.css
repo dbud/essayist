@@ -90,6 +90,10 @@
   &.dropdown-menu--no-br {
     border-bottom-right-radius: 0;
   }
+  &.dropdown-menu--end {
+    left: auto;
+    right: 0;
+  }
   &.dropdown-menu--no-tl .dropdown-corner--tl,
   &.dropdown-menu--no-tr .dropdown-corner--tr,
   &.dropdown-menu--no-bl .dropdown-corner--bl,

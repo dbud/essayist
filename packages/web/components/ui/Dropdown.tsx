@@ -35,11 +35,19 @@ export default function Dropdown({
   );
 }
 
-export function DropdownMenu({ children }: { children: ComponentChildren }) {
+export function DropdownMenu({
+  end,
+  children,
+}: {
+  end?: boolean;
+  children: ComponentChildren;
+}) {
+  const align = end ? "dropdown-menu--end" : "";
+  const mergeCorner = end ? "dropdown-menu--no-tr" : "dropdown-menu--no-tl";
   return (
-    <ul class="dropdown-menu dropdown-menu--no-tl" data-stagger-children>
+    <ul class={`dropdown-menu ${mergeCorner} ${align}`} data-stagger-children>
       {children}
-      {/*<div class="dropdown-corner dropdown-corner--tl" data-no-motion />*/}
+      <div class="dropdown-corner dropdown-corner--tl" data-no-motion />
       <div class="dropdown-corner dropdown-corner--tr" data-no-motion />
       <div class="dropdown-corner dropdown-corner--bl" data-no-motion />
       <div class="dropdown-corner dropdown-corner--br" data-no-motion />
