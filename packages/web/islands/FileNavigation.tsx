@@ -1,8 +1,7 @@
 import { useSignal } from "@preact/signals";
 import { Briefcase, ChevronDown, FileText, Plus, Slash } from "lucide-preact";
-import ContentLayout from "@/components/ui/ContentLayout.tsx";
 import Panel from "@/components/ui/Panel.tsx";
-
+import { useClickOutside } from "@/hooks/useClickOutside.ts";
 import CreateWorkspaceDialog from "@/islands/CreateWorkspaceDialog.tsx";
 import { getFileTree, type TreeNode } from "@/signals/fileTree.ts";
 import { getOpenedFiles } from "@/signals/openedFiles.ts";
@@ -54,6 +53,7 @@ function buildFileEntries(
 
 export default function FileNavigation() {
   const createDialogOpen = useSignal(false);
+  const ref = useClickOutside(() => (navigationOpened.value = false));
 
   const files = getFileTree();
   if (!files) return null;
@@ -155,35 +155,30 @@ export default function FileNavigation() {
   );
 
   return (
-    <Panel
-      open
-      class={`flex items-center gap-2 py-2 bg-pane text-pane-content`}
-      onClickOutside={() => (navigationOpened.value = false)}
-    >
-      <ContentLayout>
-        {({ mainClass }) => (
-          <div
-            class={`${mainClass} ${files.loading.value || workspaces.loading.value ? "loading" : ""}`}
-          >
-            <div class="flex flex-col">
-              <Panel open={!navigationOpened.value}>
-                <div class="flex gap-2">
-                  {wsTrigger}
-                  <Slash size={16} />
-                  {fileTrigger}
-                </div>
-              </Panel>
-              <Panel open={navigationOpened.value}>
-                <div class="flex gap-24">
-                  {wsList}
-                  {fileList}
-                </div>
-              </Panel>
+    <>
+      <div
+        ref={ref}
+        class={`flex items-center py-2
+              ${files.loading.value || workspaces.loading.value ? "loading" : ""}`}
+      >
+        <div class="flex flex-col">
+          <Panel open={!navigationOpened.value}>
+            <div class="flex gap-2">
+              {wsTrigger}
+              <Slash size={16} />
+              {fileTrigger}
             </div>
-          </div>
-        )}
-      </ContentLayout>
+          </Panel>
+          <Panel open={navigationOpened.value}>
+            <div class="flex gap-24">
+              {wsList}
+              {fileList}
+            </div>
+          </Panel>
+        </div>
+      </div>
+
       <CreateWorkspaceDialog open={createDialogOpen} />
-    </Panel>
+    </>
   );
 }

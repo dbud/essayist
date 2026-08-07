@@ -1,3 +1,5 @@
+import ContentLayout from "@/components/ui/ContentLayout.tsx";
+import Panel from "@/components/ui/Panel.tsx";
 import Sidebar from "@/components/ui/Sidebar.tsx";
 import Chat from "@/islands/Chat.tsx";
 import ExportPreviewSection from "@/islands/ExportPreviewSection.tsx";
@@ -12,7 +14,19 @@ export default function HomePage() {
   return (
     <div class="flex flex-1 min-h-0">
       <main class="flex flex-1 flex-col min-h-0 @container bg-paper text-ink">
-        <FileNavigation />
+        <Panel open class="bg-pane text-pane-content">
+          <ContentLayout withSidePane>
+            {({ mainClass, sideClass }) => (
+              <>
+                <div class={mainClass}>
+                  <FileNavigation />
+                </div>
+                <div class={sideClass}>{/*<span>user menu</span>*/}</div>
+              </>
+            )}
+          </ContentLayout>
+        </Panel>
+
         <FileViewer />
       </main>
 
