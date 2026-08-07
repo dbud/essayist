@@ -6,16 +6,18 @@ interface AvatarProps {
 }
 
 export default function Avatar({ user }: AvatarProps) {
-  return user.picture ? (
-    <img
-      src={user.picture}
-      alt={user.name ?? user.email}
-      class="w-full h-full rounded-full object-cover shrink-0"
-      referrerpolicy="no-referrer"
-    />
-  ) : (
-    <span class="grid place-items-center w-full h-full rounded-full bg-base-300 shrink-0">
-      <UserIcon size={16} />
+  return (
+    <span class="grid place-items-center w-full h-full rounded-xl border border-pane-content bg-paper/20 color-paper overflow-hidden">
+      {user.picture ? (
+        <img
+          src={user.picture}
+          alt={user.name ?? user.email}
+          class="block w-full h-full object-cover"
+          referrerpolicy="no-referrer"
+        />
+      ) : (
+        <UserIcon size={20} />
+      )}
     </span>
   );
 }
