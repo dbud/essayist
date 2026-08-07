@@ -3,9 +3,6 @@ import { PillClipDefs } from "@/components/ui/PillClipDefs.tsx";
 import type { State } from "@/define.ts";
 import Toaster from "@/islands/Toaster.tsx";
 
-// UserMenu temporarily disabled: unstyled after the daisyUI removal.
-// import UserMenu from "@/islands/UserMenu.tsx";
-
 export default function App({ Component }: PageProps<unknown, State>) {
   return (
     <html lang="en">
