@@ -21,12 +21,15 @@ interface FileEntry {
   selected: boolean;
 }
 
-function buildFileEntries(nodes: TreeNode[]): FileEntry[] {
+function buildFileEntries(
+  nodes: TreeNode[],
+  selectedPath: string,
+): FileEntry[] {
   const result: FileEntry[] = [];
   let prevSegments: string[] = [];
 
   function walk(nodes: TreeNode[], segments: string[]) {
-    for (const { name, path, isFile, isSelected, children } of nodes) {
+    for (const { name, path, isFile, children } of nodes) {
       if (isFile) {
         const parts: PathPart[] = segments.map((segment, i) => ({
           segment,
@@ -37,7 +40,7 @@ function buildFileEntries(nodes: TreeNode[]): FileEntry[] {
           parts,
           name,
           path,
-          selected: isSelected.value,
+          selected: path === selectedPath,
         });
       } else {
         walk(children, [...segments, name]);
@@ -61,7 +64,7 @@ export default function FileNavigation() {
   }
 
   const selectedPath = getOpenedFiles()?.selected.value ?? "";
-  const entries = buildFileEntries(tree.value.children);
+  const entries = buildFileEntries(tree.value.children, selectedPath);
 
   const wsTrigger = (
     <button

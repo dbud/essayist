@@ -1,7 +1,6 @@
 import type { FileEntry } from "@essayist/core";
-import { computed, createModel, type Signal, signal } from "@preact/signals";
+import { computed, createModel, signal } from "@preact/signals";
 import { IS_BROWSER } from "fresh/runtime";
-import { getOpenedFilesFor } from "@/signals/openedFiles.ts";
 import { workspaces } from "@/signals/workspace.ts";
 import createAsyncState from "@/utils/asyncState.ts";
 import type { UploadedFile } from "@/utils/fileUpload.ts";
@@ -12,7 +11,7 @@ export const FileTreeModel = createModel((workspaceId: string) => {
   const [run, { loading, error }] = createAsyncState(true);
   const [runUpload, { progress: uploadProgress }] = createProgressState();
 
-  const tree = computed(() => buildFileTree(files.value, workspaceId));
+  const tree = computed(() => buildFileTree(files.value));
 
   async function load() {
     const result = await run(async () => {
@@ -110,17 +109,15 @@ export interface TreeNode {
   name: string;
   path: string;
   isFile: boolean;
-  isSelected: Signal<boolean>;
   children: TreeNode[];
 }
 
-function buildFileTree(files: FileEntry[], workspaceId: string): TreeNode {
+function buildFileTree(files: FileEntry[]): TreeNode {
   const root: TreeNode = {
     name: "",
     path: "",
     isFile: false,
     children: [],
-    isSelected: signal(false),
   };
 
   for (const file of files) {
@@ -138,9 +135,6 @@ function buildFileTree(files: FileEntry[], workspaceId: string): TreeNode {
           name: part,
           path,
           isFile,
-          isSelected: computed(
-            () => getOpenedFilesFor(workspaceId).selected.value === path,
-          ),
           children: [],
         };
         current.children.push(child);

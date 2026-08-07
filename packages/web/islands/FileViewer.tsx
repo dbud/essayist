@@ -35,12 +35,7 @@ export default function FileViewer() {
   const path = openedFiles?.selected.value ?? "";
   if (!openedFiles || !path) return null;
   const wsId = workspaces.currentWorkspaceId.value;
-  return (
-    <div class="flex flex-col flex-1 min-h-0">
-      <FileNavigation />
-      <FileViewerBody key={path} wsId={wsId} path={path} />
-    </div>
-  );
+  return <FileViewerBody key={path} wsId={wsId} path={path} />;
 }
 
 function FileViewerBody({ wsId, path }: { wsId: string; path: string }) {
