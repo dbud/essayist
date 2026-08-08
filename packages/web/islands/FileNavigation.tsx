@@ -195,7 +195,7 @@ export default function FileNavigation() {
             </div>
           </Panel>
           <Panel open={navigationOpened.value}>
-            <div class="flex gap-24">
+            <div class="flex flex-wrap gap-x-24 gap-y-4">
               {wsList}
               {files && fileList}
             </div>
