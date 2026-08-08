@@ -3,6 +3,7 @@ import { Briefcase, ChevronDown, FileText, Plus, Slash } from "lucide-preact";
 import Panel from "@/components/ui/Panel.tsx";
 import Spinner from "@/components/ui/Spinner.tsx";
 import { useClickOutside } from "@/hooks/useClickOutside.ts";
+import { useViewTransitionState } from "@/hooks/useViewTransitionState.ts";
 import CreateFileDialog from "@/islands/CreateFileDialog.tsx";
 import CreateWorkspaceDialog from "@/islands/CreateWorkspaceDialog.tsx";
 import FileUploader from "@/islands/FileUploader.tsx";
@@ -61,17 +62,21 @@ export default function FileNavigation() {
   const ref = useClickOutside(() => (navigationOpened.value = false));
 
   const files = getFileTree();
-
-  if (files?.error.value) {
-    return <div class="text-error">{files.error.value}</div>; // TODO -- toast?
-  }
-  // TODO -- workspaces.error?
-
   const selectedPath = getOpenedFiles()?.selected.value ?? "";
   const entries = buildFileEntries(
     files?.tree.value.children ?? [],
     selectedPath,
   );
+
+  const fileEntries = useViewTransitionState(
+    entries,
+    files?.loading.value ?? false,
+  );
+
+  if (files?.error.value) {
+    return <div class="text-error">{files.error.value}</div>; // TODO -- toast?
+  }
+  // TODO -- workspaces.error?
 
   const wsTrigger = (
     <button
@@ -149,11 +154,11 @@ export default function FileNavigation() {
   const fileList = (
     <div class="flex flex-col py-4 gap-4">
       <h3 class="text-lg font-thin">Files</h3>
-      {files?.loading.value ? (
+      {fileEntries.value.state === "loading" ? (
         <Spinner />
       ) : (
-        <ul class="flex flex-col">
-          {entries.map((entry) => (
+        <ul class="flex flex-col" style="view-transition-name: file-list">
+          {fileEntries.value.data.map((entry) => (
             <li key={entry.path} class="group w-fit">
               {entry.parts.map((p, i) => (
                 <span
@@ -178,7 +183,7 @@ export default function FileNavigation() {
           ))}
         </ul>
       )}
-      {!files?.loading.value && (
+      {fileEntries.value.state === "data" && (
         <div class="flex flex-col gap-2">
           <div>{createFile}</div>
           <div class="flex gap-2">
@@ -195,7 +200,8 @@ export default function FileNavigation() {
       <div ref={ref} class="flex items-center py-2">
         <div class="flex flex-col">
           <Panel open={!navigationOpened.value}>
-            {files?.loading.value || workspaces.loading.value ? (
+            {fileEntries.value.state === "loading" ||
+            workspaces.loading.value ? (
               <Spinner />
             ) : (
               <div class="flex gap-2">

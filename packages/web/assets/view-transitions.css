@@ -1,0 +1,58 @@
+/* Named view transitions: opacity cross-fade only, no movement. */
+
+:root {
+  --vt-duration: 150ms;
+}
+
+/* Named: opacity cross-fade, no movement */
+::view-transition-group(*),
+::view-transition-image-pair(*) {
+  animation: none;
+}
+
+::view-transition-group(*) {
+  overflow: hidden;
+}
+
+::view-transition-old(*),
+::view-transition-new(*) {
+  transform: none;
+  object-fit: none;
+  object-position: 0 0;
+}
+
+::view-transition-old(*) {
+  animation: vt-fade-out var(--vt-duration) ease-out forwards;
+}
+
+::view-transition-new(*) {
+  animation: vt-fade-in var(--vt-duration) ease-out forwards;
+}
+
+/* Root: instant swap, overrides * rules above */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  object-fit: fill;
+  object-position: 50% 50%;
+}
+
+::view-transition-old(root) {
+  opacity: 0;
+}
+
+::view-transition-new(root) {
+  opacity: 1;
+}
+
+@keyframes vt-fade-out {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes vt-fade-in {
+  from {
+    opacity: 0;
+  }
+}
