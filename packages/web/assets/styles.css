@@ -6,6 +6,7 @@
 @import "./dropdown.css";
 @import "./dialog.css";
 @import "./input.css";
+@import "./content.css";
 @plugin "@tailwindcss/typography";
 
 :root {

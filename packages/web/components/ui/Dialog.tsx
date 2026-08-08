@@ -65,9 +65,11 @@ export default function Dialog({ open, title, children }: DialogProps) {
         class="bg-pane text-pane-content"
         onSettled={onSettled}
       >
-        <div class="w-full mx-auto max-w-md px-4 py-6">
-          {title != null && <h3 class="dialog-title">{title}</h3>}
-          {children}
+        <div class="content-layout">
+          <div class="content-main py-6 min-w-0 max-w-lg">
+            {title != null && <h3 class="dialog-title">{title}</h3>}
+            {children}
+          </div>
         </div>
       </Panel>
     </dialog>

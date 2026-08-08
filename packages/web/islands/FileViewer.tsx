@@ -8,7 +8,6 @@ import { MarkHighlights } from "@/components/MarkHighlights.tsx";
 import { MarkSwatches } from "@/components/MarkSwatches.tsx";
 import Sidenote from "@/components/Sidenote.tsx";
 import BackdropBlur from "@/components/ui/BackdropBlur.tsx";
-import ContentLayout from "@/components/ui/ContentLayout.tsx";
 import { useElementHeights } from "@/hooks/useElementHeights.ts";
 import {
   type ScrollContainerRef,
@@ -69,49 +68,47 @@ function FileViewerBody({ wsId, path }: { wsId: string; path: string }) {
       <div class="flex-1 min-h-0 overflow-y-auto" ref={scrollRef}>
         <div class="sticky top-0 z-toolbar flex flex-col shadow-none">
           <BackdropBlur class="bg-paper/50" plateau={0.1} />
-          <ContentLayout withSidePane={withSidePane}>
-            {({ mainClass }) => (
-              <div class={`min-w-0 ${mainClass} flex flex-col gap-2 py-3`}>
-                <div class="flex items-center gap-2">
-                  <FontSelect />
-                  <EditorToolbar wsId={wsId} path={path} />
-                </div>
+          <div
+            class={`content-layout ${withSidePane ? "content-layout--side" : ""}`}
+          >
+            <div class="content-main min-w-0 flex flex-col gap-2 py-3">
+              <div class="flex items-center gap-2">
+                <FontSelect />
+                <EditorToolbar wsId={wsId} path={path} />
               </div>
-            )}
-          </ContentLayout>
+            </div>
+          </div>
         </div>
-        <ContentLayout withSidePane={withSidePane}>
-          {({ mainClass, sideClass }) => (
-            <>
-              {/* isolate: stacking context for MarkHighlights z-index */}
-              <div class="relative min-w-0 isolate">
-                {editorState && (
-                  <Editor
-                    wsId={wsId}
-                    path={path}
-                    state={editorState}
-                    onChange={setModifiedState}
-                    className={`${mainClass} pt-16 pb-32`}
-                  />
-                )}
-                <MarkBadges badges={sidenotes.markBadges.value} />
-                <MarkHighlights
-                  rects={sidenotes.markRects.value}
-                  activeIds={getEditorSelection(wsId, path).markIds.value}
-                />
-              </div>
-              <div class={sideClass}>
-                <Sidenotes
-                  heights={sidenotes.heights}
-                  entries={sidenotes.entries}
-                  views={sidenotes.viewportLayout}
-                  editor={activeEditor.value}
-                  scrollContainerRef={scrollRef}
-                />
-              </div>
-            </>
-          )}
-        </ContentLayout>
+        <div
+          class={`content-layout ${withSidePane ? "content-layout--side" : ""}`}
+        >
+          {/* isolate: stacking context for MarkHighlights z-index */}
+          <div class="relative min-w-0 isolate">
+            {editorState && (
+              <Editor
+                wsId={wsId}
+                path={path}
+                state={editorState}
+                onChange={setModifiedState}
+                className={`content-main pt-16 pb-32`}
+              />
+            )}
+            <MarkBadges badges={sidenotes.markBadges.value} />
+            <MarkHighlights
+              rects={sidenotes.markRects.value}
+              activeIds={getEditorSelection(wsId, path).markIds.value}
+            />
+          </div>
+          <div class="content-side">
+            <Sidenotes
+              heights={sidenotes.heights}
+              entries={sidenotes.entries}
+              views={sidenotes.viewportLayout}
+              editor={activeEditor.value}
+              scrollContainerRef={scrollRef}
+            />
+          </div>
+        </div>
       </div>
       {/* TEMPORARY palette preview. */}
       <MarkSwatches />
