@@ -7,6 +7,8 @@ export interface PanelProps {
   class?: string;
   /** Called when a click lands outside the panel. */
   onClickOutside?: () => void;
+  /** Called when the clip transition settles (after overflow is toggled). */
+  onSettled?: () => void;
   children: ComponentChildren;
 }
 
@@ -15,9 +17,14 @@ export default function Panel({
   open,
   class: className = "",
   onClickOutside,
+  onSettled,
   children,
 }: PanelProps) {
-  const { clipRef, onTransitionEnd } = usePaneClip(open, "grid-template-rows");
+  const { clipRef, onTransitionEnd } = usePaneClip(
+    open,
+    "grid-template-rows",
+    onSettled,
+  );
   const outsideRef = useClickOutside(onClickOutside);
   const state = open ? "is-open" : "is-closed";
   return (

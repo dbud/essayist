@@ -6,6 +6,7 @@ import { useEffect, useRef } from "preact/hooks";
 export function usePaneClip(
   open: boolean,
   transitionProp: "grid-template-rows" | "grid-template-columns",
+  onSettled?: () => void,
 ) {
   const clipRef = useRef<HTMLDivElement>(null);
   const openRef = useRef(open);
@@ -31,6 +32,7 @@ export function usePaneClip(
     if (e.target !== clip.parentElement) return;
     if (e.propertyName !== transitionProp) return;
     if (openRef.current) clip.style.overflow = "visible";
+    onSettled?.();
   };
 
   return { clipRef, onTransitionEnd };
