@@ -87,12 +87,12 @@ export default function FileNavigation() {
   const fileTrigger = (
     <button
       type="button"
-      class="btn btn--ghost"
+      class="btn btn--ghost max-w-xs"
       onClick={() => (navigationOpened.value = !navigationOpened.value)}
     >
-      <FileText size={14} />
-      {selectedPath || ""}
-      <ChevronDown size={14} />
+      <FileText size={14} class="shrink-0" />
+      <span class="truncate min-w-0">{selectedPath || ""}</span>
+      <ChevronDown size={14} class="shrink-0" />
     </button>
   );
 
