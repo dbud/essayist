@@ -1,7 +1,8 @@
 @utility dialog-backdrop {
   --dialog-duration: 200ms;
   &[open] {
-    @apply fixed inset-0 grid justify-items-stretch items-start w-full h-full max-w-none m-0 border-none bg-transparent;
+    @apply fixed inset-0 grid justify-items-stretch items-start w-full h-full max-w-none m-0 p-0 border-none bg-transparent;
+    container-type: inline-size;
     z-index: var(--z-dialog);
   }
 
