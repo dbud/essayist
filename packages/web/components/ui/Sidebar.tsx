@@ -24,7 +24,7 @@ export default function Sidebar({
       onTransitionEnd={onTransitionEnd}
     >
       <div class="pane-clip" ref={clipRef}>
-        <div class="pane-content h-full overflow-y-auto">{children}</div>
+        <div class="h-full overflow-y-auto">{children}</div>
       </div>
     </aside>
   );

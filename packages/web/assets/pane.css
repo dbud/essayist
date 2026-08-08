@@ -1,49 +1,38 @@
-/* Pane: collapsible container that clips its size and slides its content.
-   Three layers: .pane (outer) > .pane-clip (inner) > .pane-content (slides).
-   Both variants use grid fr animation for auto-sizing.
-   State toggled by .is-open / .is-closed on .pane only; .pane-content
-   derives its state via descendant selectors. */
+/* Pane: collapsible container with grid fr animation.
+   .pane (outer) > .pane-clip (overflow hidden) > content div.
+   State toggled by .is-open / .is-closed on .pane only. */
 
 :root {
-  --motion-pane-duration: 400ms;
   --motion-pane-clip-duration: 300ms;
-  --motion-pane-offset: 1rem;
 }
 
 @utility pane {
   position: relative;
   z-index: var(--z-panel);
   flex-shrink: 0;
+  display: grid;
+  transition-duration: var(--motion-pane-clip-duration);
+
+  &.is-open {
+    transition-timing-function: ease-out;
+  }
+  &.is-closed {
+    transition-timing-function: ease-in;
+  }
 
   &.pane--sidebar {
-    display: grid;
     grid-template-columns: 0fr;
     transition-property: grid-template-columns;
-    transition-duration: var(--motion-pane-clip-duration);
-
     &.is-open {
       grid-template-columns: 1fr;
-      transition-timing-function: ease-out;
-    }
-    &.is-closed {
-      grid-template-columns: 0fr;
-      transition-timing-function: ease-in;
     }
   }
 
   &.pane--panel {
-    display: grid;
     grid-template-rows: 0fr;
     transition-property: grid-template-rows;
-    transition-duration: var(--motion-pane-clip-duration);
-
     &.is-open {
       grid-template-rows: 1fr;
-      transition-timing-function: ease-out;
-    }
-    &.is-closed {
-      grid-template-rows: 0fr;
-      transition-timing-function: ease-in;
     }
   }
 }
@@ -59,28 +48,5 @@
   .pane--panel & {
     min-height: 0;
     width: 100%;
-  }
-}
-
-@utility pane-content {
-  transition-property: transform;
-  transition-duration: var(--motion-pane-duration);
-
-  .pane--sidebar.is-open & {
-    transform: translateX(0);
-    transition-timing-function: ease-out;
-  }
-  .pane--sidebar.is-closed & {
-    transform: translateX(calc(-1 * var(--motion-pane-offset)));
-    transition-timing-function: ease-in;
-  }
-
-  .pane--panel.is-open & {
-    transform: translateY(0);
-    transition-timing-function: ease-out;
-  }
-  .pane--panel.is-closed & {
-    transform: translateY(calc(-1 * var(--motion-pane-offset)));
-    transition-timing-function: ease-in;
   }
 }

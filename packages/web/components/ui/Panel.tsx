@@ -3,7 +3,7 @@ import { useClickOutside } from "@/hooks/useClickOutside.ts";
 import { usePaneClip } from "@/hooks/usePaneClip.ts";
 
 export interface PanelProps {
-  open: boolean;
+  open?: boolean;
   class?: string;
   /** Called when a click lands outside the panel. */
   onClickOutside?: () => void;
@@ -14,7 +14,7 @@ export interface PanelProps {
 
 /** Collapsible panel pane. See pane.css for animation details. */
 export default function Panel({
-  open,
+  open = true,
   class: className = "",
   onClickOutside,
   onSettled,
@@ -33,9 +33,7 @@ export default function Panel({
       onTransitionEnd={onTransitionEnd}
     >
       <div class="pane-clip" ref={clipRef}>
-        <div class="pane-content" ref={outsideRef}>
-          {children}
-        </div>
+        <div ref={outsideRef}>{children}</div>
       </div>
     </div>
   );

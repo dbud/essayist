@@ -12,7 +12,6 @@ interface NavigationProps {
 export default function Navigation({ user, children }: NavigationProps) {
   return (
     <Panel
-      open
       class="bg-pane text-pane-content"
       onClickOutside={() => (navigationOpened.value = false)}
     >
