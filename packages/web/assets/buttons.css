@@ -8,22 +8,15 @@
   --btn-bg: var(--color-pane);
   --btn-bg-hover: color-mix(in oklch, white, var(--color-pane) 80%);
   --btn-duration: 120ms;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.35rem;
+  @apply inline-flex items-center justify-center gap-[0.35rem] relative isolate cursor-pointer select-none whitespace-nowrap font-medium;
   background: var(--btn-bg);
   border-radius: calc(var(--btn-line-height) / 2 * 1em);
   box-shadow: 0 1.5px 2px -1px rgba(0, 0, 0, 0.3);
   color: var(--color-pane-content);
   font-family: var(--font-sans);
   @apply btn--size;
-  font-weight: 500;
   line-height: var(--btn-line-height);
   text-decoration: none;
-  cursor: pointer;
-  user-select: none;
-  white-space: nowrap;
   transition:
     background-color var(--btn-duration) ease-out,
     border-radius calc(var(--btn-duration) / 2) ease,
@@ -34,22 +27,17 @@
 
   padding-inline: calc(var(--btn-line-height) / 2 * 1em - var(--btn-cap-bleed));
   min-height: calc(var(--btn-line-height) * 1em);
-  position: relative;
-  isolation: isolate;
   & > * {
-    position: relative;
-    z-index: 1;
+    @apply relative z-1;
   }
   &::before,
   &::after {
     content: "";
-    position: absolute;
-    top: 0;
+    @apply absolute top-0 pointer-events-none;
     height: 100%;
     width: calc(var(--btn-line-height) / 2 * 1em);
     background: var(--btn-bg);
     transition: background-color var(--btn-duration) ease-out;
-    pointer-events: none;
     z-index: -1;
   }
   &::before {
@@ -68,12 +56,12 @@
     transform: scale(0.98) translateY(1px);
   }
   &:focus-visible {
-    outline: 2px solid var(--color-accent);
-    outline-offset: 2px;
+    @apply outline-2 outline-offset-2;
+    outline-style: solid;
+    outline-color: var(--color-accent);
   }
   &:disabled {
-    opacity: 0.4;
-    pointer-events: none;
+    @apply opacity-40 pointer-events-none;
   }
 
   &.btn--no-tl {
@@ -96,17 +84,15 @@
 }
 
 @utility btn--ghost {
-  background: transparent;
+  @apply bg-transparent shadow-none rounded-none;
   &::before,
   &::after {
-    display: none;
+    @apply hidden;
   }
   color: inherit;
-  box-shadow: none;
   padding-inline: 0;
   line-height: 1rem;
   min-height: auto;
-  border-radius: 0;
 
   &:not(:disabled) {
     text-decoration: underline 1.5px solid
@@ -118,8 +104,7 @@
   }
 
   &.is-selected {
-    color: var(--color-accent);
+    @apply text-accent font-medium;
     text-decoration: none;
-    font-weight: 500;
   }
 }

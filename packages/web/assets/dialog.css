@@ -1,0 +1,25 @@
+@utility dialog-backdrop {
+  --dialog-duration: 200ms;
+  &[open] {
+    @apply fixed inset-0 grid justify-items-stretch items-start w-full h-full max-w-none m-0 border-none bg-transparent;
+    z-index: var(--z-dialog);
+  }
+
+  &::backdrop {
+    background: oklch(0 0 0 / 0.5);
+    backdrop-filter: blur(4px);
+    transition:
+      opacity var(--dialog-duration) ease-out,
+      backdrop-filter var(--dialog-duration) ease-out,
+      display var(--dialog-duration) ease-out allow-discrete;
+    @starting-style {
+      opacity: 0;
+      backdrop-filter: blur(0);
+    }
+  }
+}
+
+@utility dialog-title {
+  @apply text-xl font-thin;
+  margin-bottom: 1rem;
+}

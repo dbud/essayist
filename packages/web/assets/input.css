@@ -1,0 +1,6 @@
+@utility input-text {
+  @apply rounded-md border border-pane-content/20 bg-pane px-3 py-2 text-sm text-pane-content outline-none;
+  &:focus {
+    @apply border-accent;
+  }
+}

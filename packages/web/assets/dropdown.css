@@ -55,23 +55,19 @@
 
 @utility dropdown-menu {
   --dropdown-radius: 1rem;
-  position: absolute;
+  @apply absolute flex flex-col gap-1 p-2 isolate;
   top: 100%;
   left: 0;
   margin-top: 0.25rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
   width: max-content;
   min-width: 12rem;
-  padding: 0.5rem;
   background: var(--color-pane);
   border-radius: var(--dropdown-radius);
   color: var(--color-pane-content);
   box-shadow: 0 4px 8px -4px rgba(0, 0, 0, 0.8);
   font-family: var(--font-sans);
   font-size: 0.8rem;
-  font-weight: 500;
+  @apply font-medium;
   line-height: 1.5;
   z-index: var(--z-dropdown);
   --dropdown-duration: 120ms;
@@ -106,19 +102,9 @@
 }
 
 @utility dropdown-item {
-  display: flex;
-  align-items: center;
-  gap: 0.35rem;
-  width: 100%;
+  @apply flex items-center gap-[0.35rem] w-full text-left no-underline cursor-pointer select-none bg-transparent border-none rounded-lg;
   padding-inline: 0.5rem;
   padding-block: 0.25rem;
-  border-radius: 0.5rem;
-  text-align: left;
-  text-decoration: none;
-  cursor: pointer;
-  user-select: none;
-  background: transparent;
-  border: none;
   color: inherit;
   font: inherit;
   transition: background-color 80ms ease-out;
