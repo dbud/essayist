@@ -1,6 +1,7 @@
 import { useSignal } from "@preact/signals";
 import { Briefcase, ChevronDown, FileText, Plus, Slash } from "lucide-preact";
 import Panel from "@/components/ui/Panel.tsx";
+import Spinner from "@/components/ui/Spinner.tsx";
 import { useClickOutside } from "@/hooks/useClickOutside.ts";
 import CreateFileDialog from "@/islands/CreateFileDialog.tsx";
 import CreateWorkspaceDialog from "@/islands/CreateWorkspaceDialog.tsx";
@@ -110,22 +111,26 @@ export default function FileNavigation() {
   const wsList = (
     <div class="flex flex-col py-4 gap-4">
       <h3 class="text-lg font-thin">Projects</h3>
-      <ul class="flex flex-col">
-        {workspaces.list.value.length > 1 &&
-          workspaces.list.value.map(({ id, name }) => (
-            <li key={id}>
-              <button
-                type="button"
-                class={`font-normal btn btn--ghost ${id === workspaces.currentWorkspaceId.value ? "is-selected" : ""}`}
-                onClick={() => {
-                  workspaces.select(id);
-                }}
-              >
-                {name}
-              </button>
-            </li>
-          ))}
-      </ul>
+      {workspaces.loading.value ? (
+        <Spinner />
+      ) : (
+        <ul class="flex flex-col">
+          {workspaces.list.value.length > 1 &&
+            workspaces.list.value.map(({ id, name }) => (
+              <li key={id}>
+                <button
+                  type="button"
+                  class={`font-normal btn btn--ghost ${id === workspaces.currentWorkspaceId.value ? "is-selected" : ""}`}
+                  onClick={() => {
+                    workspaces.select(id);
+                  }}
+                >
+                  {name}
+                </button>
+              </li>
+            ))}
+        </ul>
+      )}
       {createWorkspace}
     </div>
   );
@@ -144,55 +149,61 @@ export default function FileNavigation() {
   const fileList = (
     <div class="flex flex-col py-4 gap-4">
       <h3 class="text-lg font-thin">Files</h3>
-      <ul class="flex flex-col">
-        {entries.map((entry) => (
-          <li key={entry.path} class="group w-fit">
-            {entry.parts.map((p, i) => (
-              <span
-                key={i}
-                class={`btn--size transition-opacity ${p.redundant ? "opacity-0 group-hover:opacity-100" : ""}`}
+      {files?.loading.value ? (
+        <Spinner />
+      ) : (
+        <ul class="flex flex-col">
+          {entries.map((entry) => (
+            <li key={entry.path} class="group w-fit">
+              {entry.parts.map((p, i) => (
+                <span
+                  key={i}
+                  class={`btn--size transition-opacity ${p.redundant ? "opacity-0 group-hover:opacity-100" : ""}`}
+                >
+                  {p.segment}
+                  <span class="px-1">/</span>
+                </span>
+              ))}
+              <button
+                type="button"
+                class={`font-normal btn btn--ghost ${entry.selected ? "is-selected" : ""}`}
+                onClick={() => {
+                  getOpenedFiles()?.open(entry.path);
+                  navigationOpened.value = false;
+                }}
               >
-                {p.segment}
-                <span class="px-1">/</span>
-              </span>
-            ))}
-            <button
-              type="button"
-              class={`font-normal btn btn--ghost ${entry.selected ? "is-selected" : ""}`}
-              onClick={() => {
-                getOpenedFiles()?.open(entry.path);
-                navigationOpened.value = false;
-              }}
-            >
-              <span class="break-all min-w-0">{entry.name}</span>
-            </button>
-          </li>
-        ))}
-      </ul>
-      <div class="flex flex-col gap-2">
-        <div>{createFile}</div>
-        <div class="flex gap-2">
-          <FileUploader />
-          <GoogleDocImporter />
+                <span class="break-all min-w-0">{entry.name}</span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+      {!files?.loading.value && (
+        <div class="flex flex-col gap-2">
+          <div>{createFile}</div>
+          <div class="flex gap-2">
+            <FileUploader />
+            <GoogleDocImporter />
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 
   return (
     <>
-      <div
-        ref={ref}
-        class={`flex items-center py-2
-              ${files?.loading.value || workspaces.loading.value ? "loading" : ""}`}
-      >
+      <div ref={ref} class="flex items-center py-2">
         <div class="flex flex-col">
           <Panel open={!navigationOpened.value}>
-            <div class="flex gap-2">
-              {wsTrigger}
-              {files && <Slash size={16} class="hidden @md:block" />}
-              {files && fileTrigger}
-            </div>
+            {files?.loading.value || workspaces.loading.value ? (
+              <Spinner />
+            ) : (
+              <div class="flex gap-2">
+                {wsTrigger}
+                {files && <Slash size={16} class="hidden @md:block" />}
+                {files && fileTrigger}
+              </div>
+            )}
           </Panel>
           <Panel open={navigationOpened.value}>
             <div class="flex flex-wrap gap-x-24 gap-y-4">
