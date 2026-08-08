@@ -1,18 +1,18 @@
 import { type Signal, useSignal } from "@preact/signals";
-import Dialog from "@/components/Dialog.tsx";
+import Dialog from "@/components/ui/Dialog.tsx";
 import { getFileTree } from "@/signals/fileTree.ts";
 import { getOpenedFiles } from "@/signals/openedFiles.ts";
 
 interface CreateFileDialogProps {
   open: Signal<boolean>;
+  onCreated?: () => void;
 }
 
-/**
- * Dialog for creating a new file in the current workspace. The user supplies
- * the full path (e.g. "notes/ideas.md"); the file is created empty and then
- * opened in the editor.
- */
-export default function CreateFileDialog({ open }: CreateFileDialogProps) {
+/** Dialog for creating a new file in the current workspace. */
+export default function CreateFileDialog({
+  open,
+  onCreated,
+}: CreateFileDialogProps) {
   const path = useSignal("");
   const error = useSignal<string | null>(null);
   const submitting = useSignal(false);
@@ -30,6 +30,7 @@ export default function CreateFileDialog({ open }: CreateFileDialogProps) {
       getOpenedFiles()?.open(trimmed);
       path.value = "";
       open.value = false;
+      onCreated?.();
     } catch (err) {
       error.value =
         err instanceof Error ? err.message : "Failed to create file";
@@ -40,9 +41,9 @@ export default function CreateFileDialog({ open }: CreateFileDialogProps) {
 
   return (
     <Dialog open={open} title="New file">
-      <form onSubmit={onSubmit} class="mt-4 flex flex-col gap-3">
-        <label class="input">
-          <span class="label">Path</span>
+      <form onSubmit={onSubmit} class="flex flex-col gap-3">
+        <label class="flex flex-col gap-1 text-sm">
+          <span class="font-medium">Path</span>
           <input
             type="text"
             placeholder="e.g. notes/ideas.md"
@@ -50,17 +51,18 @@ export default function CreateFileDialog({ open }: CreateFileDialogProps) {
             onInput={(e) => (path.value = e.currentTarget.value)}
             disabled={submitting.value}
             autofocus
+            class="input-text"
           />
         </label>
         {error.value && (
-          <div role="alert" class="alert alert-error text-sm py-2">
+          <div role="alert" class="text-sm text-red-500">
             {error.value}
           </div>
         )}
-        <div class="modal-action">
+        <div class="flex justify-end gap-2 pt-2">
           <button
             type="button"
-            class="btn btn-ghost"
+            class="btn"
             onClick={() => {
               open.value = false;
               error.value = null;
@@ -71,12 +73,10 @@ export default function CreateFileDialog({ open }: CreateFileDialogProps) {
           </button>
           <button
             type="submit"
-            class="btn btn-primary"
+            class="btn btn--accent"
             disabled={submitting.value || !path.value.trim()}
           >
-            {submitting.value && (
-              <span class="loading loading-spinner loading-sm" />
-            )}
+            {submitting.value && <span class="loading" />}
             Create
           </button>
         </div>

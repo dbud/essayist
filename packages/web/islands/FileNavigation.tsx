@@ -2,7 +2,10 @@ import { useSignal } from "@preact/signals";
 import { Briefcase, ChevronDown, FileText, Plus, Slash } from "lucide-preact";
 import Panel from "@/components/ui/Panel.tsx";
 import { useClickOutside } from "@/hooks/useClickOutside.ts";
+import CreateFileDialog from "@/islands/CreateFileDialog.tsx";
 import CreateWorkspaceDialog from "@/islands/CreateWorkspaceDialog.tsx";
+import FileUploader from "@/islands/FileUploader.tsx";
+import GoogleDocImporter from "@/islands/GoogleDocImporter.tsx";
 import { getFileTree, type TreeNode } from "@/signals/fileTree.ts";
 import { getOpenedFiles } from "@/signals/openedFiles.ts";
 import { navigationOpened } from "@/signals/sidebar.ts";
@@ -52,19 +55,22 @@ function buildFileEntries(
 }
 
 export default function FileNavigation() {
-  const createDialogOpen = useSignal(false);
+  const createWorkspaceDialogOpen = useSignal(false);
+  const createFileDialogOpen = useSignal(false);
   const ref = useClickOutside(() => (navigationOpened.value = false));
 
   const files = getFileTree();
-  if (!files) return null;
-  const { tree, error } = files;
 
-  if (error.value) {
-    return <div class="text-error">{error.value}</div>;
+  if (files?.error.value) {
+    return <div class="text-error">{files.error.value}</div>; // TODO -- toast?
   }
+  // TODO -- workspaces.error?
 
   const selectedPath = getOpenedFiles()?.selected.value ?? "";
-  const entries = buildFileEntries(tree.value.children, selectedPath);
+  const entries = buildFileEntries(
+    files?.tree.value.children ?? [],
+    selectedPath,
+  );
 
   const wsTrigger = (
     <button
@@ -90,6 +96,17 @@ export default function FileNavigation() {
     </button>
   );
 
+  const createWorkspace = (
+    <button
+      type="button"
+      class="btn btn--ghost"
+      onClick={() => (createWorkspaceDialogOpen.value = true)}
+    >
+      <Plus size={14} />
+      New project
+    </button>
+  );
+
   const wsList = (
     <div class="flex flex-col py-4 gap-4">
       <h3 class="text-lg font-thin">Projects</h3>
@@ -109,18 +126,19 @@ export default function FileNavigation() {
             </li>
           ))}
       </ul>
-      <button
-        type="button"
-        class="btn btn--accent"
-        onClick={() => {
-          navigationOpened.value = false;
-          createDialogOpen.value = true;
-        }}
-      >
-        <Plus size={14} />
-        New project
-      </button>
+      {createWorkspace}
     </div>
+  );
+
+  const createFile = (
+    <button
+      type="button"
+      class="btn btn--ghost"
+      onClick={() => (createFileDialogOpen.value = true)}
+    >
+      <Plus size={14} />
+      Create new file
+    </button>
   );
 
   const fileList = (
@@ -151,6 +169,13 @@ export default function FileNavigation() {
           </li>
         ))}
       </ul>
+      <div class="flex flex-col gap-2">
+        <div>{createFile}</div>
+        <div class="flex gap-2">
+          <FileUploader />
+          <GoogleDocImporter />
+        </div>
+      </div>
     </div>
   );
 
@@ -159,26 +184,30 @@ export default function FileNavigation() {
       <div
         ref={ref}
         class={`flex items-center py-2
-              ${files.loading.value || workspaces.loading.value ? "loading" : ""}`}
+              ${files?.loading.value || workspaces.loading.value ? "loading" : ""}`}
       >
         <div class="flex flex-col">
           <Panel open={!navigationOpened.value}>
             <div class="flex gap-2">
               {wsTrigger}
-              <Slash size={16} />
-              {fileTrigger}
+              {files && <Slash size={16} />}
+              {files && fileTrigger}
             </div>
           </Panel>
           <Panel open={navigationOpened.value}>
             <div class="flex gap-24">
               {wsList}
-              {fileList}
+              {files && fileList}
             </div>
           </Panel>
         </div>
       </div>
 
-      <CreateWorkspaceDialog open={createDialogOpen} />
+      <CreateWorkspaceDialog open={createWorkspaceDialogOpen} />
+      <CreateFileDialog
+        open={createFileDialogOpen}
+        onCreated={() => (navigationOpened.value = false)}
+      />
     </>
   );
 }

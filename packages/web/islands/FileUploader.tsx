@@ -55,9 +55,9 @@ export default function FileUploader() {
   }
 
   return (
-    <label class="btn btn-sm gap-2" title="Upload files">
+    <label class="btn btn--ghost" title="Upload files">
       <Upload size={16} />
-      Upload
+      Upload file
       <input type="file" multiple class="hidden" onChange={onInputChange} />
     </label>
   );

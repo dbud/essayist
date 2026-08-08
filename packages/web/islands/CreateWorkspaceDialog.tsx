@@ -1,5 +1,5 @@
 import { type Signal, useSignal } from "@preact/signals";
-import Dialog from "@/components/Dialog.tsx";
+import Dialog from "@/components/ui/Dialog.tsx";
 import { workspaces } from "@/signals/workspace.ts";
 
 interface CreateWorkspaceDialogProps {
@@ -33,9 +33,9 @@ export default function CreateWorkspaceDialog({
 
   return (
     <Dialog open={open} title="New project">
-      <form onSubmit={onSubmit} class="mt-4 flex flex-col gap-3">
-        <label class="input">
-          <span class="label">Name</span>
+      <form onSubmit={onSubmit} class="flex flex-col gap-3">
+        <label class="flex flex-col gap-1 text-sm">
+          <span class="font-medium">Name</span>
           <input
             type="text"
             placeholder="Project name"
@@ -43,17 +43,18 @@ export default function CreateWorkspaceDialog({
             onInput={(e) => (name.value = e.currentTarget.value)}
             disabled={submitting.value}
             autofocus
+            class="input-text"
           />
         </label>
         {error.value && (
-          <div role="alert" class="alert alert-error text-sm py-2">
+          <div role="alert" class="text-sm text-red-500">
             {error.value}
           </div>
         )}
-        <div class="modal-action">
+        <div class="flex justify-end gap-2 pt-2">
           <button
             type="button"
-            class="btn btn-ghost"
+            class="btn"
             onClick={() => (open.value = false)}
             disabled={submitting.value}
           >
@@ -61,12 +62,10 @@ export default function CreateWorkspaceDialog({
           </button>
           <button
             type="submit"
-            class="btn btn-primary"
+            class="btn btn--accent"
             disabled={submitting.value || !name.value.trim()}
           >
-            {submitting.value && (
-              <span class="loading loading-spinner loading-sm" />
-            )}
+            {submitting.value && <span class="loading" />}
             Create
           </button>
         </div>

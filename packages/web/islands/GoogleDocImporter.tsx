@@ -91,7 +91,7 @@ export default function GoogleDocImporter() {
   return (
     <button
       type="button"
-      class="btn btn-sm gap-2"
+      class="btn btn--ghost"
       onClick={handleImport}
       disabled={importing.value}
       title="Import from Google Docs"
@@ -101,7 +101,7 @@ export default function GoogleDocImporter() {
       ) : (
         <Download size={16} />
       )}
-      Import
+      Import from Google Docs
     </button>
   );
 }
