@@ -52,9 +52,11 @@ export default function BlockTypeSelect({
           <Swappable swapKey={current.value} class="swap-rotate">
             {current.icon}
           </Swappable>
-          <Swappable swapKey={current.value} class="swap-shift">
-            {current.label}
-          </Swappable>
+          <span class="hidden @sm:inline">
+            <Swappable swapKey={current.value} class="swap-shift">
+              {current.label}
+            </Swappable>
+          </span>
           <ChevronDown size={14} />
         </>
       }

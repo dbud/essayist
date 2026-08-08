@@ -23,7 +23,7 @@ export default function FontSelect() {
           <Swappable swapKey={current.value} class="swap-shift">
             <span class={`inline-flex gap-1 ${current.value}`}>
               <span>Aa</span>
-              {current.label}
+              <span class="hidden @sm:inline">{current.label}</span>
             </span>
           </Swappable>
           <ChevronDown size={14} />
