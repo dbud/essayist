@@ -176,6 +176,13 @@
   --tw-prose-td-borders: var(--color-rule);
 }
 
+/* Mono reads larger than sans/serif at the same size. The viewer's editable is
+   .prose, which sets its own font-size, so shrink it directly when in Mono
+   mode (the .font-mono class sits on the editor wrapper). */
+.font-mono .prose {
+  font-size: 0.9em;
+}
+
 @utility menu-divider {
   @apply block h-0 p-0 rounded-none pointer-events-none;
   border-top: 1px solid var(--color-rule);
