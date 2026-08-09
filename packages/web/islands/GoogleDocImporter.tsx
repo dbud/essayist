@@ -2,7 +2,7 @@ import { useSignal } from "@preact/signals";
 import { Download } from "lucide-preact";
 import { getFileTree } from "@/signals/fileTree.ts";
 import { getOpenedFiles } from "@/signals/openedFiles.ts";
-import { dismissToast, showToast } from "@/signals/toast.ts";
+import { showToast } from "@/signals/toast.ts";
 import { workspaces } from "@/signals/workspace.ts";
 import { openGooglePicker, type PickerDoc } from "@/utils/googlePicker.ts";
 
@@ -52,6 +52,7 @@ export default function GoogleDocImporter() {
     for (let i = 0; i < docs.length; i++) {
       const doc = docs[i];
       toast.value = {
+        ...toast.value,
         message: `Importing ${i + 1}/${docs.length}: ${doc.name}…`,
         type: "info",
         progress: { done: i, total: docs.length },
@@ -76,6 +77,7 @@ export default function GoogleDocImporter() {
     if (firstPath) getOpenedFiles()?.open(firstPath);
 
     toast.value = {
+      ...toast.value,
       message:
         errors.length > 0
           ? `Imported ${docs.length - errors.length}/${docs.length}${
@@ -84,7 +86,6 @@ export default function GoogleDocImporter() {
           : `Imported ${docs.length} doc${docs.length === 1 ? "" : "s"}`,
       type: errors.length > 0 ? "error" : "success",
     };
-    setTimeout(() => dismissToast(toast), 5000);
     importing.value = false;
   }
 

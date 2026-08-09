@@ -1,0 +1,74 @@
+/* Toasts: a fixed bottom-right stack of dismissible notifications.
+   toast  = container (positioning + stack)
+   alert  = item card (box + column layout)
+   alert--info / alert--success / alert--error = type accent */
+
+@utility toast {
+  --toast-duration: 200ms;
+  @apply fixed flex flex-col gap-2 isolate right-4 bottom-4 w-96 z-toast;
+  max-width: calc(100vw - 2rem);
+}
+
+@utility alert {
+  --toast-radius: 0.75rem;
+  @apply relative isolate flex flex-col items-stretch gap-2 text-pane-content;
+  background: var(--alert-color, var(--color-pane));
+  border-radius: var(--toast-radius);
+  box-shadow: 0 4px 8px -4px rgba(0, 0, 0, 0.3);
+  transition: background-color var(--toast-duration) ease-out;
+  animation: toast-in var(--toast-duration) ease-out;
+}
+
+@utility alert--info {
+  --alert-color: var(--color-pane);
+  @apply text-pane-content;
+}
+
+@utility alert--success {
+  --alert-color: oklch(0.6 0.16 145);
+}
+
+@utility alert--error {
+  --alert-color: var(--color-accent);
+}
+
+.toast-corner {
+  @apply absolute pointer-events-none;
+  width: var(--toast-radius);
+  height: var(--toast-radius);
+  background: var(--alert-color, var(--color-pane));
+  transition: background-color var(--toast-duration) ease-out;
+  z-index: -1;
+}
+.toast-corner--tl {
+  @apply top-0 left-0;
+  clip-path: url(#corner-tl);
+}
+.toast-corner--tr {
+  @apply top-0 right-0;
+  clip-path: url(#corner-tr);
+}
+.toast-corner--bl {
+  @apply bottom-0 left-0;
+  clip-path: url(#corner-bl);
+}
+.toast-corner--br {
+  @apply bottom-0 right-0;
+  clip-path: url(#corner-br);
+}
+
+.toast-progress {
+  @apply h-1 w-full rounded-full overflow-hidden;
+  background: color-mix(in oklch, currentColor 20%, transparent);
+}
+.toast-progress-fill {
+  @apply h-full bg-current rounded-full;
+  transition: width var(--toast-duration) ease-out;
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+}

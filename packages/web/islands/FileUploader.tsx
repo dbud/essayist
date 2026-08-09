@@ -1,7 +1,7 @@
 import { effect } from "@preact/signals";
 import { Upload } from "lucide-preact";
 import { getFileTree } from "@/signals/fileTree.ts";
-import { dismissToast, showToast } from "@/signals/toast.ts";
+import { showToast } from "@/signals/toast.ts";
 import { filesFromFileInput, readFilesAsText } from "@/utils/fileUpload.ts";
 
 /**
@@ -21,13 +21,15 @@ export default function FileUploader() {
       showToast("No text files to upload");
       return;
     }
-    const toast = showToast("Uploading…");
+    const toast = showToast("Uploading\u2026");
+    const id = toast.value.id;
     // Subscribe to the progress signal and mirror it into the toast.
     const dispose = effect(() => {
       const p = uploadProgress.value;
       if (!p) return;
       const { total, done, complete, errors } = p;
       toast.value = {
+        id,
         message: complete
           ? `Uploaded ${total} file${total === 1 ? "" : "s"}${
               errors.length > 0 ? ` (${errors.length} failed)` : ""
@@ -36,7 +38,6 @@ export default function FileUploader() {
         type: complete ? (errors.length > 0 ? "error" : "success") : "info",
         progress: complete ? undefined : { done, total },
       };
-      if (complete) setTimeout(() => dismissToast(toast), 5000);
     });
     try {
       await uploadFiles(uploads);

@@ -25,7 +25,7 @@ function ErrorMessage({ error }: { error: ProviderError }) {
   const label = providerErrorLabel(error);
   const detail = providerErrorDetail(error);
   return (
-    <div class="alert alert-error text-xs flex flex-col items-start gap-1 py-2 px-3">
+    <div class="alert alert--error text-xs py-2 px-3">
       <div class="font-semibold">{label}</div>
       <div class="whitespace-pre-wrap break-words">{detail}</div>
       {error.providerName && (

@@ -90,6 +90,7 @@
     "npm:preact@^10.29.8": "10.29.8_preact-render-to-string@6.7.0",
     "npm:rollup@^4.55.1": "4.62.2",
     "npm:tailwindcss@^4.3.3": "4.3.3",
+    "npm:vite@*": "7.3.6_@types+node@26.2.0",
     "npm:vite@^7.1.4": "7.3.6_@types+node@26.2.0",
     "npm:vite@^7.3.6": "7.3.6_@types+node@26.2.0",
     "npm:zod@^4.4.3": "4.4.3"
