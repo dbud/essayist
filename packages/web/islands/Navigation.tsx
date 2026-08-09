@@ -17,7 +17,7 @@ export default function Navigation({ user, children }: NavigationProps) {
     >
       <div class="content-layout content-layout--side">
         <div class="content-main flex items-center">{children}</div>
-        <div class="content-side flex items-start justify-end my-2">
+        <div class="content-side flex items-start justify-end my-2 -mr-2">
           {user && <SettingsMenu user={user} />}
         </div>
       </div>

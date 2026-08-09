@@ -17,7 +17,7 @@ export default function SettingsMenu({ user }: SettingsMenuProps) {
       trigger={
         <>
           <Settings size={16} />
-          <span class="hidden @sm:inline">Settings</span>
+          <span class="hidden @lg:inline">Settings</span>
           <ChevronDown size={14} class="hidden @sm:inline" />
         </>
       }

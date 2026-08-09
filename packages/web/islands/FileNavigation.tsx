@@ -206,7 +206,7 @@ export default function FileNavigation() {
             ) : (
               <div class="flex gap-2">
                 {wsTrigger}
-                {files && <Slash size={16} class="hidden @md:block" />}
+                {files && <Slash size={16} class="hidden @lg:block" />}
                 {files && fileTrigger}
               </div>
             )}
