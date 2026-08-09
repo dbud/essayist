@@ -1,5 +1,6 @@
 import { type Signal, useSignal } from "@preact/signals";
 import Dialog from "@/components/ui/Dialog.tsx";
+import Spinner from "@/components/ui/Spinner.tsx";
 import { getFileTree } from "@/signals/fileTree.ts";
 import { getOpenedFiles } from "@/signals/openedFiles.ts";
 
@@ -76,7 +77,7 @@ export default function CreateFileDialog({
             class="btn btn--accent"
             disabled={submitting.value || !path.value.trim()}
           >
-            {submitting.value && <span class="loading" />}
+            {submitting.value && <Spinner />}
             Create
           </button>
         </div>
