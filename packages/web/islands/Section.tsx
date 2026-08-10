@@ -1,5 +1,7 @@
 import { toKebabCase } from "@std/text/to-kebab-case";
+import { ChevronDown } from "lucide-preact";
 import type { ComponentChildren } from "preact";
+import Panel from "@/components/ui/Panel.tsx";
 import { usePersistentSignal } from "@/utils/persistentSignal.ts";
 
 interface SectionProps {
@@ -19,22 +21,24 @@ export default function Section({
   );
 
   return (
-    <details
-      class="collapse collapse-arrow join-item border border-base-300 bg-base-100"
-      open={open.value}
-    >
-      {/** biome-ignore lint/a11y/useSemanticElements: summary is clickable */}
-      <summary
-        role="button"
-        class="collapse-title font-semibold text-sm flex items-center gap-2 cursor-pointer"
-        onClick={(e) => {
-          e.preventDefault();
-          open.value = !open.value;
-        }}
+    <div class="flex flex-col">
+      <button
+        type="button"
+        class="flex items-center gap-2 w-full text-left text-xs font-semibold uppercase tracking-wider cursor-pointer"
+        onClick={() => (open.value = !open.value)}
+        aria-expanded={open.value}
       >
+        <ChevronDown
+          size={16}
+          class={`transition-transform duration-150 ${
+            open.value ? "" : "-rotate-90"
+          }`}
+        />
         {title}
-      </summary>
-      <div class="collapse-content">{children}</div>
-    </details>
+      </button>
+      <Panel open={open.value} class="pt-2">
+        {children}
+      </Panel>
+    </div>
   );
 }

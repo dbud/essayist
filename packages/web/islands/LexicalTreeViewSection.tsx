@@ -6,7 +6,7 @@ export default function LexicalTreeViewSection() {
   if (!activeEditor.value) return null;
   return (
     <Section title="Lexical Editor">
-      <TreeView editor={activeEditor.value} viewClassName="text-xs" />
+      <TreeView editor={activeEditor.value} viewClassName="text-[0.6rem]" />
     </Section>
   );
 }

@@ -54,7 +54,7 @@ function MarkdownPreview({ wsId, path }: { wsId: string; path: string }) {
 
   return (
     <>
-      <pre class="text-xs whitespace-pre-wrap break-words bg-base-200 p-2 rounded">
+      <pre class="text-ink text-[0.7rem] whitespace-pre-wrap break-words bg-paper p-2 rounded">
         {segments.map((seg, i) => {
           if (seg.marks.length === 0) {
             return <span key={i}>{visualizeWhitespace(seg.text)}</span>;
