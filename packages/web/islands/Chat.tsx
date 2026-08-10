@@ -4,6 +4,7 @@ import type { StreamableOutputItem } from "@openrouter/agent";
 import { useComputed, useSignal } from "@preact/signals";
 import { useEffect, useRef } from "preact/hooks";
 import MarkdownView from "@/components/MarkdownView.tsx";
+import Spinner from "@/components/ui/Spinner.tsx";
 import { useChat } from "@/hooks/useChat.ts";
 import { workspaces } from "@/signals/workspace.ts";
 
@@ -40,7 +41,9 @@ function renderItem(item: StreamableOutputItem) {
     case "function_call":
       return (
         <div class="flex flex-col gap-2">
-          <span class="badge badge-info badge-sm font-mono">{item.name}</span>
+          <span class="text-white bg-accent rounded text-[0.6rem] font-mono">
+            {item.name}
+          </span>
           <div class="whitespace-pre-wrap text-xs font-mono">
             {pprint(item.arguments)}
           </div>
@@ -49,8 +52,8 @@ function renderItem(item: StreamableOutputItem) {
     case "function_call_output":
       return (
         <div class="flex flex-col gap-2">
-          <span class="badge badge-success badge-sm">result</span>
-          <div class="font-mono whitespace-pre-wrap text-xs">
+          <span class="text-accent font-mono">==&gt;</span>
+          <div class="text-[0.6rem] font-mono whitespace-pre-wrap text-xs">
             {pprint(item.output)}
           </div>
         </div>
@@ -95,7 +98,7 @@ export default function Chat() {
         {messages.value.length > 0 && (
           <div
             ref={scrollRef}
-            class="text-sm flex-1 overflow-y-auto space-y-4 min-h-0 shadow-[inset_0_8px_8px_-10px_rgba(0,0,0,0.3)] pt-4"
+            class="text-xs flex-1 overflow-y-auto flex flex-col gap-4 min-h-0 shadow-[inset_0_8px_8px_-10px_rgba(0,0,0,0.3)] pt-4"
           >
             {messages.value
               .filter((msgSig) => msgSig.value)
@@ -104,45 +107,40 @@ export default function Chat() {
                 return (
                   <div
                     key={i}
-                    class={`chat ${isUser ? "chat-end" : "chat-start"}`}
+                    class={`max-w-[85%] rounded px-4 py-1 ${
+                      isUser
+                        ? "self-end bg-accent text-pane-content"
+                        : "self-start bg-paper text-ink"
+                    }`}
                   >
-                    {/* Bubble */}
-                    <div
-                      class={`chat-bubble ${
-                        isUser ? "chat-bubble-primary" : "chat-bubble"
-                      }`}
-                    >
-                      {/* Tool calls and reasoning items */}
-                      <div class="flex flex-col gap-4">
-                        {Array.from(message.items.entries()).map(
-                          ([key, item]) => (
-                            <div key={key}>{renderItem(item)}</div>
-                          ),
-                        )}
-                      </div>
-
-                      {/* Provider error */}
-                      {message.error && <ErrorMessage error={message.error} />}
-
-                      {/* Text content */}
-                      {message.text &&
-                        (isUser ? (
-                          <div>{message.text}</div>
-                        ) : (
-                          <MarkdownView
-                            content={message.text}
-                            class="whitespace-pre-wrap"
-                          />
-                        ))}
-
-                      {/* Streaming indicator */}
-                      {i === messages.value.length - 1 &&
-                        streaming.value &&
-                        !message.text &&
-                        !message.error && (
-                          <span class="loading loading-dots loading-sm"></span>
-                        )}
+                    {/* Tool calls and reasoning items */}
+                    <div class="flex flex-col gap-4">
+                      {Array.from(message.items.entries()).map(
+                        ([key, item]) => (
+                          <div key={key}>{renderItem(item)}</div>
+                        ),
+                      )}
                     </div>
+
+                    {/* Provider error */}
+                    {message.error && <ErrorMessage error={message.error} />}
+
+                    {/* Text content */}
+                    {message.text &&
+                      (isUser ? (
+                        <div>{message.text}</div>
+                      ) : (
+                        <MarkdownView
+                          content={message.text}
+                          class="whitespace-pre-wrap text-xs"
+                        />
+                      ))}
+
+                    {/* Streaming indicator */}
+                    {i === messages.value.length - 1 &&
+                      streaming.value &&
+                      !message.text &&
+                      !message.error && <Spinner class="text-ink" />}
                   </div>
                 );
               })}
@@ -151,7 +149,7 @@ export default function Chat() {
 
         {/* Input area */}
         <form
-          class="grow flex gap-2"
+          class="grow flex items-center gap-2"
           onSubmit={(e) => {
             e.preventDefault();
             send(input.value);
@@ -163,19 +161,15 @@ export default function Chat() {
             value={input.value}
             onInput={(e) => (input.value = e.currentTarget.value)}
             placeholder="Type a message..."
-            class="input input-bordered rounded-field flex-1"
+            class="input-text"
             disabled={streaming.value}
           />
           <button
             type="submit"
-            class="btn btn-primary rounded-field"
+            class="btn btn--accent"
             disabled={streaming.value || !input.value.trim()}
           >
-            {streaming.value ? (
-              <span class="loading loading-spinner loading-sm"></span>
-            ) : (
-              "Send"
-            )}
+            {streaming.value ? <Spinner /> : "Send"}
           </button>
         </form>
       </div>
