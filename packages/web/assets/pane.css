@@ -3,7 +3,7 @@
    State toggled by .is-open / .is-closed on .pane only. */
 
 :root {
-  --motion-pane-clip-duration: 300ms;
+  --motion-pane-clip-duration: 250ms;
 }
 
 @utility pane {
@@ -12,9 +12,11 @@
   flex-shrink: 0;
   display: grid;
   transition-duration: var(--motion-pane-clip-duration);
+  opacity: 0;
 
   &.is-open {
     transition-timing-function: ease-out;
+    opacity: 1;
   }
   &.is-closed {
     transition-timing-function: ease-in;
@@ -23,7 +25,7 @@
   &.pane--sidebar {
     grid-template-columns: 0fr;
     grid-template-rows: minmax(0, 1fr);
-    transition-property: grid-template-columns;
+    transition-property: grid-template-columns opacity;
     &.is-open {
       grid-template-columns: 1fr;
     }
@@ -31,7 +33,7 @@
 
   &.pane--panel {
     grid-template-rows: 0fr;
-    transition-property: grid-template-rows;
+    transition-property: grid-template-rows opacity;
     &.is-open {
       grid-template-rows: 1fr;
     }

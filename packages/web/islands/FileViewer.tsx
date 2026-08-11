@@ -7,7 +7,6 @@ import { MarkBadges } from "@/components/MarkBadges.tsx";
 import { MarkHighlights } from "@/components/MarkHighlights.tsx";
 import { MarkSwatches } from "@/components/MarkSwatches.tsx";
 import Sidenote from "@/components/Sidenote.tsx";
-import BackdropBlur from "@/components/ui/BackdropBlur.tsx";
 import { useElementHeights } from "@/hooks/useElementHeights.ts";
 import {
   type ScrollContainerRef,
@@ -67,7 +66,7 @@ function FileViewerBody({ wsId, path }: { wsId: string; path: string }) {
     >
       <div class="flex-1 min-h-0 overflow-y-auto" ref={scrollRef}>
         <div class="sticky top-0 z-toolbar flex flex-col shadow-none">
-          <BackdropBlur class="bg-paper/50" plateau={0.1} />
+          {/*<BackdropBlur class="--bg-paper/50" plateau={0.1} />*/}
           <div
             class={`content-layout ${withSidePane ? "content-layout--side" : ""}`}
           >

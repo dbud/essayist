@@ -120,20 +120,19 @@ export default function FileNavigation() {
         <Spinner />
       ) : (
         <ul class="flex flex-col">
-          {workspaces.list.value.length > 1 &&
-            workspaces.list.value.map(({ id, name }) => (
-              <li key={id}>
-                <button
-                  type="button"
-                  class={`font-normal btn btn--ghost ${id === workspaces.currentWorkspaceId.value ? "is-selected" : ""}`}
-                  onClick={() => {
-                    workspaces.select(id);
-                  }}
-                >
-                  {name}
-                </button>
-              </li>
-            ))}
+          {workspaces.list.value.map(({ id, name }) => (
+            <li key={id}>
+              <button
+                type="button"
+                class={`font-normal btn btn--ghost ${id === workspaces.currentWorkspaceId.value ? "is-selected" : ""}`}
+                onClick={() => {
+                  workspaces.select(id);
+                }}
+              >
+                {name}
+              </button>
+            </li>
+          ))}
         </ul>
       )}
       {createWorkspace}
@@ -163,7 +162,7 @@ export default function FileNavigation() {
               {entry.parts.map((p, i) => (
                 <span
                   key={i}
-                  class={`btn--size transition-opacity ${p.redundant ? "opacity-0 group-hover:opacity-100" : ""}`}
+                  class={`btn--size transition-opacity ${p.redundant ? "opacity-50 group-hover:opacity-100" : ""}`}
                 >
                   {p.segment}
                   <span class="px-1">/</span>
