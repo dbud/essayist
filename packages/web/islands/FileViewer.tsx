@@ -3,8 +3,8 @@ import type { LexicalEditor } from "lexical";
 import { useMemo } from "preact/hooks";
 import { MarkBadges } from "@/components/MarkBadges.tsx";
 import { MarkHighlights } from "@/components/MarkHighlights.tsx";
-import { MarkSwatches } from "@/components/MarkSwatches.tsx";
 import Sidenote from "@/components/Sidenote.tsx";
+import Spinner from "@/components/ui/Spinner.tsx";
 import { useElementHeights } from "@/hooks/useElementHeights.ts";
 import {
   type ScrollContainerRef,
@@ -76,6 +76,13 @@ function FileViewerBody({ wsId, path }: { wsId: string; path: string }) {
               </div>
             </div>
           </div>
+          {(withSidePane || true) && (
+            <div class="content-side">
+              <div class="py-3 flex items-center">
+                {resolvingVisible.value && <Spinner />}
+              </div>
+            </div>
+          )}
         </div>
       </div>
       <div class="flex-1 min-h-0 overflow-y-auto" ref={scrollRef}>
@@ -110,8 +117,6 @@ function FileViewerBody({ wsId, path }: { wsId: string; path: string }) {
           </div>
         </div>
       </div>
-      {/* TEMPORARY palette preview. */}
-      {/*<MarkSwatches />*/}
     </div>
   );
 }
