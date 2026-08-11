@@ -3,7 +3,7 @@
    State toggled by .is-open / .is-closed on .pane only. */
 
 :root {
-  --motion-pane-clip-duration: 250ms;
+  --motion-pane-clip-duration: 300ms;
 }
 
 @utility pane {

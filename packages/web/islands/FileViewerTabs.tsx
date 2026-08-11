@@ -1,5 +1,5 @@
 import { FileText, X } from "lucide-preact";
-import Tabs from "@/components/Tabs.tsx";
+import Tabs from "@/islands/Tabs.tsx";
 import { getFile } from "@/signals/file.ts";
 import { getOpenedFiles, type OpenedFiles } from "@/signals/openedFiles.ts";
 import { workspaces } from "@/signals/workspace.ts";

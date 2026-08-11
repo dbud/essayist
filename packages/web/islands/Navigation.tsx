@@ -31,7 +31,7 @@ function RightSidebarToggle() {
 export default function Navigation({ user, children }: NavigationProps) {
   return (
     <Panel
-      class="bg-pane text-ink"
+      class="bg-pane text-ink shadow-inset-bottom"
       onClickOutside={() => (navigationOpened.value = false)}
     >
       <div class="content-layout content-layout--side">

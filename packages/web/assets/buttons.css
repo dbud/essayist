@@ -22,7 +22,6 @@
 
   @apply inline-flex items-center justify-center gap-[0.35rem] isolate cursor-pointer select-none whitespace-nowrap font-medium shadow-sm;
   background: var(--btn-bg);
-  /*box-shadow: 2px 1px 3px -1px rgba(0, 0, 0, 0.3);*/
   color: var(--color-ink);
   font-family: var(--font-sans);
   @apply btn--size;

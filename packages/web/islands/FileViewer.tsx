@@ -1,8 +1,6 @@
 import type { ReadonlySignal, Signal } from "@preact/signals";
 import type { LexicalEditor } from "lexical";
 import { useMemo } from "preact/hooks";
-import EditorToolbar from "@/components/EditorToolbar.tsx";
-import FontSelect from "@/components/FontSelect.tsx";
 import { MarkBadges } from "@/components/MarkBadges.tsx";
 import { MarkHighlights } from "@/components/MarkHighlights.tsx";
 import { MarkSwatches } from "@/components/MarkSwatches.tsx";
@@ -12,7 +10,9 @@ import {
   type ScrollContainerRef,
   useScrollViewport,
 } from "@/hooks/useScrollViewport.ts";
-import Editor from "@/islands/editor/Editor.tsx";
+import Editor from "@/islands/Editor.tsx";
+import EditorToolbar from "@/islands/EditorToolbar.tsx";
+import FontSelect from "@/islands/FontSelect.tsx";
 import { activeEditor } from "@/signals/activeEditor.ts";
 import { getEditorSelection } from "@/signals/editorSelection.ts";
 import { getFile } from "@/signals/file.ts";
