@@ -8,11 +8,7 @@ export function MarkBadges({ badges }: { badges: MarkBadge[] }) {
   return (
     <div class="pointer-events-none absolute inset-0">
       {badges.map(({ key, left, top, numbers }) => (
-        <span
-          key={key}
-          class="mark-badge absolute font-semibold text-[var(--color-primary)]"
-          style={`left:${left}px;top:${top}px`}
-        >
+        <span key={key} class="mark-badge absolute" style={{ left, top }}>
           {numbers.join(", ")}
         </span>
       ))}

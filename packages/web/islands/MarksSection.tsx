@@ -29,13 +29,11 @@ function MarkDetail({
   return (
     <div
       class={`text-sm p-2 rounded ${
-        active ? "bg-primary/10 ring-1 ring-primary/30" : ""
+        active ? "bg-accent/10 ring-1 ring-accent/30" : ""
       }`}
     >
       <div class="flex items-center gap-2 mb-1">
-        <span class="font-semibold text-base-content/70">
-          {mark.label || "Mark"}
-        </span>
+        <span class="font-semibold text-ink/70">{mark.label || "Mark"}</span>
         {statusBadge(mark.status)}
         <button
           type="button"
@@ -50,11 +48,9 @@ function MarkDetail({
           <Crosshair size={14} />
         </button>
       </div>
-      <div class="text-base-content/50 italic">
-        &ldquo;{mark.selected_text}&rdquo;
-      </div>
-      <div class="text-base-content/80 mt-1">{mark.comment}</div>
-      <div class="text-xs text-base-content/60 mt-2 flex gap-3">
+      <div class="text-ink/50 italic">&ldquo;{mark.selected_text}&rdquo;</div>
+      <div class="text-ink/80 mt-1">{mark.comment}</div>
+      <div class="text-xs text-ink/60 mt-2 flex gap-3">
         <span>offset: {mark.offset}</span>
         <span>length: {mark.length}</span>
         <span>thread_id: {mark.thread_id}</span>

@@ -20,15 +20,19 @@ export function MarkHighlights({
 }) {
   if (rects.length === 0) return null;
   return (
-    <div
-      class="pointer-events-none absolute inset-0"
-      style={`z-index: var(--z-mark)`}
-    >
+    <div class="pointer-events-none absolute inset-0 z-mark">
       {rects.map(({ id, left, top, width, height, color }, i) => (
         <div
           key={i}
-          class={`mark-band ${activeIds.has(id) ? "mark-band-active" : ""}`}
-          style={`left:${left}px;top:${top}px;width:${width}px;height:${height}px;background-color:${color};color:${color}`}
+          class={`mark-band ${activeIds.has(id) ? "is-active" : ""}`}
+          style={{
+            left,
+            top,
+            width,
+            height,
+            backgroundColor: color,
+            color,
+          }}
         />
       ))}
     </div>

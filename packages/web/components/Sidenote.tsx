@@ -36,18 +36,12 @@ export default function Sidenote({
       // Ghosts omit data-thread-id so useElementHeights doesn't measure them
       // (the real sidenote is already measured).
       data-thread-id={isGhost ? undefined : mark.thread_id}
-      class={`absolute left-0 right-0 text-left text-sm p-2 rounded cursor-pointer border-0 appearance-none transition-[background-color,box-shadow] duration-200 ${
-        isGhost
-          ? "sidenote-ghost"
-          : active
-            ? "sidenote-active"
-            : "sidenote-inactive"
-      }`}
+      class={`absolute left-0 right-0 sidenote ${
+        isGhost ? "is-ghost" : active ? "is-active" : ""
+      } ${hidden ? "invisible" : ""}`}
       style={{
         "--mark-color": colorForMark(mark),
-        top: `${top}px`,
-        visibility: hidden ? "hidden" : "visible",
-        opacity: isGhost ? 0.65 : undefined,
+        top,
         transform: ghost === "down" ? "translateY(-100%)" : undefined,
       }}
       title={isGhost ? "Offscreen; jump to mark" : "Jump to mark in editor"}
@@ -58,17 +52,20 @@ export default function Sidenote({
         editor?.dispatchCommand(SELECT_MARK_COMMAND, mark.thread_id);
       }}
     >
+      {isGhost && (
+        <Icon
+          size={14}
+          class="absolute left-0 top-1/2 -translate-x-full -translate-y-1/2 font-serif"
+        />
+      )}
       <div class="flex items-start gap-2">
-        <span class="font-semibold text-primary flex items-center gap-0.5">
-          {isGhost && <Icon size={14} />}
-          {number}
-        </span>
+        <span class="font-semibold font-serif">{number}</span>
         <div class="min-w-0 flex flex-col gap-1">
-          <div class={`text-base-content/80 ${isGhost ? "line-clamp-1" : ""}`}>
+          <div class={`text-ink ${isGhost ? "line-clamp-1" : ""}`}>
             {mark.comment}
           </div>
           {!isGhost && mark.status === "stale" && mark.selected_text && (
-            <div class="font-serif italic text-base-content/70 line-clamp-2 line-through">
+            <div class="font-serif italic text-ink line-clamp-2 line-through">
               &ldquo;{mark.selected_text}&rdquo;
             </div>
           )}

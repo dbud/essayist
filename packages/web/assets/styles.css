@@ -9,6 +9,7 @@
 @import "./toast.css";
 @import "./input.css";
 @import "./content.css";
+@import "./marks.css";
 @import "./view-transitions.css";
 @plugin "@tailwindcss/typography";
 
@@ -16,7 +17,7 @@
   --color-paper: oklch(0.98 0 0);
   --color-ink: oklch(22% 0.01 60);
   --color-rule: oklch(82% 0.005 85);
-  --color-accent: oklch(0.69 0.24 29);
+  --color-accent: oklch(0.62 0.22 29);
   --color-pane: oklch(95% 0.01 70);
   --color-button: oklch(92% 0.01 70);
   --color-stroke: color-mix(in oklch, var(--color-ink) 20%, transparent);
@@ -49,63 +50,6 @@
     color: var(--color-ink);
     font-size: 18px;
   }
-  mark {
-    background-color: transparent;
-    color: inherit;
-  }
-  .mark-band {
-    position: absolute;
-    border-radius: 0;
-    opacity: var(--mark-band-pct);
-    animation: mark-band-in 400ms ease;
-    transition:
-      opacity 200ms ease,
-      box-shadow 200ms ease;
-  }
-  .mark-band-active {
-    opacity: var(--mark-band-active-pct);
-  }
-  .mark-badge {
-    font-size: 0.75em;
-    line-height: 1;
-    margin-inline-start: 0.25em;
-    transform: translateY(-0.5em);
-  }
-  .sidenote-active {
-    background-color: color-mix(
-      in oklch,
-      var(--mark-color) var(--mark-band-active-pct),
-      transparent
-    );
-    box-shadow: inset 0 0 0 1px var(--mark-color);
-  }
-  .sidenote-inactive {
-    background-color: color-mix(in oklch, var(--color-paper) 60%, transparent);
-  }
-  .sidenote-ghost {
-    background-color: color-mix(in oklch, var(--color-paper) 50%, transparent);
-    box-shadow: inset 0 0 0 1px
-      color-mix(in oklch, var(--mark-color) 30%, transparent);
-  }
-}
-
-@keyframes mark-band-in {
-  from {
-    opacity: 0;
-  }
-}
-
-:root {
-  --mark-band-pct: 40%;
-  --mark-band-active-pct: 70%;
-  --mark-l: 85%;
-  --mark-c: 0.2;
-  --color-mark-0: oklch(var(--mark-l) var(--mark-c) 101);
-  --color-mark-1: oklch(var(--mark-l) var(--mark-c) 145);
-  --color-mark-2: oklch(var(--mark-l) var(--mark-c) 210);
-  --color-mark-3: oklch(var(--mark-l) var(--mark-c) 260);
-  --color-mark-4: oklch(var(--mark-l) var(--mark-c) 35);
-  --color-mark-5: oklch(var(--mark-l) var(--mark-c) 350);
 }
 
 @utility loading {
@@ -138,7 +82,7 @@
     background: linear-gradient(
       90deg,
       transparent 40%,
-      var(--color-accent) 50%,
+      var(--color-aant) 50%,
       transparent 60%
     );
     background-size: 200% 100%;
