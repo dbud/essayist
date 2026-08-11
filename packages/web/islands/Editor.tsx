@@ -67,6 +67,11 @@ export default function Editor({
   const contentEditable = useMemo(
     () => (
       <ContentEditable
+        // TODO -- Lexical doesn't seem to pass these attributes
+        // TODO -- extract setting to preferences
+        spellcheck="false"
+        autocorrect="off"
+        autocapitalize="off"
         class={`prose whitespace-pre-wrap editor-input outline-none max-w-none ${className}`}
         placeholder={
           <span class="absolute left-4 top-16 @[64rem]:left-16 text-ink/40 pointer-events-none prose pl-1">
