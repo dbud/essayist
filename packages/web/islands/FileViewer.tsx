@@ -13,6 +13,7 @@ import {
 import Editor from "@/islands/Editor.tsx";
 import EditorToolbar from "@/islands/EditorToolbar.tsx";
 import FontSelect from "@/islands/FontSelect.tsx";
+import SidenoteControls from "@/islands/SidenoteControls.tsx";
 import { activeEditor } from "@/signals/activeEditor.ts";
 import { getEditorSelection } from "@/signals/editorSelection.ts";
 import { getFile } from "@/signals/file.ts";
@@ -76,13 +77,12 @@ function FileViewerBody({ wsId, path }: { wsId: string; path: string }) {
               </div>
             </div>
           </div>
-          {(withSidePane || true) && (
-            <div class="content-side">
-              <div class="py-3 flex items-center">
-                {resolvingVisible.value && <Spinner />}
-              </div>
+          <div class="content-side">
+            <div class="py-3 flex items-center gap-2">
+              {resolvingVisible.value && <Spinner />}
+              <SidenoteControls />
             </div>
-          )}
+          </div>
         </div>
       </div>
       <div class="flex-1 min-h-0 overflow-y-auto" ref={scrollRef}>
