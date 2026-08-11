@@ -1,40 +1,16 @@
-import type { MarkRect } from "@/signals/sidenotes.ts";
+import { BandRenderer } from "@/components/highlights/BandRenderer.tsx";
+import type { HighlightRendererProps } from "@/components/highlights/types.ts";
 
-// Banded mark highlights as an overlay (pointer-events: none) over the editor,
-// in the editor column's coordinate space. Mirrors MarkBadges' positioning
-// approach: rendered inside the same `relative` column so it scrolls with
-// content and re-measures only on content/resize/marks change -- never on
-// scroll. Colors come from the per-id palette (see markColors.ts); the active
-// set thickens/raises the matching bands.
-//
-// Painted behind the text: the editor column is an isolation stacking context
-// (see FileViewer) and this overlay uses a negative z-index, so it sits above
-// the column background but below the in-flow editor text -- the classic
-// highlighter look. MarkBadges stays above the text (ordinal numbers).
-export function MarkHighlights({
-  rects,
-  activeIds,
-}: {
-  rects: MarkRect[];
-  activeIds: ReadonlySet<string>;
-}) {
+// Mark highlight overlay over the editor, in the editor column's coordinate
+// space. Painted behind the text via a negative z-index; MarkBadges stays
+// above the text. Owns the overlay container -- the shapes are drawn by a
+// renderer (BandRenderer today); alternatives plug in here without touching
+// the contentEditable.
+export function MarkHighlights({ rects, activeIds }: HighlightRendererProps) {
   if (rects.length === 0) return null;
   return (
     <div class="pointer-events-none absolute inset-0 z-mark">
-      {rects.map(({ id, left, top, width, height, color }, i) => (
-        <div
-          key={i}
-          class={`mark-band ${activeIds.has(id) ? "is-active" : ""}`}
-          style={{
-            left,
-            top,
-            width,
-            height,
-            backgroundColor: color,
-            color,
-          }}
-        />
-      ))}
+      <BandRenderer rects={rects} activeIds={activeIds} />
     </div>
   );
 }
