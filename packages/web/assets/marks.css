@@ -5,14 +5,14 @@
 :root {
   --mark-band-pct: 40%;
   --mark-band-active-pct: 70%;
-  --mark-l: 85%;
-  --mark-c: 0.2;
-  --color-mark-0: oklch(var(--mark-l) var(--mark-c) 101);
-  --color-mark-1: oklch(var(--mark-l) var(--mark-c) 145);
-  --color-mark-2: oklch(var(--mark-l) var(--mark-c) 210);
+  --mark-l: 90%;
+  --mark-c: 0.15;
+  --color-mark-0: oklch(var(--mark-l) var(--mark-c) 90);
+  --color-mark-1: oklch(var(--mark-l) var(--mark-c) 130);
+  --color-mark-2: oklch(var(--mark-l) var(--mark-c) 160);
   --color-mark-3: oklch(var(--mark-l) var(--mark-c) 260);
-  --color-mark-4: oklch(var(--mark-l) var(--mark-c) 35);
-  --color-mark-5: oklch(var(--mark-l) var(--mark-c) 350);
+  --color-mark-4: oklch(var(--mark-l) var(--mark-c) 300);
+  --color-mark-5: oklch(var(--mark-l) var(--mark-c) 355);
 }
 
 @layer base {
