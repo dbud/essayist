@@ -1,6 +1,6 @@
 /* Toasts: a fixed bottom-right stack of dismissible notifications.
    toast  = container (positioning + stack)
-   alert  = item card (box + column layout)
+   alert  = item card (squircle body + inner stroke, box + column layout)
    alert--info / alert--success / alert--error = type accent */
 
 @utility toast {
@@ -11,9 +11,13 @@
 
 @utility alert {
   --toast-radius: 0.75rem;
-  @apply relative isolate flex flex-col items-stretch gap-2 text-pane-content;
+  @apply squircle;
+  --sq-r: var(--toast-radius);
+  --sq-fill: var(--alert-color, var(--color-pane));
+  --sq-stroke: color-mix(in oklch, var(--color-pane-content) 20%, transparent);
+  --sq-duration: var(--toast-duration);
   background: var(--alert-color, var(--color-pane));
-  border-radius: var(--toast-radius);
+  @apply isolate flex flex-col items-stretch gap-2 text-pane-content;
   box-shadow: 0 4px 8px -4px rgba(0, 0, 0, 0.3);
   transition: background-color var(--toast-duration) ease-out;
   animation: toast-in var(--toast-duration) ease-out;
@@ -30,31 +34,6 @@
 
 @utility alert--error {
   --alert-color: var(--color-accent);
-}
-
-.toast-corner {
-  @apply absolute pointer-events-none;
-  width: var(--toast-radius);
-  height: var(--toast-radius);
-  background: var(--alert-color, var(--color-pane));
-  transition: background-color var(--toast-duration) ease-out;
-  z-index: -1;
-}
-.toast-corner--tl {
-  @apply top-0 left-0;
-  clip-path: url(#corner-tl);
-}
-.toast-corner--tr {
-  @apply top-0 right-0;
-  clip-path: url(#corner-tr);
-}
-.toast-corner--bl {
-  @apply bottom-0 left-0;
-  clip-path: url(#corner-bl);
-}
-.toast-corner--br {
-  @apply bottom-0 right-0;
-  clip-path: url(#corner-br);
 }
 
 .toast-progress {

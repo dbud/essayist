@@ -2,6 +2,7 @@
 @import "./motion.css";
 @import "./pane.css";
 @import "./layers.css";
+@import "./squircle.css";
 @import "./buttons.css";
 @import "./dropdown.css";
 @import "./dialog.css";
@@ -16,8 +17,9 @@
   --color-ink: oklch(22% 0.01 60);
   --color-rule: oklch(82% 0.005 85);
   --color-accent: oklch(0.69 0.24 29);
-  --color-pane: oklch(25% 0.01 60);
-  --color-pane-content: oklch(100% 0.005 85);
+  --color-pane: oklch(95% 0.01 70);
+  --color-button: oklch(92% 0.01 70);
+  --color-stroke: color-mix(in oklch, var(--color-ink) 20%, transparent);
 }
 
 @theme inline {
@@ -26,7 +28,7 @@
   --color-rule: var(--color-rule);
   --color-accent: var(--color-accent);
   --color-pane: var(--color-pane);
-  --color-pane-content: var(--color-pane-content);
+  --color-pane-content: var(--color-ink); /* TODO -- migrate */
 }
 
 @theme {
@@ -43,7 +45,7 @@
 
 @layer base {
   html {
-    background-color: color-mix(in oklch, var(--color-paper) 90%, black);
+    background-color: var(--color-pane);
     font-size: 18px;
   }
   mark {

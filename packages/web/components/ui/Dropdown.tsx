@@ -30,7 +30,12 @@ export default function Dropdown({
       >
         {trigger}
       </button>
-      {open.value && children(close)}
+      {open.value && (
+        <>
+          {children(close)}
+          <div class="dropdown-bridge" />
+        </>
+      )}
     </div>
   );
 }
@@ -47,10 +52,6 @@ export function DropdownMenu({
   return (
     <ul class={`dropdown-menu ${mergeCorner} ${align}`} data-stagger-children>
       {children}
-      <div class="dropdown-corner dropdown-corner--tl" data-no-motion />
-      <div class="dropdown-corner dropdown-corner--tr" data-no-motion />
-      <div class="dropdown-corner dropdown-corner--bl" data-no-motion />
-      <div class="dropdown-corner dropdown-corner--br" data-no-motion />
     </ul>
   );
 }

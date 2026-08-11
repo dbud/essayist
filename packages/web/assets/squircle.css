@@ -1,0 +1,112 @@
+/* Squircle: reusable superellipse (n=2.7) rounded rect with an inner stroke.
+   Set --sq-r for the corner radius; --sq-fill / --sq-stroke for colors. Per-corner
+   radii (--sq-r-tl etc.) default to --sq-r; set one to 0 to flatten that corner
+   (the element bg goes square, the corner mask is skipped, and adjacent edge
+   bars extend to the edge). Mask images are injected by PillClipDefs. */
+@utility squircle {
+  --sq-r: 0;
+  --sq-r-tl: var(--sq-r);
+  --sq-r-tr: var(--sq-r);
+  --sq-r-bl: var(--sq-r);
+  --sq-r-br: var(--sq-r);
+  --sq-fill: transparent;
+  --sq-stroke: transparent;
+  --sq-stroke-width: calc(var(--sq-r) * 0.071);
+  --sq-duration: 120ms;
+
+  position: relative;
+  border-radius: var(--sq-r-tl) var(--sq-r-tr) var(--sq-r-br) var(--sq-r-bl);
+
+  &::before,
+  &::after {
+    content: "";
+    @apply absolute inset-0 pointer-events-none;
+    z-index: -1;
+    transition: background-color var(--sq-duration) ease-out;
+  }
+
+  /* Squircle corner fills: paint over the element's circular border-radius
+     corners so the visible corners follow the superellipse. */
+  &::before {
+    background: var(--sq-fill);
+    -webkit-mask-image: var(--sq-tl), var(--sq-tr), var(--sq-bl), var(--sq-br);
+    -webkit-mask-size:
+      var(--sq-r-tl) var(--sq-r-tl),
+      var(--sq-r-tr) var(--sq-r-tr),
+      var(--sq-r-bl) var(--sq-r-bl),
+      var(--sq-r-br) var(--sq-r-br);
+    -webkit-mask-position:
+      left top,
+      right top,
+      left bottom,
+      right bottom;
+    -webkit-mask-repeat: no-repeat;
+    mask-image: var(--sq-tl), var(--sq-tr), var(--sq-bl), var(--sq-br);
+    mask-size:
+      var(--sq-r-tl) var(--sq-r-tl),
+      var(--sq-r-tr) var(--sq-r-tr),
+      var(--sq-r-bl) var(--sq-r-bl),
+      var(--sq-r-br) var(--sq-r-br);
+    mask-position:
+      left top,
+      right top,
+      left bottom,
+      right bottom;
+    mask-repeat: no-repeat;
+  }
+
+  /* Inner stroke: 4 corner rings (outer corner minus concentric inset) + 4 edge
+     bars. Per-corner radii drive both, so flat corners just drop their ring and
+     let the bars extend. */
+  &::after {
+    background: var(--sq-stroke);
+    -webkit-mask-image:
+      var(--sq-tl-ring), var(--sq-tr-ring), var(--sq-bl-ring),
+      var(--sq-br-ring), linear-gradient(#fff, #fff),
+      linear-gradient(#fff, #fff), linear-gradient(#fff, #fff),
+      linear-gradient(#fff, #fff);
+    -webkit-mask-size:
+      var(--sq-r-tl) var(--sq-r-tl),
+      var(--sq-r-tr) var(--sq-r-tr),
+      var(--sq-r-bl) var(--sq-r-bl),
+      var(--sq-r-br) var(--sq-r-br),
+      calc(100% - var(--sq-r-tl) - var(--sq-r-tr)) var(--sq-stroke-width),
+      calc(100% - var(--sq-r-bl) - var(--sq-r-br)) var(--sq-stroke-width),
+      var(--sq-stroke-width) calc(100% - var(--sq-r-tl) - var(--sq-r-bl)),
+      var(--sq-stroke-width) calc(100% - var(--sq-r-tr) - var(--sq-r-br));
+    -webkit-mask-position:
+      left top,
+      right top,
+      left bottom,
+      right bottom,
+      var(--sq-r-tl) 0,
+      var(--sq-r-bl) 100%,
+      0 var(--sq-r-tl),
+      100% var(--sq-r-tr);
+    -webkit-mask-repeat: no-repeat;
+    mask-image:
+      var(--sq-tl-ring), var(--sq-tr-ring), var(--sq-bl-ring),
+      var(--sq-br-ring), linear-gradient(#fff, #fff),
+      linear-gradient(#fff, #fff), linear-gradient(#fff, #fff),
+      linear-gradient(#fff, #fff);
+    mask-size:
+      var(--sq-r-tl) var(--sq-r-tl),
+      var(--sq-r-tr) var(--sq-r-tr),
+      var(--sq-r-bl) var(--sq-r-bl),
+      var(--sq-r-br) var(--sq-r-br),
+      calc(100% - var(--sq-r-tl) - var(--sq-r-tr)) var(--sq-stroke-width),
+      calc(100% - var(--sq-r-bl) - var(--sq-r-br)) var(--sq-stroke-width),
+      var(--sq-stroke-width) calc(100% - var(--sq-r-tl) - var(--sq-r-bl)),
+      var(--sq-stroke-width) calc(100% - var(--sq-r-tr) - var(--sq-r-br));
+    mask-position:
+      left top,
+      right top,
+      left bottom,
+      right bottom,
+      var(--sq-r-tl) 0,
+      var(--sq-r-bl) 100%,
+      0 var(--sq-r-tl),
+      100% var(--sq-r-tr);
+    mask-repeat: no-repeat;
+  }
+}

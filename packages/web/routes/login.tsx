@@ -22,16 +22,12 @@ export default function LoginPage({ url }: PageProps) {
   const next = safeNext(url.searchParams.get("next"));
   const href = `/oauth/signin?success_url=${encodeURIComponent(next)}`;
   return (
-    <main class="flex-1 flex items-start justify-center p-4">
-      <div class="card bg-base-100 shadow w-full max-w-sm">
-        <div class="card-body text-center gap-4">
-          <p class="text-base-content/60">
-            Sign in with your Google account to continue.
-          </p>
-          <a href={href} class="btn btn-primary w-full">
-            Sign in with Google
-          </a>
-        </div>
+    <main class="flex items-start justify-center p-4 bg-paper h-full">
+      <div class="flex flex-col gap-4">
+        <p class="text-ink">Sign in with your Google account to continue.</p>
+        <a href={href} class="btn btn--accent self-center">
+          Sign in with Google
+        </a>
       </div>
     </main>
   );

@@ -20,11 +20,6 @@ function ToastView({ toast }: { toast: Signal<Toast> }) {
     progress && progress.total > 0 ? (progress.done / progress.total) * 100 : 0;
   return (
     <div role="alert" class={`alert ${alertClass} p-3`}>
-      <div class="toast-corner toast-corner--tl" data-no-motion />
-      <div class="toast-corner toast-corner--tr" data-no-motion />
-      <div class="toast-corner toast-corner--bl" data-no-motion />
-      <div class="toast-corner toast-corner--br" data-no-motion />
-
       <div class="flex items-center justify-between gap-2">
         <div class="flex items-center gap-2 min-w-0">
           <Icon size={16} class="shrink-0" />

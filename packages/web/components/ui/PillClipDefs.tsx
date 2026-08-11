@@ -1,35 +1,35 @@
 import {
-  BL_PATH,
-  BR_PATH,
-  LEFT_PATH,
-  RIGHT_PATH,
-  TL_PATH,
-  TR_PATH,
+  SQ_BL,
+  SQ_BL_RING,
+  SQ_BR,
+  SQ_BR_RING,
+  SQ_TL,
+  SQ_TL_RING,
+  SQ_TR,
+  SQ_TR_RING,
 } from "@/components/ui/pillClipPaths.ts";
 
-/** Hidden SVG with clip paths (objectBoundingBox, 0..1 coords). Pseudo-elements
- *  sized to match give no distortion. Render once in the app shell. */
+const MASK_VARS = `:root {
+  --sq-tl: ${SQ_TL};
+  --sq-tr: ${SQ_TR};
+  --sq-bl: ${SQ_BL};
+  --sq-br: ${SQ_BR};
+  --sq-tl-ring: ${SQ_TL_RING};
+  --sq-tr-ring: ${SQ_TR_RING};
+  --sq-bl-ring: ${SQ_BL_RING};
+  --sq-br-ring: ${SQ_BR_RING};
+}`;
+
+/** Mask-image vars for the squircle utility (see squircle.css). Render once in
+ *  the app shell so they're present in SSR HTML (no FOUC). */
 export function PillClipDefs() {
   return (
-    <svg width="0" height="0" style="position:absolute" aria-hidden="true">
-      <clipPath id="pill-cap-left" clipPathUnits="objectBoundingBox">
-        <path d={LEFT_PATH} />
-      </clipPath>
-      <clipPath id="pill-cap-right" clipPathUnits="objectBoundingBox">
-        <path d={RIGHT_PATH} />
-      </clipPath>
-      <clipPath id="corner-tl" clipPathUnits="objectBoundingBox">
-        <path d={TL_PATH} />
-      </clipPath>
-      <clipPath id="corner-tr" clipPathUnits="objectBoundingBox">
-        <path d={TR_PATH} />
-      </clipPath>
-      <clipPath id="corner-bl" clipPathUnits="objectBoundingBox">
-        <path d={BL_PATH} />
-      </clipPath>
-      <clipPath id="corner-br" clipPathUnits="objectBoundingBox">
-        <path d={BR_PATH} />
-      </clipPath>
-    </svg>
+    // Injected raw so Preact never HTML-escapes the url() tokens (a <style> is
+    // a raw-text element, so entities wouldn't be decoded). Path math lives in
+    // pillClipPaths.ts.
+    <style
+      // deno-lint-ignore react-no-danger
+      dangerouslySetInnerHTML={{ __html: MASK_VARS }}
+    />
   );
 }
