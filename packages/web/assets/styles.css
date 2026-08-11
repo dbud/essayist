@@ -28,7 +28,6 @@
   --color-rule: var(--color-rule);
   --color-accent: var(--color-accent);
   --color-pane: var(--color-pane);
-  --color-pane-content: var(--color-ink); /* TODO -- migrate */
 }
 
 @theme {
@@ -46,6 +45,7 @@
 @layer base {
   html {
     background-color: var(--color-pane);
+    color: var(--color-ink);
     font-size: 18px;
   }
   mark {

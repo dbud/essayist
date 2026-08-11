@@ -109,7 +109,7 @@ export default function Chat() {
                     key={i}
                     class={`max-w-[85%] rounded px-4 py-1 ${
                       isUser
-                        ? "self-end bg-accent text-pane-content"
+                        ? "self-end bg-accent text-white"
                         : "self-start bg-paper text-ink"
                     }`}
                   >

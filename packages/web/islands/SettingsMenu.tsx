@@ -32,7 +32,7 @@ export default function SettingsMenu({ user }: SettingsMenuProps) {
               <div class="truncate text-md font-medium">
                 {user.name ?? user.email}
               </div>
-              <div class="truncate text-xs text-pane-content/80 tracking-wide font-normal">
+              <div class="truncate text-xs text-ink/80 tracking-wide font-normal">
                 {user.email}
               </div>
             </div>

@@ -1,5 +1,5 @@
 @utility input-text {
-  @apply w-full rounded-md border border-pane-content/20 bg-pane px-3 py-2 text-sm text-pane-content outline-none;
+  @apply w-full rounded-md border border-ink/20 px-3 py-2 text-sm bg-paper outline-none;
   &:focus {
     @apply border-accent;
   }
