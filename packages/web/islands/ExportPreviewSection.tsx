@@ -72,10 +72,10 @@ function MarkdownPreview({ wsId, path }: { wsId: string; path: string }) {
       </pre>
       {stale.length > 0 && (
         <div class="mt-2 text-xs">
-          <div class="font-semibold text-base-content/70 mb-1">Stale Marks</div>
+          <div class="font-semibold text-ink/70 mb-1">Stale Marks</div>
           <ul class="flex flex-col gap-1">
             {stale.map((mark) => (
-              <li key={mark.id} class="text-base-content/60">
+              <li key={mark.id} class="text-ink/60">
                 <span class="font-medium">{mark.label || "Mark"}</span>
                 <span class="ml-2">offset: {mark.offset}</span>
                 <span class="ml-1">length: {mark.length}</span>

@@ -20,7 +20,7 @@ function Tab({
     <button
       type="button"
       class={`tab shrink-0 rounded-t ${
-        isSelected.value ? "tab-active bg-primary/10 shadow" : ""
+        isSelected.value ? "tab-active bg-accent/10 shadow" : ""
       }`}
       onClick={() => openedFiles.open(path)}
     >

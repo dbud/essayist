@@ -111,7 +111,7 @@ function FileViewerBody({ wsId, path }: { wsId: string; path: string }) {
         </div>
       </div>
       {/* TEMPORARY palette preview. */}
-      <MarkSwatches />
+      {/*<MarkSwatches />*/}
     </div>
   );
 }

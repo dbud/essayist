@@ -69,7 +69,7 @@ export default function Editor({
       <ContentEditable
         class={`prose whitespace-pre-wrap editor-input outline-none max-w-none ${className}`}
         placeholder={
-          <span class="absolute left-4 top-16 @[64rem]:left-16 text-base-content/40 pointer-events-none prose pl-1">
+          <span class="absolute left-4 top-16 @[64rem]:left-16 text-ink/40 pointer-events-none prose pl-1">
             Start writing...
           </span>
         }
