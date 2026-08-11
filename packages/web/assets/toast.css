@@ -17,8 +17,7 @@
   --sq-stroke: color-mix(in oklch, var(--color-ink), transparent 70%);
   --sq-duration: var(--toast-duration);
   background: var(--alert-color, var(--color-pane));
-  @apply isolate flex flex-col items-stretch gap-2 text-ink;
-  /*box-shadow: 0 4px 8px -4px rgba(0, 0, 0, 0.3);*/
+  @apply isolate flex flex-col items-stretch gap-2 text-ink shadow-sm;
   transition: background-color var(--toast-duration) ease-out;
   animation: toast-in var(--toast-duration) ease-out;
 }
