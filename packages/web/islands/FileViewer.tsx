@@ -64,13 +64,12 @@ function FileViewerBody({ wsId, path }: { wsId: string; path: string }) {
         flex-1 min-h-0 flex flex-col shadow @container
         ${loading.value || !state.value || resolvingVisible.value ? "loading-border" : ""}`}
     >
-      <div class="flex-1 min-h-0 overflow-y-auto" ref={scrollRef}>
-        <div class="sticky top-0 z-toolbar flex flex-col shadow-none">
-          {/*<BackdropBlur class="--bg-paper/50" plateau={0.1} />*/}
-          <div
-            class={`content-layout ${withSidePane ? "content-layout--side" : ""}`}
-          >
-            <div class="content-main min-w-0 flex flex-col gap-2 py-3">
+      <div class="z-toolbar flex flex-col bg-pane border-b border-stroke/50">
+        <div
+          class={`content-layout ${withSidePane ? "content-layout--side" : ""}`}
+        >
+          <div class="content-main min-w-0">
+            <div class="border-top-dashed py-3">
               <div class="flex items-center gap-2">
                 <FontSelect />
                 <EditorToolbar wsId={wsId} path={path} />
@@ -78,6 +77,8 @@ function FileViewerBody({ wsId, path }: { wsId: string; path: string }) {
             </div>
           </div>
         </div>
+      </div>
+      <div class="flex-1 min-h-0 overflow-y-auto" ref={scrollRef}>
         <div
           class={`content-layout ${withSidePane ? "content-layout--side" : ""}`}
         >

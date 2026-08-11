@@ -186,3 +186,18 @@
 @utility shadow-inset-bottom {
   box-shadow: inset 0 -4px 4px -2px oklch(0% 0 0 / 0.02);
 }
+
+@utility border-top-dashed {
+  --dash-len: 3px;
+  --dash-gap: 2px;
+  --dash-color: color-mix(in oklch, var(--color-stroke), transparent 0%);
+
+  background-image: repeating-linear-gradient(
+    90deg,
+    var(--dash-color) 0 var(--dash-len),
+    transparent 0 calc(var(--dash-len) + var(--dash-gap))
+  );
+  background-size: 100% 1px;
+  background-position: top;
+  background-repeat: no-repeat;
+}
