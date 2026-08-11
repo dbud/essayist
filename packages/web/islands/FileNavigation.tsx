@@ -97,7 +97,7 @@ export default function FileNavigation() {
       onClick={() => (navigationOpened.value = !navigationOpened.value)}
     >
       <FileText size={14} class="shrink-0" />
-      <span class="truncate min-w-0">{selectedPath || ""}</span>
+      <span class="truncate min-w-0 pb-px">{selectedPath || ""}</span>
       <ChevronDown size={14} class="shrink-0" />
     </button>
   );
