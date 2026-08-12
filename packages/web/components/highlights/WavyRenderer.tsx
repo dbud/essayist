@@ -7,10 +7,10 @@ import type { HighlightRendererProps } from "./types.ts";
 // Tunables. BASELINE_RATIO is the baseline as a fraction of the line-box
 // height (prose line-height ~1.75 -> baseline ~0.67); the wave sits just below.
 const BASELINE_RATIO = 1.0;
-const STACK_GAP = 3; // vertical offset per overlapping mark
+const STACK_GAP = 4; // vertical offset per overlapping mark
 const AMPLITUDE = 1;
 const AMPLITUDE_ACTIVE = 1.2;
-const WAVELENGTH = 8;
+const WAVELENGTH = 10;
 
 // Trim to 1 decimal to keep path data compact.
 const r = (n: number): string => n.toFixed(1);
