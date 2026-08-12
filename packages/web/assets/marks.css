@@ -7,6 +7,7 @@
   --mark-c: 0.3;
   --mark-pct: 30%;
   --mark-active-pct: 70%;
+  --mark-inner-pct: 100%;
 }
 
 .mark-wavy {
@@ -16,7 +17,8 @@
   --mark-pct: 90%;
   --mark-active-pct: 100%;
   --mark-stroke: 1.2;
-  --mark-active-stroke: 2;
+  --mark-active-stroke: var(--mark-stroke);
+  --mark-inner-stroke: 2;
 }
 
 .mark-band {
@@ -24,7 +26,8 @@
   --mark-l: 85%;
   --mark-c: 0.3;
   --mark-pct: 30%;
-  --mark-active-pct: 70%;
+  --mark-active-pct: var(--mark-pct);
+  --mark-inner-pct: 70%;
 }
 
 .mark-band,
@@ -44,6 +47,9 @@
     &.is-active {
       opacity: var(--mark-active-pct);
     }
+    &.is-inner {
+      opacity: var(--mark-inner-pct);
+    }
   }
   .mark-wavy path {
     transition:
@@ -53,6 +59,10 @@
     stroke-opacity: var(--mark-pct);
     &.is-active {
       stroke-width: var(--mark-active-stroke);
+      stroke-opacity: var(--mark-active-pct);
+    }
+    &.is-inner {
+      stroke-width: var(--mark-inner-stroke);
       stroke-opacity: var(--mark-active-pct);
     }
   }

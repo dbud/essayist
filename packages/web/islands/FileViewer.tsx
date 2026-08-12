@@ -43,6 +43,7 @@ function FileViewerBody({ wsId, path }: { wsId: string; path: string }) {
   );
   const { resolving, resolved } = getMarks(wsId, path);
   const sidenotes = getSidenotes(wsId, path);
+  const selection = getEditorSelection(wsId, path);
   const resolvingVisible = useMemo(
     () => delayedRise(resolving, 150),
     [resolving],
@@ -103,7 +104,8 @@ function FileViewerBody({ wsId, path }: { wsId: string; path: string }) {
             <MarkBadges badges={sidenotes.markBadges.value} />
             <MarkHighlights
               rects={sidenotes.markRects.value}
-              activeIds={getEditorSelection(wsId, path).markIds.value}
+              activeIds={selection.markIds.value}
+              innerId={selection.innerMarkId.value}
             />
           </div>
           <div class="content-side">

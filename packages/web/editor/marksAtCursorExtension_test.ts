@@ -1,5 +1,10 @@
 import { buildEditorFromExtensions } from "@lexical/extension";
-import { $isMarkNode, $wrapSelectionInMarkNode, MarkNode } from "@lexical/mark";
+import {
+  $createMarkNode,
+  $isMarkNode,
+  $wrapSelectionInMarkNode,
+  MarkNode,
+} from "@lexical/mark";
 import { RichTextExtension } from "@lexical/rich-text";
 import { assert, assertEquals } from "@std/assert";
 import {
@@ -53,6 +58,23 @@ function buildMarkedEditor(editor: LexicalEditor, id: string): void {
   );
 }
 
+// Build "hello world" with "hello" wrapped in a single MarkNode carrying
+// `ids` (outer-first), so the innermost selection can be exercised.
+function buildMultiIdMark(editor: LexicalEditor, ids: string[]): void {
+  editor.update(
+    () => {
+      $getRoot().clear();
+      const text = $createTextNode("hello world");
+      $getRoot().append($createParagraphNode().append(text));
+      const sel = $createRangeSelection();
+      sel.anchor.set(text.getKey(), 0, "text");
+      sel.focus.set(text.getKey(), 5, "text");
+      $wrapSelectionInMarkNode(sel, false, ids[0], () => $createMarkNode(ids));
+    },
+    { discrete: true },
+  );
+}
+
 /**
  * Places a collapsed caret inside the first text node matching `predicate`
  * (offset 1, so it's strictly interior, not a boundary that Lexical might
@@ -82,9 +104,42 @@ Deno.test("marksAtCursor -- contains the mark id when caret is inside it", () =>
 
 Deno.test("marksAtCursor -- empty when caret is outside any mark", () => {
   selection.markIds.value = new Set();
+  selection.innerMarkId.value = null;
   const editor = createEditor();
   buildMarkedEditor(editor, "t2");
   caretIn(editor, (n) => n.getParent() !== null && !$isMarkNode(n.getParent()));
 
   assertEquals(selection.markIds.value.size, 0);
+  assertEquals(selection.innerMarkId.value, null);
+});
+
+Deno.test("marksAtCursor -- innerMarkId is the sole id for a single-id mark", () => {
+  selection.innerMarkId.value = null;
+  const editor = createEditor();
+  buildMarkedEditor(editor, "t3");
+  caretIn(editor, (n) => n.getParent() !== null && $isMarkNode(n.getParent()));
+
+  assertEquals(selection.innerMarkId.value, "t3");
+});
+
+Deno.test("marksAtCursor -- innerMarkId is the last (innermost) id on the segment", () => {
+  selection.innerMarkId.value = null;
+  const editor = createEditor();
+  // ids are stored outer-first, so "inner" is the innermost mark.
+  buildMultiIdMark(editor, ["outer", "inner"]);
+  caretIn(editor, (n) => n.getParent() !== null && $isMarkNode(n.getParent()));
+
+  assertEquals(selection.innerMarkId.value, "inner");
+  // The full active set still contains both.
+  assert(selection.markIds.value.has("outer"));
+  assert(selection.markIds.value.has("inner"));
+});
+
+Deno.test("marksAtCursor -- innerMarkId is null when caret is outside any mark", () => {
+  selection.innerMarkId.value = "stale";
+  const editor = createEditor();
+  buildMarkedEditor(editor, "t4");
+  caretIn(editor, (n) => n.getParent() !== null && !$isMarkNode(n.getParent()));
+
+  assertEquals(selection.innerMarkId.value, null);
 });

@@ -35,16 +35,21 @@ function wavePath(x0: number, y0: number, w: number, amp: number): string {
   return d;
 }
 
-export function WavyRenderer({ rects, activeIds }: HighlightRendererProps) {
+export function WavyRenderer({
+  rects,
+  activeIds,
+  innerId,
+}: HighlightRendererProps) {
   return (
     <svg aria-hidden="true" class="mark-wavy">
       {rects.map(({ id, color, left, width, top, height, order }, i) => {
-        const active = activeIds.has(id);
+        const inner = id === innerId;
+        const active = inner || activeIds.has(id);
         const y = top + height * BASELINE_RATIO + order * STACK_GAP;
         return (
           <path
             key={i}
-            class={active ? "is-active" : ""}
+            class={inner ? "is-inner" : active ? "is-active" : ""}
             d={wavePath(left, y, width, active ? AMPLITUDE_ACTIVE : AMPLITUDE)}
             fill="none"
             strokeLinecap="round"

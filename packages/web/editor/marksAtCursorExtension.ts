@@ -7,7 +7,7 @@ import {
   SELECTION_CHANGE_COMMAND,
 } from "lexical";
 import { defaultEditorSelection } from "@/signals/editorSelection.ts";
-import { $markIdsAtAnchor } from "./markSelection.ts";
+import { $innerMarkIdAtAnchor, $markIdsAtAnchor } from "./markSelection.ts";
 import type { SelectionExtensionConfig } from "./toolbarStateExtension.ts";
 
 export const MarksAtCursorExtension = defineExtension({
@@ -17,12 +17,14 @@ export const MarksAtCursorExtension = defineExtension({
     editor: LexicalEditor,
     { selection }: SelectionExtensionConfig,
   ) => {
-    // Publish the mark ids at the caret into `selection.markIds`. The active
-    // highlighting is rendered by the MarkHighlights overlay, which reads this
-    // signal; the <mark> element stays transparent.
+    // Publish the mark ids at the caret into `selection.markIds`, and the
+    // innermost one into `selection.innerMarkId`. The active highlighting is
+    // rendered by the MarkHighlights overlay, which reads these signals; the
+    // <mark> element stays transparent.
     const read = (editorState: EditorState) => {
       editorState.read(() => {
         selection.markIds.value = $markIdsAtAnchor();
+        selection.innerMarkId.value = $innerMarkIdAtAnchor();
       });
     };
 

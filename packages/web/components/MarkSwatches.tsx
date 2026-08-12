@@ -2,14 +2,20 @@ import { WavyRenderer } from "@/components/highlights/WavyRenderer.tsx";
 import { MARK_PALETTE } from "@/editor/markColors.ts";
 import type { MarkRect } from "@/signals/sidenotes.ts";
 
-const VARIANTS = ["regular", "active"] as const;
+const VARIANTS = ["regular", "active", "inner"] as const;
 const EMPTY: ReadonlySet<string> = new Set();
+
+const BAND_CLASS: Record<(typeof VARIANTS)[number], string> = {
+  regular: "",
+  active: "is-active",
+  inner: "is-inner",
+};
 
 // TEMPORARY palette preview -- remove once the palette/opacities are settled.
 export function MarkSwatches() {
   return (
     <div class="fixed bottom-8 right-8 z-toast flex flex-col gap-1 rounded bg-paper border border-stroke/50 p-2 text-xs">
-      {VARIANTS.map((variant) => (
+      {VARIANTS.filter((v) => v !== "active").map((variant) => (
         <div key={`band-${variant}`} class="flex items-center gap-1">
           {MARK_PALETTE.map((c) => (
             <span
@@ -17,7 +23,7 @@ export function MarkSwatches() {
               class="relative inline-flex h-6 w-12 items-center justify-center"
             >
               <span
-                class={`mark-band inset-0 ${variant === "active" ? "is-active" : ""}`}
+                class={`mark-band inset-0 ${BAND_CLASS[variant]}`}
                 style={{ backgroundColor: c, color: c }}
               />
               <span class="relative">text</span>
@@ -25,7 +31,7 @@ export function MarkSwatches() {
           ))}
         </div>
       ))}
-      {VARIANTS.map((variant) => (
+      {VARIANTS.filter((v) => v !== "active").map((variant) => (
         <div key={`wavy-${variant}`} class="flex items-center gap-1">
           {MARK_PALETTE.map((c, ci) => {
             const id = `swatch-${ci}`;
@@ -46,7 +52,8 @@ export function MarkSwatches() {
               >
                 <WavyRenderer
                   rects={[rect]}
-                  activeIds={variant === "active" ? new Set([id]) : EMPTY}
+                  activeIds={EMPTY}
+                  innerId={variant === "inner" ? id : null}
                 />
                 <span class="relative">text</span>
               </span>

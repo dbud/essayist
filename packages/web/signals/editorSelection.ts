@@ -17,7 +17,17 @@ export const EditorSelectionModel = createModel(
     const code = signal(false);
     const inCodeBlock = signal(false);
     const markIds = signal<Set<string>>(new Set());
-    return { block, bold, italic, strikethrough, code, inCodeBlock, markIds };
+    const innerMarkId = signal<string | null>(null);
+    return {
+      block,
+      bold,
+      italic,
+      strikethrough,
+      code,
+      inCodeBlock,
+      markIds,
+      innerMarkId,
+    };
   },
 );
 
