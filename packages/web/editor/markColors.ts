@@ -1,17 +1,17 @@
 import type { Mark } from "@essayist/core";
 
 // Color + band-order policy for overlapping marks. `colorForMark` takes the
-// whole mark so the derivation can change (e.g. to mark.category) without
-// touching call sites; it hashes thread_id (stable across versions) today.
+// whole mark so the derivation can change (e.g. to mark.category).
 
-// CSS custom property names; values are defined in `assets/styles.css`.
+// Palette: oklch() with per-slot hue + --mark-l/--mark-c knobs. Knobs are set
+// per scope in marks.css (.mark-band, .mark-wavy), so colors resolve per scope.
 export const MARK_PALETTE = [
-  "var(--color-mark-0)",
-  "var(--color-mark-1)",
-  "var(--color-mark-2)",
-  "var(--color-mark-3)",
-  "var(--color-mark-4)",
-  "var(--color-mark-5)",
+  "oklch(var(--mark-l) var(--mark-c) 90)",
+  "oklch(var(--mark-l) var(--mark-c) 130)",
+  "oklch(var(--mark-l) var(--mark-c) 160)",
+  "oklch(var(--mark-l) var(--mark-c) 260)",
+  "oklch(var(--mark-l) var(--mark-c) 300)",
+  "oklch(var(--mark-l) var(--mark-c) 355)",
 ] as const;
 
 // djb2 -- stable, small, good enough distribution for palette assignment.

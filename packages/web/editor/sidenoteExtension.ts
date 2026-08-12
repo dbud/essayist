@@ -106,29 +106,31 @@ export const SidenoteExtension = defineExtension({
               });
             }
           }
-          // Banded highlights: one rect per visual line of the fragment,
-          // split vertically into one band per covering id (in segment order:
-          // outer/earliest mark on top).
+          // Banded highlights: one rect per visual line per covering id (in
+          // segment order: outer/earliest mark on top). Each rect carries the
+          // full line box plus `order`/`bandCount`; the renderer splits it.
           const byThread = new Map(
             // TODO -- move to model?
             resolved.value.map((m) => [m.thread_id, m] as const),
           );
           const bands = assignBands(byThread, ids);
-          const n = bands.length;
-          if (n > 0) {
-            for (const lineRect of el.getClientRects()) {
-              const bandHeight = lineRect.height / n;
-              const left = lineRect.left - containerRect.left;
-              const top = lineRect.top - containerRect.top;
-              const width = lineRect.width;
+          const bandCount = bands.length;
+          if (bandCount > 0) {
+            for (const rect of el.getClientRects()) {
+              const left = rect.left - containerRect.left;
+              const top = rect.top - containerRect.top;
+              const width = rect.width;
+              const height = rect.height;
               for (const { id, color, order } of bands) {
                 rects.push({
                   id,
                   color,
                   left,
-                  top: top + order * bandHeight,
+                  top,
                   width,
-                  height: bandHeight,
+                  height,
+                  order,
+                  bandCount,
                 });
               }
             }

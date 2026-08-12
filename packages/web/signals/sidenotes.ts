@@ -24,11 +24,13 @@ export interface MarkBadge {
 // ids yields N bands stacked vertically within each of its line-rects.
 export interface MarkRect {
   id: string; // thread id this band belongs to
-  color: string; // CSS color (a var(--color-mark-*))
+  color: string; // oklch(var(--mark-l) var(--mark-c) <hue>)
   left: number; // editor-column-local
   top: number;
   width: number;
-  height: number;
+  height: number; // visual line box height
+  order: number; // band index within the line (0 = topmost mark)
+  bandCount: number; // bands on this line
 }
 
 export interface SidenoteEntry {

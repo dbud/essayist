@@ -5,13 +5,25 @@ import type { HighlightRendererProps } from "./types.ts";
 export function BandRenderer({ rects, activeIds }: HighlightRendererProps) {
   return (
     <>
-      {rects.map(({ id, left, top, width, height, color }, i) => (
-        <div
-          key={i}
-          class={`mark-band ${activeIds.has(id) ? "is-active" : ""}`}
-          style={{ left, top, width, height, backgroundColor: color, color }}
-        />
-      ))}
+      {rects.map(
+        ({ id, color, left, top, width, height, order, bandCount }, i) => {
+          const bandHeight = height / bandCount;
+          return (
+            <div
+              key={i}
+              class={`mark-band ${activeIds.has(id) ? "is-active" : ""}`}
+              style={{
+                left,
+                top: top + order * bandHeight,
+                width,
+                height: bandHeight,
+                backgroundColor: color,
+                color,
+              }}
+            />
+          );
+        },
+      )}
     </>
   );
 }

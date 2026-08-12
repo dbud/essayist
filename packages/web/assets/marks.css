@@ -1,18 +1,37 @@
-/* Marks: highlighted ranges in the editor, ordinal badges, and sidenote
-   states. Per-mark color is set inline as --mark-color (see Sidenote.tsx /
-   markColors.ts); the palette and band opacities live here. */
+/* Marks: highlight renderers (band, wavy), ordinal badges, and sidenote
+   states. Color/opacity knobs (--mark-l, --mark-c, --mark-pct,
+   --mark-active-pct) live here, scoped per renderer with :root defaults. */
 
 :root {
-  --mark-band-pct: 40%;
-  --mark-band-active-pct: 70%;
-  --mark-l: 90%;
-  --mark-c: 0.15;
-  --color-mark-0: oklch(var(--mark-l) var(--mark-c) 90);
-  --color-mark-1: oklch(var(--mark-l) var(--mark-c) 130);
-  --color-mark-2: oklch(var(--mark-l) var(--mark-c) 160);
-  --color-mark-3: oklch(var(--mark-l) var(--mark-c) 260);
-  --color-mark-4: oklch(var(--mark-l) var(--mark-c) 300);
-  --color-mark-5: oklch(var(--mark-l) var(--mark-c) 355);
+  --mark-l: 85%;
+  --mark-c: 0.3;
+  --mark-pct: 30%;
+  --mark-active-pct: 70%;
+}
+
+.mark-wavy {
+  @apply absolute inset-0 w-full h-full overflow-visible pointer-events-none;
+  --mark-l: 65%;
+  --mark-c: 0.4;
+  --mark-pct: 90%;
+  --mark-active-pct: 100%;
+  --mark-stroke: 1.2;
+  --mark-active-stroke: 2;
+}
+
+.mark-band {
+  @apply absolute rounded-none;
+  --mark-l: 85%;
+  --mark-c: 0.3;
+  --mark-pct: 30%;
+  --mark-active-pct: 70%;
+}
+
+.mark-band,
+.mark-wavy {
+  --mark-duration: 200ms;
+  animation: mark-fade-in calc(2 * var(--mark-duration)) ease;
+  transition: opacity var(--mark-duration) ease;
 }
 
 @layer base {
@@ -21,16 +40,20 @@
     color: inherit;
   }
   .mark-band {
-    position: absolute;
-    border-radius: 0;
-    opacity: var(--mark-band-pct);
-    animation: mark-band-in 400ms ease;
-    transition:
-      opacity 200ms ease,
-      box-shadow 200ms ease;
-
+    opacity: var(--mark-pct);
     &.is-active {
-      opacity: var(--mark-band-active-pct);
+      opacity: var(--mark-active-pct);
+    }
+  }
+  .mark-wavy path {
+    transition:
+      stroke-opacity var(--mark-duration) ease,
+      stroke-width var(--mark-duration) ease;
+    stroke-width: var(--mark-stroke);
+    stroke-opacity: var(--mark-pct);
+    &.is-active {
+      stroke-width: var(--mark-active-stroke);
+      stroke-opacity: var(--mark-active-pct);
     }
   }
   .mark-badge {
@@ -47,7 +70,7 @@
     &.is-active {
       background-color: color-mix(
         in oklch,
-        var(--mark-color) var(--mark-band-active-pct),
+        var(--mark-color) var(--mark-active-pct),
         transparent
       );
     }
@@ -62,7 +85,7 @@
   }
 }
 
-@keyframes mark-band-in {
+@keyframes mark-fade-in {
   from {
     opacity: 0;
   }
