@@ -9,12 +9,12 @@ const OPTIONS = [
 // the rest stay default. Reads/writes the global `highlightStyle` signal.
 export default function SidenoteControls() {
   return (
-    <div class="flex items-center gap-1">
+    <div class="flex items-center gap-2">
       {OPTIONS.map((o) => (
         <button
           key={o.value}
           type="button"
-          class={`btn ${highlightStyle.value === o.value ? "btn--accent" : ""}`}
+          class={`btn btn--ghost ${highlightStyle.value === o.value ? "is-selected" : ""}`}
           onClick={() => (highlightStyle.value = o.value)}
         >
           {o.label}
