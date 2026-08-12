@@ -11,7 +11,8 @@ import type {
   SidenotePositions,
 } from "@/signals/sidenotes.ts";
 import { editorStateToMarkdown } from "@/utils/markdown.ts";
-import { contentEndRect, getMeasureContext, hasRect } from "./domMeasure.ts";
+import { getMeasureContext } from "./domMeasure.ts";
+import { computeMarkBadges } from "./markBadges.ts";
 import { assignBands } from "./markColors.ts";
 import {
   $collectTextNodeSpans,
@@ -88,24 +89,11 @@ export const SidenoteExtension = defineExtension({
           if (markRects.value.length > 0) markRects.value = [];
           return;
         }
-        const { containerRect, doc } = ctx;
-        const badges: MarkBadge[] = [];
+        const { containerRect } = ctx;
+        markBadges.value = computeMarkBadges(fragments, numbers, editor, ctx);
+
         const rects: MarkRect[] = [];
-        for (const { el, ids, key } of fragments) {
-          const nums = ids
-            .map((id) => numbers.get(id))
-            .filter((n): n is number => n !== undefined);
-          if (nums.length > 0) {
-            const rect = contentEndRect(el, doc);
-            if (hasRect(rect)) {
-              badges.push({
-                key,
-                left: rect.right - containerRect.left,
-                top: rect.top - containerRect.top,
-                numbers: nums.sort((a, b) => a - b),
-              });
-            }
-          }
+        for (const { el, ids } of fragments) {
           // Banded highlights: one rect per visual line per covering id (in
           // segment order: outer/earliest mark on top). Each rect carries the
           // full line box plus `order`/`bandCount`; the renderer splits it.
@@ -136,7 +124,6 @@ export const SidenoteExtension = defineExtension({
             }
           }
         }
-        markBadges.value = badges;
         markRects.value = rects;
       },
     });
