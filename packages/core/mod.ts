@@ -1,4 +1,5 @@
 export { Agent } from "@/agent.ts";
+export { ConfigMissingError, ConfigStore } from "@/config/store.ts";
 export { renderPrompt } from "@/config/template.ts";
 export type {
   Category,
