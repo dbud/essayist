@@ -41,6 +41,22 @@ Deno.test("WorkspaceStore -- updateUser returns undefined for unknown id", async
   assertEquals(await store.updateUser("nope", { name: "x" }), undefined);
 });
 
+Deno.test("WorkspaceStore -- setUserRole grants admin", async () => {
+  const store = createStore();
+  const created = await store.createUser({ email: "alice@example.com" });
+  assertEquals(store.isAdmin(created), false);
+
+  const updated = await store.setUserRole(created.id, "admin");
+  assertEquals(updated?.role, "admin");
+  if (updated) assertEquals(store.isAdmin(updated), true);
+  assertEquals((await store.getUser(created.id))?.role, "admin");
+});
+
+Deno.test("WorkspaceStore -- setUserRole returns undefined for unknown id", async () => {
+  const store = createStore();
+  assertEquals(await store.setUserRole("nope", "admin"), undefined);
+});
+
 Deno.test("WorkspaceStore -- getUser missing returns undefined", async () => {
   const store = createStore();
   assertEquals(await store.getUser("nope"), undefined);

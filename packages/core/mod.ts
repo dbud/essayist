@@ -53,6 +53,7 @@ export {
   UserEmailTakenError,
   type UserInput,
   type UserProfile,
+  type UserRole,
   type Workspace,
   type WorkspaceMember,
 } from "@/workspace/types.ts";

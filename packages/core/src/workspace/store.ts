@@ -8,6 +8,7 @@ import type {
   User,
   UserInput,
   UserProfile,
+  UserRole,
   Workspace,
   WorkspaceMember,
 } from "./types.ts";
@@ -101,6 +102,26 @@ export class WorkspaceStore {
       checks: [{ key, versionstamp: entry.versionstamp }],
     });
     return user;
+  }
+
+  /**
+   * Set a user's site-wide {@link UserRole}. Uses optimistic concurrency.
+   * Returns the updated user, or `undefined` if the id is unknown.
+   */
+  async setUserRole(id: string, role: UserRole): Promise<User | undefined> {
+    const key: Key = [USERS, id];
+    const entry = await this.#adapter.get<User>(key);
+    if (entry === undefined) return undefined;
+    const user: User = { ...entry.value, role };
+    await this.#adapter.batch([{ type: "set", key, value: user }], {
+      checks: [{ key, versionstamp: entry.versionstamp }],
+    });
+    return user;
+  }
+
+  /** Whether `user` has the admin role. */
+  isAdmin(user: User): boolean {
+    return user.role === "admin";
   }
 
   // -- workspaces --

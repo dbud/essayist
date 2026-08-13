@@ -4,6 +4,7 @@ export interface User {
   email: string;
   name?: string;
   picture?: string;
+  role?: UserRole;
   createdAt: number;
 }
 
@@ -12,6 +13,9 @@ export interface UserProfile {
   name?: string;
   picture?: string;
 }
+
+/** Site-wide role. `admin` can access the admin area and manage config. */
+export type UserRole = "admin" | "writer";
 
 /** Input for creating a user: the unique email plus optional profile fields. */
 export interface UserInput extends UserProfile {
