@@ -99,3 +99,61 @@ Deno.test("createMarkTool -- has correct schema and instruction", () => {
       "Read the file first to get the exact text.",
   );
 });
+
+Deno.test("createMarkTool -- allowedLabels append to description and override instruction", () => {
+  const vfs = createMockVFS();
+  const { tool, instruction } = createMarkTool(vfs, {
+    allowedLabels: ["thesis", "evidence"],
+    instruction: "Mark it.",
+  });
+  const fn = tool as ToolWithExecute;
+
+  assertEquals(
+    fn.function.description,
+    "Place a mark (annotation) on a text span in a file. " +
+      "Returns a mark_id and thread_id. " +
+      "If selected_text appears multiple times, use line_hint to specify which occurrence." +
+      " Allowed labels: thesis, evidence.",
+  );
+  assertEquals(instruction, "Mark it.");
+});
+
+Deno.test("createMarkTool -- rejects disallowed label without calling VFS", async () => {
+  let called = false;
+  const vfs = createMockVFS({
+    mark: () => {
+      called = true;
+      return { mark_id: "m", thread_id: "t", marked: true };
+    },
+  });
+  const { tool } = createMarkTool(vfs, { allowedLabels: ["thesis"] });
+  const fn = tool as ToolWithExecute;
+
+  const result = (await fn.function.execute({
+    path: "f.txt",
+    selected_text: "hi",
+    comment: "c",
+    label: "bogus",
+  })) as { marked: boolean; error?: string };
+
+  assertEquals(result.marked, false);
+  assertEquals(typeof result.error, "string");
+  assertEquals(called, false);
+});
+
+Deno.test("createMarkTool -- allows a label in the allowed set", async () => {
+  const vfs = createMockVFS({
+    mark: () => ({ mark_id: "m", thread_id: "t", marked: true }),
+  });
+  const { tool } = createMarkTool(vfs, { allowedLabels: ["thesis"] });
+  const fn = tool as ToolWithExecute;
+
+  const result = (await fn.function.execute({
+    path: "f.txt",
+    selected_text: "hi",
+    comment: "c",
+    label: "thesis",
+  })) as { marked: boolean };
+
+  assertEquals(result.marked, true);
+});

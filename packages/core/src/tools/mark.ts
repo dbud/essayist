@@ -15,9 +15,7 @@ const inputSchema = z.object({
   label: z
     .string()
     .optional()
-    .describe(
-      "Optional short label for categorizing this mark (e.g. 'todo', 'question', 'suggestion').",
-    ),
+    .describe("Optional short label; must be one of the allowed labels."),
   line_hint: z
     .number()
     .optional()
@@ -37,22 +35,48 @@ const outputSchema = z.object({
     .describe(
       "True if the mark was created successfully, false if the text was not found.",
     ),
+  error: z
+    .string()
+    .optional()
+    .describe("Present when the mark could not be created."),
 });
 
 export type MarkInput = z.infer<typeof inputSchema>;
 export type MarkOutput = z.infer<typeof outputSchema>;
 
-export function createMarkTool(vfs: VFS): ToolPrompt {
+/** Options for createMarkTool. */
+export interface MarkToolOptions {
+  /** Allowed label values. */
+  allowedLabels?: string[];
+  /** Instruction text; overrides the default. */
+  instruction?: string;
+}
+
+const DEFAULT_INSTRUCTION =
+  "Use the mark tool to annotate a text span in a file with a comment. " +
+  "Read the file first to get the exact text.";
+
+const DEFAULT_DESCRIPTION =
+  "Place a mark (annotation) on a text span in a file. " +
+  "Returns a mark_id and thread_id. " +
+  "If selected_text appears multiple times, use line_hint to specify which occurrence.";
+
+export function createMarkTool(
+  vfs: VFS,
+  options?: MarkToolOptions,
+): ToolPrompt {
+  const allowedLabels = options?.allowedLabels;
+  const instruction = options?.instruction ?? DEFAULT_INSTRUCTION;
+  const description =
+    allowedLabels && allowedLabels.length > 0
+      ? `${DEFAULT_DESCRIPTION} Allowed labels: ${allowedLabels.join(", ")}.`
+      : DEFAULT_DESCRIPTION;
+
   return {
-    instruction:
-      "Use the mark tool to annotate a text span in a file with a comment. " +
-      "Read the file first to get the exact text.",
+    instruction,
     tool: tool({
       name: "mark",
-      description:
-        "Place a mark (annotation) on a text span in a file. " +
-        "Returns a mark_id and thread_id. " +
-        "If selected_text appears multiple times, use line_hint to specify which occurrence.",
+      description,
       inputSchema,
       outputSchema,
       execute: async ({
@@ -62,6 +86,19 @@ export function createMarkTool(vfs: VFS): ToolPrompt {
         label,
         line_hint,
       }): Promise<MarkOutput> => {
+        if (
+          allowedLabels &&
+          allowedLabels.length > 0 &&
+          label !== undefined &&
+          !allowedLabels.includes(label)
+        ) {
+          return {
+            mark_id: "",
+            thread_id: "",
+            marked: false,
+            error: `Label "${label}" is not allowed. Use one of: ${allowedLabels.join(", ")}.`,
+          };
+        }
         return await vfs.mark(path, selected_text, comment, {
           label,
           lineHint: line_hint,
