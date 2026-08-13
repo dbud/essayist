@@ -66,6 +66,7 @@ export { WorkspaceStore } from "@/workspace/store.ts";
 export {
   LastOwnerError,
   type Role,
+  USER_ROLES,
   type User,
   UserEmailTakenError,
   type UserInput,

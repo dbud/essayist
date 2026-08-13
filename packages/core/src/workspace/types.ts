@@ -15,7 +15,8 @@ export interface UserProfile {
 }
 
 /** Site-wide role. `admin` can access the admin area and manage config. */
-export type UserRole = "admin" | "writer";
+export const USER_ROLES = ["admin", "writer"] as const;
+export type UserRole = (typeof USER_ROLES)[number];
 
 /** Input for creating a user: the unique email plus optional profile fields. */
 export interface UserInput extends UserProfile {

@@ -246,7 +246,7 @@ export interface DemoData {
  * existing demo entities are loaded and returned without re-creating, so demo
  * IDs stay stable across restarts.
  *
- * Reset by wiping the store (`deno task kv:wipe`) or deleting the local SQLite
+ * Reset by wiping the store (`deno task kvctl wipe`) or deleting the local SQLite
  * file; the next boot re-seeds from scratch.
  */
 export async function seedDemo(
@@ -283,14 +283,14 @@ async function loadDemo(store: WorkspaceStore): Promise<DemoData> {
   const demoUser2 = await store.getUserByEmail("demo2@example.com");
   if (!demoUser || !demoUser2) {
     throw new Error(
-      "Seed sentinel is set but demo users are missing; run `deno task kv:wipe` and restart.",
+      "Seed sentinel is set but demo users are missing; run `deno task kvctl wipe` and restart.",
     );
   }
   const workspaces = await store.listWorkspacesForUser(demoUser.id);
   const demoWorkspace = workspaces.find((w) => w.name === "Demo");
   if (!demoWorkspace) {
     throw new Error(
-      "Seed sentinel is set but the demo workspace is missing; run `deno task kv:wipe` and restart.",
+      "Seed sentinel is set but the demo workspace is missing; run `deno task kvctl wipe` and restart.",
     );
   }
   return { demoUser, demoUser2, demoWorkspace };
