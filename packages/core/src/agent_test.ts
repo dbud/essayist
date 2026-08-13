@@ -50,7 +50,7 @@ Deno.test("Agent.callModel -- forwards RETRY_OPTIONS to the OpenRouter client", 
   const { client, calls } = createSpyClient();
   const agent = new Agent("test-key", client as unknown as never);
 
-  await agent.callModel("ping", z.object({ ok: z.boolean() }));
+  await agent.callModel("ping", z.object({ ok: z.boolean() }), ["m/a", "m/b"]);
 
   assertEquals(calls.length, 1);
   assertEquals(calls[0].options, RETRY_OPTIONS);
@@ -60,7 +60,7 @@ Deno.test("Agent.callModelWithTools -- forwards RETRY_OPTIONS to the OpenRouter 
   const { client, calls } = createSpyClient();
   const agent = new Agent("test-key", client as unknown as never);
 
-  agent.callModelWithTools("ping", []);
+  agent.callModelWithTools("ping", [], ["m/a", "m/b"]);
 
   assertEquals(calls.length, 1);
   assertEquals(calls[0].options, RETRY_OPTIONS);

@@ -5,10 +5,11 @@ import {
   createWriteFileTool,
 } from "@essayist/core";
 import { define } from "@/define.ts";
+import { ResolveAgentError, resolveAgent } from "@/utils/agent.ts";
 import { streamModelResultSSE } from "@/utils/sse.ts";
 
 export const handler = {
-  GET: define.handlers((ctx) => {
+  GET: define.handlers(async (ctx) => {
     const url = new URL(ctx.req.url);
     const message = url.searchParams.get("message");
 
@@ -19,23 +20,38 @@ export const handler = {
       );
     }
 
-    // Build tools per request against the resolved workspace VFS.
-    const tools = [
-      createReadFileTool(ctx.state.vfs),
-      createListFilesTool(ctx.state.vfs),
-      createGrepTool(ctx.state.vfs),
-      createWriteFileTool(ctx.state.vfs),
-    ];
+    try {
+      const { agent, pass } = await resolveAgent(ctx.state.config);
 
-    const result = ctx.state.agent.callModelWithTools(message, tools);
-    const stream = streamModelResultSSE(result);
+      // Debug tool set (incl. write_file).
+      const tools = [
+        createReadFileTool(ctx.state.vfs),
+        createListFilesTool(ctx.state.vfs),
+        createGrepTool(ctx.state.vfs),
+        createWriteFileTool(ctx.state.vfs),
+      ];
 
-    return new Response(stream, {
-      headers: {
-        "Content-Type": "text/event-stream",
-        "Cache-Control": "no-cache",
-        Connection: "keep-alive",
-      },
-    });
+      const input = `${pass.systemPrompt}\n\n${pass.instructions}\n\n${message}`;
+      const modelResult = agent.callModelWithTools(
+        input,
+        tools,
+        pass.modelRefs,
+        pass.reviewPass.maxRounds,
+      );
+      const stream = streamModelResultSSE(modelResult);
+
+      return new Response(stream, {
+        headers: {
+          "Content-Type": "text/event-stream",
+          "Cache-Control": "no-cache",
+          Connection: "keep-alive",
+        },
+      });
+    } catch (e) {
+      if (e instanceof ResolveAgentError) {
+        return Response.json({ error: e.message }, { status: 500 });
+      }
+      throw e;
+    }
   }),
 };

@@ -5,12 +5,6 @@ import { logAgentCall, logAgentResult } from "@/agent_logger.ts";
 import { generateInstructions, stripMarkdownFences } from "@/schema.ts";
 import type { ToolPrompt } from "@/tools/index.ts";
 
-const MODELS = [
-  // "inclusionai/ling-3.0-tiny:free",
-  "poolside/laguna-s-2.1:free",
-  // "openai/gpt-oss-120b:free",
-];
-
 // The OpenRouter SDK retries only 5XX by default (retryCodes: ["5XX"]). Free
 // upstream providers commonly 429, so opt 429 into the same backoff loop.
 // The SDK honors any Retry-After header from OpenRouter, overriding the
@@ -41,13 +35,14 @@ export class Agent {
   async callModel<T extends z.ZodObject<z.ZodRawShape>>(
     input: string,
     schema: T,
+    models: string[],
     options?: { includeExample?: boolean },
   ): Promise<z.output<T>> {
     const fullInput = `${input}\n\n${generateInstructions(schema, options)}`;
 
     const result = this.#client.callModel(
       {
-        models: MODELS,
+        models,
         input: fullInput,
       },
       RETRY_OPTIONS,
@@ -63,6 +58,7 @@ export class Agent {
   callModelWithTools(
     input: string,
     toolPrompts: readonly ToolPrompt[],
+    models: string[],
     maxRounds = 5,
   ) {
     const tools = toolPrompts.map((tp) => tp.tool);
@@ -70,7 +66,7 @@ export class Agent {
     const fullInput = `${instructions}\n\n${input}`;
 
     const request = {
-      models: MODELS,
+      models,
       input: fullInput,
       tools,
       stopWhen: stepCountIs(maxRounds),

@@ -6,12 +6,14 @@ export async function summarizeFile(
   fileName: string,
   client: Agent,
   vfs: VFS,
+  models: string[],
 ): Promise<string> {
   const readToolPrompt = createReadFileTool(vfs);
 
   const result = client.callModelWithTools(
     `Summarize the file "${fileName}" in 2-3 sentences.`,
     [readToolPrompt],
+    models,
   );
   return await result.getText();
 }

@@ -10,7 +10,11 @@ function createMockAgentWithTools(
   onCall?: (input: string, toolPrompts: readonly ToolPrompt[]) => void,
 ): Agent {
   return {
-    callModelWithTools: (input: string, toolPrompts: readonly ToolPrompt[]) => {
+    callModelWithTools: (
+      input: string,
+      toolPrompts: readonly ToolPrompt[],
+      _models: readonly string[],
+    ) => {
       onCall?.(input, toolPrompts);
       return {
         getText: () => Promise.resolve(responseText),
@@ -39,7 +43,7 @@ const vfs = createMockVFS({
 
 Deno.test("summarizeFile -- delegates to agent and returns result", async () => {
   const agent = createMockAgentWithTools("This is a pangram.");
-  const result = await summarizeFile("essay.txt", agent, vfs);
+  const result = await summarizeFile("essay.txt", agent, vfs, ["m/a"]);
   assertEquals(result, "This is a pangram.");
 });
 
@@ -51,7 +55,7 @@ Deno.test("summarizeFile -- sends correct prompt and tool", async () => {
     capturedPrompts = toolPrompts;
   });
 
-  await summarizeFile("essay.txt", agent, vfs);
+  await summarizeFile("essay.txt", agent, vfs, ["m/a"]);
 
   assertEquals(
     capturedInput,

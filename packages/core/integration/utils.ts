@@ -1,5 +1,11 @@
 import { Agent } from "@essayist/core";
 
+/** Models used by integration tests (real OpenRouter calls). */
+export const TEST_MODELS = [
+  "poolside/laguna-s-2.1:free",
+  "nvidia/nemotron-3.5-lightning:free",
+];
+
 export function createAgent(): Agent | null {
   let apiKey: string | undefined;
   try {

@@ -7,7 +7,7 @@ import {
 } from "@essayist/core";
 import { assertEquals, assertMatch } from "@std/assert";
 import { createVFS } from "@/vfs/testing/helpers.ts";
-import { createAgent, require } from "./utils.ts";
+import { createAgent, require, TEST_MODELS } from "./utils.ts";
 
 const agent = createAgent();
 
@@ -41,6 +41,7 @@ Deno.test({
     const result = require(agent).callModelWithTools(
       "What files are available? List all of them.",
       [toolPrompt],
+      TEST_MODELS,
     );
     const text = await result.getText();
 
@@ -90,6 +91,7 @@ Deno.test({
     const result = require(agent).callModelWithTools(
       "Search for all mentions of 'parser' across all files. Tell me which files contain it and the matching lines.",
       [toolPrompt],
+      TEST_MODELS,
     );
     const text = await result.getText();
 
@@ -106,6 +108,7 @@ Deno.test({
     const result = require(agent).callModelWithTools(
       "Search for the exact text '$5.00' across all files. Use grep.",
       [toolPrompt],
+      TEST_MODELS,
     );
     const text = await result.getText();
     assertMatch(text, /5\.00/);
@@ -120,6 +123,7 @@ Deno.test({
     const result = require(agent).callModelWithTools(
       "Find all lines that start with '- ' (list items) in the notes directory. Use a regex pattern.",
       [toolPrompt],
+      TEST_MODELS,
     );
     const text = await result.getText();
 
@@ -149,6 +153,7 @@ Deno.test({
     const result = require(agent).callModelWithTools(
       "Create a file called 'hello.txt' with the content 'Hello, world!'",
       [toolPrompt],
+      TEST_MODELS,
     );
     await result.getText();
 
@@ -169,6 +174,7 @@ Deno.test({
     const result = require(agent).callModelWithTools(
       'Overwrite config.json with: {"version": "2.0"}',
       [toolPrompt],
+      TEST_MODELS,
     );
     await result.getText();
 
@@ -194,6 +200,7 @@ Deno.test({
     const result = require(agent).callModelWithTools(
       "Read input.txt, sort the lines alphabetically, and write the sorted output to sorted.txt",
       [readTool, writeTool],
+      TEST_MODELS,
     );
     await result.getText();
 
@@ -234,6 +241,7 @@ Deno.test({
       "Read essay.txt with numbered=true, then mark the word 'fox' " +
         "with a comment 'This is the first animal mention' and label 'note'.",
       [readTool, markTool],
+      TEST_MODELS,
     );
     await result.getText();
 
@@ -260,6 +268,7 @@ Deno.test({
         "with comment 'second occurrence' and label 'verify'. " +
         "Use line_hint to specify which occurrence.",
       [readTool, markTool],
+      TEST_MODELS,
     );
     await result.getText();
 

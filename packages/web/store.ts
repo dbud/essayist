@@ -1,5 +1,10 @@
-import type { User, Workspace } from "@essayist/core";
-import { KvAdapter, WorkspaceStore } from "@essayist/core";
+import {
+  ConfigStore,
+  KvAdapter,
+  type User,
+  type Workspace,
+  WorkspaceStore,
+} from "@essayist/core";
 import { seedDemo } from "@/seed.ts";
 
 /**
@@ -22,6 +27,7 @@ export const kv = isDev
 
 export const adapter = new KvAdapter(kv);
 export const store = new WorkspaceStore(adapter);
+export const configStore = new ConfigStore(adapter);
 
 /**
  * Dev-mode demo data (users + workspace + sample files), seeded idempotently on
