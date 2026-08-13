@@ -1,4 +1,20 @@
 export { Agent } from "@/agent.ts";
+export { renderPrompt } from "@/config/template.ts";
+export type {
+  Category,
+  ModelPool,
+  Prompt,
+  ResolvedReviewPass,
+  ReviewPass,
+  ToolName,
+} from "@/config/types.ts";
+export {
+  CategorySchema,
+  ModelPoolSchema,
+  PromptSchema,
+  ReviewPassSchema,
+  ToolNameSchema,
+} from "@/config/types.ts";
 export { measure } from "@/measure.ts";
 export { KvAdapter } from "@/persistence/kv_adapter.ts";
 export {
