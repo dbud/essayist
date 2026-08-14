@@ -81,7 +81,7 @@ function FileViewerBody({ wsId, path }: { wsId: string; path: string }) {
           <div class="content-side">
             <div class="py-3 flex items-center gap-2">
               {resolvingVisible.value && <Spinner />}
-              <SidenoteControls />
+              <SidenoteControls wsId={wsId} path={path} />
             </div>
           </div>
         </div>

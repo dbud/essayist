@@ -62,6 +62,11 @@ export default function Sidenote({
         <span class="font-semibold font-serif">{number}</span>
         <div class="min-w-0 flex flex-col gap-1">
           <div class={`text-ink ${isGhost ? "line-clamp-1" : ""}`}>
+            {mark.label && (
+              <span class="font-mono text-xs bg-accent text-white mr-2">
+                {mark.label}
+              </span>
+            )}
             {mark.comment}
           </div>
           {!isGhost && mark.status === "stale" && mark.selected_text && (
