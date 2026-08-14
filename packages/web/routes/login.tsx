@@ -22,7 +22,7 @@ export default function LoginPage({ url }: PageProps) {
   const next = safeNext(url.searchParams.get("next"));
   const href = `/oauth/signin?success_url=${encodeURIComponent(next)}`;
   return (
-    <main class="flex items-start justify-center p-4 bg-paper h-full">
+    <main class="flex items-start justify-center p-4 bg-pane h-full">
       <div class="flex flex-col gap-4">
         <p class="text-ink">Sign in with your Google account to continue.</p>
         <a href={href} class="btn btn--accent self-center">
