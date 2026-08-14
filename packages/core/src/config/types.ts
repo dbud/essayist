@@ -59,6 +59,8 @@ export const ReviewPassSchema = z.object({
   modelPoolId: z.string(),
   /** Prompt key for the system message. */
   systemPromptKey: z.string(),
+  /** Prompt key for the per-file review directive (supports {{file}}). */
+  directivePromptKey: z.string(),
   /** Optional prompt key for additional instructions. */
   instructionsPromptKey: z.string().optional(),
   /** Inline instructions. */
@@ -82,6 +84,8 @@ export interface ResolvedReviewPass {
   apiKeyEnvKey: string;
   /** Rendered system prompt. */
   systemPrompt: string;
+  /** Review directive template ({{file}} unresolved). */
+  directive: string;
   /** Rendered instructions. */
   instructions: string;
   /** Allowed categories. */

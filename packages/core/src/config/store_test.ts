@@ -24,6 +24,10 @@ async function seedFullConfig(store: ConfigStore) {
     key: "instructions.mark",
     body: "Use the mark tool with {{categories}} labels.",
   });
+  await store.savePrompt({
+    key: "directive.review",
+    body: 'Review the file "{{file}}". Read it, then mark issues using the allowed labels.',
+  });
   await store.saveCategory({
     id: "thesis",
     label: "thesis",
@@ -39,6 +43,7 @@ async function seedFullConfig(store: ConfigStore) {
     name: "Essay review",
     modelPoolId: "free-pool",
     systemPromptKey: "system.reviewer",
+    directivePromptKey: "directive.review",
     instructionsPromptKey: "instructions.mark",
     enabledTools: ["read_file", "list_files", "grep", "mark"],
     allowedCategoryIds: ["thesis", "evidence"],
@@ -73,6 +78,10 @@ Deno.test("ConfigStore -- active pin + resolveActiveReviewPass", async () => {
     resolved.instructions,
     "Use the mark tool with thesis or evidence labels.",
   );
+  assertEquals(
+    resolved.directive,
+    'Review the file "{{file}}". Read it, then mark issues using the allowed labels.',
+  );
   assertEquals(resolved.allowedLabels, ["thesis", "evidence"]);
 });
 
@@ -95,6 +104,7 @@ Deno.test("ConfigStore -- respects pool.apiKeyEnvKey when set", async () => {
     name: "R",
     modelPoolId: "p",
     systemPromptKey: "sys",
+    directivePromptKey: "sys",
     enabledTools: ["read_file"],
     allowedCategoryIds: [],
     maxRounds: 3,
@@ -122,6 +132,7 @@ Deno.test("ConfigStore -- resolve throws on missing model pool", async () => {
     name: "R",
     modelPoolId: "missing-pool",
     systemPromptKey: "p",
+    directivePromptKey: "p",
     enabledTools: ["read_file"],
     allowedCategoryIds: [],
     maxRounds: 3,
@@ -142,6 +153,7 @@ Deno.test("ConfigStore -- resolve throws on empty model pool", async () => {
     name: "R",
     modelPoolId: "empty",
     systemPromptKey: "p",
+    directivePromptKey: "p",
     enabledTools: ["read_file"],
     allowedCategoryIds: [],
     maxRounds: 3,
@@ -161,6 +173,28 @@ Deno.test("ConfigStore -- resolve throws on missing prompt", async () => {
     name: "R",
     modelPoolId: "pool",
     systemPromptKey: "missing.prompt",
+    directivePromptKey: "p",
+    enabledTools: ["read_file"],
+    allowedCategoryIds: [],
+    maxRounds: 3,
+  });
+  await store.setActiveReviewPass("r");
+  await assertRejects(
+    () => store.resolveActiveReviewPass(),
+    ConfigMissingError,
+  );
+});
+
+Deno.test("ConfigStore -- resolve throws on missing directive prompt", async () => {
+  const store = seed();
+  await store.saveModelPool({ id: "pool", name: "Pool", models: ["m/ref"] });
+  await store.savePrompt({ key: "sys", body: "hi" });
+  await store.saveReviewPass({
+    id: "r",
+    name: "R",
+    modelPoolId: "pool",
+    systemPromptKey: "sys",
+    directivePromptKey: "missing.directive",
     enabledTools: ["read_file"],
     allowedCategoryIds: [],
     maxRounds: 3,
@@ -184,7 +218,7 @@ Deno.test("ConfigStore -- list helpers", async () => {
   const store = seed();
   await seedFullConfig(store);
   assertEquals((await store.listModelPools()).length, 1);
-  assertEquals((await store.listPrompts()).length, 2);
+  assertEquals((await store.listPrompts()).length, 3);
   assertEquals((await store.listCategories()).length, 2);
   assertEquals((await store.listReviewPasses()).length, 1);
 });

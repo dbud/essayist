@@ -171,6 +171,12 @@ export class ConfigStore {
       instructions = renderPrompt(reviewPass.instructions, vars);
     }
 
+    const directiveEntry = await this.getPrompt(reviewPass.directivePromptKey);
+    if (!directiveEntry) {
+      throw new ConfigMissingError(`prompt "${reviewPass.directivePromptKey}"`);
+    }
+    const directive = renderPrompt(directiveEntry.body, vars);
+
     const catEntries = await this.#adapter.getMany<Category>(
       reviewPass.allowedCategoryIds.map((id) => [CFG, CATEGORIES, id]),
     );
@@ -187,6 +193,7 @@ export class ConfigStore {
       modelRefs: pool.models,
       apiKeyEnvKey: pool.apiKeyEnvKey ?? DEFAULT_API_KEY_ENV,
       systemPrompt,
+      directive,
       instructions,
       categories,
       allowedLabels,

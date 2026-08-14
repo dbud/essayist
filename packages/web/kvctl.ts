@@ -118,6 +118,7 @@ await new Command()
       // Default prompts are generic placeholders.
       const systemPromptKey = "system.reviewer";
       const instructionsPromptKey = "instructions.mark";
+      const directivePromptKey = "directive.review";
       const prompts = [
         {
           key: systemPromptKey,
@@ -128,6 +129,11 @@ await new Command()
           key: instructionsPromptKey,
           body: "Read the relevant files, then use the mark tool to annotate specific text spans. Each mark must use one of the allowed labels and a concise, actionable comment.",
           variables: [],
+        },
+        {
+          key: directivePromptKey,
+          body: 'Review the file "{{file}}". Read it, then mark issues using the allowed labels.',
+          variables: ["file"],
         },
       ];
       for (const p of prompts) await config.savePrompt(p);
@@ -163,6 +169,7 @@ await new Command()
         name: "Essay review",
         modelPoolId: poolId,
         systemPromptKey,
+        directivePromptKey,
         instructionsPromptKey,
         enabledTools: ["read_file", "list_files", "grep", "mark"],
         allowedCategoryIds: categories.map((c) => c.id),
