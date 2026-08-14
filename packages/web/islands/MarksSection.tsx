@@ -11,9 +11,7 @@ import { workspaces } from "@/signals/workspace.ts";
 
 function statusBadge(status: MarkStatus) {
   const classes =
-    status === "resolved"
-      ? "badge badge-success badge-xs"
-      : "badge badge-warning badge-xs";
+    status === "resolved" ? "badge badge--success" : "badge badge--warning";
   return <span class={classes}>{status}</span>;
 }
 

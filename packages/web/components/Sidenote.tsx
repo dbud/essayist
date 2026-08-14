@@ -61,13 +61,13 @@ export default function Sidenote({
       <div class="flex items-start gap-2">
         <span class="font-semibold font-serif">{number}</span>
         <div class="min-w-0 flex flex-col gap-1">
-          <div class={`text-ink ${isGhost ? "line-clamp-1" : ""}`}>
+          <div class="text-ink flex flex-wrap items-start gap-2">
             {mark.label && (
-              <span class="font-mono text-xs bg-accent text-white mr-2">
-                {mark.label}
-              </span>
+              <span class="badge badge--accent">{mark.label}</span>
             )}
-            {mark.comment}
+            <span class={`min-w-0 flex-1 ${isGhost ? "line-clamp-1" : ""}`}>
+              {mark.comment}
+            </span>
           </div>
           {!isGhost && mark.status === "stale" && mark.selected_text && (
             <div class="font-serif italic text-ink line-clamp-2 line-through">

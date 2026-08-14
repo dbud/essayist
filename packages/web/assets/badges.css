@@ -1,0 +1,36 @@
+@utility badge {
+  --badge-bg: color-mix(in oklch, var(--color-pane));
+  --badge-fg: var(--color-ink);
+  --badge-slant: 0.2rem;
+  @apply inline-flex items-center justify-center whitespace-nowrap font-medium px-2 py-1;
+  font-size: 0.7rem;
+  line-height: 1;
+  background: var(--badge-bg);
+  color: var(--badge-fg);
+  clip-path: polygon(
+    var(--badge-slant) 0,
+    100% 0,
+    calc(100% - var(--badge-slant)) 100%,
+    0 100%
+  );
+}
+
+@utility badge--success {
+  --badge-bg: oklch(62% 0.13 145);
+  --badge-fg: white;
+}
+
+@utility badge--error {
+  --badge-bg: oklch(62% 0.2 25);
+  --badge-fg: white;
+}
+
+@utility badge--warning {
+  --badge-bg: oklch(82% 0.12 85);
+  --badge-fg: oklch(30% 0.05 60);
+}
+
+@utility badge--accent {
+  --badge-bg: var(--color-accent);
+  --badge-fg: white;
+}
