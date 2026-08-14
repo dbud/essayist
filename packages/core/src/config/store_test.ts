@@ -99,6 +99,11 @@ Deno.test("ConfigStore -- respects pool.apiKeyEnvKey when set", async () => {
     apiKeyEnvKey: "CUSTOM_KEY",
   });
   await store.savePrompt({ key: "sys", body: "hi" });
+  await store.saveCategory({
+    id: "c",
+    label: "c",
+    description: "d",
+  });
   await store.saveReviewPass({
     id: "r",
     name: "R",
@@ -106,7 +111,7 @@ Deno.test("ConfigStore -- respects pool.apiKeyEnvKey when set", async () => {
     systemPromptKey: "sys",
     directivePromptKey: "sys",
     enabledTools: ["read_file"],
-    allowedCategoryIds: [],
+    allowedCategoryIds: ["c"],
     maxRounds: 3,
   });
   await store.setActiveReviewPass("r");
@@ -203,6 +208,50 @@ Deno.test("ConfigStore -- resolve throws on missing directive prompt", async () 
   await assertRejects(
     () => store.resolveActiveReviewPass(),
     ConfigMissingError,
+  );
+});
+
+Deno.test("ConfigStore -- resolve throws on no allowed categories", async () => {
+  const store = seed();
+  await store.saveModelPool({ id: "pool", name: "Pool", models: ["m/ref"] });
+  await store.savePrompt({ key: "sys", body: "hi" });
+  await store.saveReviewPass({
+    id: "r",
+    name: "R",
+    modelPoolId: "pool",
+    systemPromptKey: "sys",
+    directivePromptKey: "sys",
+    enabledTools: ["read_file"],
+    allowedCategoryIds: [],
+    maxRounds: 3,
+  });
+  await store.setActiveReviewPass("r");
+  await assertRejects(
+    () => store.resolveActiveReviewPass(),
+    ConfigMissingError,
+    'review pass "r" has no allowed categories',
+  );
+});
+
+Deno.test("ConfigStore -- resolve throws on missing referenced categories", async () => {
+  const store = seed();
+  await store.saveModelPool({ id: "pool", name: "Pool", models: ["m/ref"] });
+  await store.savePrompt({ key: "sys", body: "hi" });
+  await store.saveReviewPass({
+    id: "r",
+    name: "R",
+    modelPoolId: "pool",
+    systemPromptKey: "sys",
+    directivePromptKey: "sys",
+    enabledTools: ["read_file"],
+    allowedCategoryIds: ["gone", "also-gone"],
+    maxRounds: 3,
+  });
+  await store.setActiveReviewPass("r");
+  await assertRejects(
+    () => store.resolveActiveReviewPass(),
+    ConfigMissingError,
+    "references missing categories: gone, also-gone",
   );
 });
 

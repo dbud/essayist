@@ -134,7 +134,7 @@ export class ConfigStore {
   /**
    * Resolve the active review pass into a ResolvedReviewPass bundle.
    * Returns undefined if none is pinned; throws ConfigMissingError on
-   * incomplete config.
+   * incomplete config (including a pass with zero resolved categories).
    */
   async resolveActiveReviewPass(): Promise<ResolvedReviewPass | undefined> {
     const activeId = await this.getActiveReviewPassId();
@@ -186,6 +186,15 @@ export class ConfigStore {
           e !== undefined,
       )
       .map((e) => e.value);
+    if (categories.length === 0) {
+      throw new ConfigMissingError(
+        reviewPass.allowedCategoryIds.length === 0
+          ? `review pass "${reviewPass.id}" has no allowed categories`
+          : `review pass "${reviewPass.id}" references missing categories: ${reviewPass.allowedCategoryIds.join(
+              ", ",
+            )}`,
+      );
+    }
     const allowedLabels = categories.map((c) => c.label);
 
     return {
