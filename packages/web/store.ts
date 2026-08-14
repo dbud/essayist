@@ -1,6 +1,7 @@
 import {
   ConfigStore,
   KvAdapter,
+  ReviewStore,
   type User,
   type Workspace,
   WorkspaceStore,
@@ -28,6 +29,7 @@ export const kv = isDev
 export const adapter = new KvAdapter(kv);
 export const store = new WorkspaceStore(adapter);
 export const configStore = new ConfigStore(adapter);
+export const reviewStore = new ReviewStore(adapter);
 
 /**
  * Dev-mode demo data (users + workspace + sample files), seeded idempotently on
