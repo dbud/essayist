@@ -91,21 +91,21 @@ Deno.test("runReviewPass -- completes a run with the agent summary", async () =>
     captured = c;
   });
 
-  const run = await runReviewPass(
+  const run = await runReviewPass({
     agent,
     vfs,
     reviewStore,
     pass,
-    "ws",
-    "essay.txt",
-  );
+    workspaceId: "ws",
+    fileId: "essay.txt",
+  });
 
   assertEquals(run.status, "completed");
   assertEquals(run.summary, "Strong thesis; evidence needs work.");
   assertEquals(run.fileId, "essay.txt");
   assertEquals(run.reviewPassId, "essay-review");
 
-  const stored = await reviewStore.getRun("ws", run.id);
+  const stored = await reviewStore.getRun({ workspaceId: "ws", id: run.id });
   assertEquals(stored?.status, "completed");
 
   if (!captured) throw new Error("agent was not called");
@@ -135,16 +135,19 @@ Deno.test("runReviewPass -- records a failed run on agent error", async () => {
   const { vfs, reviewStore } = setup();
   const agent = createMockThrowingAgent("upstream down");
 
-  const run = await runReviewPass(
+  const run = await runReviewPass({
     agent,
     vfs,
     reviewStore,
     pass,
-    "ws",
-    "essay.txt",
-  );
+    workspaceId: "ws",
+    fileId: "essay.txt",
+  });
 
   assertEquals(run.status, "failed");
   assertEquals(run.error, "upstream down");
-  assertEquals((await reviewStore.getRun("ws", run.id))?.status, "failed");
+  assertEquals(
+    (await reviewStore.getRun({ workspaceId: "ws", id: run.id }))?.status,
+    "failed",
+  );
 });

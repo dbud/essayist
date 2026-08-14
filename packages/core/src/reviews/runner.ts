@@ -41,20 +41,30 @@ function buildTools(
   return tools;
 }
 
+/** Options for {@link runReviewPass}. */
+export interface RunReviewPassOptions {
+  agent: Agent;
+  vfs: VFS;
+  reviewStore: ReviewStore;
+  pass: ResolvedReviewPass;
+  workspaceId: string;
+  fileId: string;
+}
+
 /** Run a review pass over `fileId` and record a ReviewRun. */
-export async function runReviewPass(
-  agent: Agent,
-  vfs: VFS,
-  reviewStore: ReviewStore,
-  pass: ResolvedReviewPass,
-  workspaceId: string,
-  fileId: string,
-): Promise<ReviewRun> {
-  const run = await reviewStore.createRun(
+export async function runReviewPass({
+  agent,
+  vfs,
+  reviewStore,
+  pass,
+  workspaceId,
+  fileId,
+}: RunReviewPassOptions): Promise<ReviewRun> {
+  const run = await reviewStore.createRun({
     workspaceId,
     fileId,
-    pass.reviewPass.id,
-  );
+    reviewPassId: pass.reviewPass.id,
+  });
 
   try {
     const tools = buildTools(
@@ -71,9 +81,14 @@ export async function runReviewPass(
       pass.reviewPass.maxRounds,
     );
     const summary = await result.getText();
-    return (await reviewStore.completeRun(workspaceId, run.id, summary)) ?? run;
+    return (
+      (await reviewStore.completeRun({ workspaceId, id: run.id, summary })) ??
+      run
+    );
   } catch (e) {
     const error = e instanceof Error ? e.message : String(e);
-    return (await reviewStore.failRun(workspaceId, run.id, error)) ?? run;
+    return (
+      (await reviewStore.failRun({ workspaceId, id: run.id, error })) ?? run
+    );
   }
 }

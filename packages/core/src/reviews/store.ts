@@ -14,11 +14,15 @@ export class ReviewStore {
   }
 
   /** Create a run in the "running" state. */
-  async createRun(
-    workspaceId: string,
-    fileId: string,
-    reviewPassId: string,
-  ): Promise<ReviewRun> {
+  async createRun({
+    workspaceId,
+    fileId,
+    reviewPassId,
+  }: {
+    workspaceId: string;
+    fileId: string;
+    reviewPassId: string;
+  }): Promise<ReviewRun> {
     const id = crypto.randomUUID();
     const startedAt = Date.now();
     const run: ReviewRun = {
@@ -33,26 +37,37 @@ export class ReviewStore {
     return run;
   }
 
-  completeRun(
-    workspaceId: string,
-    id: string,
-    summary: string,
-  ): Promise<ReviewRun | undefined> {
+  completeRun({
+    workspaceId,
+    id,
+    summary,
+  }: {
+    workspaceId: string;
+    id: string;
+    summary: string;
+  }): Promise<ReviewRun | undefined> {
     return this.#end(workspaceId, id, "completed", { summary });
   }
 
-  failRun(
-    workspaceId: string,
-    id: string,
-    error: string,
-  ): Promise<ReviewRun | undefined> {
+  failRun({
+    workspaceId,
+    id,
+    error,
+  }: {
+    workspaceId: string;
+    id: string;
+    error: string;
+  }): Promise<ReviewRun | undefined> {
     return this.#end(workspaceId, id, "failed", { error });
   }
 
-  async getRun(
-    workspaceId: string,
-    id: string,
-  ): Promise<ReviewRun | undefined> {
+  async getRun({
+    workspaceId,
+    id,
+  }: {
+    workspaceId: string;
+    id: string;
+  }): Promise<ReviewRun | undefined> {
     return (await this.#adapter.get<ReviewRun>([REVIEWS, workspaceId, id]))
       ?.value;
   }
