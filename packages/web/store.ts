@@ -40,9 +40,3 @@ const demo = isDev ? await seedDemo(store, adapter) : undefined;
 export const demoUser: User | undefined = demo?.demoUser;
 export const demoUser2: User | undefined = demo?.demoUser2;
 export const demoWorkspace: Workspace | undefined = demo?.demoWorkspace;
-
-if (demo) {
-  console.info(
-    `[dev] users: ${demo.demoUser.id} (demo), ${demo.demoUser2.id} (demo2) | workspace: ${demo.demoWorkspace.id}`,
-  );
-}
