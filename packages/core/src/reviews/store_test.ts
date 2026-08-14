@@ -78,18 +78,49 @@ Deno.test("ReviewStore -- listRuns newest first", async () => {
     workspaceId: "ws",
     fileId: "a.txt",
     reviewPassId: "pass",
+    startedAt: 100,
   });
-  await new Promise((r) => setTimeout(r, 5));
   const b = await store.createRun({
     workspaceId: "ws",
     fileId: "b.txt",
     reviewPassId: "pass",
+    startedAt: 200,
   });
 
-  const runs = await store.listRuns("ws");
+  const runs = await store.listRuns({ workspaceId: "ws" });
   assertEquals(runs.length, 2);
   assertEquals(runs[0].id, b.id);
   assertEquals(runs[1].id, a.id);
+});
+
+Deno.test("ReviewStore -- listRuns filters by fileId", async () => {
+  const store = createStore();
+  const a = await store.createRun({
+    workspaceId: "ws",
+    fileId: "a.txt",
+    reviewPassId: "pass",
+    startedAt: 100,
+  });
+  await store.createRun({
+    workspaceId: "ws",
+    fileId: "b.txt",
+    reviewPassId: "pass",
+    startedAt: 200,
+  });
+  const a2 = await store.createRun({
+    workspaceId: "ws",
+    fileId: "a.txt",
+    reviewPassId: "pass",
+    startedAt: 300,
+  });
+
+  const aRuns = await store.listRuns({ workspaceId: "ws", fileId: "a.txt" });
+  assertEquals(aRuns.length, 2);
+  assertEquals(aRuns[0].id, a2.id);
+  assertEquals(aRuns[1].id, a.id);
+
+  const bRuns = await store.listRuns({ workspaceId: "ws", fileId: "b.txt" });
+  assertEquals(bRuns.length, 1);
 });
 
 Deno.test("ReviewStore -- listRuns is workspace-scoped", async () => {
@@ -104,6 +135,6 @@ Deno.test("ReviewStore -- listRuns is workspace-scoped", async () => {
     fileId: "b.txt",
     reviewPassId: "pass",
   });
-  assertEquals((await store.listRuns("ws1")).length, 1);
-  assertEquals((await store.listRuns("ws2")).length, 1);
+  assertEquals((await store.listRuns({ workspaceId: "ws1" })).length, 1);
+  assertEquals((await store.listRuns({ workspaceId: "ws2" })).length, 1);
 });

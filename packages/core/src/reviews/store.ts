@@ -18,13 +18,14 @@ export class ReviewStore {
     workspaceId,
     fileId,
     reviewPassId,
+    startedAt = Date.now(),
   }: {
     workspaceId: string;
     fileId: string;
     reviewPassId: string;
+    startedAt?: number;
   }): Promise<ReviewRun> {
     const id = crypto.randomUUID();
-    const startedAt = Date.now();
     const run: ReviewRun = {
       id,
       workspaceId,
@@ -72,14 +73,21 @@ export class ReviewStore {
       ?.value;
   }
 
-  /** List runs for a workspace, newest first. */
-  async listRuns(workspaceId: string): Promise<ReviewRun[]> {
+  /** List runs for a workspace, newest first. Optionally filtered by file. */
+  async listRuns({
+    workspaceId,
+    fileId,
+  }: {
+    workspaceId: string;
+    fileId?: string;
+  }): Promise<ReviewRun[]> {
     const { entries } = await this.#adapter.list<ReviewRun>([
       REVIEWS,
       workspaceId,
     ]);
     return entries
       .map((e) => e.value)
+      .filter((run) => fileId === undefined || run.fileId === fileId)
       .sort((a, b) => b.startedAt - a.startedAt);
   }
 
