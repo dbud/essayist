@@ -231,7 +231,11 @@ mod tests {
 
     /// Decode the flat op vec into (type, old_idx, new_idx) triples.
     fn decode(ops: &[i32]) -> Vec<(i32, i32, i32)> {
-        ops.chunks_exact(3).map(|c| (c[0], c[1], c[2])).collect()
+        ops.as_chunks::<3>()
+            .0
+            .iter()
+            .map(|c| (c[0], c[1], c[2]))
+            .collect()
     }
 
     // -- exact-output cases (deterministic, unambiguous inputs) --
@@ -344,7 +348,7 @@ mod tests {
     fn validate(ops: &[i32], a: &[i32], b: &[i32]) -> bool {
         let mut i = 0usize;
         let mut j = 0usize;
-        for chunk in ops.chunks_exact(3) {
+        for chunk in ops.as_chunks::<3>().0 {
             match chunk[0] {
                 EQ => {
                     if chunk[1] != i as i32 || chunk[2] != j as i32 {
@@ -375,7 +379,7 @@ mod tests {
     }
 
     fn edit_distance(ops: &[i32]) -> usize {
-        ops.chunks_exact(3).filter(|c| c[0] != EQ).count()
+        ops.as_chunks::<3>().0.iter().filter(|c| c[0] != EQ).count()
     }
 
     fn lcs_len(a: &[i32], b: &[i32]) -> usize {
