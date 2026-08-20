@@ -9,5 +9,10 @@ export default function Spinner({
   size = 20,
   class: className = "",
 }: SpinnerProps) {
-  return <Cog size={size} class={`animate-spin ${className}`} />;
+  return (
+    <Cog
+      size={size}
+      class={`animate-spin [animation-duration:2s] ${className}`}
+    />
+  );
 }
