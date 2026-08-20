@@ -2,6 +2,7 @@ import { fileURLToPath } from "node:url";
 import { fresh } from "@fresh/plugin-vite";
 import tailwindcss from "@tailwindcss/vite";
 import { defineConfig, type Plugin, type ViteDevServer } from "vite";
+import { assetGenerate } from "./vite/asset-generate.ts";
 
 function watchCore(): Plugin {
   return {
@@ -40,7 +41,13 @@ function serveWorkers(): Plugin {
 }
 
 export default defineConfig({
-  plugins: [serveWorkers(), fresh(), tailwindcss(), watchCore()],
+  plugins: [
+    assetGenerate(),
+    serveWorkers(),
+    fresh(),
+    tailwindcss(),
+    watchCore(),
+  ],
   worker: {
     plugins: () => [fresh()],
   },

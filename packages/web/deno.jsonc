@@ -46,6 +46,7 @@
     "lucide-preact": "npm:lucide-preact@^1.30.0",
     "marked": "npm:marked@^18.0.9",
     "node:url": "node:url",
+    "pngjs": "npm:pngjs@^7.0.0",
     "preact": "npm:preact@^10.29.8",
     "react": "npm:preact@^10.29.8/compat",
     "react-dom": "npm:preact@^10.29.8/compat",
