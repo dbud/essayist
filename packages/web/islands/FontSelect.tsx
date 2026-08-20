@@ -21,7 +21,7 @@ export default function FontSelect() {
       trigger={
         <>
           <Swappable swapKey={current.value} class="swap-shift">
-            <span class={`inline-flex gap-1 ${current.value}`}>
+            <span class="inline-flex gap-1">
               <span>Aa</span>
               <span class="hidden @sm:inline">{current.label}</span>
             </span>
