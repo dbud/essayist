@@ -30,6 +30,7 @@ export default function Sidenote({
 }: SidenoteProps) {
   const isGhost = ghost !== undefined;
   const Icon = ghost === "down" ? ChevronDown : ChevronUp;
+  const color = colorForMark(mark);
   return (
     <button
       type="button"
@@ -40,7 +41,7 @@ export default function Sidenote({
         isGhost ? "is-ghost" : active ? "is-active" : ""
       } ${hidden ? "invisible" : ""}`}
       style={{
-        "--mark-color": colorForMark(mark),
+        "--mark-color": color,
         top,
         transform: ghost === "down" ? "translateY(-100%)" : undefined,
       }}
@@ -61,9 +62,14 @@ export default function Sidenote({
       <div class="flex items-start gap-2">
         <span class="font-semibold font-serif">{number}</span>
         <div class="min-w-0 flex flex-col gap-1">
-          <div class="text-ink flex flex-wrap items-start gap-2">
+          <div class="text-ink">
             {mark.label && (
-              <span class="badge badge--accent">{mark.label}</span>
+              <span
+                class="badge mr-1"
+                // style={{ "--badge-bg": color }}
+              >
+                {mark.label}
+              </span>
             )}
             <span class={`min-w-0 flex-1 ${isGhost ? "line-clamp-1" : ""}`}>
               {mark.comment}
