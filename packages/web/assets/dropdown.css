@@ -25,26 +25,24 @@
    so the two read as one continuous pane. Positioned off the dropdown container
    (whose height = the trigger); the menu's margin-top is the gap it spans. */
 .dropdown-bridge {
-  --dropdown-bridge-overlap: 1px;
+  --stroke-width: 1.5px;
   position: absolute;
   left: 0;
   right: 0;
-  top: calc(100% - var(--dropdown-bridge-overlap));
-  height: calc(var(--dropdown-bridge-overlap) * 2 + 0.25rem);
-  background: var(--color-pane);
-  border-left: var(--sq-stroke-width, 1px) solid var(--color-stroke);
-  border-right: var(--sq-stroke-width, 1px) solid var(--color-stroke);
+  top: calc(100% - var(--stroke-width));
+  height: calc(2 * var(--stroke-width) + 0.25rem);
+  background: var(--color-surface);
+  border-left: var(--stroke-width) solid var(--color-stroke);
+  border-right: var(--stroke-width) solid var(--color-stroke);
   z-index: var(--z-dropdown);
   pointer-events: none;
 }
 
 @utility dropdown-menu {
-  --dropdown-radius: 0.8rem;
   @apply squircle;
-  --sq-r: var(--dropdown-radius);
-  --sq-fill: var(--color-pane);
+  --sq-fill: var(--color-surface);
   --sq-stroke: var(--color-stroke);
-  background: var(--color-pane);
+  background: var(--color-surface);
   box-shadow: 2px 2px 4px -2px rgba(0, 0, 0, 0.3);
   @apply absolute flex flex-col gap-1 p-2 isolate;
   top: 100%;

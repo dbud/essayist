@@ -4,14 +4,14 @@
    (the element bg goes square, the corner mask is skipped, and adjacent edge
    bars extend to the edge). Mask images are injected by PillClipDefs. */
 @utility squircle {
-  --sq-r: 0;
+  --sq-r: 15px;
   --sq-r-tl: var(--sq-r);
   --sq-r-tr: var(--sq-r);
   --sq-r-bl: var(--sq-r);
   --sq-r-br: var(--sq-r);
   --sq-fill: transparent;
   --sq-stroke: transparent;
-  --sq-stroke-width: calc(var(--sq-r) * 0.071);
+  --sq-stroke-width: 1.5px;
   --sq-duration: 120ms;
 
   position: relative;
@@ -29,18 +29,6 @@
      corners so the visible corners follow the superellipse. */
   &::before {
     background: var(--sq-fill);
-    -webkit-mask-image: var(--sq-tl), var(--sq-tr), var(--sq-bl), var(--sq-br);
-    -webkit-mask-size:
-      var(--sq-r-tl) var(--sq-r-tl),
-      var(--sq-r-tr) var(--sq-r-tr),
-      var(--sq-r-bl) var(--sq-r-bl),
-      var(--sq-r-br) var(--sq-r-br);
-    -webkit-mask-position:
-      left top,
-      right top,
-      left bottom,
-      right bottom;
-    -webkit-mask-repeat: no-repeat;
     mask-image: var(--sq-tl), var(--sq-tr), var(--sq-bl), var(--sq-br);
     mask-size:
       var(--sq-r-tl) var(--sq-r-tl),
@@ -60,30 +48,7 @@
      let the bars extend. */
   &::after {
     background: var(--sq-stroke);
-    -webkit-mask-image:
-      var(--sq-tl-ring), var(--sq-tr-ring), var(--sq-bl-ring),
-      var(--sq-br-ring), linear-gradient(#fff, #fff),
-      linear-gradient(#fff, #fff), linear-gradient(#fff, #fff),
-      linear-gradient(#fff, #fff);
-    -webkit-mask-size:
-      var(--sq-r-tl) var(--sq-r-tl),
-      var(--sq-r-tr) var(--sq-r-tr),
-      var(--sq-r-bl) var(--sq-r-bl),
-      var(--sq-r-br) var(--sq-r-br),
-      calc(100% - var(--sq-r-tl) - var(--sq-r-tr)) var(--sq-stroke-width),
-      calc(100% - var(--sq-r-bl) - var(--sq-r-br)) var(--sq-stroke-width),
-      var(--sq-stroke-width) calc(100% - var(--sq-r-tl) - var(--sq-r-bl)),
-      var(--sq-stroke-width) calc(100% - var(--sq-r-tr) - var(--sq-r-br));
-    -webkit-mask-position:
-      left top,
-      right top,
-      left bottom,
-      right bottom,
-      var(--sq-r-tl) 0,
-      var(--sq-r-bl) 100%,
-      0 var(--sq-r-tl),
-      100% var(--sq-r-tr);
-    -webkit-mask-repeat: no-repeat;
+    --o: 1px;
     mask-image:
       var(--sq-tl-ring), var(--sq-tr-ring), var(--sq-bl-ring),
       var(--sq-br-ring), linear-gradient(#fff, #fff),
@@ -94,8 +59,10 @@
       var(--sq-r-tr) var(--sq-r-tr),
       var(--sq-r-bl) var(--sq-r-bl),
       var(--sq-r-br) var(--sq-r-br),
-      calc(100% - var(--sq-r-tl) - var(--sq-r-tr)) var(--sq-stroke-width),
-      calc(100% - var(--sq-r-bl) - var(--sq-r-br)) var(--sq-stroke-width),
+      calc(100% - var(--sq-r-tl) - var(--sq-r-tr) + 2 * var(--o))
+      var(--sq-stroke-width),
+      calc(100% - var(--sq-r-bl) - var(--sq-r-br) + 2 * var(--o))
+      var(--sq-stroke-width),
       var(--sq-stroke-width) calc(100% - var(--sq-r-tl) - var(--sq-r-bl)),
       var(--sq-stroke-width) calc(100% - var(--sq-r-tr) - var(--sq-r-br));
     mask-position:
@@ -103,8 +70,8 @@
       right top,
       left bottom,
       right bottom,
-      var(--sq-r-tl) 0,
-      var(--sq-r-bl) 100%,
+      calc(var(--sq-r-tl) - var(--o)) 0,
+      calc(var(--sq-r-bl) - var(--o)) 100%,
       0 var(--sq-r-tl),
       100% var(--sq-r-tr);
     mask-repeat: no-repeat;

@@ -15,13 +15,22 @@
 @plugin "@tailwindcss/typography";
 
 :root {
-  --color-paper: oklch(0.98 0 0);
+  --color-paper: oklch(100% 0.01 50);
   --color-ink: oklch(22% 0.01 60);
   --color-rule: oklch(82% 0.005 85);
-  --color-accent: oklch(0.62 0.22 29);
-  --color-pane: oklch(95% 0.01 70);
-  --color-button: oklch(92% 0.01 70);
-  --color-stroke: color-mix(in oklch, var(--color-ink) 20%, transparent);
+  --color-accent: oklch(62% 0.22 29);
+  --color-pane: oklch(100% 0 0);
+  --color-surface: oklch(100% 0 0);
+  --color-stroke: color-mix(in oklch, var(--color-ink) 60%, transparent);
+}
+
+@utility pane-noise {
+  background-image:
+    linear-gradient(to right, oklch(100% 0 0 / 1), oklch(100% 0 0 / 0.01)),
+    url("./noise.png?w=1200&h=1200&seed=1337&alpha=0&min=150");
+  background-size:
+    100% 100%,
+    1600px 1600px;
 }
 
 @theme inline {
@@ -30,6 +39,7 @@
   --color-rule: var(--color-rule);
   --color-accent: var(--color-accent);
   --color-pane: var(--color-pane);
+  --color-surface: var(--color-surface);
   --color-stroke: var(--color-stroke);
 }
 
@@ -134,8 +144,8 @@
 
 @utility border-top-dashed {
   --dash-len: 3px;
-  --dash-gap: 2px;
-  --dash-color: color-mix(in oklch, var(--color-stroke), transparent 0%);
+  --dash-gap: 5px;
+  --dash-color: color-mix(in oklch, var(--color-stroke), transparent 10%);
 
   background-image: repeating-linear-gradient(
     90deg,

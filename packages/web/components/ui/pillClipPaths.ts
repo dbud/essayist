@@ -80,9 +80,8 @@ function dataUri(svg: string): string {
   return `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
 }
 
-// Inset fraction for the stroke ring. Coupled to the bar width in squircle.css
-// (bar = --sq-r * STROKE_F). Tune both together.
-const STROKE_F = 1 / 16;
+// Inset fraction for the stroke ring (stroke-width / radius)
+const STROKE_F = 1.5 / 15;
 
 export const SQ_TL = dataUri(cornerSvg("tl"));
 export const SQ_TR = dataUri(cornerSvg("tr"));

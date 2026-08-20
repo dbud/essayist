@@ -3,21 +3,21 @@
 }
 
 @utility btn {
-  --btn-line-height: 2.2;
-  --btn-cap-r: calc(var(--btn-line-height) / 2 * 1em);
+  --btn-cap-r: 15px;
   --btn-cap-bleed: 0.2rem;
-  --btn-bg: color-mix(in oklch, var(--color-pane));
-  --btn-bg-hover: color-mix(in oklch, var(--color-pane), white 30%);
+  --btn-bg: var(--color-surface);
+  --btn-bg-hover: color-mix(
+    in oklch,
+    var(--color-surface),
+    var(--color-accent) 5%
+  );
   --btn-stroke: var(--color-stroke);
-  --btn-stroke-hover: var(--btn-stroke);
-  --btn-stroke-width: 1px;
   --btn-duration: 120ms;
 
   @apply squircle;
   --sq-r: var(--btn-cap-r);
   --sq-fill: var(--btn-bg);
   --sq-stroke: var(--btn-stroke);
-  --sq-stroke-width: var(--btn-stroke-width);
   --sq-duration: var(--btn-duration);
 
   @apply inline-flex items-center justify-center gap-[0.35rem] isolate cursor-pointer select-none whitespace-nowrap font-medium shadow-sm;
@@ -25,7 +25,7 @@
   color: var(--color-ink);
   font-family: var(--font-sans);
   @apply btn--size;
-  line-height: var(--btn-line-height);
+  height: calc(2 * var(--btn-cap-r));
   text-decoration: none;
   transition:
     background-color var(--btn-duration) ease-out,
@@ -36,13 +36,13 @@
     text-decoration-color var(--btn-duration) ease-out;
 
   padding-inline: calc(var(--btn-cap-r) - var(--btn-cap-bleed));
-  min-height: calc(var(--btn-cap-r) * 2);
   & > * {
     @apply relative z-1;
   }
 
   &:hover:where(:not(.dropdown-open)) {
     --btn-bg: var(--btn-bg-hover);
+    --btn-stroke: var(--color-accent);
   }
   &:active {
     transform: scale(0.98) translateY(1px);
@@ -77,15 +77,22 @@
 }
 
 @utility btn--ghost {
-  @apply bg-transparent shadow-none rounded-none;
-  &::before,
+  --btn-bg: transparent;
+  --btn-stroke: transparent;
+  &:hover {
+    --btn-bg: color-mix(in oklch, var(--color-surface), transparent 50%);
+  }
+  @apply shadow-none;
+  /*@apply bg-transparent shadow-none rounded-none;*/
+  /*&::before,
   &::after {
     @apply hidden;
-  }
+  }*/
   color: inherit;
-  padding-inline: 0;
-  line-height: 1rem;
-  min-height: auto;
+  /*padding-inline: 0;*/
+  margin-inline: calc(-1 * var(--btn-cap-r) + var(--btn-cap-bleed));
+  /*line-height: 1rem;*/
+  /*min-height: auto;*/
 
   &:not(:disabled) {
     text-decoration: underline 1px solid
@@ -100,5 +107,18 @@
   &.is-selected {
     @apply text-accent font-medium;
     text-decoration: none;
+  }
+}
+
+@utility join {
+  @apply flex flex-row gap-0;
+  .btn:not(:first-child) {
+    --sq-r-tl: 0px;
+    --sq-r-bl: 0px;
+    margin-left: -1px;
+  }
+  .btn:not(:last-child) {
+    --sq-r-tr: 0px;
+    --sq-r-br: 0px;
   }
 }
