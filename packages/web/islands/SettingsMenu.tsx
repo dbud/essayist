@@ -1,5 +1,11 @@
 import type { User } from "@essayist/core";
-import { ChevronDown, LogOut, RotateCcw, Settings } from "lucide-preact";
+import {
+  ChevronDown,
+  LogOut,
+  RotateCcw,
+  Settings,
+  SlidersVertical,
+} from "lucide-preact";
 import Avatar from "@/components/Avatar.tsx";
 import Dropdown, {
   DropdownItem,
@@ -37,6 +43,14 @@ export default function SettingsMenu({ user }: SettingsMenuProps) {
               </div>
             </div>
           </li>
+          {user.role === "admin" && (
+            <DropdownItem onClick={close}>
+              <a href="/admin" class="flex items-center gap-2">
+                <SlidersVertical size={16} />
+                Control panel
+              </a>
+            </DropdownItem>
+          )}
           <DropdownItem
             onClick={() => {
               localStorage.clear();
