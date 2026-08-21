@@ -20,7 +20,7 @@
   --sq-stroke: var(--btn-stroke);
   --sq-duration: var(--btn-duration);
 
-  @apply inline-flex items-center justify-center gap-[0.35rem] isolate cursor-pointer select-none whitespace-nowrap font-medium shadow-sm;
+  @apply inline-flex items-center justify-center gap-[0.35rem] isolate cursor-pointer select-none whitespace-nowrap font-medium shadow-none;
   background: var(--btn-bg);
   color: var(--color-ink);
   font-family: var(--font-sans);
@@ -82,17 +82,13 @@
   &:hover {
     --btn-bg: color-mix(in oklch, var(--color-surface), transparent 50%);
   }
-  @apply shadow-none;
-  /*@apply bg-transparent shadow-none rounded-none;*/
-  /*&::before,
+  @apply bg-transparent shadow-none rounded-none;
+  &::before,
   &::after {
     @apply hidden;
-  }*/
+  }
   color: inherit;
-  /*padding-inline: 0;*/
   margin-inline: calc(-1 * var(--btn-cap-r) + var(--btn-cap-bleed));
-  /*line-height: 1rem;*/
-  /*min-height: auto;*/
 
   &:not(:disabled) {
     text-decoration: underline 1px solid
