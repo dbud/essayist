@@ -32,7 +32,7 @@ export default function SidenoteControls({
   }
 
   return (
-    <div class="flex items-center gap-4">
+    <div class="flex gap-2">
       <button
         type="button"
         class="btn btn--accent"

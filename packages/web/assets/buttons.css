@@ -7,10 +7,10 @@
   --btn-bg-hover: color-mix(in oklch, var(--color-surface), black 10%);
   --btn-duration: 120ms;
 
-  @apply inline-flex items-center justify-center;
-  @apply h-10 min-w-11 px-3 gap-2;
+  @apply inline-flex;
+  @apply h-10 min-w-11 gap-1 pr-6 pl-1 pt-1;
   @apply rounded-none cursor-pointer select-none whitespace-nowrap isolate;
-  @apply font-sans font-normal text-ink shadow-none btn--size;
+  @apply font-sans font-normal text-ink leading-none shadow-none btn--size;
   text-decoration: none;
   background: var(--btn-bg);
   transition:

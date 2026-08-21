@@ -41,10 +41,8 @@ export default function FontSelect() {
                 close();
               }}
             >
-              <span class={`inline-flex gap-1 ${o.value}`}>
-                <span>Aa</span>
-                {o.label}
-              </span>
+              <span class={o.value}>Aa</span>
+              <span class={o.value}>{o.label}</span>
             </DropdownItem>
           ))}
         </DropdownMenu>

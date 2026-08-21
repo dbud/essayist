@@ -30,6 +30,10 @@
 
   --motion-stagger-step: 20ms;
   --motion-stagger-cap: calc(10 * var(--motion-stagger-step));
+
+  & > li {
+    display: flex;
+  }
 }
 
 @utility dropdown-item {

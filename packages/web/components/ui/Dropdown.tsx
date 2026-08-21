@@ -52,24 +52,29 @@ export function DropdownMenu({
 
 interface DropdownItemProps {
   selected?: boolean;
-  onClick: () => void;
+  onClick?: () => void;
+  href?: string;
   children: ComponentChildren;
 }
 
 export function DropdownItem({
   selected,
   onClick,
+  href,
   children,
 }: DropdownItemProps) {
+  const cls = `dropdown-item ${selected ? "is-selected" : ""}`;
   return (
     <li>
-      <button
-        type="button"
-        class={`dropdown-item ${selected ? "is-selected" : ""}`}
-        onClick={onClick}
-      >
-        {children}
-      </button>
+      {href ? (
+        <a href={href} class={cls} onClick={onClick}>
+          {children}
+        </a>
+      ) : (
+        <button type="button" class={cls} onClick={onClick}>
+          {children}
+        </button>
+      )}
     </li>
   );
 }

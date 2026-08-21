@@ -30,25 +30,18 @@ export default function SettingsMenu({ user }: SettingsMenuProps) {
     >
       {(close) => (
         <DropdownMenu end>
-          <li class="dropdown-item pointer-events-none flex gap-3">
-            <span class="grid h-8 w-8">
+          <li class="dropdown-item pointer-events-none flex gap-1 p-0">
+            <span class="grid h-10 w-10">
               <Avatar user={user} />
             </span>
-            <div class="flex flex-col min-w-0">
-              <div class="truncate text-md font-medium">
-                {user.name ?? user.email}
-              </div>
-              <div class="truncate text-xs text-ink/80 tracking-wide font-normal">
-                {user.email}
-              </div>
+            <div class="flex flex-col min-w-0 pt-1 pr-12">
+              <div class="truncate">{user.name ?? user.email}</div>
             </div>
           </li>
           {user.role === "admin" && (
-            <DropdownItem onClick={close}>
-              <a href="/admin" class="flex items-center gap-2">
-                <SlidersVertical size={16} />
-                Control panel
-              </a>
+            <DropdownItem href="/admin" onClick={close}>
+              <SlidersVertical size={16} />
+              Control panel
             </DropdownItem>
           )}
           <DropdownItem
@@ -61,11 +54,9 @@ export default function SettingsMenu({ user }: SettingsMenuProps) {
             <RotateCcw size={16} />
             Clear cache
           </DropdownItem>
-          <DropdownItem onClick={close}>
-            <a href="/oauth/signout" class="flex items-center gap-2">
-              <LogOut size={16} />
-              Sign out
-            </a>
+          <DropdownItem href="/oauth/signout" onClick={close}>
+            <LogOut size={16} />
+            Sign out
           </DropdownItem>
         </DropdownMenu>
       )}

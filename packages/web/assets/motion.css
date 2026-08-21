@@ -161,8 +161,7 @@
 
 .swappable {
   display: inline-grid;
-  place-items: center;
-  vertical-align: middle;
+  place-items: start;
 }
 
 .swappable-out,

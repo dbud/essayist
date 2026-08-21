@@ -7,7 +7,7 @@ interface AvatarProps {
 
 export default function Avatar({ user }: AvatarProps) {
   return (
-    <span class="grid place-items-center w-full h-full rounded-xl border border-stroke bg-paper/20 color-paper overflow-hidden">
+    <span class="grid place-items-center w-full h-full bg-ink border border-ink text-surface overflow-hidden">
       {user.picture ? (
         <img
           src={user.picture}
@@ -16,7 +16,7 @@ export default function Avatar({ user }: AvatarProps) {
           referrerpolicy="no-referrer"
         />
       ) : (
-        <UserIcon size={20} />
+        <UserIcon size={30} />
       )}
     </span>
   );
