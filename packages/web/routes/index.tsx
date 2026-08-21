@@ -9,7 +9,7 @@ import RightSidebar from "@/islands/RightSidebar.tsx";
 export default function HomePage({ state }: PageProps<unknown, State>) {
   return (
     <div class="flex flex-1 min-h-0">
-      <main class="flex flex-1 flex-col min-h-0 @container bg-paper text-ink">
+      <main class="flex flex-1 flex-col min-h-0 @container text-ink stack stack--col">
         <Navigation user={state.user}>
           <FileNavigation />
         </Navigation>

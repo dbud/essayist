@@ -62,31 +62,29 @@ function FileViewerBody({ wsId, path }: { wsId: string; path: string }) {
 
   return (
     <div
-      class={`text-sm
-        flex-1 min-h-0 flex flex-col shadow @container
+      class={`flex-1 min-h-0 flex flex-col stack @container
         ${loading.value || !state.value || resolvingVisible.value ? "loading-border" : ""}`}
     >
-      <div class="z-toolbar flex flex-col bg-pane border-b border-stroke/50">
+      <div class="z-toolbar flex flex-col bg-surface">
         <div
           class={`content-layout ${withSidePane ? "content-layout--side" : ""}`}
         >
           <div class="content-main min-w-0">
-            <div class="border-top-dashed py-3">
-              <div class="flex items-center gap-2">
-                <FontSelect />
-                <EditorToolbar wsId={wsId} path={path} />
-              </div>
+            <div class="flex w-fit stack stack--row">
+              <FontSelect />
+              <EditorToolbar wsId={wsId} path={path} />
             </div>
           </div>
-          <div class="content-side">
-            <div class="py-3 flex items-center gap-2">
-              {resolvingVisible.value && <Spinner />}
+          <div class="content-side flex items-center">
+            {resolvingVisible.value ? (
+              <Spinner />
+            ) : (
               <SidenoteControls wsId={wsId} path={path} />
-            </div>
+            )}
           </div>
         </div>
       </div>
-      <div class="flex-1 min-h-0 overflow-y-auto" ref={scrollRef}>
+      <div class="flex-1 min-h-0 overflow-y-auto bg-paper" ref={scrollRef}>
         <div
           class={`content-layout ${withSidePane ? "content-layout--side" : ""}`}
         >

@@ -13,17 +13,17 @@
   --toast-radius: 0.75rem;
   @apply squircle;
   --sq-r: var(--toast-radius);
-  --sq-fill: var(--alert-color, var(--color-pane));
+  --sq-fill: var(--alert-color, var(--color-surface));
   --sq-stroke: color-mix(in oklch, var(--color-ink), transparent 70%);
   --sq-duration: var(--toast-duration);
-  background: var(--alert-color, var(--color-pane));
+  background: var(--alert-color, var(--color-surface));
   @apply isolate flex flex-col items-stretch gap-2 text-ink shadow-sm;
   transition: background-color var(--toast-duration) ease-out;
   animation: toast-in var(--toast-duration) ease-out;
 }
 
 @utility alert--info {
-  --alert-color: var(--color-pane);
+  --alert-color: var(--color-surface);
   @apply text-ink;
 }
 

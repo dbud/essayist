@@ -1,5 +1,5 @@
 import { useSignal } from "@preact/signals";
-import { Briefcase, ChevronDown, FileText, Plus, Slash } from "lucide-preact";
+import { Briefcase, ChevronDown, FileText, Plus } from "lucide-preact";
 import Panel from "@/components/ui/Panel.tsx";
 import Spinner from "@/components/ui/Spinner.tsx";
 import { useClickOutside } from "@/hooks/useClickOutside.ts";
@@ -81,7 +81,7 @@ export default function FileNavigation() {
   const wsTrigger = (
     <button
       type="button"
-      class="btn btn--ghost"
+      class="btn"
       onClick={() => (navigationOpened.value = !navigationOpened.value)}
     >
       <Briefcase size={14} />
@@ -93,7 +93,7 @@ export default function FileNavigation() {
   const fileTrigger = (
     <button
       type="button"
-      class="btn btn--ghost max-w-xs"
+      class="btn max-w-xs"
       onClick={() => (navigationOpened.value = !navigationOpened.value)}
     >
       <FileText size={14} class="shrink-0" />
@@ -196,17 +196,18 @@ export default function FileNavigation() {
 
   return (
     <>
-      <div ref={ref} class="flex items-center py-2">
+      <div ref={ref} class="flex items-center">
         <div class="flex flex-col">
           <Panel open={!navigationOpened.value}>
             {fileEntries.value.state === "loading" ||
             workspaces.loading.value ? (
               <Spinner />
             ) : (
-              <div class="flex gap-2">
-                {wsTrigger}
-                {files && <Slash size={16} class="hidden @lg:block" />}
-                {files && fileTrigger}
+              <div class="flex">
+                <div class="flex stack stack--row">
+                  {wsTrigger}
+                  {files && fileTrigger}
+                </div>
               </div>
             )}
           </Panel>

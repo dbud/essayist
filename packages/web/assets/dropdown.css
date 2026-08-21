@@ -10,71 +10,22 @@
   }
 }
 
-/* Dropdown: animated dropdown menu with a squircle body + inner stroke.
-   Naming: dropdown-menu, dropdown-item = elements.
-   dropdown-open = state class on the trigger (flattens its bottom to merge).
-   dropdown-menu--no-tl etc. = corner-flatten modifiers. */
-
-.btn.dropdown-open {
-  --sq-r-bl: 0px;
-  --sq-r-br: 0px;
-  transform: translateY(1.5px);
-}
-
-/* Rectangular connector that overlays the trigger's bottom and the menu's top
-   so the two read as one continuous pane. Positioned off the dropdown container
-   (whose height = the trigger); the menu's margin-top is the gap it spans. */
-.dropdown-bridge {
-  --stroke-width: 1.5px;
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: calc(100% - var(--stroke-width));
-  height: calc(2 * var(--stroke-width) + 0.25rem);
-  background: var(--color-surface);
-  border-left: var(--stroke-width) solid var(--color-stroke);
-  border-right: var(--stroke-width) solid var(--color-stroke);
-  z-index: var(--z-dropdown);
-  pointer-events: none;
-}
-
 @utility dropdown-menu {
-  @apply squircle;
-  --sq-fill: var(--color-surface);
-  --sq-stroke: var(--color-stroke);
   background: var(--color-surface);
-  box-shadow: 2px 2px 4px -2px rgba(0, 0, 0, 0.3);
-  @apply absolute flex flex-col gap-1 p-2 isolate;
+  @apply absolute flex flex-col isolate stack;
   top: 100%;
-  left: 0;
-  margin-top: 0.25rem;
+  left: -1px;
+  border: 1px solid var(--color-stroke);
   width: max-content;
   min-width: 12rem;
   color: var(--color-ink);
-  font-family: var(--font-sans);
-  font-size: 0.8rem;
-  @apply font-medium;
-  line-height: 1.5;
   z-index: var(--z-dropdown);
   --dropdown-duration: 120ms;
   animation: dropdown-in var(--dropdown-duration) ease-out;
-  isolation: isolate;
 
-  &.dropdown-menu--no-tl {
-    --sq-r-tl: 0px;
-  }
-  &.dropdown-menu--no-tr {
-    --sq-r-tr: 0px;
-  }
-  &.dropdown-menu--no-bl {
-    --sq-r-bl: 0px;
-  }
-  &.dropdown-menu--no-br {
-    --sq-r-br: 0px;
-  }
   &.dropdown-menu--end {
     left: auto;
-    right: 0;
+    right: -1px;
   }
 
   --motion-stagger-step: 20ms;
@@ -82,19 +33,10 @@
 }
 
 @utility dropdown-item {
-  @apply flex items-center gap-[0.35rem] w-full text-left no-underline cursor-pointer select-none bg-transparent border-none rounded-lg;
-  padding-inline: 0.5rem;
-  padding-block: 0.25rem;
-  color: inherit;
-  font: inherit;
-  transition: background-color 80ms ease-out;
-
-  &:hover {
-    background: color-mix(in oklch, var(--color-ink) 10%, transparent);
-  }
+  @apply btn w-full justify-start;
 
   &.is-selected {
-    background: color-mix(in oklch, var(--color-accent) 10%, transparent);
+    --btn-bg: color-mix(in oklch, var(--color-accent) 10%, white);
     color: var(--color-accent);
   }
 }

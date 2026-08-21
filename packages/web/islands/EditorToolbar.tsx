@@ -65,7 +65,7 @@ export default function EditorToolbar({ wsId, path }: EditorToolbarProps) {
   ];
 
   return (
-    <div class="flex items-center gap-1">
+    <div class="flex stack">
       <BlockTypeSelect block={sel.block.value} onChange={setBlock} />
       {inlineButtons.map(({ fmt, title, icon }) => (
         <button

@@ -32,3 +32,16 @@
     @apply pr-16;
   }
 }
+
+@utility stack {
+  gap: 1px;
+  background: var(--color-stroke);
+}
+
+@utility stack--col {
+  padding-block: 1px;
+}
+
+@utility stack--row {
+  padding-inline: 1px;
+}

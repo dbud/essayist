@@ -17,11 +17,9 @@
 :root {
   --color-paper: oklch(100% 0.01 50);
   --color-ink: oklch(22% 0.01 60);
-  --color-rule: oklch(82% 0.005 85);
   --color-accent: oklch(62% 0.22 29);
-  --color-pane: oklch(100% 0 0);
   --color-surface: oklch(100% 0 0);
-  --color-stroke: color-mix(in oklch, var(--color-ink) 60%, transparent);
+  --color-stroke: color-mix(in oklch, var(--color-ink) 20%, white);
 }
 
 @utility pane-noise {
@@ -36,9 +34,7 @@
 @theme inline {
   --color-paper: var(--color-paper);
   --color-ink: var(--color-ink);
-  --color-rule: var(--color-rule);
   --color-accent: var(--color-accent);
-  --color-pane: var(--color-pane);
   --color-surface: var(--color-surface);
   --color-stroke: var(--color-stroke);
 }
@@ -57,7 +53,7 @@
 
 @layer base {
   html {
-    background-color: var(--color-pane);
+    background-color: var(--color-surface);
     color: var(--color-ink);
     font-size: 18px;
   }
@@ -119,19 +115,19 @@
   --tw-prose-bold: var(--color-ink);
   --tw-prose-counters: color-mix(in oklch, var(--color-ink) 60%, transparent);
   --tw-prose-bullets: color-mix(in oklch, var(--color-ink) 30%, transparent);
-  --tw-prose-hr: var(--color-rule);
+  --tw-prose-hr: var(--color-stroke);
   --tw-prose-quotes: var(--color-ink);
-  --tw-prose-quote-borders: var(--color-rule);
+  --tw-prose-quote-borders: var(--color-stroke);
   --tw-prose-captions: color-mix(in oklch, var(--color-ink) 60%, transparent);
   --tw-prose-code: var(--color-ink);
   --tw-prose-pre-code: var(--color-ink);
   --tw-prose-pre-bg: color-mix(
     in oklch,
     var(--color-paper) 80%,
-    var(--color-rule)
+    var(--color-stroke)
   );
-  --tw-prose-th-borders: var(--color-rule);
-  --tw-prose-td-borders: var(--color-rule);
+  --tw-prose-th-borders: var(--color-stroke);
+  --tw-prose-td-borders: var(--color-stroke);
 
   h1 {
     font-weight: 400;
