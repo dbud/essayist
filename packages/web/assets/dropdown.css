@@ -12,7 +12,7 @@
 
 @utility dropdown-menu {
   background: var(--color-surface);
-  @apply absolute flex flex-col isolate stack;
+  @apply absolute flex flex-col isolate stack shadow-sm;
   top: 100%;
   left: -1px;
   border: 1px solid var(--color-stroke);
@@ -40,7 +40,7 @@
   @apply btn w-full justify-start;
 
   &.is-selected {
-    --btn-bg: color-mix(in oklch, var(--color-accent) 10%, white);
-    color: var(--color-accent);
+    --btn-bg: var(--color-accent);
+    color: white;
   }
 }

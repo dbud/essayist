@@ -15,10 +15,10 @@
 @plugin "@tailwindcss/typography";
 
 :root {
-  --color-paper: oklch(100% 0.01 50);
+  --color-paper: oklch(100% 0 50);
   --color-ink: oklch(22% 0.01 60);
   --color-accent: oklch(62% 0.22 29);
-  --color-surface: oklch(100% 0 0);
+  --color-surface: oklch(99% 0 0);
   --color-stroke: color-mix(in oklch, var(--color-ink) 20%, white);
 }
 

@@ -65,7 +65,7 @@ function FileViewerBody({ wsId, path }: { wsId: string; path: string }) {
       class={`flex-1 min-h-0 flex flex-col stack @container
         ${loading.value || !state.value || resolvingVisible.value ? "loading-border" : ""}`}
     >
-      <div class="z-toolbar flex flex-col bg-surface">
+      <div class="z-toolbar flex flex-col bg-surface shadow-md">
         <div
           class={`content-layout ${withSidePane ? "content-layout--side" : ""}`}
         >
