@@ -132,6 +132,29 @@
   );
   --tw-prose-th-borders: var(--color-rule);
   --tw-prose-td-borders: var(--color-rule);
+
+  h1 {
+    font-weight: 400;
+    font-size: 2.75em;
+  }
+  h2 {
+    font-weight: 400;
+    font-size: 1.875em;
+  }
+  h3 {
+    font-weight: 400;
+    font-size: 1.375em;
+  }
+  h4 {
+    font-weight: 400;
+    font-size: 1.125em;
+  }
+  h5 {
+    font-weight: 400;
+  }
+  h6 {
+    font-weight: 400;
+  }
 }
 
 .font-mono .prose {
