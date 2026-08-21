@@ -1,4 +1,5 @@
 import type { PageProps } from "fresh";
+import { ArrowUpRight } from "lucide-preact";
 
 /**
  * Returns a safe same-origin path to redirect to after sign-in, or `/` if the
@@ -22,10 +23,13 @@ export default function LoginPage({ url }: PageProps) {
   const next = safeNext(url.searchParams.get("next"));
   const href = `/oauth/signin?success_url=${encodeURIComponent(next)}`;
   return (
-    <main class="flex items-start justify-center p-4 bg-surface h-full">
-      <div class="flex flex-col gap-4">
-        <p class="text-ink">Sign in with your Google account to continue.</p>
-        <a href={href} class="btn btn--accent self-center">
+    <main class="flex items-start bg-surface h-full">
+      <div class="flex flex-col stack w-1/2 max-w-128">
+        <p class="text-ink bg-surface h-20 p-4 w-full">
+          Sign in with your Google account to continue.
+        </p>
+        <a href={href} class="btn btn--accent self-end">
+          <ArrowUpRight size={16} />
           Sign in with Google
         </a>
       </div>
