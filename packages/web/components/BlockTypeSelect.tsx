@@ -48,7 +48,7 @@ export default function BlockTypeSelect({
   return (
     <Dropdown
       tooltip="Paragraph style"
-      triggerClass="btn w-36"
+      triggerClass="btn @sm:w-36"
       trigger={
         <>
           <Swappable swapKey={current.value} class="swap-rotate">

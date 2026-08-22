@@ -19,7 +19,7 @@ export default function FontSelect() {
   return (
     <Dropdown
       tooltip="Reading font"
-      triggerClass="btn w-24"
+      triggerClass="btn @sm:w-24"
       trigger={
         <>
           <Swappable swapKey={current.value} class="swap-shift">
