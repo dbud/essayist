@@ -4,12 +4,27 @@ import {
   REMOVE_LIST_COMMAND,
 } from "@lexical/list";
 import { FORMAT_TEXT_COMMAND } from "lexical";
+import type { LucideIcon } from "lucide-preact";
 import { Bold, Code, Italic, Strikethrough } from "lucide-preact";
-import type { VNode } from "preact";
 import BlockTypeSelect from "@/components/BlockTypeSelect.tsx";
 import { $setBlocksType, type BlockType } from "@/editor/blockFormat.ts";
 import { activeEditor } from "@/signals/activeEditor.ts";
 import { getEditorSelection } from "@/signals/editorSelection.ts";
+
+type FormatType = "bold" | "italic" | "strikethrough" | "code";
+
+interface InlineButton {
+  fmt: FormatType;
+  tooltip: string;
+  icon: LucideIcon;
+}
+
+const INLINE_BUTTONS: InlineButton[] = [
+  { fmt: "bold", tooltip: "Bold", icon: Bold },
+  { fmt: "italic", tooltip: "Emphasis", icon: Italic },
+  { fmt: "strikethrough", tooltip: "Strikethrough", icon: Strikethrough },
+  { fmt: "code", tooltip: "Monospaced / code", icon: Code },
+];
 
 interface EditorToolbarProps {
   wsId: string;
@@ -21,7 +36,7 @@ export default function EditorToolbar({ wsId, path }: EditorToolbarProps) {
   const sel = getEditorSelection(wsId, path);
   if (editor === null) return null;
 
-  const format = (fmt: "bold" | "italic" | "strikethrough" | "code") => {
+  const format = (fmt: FormatType) => {
     editor.focus();
     editor.dispatchCommand(FORMAT_TEXT_COMMAND, fmt);
   };
@@ -49,33 +64,18 @@ export default function EditorToolbar({ wsId, path }: EditorToolbarProps) {
 
   const inlineDisabled = sel.inCodeBlock.value;
 
-  const inlineButtons: {
-    fmt: "bold" | "italic" | "strikethrough" | "code";
-    title: string;
-    icon: VNode;
-  }[] = [
-    { fmt: "bold", title: "Bold", icon: <Bold size={16} /> },
-    { fmt: "italic", title: "Italic", icon: <Italic size={16} /> },
-    {
-      fmt: "strikethrough",
-      title: "Strikethrough",
-      icon: <Strikethrough size={16} />,
-    },
-    { fmt: "code", title: "Inline code", icon: <Code size={16} /> },
-  ];
-
   return (
     <div class="flex stack">
       <BlockTypeSelect block={sel.block.value} onChange={setBlock} />
-      {inlineButtons.map(({ fmt, title, icon }) => (
+      {INLINE_BUTTONS.map(({ fmt, tooltip, icon: Icon }) => (
         <button
           type="button"
           class={`btn ${sel[fmt].value ? "btn--accent" : ""}`}
           disabled={inlineDisabled}
-          title={title}
+          data-tooltip={tooltip}
           onClick={() => format(fmt)}
         >
-          {icon}
+          <Icon size={16} />
         </button>
       ))}
     </div>

@@ -47,6 +47,7 @@ export default function BlockTypeSelect({
 
   return (
     <Dropdown
+      tooltip="Paragraph style"
       triggerClass="btn w-36"
       trigger={
         <>
