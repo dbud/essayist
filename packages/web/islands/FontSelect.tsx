@@ -18,6 +18,7 @@ export default function FontSelect() {
 
   return (
     <Dropdown
+      triggerClass="btn w-24"
       trigger={
         <>
           <Swappable swapKey={current.value} class="swap-shift">
@@ -26,7 +27,7 @@ export default function FontSelect() {
               <span class="hidden @sm:inline">{current.label}</span>
             </span>
           </Swappable>
-          <ChevronDown size={14} />
+          <ChevronDown size={14} class="rotate-on-open" />
         </>
       }
     >

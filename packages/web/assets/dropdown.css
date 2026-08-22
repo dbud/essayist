@@ -20,7 +20,7 @@
   min-width: 12rem;
   color: var(--color-ink);
   z-index: var(--z-dropdown);
-  --dropdown-duration: 120ms;
+  --dropdown-duration: 100ms;
   animation: dropdown-in var(--dropdown-duration) ease-out;
 
   &.dropdown-menu--end {
@@ -28,7 +28,7 @@
     right: -1px;
   }
 
-  --motion-stagger-step: 20ms;
+  --motion-stagger-step: 15ms;
   --motion-stagger-cap: calc(10 * var(--motion-stagger-step));
 
   & > li {
@@ -42,5 +42,13 @@
   &.is-selected {
     --btn-bg: var(--color-accent);
     color: white;
+  }
+}
+
+@utility rotate-on-open {
+  @apply transition-transform duration-150;
+
+  .dropdown-open & {
+    @apply -rotate-180;
   }
 }

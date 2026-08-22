@@ -47,6 +47,7 @@ export default function BlockTypeSelect({
 
   return (
     <Dropdown
+      triggerClass="btn w-36"
       trigger={
         <>
           <Swappable swapKey={current.value} class="swap-rotate">
@@ -57,7 +58,7 @@ export default function BlockTypeSelect({
               {current.label}
             </Swappable>
           </span>
-          <ChevronDown size={14} />
+          <ChevronDown size={14} class="rotate-on-open" />
         </>
       }
     >

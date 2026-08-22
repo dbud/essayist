@@ -24,7 +24,7 @@ export default function SettingsMenu({ user }: SettingsMenuProps) {
         <>
           <Settings size={16} />
           <span class="hidden @lg:inline">Settings</span>
-          <ChevronDown size={14} class="hidden @sm:inline" />
+          <ChevronDown size={14} class="hidden @sm:inline rotate-on-open" />
         </>
       }
     >
