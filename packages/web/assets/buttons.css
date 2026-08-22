@@ -2,14 +2,14 @@
   font-size: 0.8rem;
 }
 
-@utility btn {
+@utility btn--like {
   --btn-bg: var(--color-surface);
   --btn-bg-hover: color-mix(in oklch, var(--color-surface), black 10%);
   --btn-duration: 120ms;
 
   @apply inline-flex;
-  @apply h-10 min-w-11 gap-1 pr-6 pl-1 pt-1;
-  @apply rounded-none cursor-pointer select-none whitespace-nowrap isolate;
+  @apply h-10 min-w-11 gap-1 pr-6 pl-1 pt-1 pb-0;
+  @apply appearance-none border-0 rounded-none select-none whitespace-nowrap isolate;
   @apply font-sans font-normal text-ink leading-none shadow-none btn--size;
   text-decoration: none;
   background: var(--btn-bg);
@@ -21,6 +21,11 @@
   & > * {
     @apply relative z-1;
   }
+}
+
+@utility btn {
+  @apply btn--like;
+  @apply cursor-pointer;
 
   &:hover:where(:not(.dropdown-open)) {
     --btn-bg: var(--btn-bg-hover);
@@ -39,6 +44,12 @@
   --btn-bg: var(--color-accent);
   --btn-bg-hover: oklch(from var(--color-accent) l calc(c * 1.3) h);
   color: white;
+}
+
+@utility btn--ink {
+  --btn-bg: var(--color-ink);
+  --btn-bg-hover: color-mix(in oklch, var(--color-ink), white 30%);
+  color: var(--color-surface);
 }
 
 @utility btn--ghost {
