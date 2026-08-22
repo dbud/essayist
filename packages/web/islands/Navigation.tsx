@@ -31,10 +31,10 @@ function RightSidebarToggle() {
 export default function Navigation({ user, children }: NavigationProps) {
   return (
     <Panel
-      class="bg-surface"
+      class="bg-surface shadow-md"
       onClickOutside={() => (navigationOpened.value = false)}
     >
-      <div class="content-layout content-layout--side shadow-md">
+      <div class="content-layout content-layout--side">
         <div class="content-main flex items-center">{children}</div>
         <div class="flex items-start justify-end">
           <div class="flex stack stack--row">
