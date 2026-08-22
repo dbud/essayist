@@ -162,6 +162,7 @@
 .swappable {
   display: inline-grid;
   place-items: start;
+  overflow: hidden;
 }
 
 .swappable-out,

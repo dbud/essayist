@@ -3,7 +3,7 @@ import { PanelRightClose, PanelRightOpen } from "lucide-preact";
 import type { ComponentChildren } from "preact";
 import Panel from "@/components/ui/Panel.tsx";
 import SettingsMenu from "@/islands/SettingsMenu.tsx";
-import { navigationOpened, rightSidebarOpened } from "@/signals/sidebar.ts";
+import { rightSidebarOpened } from "@/signals/sidebar.ts";
 
 interface NavigationProps {
   user?: User;
@@ -30,12 +30,9 @@ function RightSidebarToggle() {
 
 export default function Navigation({ user, children }: NavigationProps) {
   return (
-    <Panel
-      class="bg-surface shadow-md"
-      onClickOutside={() => (navigationOpened.value = false)}
-    >
+    <Panel class="bg-surface shadow-md">
       <div class="content-layout content-layout--side">
-        <div class="content-main flex items-center">{children}</div>
+        <div class="content-main flex flex-col items-start">{children}</div>
         <div class="flex items-start justify-end">
           <div class="flex stack stack--row">
             {user && <SettingsMenu user={user} />}
