@@ -1,18 +1,26 @@
+@utility slant {
+  --skew: -10deg;
+  --slant-bg: transparent;
+  --slant-stroke: transparent;
+  --slant-inset: 2px;
+  @apply relative isolate;
+
+  &::before {
+    @apply content-[''] absolute top-0 bottom-0 -z-1 origin-center border;
+    left: calc(-1 * var(--slant-inset));
+    right: calc(-1 * var(--slant-inset));
+    transform: skewX(var(--skew));
+    background: var(--slant-bg);
+    border-color: var(--slant-stroke);
+  }
+}
+
 @utility badge {
   --badge-bg: color-mix(in oklch, var(--color-surface));
   --badge-fg: var(--color-ink);
-  --badge-slant: 0.2rem;
-  @apply inline-flex items-center justify-center whitespace-nowrap font-medium px-2 py-1;
-  font-size: 0.7rem;
-  line-height: 1;
-  background: var(--badge-bg);
+  @apply inline-flex items-center justify-center whitespace-nowrap font-medium px-2 py-1 slant text-[0.7rem] leading-none;
   color: var(--badge-fg);
-  clip-path: polygon(
-    var(--badge-slant) 0,
-    100% 0,
-    calc(100% - var(--badge-slant)) 100%,
-    0 100%
-  );
+  --slant-bg: var(--badge-bg);
 }
 
 @utility badge--success {
