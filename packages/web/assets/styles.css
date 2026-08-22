@@ -10,6 +10,7 @@
 @import "./toast.css";
 @import "./input.css";
 @import "./content.css";
+@import "./tooltip.css";
 @import "./marks.css";
 @import "./view-transitions.css";
 @plugin "@tailwindcss/typography";

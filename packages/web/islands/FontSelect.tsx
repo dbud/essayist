@@ -18,6 +18,7 @@ export default function FontSelect() {
 
   return (
     <Dropdown
+      tooltip="Reading font"
       triggerClass="btn w-24"
       trigger={
         <>

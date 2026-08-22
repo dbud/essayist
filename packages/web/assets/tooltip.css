@@ -1,0 +1,15 @@
+.tooltip {
+  @apply fixed pointer-events-none bg-ink text-white text-[0.7rem] py-0 px-1;
+  transform: translate(12px, 12px);
+  animation: tooltip-fade-in 100ms ease-out;
+  /* TODO: edge detection */
+}
+
+@keyframes tooltip-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}

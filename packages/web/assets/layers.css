@@ -4,6 +4,7 @@
   --z-toolbar: 20;
   --z-panel: 30;
   --z-dropdown: 40;
+  --z-tooltip: 45;
   --z-dialog: 50;
   --z-toast: 60;
 }
@@ -19,6 +20,9 @@
 }
 @utility z-dropdown {
   z-index: var(--z-dropdown);
+}
+@utility z-tooltip {
+  z-index: var(--z-tooltip);
 }
 @utility z-dialog {
   z-index: var(--z-dialog);

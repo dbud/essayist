@@ -4,6 +4,7 @@ import { useClickOutside } from "@/hooks/useClickOutside.ts";
 
 interface DropdownProps {
   triggerClass?: string;
+  tooltip?: string;
   trigger: ComponentChildren;
   children: (close: () => void) => ComponentChildren;
 }
@@ -11,6 +12,7 @@ interface DropdownProps {
 /** Dropdown shell with open/close state and outside-click dismissal. */
 export default function Dropdown({
   triggerClass = "btn",
+  tooltip,
   trigger,
   children,
 }: DropdownProps) {
@@ -27,6 +29,7 @@ export default function Dropdown({
         type="button"
         class={`${triggerClass} ${open.value ? "dropdown-open" : ""}`}
         onClick={() => (open.value = !open.value)}
+        data-tooltip={tooltip}
       >
         {trigger}
       </button>
