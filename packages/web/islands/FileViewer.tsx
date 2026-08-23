@@ -59,11 +59,12 @@ function FileViewerBody({ wsId, path }: { wsId: string; path: string }) {
   }
 
   const withSidePane = resolved.value.length > 0;
+  const editorLoading = loading.value || !state.value;
 
   return (
     <div
       class={`flex-1 min-h-0 flex flex-col stack @container
-        ${loading.value || !state.value || resolvingVisible.value ? "loading-border" : ""}`}
+        ${editorLoading || resolvingVisible.value ? "loading-border" : ""}`}
     >
       <div class="z-toolbar flex flex-col bg-surface shadow-md">
         <div
@@ -73,6 +74,10 @@ function FileViewerBody({ wsId, path }: { wsId: string; path: string }) {
             <div class="flex w-fit stack stack--row">
               <FontSelect />
               <EditorToolbar wsId={wsId} path={path} />
+              <WaveBars
+                amplitude={editorLoading ? 1 : 0}
+                class="text-ink bg-surface"
+              />
             </div>
           </div>
           <div class="content-side flex items-center">
@@ -86,7 +91,7 @@ function FileViewerBody({ wsId, path }: { wsId: string; path: string }) {
       </div>
       <div class="flex-1 min-h-0 overflow-y-auto bg-paper" ref={scrollRef}>
         <div
-          class={`content-layout ${withSidePane ? "content-layout--side" : ""}`}
+          class={`isolate content-layout ${withSidePane ? "content-layout--side" : ""}`}
         >
           {/* isolate: stacking context for MarkHighlights z-index */}
           <div class="relative min-w-0 isolate">
@@ -115,6 +120,7 @@ function FileViewerBody({ wsId, path }: { wsId: string; path: string }) {
               scrollContainerRef={scrollRef}
             />
           </div>
+          <div class={`scrim ${editorLoading ? "is-open" : ""}`} />
         </div>
       </div>
     </div>

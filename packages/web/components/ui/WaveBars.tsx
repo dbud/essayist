@@ -1,6 +1,6 @@
 const BAR_COUNT = 32;
 const DURATION = 1.2;
-const DEFAULT_BAR_WIDTH = 1.5;
+const DEFAULT_BAR_WIDTH = 2;
 const DEFAULT_GAP = 4;
 const DEFAULT_HEIGHT = 45;
 const DEFAULT_AMPLITUDE = 1;

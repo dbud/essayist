@@ -85,7 +85,7 @@ function BreadcrumbsTrigger() {
     >
       <div class="flex stack stack--row">
         {workspaces.loading.value ? (
-          <WaveBars class="h-10 text-ink/50 bg-surface" />
+          <WaveBars class="h-10 text-ink/70 bg-surface" />
         ) : navigationOpened.value ? (
           <div class="btn--like btn--ink w-48 relative">
             <WaveBars
