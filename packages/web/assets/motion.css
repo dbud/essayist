@@ -162,7 +162,8 @@
 .swappable {
   display: inline-grid;
   place-items: start;
-  overflow: hidden;
+  overflow: clip;
+  overflow-clip-margin: 0.3em; /* for glyph descenders */
 }
 
 .swappable-out,
