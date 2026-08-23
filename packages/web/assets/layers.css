@@ -3,10 +3,11 @@
   --z-mark: -10;
   --z-toolbar: 20;
   --z-panel: 30;
-  --z-dropdown: 40;
-  --z-tooltip: 45;
-  --z-dialog: 50;
-  --z-toast: 60;
+  --z-scrim: 40;
+  --z-dropdown: 50;
+  --z-tooltip: 60;
+  --z-dialog: 70;
+  --z-toast: 80;
 }
 
 @utility z-base {
@@ -27,7 +28,6 @@
 @utility z-dialog {
   z-index: var(--z-dialog);
 }
-
 @utility z-toast {
   z-index: var(--z-toast);
 }
