@@ -22,11 +22,6 @@
   }
 }
 
-@utility dialog-title {
-  @apply text-xl font-thin;
-  margin-bottom: 1rem;
-}
-
 @utility scrim {
   @apply striped;
   --scrim-duration: 120ms;

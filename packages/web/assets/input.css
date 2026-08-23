@@ -1,6 +1,32 @@
+@property --input-underline-color {
+  syntax: "<color>";
+  inherits: false;
+  initial-value: oklch(0 0 0 / 0.2);
+}
+
 @utility input-text {
-  @apply w-full rounded-md border border-ink/20 px-3 py-2 text-sm bg-paper outline-none;
+  --input-height: 2.5rem;
+  --input-pad-top: 0.25rem;
+  --input-underline-gap: 0.5rem;
+  --input-underline-thickness: 1px;
+  --input-underline-inset: 0.25rem;
+  --input-underline-color: var(--color-ink);
+  --input-underline-duration: 150ms;
+  @apply btn--like w-full select-text outline-none;
+  padding-bottom: calc(var(--input-height) - var(--input-pad-top) - 1em);
+  background-color: var(--color-surface);
+  background-image: linear-gradient(
+    to right,
+    var(--input-underline-color),
+    var(--input-underline-color)
+  );
+  background-position: var(--input-underline-inset)
+    calc(var(--input-pad-top) + 1em + var(--input-underline-gap));
+  background-size: calc(100% - var(--input-underline-inset))
+    var(--input-underline-thickness);
+  background-repeat: no-repeat;
+  transition: --input-underline-color var(--input-underline-duration) ease-out;
   &:focus {
-    @apply border-accent;
+    --input-underline-color: var(--color-accent);
   }
 }

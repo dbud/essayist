@@ -1,6 +1,6 @@
 import { type Signal, useSignal } from "@preact/signals";
 import Dialog from "@/components/ui/Dialog.tsx";
-import Spinner from "@/components/ui/Spinner.tsx";
+import WaveBars from "@/components/ui/WaveBars.tsx";
 import { getFileTree } from "@/signals/fileTree.ts";
 import { getOpenedFiles } from "@/signals/openedFiles.ts";
 
@@ -41,26 +41,29 @@ export default function CreateFileDialog({
   }
 
   return (
-    <Dialog open={open} title="New file">
-      <form onSubmit={onSubmit} class="flex flex-col gap-3">
-        <label class="flex flex-col gap-1 text-sm">
-          <span class="font-medium">Path</span>
-          <input
-            type="text"
-            placeholder="e.g. notes/ideas.md"
-            value={path.value}
-            onInput={(e) => (path.value = e.currentTarget.value)}
-            disabled={submitting.value}
-            autofocus
-            class="input-text"
-          />
+    <Dialog open={open}>
+      <form onSubmit={onSubmit} class="grid grid-cols-2 stack stack--col">
+        <div class="btn--like btn--ink col-span-2">New file</div>
+        <label class="btn--like" htmlFor="file-path">
+          Path
         </label>
+        <input
+          id="file-path"
+          type="text"
+          placeholder="e.g. notes/ideas.md"
+          value={path.value}
+          onInput={(e) => (path.value = e.currentTarget.value)}
+          disabled={submitting.value}
+          autofocus
+          class="input-text"
+        />
         {error.value && (
-          <div role="alert" class="text-sm text-red-500">
+          <div role="alert" class="btn--like col-span-2 text-red-500">
             {error.value}
           </div>
         )}
-        <div class="flex justify-end gap-2 pt-2">
+        <div class="col-span-2 separator" />
+        <div class="col-span-2 flex stack stack--row justify-end">
           <button
             type="button"
             class="btn"
@@ -74,11 +77,11 @@ export default function CreateFileDialog({
           </button>
           <button
             type="submit"
-            class="btn btn--accent"
+            class="btn btn--accent relative w-30"
             disabled={submitting.value || !path.value.trim()}
           >
-            {submitting.value && <Spinner />}
             Create
+            <WaveBars fill amplitude={submitting.value ? 1 : 0} />
           </button>
         </div>
       </form>

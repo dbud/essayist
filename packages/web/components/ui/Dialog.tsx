@@ -5,7 +5,6 @@ import Panel from "@/components/ui/Panel.tsx";
 
 interface DialogProps {
   open: Signal<boolean>;
-  title?: ComponentChildren;
   children: ComponentChildren;
 }
 
@@ -17,7 +16,7 @@ interface DialogProps {
  *  renders the 0fr state before transitioning to 1fr.
  *  On close: panelOpen flips to false (by close, useEffect, or consumer),
  *  Panel animates closed, then onSettled calls dialog.close(). */
-export default function Dialog({ open, title, children }: DialogProps) {
+export default function Dialog({ open, children }: DialogProps) {
   const ref = useRef<HTMLDialogElement>(null);
   const panelOpen = useSignal(false);
 
@@ -66,8 +65,7 @@ export default function Dialog({ open, title, children }: DialogProps) {
         onSettled={onSettled}
       >
         <div class="content-layout">
-          <div class="content-main py-6 min-w-0 max-w-lg">
-            {title != null && <h3 class="dialog-title">{title}</h3>}
+          <div class="content-main pt-10 pb-32 min-w-0 max-w-lg">
             {children}
           </div>
         </div>
