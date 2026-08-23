@@ -26,7 +26,7 @@
   @apply striped;
   --scrim-duration: 120ms;
   @apply fixed inset-0 pointer-events-none;
-  z-index: var(--z-dropdown);
+  z-index: var(--z-scrim);
   background-color: color-mix(in oklch, var(--color-surface), transparent 40%);
   opacity: 0;
   display: none;
