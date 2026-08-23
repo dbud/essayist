@@ -1,5 +1,5 @@
 @utility dialog-backdrop {
-  --dialog-duration: 200ms;
+  --dialog-duration: 120ms;
   &[open] {
     @apply fixed inset-0 grid justify-items-stretch items-start w-full h-full max-w-none m-0 p-0 border-none bg-transparent;
     container-type: inline-size;
@@ -7,15 +7,17 @@
   }
 
   &::backdrop {
-    background: oklch(0 0 0 / 0.5);
-    backdrop-filter: blur(4px);
+    @apply striped;
+    background-color: color-mix(
+      in oklch,
+      var(--color-surface),
+      transparent 40%
+    );
     transition:
       opacity var(--dialog-duration) ease-out,
-      backdrop-filter var(--dialog-duration) ease-out,
       display var(--dialog-duration) ease-out allow-discrete;
     @starting-style {
       opacity: 0;
-      backdrop-filter: blur(0);
     }
   }
 }
@@ -23,4 +25,25 @@
 @utility dialog-title {
   @apply text-xl font-thin;
   margin-bottom: 1rem;
+}
+
+@utility scrim {
+  @apply striped;
+  --scrim-duration: 120ms;
+  @apply fixed inset-0 pointer-events-none;
+  z-index: var(--z-dropdown);
+  background-color: color-mix(in oklch, var(--color-surface), transparent 40%);
+  opacity: 0;
+  display: none;
+  transition:
+    opacity var(--scrim-duration) ease-out,
+    display var(--scrim-duration) allow-discrete;
+
+  &.is-open {
+    display: block;
+    opacity: 1;
+    @starting-style {
+      opacity: 0;
+    }
+  }
 }
