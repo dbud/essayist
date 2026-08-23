@@ -32,6 +32,23 @@
     1600px 1600px;
 }
 
+@utility striped {
+  --sqrt2: 1.4142135624;
+  --stripe-line: calc(1 * var(--sqrt2) * 1px);
+  --stripe-period: calc(4 * var(--sqrt2) * 1px);
+  background-image: repeating-linear-gradient(
+    -45deg,
+    color-mix(in oklch, var(--color-ink), transparent 90%) 0,
+    color-mix(in oklch, var(--color-ink), transparent 90%) var(--stripe-line),
+    transparent var(--stripe-line),
+    transparent var(--stripe-period)
+  );
+}
+
+@utility separator {
+  @apply h-3 bg-surface/50 striped;
+}
+
 @theme inline {
   --color-paper: var(--color-paper);
   --color-ink: var(--color-ink);

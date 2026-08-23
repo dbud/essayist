@@ -80,14 +80,14 @@
 
   to {
     opacity: 0;
-    transform: translateX(50%);
+    transform: translateX(-50%);
   }
 }
 
 @keyframes swap-slide-in {
   from {
     opacity: 0;
-    transform: translateX(-50%);
+    transform: translateX(50%);
   }
 
   to {
