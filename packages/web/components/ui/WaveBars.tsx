@@ -47,7 +47,7 @@ export default function WaveBars({
   const svg = (
     <svg
       aria-hidden="true"
-      class={fill ? "h-full" : className}
+      class={fill ? "h-full shrink-0" : className}
       width={viewBoxW}
       height={DEFAULT_HEIGHT}
       viewBox={`0 0 ${viewBoxW} 1`}
@@ -85,7 +85,9 @@ export default function WaveBars({
 
   // anchor the wave at the bottom-right of the nearest positioned ancestor
   return (
-    <div class={`absolute inset-0 flex items-end justify-end ${className}`}>
+    <div
+      class={`absolute inset-0 flex items-end justify-end overflow-hidden ${className}`}
+    >
       {svg}
     </div>
   );
