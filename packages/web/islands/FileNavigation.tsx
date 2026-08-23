@@ -1,9 +1,16 @@
 import { useSignal } from "@preact/signals";
-import { Briefcase, ChevronDown, FileText, Plus } from "lucide-preact";
+import {
+  ArrowDownRight,
+  Briefcase,
+  ChevronDown,
+  FileText,
+  Plus,
+} from "lucide-preact";
+import type { TargetedMouseEvent } from "preact";
 import Panel from "@/components/ui/Panel.tsx";
-import Spinner from "@/components/ui/Spinner.tsx";
+import Swappable from "@/components/ui/Swappable.tsx";
+import WaveBars from "@/components/ui/WaveBars.tsx";
 import { useClickOutside } from "@/hooks/useClickOutside.ts";
-import { useViewTransitionState } from "@/hooks/useViewTransitionState.ts";
 import CreateFileDialog from "@/islands/CreateFileDialog.tsx";
 import CreateWorkspaceDialog from "@/islands/CreateWorkspaceDialog.tsx";
 import FileUploader from "@/islands/FileUploader.tsx";
@@ -56,168 +63,168 @@ function buildFileEntries(
   return result;
 }
 
+function BreadcrumbsTrigger() {
+  const selectedWorkspace = workspaces.current.value?.name ?? "";
+  const selectedPath = getOpenedFiles()?.selected.value ?? "";
+
+  const open = (e: TargetedMouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation();
+    navigationOpened.value = true;
+  };
+
+  return (
+    <Swappable
+      swapKey={
+        workspaces.loading.value
+          ? "loading"
+          : navigationOpened.value
+            ? "open"
+            : "closed"
+      }
+      class="swap-slide leading-none relative z-dropdown"
+    >
+      <div class="flex stack stack--row">
+        {workspaces.loading.value ? (
+          <WaveBars class="h-10 text-ink/50 bg-surface" />
+        ) : navigationOpened.value ? (
+          <div class="btn--like btn--ink w-48 relative">
+            <WaveBars
+              fill
+              amplitude={workspaces.loading.value ? 1 : 0}
+              class="text-surface"
+            />
+            <ArrowDownRight size={14} />
+            Projects
+          </div>
+        ) : (
+          <>
+            <button type="button" class="btn" onClick={open}>
+              <Briefcase size={14} />
+              {selectedWorkspace}
+              <ChevronDown size={14} />
+            </button>
+            <button type="button" class="btn max-w-xs" onClick={open}>
+              <FileText size={14} />
+              <span class="truncate min-w-0 pb-px">{selectedPath}</span>
+              <ChevronDown size={14} />
+            </button>
+          </>
+        )}
+      </div>
+    </Swappable>
+  );
+}
+
 export default function FileNavigation() {
   const createWorkspaceDialogOpen = useSignal(false);
   const createFileDialogOpen = useSignal(false);
+
   const ref = useClickOutside(() => (navigationOpened.value = false));
 
   const files = getFileTree();
   const selectedPath = getOpenedFiles()?.selected.value ?? "";
-  const entries = buildFileEntries(
+  const fileEntries = buildFileEntries(
     files?.tree.value.children ?? [],
     selectedPath,
   );
 
-  const fileEntries = useViewTransitionState(
-    entries,
-    files?.loading.value ?? false,
+  const createFile = (
+    <>
+      <button
+        type="button"
+        class="btn"
+        onClick={() => (createFileDialogOpen.value = true)}
+      >
+        <Plus size={14} />
+        Create new file
+      </button>
+      <FileUploader />
+      <GoogleDocImporter />
+    </>
   );
 
-  if (files?.error.value) {
-    return <div class="text-error">{files.error.value}</div>; // TODO -- toast?
-  }
-  // TODO -- workspaces.error?
-
-  const wsTrigger = (
-    <button
-      type="button"
-      class="btn"
-      onClick={() => (navigationOpened.value = !navigationOpened.value)}
+  const filesList = (
+    <Panel
+      class="dropdown--like absolute left-full top-[-1px] z-dropdown min-w-72"
+      open={navigationOpened.value}
     >
-      <Briefcase size={14} />
-      {workspaces.current.value?.name ?? ""}
-      <ChevronDown size={14} />
-    </button>
-  );
-
-  const fileTrigger = (
-    <button
-      type="button"
-      class="btn max-w-xs"
-      onClick={() => (navigationOpened.value = !navigationOpened.value)}
-    >
-      <FileText size={14} class="shrink-0" />
-      <span class="truncate min-w-0 pb-px">{selectedPath || ""}</span>
-      <ChevronDown size={14} class="shrink-0" />
-    </button>
+      <div class="flex flex-col stack" data-stagger-children>
+        {fileEntries.map(
+          ({ path, parts, selected: fileSelected, name: fileName }) => (
+            <button
+              key={path}
+              type="button"
+              class={`group btn ${fileSelected ? "is-selected" : ""}`}
+              onClick={() => {
+                getOpenedFiles()?.open(path);
+                navigationOpened.value = false;
+              }}
+            >
+              {parts.map((p, i) => (
+                <span
+                  key={i}
+                  class={`transition-opacity ${p.redundant ? "opacity-50 group-hover:opacity-100" : ""}`}
+                >
+                  {p.segment}
+                  <span class="pl-1">/</span>
+                </span>
+              ))}
+              <span class="break-all min-w-0">{fileName}</span>
+            </button>
+          ),
+        )}
+        {(files?.files.value.length ?? 0) > 0 && <div class="separator" />}
+        {createFile}
+      </div>
+    </Panel>
   );
 
   const createWorkspace = (
     <button
       type="button"
-      class="btn btn--ghost"
+      class="btn"
       onClick={() => (createWorkspaceDialogOpen.value = true)}
     >
-      <Plus size={14} />
-      New project
+      {" "}
+      <Plus size={14} /> New project{" "}
     </button>
   );
 
-  const wsList = (
-    <div class="flex flex-col py-4 gap-4">
-      <h3 class="text-lg font-thin">Projects</h3>
-      {workspaces.loading.value ? (
-        <Spinner />
-      ) : (
-        <ul class="flex flex-col">
-          {workspaces.list.value.map(({ id, name }) => (
-            <li key={id}>
-              <button
-                type="button"
-                class={`font-normal btn btn--ghost ${id === workspaces.currentWorkspaceId.value ? "is-selected" : ""}`}
-                onClick={() => {
-                  workspaces.select(id);
-                }}
-              >
-                {name}
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
-      {createWorkspace}
-    </div>
-  );
-
-  const createFile = (
-    <button
-      type="button"
-      class="btn btn--ghost"
-      onClick={() => (createFileDialogOpen.value = true)}
-    >
-      <Plus size={14} />
-      Create new file
-    </button>
-  );
-
-  const fileList = (
-    <div class="flex flex-col py-4 gap-4">
-      <h3 class="text-lg font-thin">Files</h3>
-      {fileEntries.value.state === "loading" ? (
-        <Spinner />
-      ) : (
-        <ul class="flex flex-col" style="view-transition-name: file-list">
-          {fileEntries.value.data.map((entry) => (
-            <li key={entry.path} class="group w-fit">
-              {entry.parts.map((p, i) => (
-                <span
-                  key={i}
-                  class={`btn--size transition-opacity ${p.redundant ? "opacity-50 group-hover:opacity-100" : ""}`}
-                >
-                  {p.segment}
-                  <span class="px-1">/</span>
-                </span>
-              ))}
-              <button
-                type="button"
-                class={`font-normal btn btn--ghost ${entry.selected ? "is-selected" : ""}`}
-                onClick={() => {
-                  getOpenedFiles()?.open(entry.path);
-                  navigationOpened.value = false;
-                }}
-              >
-                <span class="break-all min-w-0">{entry.name}</span>
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
-      {fileEntries.value.state === "data" && (
-        <div class="flex flex-col gap-2">
-          <div>{createFile}</div>
-          <div class="flex gap-2">
-            <FileUploader />
-            <GoogleDocImporter />
-          </div>
-        </div>
-      )}
-    </div>
-  );
+  const workspacesList = workspaces.list.value.map(({ id, name }) => {
+    const selected = id === workspaces.currentWorkspaceId.value;
+    return (
+      <div class="relative flex" key={id}>
+        <button
+          type="button"
+          class={`btn min-w-48 ${selected ? "is-selected" : ""}`}
+          onClick={() => workspaces.select(id)}
+        >
+          {name}
+          {selected && <ArrowDownRight size={14} class="absolute right-1" />}
+          <WaveBars
+            fill
+            amplitude={selected && files?.loading.value ? 0.5 : 0}
+            class="text-surface"
+          />
+        </button>
+        {selected && filesList}
+      </div>
+    );
+  });
 
   return (
-    <>
-      <div ref={ref} class="flex items-center">
-        <div class="flex flex-col">
-          <Panel open={!navigationOpened.value}>
-            {fileEntries.value.state === "loading" ||
-            workspaces.loading.value ? (
-              <Spinner />
-            ) : (
-              <div class="flex">
-                <div class="flex stack stack--row">
-                  {wsTrigger}
-                  {files && fileTrigger}
-                </div>
-              </div>
-            )}
-          </Panel>
-          <Panel open={navigationOpened.value}>
-            <div class="flex flex-wrap gap-x-24 gap-y-4">
-              {wsList}
-              {files && fileList}
-            </div>
-          </Panel>
-        </div>
+    <div ref={ref} class="relative inline-flex">
+      <div class={`scrim ${navigationOpened.value ? "is-open" : ""}`} />
+      <BreadcrumbsTrigger />
+
+      <div class="absolute top-full left-0 z-dropdown">
+        <Panel class="dropdown--like" open={navigationOpened.value}>
+          <div class="flex flex-col stack min-w-48" data-stagger-children>
+            {workspacesList}
+            {workspaces.list.value.length > 0 && <div class="separator" />}
+            {createWorkspace}
+          </div>
+        </Panel>
       </div>
 
       <CreateWorkspaceDialog open={createWorkspaceDialogOpen} />
@@ -225,6 +232,6 @@ export default function FileNavigation() {
         open={createFileDialogOpen}
         onCreated={() => (navigationOpened.value = false)}
       />
-    </>
+    </div>
   );
 }
