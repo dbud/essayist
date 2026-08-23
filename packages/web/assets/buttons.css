@@ -38,6 +38,11 @@
   &:disabled {
     @apply opacity-40 pointer-events-none;
   }
+
+  &.is-selected {
+    --btn-bg: var(--color-accent);
+    color: white;
+  }
 }
 
 @utility btn--accent {
