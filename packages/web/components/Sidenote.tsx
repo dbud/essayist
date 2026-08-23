@@ -55,7 +55,7 @@ export default function Sidenote({
     >
       {isGhost && (
         <Icon
-          size={14}
+          size={16}
           class="absolute left-0 top-1/2 -translate-x-full -translate-y-1/2 font-serif"
         />
       )}

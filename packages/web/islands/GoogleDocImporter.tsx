@@ -92,7 +92,7 @@ export default function GoogleDocImporter() {
   return (
     <button
       type="button"
-      class="btn btn--ghost"
+      class="btn"
       onClick={handleImport}
       disabled={importing.value}
       title="Import from Google Docs"
@@ -100,7 +100,7 @@ export default function GoogleDocImporter() {
       {importing.value ? (
         <span class="loading loading-spinner loading-xs" />
       ) : (
-        <Download size={16} />
+        <Download size={14} />
       )}
       Import from Google Docs
     </button>

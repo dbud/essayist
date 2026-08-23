@@ -40,7 +40,7 @@ export default function SettingsMenu({ user }: SettingsMenuProps) {
           </li>
           {user.role === "admin" && (
             <DropdownItem href="/admin" onClick={close}>
-              <SlidersVertical size={16} />
+              <SlidersVertical size={14} />
               Control panel
             </DropdownItem>
           )}
@@ -51,11 +51,11 @@ export default function SettingsMenu({ user }: SettingsMenuProps) {
               close();
             }}
           >
-            <RotateCcw size={16} />
+            <RotateCcw size={14} />
             Clear cache
           </DropdownItem>
           <DropdownItem href="/oauth/signout" onClick={close}>
-            <LogOut size={16} />
+            <LogOut size={14} />
             Sign out
           </DropdownItem>
         </DropdownMenu>

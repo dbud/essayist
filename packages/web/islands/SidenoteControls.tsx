@@ -5,8 +5,8 @@ import { getReview } from "@/signals/review.ts";
 import { showToast } from "@/signals/toast.ts";
 
 const OPTIONS = [
-  { value: "band", label: "Band", icon: <Rows3 size={16} /> },
-  { value: "wavy", label: "Wavy", icon: <ZodiacAquarius size={16} /> },
+  { value: "band", label: "Band", icon: <Rows3 size={14} /> },
+  { value: "wavy", label: "Wavy", icon: <ZodiacAquarius size={14} /> },
 ] as const;
 
 export default function SidenoteControls({
@@ -39,7 +39,7 @@ export default function SidenoteControls({
         disabled={loading.value}
         onClick={onReview}
       >
-        <Highlighter size={16} />
+        <Highlighter size={14} />
         {loading.value ? (
           <>
             Reviewing <Spinner />

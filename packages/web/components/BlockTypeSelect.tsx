@@ -24,14 +24,14 @@ interface BlockOption {
 }
 
 const OPTIONS: BlockOption[] = [
-  { value: "normal", label: "Paragraph", icon: <Pilcrow size={16} /> },
-  { value: "h1", label: "Heading 1", icon: <Heading1 size={16} /> },
-  { value: "h2", label: "Heading 2", icon: <Heading2 size={16} /> },
-  { value: "h3", label: "Heading 3", icon: <Heading3 size={16} /> },
-  { value: "quote", label: "Quote", icon: <Quote size={16} /> },
-  { value: "bullet", label: "Bullet list", icon: <List size={16} /> },
-  { value: "number", label: "Numbered list", icon: <ListOrdered size={16} /> },
-  { value: "code", label: "Code block", icon: <CodeXml size={16} /> },
+  { value: "normal", label: "Paragraph", icon: <Pilcrow size={14} /> },
+  { value: "h1", label: "Heading 1", icon: <Heading1 size={14} /> },
+  { value: "h2", label: "Heading 2", icon: <Heading2 size={14} /> },
+  { value: "h3", label: "Heading 3", icon: <Heading3 size={14} /> },
+  { value: "quote", label: "Quote", icon: <Quote size={14} /> },
+  { value: "bullet", label: "Bullet list", icon: <List size={14} /> },
+  { value: "number", label: "Numbered list", icon: <ListOrdered size={14} /> },
+  { value: "code", label: "Code block", icon: <CodeXml size={14} /> },
 ];
 
 interface BlockTypeSelectProps {

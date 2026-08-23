@@ -56,8 +56,8 @@ export default function FileUploader() {
   }
 
   return (
-    <label class="btn btn--ghost" title="Upload files">
-      <Upload size={16} />
+    <label class="btn" title="Upload files">
+      <Upload size={14} />
       Upload file
       <input type="file" multiple class="hidden" onChange={onInputChange} />
     </label>

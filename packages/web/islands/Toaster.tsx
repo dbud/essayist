@@ -22,7 +22,7 @@ function ToastView({ toast }: { toast: Signal<Toast> }) {
     <div role="alert" class={`alert ${alertClass} p-3`}>
       <div class="flex items-center justify-between gap-2">
         <div class="flex items-center gap-2 min-w-0">
-          <Icon size={16} class="shrink-0" />
+          <Icon size={14} class="shrink-0" />
           <span class="text-xs">{message}</span>
         </div>
         <button
@@ -31,7 +31,7 @@ function ToastView({ toast }: { toast: Signal<Toast> }) {
           onClick={() => dismissToast(toast)}
           aria-label="Dismiss"
         >
-          <X size={14} />
+          <X size={16} />
         </button>
       </div>
       {progress && (
