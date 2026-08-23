@@ -1,0 +1,26 @@
+@keyframes wave-bar {
+  0%,
+  100% {
+    transform: scaleY(0.18);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+
+@keyframes wave-amp-in {
+  from {
+    transform: scaleY(0);
+  }
+  to {
+    transform: scaleY(var(--wave-amp, 1));
+  }
+}
+
+.wave-bar {
+  transform-box: fill-box;
+  transform-origin: bottom;
+  fill: color-mix(in oklch, currentColor, transparent 22%);
+  animation: wave-bar var(--wave-duration, 1s) ease-in-out var(--wave-delay, 0s)
+    infinite;
+}
