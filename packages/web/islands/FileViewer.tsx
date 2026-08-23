@@ -4,7 +4,7 @@ import { useMemo } from "preact/hooks";
 import { MarkBadges } from "@/components/MarkBadges.tsx";
 import { MarkHighlights } from "@/components/MarkHighlights.tsx";
 import Sidenote from "@/components/Sidenote.tsx";
-import Spinner from "@/components/ui/Spinner.tsx";
+import WaveBars from "@/components/ui/WaveBars.tsx";
 import { useElementHeights } from "@/hooks/useElementHeights.ts";
 import {
   type ScrollContainerRef,
@@ -77,7 +77,7 @@ function FileViewerBody({ wsId, path }: { wsId: string; path: string }) {
           </div>
           <div class="content-side flex items-center">
             {resolvingVisible.value ? (
-              <Spinner />
+              <WaveBars class="text-accent" />
             ) : (
               <SidenoteControls wsId={wsId} path={path} />
             )}
