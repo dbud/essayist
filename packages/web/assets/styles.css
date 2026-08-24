@@ -98,35 +98,6 @@
   }
 }
 
-@utility loading-border {
-  @apply relative;
-
-  &::before {
-    content: "";
-    @apply absolute top-0 left-0 right-0;
-    height: 4px;
-    border-radius: 2px;
-    background: linear-gradient(
-      90deg,
-      transparent 40%,
-      var(--color-aant) 50%,
-      transparent 60%
-    );
-    background-size: 200% 100%;
-    animation: loading-slide 3s ease-in-out infinite;
-  }
-}
-
-@keyframes loading-slide {
-  0% {
-    background-position: 0% 0;
-  }
-
-  100% {
-    background-position: -200% 0;
-  }
-}
-
 .prose {
   --tw-prose-body: var(--color-ink);
   --tw-prose-headings: var(--color-ink);
