@@ -56,9 +56,13 @@ export default function FileUploader() {
   }
 
   return (
-    <label class="btn" title="Upload files">
+    <label
+      class="btn"
+      title="Upload files"
+      data-tooltip="Upload a file from my computer"
+    >
       <Upload size={14} />
-      Upload file
+      Upload file&hellip;
       <input type="file" multiple class="hidden" onChange={onInputChange} />
     </label>
   );

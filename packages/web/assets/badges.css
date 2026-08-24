@@ -3,12 +3,15 @@
   --slant-bg: transparent;
   --slant-stroke: transparent;
   --slant-inset: 2px;
+  --slant-inset-y: 0;
   @apply relative isolate;
 
   &::before {
-    @apply content-[''] absolute top-0 bottom-0 -z-1 origin-center border;
+    @apply content-[''] absolute -z-1 origin-center border;
     left: calc(-1 * var(--slant-inset));
     right: calc(-1 * var(--slant-inset));
+    top: calc(-1 * var(--slant-inset-y));
+    bottom: calc(-1 * var(--slant-inset-y));
     transform: skewX(var(--skew));
     background: var(--slant-bg);
     border-color: var(--slant-stroke);
@@ -16,9 +19,10 @@
 }
 
 @utility badge {
-  --badge-bg: color-mix(in oklch, var(--color-surface));
+  --badge-bg: color-mix(in oklch, var(--color-surface), black 5%);
   --badge-fg: var(--color-ink);
-  @apply inline-flex items-center justify-center whitespace-nowrap font-medium px-2 py-1 slant text-[0.7rem] leading-none;
+  @apply inline-flex items-center justify-center whitespace-nowrap font-medium px-2 py-0 slant text-[0.7rem] leading-none;
+  --slant-inset-y: 0.25rem;
   color: var(--badge-fg);
   --slant-bg: var(--badge-bg);
 }

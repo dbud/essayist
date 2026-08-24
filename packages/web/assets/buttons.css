@@ -36,7 +36,7 @@
     outline-color: var(--color-accent);
   }
   &:disabled {
-    @apply pointer-events-none striped line-through opacity-60;
+    @apply pointer-events-none striped opacity-60;
   }
 
   &.is-selected {

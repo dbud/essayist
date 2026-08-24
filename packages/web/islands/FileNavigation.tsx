@@ -135,9 +135,10 @@ export default function FileNavigation() {
         type="button"
         class="btn"
         onClick={() => (createFileDialogOpen.value = true)}
+        data-tooltip="Start writing from scratch"
       >
         <Plus size={14} />
-        Create new file
+        New file&hellip;
       </button>
       <FileUploader />
       <GoogleDocImporter />
@@ -186,8 +187,7 @@ export default function FileNavigation() {
       class="btn"
       onClick={() => (createWorkspaceDialogOpen.value = true)}
     >
-      {" "}
-      <Plus size={14} /> New project{" "}
+      <Plus size={14} /> New project&hellip;
     </button>
   );
 
