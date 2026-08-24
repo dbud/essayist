@@ -87,7 +87,10 @@ function FileViewerBody({ wsId, path }: { wsId: string; path: string }) {
           </div>
         </div>
       </div>
-      <div class="flex-1 min-h-0 overflow-y-auto bg-paper" ref={scrollRef}>
+      <div
+        class="relative flex-1 min-h-0 overflow-y-auto bg-paper"
+        ref={scrollRef}
+      >
         <div
           class={`isolate content-layout ${withSidePane ? "content-layout--side" : ""}`}
         >
@@ -119,8 +122,8 @@ function FileViewerBody({ wsId, path }: { wsId: string; path: string }) {
             />
           </div>
         </div>
+        <Overlay when={editorLoading} local capture />
       </div>
-      <Overlay when={editorLoading} local capture />
     </div>
   );
 }
