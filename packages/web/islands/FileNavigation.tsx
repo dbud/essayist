@@ -7,6 +7,7 @@ import {
   Plus,
 } from "lucide-preact";
 import type { TargetedMouseEvent } from "preact";
+import Overlay from "@/components/ui/Overlay.tsx";
 import Panel from "@/components/ui/Panel.tsx";
 import Swappable from "@/components/ui/Swappable.tsx";
 import WaveBars from "@/components/ui/WaveBars.tsx";
@@ -214,7 +215,7 @@ export default function FileNavigation() {
 
   return (
     <div ref={ref} class="relative inline-flex">
-      <div class={`scrim ${navigationOpened.value ? "is-open" : ""}`} />
+      <Overlay when={navigationOpened.value} />
       <BreadcrumbsTrigger />
 
       <div class="absolute top-full left-0 z-dropdown">

@@ -4,6 +4,7 @@ import { useMemo } from "preact/hooks";
 import { MarkBadges } from "@/components/MarkBadges.tsx";
 import { MarkHighlights } from "@/components/MarkHighlights.tsx";
 import Sidenote from "@/components/Sidenote.tsx";
+import Overlay from "@/components/ui/Overlay.tsx";
 import WaveBars from "@/components/ui/WaveBars.tsx";
 import { useElementHeights } from "@/hooks/useElementHeights.ts";
 import {
@@ -62,10 +63,7 @@ function FileViewerBody({ wsId, path }: { wsId: string; path: string }) {
   const editorLoading = loading.value || !state.value;
 
   return (
-    <div
-      class={`flex-1 min-h-0 flex flex-col stack @container
-        ${editorLoading || resolvingVisible.value ? "loading-border" : ""}`}
-    >
+    <div class="relative flex-1 min-h-0 flex flex-col stack @container">
       <div class="z-toolbar flex flex-col bg-surface shadow-md">
         <div
           class={`content-layout ${withSidePane ? "content-layout--side" : ""}`}
@@ -120,9 +118,9 @@ function FileViewerBody({ wsId, path }: { wsId: string; path: string }) {
               scrollContainerRef={scrollRef}
             />
           </div>
-          <div class={`scrim ${editorLoading ? "is-open" : ""}`} />
         </div>
       </div>
+      <Overlay when={editorLoading} local capture />
     </div>
   );
 }

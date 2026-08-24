@@ -1,0 +1,19 @@
+@utility overlay {
+  @apply striped;
+  --overlay-duration: 120ms;
+  z-index: var(--z-overlay);
+  background-color: color-mix(in oklch, var(--color-surface), transparent 40%);
+  opacity: 0;
+  display: none;
+  transition:
+    opacity var(--overlay-duration) ease-out,
+    display var(--overlay-duration) allow-discrete;
+
+  &.is-open {
+    display: block;
+    opacity: 1;
+    @starting-style {
+      opacity: 0;
+    }
+  }
+}
