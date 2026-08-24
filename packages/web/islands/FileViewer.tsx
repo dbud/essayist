@@ -79,7 +79,7 @@ function FileViewerBody({ wsId, path }: { wsId: string; path: string }) {
             </div>
           </div>
           <div class="content-side flex items-center">
-            {resolvingVisible.value ? (
+            {editorLoading || resolvingVisible.value ? (
               <WaveBars class="text-accent" />
             ) : (
               <SidenoteControls wsId={wsId} path={path} />
