@@ -1,47 +1,29 @@
 import { useSignal } from "@preact/signals";
 import { Download } from "lucide-preact";
+import { useEffect, useRef } from "preact/hooks";
+import WaveBars from "@/components/ui/WaveBars.tsx";
 import { getFileTree } from "@/signals/fileTree.ts";
 import { getOpenedFiles } from "@/signals/openedFiles.ts";
 import { showToast } from "@/signals/toast.ts";
 import { workspaces } from "@/signals/workspace.ts";
-import { openGooglePicker, type PickerDoc } from "@/utils/googlePicker.ts";
+import type { PickerDoc } from "@/utils/googlePicker.ts";
+
+interface PickedMessage {
+  type: "picked";
+  docs: PickerDoc[];
+}
 
 export default function GoogleDocImporter() {
   const importing = useSignal(false);
+  const wsIdRef = useRef<string | null>(null);
 
-  async function handleImport() {
-    const wsId = workspaces.currentWorkspaceId.value;
-    if (!wsId || importing.value) return;
-
-    const configRes = await fetch("/api/integrations/google-picker-config");
-    if (!configRes.ok) {
-      const body = (await configRes.json().catch(() => null)) as {
-        error?: string;
-      } | null;
-      showToast(
-        body?.error ?? `Picker config failed (${configRes.status})`,
-        "error",
-      );
+  async function runImport(docs: PickerDoc[]) {
+    const wsId = wsIdRef.current;
+    wsIdRef.current = null;
+    if (!wsId) {
+      showToast("No workspace selected", "error");
       return;
     }
-    const config = (await configRes.json()) as {
-      accessToken: string;
-      developerKey: string;
-      appId?: string;
-    };
-
-    let docs: PickerDoc[];
-    try {
-      docs = await openGooglePicker(config);
-    } catch (err) {
-      showToast(
-        err instanceof Error ? err.message : "Failed to open Google Picker",
-        "error",
-      );
-      return;
-    }
-    if (docs.length === 0) return;
-
     importing.value = true;
     const toast = showToast(
       `Importing ${docs.length} doc${docs.length === 1 ? "" : "s"}…`,
@@ -89,6 +71,24 @@ export default function GoogleDocImporter() {
     importing.value = false;
   }
 
+  // The Picker runs in a separate tab; it postMessages the picked docs back.
+  useEffect(() => {
+    function onMessage(e: MessageEvent) {
+      if (e.origin !== globalThis.location.origin) return;
+      const data = e.data as PickedMessage | undefined;
+      if (data?.type !== "picked" || !Array.isArray(data.docs)) return;
+      runImport(data.docs);
+    }
+    globalThis.addEventListener("message", onMessage);
+    return () => globalThis.removeEventListener("message", onMessage);
+  }, []);
+
+  function handleImport() {
+    if (importing.value) return;
+    wsIdRef.current = workspaces.currentWorkspaceId.value;
+    globalThis.open("/import/google-docs", "_blank");
+  }
+
   return (
     <button
       type="button"
@@ -96,13 +96,16 @@ export default function GoogleDocImporter() {
       onClick={handleImport}
       disabled={importing.value}
       title="Import from Google Docs"
+      data-tooltip="Import documents from my Google Drive"
     >
-      {importing.value ? (
-        <span class="loading loading-spinner loading-xs" />
-      ) : (
-        <Download size={14} />
+      <Download size={14} />
+      Import from Google Docs&hellip;
+      {!importing.value && (
+        <span class="badge flex gap-1 self-start ms-auto">
+          opens in a new tab
+        </span>
       )}
-      Import from Google Docs
+      <WaveBars fill amplitude={importing.value ? 1 : 0} />
     </button>
   );
 }

@@ -69,7 +69,7 @@ export default function CreateWorkspaceDialog({
             class="btn btn--accent relative w-30"
             disabled={submitting.value || !name.value.trim()}
           >
-            Create
+            {submitting.value ? "Creating…" : "Create"}
             <WaveBars fill amplitude={submitting.value ? 1 : 0} />
           </button>
         </div>
