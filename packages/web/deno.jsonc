@@ -9,7 +9,7 @@
       "deno.ns",
       "deno.unstable"
     ],
-    "types": ["vite/client"]
+    "types": ["vite/client", "@types/gapi", "@types/google.picker"]
   },
   "exclude": ["**/_fresh/*"],
   "exports": "./main.ts",
@@ -39,6 +39,8 @@
     "@tailwindcss/typography": "npm:@tailwindcss/typography@^0.5.20",
     "@tailwindcss/vite": "npm:@tailwindcss/vite@^4.3.3",
     "@types/babel__core": "npm:@types/babel__core@^7.20.5",
+    "@types/gapi": "npm:@types/gapi@^0.0.47",
+    "@types/google.picker": "npm:@types/google.picker@^0.0.52",
     "@types/node": "npm:@types/node@^26.2.0",
     "dompurify": "npm:dompurify@^3.4.13",
     "fresh": "jsr:@fresh/core@^2.3.3",

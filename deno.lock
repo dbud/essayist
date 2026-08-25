@@ -79,6 +79,8 @@
     "npm:@tailwindcss/typography@~0.5.20": "0.5.20_tailwindcss@4.3.3",
     "npm:@tailwindcss/vite@^4.3.3": "4.3.3_vite@7.3.6__@types+node@26.2.0_@types+node@26.2.0",
     "npm:@types/babel__core@^7.20.5": "7.20.5",
+    "npm:@types/gapi@^0.0.47": "0.0.47",
+    "npm:@types/google.picker@^0.0.52": "0.0.52",
     "npm:@types/node@^26.2.0": "26.2.0",
     "npm:dompurify@^3.4.13": "3.4.13",
     "npm:esbuild-wasm@~0.25.11": "0.25.12",
@@ -1600,6 +1602,12 @@
     "@types/estree@1.0.9": {
       "integrity": "sha512-GhdPgy1el4/ImP05X05Uw4cw2/M93BCUmnEvWZNStlCzEKME4Fkk+YpoA5OiHNQmoS7Cafb8Xa3Pya8m1Qrzeg=="
     },
+    "@types/gapi@0.0.47": {
+      "integrity": "sha512-/ZsLuq6BffMgbKMtZyDZ8vwQvTyKhKQ1G2K6VyWCgtHHhfSSXbk4+4JwImZiTjWNXfI2q1ZStAwFFHSkNoTkHA=="
+    },
+    "@types/google.picker@0.0.52": {
+      "integrity": "sha512-k0HyW8HxJePomM2r0JWq9nE9XG6qY93lVpoVnaV4WjQggDHrGwDKq3G8CGpcBWhQlJBTxX9jDIrI7RQnqjM63w=="
+    },
     "@types/node@26.2.0": {
       "integrity": "sha512-5IviulTZeRNp2vAJ514cc/HUlY5nZ9fCbq9DMyC52BrhFZACo3nI0R7qBxhQmo/d27NFe96ur/b7Wwxklda+kg==",
       "dependencies": [
@@ -2275,6 +2283,8 @@
           "npm:@tailwindcss/typography@~0.5.20",
           "npm:@tailwindcss/vite@^4.3.3",
           "npm:@types/babel__core@^7.20.5",
+          "npm:@types/gapi@^0.0.47",
+          "npm:@types/google.picker@^0.0.52",
           "npm:@types/node@^26.2.0",
           "npm:dompurify@^3.4.13",
           "npm:lexical@0.48",

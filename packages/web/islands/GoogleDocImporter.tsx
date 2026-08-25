@@ -4,6 +4,7 @@ import { useEffect, useRef } from "preact/hooks";
 import WaveBars from "@/components/ui/WaveBars.tsx";
 import { getFileTree } from "@/signals/fileTree.ts";
 import { getOpenedFiles } from "@/signals/openedFiles.ts";
+import { navigationOpened } from "@/signals/sidebar.ts";
 import { showToast } from "@/signals/toast.ts";
 import { workspaces } from "@/signals/workspace.ts";
 import type { PickerDoc } from "@/utils/googlePicker.ts";
@@ -26,7 +27,7 @@ export default function GoogleDocImporter() {
     }
     importing.value = true;
     const toast = showToast(
-      `Importing ${docs.length} doc${docs.length === 1 ? "" : "s"}…`,
+      `Importing ${docs.length} document${docs.length === 1 ? "" : "s"}…`,
     );
     const errors: string[] = [];
     let firstPath: string | null = null;
@@ -57,16 +58,16 @@ export default function GoogleDocImporter() {
 
     await getFileTree()?.load();
     if (firstPath) getOpenedFiles()?.open(firstPath);
+    if (docs.length === 1) navigationOpened.value = false;
 
     toast.value = {
       ...toast.value,
       message:
         errors.length > 0
-          ? `Imported ${docs.length - errors.length}/${docs.length}${
-              errors.length > 0 ? ` (${errors.length} failed)` : ""
-            }`
-          : `Imported ${docs.length} doc${docs.length === 1 ? "" : "s"}`,
+          ? `Imported ${docs.length - errors.length}/${docs.length} (${errors.length} failed)`
+          : `Imported ${docs.length} document${docs.length === 1 ? "" : "s"}`,
       type: errors.length > 0 ? "error" : "success",
+      progress: undefined,
     };
     importing.value = false;
   }
