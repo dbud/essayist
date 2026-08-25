@@ -60,8 +60,23 @@
 
 @utility btn--ghost {
   @apply btn--base;
+  @apply cursor-pointer;
   --btn-bg: transparent;
   --btn-bg-hover: transparent;
   background: transparent;
   color: inherit;
+
+  &:not(:disabled) {
+    text-decoration: underline 1px solid
+      color-mix(in oklch, transparent 40%, currentColor);
+    text-underline-offset: 0.2rem;
+  }
+  &:hover {
+    color: var(--color-accent);
+  }
+
+  &.is-selected {
+    @apply text-accent font-medium;
+    text-decoration: none;
+  }
 }

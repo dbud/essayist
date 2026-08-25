@@ -13,7 +13,7 @@ export interface Toast {
 let count = 0;
 const toasts = signal<Signal<Toast>[]>([]);
 
-const DEFAULT_TIMEOUT = 5000;
+const DEFAULT_TIMEOUT = 10_000;
 
 /** No progress, or progress complete. */
 function isFinished(t: Toast): boolean {

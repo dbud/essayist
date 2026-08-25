@@ -1,34 +1,42 @@
-/* Toasts: a fixed bottom-right stack of dismissible notifications.
-   toast  = container (positioning + stack)
-   alert  = item card (squircle body + inner stroke, box + column layout)
-   alert--info / alert--success / alert--error = type accent */
-
 @utility toast {
   --toast-duration: 200ms;
-  @apply fixed flex flex-col gap-2 isolate right-4 bottom-4 w-96 z-toast;
+  @apply fixed flex flex-col isolate right-5 bottom-5 w-96 z-toast gap-5;
   max-width: calc(100vw - 2rem);
 }
 
 @utility alert {
-  --toast-radius: 0.75rem;
-  @apply squircle;
-  --sq-r: var(--toast-radius);
-  --sq-fill: var(--alert-color, var(--color-surface));
-  --sq-stroke: color-mix(in oklch, var(--color-ink), transparent 70%);
-  --sq-duration: var(--toast-duration);
-  background: var(--alert-color, var(--color-surface));
-  @apply isolate flex flex-col items-stretch gap-2 text-ink shadow-sm;
+  filter: drop-shadow(
+    3px 3px 5px color-mix(in oklch, var(--color-ink), transparent 70%)
+  );
+}
+
+@utility alert-inner {
+  --alert-notch: 0.25rem;
+  @apply flex flex-col leading-none min-h-15;
+  font-size: 0.8rem;
+  background-color: var(--alert-color, var(--color-surface));
+  clip-path: polygon(
+    var(--alert-notch) 0,
+    100% 0,
+    100% 100%,
+    0 100%,
+    0 var(--alert-notch)
+  );
   transition: background-color var(--toast-duration) ease-out;
   animation: toast-in var(--toast-duration) ease-out;
+
+  & .btn--ghost:hover {
+    color: white;
+  }
 }
 
 @utility alert--info {
-  --alert-color: var(--color-surface);
-  @apply text-ink;
+  --alert-color: var(--color-ink);
+  @apply text-surface;
 }
 
 @utility alert--success {
-  --alert-color: oklch(0.6 0.16 145);
+  --alert-color: oklch(65% 0.2 135);
   --toast-progress-fill: white;
   @apply text-white;
 }
@@ -39,11 +47,11 @@
 }
 
 .toast-progress {
-  @apply h-1 w-full rounded-full overflow-hidden;
-  background: color-mix(in oklch, currentColor 20%, transparent);
+  @apply h-10 w-full striped overflow-hidden mt-auto;
+  background-color: color-mix(in oklch, currentColor 20%, transparent);
 }
 .toast-progress-fill {
-  @apply h-full rounded-full;
+  @apply h-full;
   background: var(--toast-progress-fill, var(--color-accent));
   transition: width var(--toast-duration) ease-out;
 }
