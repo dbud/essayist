@@ -3,6 +3,7 @@ import { computed, createModel, signal } from "@preact/signals";
 import { IS_BROWSER } from "fresh/runtime";
 import { workspaces } from "@/signals/workspace.ts";
 import createAsyncState from "@/utils/asyncState.ts";
+import { ensureOk } from "@/utils/ensureOk.ts";
 import type { UploadedFile } from "@/utils/fileUpload.ts";
 import createProgressState from "@/utils/progressState.ts";
 
@@ -18,7 +19,7 @@ export const FileTreeModel = createModel((workspaceId: string) => {
       const res = await fetch(
         `/api/workspaces/${encodeURIComponent(workspaceId)}/files`,
       );
-      if (!res.ok) throw new Error(`Request failed (${res.status})`);
+      await ensureOk(res);
       return (await res.json()) as FileEntry[];
     });
     if (result) files.value = result;
@@ -34,12 +35,7 @@ export const FileTreeModel = createModel((workspaceId: string) => {
         body: JSON.stringify({ content }),
       },
     );
-    if (!res.ok) {
-      const body = (await res.json().catch(() => null)) as {
-        error?: string;
-      } | null;
-      throw new Error(body?.error ?? `Request failed (${res.status})`);
-    }
+    await ensureOk(res);
     await load();
   }
 
@@ -61,12 +57,11 @@ export const FileTreeModel = createModel((workspaceId: string) => {
           body: JSON.stringify({ content }),
         },
       );
-      if (!res.ok) {
-        const body = (await res.json().catch(() => null)) as {
-          error?: string;
-        } | null;
+      try {
+        await ensureOk(res);
+      } catch (err) {
         throw new Error(
-          `${path}: ${body?.error ?? `Request failed (${res.status})`}`,
+          `${path}: ${err instanceof Error ? err.message : String(err)}`,
         );
       }
     });

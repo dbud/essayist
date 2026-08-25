@@ -3,6 +3,7 @@ import { createModel, signal } from "@preact/signals";
 import { IS_BROWSER } from "fresh/runtime";
 import { getMarks } from "@/signals/marks.ts";
 import createAsyncState from "@/utils/asyncState.ts";
+import { ensureOk } from "@/utils/ensureOk.ts";
 
 export const ReviewModel = createModel((workspaceId: string, path: string) => {
   const run = signal<ReviewRun | null>(null);
@@ -18,7 +19,7 @@ export const ReviewModel = createModel((workspaceId: string, path: string) => {
           path,
         )}`,
       );
-      if (!res.ok) throw new Error(`Request failed (${res.status})`);
+      await ensureOk(res);
       return (await res.json()) as ReviewRun[];
     });
     if (result) runs.value = result;
@@ -30,7 +31,7 @@ export const ReviewModel = createModel((workspaceId: string, path: string) => {
         `/api/workspaces/${encodeURIComponent(workspaceId)}/files/${encodeURIComponent(path)}/review`,
         { method: "POST" },
       );
-      if (!res.ok) throw new Error(`Request failed (${res.status})`);
+      await ensureOk(res);
       return (await res.json()) as ReviewRun;
     });
     if (result) {

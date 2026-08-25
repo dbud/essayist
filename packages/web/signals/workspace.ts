@@ -2,6 +2,7 @@ import type { Workspace } from "@essayist/core";
 import { computed, createModel, signal } from "@preact/signals";
 import { IS_BROWSER } from "fresh/runtime";
 import createAsyncState from "@/utils/asyncState.ts";
+import { ensureOk } from "@/utils/ensureOk.ts";
 import { persistentSignal } from "@/utils/persistentSignal.ts";
 
 export const WorkspacesModel = createModel(() => {
@@ -21,7 +22,7 @@ export const WorkspacesModel = createModel(() => {
   async function load(): Promise<void> {
     const result = await run(async () => {
       const res = await fetch("/api/workspaces");
-      if (!res.ok) throw new Error(`Request failed (${res.status})`);
+      await ensureOk(res);
       return (await res.json()) as Workspace[];
     });
     if (!result) return;
@@ -38,12 +39,7 @@ export const WorkspacesModel = createModel(() => {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name }),
     });
-    if (!res.ok) {
-      const body = (await res.json().catch(() => null)) as {
-        error?: string;
-      } | null;
-      throw new Error(body?.error ?? `Request failed (${res.status})`);
-    }
+    await ensureOk(res);
     const workspace = (await res.json()) as Workspace;
     await load();
     currentWorkspaceId.value = workspace.id;

@@ -1,18 +1,7 @@
 import type { Signal } from "@preact/signals";
 import { showToast } from "@/signals/toast.ts";
 import createAsyncState from "@/utils/asyncState.ts";
-
-async function ensureOk(res: Response): Promise<void> {
-  if (res.ok) return;
-  let message = `Request failed (${res.status})`;
-  try {
-    const body = await res.json();
-    if (body?.error) message = body.error;
-  } catch {
-    /* not JSON */
-  }
-  throw new Error(message);
-}
+import { ensureOk } from "@/utils/ensureOk.ts";
 
 export interface Mutations {
   mutating: Signal<boolean>;

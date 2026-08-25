@@ -4,6 +4,7 @@ import { IS_BROWSER } from "fresh/runtime";
 import type { EditorState } from "lexical";
 import { getOpenedFilesFor } from "@/signals/openedFiles.ts";
 import createAsyncState from "@/utils/asyncState.ts";
+import { ensureOk } from "@/utils/ensureOk.ts";
 import {
   editorStateToMarkdown,
   markdownToEditorState,
@@ -48,7 +49,7 @@ export const FileModel = createModel((workspaceId: string, path: string) => {
       const res = await fetch(
         `/api/workspaces/${encodeURIComponent(workspaceId)}/files/${encodeURIComponent(path)}`,
       );
-      if (!res.ok) throw new Error(`Request failed (${res.status})`);
+      await ensureOk(res);
       return (await res.json()) as FileSnapshot;
     });
     if (result) snapshot.value = result;

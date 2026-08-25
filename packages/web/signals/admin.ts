@@ -3,6 +3,7 @@ import { createModel, signal } from "@preact/signals";
 import { IS_BROWSER } from "fresh/runtime";
 import createAsyncState from "@/utils/asyncState.ts";
 import { createMutations } from "@/utils/createMutations.ts";
+import { ensureOk } from "@/utils/ensureOk.ts";
 
 export interface AdminConfig {
   modelPools: ModelPool[];
@@ -27,7 +28,7 @@ export const AdminConfigModel = createModel(() => {
   async function load() {
     const result = await run(async () => {
       const res = await fetch("/api/admin/config");
-      if (!res.ok) throw new Error(`Request failed (${res.status})`);
+      await ensureOk(res);
       return (await res.json()) as AdminConfig;
     });
     if (result) {
