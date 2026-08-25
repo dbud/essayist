@@ -1,6 +1,11 @@
 import type { Signal } from "@preact/signals";
 import { CircleCheckBig, Info, TriangleAlert, X } from "lucide-preact";
-import { dismissToast, type Toast, toasts } from "@/signals/toast.ts";
+import {
+  dismissToast,
+  removeToast,
+  type Toast,
+  toasts,
+} from "@/signals/toast.ts";
 
 const ICONS = {
   info: Info,
@@ -9,7 +14,7 @@ const ICONS = {
 } as const;
 
 function ToastView({ toast }: { toast: Signal<Toast> }) {
-  const { type, message, progress } = toast.value;
+  const { type, message, progress, dismissing } = toast.value;
   const alertClass = {
     info: "alert--info",
     success: "alert--success",
@@ -20,7 +25,12 @@ function ToastView({ toast }: { toast: Signal<Toast> }) {
     progress && progress.total > 0 ? (progress.done / progress.total) * 100 : 0;
   return (
     <div class={`alert ${alertClass}`} role="alert">
-      <div class="alert-inner">
+      <div
+        class={`alert-inner ${dismissing ? "toast-leave" : "toast-enter"}`}
+        onAnimationEnd={(e) => {
+          if (e.animationName === "toast-out") removeToast(toast);
+        }}
+      >
         <div class="flex p-2 gap-2">
           <Icon size={14} class="shrink-0" />
           <span>{message}</span>

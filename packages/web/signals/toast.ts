@@ -8,6 +8,8 @@ export interface Toast {
   type: ToastType;
   /** Optional progress bar. */
   progress?: { done: number; total: number };
+  /** Set by dismissToast to play the leave animation before removal. */
+  dismissing?: boolean;
 }
 
 let count = 0;
@@ -44,7 +46,15 @@ export function showToast(
   return toast;
 }
 
+/** Begin dismissal: plays the leave animation. The element's animationend
+ * listener calls removeToast once the animation finishes. */
 export function dismissToast(toast: Signal<Toast>): void {
+  if (toast.value.dismissing) return;
+  toast.value = { ...toast.value, dismissing: true };
+}
+
+/** Remove a toast from the model. Called after the leave animation ends. */
+export function removeToast(toast: Signal<Toast>): void {
   toasts.value = toasts.value.filter((t) => t !== toast);
 }
 
