@@ -119,6 +119,7 @@ function BreadcrumbsTrigger() {
 export default function FileNavigation() {
   const createWorkspaceDialogOpen = useSignal(false);
   const createFileDialogOpen = useSignal(false);
+  const filesPanelOpen = useSignal(navigationOpened.value);
 
   const ref = useClickOutside(() => (navigationOpened.value = false));
 
@@ -148,7 +149,7 @@ export default function FileNavigation() {
   const filesList = (
     <Panel
       class="dropdown--like absolute left-full top-[-1px] z-dropdown min-w-72"
-      open={navigationOpened.value}
+      open={filesPanelOpen.value}
     >
       <div class="flex flex-col stack" data-stagger-children>
         {fileEntries.map(
@@ -219,7 +220,11 @@ export default function FileNavigation() {
       <BreadcrumbsTrigger />
 
       <div class="absolute top-full left-0 z-dropdown">
-        <Panel class="dropdown--like" open={navigationOpened.value}>
+        <Panel
+          class="dropdown--like"
+          open={navigationOpened.value}
+          onSettled={() => (filesPanelOpen.value = navigationOpened.value)}
+        >
           <div class="flex flex-col stack min-w-48" data-stagger-children>
             {workspacesList}
             {workspaces.list.value.length > 0 && <div class="separator" />}

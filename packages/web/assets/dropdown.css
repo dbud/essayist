@@ -15,6 +15,7 @@
   --motion-pane-clip-duration: var(--dropdown-duration);
   --motion-stagger-step: 15ms;
   --motion-stagger-cap: calc(10 * var(--motion-stagger-step));
+  width: max-content;
   background: var(--color-surface);
   @apply shadow-md;
   border: 1px solid var(--color-stroke);
@@ -26,7 +27,6 @@
   @apply absolute flex flex-col isolate stack;
   top: 100%;
   left: -1px;
-  width: max-content;
   min-width: 12rem;
   z-index: var(--z-dropdown);
   animation: dropdown-in var(--dropdown-duration) ease-out;
