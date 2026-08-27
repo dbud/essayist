@@ -2,8 +2,6 @@ import { effect, type Signal, signal, useSignal } from "@preact/signals";
 import { IS_BROWSER } from "fresh/runtime";
 import { useEffect, useRef } from "preact/hooks";
 
-const cache = new Map<string, Signal<unknown>>();
-
 function readStored<T>(key: string, fallback: T): T {
   if (!IS_BROWSER) return fallback;
 
@@ -17,10 +15,11 @@ function readStored<T>(key: string, fallback: T): T {
   }
 }
 
+// No module-level cache: each model instance owns its own signal so that
+// server-side, request-scoped model instances get request-scoped signals.
+// On the client each model is a singleton (via the model store), so a key is
+// still constructed only once.
 export function persistentSignal<T>(key: string, fallback: T): Signal<T> {
-  const existing = cache.get(key);
-  if (existing) return existing as Signal<T>;
-
   const s = signal<T>(readStored(key, fallback));
 
   if (IS_BROWSER) {
@@ -29,7 +28,6 @@ export function persistentSignal<T>(key: string, fallback: T): Signal<T> {
     });
   }
 
-  cache.set(key, s);
   return s;
 }
 

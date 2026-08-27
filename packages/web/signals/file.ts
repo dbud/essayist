@@ -2,6 +2,7 @@ import type { FileSnapshot } from "@essayist/core";
 import { computed, createModel, signal } from "@preact/signals";
 import { IS_BROWSER } from "fresh/runtime";
 import type { EditorState } from "lexical";
+import { get, seed } from "@/signals/models.ts";
 import { getOpenedFilesFor } from "@/signals/openedFiles.ts";
 import createAsyncState from "@/utils/asyncState.ts";
 import { ensureOk } from "@/utils/ensureOk.ts";
@@ -55,7 +56,13 @@ export const FileModel = createModel((workspaceId: string, path: string) => {
     if (result) snapshot.value = result;
   }
 
-  if (IS_BROWSER) void load();
+  // Prefer a server-provided seed over a REST fetch when available.
+  const seeded = seed<FileSnapshot>("file", `${workspaceId}:${path}`);
+  if (seeded) {
+    snapshot.value = seeded;
+    loading.value = false;
+  }
+  if (IS_BROWSER && !seeded) void load();
 
   return {
     snapshot,
@@ -71,9 +78,12 @@ export const FileModel = createModel((workspaceId: string, path: string) => {
   };
 });
 
-const cache = new Map<string, InstanceType<typeof FileModel>>();
+export type FileModelInstance = InstanceType<typeof FileModel>;
 
-export function getFile(workspaceId: string, path: string) {
-  const key = `${workspaceId}:${path}`;
-  return cache.getOrInsertComputed(key, () => new FileModel(workspaceId, path));
+export function getFile(workspaceId: string, path: string): FileModelInstance {
+  return get(
+    "file",
+    `${workspaceId}:${path}`,
+    () => new FileModel(workspaceId, path),
+  );
 }

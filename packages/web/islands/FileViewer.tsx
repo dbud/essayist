@@ -1,4 +1,5 @@
 import type { ReadonlySignal, Signal } from "@preact/signals";
+import { IS_BROWSER } from "fresh/runtime";
 import type { LexicalEditor } from "lexical";
 import { useMemo } from "preact/hooks";
 import { MarkBadges } from "@/components/MarkBadges.tsx";
@@ -30,6 +31,9 @@ import { workspaces } from "@/signals/workspace.ts";
 import { delayedRise } from "@/utils/delayedRise.ts";
 
 export default function FileViewer() {
+  // SSR is deferred for the editor area pending Lexical SSR support; the
+  // surrounding nav (FileNavigation) still server-renders via seeded models.
+  if (!IS_BROWSER) return null;
   const openedFiles = getOpenedFiles();
   const path = openedFiles?.selected.value ?? "";
   if (!openedFiles || !path) return null;

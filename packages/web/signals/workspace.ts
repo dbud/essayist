@@ -1,9 +1,15 @@
 import type { Workspace } from "@essayist/core";
 import { computed, createModel, signal } from "@preact/signals";
 import { IS_BROWSER } from "fresh/runtime";
+import { get, seed } from "@/signals/models.ts";
 import createAsyncState from "@/utils/asyncState.ts";
 import { ensureOk } from "@/utils/ensureOk.ts";
 import { persistentSignal } from "@/utils/persistentSignal.ts";
+
+interface WorkspacesSeed {
+  list: Workspace[];
+  currentId: string;
+}
 
 export const WorkspacesModel = createModel(() => {
   const currentWorkspaceId = persistentSignal<string>("workspaceId", "");
@@ -46,7 +52,14 @@ export const WorkspacesModel = createModel(() => {
     return workspace;
   }
 
-  if (IS_BROWSER) void load();
+  // Prefer a server-provided seed (list + current id) over a REST fetch.
+  const seeded = seed<WorkspacesSeed>("workspaces", "singleton");
+  if (seeded) {
+    list.value = seeded.list;
+    currentWorkspaceId.value = seeded.currentId;
+    loading.value = false;
+  }
+  if (IS_BROWSER && !seeded) void load();
 
   return {
     currentWorkspaceId,
@@ -60,4 +73,21 @@ export const WorkspacesModel = createModel(() => {
   };
 });
 
-export const workspaces = new WorkspacesModel();
+export type WorkspacesModelInstance = InstanceType<typeof WorkspacesModel>;
+
+/**
+ * Request-scoped on the server (the active request's WorkspacesModel, via the
+ * model store) and module-scoped on the client. The Proxy keeps the existing
+ * `workspaces.foo` call sites unchanged while routing property access to the
+ * per-environment instance.
+ */
+export const workspaces = new Proxy({} as WorkspacesModelInstance, {
+  get(_t, prop) {
+    const inst = get<WorkspacesModelInstance>(
+      "workspaces",
+      "singleton",
+      () => new WorkspacesModel(),
+    );
+    return Reflect.get(inst, prop);
+  },
+}) as WorkspacesModelInstance;

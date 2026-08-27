@@ -1,9 +1,11 @@
 import { App, staticFiles } from "fresh";
 import type { State } from "@/define.ts";
 import authMiddleware from "@/middleware/auth.ts";
+import modelsMiddleware from "@/middleware/models.ts";
 
 export const app: App<State> = new App<State>()
   .use(staticFiles())
+  .use(modelsMiddleware)
   .use(authMiddleware);
 
 app.fsRoutes();

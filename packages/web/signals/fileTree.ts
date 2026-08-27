@@ -1,6 +1,7 @@
 import type { FileEntry } from "@essayist/core";
 import { computed, createModel, signal } from "@preact/signals";
 import { IS_BROWSER } from "fresh/runtime";
+import { get, seed } from "@/signals/models.ts";
 import { workspaces } from "@/signals/workspace.ts";
 import createAsyncState from "@/utils/asyncState.ts";
 import { ensureOk } from "@/utils/ensureOk.ts";
@@ -40,10 +41,10 @@ export const FileTreeModel = createModel((workspaceId: string) => {
   }
 
   /**
-   * Upsert files via PUT. Used by uploads where replacing existing content
-   * is expected. Files are uploaded in parallel; the runner's
-   * `uploadProgress` signal updates as each file settles so the caller can
-   * subscribe via `effect()`. The tree is reloaded once after all uploads settle.
+   * Upsert files via PUT. Used by uploads where replacing existing content is
+   * expected. Files are uploaded in parallel; the runner's `uploadProgress`
+   * signal updates as each file settles so the caller can subscribe via
+   * `effect()`. The tree is reloaded once after all uploads settle.
    */
   async function uploadFiles(items: UploadedFile[]): Promise<void> {
     if (items.length === 0) return;
@@ -69,7 +70,13 @@ export const FileTreeModel = createModel((workspaceId: string) => {
     await load();
   }
 
-  if (IS_BROWSER) void load();
+  // Prefer a server-provided seed over a REST fetch when available.
+  const seeded = seed<FileEntry[]>("tree", workspaceId);
+  if (seeded) {
+    files.value = seeded;
+    loading.value = false;
+  }
+  if (IS_BROWSER && !seeded) void load();
 
   return {
     files,
@@ -83,15 +90,10 @@ export const FileTreeModel = createModel((workspaceId: string) => {
   };
 });
 
-const cache = new Map<string, FileTree>();
-
 export type FileTree = InstanceType<typeof FileTreeModel>;
 
 export function getFileTreeFor(workspaceId: string): FileTree {
-  return cache.getOrInsertComputed(
-    workspaceId,
-    () => new FileTreeModel(workspaceId),
-  );
+  return get("tree", workspaceId, () => new FileTreeModel(workspaceId));
 }
 
 // Returns `null` while no workspace is selected (bootstrap, login page).

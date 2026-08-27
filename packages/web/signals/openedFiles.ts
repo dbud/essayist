@@ -1,6 +1,7 @@
 import { createModel, effect } from "@preact/signals";
 import { IS_BROWSER } from "fresh/runtime";
 import { getFileTree } from "@/signals/fileTree.ts";
+import { get, seed } from "@/signals/models.ts";
 import { leftSidebarOpened } from "@/signals/sidebar.ts";
 import { workspaces } from "@/signals/workspace.ts";
 import { persistentSignal } from "@/utils/persistentSignal.ts";
@@ -29,15 +30,18 @@ export const OpenedFilesModel = createModel((workspaceId: string) => {
     }
   }
 
+  // Apply a server-provided selection seed (the file this request targets).
+  const targetPath = seed<string>("openedFiles", workspaceId);
+  if (targetPath) open(targetPath);
+
   return { opened, selected, open, close };
 });
-
-const cache = new Map<string, OpenedFiles>();
 
 export type OpenedFiles = InstanceType<typeof OpenedFilesModel>;
 
 export function getOpenedFilesFor(workspaceId: string): OpenedFiles {
-  return cache.getOrInsertComputed(
+  return get(
+    "openedFiles",
     workspaceId,
     () => new OpenedFilesModel(workspaceId),
   );

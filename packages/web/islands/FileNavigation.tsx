@@ -64,6 +64,13 @@ function buildFileEntries(
   return result;
 }
 
+/** URL for a file in the workspace route, encoding each path segment but
+ * keeping slashes as real separators for the catch-all route. */
+function fileHref(wsId: string, path: string): string {
+  const encoded = path.split("/").map(encodeURIComponent).join("/");
+  return `/w/${encodeURIComponent(wsId)}/f/${encoded}`;
+}
+
 function BreadcrumbsTrigger() {
   const selectedWorkspace = workspaces.current.value?.name ?? "";
   const selectedPath = getOpenedFiles()?.selected.value ?? "";
@@ -153,12 +160,11 @@ export default function FileNavigation() {
       <div class="flex flex-col stack" data-stagger-children>
         {fileEntries.map(
           ({ path, parts, selected: fileSelected, name: fileName }) => (
-            <button
+            <a
               key={path}
-              type="button"
+              href={fileHref(workspaces.currentWorkspaceId.value, path)}
               class={`group btn ${fileSelected ? "is-selected" : ""}`}
               onClick={() => {
-                getOpenedFiles()?.open(path);
                 navigationOpened.value = false;
               }}
             >
@@ -172,7 +178,7 @@ export default function FileNavigation() {
                 </span>
               ))}
               <span class="break-all min-w-0">{fileName}</span>
-            </button>
+            </a>
           ),
         )}
         {(files?.files.value.length ?? 0) > 0 && <div class="separator" />}
