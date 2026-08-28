@@ -24,6 +24,13 @@
   @apply h-10 min-w-11 pr-6 pl-1 pt-1 pb-0;
 }
 
+@utility cell--data {
+  @apply cell--base;
+  @apply min-h-10 pl-1 pt-1 pr-6;
+  padding-bottom: 1.45rem;
+  white-space: normal;
+}
+
 @utility btn {
   @apply cell;
   @apply cursor-pointer;

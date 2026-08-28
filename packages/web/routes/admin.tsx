@@ -26,13 +26,7 @@ export default function AdminPage({ state }: PageProps<unknown, State>) {
             <div class="cell">Control panel</div>
           </div>
         </Navigation>
-        <div class="flex-1 min-h-0 overflow-y-auto bg-surface">
-          <div class="content-layout">
-            <div class="content-main min-w-0 flex flex-col">
-              <AdminConfig />
-            </div>
-          </div>
-        </div>
+        <AdminConfig />
       </main>
     </div>
   );
