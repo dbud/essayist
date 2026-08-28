@@ -10,7 +10,7 @@
   caret-color: transparent;
 }
 
-.editor-input::selection {
+::selection {
   background-color: var(--color-ink);
   color: var(--color-paper);
 }
