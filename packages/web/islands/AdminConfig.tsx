@@ -1,6 +1,6 @@
 import type { Category, ModelPool, Prompt, ReviewPass } from "@essayist/core";
 import type { ComponentChildren } from "preact";
-import Spinner from "@/components/ui/Spinner.tsx";
+import WaveBars from "@/components/ui/WaveBars.tsx";
 import Section from "@/islands/Section.tsx";
 import { getAdminConfig } from "@/signals/admin.ts";
 
@@ -107,14 +107,14 @@ export default function AdminConfig() {
   } = getAdminConfig();
 
   if (loading.value && modelPools.value.length === 0) {
-    return <Spinner />;
+    return <WaveBars />;
   }
   if (error.value) {
     return <p class="text-sm text-ink/60">{error.value}</p>;
   }
 
   return (
-    <div class="flex flex-col gap-4">
+    <div class="flex flex-col gap-10">
       <Section title="Review passes">
         {reviewPasses.value.length === 0 ? (
           <Empty />

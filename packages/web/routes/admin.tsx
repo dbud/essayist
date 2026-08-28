@@ -17,19 +17,18 @@ export const handler = define.handlers({
 export default function AdminPage({ state }: PageProps<unknown, State>) {
   return (
     <div class="flex flex-1 min-h-0">
-      <main class="flex flex-1 flex-col min-h-0 @container bg-paper text-ink">
+      <main class="flex flex-1 flex-col stack stack--col min-h-0 @container">
         <Navigation user={state.user}>
-          <div class="flex gap-4">
-            <a href="/" class="btn btn--ghost">
-              <MoveLeft />
-              Back to editor
+          <div class="flex stack stack--row">
+            <a href="/" class="btn">
+              <MoveLeft size={16} />
             </a>
-            <h1 class="text-lg font-thin">Control panel</h1>
+            <div class="cell">Control panel</div>
           </div>
         </Navigation>
-        <div class="flex-1 min-h-0 overflow-y-auto">
+        <div class="flex-1 min-h-0 overflow-y-auto bg-surface">
           <div class="content-layout">
-            <div class="content-main min-w-0 py-6 flex flex-col gap-4">
+            <div class="content-main min-w-0 flex flex-col">
               <AdminConfig />
             </div>
           </div>

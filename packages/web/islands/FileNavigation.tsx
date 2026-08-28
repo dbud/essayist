@@ -88,7 +88,7 @@ function BreadcrumbsTrigger() {
         {workspaces.loading.value ? (
           <WaveBars class="h-10 text-ink/70 bg-surface" />
         ) : navigationOpened.value ? (
-          <div class="btn--like btn--ink w-48 relative">
+          <div class="cell cell--ink w-48 relative">
             <WaveBars
               fill
               amplitude={workspaces.loading.value ? 1 : 0}

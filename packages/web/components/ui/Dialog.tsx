@@ -61,7 +61,7 @@ export default function Dialog({ open, children }: DialogProps) {
     >
       <Panel
         open={panelOpen.value}
-        class="bg-surface text-ink"
+        class="bg-surface text-ink shadow-md"
         onSettled={onSettled}
       >
         <div class="content-layout">

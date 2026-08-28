@@ -12,7 +12,7 @@
   --input-underline-inset: 0.25rem;
   --input-underline-color: var(--color-ink);
   --input-underline-duration: 150ms;
-  @apply btn--like w-full select-text outline-none;
+  @apply cell w-full select-text outline-none;
   padding-bottom: calc(var(--input-height) - var(--input-pad-top) - 1em);
   background-color: var(--color-surface);
   background-image: linear-gradient(

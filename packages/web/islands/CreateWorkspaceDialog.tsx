@@ -35,8 +35,8 @@ export default function CreateWorkspaceDialog({
   return (
     <Dialog open={open}>
       <form onSubmit={onSubmit} class="grid grid-cols-2 stack stack--col">
-        <div class="btn--like btn--ink col-span-2">New project</div>
-        <label class="btn--like" htmlFor="workspace-name">
+        <div class="cell cell--ink col-span-2">New project</div>
+        <label class="cell" htmlFor="workspace-name">
           Name
         </label>
         <input
@@ -50,7 +50,7 @@ export default function CreateWorkspaceDialog({
           class="input-text"
         />
         {error.value && (
-          <div role="alert" class="btn--like col-span-2 text-red-500">
+          <div role="alert" class="cell col-span-2 text-red-500">
             {error.value}
           </div>
         )}
@@ -66,7 +66,7 @@ export default function CreateWorkspaceDialog({
           </button>
           <button
             type="submit"
-            class="btn btn--accent relative w-30"
+            class="btn cell--accent relative w-30"
             disabled={submitting.value || !name.value.trim()}
           >
             {submitting.value ? "Creating…" : "Create"}

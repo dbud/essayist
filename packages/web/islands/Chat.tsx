@@ -166,7 +166,7 @@ export default function Chat() {
           />
           <button
             type="submit"
-            class="btn btn--accent"
+            class="btn cell--accent"
             disabled={streaming.value || !input.value.trim()}
           >
             {streaming.value ? <Spinner /> : "Send"}

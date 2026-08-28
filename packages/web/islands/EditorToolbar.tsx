@@ -70,7 +70,7 @@ export default function EditorToolbar({ wsId, path }: EditorToolbarProps) {
       {INLINE_BUTTONS.map(({ fmt, tooltip, icon: Icon }) => (
         <button
           type="button"
-          class={`btn ${sel[fmt].value ? "btn--accent" : ""}`}
+          class={`btn ${sel[fmt].value ? "cell--accent" : ""}`}
           disabled={inlineDisabled}
           data-tooltip={tooltip}
           onClick={() => format(fmt)}

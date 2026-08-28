@@ -24,7 +24,7 @@ export default function Section({
     <div class="flex flex-col">
       <button
         type="button"
-        class="btn btn--ink"
+        class="btn cell--ink"
         onClick={() => (open.value = !open.value)}
         aria-expanded={open.value}
       >

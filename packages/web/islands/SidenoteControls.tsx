@@ -35,7 +35,7 @@ export default function SidenoteControls({
     <div class="flex gap-2">
       <button
         type="button"
-        class="btn btn--accent"
+        class="btn cell--accent"
         disabled={loading.value}
         onClick={onReview}
       >

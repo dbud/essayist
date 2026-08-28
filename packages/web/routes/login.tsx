@@ -28,7 +28,7 @@ export default function LoginPage({ url }: PageProps) {
         <p class="text-ink bg-surface h-20 p-4 w-full">
           Sign in with your Google account to continue.
         </p>
-        <a href={href} class="btn btn--accent self-end">
+        <a href={href} class="btn cell--accent self-end">
           <ArrowUpRight size={16} />
           Sign in with Google
         </a>
