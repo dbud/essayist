@@ -1,7 +1,7 @@
 :root {
   --caret-color: var(--color-accent);
   --caret-thickness: 2px;
-  --caret-extend-top: 4px;
+  --caret-extend-top: 6px;
   --caret-extend-bottom: 4px;
   --caret-blink-period: 1s;
 }

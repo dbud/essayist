@@ -3,8 +3,10 @@ import {
   $getSelection,
   $isRangeSelection,
   COMMAND_PRIORITY_LOW,
+  KEY_ARROW_DOWN_COMMAND,
   KEY_ARROW_LEFT_COMMAND,
   KEY_ARROW_RIGHT_COMMAND,
+  KEY_ARROW_UP_COMMAND,
   type LexicalEditor,
   mergeRegister,
   SELECTION_CHANGE_COMMAND,
@@ -29,8 +31,9 @@ import type { SelectionExtensionConfig } from "./toolbarStateExtension.ts";
 // native caret's side is a hidden browser state, and an arrow at that offset
 // re-renders the SAME offset as the other side without firing selectionchange.
 // So we track an `affinity` in state, driven by KEY_ARROW_*_COMMAND (the only
-// event on that toggle): a same-offset arrow flips it; an offset-changing move
-// sets it by direction; a re-measure with no arrow keeps it.
+// event on that toggle): a same-offset arrow flips it; an offset-changing
+// left/right move sets it by direction; a down/up move keeps it (vertical
+// moves preserve the side you were on); a re-measure with no arrow keeps it.
 export const CaretExtension = defineExtension({
   name: "caret",
   config: { selection: defaultEditorSelection },
@@ -41,9 +44,9 @@ export const CaretExtension = defineExtension({
     let lastOffset = -1;
     // "end" = end of the previous line; "start" = start of the next line.
     let affinity: "end" | "start" = "end";
-    // Direction of the arrow that triggered the pending measure, consumed by the
-    // next measure (set on KEY_ARROW_*_COMMAND, cleared after each measure).
-    let pending: "forward" | "backward" | null = null;
+    // The arrow that triggered the pending measure, consumed by the next
+    // measure (set on KEY_ARROW_*_COMMAND, cleared after each measure).
+    let pending: "right" | "left" | "down" | "up" | null = null;
 
     const measure = () => {
       const root = editor.getRootElement();
@@ -82,13 +85,28 @@ export const CaretExtension = defineExtension({
           // Wrap boundary: the collapsed rect is the end of the previous line,
           // `right` is the start of the next. Pick the side from the last move.
           if (textOffset === lastOffset && pending !== null) {
-            affinity = pending === "forward" ? "start" : "end";
-          } else if (textOffset !== lastOffset) {
+            // A same-offset arrow at the boundary flips the side: right/down
+            // toward the start of the next line, left/up toward the end of the
+            // previous one.
+            affinity =
+              pending === "right" || pending === "down" ? "start" : "end";
+          } else if (
+            textOffset !== lastOffset &&
+            pending !== "down" &&
+            pending !== "up"
+          ) {
+            // Horizontal move sets the side by direction; a vertical move
+            // keeps the side (you stay on the same edge of the line).
             affinity = textOffset > lastOffset ? "end" : "start";
           }
           rect = affinity === "start" ? right : collapsed;
         } else {
           rect = collapsed.height > 0 ? collapsed : null;
+          // At the start of the text there is no preceding char on this line,
+          // so mark the caret as on the start side -- otherwise the default
+          // "end" affinity makes a following down-arrow render at the end of
+          // the first line instead of the start of the second.
+          if (left === null) affinity = "start";
         }
         if (rect === null || rect.height === 0) {
           rect =
@@ -146,8 +164,10 @@ export const CaretExtension = defineExtension({
       ),
       ...(
         [
-          [KEY_ARROW_RIGHT_COMMAND, "forward"],
-          [KEY_ARROW_LEFT_COMMAND, "backward"],
+          [KEY_ARROW_RIGHT_COMMAND, "right"],
+          [KEY_ARROW_LEFT_COMMAND, "left"],
+          [KEY_ARROW_DOWN_COMMAND, "down"],
+          [KEY_ARROW_UP_COMMAND, "up"],
         ] as const
       ).map(([cmd, direction]) =>
         editor.registerCommand(
