@@ -1,0 +1,44 @@
+:root {
+  --caret-color: var(--color-accent);
+  --caret-thickness: 2px;
+  --caret-extend-top: 4px;
+  --caret-extend-bottom: 4px;
+  --caret-blink-period: 1s;
+}
+
+.editor-input {
+  caret-color: transparent;
+}
+
+.editor-input::selection {
+  background-color: var(--color-ink);
+  color: var(--color-paper);
+}
+
+.essayist-caret {
+  left: var(--caret-left);
+  top: calc(var(--caret-top) - var(--caret-extend-top));
+  width: var(--caret-thickness);
+  height: calc(
+    var(--caret-line-height) +
+    var(--caret-extend-top) +
+    var(--caret-extend-bottom)
+  );
+  background-color: var(--caret-color);
+  transform: translateX(calc(var(--caret-thickness) / -2));
+  animation: caret-blink var(--caret-blink-period) ease-in-out infinite;
+  z-index: 1;
+}
+
+@keyframes caret-blink {
+  0%,
+  60% {
+    opacity: 100%;
+  }
+  90% {
+    opacity: 20%;
+  }
+  100% {
+    opacity: 100%;
+  }
+}

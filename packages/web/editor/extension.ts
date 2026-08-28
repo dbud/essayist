@@ -19,6 +19,7 @@ import type {
   MarkRect,
   SidenotePositions,
 } from "@/signals/sidenotes.ts";
+import { CaretExtension } from "./caretExtension.ts";
 import { MarksExtension } from "./markExtension.ts";
 import { MarksAtCursorExtension } from "./marksAtCursorExtension.ts";
 import { SidenoteExtension } from "./sidenoteExtension.ts";
@@ -76,6 +77,7 @@ export function createEditorExtension(
       }),
       configExtension(ToolbarStateExtension, { selection }),
       configExtension(MarksAtCursorExtension, { selection }),
+      configExtension(CaretExtension, { selection }),
       PartialUpdateExtension,
     ],
   });

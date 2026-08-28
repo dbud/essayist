@@ -9,6 +9,7 @@ import {
   type NodeKey,
 } from "lexical";
 import { getMeasureContext, hasRect, textPointRect } from "./domMeasure.ts";
+import { createRafScheduler, registerRootObserver } from "./editorDom.ts";
 import { registerNodeKeyTracker } from "./nodeKeyTracker.ts";
 
 export interface TrackedFragment {
@@ -97,34 +98,19 @@ export function trackNodePositions<T extends LexicalNode>(
     onFragments?.(fragments);
   };
 
-  let rafId = 0;
-  const scheduleMeasure = () => {
-    if (rafId) return;
-    rafId = requestAnimationFrame(() => {
-      rafId = 0;
-      measure();
-    });
-  };
+  const { schedule: scheduleMeasure, dispose } = createRafScheduler(measure);
 
   output.value = new Map();
 
-  let resizeObserver: ResizeObserver | null = null;
-  const attach = (root: HTMLElement | null) => {
-    resizeObserver?.disconnect();
-    if (root) {
-      resizeObserver = new ResizeObserver(scheduleMeasure);
-      resizeObserver.observe(root);
-    } else {
-      resizeObserver = null;
-    }
-  };
+  const removeRootObserver = registerRootObserver(editor, (root) => {
+    const ro = new ResizeObserver(scheduleMeasure);
+    ro.observe(root);
+    scheduleMeasure();
+    return () => ro.disconnect();
+  });
 
   const disposers = [
-    editor.registerRootListener((next, prev) => {
-      if (next === prev) return;
-      attach(next);
-      if (next) scheduleMeasure();
-    }),
+    removeRootObserver,
     registerNodeKeyTracker(editor, nodeClass, nodeKeys, scheduleMeasure),
     editor.registerUpdateListener(scheduleMeasure),
   ];
@@ -137,12 +123,7 @@ export function trackNodePositions<T extends LexicalNode>(
     );
   }
 
-  const cleanup = mergeRegister(...disposers);
-  return () => {
-    if (rafId) cancelAnimationFrame(rafId);
-    resizeObserver?.disconnect();
-    cleanup();
-  };
+  return mergeRegister(...disposers, dispose);
 }
 
 /**

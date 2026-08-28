@@ -1,6 +1,12 @@
 import { createModel, signal } from "@preact/signals";
 import type { BlockType } from "@/editor/blockFormat.ts";
 
+export interface CaretRect {
+  left: number;
+  top: number;
+  height: number;
+}
+
 /**
  * Per-file editor-selection state, written by the editor extensions
  * (`ToolbarStateExtension` for block/format flags, `MarksAtCursorExtension`
@@ -18,6 +24,7 @@ export const EditorSelectionModel = createModel(
     const inCodeBlock = signal(false);
     const markIds = signal<Set<string>>(new Set());
     const innerMarkId = signal<string | null>(null);
+    const caretRect = signal<CaretRect | null>(null);
     return {
       block,
       bold,
@@ -27,6 +34,7 @@ export const EditorSelectionModel = createModel(
       inCodeBlock,
       markIds,
       innerMarkId,
+      caretRect,
     };
   },
 );

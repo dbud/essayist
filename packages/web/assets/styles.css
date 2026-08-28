@@ -14,6 +14,7 @@
 @import "./tooltip.css";
 @import "./wavebars.css";
 @import "./marks.css";
+@import "./caret.css";
 @import "./view-transitions.css";
 @plugin "@tailwindcss/typography";
 

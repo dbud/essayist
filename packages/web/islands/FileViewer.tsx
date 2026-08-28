@@ -1,6 +1,7 @@
 import type { ReadonlySignal, Signal } from "@preact/signals";
 import type { LexicalEditor } from "lexical";
 import { useMemo } from "preact/hooks";
+import { Caret } from "@/components/Caret.tsx";
 import { MarkBadges } from "@/components/MarkBadges.tsx";
 import { MarkHighlights } from "@/components/MarkHighlights.tsx";
 import Sidenote from "@/components/Sidenote.tsx";
@@ -106,6 +107,7 @@ function FileViewerBody({ wsId, path }: { wsId: string; path: string }) {
               />
             )}
             <MarkBadges badges={sidenotes.markBadges.value} />
+            <Caret rect={selection.caretRect} />
             <MarkHighlights
               rects={sidenotes.markRects.value}
               activeIds={selection.markIds.value}
