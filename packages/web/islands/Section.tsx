@@ -24,19 +24,19 @@ export default function Section({
     <div class="flex flex-col">
       <button
         type="button"
-        class="flex items-center gap-2 w-full text-left text-xs font-semibold uppercase tracking-wider cursor-pointer"
+        class="btn btn--ink"
         onClick={() => (open.value = !open.value)}
         aria-expanded={open.value}
       >
+        {title}
         <ChevronDown
           size={16}
           class={`transition-transform duration-150 ${
             open.value ? "" : "-rotate-90"
           }`}
         />
-        {title}
       </button>
-      <Panel open={open.value} class="pt-2">
+      <Panel open={open.value} class="bg-surface">
         {children}
       </Panel>
     </div>
