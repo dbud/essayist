@@ -69,6 +69,7 @@
 @layer utilities {
   .font-mono {
     font-variation-settings: "MONO" 1;
+    font-size: 0.9em;
   }
 }
 
@@ -146,7 +147,7 @@
 }
 
 .font-mono .prose {
-  font-size: 0.9em;
+  font-size: 1em;
 }
 
 @utility shadow-inset-bottom {
