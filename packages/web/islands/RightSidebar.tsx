@@ -9,8 +9,11 @@ import { rightSidebarOpened } from "@/signals/sidebar.ts";
 
 export default function RightSidebar() {
   return (
-    <Sidebar open={rightSidebarOpened.value} class="bg-surface text-ink">
-      <div class="w-128 flex flex-col stack stack--row">
+    <Sidebar
+      open={rightSidebarOpened.value}
+      class="bg-surface text-ink shadow-md"
+    >
+      <div class="w-128 flex flex-col h-full stack">
         <ExportPreviewSection />
         <ReviewHistorySection />
         <MarksSection />

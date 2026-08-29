@@ -35,14 +35,21 @@
     1600px 1600px;
 }
 
-@utility striped {
+@utility striped-* {
   --sqrt2: 1.4142135624;
   --stripe-line: calc(1 * var(--sqrt2) * 1px);
   --stripe-period: calc(4 * var(--sqrt2) * 1px);
+  --stripe-opacity: --value(integer, --default(10));
+  --stripe-opacity: --modifier(integer);
+  --stripe-color: color-mix(
+    in oklch,
+    var(--color-ink),
+    transparent calc(100% - var(--stripe-opacity) * 1%)
+  );
   background-image: repeating-linear-gradient(
     -45deg,
-    color-mix(in oklch, var(--color-ink), transparent 90%) 0,
-    color-mix(in oklch, var(--color-ink), transparent 90%) var(--stripe-line),
+    var(--stripe-color) 0,
+    var(--stripe-color) var(--stripe-line),
     transparent var(--stripe-line),
     transparent var(--stripe-period)
   );
