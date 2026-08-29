@@ -7,24 +7,40 @@
 @utility input-text {
   --input-height: 2.5rem;
   --input-pad-top: 0.25rem;
-  --input-underline-gap: 0.5rem;
   --input-underline-thickness: 1px;
   --input-underline-inset: 0.25rem;
-  --input-underline-color: var(--color-ink);
+  --input-underline-lift: 0.6rem;
+  --input-underline-color: var(--color-stroke);
   --input-underline-duration: 150ms;
+  --input-icon: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232e2a25' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12h14'/%3E%3Cpath d='m12 5 7 7-7 7'/%3E%3C/svg%3E");
+  --input-icon-inset: 0.25rem;
+  --input-icon-size: 0.85rem;
+  --input-icon-gap: 0.45rem;
+  --input-pad-left: calc(
+    var(--input-icon-inset) +
+    var(--input-icon-size) +
+    var(--input-icon-gap)
+  );
   @apply cell w-full select-text outline-none;
+  padding-left: var(--input-pad-left);
   padding-bottom: calc(var(--input-height) - var(--input-pad-top) - 1em);
   background-color: var(--color-surface);
-  background-image: linear-gradient(
-    to right,
-    var(--input-underline-color),
-    var(--input-underline-color)
-  );
-  background-position: var(--input-underline-inset)
-    calc(var(--input-pad-top) + 1em + var(--input-underline-gap));
-  background-size: calc(100% - var(--input-underline-inset))
-    var(--input-underline-thickness);
+  background-image:
+    var(--input-icon),
+    linear-gradient(
+      to right,
+      var(--input-underline-color),
+      var(--input-underline-color)
+    );
   background-repeat: no-repeat;
+  background-position:
+    var(--input-icon-inset)
+    calc(var(--input-pad-top) + (1em - var(--input-icon-size)) / 2),
+    var(--input-pad-left) calc(100% - var(--input-underline-lift));
+  background-size:
+    var(--input-icon-size) var(--input-icon-size),
+    calc(100% - var(--input-pad-left) - var(--input-underline-inset))
+    var(--input-underline-thickness);
   transition: --input-underline-color var(--input-underline-duration) ease-out;
   &:focus {
     --input-underline-color: var(--color-accent);
