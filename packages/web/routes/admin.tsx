@@ -2,7 +2,7 @@ import type { PageProps } from "fresh";
 import { page } from "fresh";
 import { MoveLeft } from "lucide-preact";
 import { define, type State } from "@/define.ts";
-import AdminConfig from "@/islands/AdminConfig.tsx";
+import AdminConfig from "@/islands/admin/AdminConfig.tsx";
 import Navigation from "@/islands/Navigation.tsx";
 
 export const handler = define.handlers({
