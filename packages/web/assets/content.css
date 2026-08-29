@@ -18,18 +18,18 @@
 }
 
 @utility content-main {
-  @apply px-4;
+  @apply px-5;
 
   @container (width >= 64rem) {
-    @apply px-16;
+    @apply px-10;
   }
 }
 
 @utility content-side {
-  @apply min-w-0 pr-4;
+  @apply min-w-0 pr-5;
 
   @container (width >= 64rem) {
-    @apply pr-16;
+    @apply pr-10;
   }
 }
 
