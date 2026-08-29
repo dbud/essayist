@@ -3,7 +3,7 @@
    State toggled by .is-open / .is-closed on .pane only. */
 
 :root {
-  --motion-pane-clip-duration: 300ms;
+  --motion-pane-clip-duration: 250ms;
 }
 
 @utility pane {
@@ -41,7 +41,7 @@
 }
 
 @utility pane-clip {
-  overflow: hidden;
+  overflow: clip;
 
   .pane--sidebar & {
     min-width: 0;

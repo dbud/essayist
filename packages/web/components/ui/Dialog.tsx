@@ -28,6 +28,7 @@ export default function Dialog({ open, children }: DialogProps) {
     if (!dialog) return;
     if (open.value && !dialog.open) {
       dialog.showModal();
+      dialog.scrollTop = 0;
       panelOpen.value = false;
       raf = requestAnimationFrame(() => {
         if (!open.value) return;
@@ -61,11 +62,11 @@ export default function Dialog({ open, children }: DialogProps) {
         <div class="content-main p-10 min-w-0 max-w-lg md:max-w-2xl xl:max-w-3xl">
           <Panel
             open={panelOpen.value}
-            class="text-ink"
+            class="shadow-md"
             onClickOutside={open.value ? close : undefined}
             onSettled={onSettled}
           >
-            <div class="shadow-md">{children}</div>
+            {children}
           </Panel>
         </div>
       </div>
