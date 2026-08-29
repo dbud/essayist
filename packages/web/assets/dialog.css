@@ -1,18 +1,14 @@
 @utility dialog-backdrop {
   --dialog-duration: 120ms;
   &[open] {
-    @apply fixed inset-0 grid justify-items-stretch items-start w-full h-full max-w-none m-0 p-0 border-none bg-transparent;
+    @apply fixed inset-0 grid justify-items-stretch items-start w-full h-full max-w-none max-h-none m-0 p-0 border-none bg-transparent overflow-y-auto;
     container-type: inline-size;
     z-index: var(--z-dialog);
   }
 
   &::backdrop {
     @apply striped;
-    background-color: color-mix(
-      in oklch,
-      var(--color-surface),
-      transparent 40%
-    );
+    background-color: var(--color-surface);
     transition:
       opacity var(--dialog-duration) ease-out,
       display var(--dialog-duration) ease-out allow-discrete;

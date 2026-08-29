@@ -42,47 +42,49 @@ export default function CreateFileDialog({
 
   return (
     <Dialog open={open}>
-      <form onSubmit={onSubmit} class="grid grid-cols-2 stack stack--col">
-        <div class="cell cell--ink col-span-2">New file</div>
-        <label class="cell" htmlFor="file-path">
-          Path
-        </label>
-        <input
-          id="file-path"
-          type="text"
-          placeholder="e.g. notes/ideas.md"
-          value={path.value}
-          onInput={(e) => (path.value = e.currentTarget.value)}
-          disabled={submitting.value}
-          autofocus
-          class="input-text"
-        />
-        {error.value && (
-          <div role="alert" class="cell col-span-2 text-red-500">
-            {error.value}
-          </div>
-        )}
-        <div class="col-span-2 separator" />
-        <div class="col-span-2 flex stack stack--row justify-end">
-          <button
-            type="button"
-            class="btn"
-            onClick={() => {
-              open.value = false;
-              error.value = null;
-            }}
+      <form onSubmit={onSubmit} class="flex flex-col">
+        <div class="cell cell--ink">New file</div>
+        <div class="form-grid">
+          <label class="cell" htmlFor="file-path">
+            Path
+          </label>
+          <input
+            id="file-path"
+            type="text"
+            placeholder="e.g. notes/ideas.md"
+            value={path.value}
+            onInput={(e) => (path.value = e.currentTarget.value)}
             disabled={submitting.value}
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            class="btn cell--accent relative w-30"
-            disabled={submitting.value || !path.value.trim()}
-          >
-            Create
-            <WaveBars fill amplitude={submitting.value ? 1 : 0} />
-          </button>
+            autofocus
+            class="input-text"
+          />
+          {error.value && (
+            <div role="alert" class="cell col-span-2 text-red-500">
+              {error.value}
+            </div>
+          )}
+          <div class="col-span-2 separator" />
+          <div class="form-actions">
+            <button
+              type="button"
+              class="btn"
+              onClick={() => {
+                open.value = false;
+                error.value = null;
+              }}
+              disabled={submitting.value}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              class="btn cell--accent relative w-30"
+              disabled={submitting.value || !path.value.trim()}
+            >
+              Create
+              <WaveBars fill amplitude={submitting.value ? 1 : 0} />
+            </button>
+          </div>
         </div>
       </form>
     </Dialog>

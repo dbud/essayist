@@ -30,3 +30,12 @@
     --input-underline-color: var(--color-accent);
   }
 }
+
+@utility form-grid {
+  @apply grid stack border-x border-b border-stroke;
+  grid-template-columns: max-content minmax(0, 1fr);
+}
+
+@utility form-actions {
+  @apply col-span-2 -mx-px -mb-px flex stack justify-end;
+}

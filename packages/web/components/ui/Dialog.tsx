@@ -15,23 +15,30 @@ interface DialogProps {
  *  On open: showModal first, then rAF to set panelOpen so the browser
  *  renders the 0fr state before transitioning to 1fr.
  *  On close: panelOpen flips to false (by close, useEffect, or consumer),
- *  Panel animates closed, then onSettled calls dialog.close(). */
+ *  Panel animates closed, then onSettled calls dialog.close().
+ *  Clicks landing outside the panel (striped frame or backdrop) close
+ *  via the Panel's built-in click-outside. */
 export default function Dialog({ open, children }: DialogProps) {
   const ref = useRef<HTMLDialogElement>(null);
   const panelOpen = useSignal(false);
 
   useEffect(() => {
+    let raf: number | undefined;
     const dialog = ref.current;
     if (!dialog) return;
     if (open.value && !dialog.open) {
       dialog.showModal();
       panelOpen.value = false;
-      requestAnimationFrame(() => {
+      raf = requestAnimationFrame(() => {
+        if (!open.value) return;
         panelOpen.value = true;
       });
     } else if (!open.value && dialog.open) {
       panelOpen.value = false;
     }
+    return () => {
+      if (raf !== undefined) cancelAnimationFrame(raf);
+    };
   }, [open.value]);
 
   function onSettled() {
@@ -49,27 +56,19 @@ export default function Dialog({ open, children }: DialogProps) {
   }
 
   return (
-    // biome-ignore lint/a11y/useKeyWithClickEvents: Escape handled by onClose
-    <dialog
-      ref={ref}
-      class="dialog-backdrop"
-      onClose={close}
-      onClick={(e) => {
-        e.stopPropagation();
-        if (e.target === e.currentTarget) close();
-      }}
-    >
-      <Panel
-        open={panelOpen.value}
-        class="bg-surface text-ink shadow-md"
-        onSettled={onSettled}
-      >
-        <div class="content-layout">
-          <div class="content-main pt-10 pb-32 min-w-0 max-w-lg">
-            {children}
-          </div>
+    <dialog ref={ref} class="dialog-backdrop" onClose={close}>
+      <div class="content-layout">
+        <div class="content-main p-10 min-w-0 max-w-lg md:max-w-2xl xl:max-w-3xl">
+          <Panel
+            open={panelOpen.value}
+            class="text-ink"
+            onClickOutside={open.value ? close : undefined}
+            onSettled={onSettled}
+          >
+            <div class="shadow-md">{children}</div>
+          </Panel>
         </div>
-      </Panel>
+      </div>
     </dialog>
   );
 }

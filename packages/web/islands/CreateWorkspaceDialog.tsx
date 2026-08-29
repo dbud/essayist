@@ -34,44 +34,46 @@ export default function CreateWorkspaceDialog({
 
   return (
     <Dialog open={open}>
-      <form onSubmit={onSubmit} class="grid grid-cols-2 stack stack--col">
-        <div class="cell cell--ink col-span-2">New project</div>
-        <label class="cell" htmlFor="workspace-name">
-          Name
-        </label>
-        <input
-          id="workspace-name"
-          type="text"
-          placeholder="Project name"
-          value={name.value}
-          onInput={(e) => (name.value = e.currentTarget.value)}
-          disabled={submitting.value}
-          autofocus
-          class="input-text"
-        />
-        {error.value && (
-          <div role="alert" class="cell col-span-2 text-red-500">
-            {error.value}
-          </div>
-        )}
-        <div class="col-span-2 separator" />
-        <div class="col-span-2 flex stack stack--row justify-end">
-          <button
-            type="button"
-            class="btn"
-            onClick={() => (open.value = false)}
+      <form onSubmit={onSubmit} class="flex flex-col">
+        <div class="cell cell--ink">New project</div>
+        <div class="form-grid">
+          <label class="cell" htmlFor="workspace-name">
+            Name
+          </label>
+          <input
+            id="workspace-name"
+            type="text"
+            placeholder="Project name"
+            value={name.value}
+            onInput={(e) => (name.value = e.currentTarget.value)}
             disabled={submitting.value}
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            class="btn cell--accent relative w-30"
-            disabled={submitting.value || !name.value.trim()}
-          >
-            {submitting.value ? "Creating…" : "Create"}
-            <WaveBars fill amplitude={submitting.value ? 1 : 0} />
-          </button>
+            autofocus
+            class="input-text"
+          />
+          {error.value && (
+            <div role="alert" class="cell col-span-2 text-red-500">
+              {error.value}
+            </div>
+          )}
+          <div class="col-span-2 separator" />
+          <div class="form-actions">
+            <button
+              type="button"
+              class="btn"
+              onClick={() => (open.value = false)}
+              disabled={submitting.value}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              class="btn cell--accent relative w-30"
+              disabled={submitting.value || !name.value.trim()}
+            >
+              {submitting.value ? "Creating…" : "Create"}
+              <WaveBars fill amplitude={submitting.value ? 1 : 0} />
+            </button>
+          </div>
         </div>
       </form>
     </Dialog>
