@@ -32,7 +32,7 @@ export function TextareaRow({
       <span class="cell--data text-ink/60">{label}</span>
       <textarea
         ref={textareaRef}
-        class="input-text block h-[auto] min-w-0 resize-none"
+        class="input-text block h-[auto] min-w-0 resize-none whitespace-pre-wrap leading-tight"
         rows={rows}
         value={value}
         placeholder={placeholder}
