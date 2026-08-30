@@ -43,10 +43,18 @@ async function withKv<T>(
   }
 }
 
-// plain output when stdout is piped or NO_COLOR is set
-function pretty(value: unknown): string {
-  const colors = Deno.stdout.isTerminal() && !Deno.env.has("NO_COLOR");
-  return Deno.inspect(value, { colors, sorted: true, compact: true });
+// colored inspect on a TTY; plain JSON when stdout is piped, one document
+// per entry, so jq can parse the stream
+function printEntry(entry: Deno.KvEntry<unknown>): void {
+  const tuple = [entry.key, entry.value];
+  const body = Deno.stdout.isTerminal()
+    ? Deno.inspect(tuple, {
+        colors: !Deno.env.has("NO_COLOR"),
+        sorted: true,
+        compact: true,
+      })
+    : JSON.stringify(tuple, null, 2);
+  console.log(`${body}\n`);
 }
 
 await new Command()
@@ -75,9 +83,10 @@ await new Command()
       let n = 0;
       for await (const entry of kv.list({ prefix })) {
         n++;
-        console.log(`${pretty([entry.key, entry.value])}\n`);
+        printEntry(entry);
       }
-      console.log(`(${n} entries)`);
+      // footer goes to stderr so piped stdout stays pure JSON
+      console.error(`(${n} entries)`);
     }),
   )
   .command("grant-role", "Set a user's site-wide role.")
