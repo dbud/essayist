@@ -89,7 +89,7 @@ function FileViewerBody({ wsId, path }: { wsId: string; path: string }) {
         </div>
       </div>
       <div
-        class="relative flex-1 min-h-0 overflow-y-auto bg-surface striped/3"
+        class="relative flex-1 min-h-0 overflow-y-auto bg-paper striped/5"
         ref={scrollRef}
       >
         <div
