@@ -4,7 +4,9 @@
 //   deno task kvctl <command> [args...] [--target <url|path>]
 //
 // For a remote instance, set DENO_KV_ACCESS_TOKEN=ddo_... in .env (loaded via
-// --env-file=.env by the kvctl task). Run `deno task kvctl help` for full usage.
+// --env-file=.env by the kvctl task). Optionally set REMOTE_URL in .env to use
+// it as the default target when --target is omitted. Run `deno task kvctl help`
+// for full usage.
 
 import { Command, EnumType } from "@cliffy/command";
 import {
@@ -24,10 +26,11 @@ interface KvCtx {
 }
 
 async function withKv<T>(
-  target: string,
+  target: string | undefined,
   fn: (ctx: KvCtx) => Promise<T>,
 ): Promise<T> {
-  const kv = await Deno.openKv(target);
+  const resolved = target ?? Deno.env.get("REMOTE_URL") ?? "./local-kv.sqlite3";
+  const kv = await Deno.openKv(resolved);
   const adapter = new KvAdapter(kv);
   try {
     return await fn({
@@ -47,10 +50,11 @@ function pretty(value: unknown): string {
 await new Command()
   .name("kvctl")
   .description("KV management CLI for the Essayist web app.")
-  .option("-t, --target <target:string>", "KV target (path or URL).", {
-    global: true,
-    default: "./local-kv.sqlite3",
-  })
+  .option(
+    "-t, --target <target:string>",
+    "KV target (path or URL). Defaults to REMOTE_URL from .env, then local SQLite.",
+    { global: true },
+  )
   .command("wipe", "Delete every key.")
   .action(({ target }) =>
     withKv(target, async ({ kv }) => {
