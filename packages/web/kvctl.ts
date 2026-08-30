@@ -43,8 +43,10 @@ async function withKv<T>(
   }
 }
 
+// plain output when stdout is piped or NO_COLOR is set
 function pretty(value: unknown): string {
-  return Deno.inspect(value, { colors: true, sorted: true, compact: true });
+  const colors = Deno.stdout.isTerminal() && !Deno.env.has("NO_COLOR");
+  return Deno.inspect(value, { colors, sorted: true, compact: true });
 }
 
 await new Command()
