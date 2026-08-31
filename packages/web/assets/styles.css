@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "./motion.css";
+@import "./logo.css";
 @import "./pane.css";
 @import "./layers.css";
 @import "./squircle.css";

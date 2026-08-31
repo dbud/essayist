@@ -1,5 +1,6 @@
 import type { User } from "@essayist/core";
 import type { ComponentChildren } from "preact";
+import EssayistLogo from "@/components/ui/EssayistLogo.tsx";
 import Panel from "@/components/ui/Panel.tsx";
 import SettingsMenu from "@/islands/SettingsMenu.tsx";
 
@@ -11,6 +12,7 @@ interface NavigationProps {
 export default function Navigation({ user, children }: NavigationProps) {
   return (
     <Panel class="bg-surface shadow-md">
+      <EssayistLogo class="absolute top-0 left-0 h-5 w-5 @[64rem]:h-10 @[64rem]:w-10" />
       <div class="content-layout content-layout--side">
         <div class="content-main flex flex-col items-start">{children}</div>
         <div class="content-side flex items-center justify-end">
