@@ -54,6 +54,7 @@
     "npm:@babel/preset-react@^7.27.1": "7.29.7_@babel+core@7.29.7",
     "npm:@biomejs/biome@*": "2.5.10",
     "npm:@biomejs/biome@^2.5.10": "2.5.10",
+    "npm:@fontsource-variable/atkinson-hyperlegible-next@^5.3.0": "5.3.0",
     "npm:@fontsource-variable/hanken-grotesk@^5.3.0": "5.3.0",
     "npm:@fontsource-variable/recursive@^5.3.0": "5.3.0",
     "npm:@fontsource-variable/source-serif-4@^5.3.0": "5.3.0",
@@ -65,17 +66,17 @@
     "npm:@lexical/list@0.49": "0.49.0",
     "npm:@lexical/mark@0.49": "0.49.0",
     "npm:@lexical/markdown@0.49": "0.49.0",
-    "npm:@lexical/react@0.49": "0.49.0_react@19.2.8_react-dom@19.2.8__react@19.2.8_yjs@13.6.32",
+    "npm:@lexical/react@0.49": "0.49.0_react@19.2.8_react-dom@19.2.8_yjs@13.6.32",
     "npm:@lexical/rich-text@0.49": "0.49.0",
     "npm:@openrouter/agent@0.11": "0.11.0",
     "npm:@openrouter/sdk@~0.13.67": "0.13.67",
     "npm:@opentelemetry/api@^1.9.0": "1.9.1",
-    "npm:@preact/signals@^2.11.1": "2.11.1_preact@10.29.8__preact-render-to-string@6.7.0",
-    "npm:@preact/signals@^2.5.1": "2.11.1_preact@10.29.8__preact-render-to-string@6.7.0",
-    "npm:@prefresh/vite@^2.4.8": "2.4.12_preact@10.29.8__preact-render-to-string@6.7.0_vite@7.3.6__@types+node@26.2.0",
+    "npm:@preact/signals@^2.11.1": "2.11.1_preact@10.29.8",
+    "npm:@preact/signals@^2.5.1": "2.11.1_preact@10.29.8",
+    "npm:@prefresh/vite@^2.4.8": "2.4.12_preact@10.29.8_vite@7.3.6",
     "npm:@remix-run/node-fetch-server@0.12": "0.12.0",
     "npm:@tailwindcss/typography@~0.5.20": "0.5.20_tailwindcss@4.3.3",
-    "npm:@tailwindcss/vite@^4.3.3": "4.3.3_vite@7.3.6__@types+node@26.2.0_@types+node@26.2.0",
+    "npm:@tailwindcss/vite@^4.3.3": "4.3.3_vite@7.3.6_@types+node@26.2.0",
     "npm:@types/babel__core@^7.20.5": "7.20.5",
     "npm:@types/gapi@^0.0.47": "0.0.47",
     "npm:@types/google.picker@^0.0.52": "0.0.52",
@@ -86,7 +87,7 @@
     "npm:esbuild@~0.25.5": "0.25.12",
     "npm:husky@^9.1.7": "9.1.7",
     "npm:lexical@0.49": "0.49.0",
-    "npm:lucide-preact@^1.34.0": "1.34.0_preact@10.29.8__preact-render-to-string@6.7.0",
+    "npm:lucide-preact@^1.34.0": "1.34.0_preact@10.29.8",
     "npm:marked@^18.0.11": "18.0.11",
     "npm:pino-pretty@^13.1.3": "13.1.3",
     "npm:pino@^10.3.1": "10.3.1",
@@ -964,7 +965,7 @@
         "@floating-ui/utils"
       ]
     },
-    "@floating-ui/react-dom@2.1.9_react@19.2.8_react-dom@19.2.8__react@19.2.8": {
+    "@floating-ui/react-dom@2.1.9_react@19.2.8_react-dom@19.2.8": {
       "integrity": "sha512-JDjEFGCpImxDCA7JJKviA0M9+RtmJdj0m/NVU5IMgBK+AmZouAQQ7/+2GLH0GXXY0YMw9oXPB8hKdbPYg5QLYg==",
       "dependencies": [
         "@floating-ui/dom",
@@ -972,7 +973,7 @@
         "react-dom"
       ]
     },
-    "@floating-ui/react@0.27.20_react@19.2.8_react-dom@19.2.8__react@19.2.8": {
+    "@floating-ui/react@0.27.20_react@19.2.8_react-dom@19.2.8": {
       "integrity": "sha512-CMqMy7OaXl9W0eq1Uy7L7i2Y/anPvHmFmESd2CEw0t5YvZhcVCeo4MBevAmswRllX7Y2dEidA4ozGPunLSTQpw==",
       "dependencies": [
         "@floating-ui/react-dom",
@@ -984,6 +985,9 @@
     },
     "@floating-ui/utils@0.2.12": {
       "integrity": "sha512-HpCo8tmWzLVad5s2d19EhAz5zqrrQ6s69qd6moPMQvkOuSwDT1YgRfWSVuc4ennqrgv3OHppiOGMQ7oC13yIww=="
+    },
+    "@fontsource-variable/atkinson-hyperlegible-next@5.3.0": {
+      "integrity": "sha512-UnLzNUy1RWoLDfydAatP4NaRm99X/WbQEph7q/PymJnCFIOOwKOx3pBmp5ys8trO0dM+CKGuJgeZP9fAR4mQpA=="
     },
     "@fontsource-variable/hanken-grotesk@5.3.0": {
       "integrity": "sha512-DOd0FqL+3cH2dfNy0JtSq9tUfxBz5mLmHMjTU0DOr3E9Zo6wxuatCl53DIPNrSPgCsnuKyM739BTIG5glCLirw=="
@@ -1073,7 +1077,7 @@
         "lexical"
       ]
     },
-    "@lexical/devtools-core@0.49.0_react@19.2.8_react-dom@19.2.8__react@19.2.8": {
+    "@lexical/devtools-core@0.49.0_react@19.2.8_react-dom@19.2.8": {
       "integrity": "sha512-LgjNlvRiuO/QF36aG6kfR4ptEvSw587o2+YF6SOsaOB7iw2Z3pqpsKloWSEF4QXaLFI65Li8JjMdQj+BaFMIOA==",
       "dependencies": [
         "@lexical/html",
@@ -1189,7 +1193,7 @@
         "lexical"
       ]
     },
-    "@lexical/react@0.49.0_react@19.2.8_react-dom@19.2.8__react@19.2.8_yjs@13.6.32": {
+    "@lexical/react@0.49.0_react@19.2.8_react-dom@19.2.8_yjs@13.6.32": {
       "integrity": "sha512-NqXF4i/IBFKVDDLDJYTwmBXE++MQuIrTQs7VTux6IPyDEpyfeFMn1rQTFb949S3f7rs33Rcu1uGtFbODQfS1Iw==",
       "dependencies": [
         "@floating-ui/react",
@@ -1297,7 +1301,7 @@
     "@preact/signals-core@1.14.4": {
       "integrity": "sha512-HNB6HYeYKhQbJ1aKl+YRjrS4+QWHLKX6qKoUsfS/m0vqzsVaEBiZiaKbG/e+NKk2ch5ALQr/ihWaMHxiCuuWHA=="
     },
-    "@preact/signals@2.11.1_preact@10.29.8__preact-render-to-string@6.7.0": {
+    "@preact/signals@2.11.1_preact@10.29.8": {
       "integrity": "sha512-uYoD+USkacTNU02kfCBkJEV7xabKTmA78W5pnT2GymsuGEC9n/ZO+UT4S96l0dIL6KLDk77VJyUFuOMBvftVHg==",
       "dependencies": [
         "@preact/signals-core",
@@ -1307,7 +1311,7 @@
     "@prefresh/babel-plugin@0.5.3": {
       "integrity": "sha512-57LX2SHs4BX2s1IwCjNzTE2OJeEepRCNf1VTEpbNcUyHfMO68eeOWGDIt4ob9aYlW6PEWZ1SuwNikuoIXANDtQ=="
     },
-    "@prefresh/core@1.5.10_preact@10.29.8__preact-render-to-string@6.7.0": {
+    "@prefresh/core@1.5.10_preact@10.29.8": {
       "integrity": "sha512-7yPTFbG56sutaFu8krp3B4a200KOFUvrtlllKWRuLjsYXo9UUucHOZRcer+gtgMkFTpv6ob8TGcTwA32bSwa1w==",
       "dependencies": [
         "preact"
@@ -1316,7 +1320,7 @@
     "@prefresh/utils@1.2.1": {
       "integrity": "sha512-vq/sIuN5nYfYzvyayXI4C2QkprfNaHUQ9ZX+3xLD8nL3rWyzpxOm1+K7RtMbhd+66QcaISViK7amjnheQ/4WZw=="
     },
-    "@prefresh/vite@2.4.12_preact@10.29.8__preact-render-to-string@6.7.0_vite@7.3.6__@types+node@26.2.0": {
+    "@prefresh/vite@2.4.12_preact@10.29.8_vite@7.3.6": {
       "integrity": "sha512-FY1fzXpUjiuosznMV0YM7XAOPZjB5FIdWS0W24+XnlxYkt9hNAwwsiKYn+cuTEoMtD/ZVazS5QVssBr9YhpCQA==",
       "dependencies": [
         "@babel/core",
@@ -1558,7 +1562,7 @@
         "tailwindcss"
       ]
     },
-    "@tailwindcss/vite@4.3.3_vite@7.3.6__@types+node@26.2.0_@types+node@26.2.0": {
+    "@tailwindcss/vite@4.3.3_vite@7.3.6_@types+node@26.2.0": {
       "integrity": "sha512-yYU8cogLeSh/ms2jh8Fj7jaba/EWa7Ja6GoUqYZaraEuCI5YS6ms6ObZgjjedm+jm6XZjdNRWBpPP6Z86oOxcw==",
       "dependencies": [
         "@tailwindcss/node",
@@ -1935,7 +1939,7 @@
         "yallist"
       ]
     },
-    "lucide-preact@1.34.0_preact@10.29.8__preact-render-to-string@6.7.0": {
+    "lucide-preact@1.34.0_preact@10.29.8": {
       "integrity": "sha512-Ytr52INF+jTnpDje4Zitkh79Zpy2ottIAYHKUhe645Z4GhS1gqtmhNq7DGYP76Tvp1ADyddi2HKK/AZfNe9XGg==",
       "dependencies": [
         "preact"
@@ -2230,6 +2234,7 @@
   "workspace": {
     "dependencies": [
       "npm:@biomejs/biome@^2.5.10",
+      "npm:@fontsource-variable/atkinson-hyperlegible-next@^5.3.0",
       "npm:husky@^9.1.7",
       "npm:pino-pretty@^13.1.3",
       "npm:pino@^10.3.1"
