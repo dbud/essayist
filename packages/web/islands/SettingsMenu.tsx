@@ -7,6 +7,7 @@ import {
   SlidersVertical,
 } from "lucide-preact";
 import Avatar from "@/components/Avatar.tsx";
+import AppFontSelect from "@/components/ui/AppFontSelect.tsx";
 import Dropdown, {
   DropdownItem,
   DropdownMenu,
@@ -38,6 +39,7 @@ export default function SettingsMenu({ user }: SettingsMenuProps) {
               <div class="truncate">{user.name ?? user.email}</div>
             </div>
           </li>
+          <AppFontSelect />
           {user.role === "admin" && (
             <DropdownItem href="/admin" onClick={close}>
               <SlidersVertical size={14} />

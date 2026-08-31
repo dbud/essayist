@@ -69,7 +69,9 @@
 
 @theme {
   --font-serif: "Source Serif 4 Variable", ui-serif, Georgia, serif;
-  --font-sans: "Special Gothic Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-sans:
+    "Atkinson Hyperlegible Next Variable", "Special Gothic Variable",
+    ui-sans-serif, system-ui, sans-serif;
   --font-mono: "Recursive Variable", ui-monospace, SFMono-Regular, monospace;
   --shadow-md:
     1px 2px 1px 0px oklch(0 0 0 / 0.05), 2px 3px 0px 0px oklch(0 0 0 / 0.05);
@@ -87,6 +89,15 @@
     background-color: var(--color-surface);
     color: var(--color-ink);
     font-size: 18px;
+  }
+
+  html[data-app-font="gothic"] {
+    --font-sans:
+      "Special Gothic Variable", ui-sans-serif, system-ui, sans-serif;
+  }
+
+  html[data-app-font="system"] {
+    --font-sans: ui-sans-serif, system-ui, sans-serif;
   }
 }
 

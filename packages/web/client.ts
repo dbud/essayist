@@ -5,3 +5,4 @@ import "@fontsource-variable/atkinson-hyperlegible-next/wght-italic.css";
 import "@fontsource-variable/recursive/mono.css";
 import "@fontsource-variable/special-gothic/wdth.css";
 import "./assets/styles.css";
+import "@/signals/preferences.ts";
