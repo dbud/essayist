@@ -14,7 +14,7 @@ export default function RightSidebar() {
       open={rightSidebarOpened.value}
       class="bg-surface text-ink shadow-md"
     >
-      <div class="w-128 flex flex-col h-full stack border-l border border-stroke bg-surface striped">
+      <div class="w-128 flex flex-col h-full stack border-l border border-stroke bg-surface overflow-y-auto">
         <div class="flex stack">
           <div class="cell striped flex-1">Debug</div>
           <button
@@ -33,6 +33,7 @@ export default function RightSidebar() {
         <Section title="Chat">
           <Chat />
         </Section>
+        <div class="striped flex-1" />
       </div>
     </Sidebar>
   );
