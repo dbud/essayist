@@ -78,7 +78,7 @@
 }
 
 @layer utilities {
-  .font-mono {
+  :where(.font-mono) {
     font-variation-settings: "MONO" 1;
     font-size: 0.9em;
   }
