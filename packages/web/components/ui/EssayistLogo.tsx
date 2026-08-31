@@ -1,3 +1,5 @@
+import { logoMark } from "@/components/ui/logo-mark.ts";
+
 interface EssayistLogoProps {
   class?: string;
 }
@@ -15,18 +17,17 @@ export default function EssayistLogo({
         fill="none"
         aria-hidden="true"
       >
-        <g transform="translate(1.35 0) skewX(-6)">
-          <path d="M5 5v14" pathLength={1} />
-          <path d="M5 5h13.5" pathLength={1} />
-          <path d="M5 12h9" pathLength={1} />
-          <path d="M5 19h13" pathLength={1} />
+        <g transform={logoMark.transform}>
+          {logoMark.paths.map((d) => (
+            <path d={d} pathLength={1} />
+          ))}
           <g class="logo-e-window">
             <rect
               class="logo-e-caret fill-accent"
-              x="16.3"
-              y="9"
-              width="2"
-              height="6.5"
+              x={logoMark.caret.x}
+              y={logoMark.caret.y}
+              width={logoMark.caret.width}
+              height={logoMark.caret.height}
             />
           </g>
         </g>

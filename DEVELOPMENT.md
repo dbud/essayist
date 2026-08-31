@@ -50,9 +50,19 @@ Without the key the tests skip gracefully.
 ```
 deno task -f web dev        # Dev server with HMR
 deno task -f web build      # Production build (vite build → _fresh/)
+deno task -f web favicon    # Regenerate favicon assets
 ```
 
 Production builds and serving are handled by Deno Deploy.
+
+## Favicon
+
+`static/favicon.svg`, `static/favicon.ico` (16/32/48) and
+`static/apple-touch-icon.png` are generated from the shared logo mark in
+`packages/web/components/ui/logo-mark.ts`, which also feeds the
+`EssayistLogo` component. After changing the mark or its palette in
+`assets/styles.css`, run `deno task -f web favicon` and commit the results.
+CI fails on stale favicons (`favicon:check`).
 
 ### WASM
 

@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+  <rect width="24" height="24" fill="#0e0a07"/>
+  <g transform="translate(1.2 1.2) scale(0.9) translate(1.35 0) skewX(-6)">
+    <g fill="none" stroke="#fcfcfc" stroke-width="3">
+      <path d="M5 5v14"/>
+      <path d="M5 5h13.5"/>
+      <path d="M5 12h9"/>
+      <path d="M5 19h13"/>
+    </g>
+    <rect x="16.3" y="9" width="2" height="6.5" fill="#ee362a"/>
+  </g>
+</svg>

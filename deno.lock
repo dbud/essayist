@@ -74,12 +74,15 @@
     "npm:@preact/signals@^2.5.1": "2.11.1_preact@10.29.8",
     "npm:@prefresh/vite@^2.4.8": "2.4.12_preact@10.29.8_vite@7.3.6",
     "npm:@remix-run/node-fetch-server@0.12": "0.12.0",
+    "npm:@resvg/resvg-wasm@2.6.2": "2.6.2",
     "npm:@tailwindcss/typography@~0.5.20": "0.5.20_tailwindcss@4.3.3",
     "npm:@tailwindcss/vite@^4.3.3": "4.3.3_vite@7.3.6_@types+node@26.2.0",
     "npm:@types/babel__core@^7.20.5": "7.20.5",
     "npm:@types/gapi@^0.0.47": "0.0.47",
     "npm:@types/google.picker@^0.0.52": "0.0.52",
     "npm:@types/node@^26.2.0": "26.2.0",
+    "npm:culori@4.0.2": "4.0.2",
+    "npm:culori@^4.0.2": "4.0.2",
     "npm:dompurify@^3.4.14": "3.4.14",
     "npm:esbuild-wasm@~0.25.11": "0.25.12",
     "npm:esbuild@0.25.7": "0.25.7",
@@ -1331,6 +1334,9 @@
     "@remix-run/node-fetch-server@0.12.0": {
       "integrity": "sha512-oeg8w8aJJSuq1fCx85jCkcgTfI6On7sKwWVSO4/OW5AvTBuosAIwnuBd/LYeU/I7lYPOTW2NXhUfyfpyeexs4w=="
     },
+    "@resvg/resvg-wasm@2.6.2": {
+      "integrity": "sha512-FqALmHI8D4o6lk/LRWDnhw95z5eO+eAa6ORjVg09YRR7BkcM6oPHU9uyC0gtQG5vpFLvgpeU4+zEAz2H8APHNw=="
+    },
     "@rollup/pluginutils@4.2.1": {
       "integrity": "sha512-iKnFXr7NkdZAIHiIWE+BX5ULi/ucVFYWD6TbAV+rZctiRTY2PL6tsIKhoIOaoskiWAkgu+VsbXgUVDNLHf+InQ==",
       "dependencies": [
@@ -1644,6 +1650,9 @@
     "cssesc@3.0.0": {
       "integrity": "sha512-/Tb/JcjK111nNScGob5MNtsntNM1aCNUDipB/TkwZFhyDrrE47SOx/18wF2bbjgc3ZzCSKW1T5nt5EbFoAz/Vg==",
       "bin": true
+    },
+    "culori@4.0.2": {
+      "integrity": "sha512-1+BhOB8ahCn4O0cep0Sh2l9KCOfOdY+BXJnKMHFFzDEouSr/el18QwXEMRlOj9UY5nCeA8UN3a/82rUWRBeyBw=="
     },
     "dateformat@4.6.3": {
       "integrity": "sha512-2P0p0pFGzHS5EMnhdxQi7aJN+iMheud0UhG4dlE1DLAlvL8JHjJJTX/CSm4JXwV0Ka5nGk3zC5mcb5bUQUxxMA=="
@@ -2277,12 +2286,14 @@
           "npm:@lexical/rich-text@0.49",
           "npm:@openrouter/agent@0.11",
           "npm:@preact/signals@^2.11.1",
+          "npm:@resvg/resvg-wasm@2.6.2",
           "npm:@tailwindcss/typography@~0.5.20",
           "npm:@tailwindcss/vite@^4.3.3",
           "npm:@types/babel__core@^7.20.5",
           "npm:@types/gapi@^0.0.47",
           "npm:@types/google.picker@^0.0.52",
           "npm:@types/node@^26.2.0",
+          "npm:culori@^4.0.2",
           "npm:dompurify@^3.4.14",
           "npm:lexical@0.49",
           "npm:lucide-preact@^1.34.0",

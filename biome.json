@@ -16,7 +16,8 @@
     }
   },
   "files": {
-    "ignoreUnknown": false
+    "ignoreUnknown": false,
+    "includes": ["**", "!**/static"]
   },
   "formatter": {
     "enabled": true,

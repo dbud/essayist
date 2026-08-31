@@ -63,3 +63,6 @@ jobs:
 
       - name: Run tests
         run: deno test -A --unstable-kv
+
+      - name: Favicon freshness
+        run: deno task -f web favicon:check
