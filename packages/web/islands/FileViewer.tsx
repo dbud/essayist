@@ -89,11 +89,11 @@ function FileViewerBody({ wsId, path }: { wsId: string; path: string }) {
         </div>
       </div>
       <div
-        class="relative flex-1 min-h-0 overflow-y-auto bg-paper striped/5"
+        class="relative flex-1 min-h-0 overflow-y-auto bg-paper striped/2"
         ref={scrollRef}
       >
         <div
-          class={`isolate content-layout ${withSidePane ? "content-layout--side" : ""} bg-paper`}
+          class={`isolate content-layout ${withSidePane ? "content-layout--side" : ""} bg-paper min-h-full`}
         >
           {/* isolate: stacking context for MarkHighlights z-index */}
           <div class="relative min-w-0 isolate">

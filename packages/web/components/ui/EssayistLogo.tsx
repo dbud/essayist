@@ -6,9 +6,11 @@ export default function EssayistLogo({
   class: className = "",
 }: EssayistLogoProps) {
   return (
-    <div class={`logo-e flex select-none justify-center bg-ink ${className}`}>
+    <div
+      class={`logo-e flex select-none justify-center bg-ink scheme-light ${className}`}
+    >
       <svg
-        class="text-surface mt-[20%] aspect-square w-3/5"
+        class="text-surface mt-[calc(20%+1px)] aspect-square w-3/5"
         viewBox="0 0 24 24"
         fill="none"
         aria-hidden="true"

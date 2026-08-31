@@ -25,7 +25,7 @@
     var(--color-opposite) 5%
   );
   --badge-fg: var(--color-ink);
-  @apply inline-flex items-center justify-center whitespace-nowrap font-medium px-2 py-0 slant text-[0.7rem] leading-none;
+  @apply inline-flex items-center justify-center whitespace-nowrap font-medium px-1 py-0 slant text-[0.7rem] leading-none;
   --slant-inset-y: 0.25rem;
   color: var(--badge-fg);
   --slant-bg: var(--badge-bg);
