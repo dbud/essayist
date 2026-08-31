@@ -20,11 +20,24 @@
 @plugin "@tailwindcss/typography";
 
 :root {
-  --color-paper: oklch(100% 0 50);
-  --color-ink: oklch(15% 0.01 60);
+  --color-paper: light-dark(oklch(100% 0 50), oklch(25% 0 50));
+  --color-ink: light-dark(oklch(15% 0.01 60), oklch(95% 0.01 60));
   --color-accent: oklch(62% 0.22 29);
-  --color-surface: oklch(99% 0 0);
-  --color-stroke: color-mix(in oklch, var(--color-ink) 20%, white);
+  --color-surface: light-dark(oklch(99% 0 0), oklch(30% 0 0));
+  --color-stroke: light-dark(
+    color-mix(in oklch, var(--color-ink) 20%, white),
+    color-mix(in oklch, var(--color-ink) 45%, black)
+  );
+  --color-opposite: light-dark(black, white);
+  color-scheme: light dark;
+}
+
+:root:where([data-theme="light"]) {
+  color-scheme: light;
+}
+
+:root:where([data-theme="dark"]) {
+  color-scheme: dark;
 }
 
 @utility pane-noise {

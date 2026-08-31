@@ -34,7 +34,7 @@ export default function SettingsMenu({ user }: SettingsMenuProps) {
       }
     >
       {(close) => (
-        <DropdownMenu end>
+        <DropdownMenu end data-stagger-children>
           <li class="dropdown-item pointer-events-none flex gap-1 p-0">
             <span class="grid h-10 w-10">
               <Avatar user={user} />

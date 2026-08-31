@@ -1,5 +1,5 @@
 .tooltip {
-  @apply slant fixed pointer-events-none text-white text-[0.7rem] py-0 px-1;
+  @apply slant fixed pointer-events-none text-surface text-[0.7rem] py-0 px-1;
   --slant-bg: var(--color-ink);
   --slant-inset-y: 0.1rem;
   transform: translate(12px, 12px);

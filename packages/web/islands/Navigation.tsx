@@ -3,6 +3,7 @@ import type { ComponentChildren } from "preact";
 import EssayistLogo from "@/components/ui/EssayistLogo.tsx";
 import Panel from "@/components/ui/Panel.tsx";
 import SettingsMenu from "@/islands/SettingsMenu.tsx";
+import ThemeToggle from "@/islands/ThemeToggle.tsx";
 
 interface NavigationProps {
   user?: User;
@@ -17,6 +18,7 @@ export default function Navigation({ user, children }: NavigationProps) {
         <div class="content-main flex flex-col items-start">{children}</div>
         <div class="content-side flex items-center justify-end">
           <div class="flex w-fit stack stack--row">
+            <ThemeToggle />
             {user && <SettingsMenu user={user} />}
           </div>
         </div>

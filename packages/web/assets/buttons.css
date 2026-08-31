@@ -1,6 +1,10 @@
 @utility cell--base {
   --btn-bg: var(--color-surface);
-  --btn-bg-hover: color-mix(in oklch, var(--color-surface), black 10%);
+  --btn-bg-hover: color-mix(
+    in oklch,
+    var(--color-surface),
+    var(--color-opposite) 10%
+  );
   --btn-duration: 120ms;
 
   @apply inline-flex gap-1;
@@ -61,7 +65,11 @@
 
 @utility cell--ink {
   --btn-bg: var(--color-ink);
-  --btn-bg-hover: color-mix(in oklch, var(--color-ink), white 30%);
+  --btn-bg-hover: color-mix(
+    in oklch,
+    var(--color-ink),
+    var(--color-opposite) 30%
+  );
   color: var(--color-surface);
 }
 
