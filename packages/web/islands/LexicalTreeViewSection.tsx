@@ -8,7 +8,7 @@ export default function LexicalTreeViewSection() {
     <Section title="Lexical Editor">
       <TreeView
         editor={activeEditor.value}
-        viewClassName="font-mono p-1 wrap-break-word text-[0.6rem]"
+        viewClassName="font-mono p-1 text-[0.6rem] [&_pre]:whitespace-pre-wrap"
       />
     </Section>
   );
