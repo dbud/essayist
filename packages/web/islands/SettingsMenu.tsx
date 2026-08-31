@@ -12,6 +12,7 @@ import Dropdown, {
   DropdownItem,
   DropdownMenu,
 } from "@/components/ui/Dropdown.tsx";
+import MarkStyleSelect from "@/components/ui/MarkStyleSelect.tsx";
 
 interface SettingsMenuProps {
   user: User;
@@ -39,7 +40,12 @@ export default function SettingsMenu({ user }: SettingsMenuProps) {
               <div class="truncate">{user.name ?? user.email}</div>
             </div>
           </li>
-          <AppFontSelect />
+          <li class="flex w-full">
+            <div class="form-grid w-full">
+              <AppFontSelect />
+              <MarkStyleSelect />
+            </div>
+          </li>
           {user.role === "admin" && (
             <DropdownItem href="/admin" onClick={close}>
               <SlidersVertical size={14} />

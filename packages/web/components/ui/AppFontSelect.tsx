@@ -7,25 +7,21 @@ const LABELS: Record<AppFont, string> = {
   system: "System",
 };
 
-/** Interface font radio row, embedded in the settings menu dropdown. */
+/** Interface font radio rows for the settings menu options grid. */
 export default function AppFontSelect() {
   return (
-    <li class="flex w-full">
-      <div class="form-grid w-full">
-        <OptionsRow
-          kind="radio"
-          name="app-font"
-          label="interface font"
-          options={(Object.keys(LABELS) as AppFont[]).map((font) => ({
-            value: font,
-            label: LABELS[font],
-          }))}
-          values={[appFont.value]}
-          onToggle={(v) => {
-            appFont.value = v as AppFont;
-          }}
-        />
-      </div>
-    </li>
+    <OptionsRow
+      kind="radio"
+      name="app-font"
+      label="Interface font"
+      options={(Object.keys(LABELS) as AppFont[]).map((font) => ({
+        value: font,
+        label: LABELS[font],
+      }))}
+      values={[appFont.value]}
+      onToggle={(v) => {
+        appFont.value = v as AppFont;
+      }}
+    />
   );
 }

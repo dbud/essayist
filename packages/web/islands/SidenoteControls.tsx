@@ -1,13 +1,7 @@
-import { Highlighter, Rows3, ZodiacAquarius } from "lucide-preact";
+import { Highlighter } from "lucide-preact";
 import Spinner from "@/components/ui/Spinner.tsx";
-import { highlightStyle } from "@/signals/preferences.ts";
 import { getReview } from "@/signals/review.ts";
 import { showToast } from "@/signals/toast.ts";
-
-const OPTIONS = [
-  { value: "band", label: "Band", icon: <Rows3 size={14} /> },
-  { value: "wavy", label: "Wavy", icon: <ZodiacAquarius size={14} /> },
-] as const;
 
 export default function SidenoteControls({
   wsId,
@@ -48,19 +42,6 @@ export default function SidenoteControls({
           "Review"
         )}
       </button>
-      <div class="flex gap-4">
-        {OPTIONS.map((o) => (
-          <button
-            key={o.value}
-            type="button"
-            class={`btn btn--ghost ${highlightStyle.value === o.value ? "is-selected" : ""}`}
-            onClick={() => (highlightStyle.value = o.value)}
-          >
-            {o.icon}
-            {o.label}
-          </button>
-        ))}
-      </div>
     </div>
   );
 }
