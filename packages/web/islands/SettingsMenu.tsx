@@ -2,6 +2,8 @@ import type { User } from "@essayist/core";
 import {
   ChevronDown,
   LogOut,
+  PanelRightClose,
+  PanelRightOpen,
   RotateCcw,
   Settings,
   SlidersVertical,
@@ -13,6 +15,7 @@ import Dropdown, {
   DropdownMenu,
 } from "@/components/ui/Dropdown.tsx";
 import MarkStyleSelect from "@/components/ui/MarkStyleSelect.tsx";
+import { rightSidebarOpened } from "@/signals/sidebar.ts";
 
 interface SettingsMenuProps {
   user: User;
@@ -46,6 +49,19 @@ export default function SettingsMenu({ user }: SettingsMenuProps) {
               <MarkStyleSelect />
             </div>
           </li>
+          <DropdownItem
+            onClick={() => {
+              rightSidebarOpened.value = !rightSidebarOpened.value;
+              close();
+            }}
+          >
+            {rightSidebarOpened.value ? (
+              <PanelRightClose size={14} />
+            ) : (
+              <PanelRightOpen size={14} />
+            )}
+            {rightSidebarOpened.value ? "Hide sidebar" : "Show sidebar"}
+          </DropdownItem>
           {user.role === "admin" && (
             <DropdownItem href="/admin" onClick={close}>
               <SlidersVertical size={14} />

@@ -1,3 +1,4 @@
+import { PanelRightClose } from "lucide-preact";
 import Sidebar from "@/components/ui/Sidebar.tsx";
 import Chat from "@/islands/Chat.tsx";
 import ExportPreviewSection from "@/islands/ExportPreviewSection.tsx";
@@ -13,7 +14,18 @@ export default function RightSidebar() {
       open={rightSidebarOpened.value}
       class="bg-surface text-ink shadow-md"
     >
-      <div class="w-128 flex flex-col h-full stack">
+      <div class="w-128 flex flex-col h-full stack border-l border border-stroke bg-surface striped">
+        <div class="flex stack">
+          <div class="cell striped flex-1">Debug</div>
+          <button
+            type="button"
+            class="btn"
+            aria-label="Hide sidebar"
+            onClick={() => (rightSidebarOpened.value = false)}
+          >
+            <PanelRightClose size={16} />
+          </button>
+        </div>
         <ExportPreviewSection />
         <ReviewHistorySection />
         <MarksSection />
