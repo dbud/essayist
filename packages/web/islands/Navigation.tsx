@@ -12,7 +12,7 @@ interface NavigationProps {
 export default function Navigation({ user, children }: NavigationProps) {
   return (
     <Panel class="bg-surface shadow-md">
-      <EssayistLogo class="absolute top-0 left-0 h-5 w-5 @[64rem]:h-10 @[64rem]:w-10" />
+      <EssayistLogo class="absolute top-0 left-0 h-10 w-5 items-start @[64rem]:w-10" />
       <div class="content-layout content-layout--side">
         <div class="content-main flex flex-col items-start">{children}</div>
         <div class="content-side flex items-center justify-end">
