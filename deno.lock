@@ -55,7 +55,6 @@
     "npm:@biomejs/biome@*": "2.5.10",
     "npm:@biomejs/biome@^2.5.10": "2.5.10",
     "npm:@fontsource-variable/atkinson-hyperlegible-next@^5.3.0": "5.3.0",
-    "npm:@fontsource-variable/hanken-grotesk@^5.3.0": "5.3.0",
     "npm:@fontsource-variable/recursive@^5.3.0": "5.3.0",
     "npm:@fontsource-variable/source-serif-4@^5.3.0": "5.3.0",
     "npm:@fontsource-variable/special-gothic@^5.3.0": "5.3.0",
@@ -988,9 +987,6 @@
     },
     "@fontsource-variable/atkinson-hyperlegible-next@5.3.0": {
       "integrity": "sha512-UnLzNUy1RWoLDfydAatP4NaRm99X/WbQEph7q/PymJnCFIOOwKOx3pBmp5ys8trO0dM+CKGuJgeZP9fAR4mQpA=="
-    },
-    "@fontsource-variable/hanken-grotesk@5.3.0": {
-      "integrity": "sha512-DOd0FqL+3cH2dfNy0JtSq9tUfxBz5mLmHMjTU0DOr3E9Zo6wxuatCl53DIPNrSPgCsnuKyM739BTIG5glCLirw=="
     },
     "@fontsource-variable/recursive@5.3.0": {
       "integrity": "sha512-4B4/lWCVeZgdbpJdIIU1sOVO/ECjjM673ohuxvyQ6uCK41TPlGzKRNokKY84noUgGYnpwc//MW4k2KrOMY19jQ=="
@@ -2267,7 +2263,6 @@
           "jsr:@std/assert@^1.0.19",
           "jsr:@std/text@^1.0.19",
           "npm:@biomejs/biome@^2.5.10",
-          "npm:@fontsource-variable/hanken-grotesk@^5.3.0",
           "npm:@fontsource-variable/recursive@^5.3.0",
           "npm:@fontsource-variable/source-serif-4@^5.3.0",
           "npm:@fontsource-variable/special-gothic@^5.3.0",

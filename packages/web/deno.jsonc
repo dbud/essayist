@@ -18,7 +18,6 @@
     "@biomejs/biome": "npm:@biomejs/biome@^2.5.10",
     "@cliffy/command": "jsr:@cliffy/command@^1.2.1",
     "@deno/kv-oauth": "jsr:@deno/kv-oauth@^0.11",
-    "@fontsource-variable/hanken-grotesk": "npm:@fontsource-variable/hanken-grotesk@^5.3.0",
     "@fontsource-variable/recursive": "npm:@fontsource-variable/recursive@^5.3.0",
     "@fontsource-variable/source-serif-4": "npm:@fontsource-variable/source-serif-4@^5.3.0",
     "@fontsource-variable/special-gothic": "npm:@fontsource-variable/special-gothic@^5.3.0",
