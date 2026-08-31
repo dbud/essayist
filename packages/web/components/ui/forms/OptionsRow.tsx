@@ -1,8 +1,9 @@
+import type { ComponentChildren } from "preact";
 import { CheckboxIcon, RadioIcon } from "@/components/ui/icons.tsx";
 
 export interface Option {
   value: string;
-  label: string;
+  label: ComponentChildren;
 }
 
 interface RadioItemProps {

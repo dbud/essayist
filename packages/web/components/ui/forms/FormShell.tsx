@@ -25,7 +25,7 @@ export function FormShell({
   return (
     <form onSubmit={onSubmit} class="flex flex-col text-ink">
       <div class="cell cell--ink">{title}</div>
-      <div class="form-grid">
+      <div class="form-grid stack--row">
         {children}
         {error && (
           <div

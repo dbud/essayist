@@ -44,7 +44,7 @@ export default function CreateFileDialog({
     <Dialog open={open}>
       <form onSubmit={onSubmit} class="flex flex-col">
         <div class="cell cell--ink">New file</div>
-        <div class="form-grid">
+        <div class="form-grid stack--row">
           <label class="cell" htmlFor="file-path">
             Path
           </label>

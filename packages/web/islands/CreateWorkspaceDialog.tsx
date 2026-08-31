@@ -36,7 +36,7 @@ export default function CreateWorkspaceDialog({
     <Dialog open={open}>
       <form onSubmit={onSubmit} class="flex flex-col">
         <div class="cell cell--ink">New project</div>
-        <div class="form-grid">
+        <div class="form-grid stack--row">
           <label class="cell" htmlFor="workspace-name">
             Name
           </label>

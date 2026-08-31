@@ -48,7 +48,7 @@
 }
 
 @utility form-grid {
-  @apply grid stack border-x border-b border-stroke;
+  @apply grid stack;
   grid-template-columns: max-content minmax(0, 1fr);
 }
 
