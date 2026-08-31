@@ -1,31 +1,11 @@
 import type { User } from "@essayist/core";
-import { PanelRightClose, PanelRightOpen } from "lucide-preact";
 import type { ComponentChildren } from "preact";
 import Panel from "@/components/ui/Panel.tsx";
 import SettingsMenu from "@/islands/SettingsMenu.tsx";
-import { rightSidebarOpened } from "@/signals/sidebar.ts";
 
 interface NavigationProps {
   user?: User;
   children: ComponentChildren;
-}
-
-function RightSidebarToggle() {
-  return (
-    <button
-      type="button"
-      class="btn"
-      aria-label={rightSidebarOpened.value ? "Hide sidebar" : "Show sidebar"}
-      aria-pressed={rightSidebarOpened.value}
-      onClick={() => (rightSidebarOpened.value = !rightSidebarOpened.value)}
-    >
-      {rightSidebarOpened.value ? (
-        <PanelRightClose size={16} />
-      ) : (
-        <PanelRightOpen size={16} />
-      )}
-    </button>
-  );
 }
 
 export default function Navigation({ user, children }: NavigationProps) {
@@ -33,10 +13,9 @@ export default function Navigation({ user, children }: NavigationProps) {
     <Panel class="bg-surface shadow-md">
       <div class="content-layout content-layout--side">
         <div class="content-main flex flex-col items-start">{children}</div>
-        <div class="flex items-start justify-end">
-          <div class="flex stack stack--row">
+        <div class="content-side flex items-center justify-end">
+          <div class="flex w-fit stack stack--row">
             {user && <SettingsMenu user={user} />}
-            <RightSidebarToggle />
           </div>
         </div>
       </div>
