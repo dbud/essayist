@@ -19,7 +19,7 @@ export function RadioIcon({ selected, size = 24 }: ChoiceIconProps) {
     >
       <circle cx="12" cy="12" r="10" />
       {selected && (
-        <circle cx="12" cy="12" r="5" fill="currentColor" stroke="none" />
+        <circle cx="12" cy="12" r="6" fill="currentColor" stroke="none" />
       )}
     </svg>
   );
@@ -42,11 +42,11 @@ export function CheckboxIcon({ selected, size = 24 }: ChoiceIconProps) {
       <rect x="3" y="3" width="18" height="18" rx="2" />
       {selected && (
         <rect
-          x="7.5"
-          y="7.5"
-          width="9"
-          height="9"
-          rx="1.5"
+          x="6.5"
+          y="6.5"
+          width="11"
+          height="11"
+          rx="0.5"
           fill="currentColor"
           stroke="none"
         />

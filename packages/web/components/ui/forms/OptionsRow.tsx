@@ -15,7 +15,7 @@ interface RadioItemProps {
 
 function RadioItem({ name, opt, selected, onToggle }: RadioItemProps) {
   return (
-    <label class="btn cursor-pointer gap-2">
+    <label class="btn cursor-pointer gap-1">
       <input
         type="radio"
         class="sr-only"
@@ -23,7 +23,7 @@ function RadioItem({ name, opt, selected, onToggle }: RadioItemProps) {
         checked={selected}
         onChange={() => onToggle(opt.value)}
       />
-      <RadioIcon selected={selected} size={16} />
+      <RadioIcon selected={selected} size={15} />
       <span class="min-w-0 truncate">{opt.label}</span>
     </label>
   );
@@ -37,14 +37,14 @@ interface CheckboxItemProps {
 
 function CheckboxItem({ opt, selected, onToggle }: CheckboxItemProps) {
   return (
-    <label class="btn cursor-pointer gap-2">
+    <label class="btn cursor-pointer gap-1">
       <input
         type="checkbox"
         class="sr-only"
         checked={selected}
         onChange={() => onToggle(opt.value)}
       />
-      <CheckboxIcon selected={selected} size={16} />
+      <CheckboxIcon selected={selected} size={15} />
       <span class="min-w-0 truncate">{opt.label}</span>
     </label>
   );
