@@ -16,6 +16,9 @@
 @utility z-mark {
   z-index: var(--z-mark);
 }
+@utility z-panel {
+  z-index: var(--z-panel);
+}
 @utility z-toolbar {
   z-index: var(--z-toolbar);
 }
