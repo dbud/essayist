@@ -1,4 +1,5 @@
 import type { ReviewRun, ReviewRunStatus } from "@essayist/core";
+import { ScrollText } from "lucide-preact";
 import MarkdownView from "@/components/MarkdownView.tsx";
 import Section from "@/islands/Section.tsx";
 import { getOpenedFiles } from "@/signals/openedFiles.ts";
@@ -15,7 +16,7 @@ function statusBadge(status: ReviewRunStatus) {
   return <span class={classes}>{status}</span>;
 }
 
-function RunItem({ run }: { run: ReviewRun }) {
+function RunItem({ run, wsId }: { run: ReviewRun; wsId: string }) {
   return (
     <div class="text-sm p-2 rounded">
       <div class="flex items-center gap-2 mb-1">
@@ -26,6 +27,13 @@ function RunItem({ run }: { run: ReviewRun }) {
             <> ({((run.completedAt - run.startedAt) / 1000).toFixed(1)}s)</>
           )}
         </span>
+        <a
+          href={`/workspaces/${wsId}/traces/${run.id}`}
+          class="btn btn-ghost btn-xs btn-square ml-auto"
+          title="View trace"
+        >
+          <ScrollText size={14} />
+        </a>
       </div>
       {run.status === "failed" && run.error && (
         <div class="text-ink/80 text-xs">{run.error}</div>
@@ -53,7 +61,7 @@ function ReviewHistory({ wsId, path }: { wsId: string; path: string }) {
     <Section title="Review history">
       <div class="flex flex-col gap-2">
         {runs.value.map((run) => (
-          <RunItem key={run.id} run={run} />
+          <RunItem key={run.id} run={run} wsId={wsId} />
         ))}
       </div>
     </Section>
