@@ -1,6 +1,6 @@
 import { runReviewPass } from "@essayist/core";
 import { define } from "@/define.ts";
-import { reviewStore } from "@/store.ts";
+import { reviewStore, traceStore } from "@/store.ts";
 import { ResolveAgentError, resolveAgent } from "@/utils/agent.ts";
 
 export const handler = {
@@ -17,6 +17,7 @@ export const handler = {
         agent,
         vfs,
         reviewStore,
+        traceStore,
         pass,
         workspaceId,
         fileId,

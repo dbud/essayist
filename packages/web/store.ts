@@ -1,5 +1,6 @@
 import {
   ConfigStore,
+  EventTraceStore,
   KvAdapter,
   ReviewStore,
   type User,
@@ -30,6 +31,7 @@ export const adapter = new KvAdapter(kv);
 export const store = new WorkspaceStore(adapter);
 export const configStore = new ConfigStore(adapter);
 export const reviewStore = new ReviewStore(adapter);
+export const traceStore = new EventTraceStore(adapter);
 
 /**
  * Dev-mode demo data (users + workspace + sample files), seeded idempotently on
