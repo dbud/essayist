@@ -2,6 +2,7 @@ import type { RequestOptions } from "@openrouter/agent";
 import { OpenRouter, stepCountIs } from "@openrouter/agent";
 import type { z } from "zod";
 import { logAgentCall, logAgentResult } from "@/agent_logger.ts";
+import type { ReviewTraceSink } from "@/reviews/types.ts";
 import { generateInstructions, stripMarkdownFences } from "@/schema.ts";
 import type { ToolPrompt } from "@/tools/index.ts";
 
@@ -54,12 +55,17 @@ export class Agent {
   /**
    * Call the model with tools. Returns the ModelResult for streaming,
    * or await .getText() for the final text.
+   *
+   * With `trace`, the caller owns stream consumption and the input is
+   * recorded through the sink. Without it, stream items are pino-logged
+   * here.
    */
   callModelWithTools(
     input: string,
     toolPrompts: readonly ToolPrompt[],
     models: string[],
     maxRounds = 5,
+    trace?: ReviewTraceSink,
   ) {
     const tools = toolPrompts.map((tp) => tp.tool);
     const instructions = toolPrompts.map((tp) => tp.instruction).join("\n");
@@ -73,7 +79,11 @@ export class Agent {
     };
     logAgentCall(request);
     const result = this.#client.callModel(request, RETRY_OPTIONS);
-    logAgentResult(result);
+    if (trace) {
+      trace.record({ type: "input", text: fullInput });
+    } else {
+      logAgentResult(result);
+    }
 
     return result;
   }

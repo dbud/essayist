@@ -38,7 +38,16 @@ export {
 } from "@/provider_error.ts";
 export { runReviewPass } from "@/reviews/runner.ts";
 export { ReviewStore } from "@/reviews/store.ts";
-export type { ReviewRun, ReviewRunStatus } from "@/reviews/types.ts";
+export type { TraceStore } from "@/reviews/trace.ts";
+export { EventTraceStore } from "@/reviews/trace.ts";
+export type {
+  ReviewRun,
+  ReviewRunStatus,
+  ReviewTraceEvent,
+  ReviewTraceSink,
+  ReviewTraceUsage,
+  TracedReviewEvent,
+} from "@/reviews/types.ts";
 export { summarizeFile } from "@/summarize.ts";
 export {
   createGrepTool,

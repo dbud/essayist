@@ -2,6 +2,7 @@ import type { Agent } from "@/agent.ts";
 import { renderPrompt } from "@/config/template.ts";
 import type { ResolvedReviewPass, ToolName } from "@/config/types.ts";
 import type { ReviewStore } from "@/reviews/store.ts";
+import type { TraceStore } from "@/reviews/trace.ts";
 import type { ReviewRun } from "@/reviews/types.ts";
 import type { ToolPrompt } from "@/tools/index.ts";
 import {
@@ -41,11 +42,12 @@ function buildTools(
   return tools;
 }
 
-/** Options for {@link runReviewPass}. */
+/** Options for {@linkcode runReviewPass}. */
 export interface RunReviewPassOptions {
   agent: Agent;
   vfs: VFS;
   reviewStore: ReviewStore;
+  traceStore?: TraceStore;
   pass: ResolvedReviewPass;
   workspaceId: string;
   fileId: string;
@@ -56,6 +58,7 @@ export async function runReviewPass({
   agent,
   vfs,
   reviewStore,
+  traceStore,
   pass,
   workspaceId,
   fileId,
@@ -65,6 +68,7 @@ export async function runReviewPass({
     fileId,
     reviewPassId: pass.reviewPass.id,
   });
+  const recorder = traceStore?.recorder({ workspaceId, runId: run.id });
 
   try {
     const tools = buildTools(
@@ -79,14 +83,19 @@ export async function runReviewPass({
       tools,
       pass.modelRefs,
       pass.reviewPass.maxRounds,
+      recorder,
     );
+    recorder?.follow(result);
     const summary = await result.getText();
+    await recorder?.flush();
     return (
       (await reviewStore.completeRun({ workspaceId, id: run.id, summary })) ??
       run
     );
   } catch (e) {
     const error = e instanceof Error ? e.message : String(e);
+    recorder?.record({ type: "error", error });
+    await recorder?.flush();
     return (
       (await reviewStore.failRun({ workspaceId, id: run.id, error })) ?? run
     );

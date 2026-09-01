@@ -5,6 +5,8 @@ import type { ResolvedReviewPass } from "@/config/types.ts";
 import { InMemoryAdapter } from "@/persistence/mod.ts";
 import { runReviewPass } from "@/reviews/runner.ts";
 import { ReviewStore } from "@/reviews/store.ts";
+import { EventTraceStore } from "@/reviews/trace.ts";
+import type { ReviewTraceSink, TracedReviewEvent } from "@/reviews/types.ts";
 import type { ToolPrompt } from "@/tools/index.ts";
 import { VirtualFileSystem } from "@/vfs/vfs.ts";
 
@@ -15,6 +17,7 @@ function fakeResult(text: string): ModelResult<readonly Tool[]> {
       yield text;
     },
     getItemsStream: async function* () {},
+    getFullResponsesStream: async function* () {},
     cancel: () => {},
   } as unknown as ModelResult<readonly Tool[]>;
 }
@@ -36,8 +39,10 @@ function createMockAgent(
       toolPrompts: readonly ToolPrompt[],
       models: string[],
       maxRounds: number,
+      trace?: ReviewTraceSink,
     ) => {
       onCall?.({ input, toolPrompts, models, maxRounds });
+      trace?.record({ type: "input", text: input });
       return fakeResult(responseText);
     },
   } as unknown as Agent;
@@ -50,6 +55,7 @@ function createMockThrowingAgent(error: string): Agent {
         getText: () => Promise.reject(new Error(error)),
         getTextStream: async function* () {},
         getItemsStream: async function* () {},
+        getFullResponsesStream: async function* () {},
         cancel: () => {},
       }) as unknown as ModelResult<readonly Tool[]>,
   } as unknown as Agent;
@@ -81,11 +87,12 @@ function setup() {
   const adapter = new InMemoryAdapter();
   const vfs = new VirtualFileSystem(adapter, "ws");
   const reviewStore = new ReviewStore(adapter);
-  return { adapter, vfs, reviewStore };
+  const traceStore = new EventTraceStore(adapter);
+  return { adapter, vfs, reviewStore, traceStore };
 }
 
 Deno.test("runReviewPass -- completes a run with the agent summary", async () => {
-  const { vfs, reviewStore } = setup();
+  const { vfs, reviewStore, traceStore } = setup();
   let captured: Captured | undefined;
   const agent = createMockAgent("Strong thesis; evidence needs work.", (c) => {
     captured = c;
@@ -95,6 +102,7 @@ Deno.test("runReviewPass -- completes a run with the agent summary", async () =>
     agent,
     vfs,
     reviewStore,
+    traceStore,
     pass,
     workspaceId: "ws",
     fileId: "essay.txt",
@@ -129,16 +137,28 @@ Deno.test("runReviewPass -- completes a run with the agent summary", async () =>
     (mark.tool as { function: { description: string } }).function.description,
     "Allowed labels: thesis, evidence",
   );
+
+  const trace = await traceStore.get({ workspaceId: "ws", runId: run.id });
+  assertEquals(
+    trace?.map((e) => e.type),
+    ["input"],
+  );
+  const inputEvent = trace?.[0] as TracedReviewEvent;
+  assertStringIncludes(
+    (inputEvent as { text: string }).text,
+    "You are an editor.",
+  );
 });
 
 Deno.test("runReviewPass -- records a failed run on agent error", async () => {
-  const { vfs, reviewStore } = setup();
+  const { vfs, reviewStore, traceStore } = setup();
   const agent = createMockThrowingAgent("upstream down");
 
   const run = await runReviewPass({
     agent,
     vfs,
     reviewStore,
+    traceStore,
     pass,
     workspaceId: "ws",
     fileId: "essay.txt",
@@ -150,4 +170,9 @@ Deno.test("runReviewPass -- records a failed run on agent error", async () => {
     (await reviewStore.getRun({ workspaceId: "ws", id: run.id }))?.status,
     "failed",
   );
+
+  const trace = await traceStore.get({ workspaceId: "ws", runId: run.id });
+  const error = trace?.[0] as Extract<TracedReviewEvent, { type: "error" }>;
+  assertEquals(error.type, "error");
+  assertEquals(error.error, "upstream down");
 });
