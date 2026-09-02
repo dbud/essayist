@@ -148,10 +148,10 @@ function SectionHeader({
 type ToolCallEvent = Extract<TracedReviewEvent, { type: "tool_call" }>;
 type ToolOutputEvent = Extract<TracedReviewEvent, { type: "tool_output" }>;
 
-function ReasoningRow({ timing, text }: { timing: string; text: string }) {
+function ReasoningRow({ timing, text }: { timing: number; text: string }) {
   return (
     <>
-      <div class="cell--data">{timing}</div>
+      <div class="cell--data">{formatElapsed(timing)}</div>
       <div class="cell--data">thinking</div>
       <div class="cell--data min-w-0">
         <div class="max-h-72 overflow-y-auto whitespace-pre-wrap">{text}</div>
@@ -164,12 +164,12 @@ function ToolCallRow({
   timing,
   event,
 }: {
-  timing: string;
+  timing: number;
   event: ToolCallEvent;
 }) {
   return (
     <>
-      <div class="cell--data">{timing}</div>
+      <div class="cell--data">{formatElapsed(timing)}</div>
       <div class="cell--data">
         <Wrench size={14} />
         {event.name}
@@ -188,12 +188,14 @@ function ToolOutputRow({
   timing,
   event,
 }: {
-  timing: string;
+  timing?: number;
   event: ToolOutputEvent;
 }) {
   return (
     <>
-      <div class="cell--data">{timing}</div>
+      <div class="cell--data">
+        {timing !== undefined && formatElapsed(timing)}
+      </div>
       <div class="cell--data">
         <ArrowRight size={14} />
         output
@@ -210,10 +212,10 @@ function ToolOutputRow({
   );
 }
 
-function MessageRow({ timing, text }: { timing: string; text: string }) {
+function MessageRow({ timing, text }: { timing: number; text: string }) {
   return (
     <>
-      <div class="cell--data">{timing}</div>
+      <div class="cell--data">{formatElapsed(timing)}</div>
       <div class="cell--data">message</div>
       <div class="cell--data min-w-0 break-words">
         <MarkdownView content={text} />
@@ -222,12 +224,14 @@ function MessageRow({ timing, text }: { timing: string; text: string }) {
   );
 }
 
-function ErrorRow({ timing, error }: { timing: string; error: string }) {
+function ErrorRow({ timing, error }: { timing?: number; error: string }) {
   return (
     <>
-      <div class="cell--data">{timing}</div>
       <div class="cell--data">
         <span class="badge badge--error self-start">error</span>
+      </div>
+      <div class="cell--data">
+        {timing !== undefined && formatElapsed(timing)}
       </div>
       <div class="cell--data min-w-0 break-words">{error}</div>
     </>
@@ -242,7 +246,7 @@ function RoundRows({ group }: { group: RoundGroup }) {
   const rows: ComponentChildren[] = [];
   // Model-side spans (reasoning, call args, message) chain from the
   // previous item's completion (or round start) and sum to the round
-  // total; tool outputs show their execution duration (output.at -
+  // total; tool outputs carry their execution duration (output.at -
   // call.at).
   let prevAt = group.start;
   for (const event of group.events) {
@@ -252,7 +256,7 @@ function RoundRows({ group }: { group: RoundGroup }) {
         rows.push(
           <ReasoningRow
             key={event.seq}
-            timing={`gen ${formatElapsed(event.at - prevAt)}`}
+            timing={event.at - prevAt}
             text={event.text}
           />,
         );
@@ -262,7 +266,7 @@ function RoundRows({ group }: { group: RoundGroup }) {
         rows.push(
           <ToolCallRow
             key={event.seq}
-            timing={`gen ${formatElapsed(event.at - prevAt)}`}
+            timing={event.at - prevAt}
             event={event}
           />,
         );
@@ -273,11 +277,7 @@ function RoundRows({ group }: { group: RoundGroup }) {
         rows.push(
           <ToolOutputRow
             key={event.seq}
-            timing={
-              callStart === undefined
-                ? ""
-                : `exec ${formatElapsed(event.at - callStart)}`
-            }
+            timing={callStart === undefined ? undefined : event.at - callStart}
             event={event}
           />,
         );
@@ -287,7 +287,7 @@ function RoundRows({ group }: { group: RoundGroup }) {
         rows.push(
           <MessageRow
             key={event.seq}
-            timing={`gen ${formatElapsed(event.at - prevAt)}`}
+            timing={event.at - prevAt}
             text={event.text}
           />,
         );
@@ -297,7 +297,7 @@ function RoundRows({ group }: { group: RoundGroup }) {
         rows.push(
           <ErrorRow
             key={event.seq}
-            timing={formatElapsed(event.at - prevAt)}
+            timing={event.at - prevAt}
             error={event.error}
           />,
         );
@@ -402,7 +402,6 @@ export default function ReviewTracePage({
                 {orphans.map((event) => (
                   <ErrorRow
                     key={event.seq}
-                    timing=""
                     error={event.type === "error" ? event.error : pretty(event)}
                   />
                 ))}
