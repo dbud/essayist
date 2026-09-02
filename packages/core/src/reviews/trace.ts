@@ -56,8 +56,11 @@ export interface TraceStore {
     runId,
   }: TraceScope): Promise<TracedReviewEvent[] | undefined>;
 
-  /** Recorder bound to one run. */
-  recorder(scope: TraceScope): TraceRecorder;
+  /** Recorder bound to one run. onEvent receives each derived event. */
+  recorder(
+    scope: TraceScope,
+    onEvent?: (event: TracedReviewEvent) => void,
+  ): TraceRecorder;
 }
 
 /** Persist one KV entry per event. */
@@ -93,8 +96,11 @@ export class EventTraceStore implements TraceStore {
     return entries.map((e) => e.value);
   }
 
-  recorder(scope: TraceScope): TraceRecorder {
-    return new TraceRecorder(this, scope.workspaceId, scope.runId);
+  recorder(
+    scope: TraceScope,
+    onEvent?: (event: TracedReviewEvent) => void,
+  ): TraceRecorder {
+    return new TraceRecorder(this, scope.workspaceId, scope.runId, onEvent);
   }
 
   #eventKey(workspaceId: string, runId: string, seq: number): string[] {
@@ -176,15 +182,22 @@ export class TraceRecorder implements ReviewTraceSink {
   #runId: string;
   #seq = 0;
   #round = 0;
+  #onEvent: ((event: TracedReviewEvent) => void) | undefined;
   #writes: Promise<void> = Promise.resolve();
   #consumer: Promise<void> | undefined;
   #flushPromise: Promise<void> | undefined;
   #flushed = false;
 
-  constructor(store: TraceStore, workspaceId: string, runId: string) {
+  constructor(
+    store: TraceStore,
+    workspaceId: string,
+    runId: string,
+    onEvent?: (event: TracedReviewEvent) => void,
+  ) {
     this.#store = store;
     this.#workspaceId = workspaceId;
     this.#runId = runId;
+    this.#onEvent = onEvent;
   }
 
   record(event: ReviewTraceEvent): void {
@@ -195,6 +208,7 @@ export class TraceRecorder implements ReviewTraceSink {
       ...event,
     };
     logTraceEvent(entry);
+    this.#onEvent?.(entry);
     // Appends are async; chain them to keep store order equal to seq order.
     this.#writes = this.#writes
       .then(() =>

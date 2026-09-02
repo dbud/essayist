@@ -3,6 +3,7 @@ import { assertEquals, assertStringIncludes } from "@std/assert";
 import type { Agent } from "@/agent.ts";
 import type { ResolvedReviewPass } from "@/config/types.ts";
 import { InMemoryAdapter } from "@/persistence/mod.ts";
+import type { ReviewProgress } from "@/reviews/progress.ts";
 import { runReviewPass } from "@/reviews/runner.ts";
 import { ReviewStore } from "@/reviews/store.ts";
 import { EventTraceStore } from "@/reviews/trace.ts";
@@ -269,4 +270,27 @@ Deno.test("runReviewPass -- commits marks placed before a failure", async () => 
   assertEquals(run.error, "upstream down");
   const marks = await vfs.getMarks("essay.txt", versionId);
   assertEquals(marks.length, 1);
+});
+
+Deno.test("runReviewPass -- emits progress snapshots via the trace recorder", async () => {
+  const { vfs, reviewStore, traceStore } = setup();
+  await vfs.write("essay.txt", "hello world");
+  const agent = createMockAgent("summary");
+  const progress: ReviewProgress[] = [];
+
+  const run = await runReviewPass({
+    agent,
+    vfs,
+    reviewStore,
+    traceStore,
+    pass,
+    workspaceId: "ws",
+    fileId: "essay.txt",
+    onProgress: (p) => progress.push(p),
+  });
+
+  assertEquals(run.status, "completed");
+  // The mock stream derives no tool or message events, so only the
+  // initial snapshot arrives.
+  assertEquals(progress, [{ phase: "working", round: 0, notes: 0 }]);
 });
