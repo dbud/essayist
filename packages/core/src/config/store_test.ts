@@ -18,7 +18,6 @@ async function seedFullConfig(store: ConfigStore) {
   await store.savePrompt({
     key: "system.reviewer",
     body: "You are {{role}}.",
-    variables: ["role"],
   });
   await store.savePrompt({
     key: "instructions.mark",

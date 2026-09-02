@@ -1,4 +1,4 @@
-import type { Prompt } from "@essayist/core";
+import { extractVariables, type Prompt } from "@essayist/core";
 import { Pencil, Trash2 } from "lucide-preact";
 import { ActionBtn, EntityCard } from "@/components/ui/EntityCard.tsx";
 import { Field, List } from "@/components/ui/EntityRows.tsx";
@@ -14,6 +14,7 @@ export function PromptRow({
   onEdit: () => void;
   onDelete: () => void;
 }) {
+  const variables = extractVariables(prompt.body);
   return (
     <EntityCard
       title={<span>{prompt.key}</span>}
@@ -35,9 +36,7 @@ export function PromptRow({
       }
     >
       <Field label="body" value={prompt.body} />
-      {prompt.variables && prompt.variables.length > 0 && (
-        <List label="variables" items={prompt.variables} />
-      )}
+      {variables.length > 0 && <List label="variables" items={variables} />}
     </EntityCard>
   );
 }

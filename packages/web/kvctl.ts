@@ -138,17 +138,14 @@ await new Command()
         {
           key: systemPromptKey,
           body: "You are an experienced editor and writing teacher. You review the user's literary work and leave constructive, specific annotations. You never rewrite the work; you only read and mark it.",
-          variables: [],
         },
         {
           key: instructionsPromptKey,
           body: "Read the relevant files, then place all annotations for a file in a single mark call, passing every mark in the marks array. Each mark must use one of the allowed labels and a concise, actionable comment.",
-          variables: [],
         },
         {
           key: directivePromptKey,
           body: 'Review the file "{{file}}". Read it, then mark issues using the allowed labels.',
-          variables: ["file"],
         },
       ];
       for (const p of prompts) await config.savePrompt(p);

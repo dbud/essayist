@@ -22,7 +22,6 @@ export const PromptSchema = z.object({
   /** Stable name. */
   key: z.string(),
   body: z.string(),
-  variables: z.string().array().optional(),
 });
 export type Prompt = z.infer<typeof PromptSchema>;
 

@@ -1,5 +1,13 @@
 import { assertEquals } from "@std/assert";
-import { renderPrompt } from "./template.ts";
+import { extractVariables, renderPrompt } from "@/config/template.ts";
+
+Deno.test("extractVariables -- returns unique names in order", () => {
+  assertEquals(extractVariables("{{b}} {{a}} {{b}}"), ["b", "a"]);
+});
+
+Deno.test("extractVariables -- no variables is empty", () => {
+  assertEquals(extractVariables("plain text"), []);
+});
 
 Deno.test("renderPrompt -- substitutes known variables", () => {
   assertEquals(

@@ -1,10 +1,10 @@
-import type { Prompt } from "@essayist/core";
+import { extractVariables, type Prompt } from "@essayist/core";
 import type { Signal } from "@preact/signals";
 import { useState } from "preact/hooks";
+import { List } from "@/components/ui/EntityRows.tsx";
 import { FormShell } from "@/components/ui/forms/FormShell.tsx";
 import { TextareaRow } from "@/components/ui/forms/TextareaRow.tsx";
 import { TextRow } from "@/components/ui/forms/TextRow.tsx";
-import { lines } from "@/islands/admin/forms/lines.ts";
 import { getAdminConfig } from "@/signals/admin.ts";
 
 export function PromptForm({
@@ -17,20 +17,16 @@ export function PromptForm({
   const admin = getAdminConfig();
   const [key, setKey] = useState(entity?.key ?? "");
   const [body, setBody] = useState(entity?.body ?? "");
-  const [variablesText, setVariablesText] = useState(
-    (entity?.variables ?? []).join("\n"),
-  );
   const [error, setError] = useState<string | null>(null);
+  const variables = extractVariables(body);
 
   async function handleSubmit(e: Event) {
     e.preventDefault();
     if (!key.trim()) return setError("Key is required.");
     if (!body.trim()) return setError("Body is required.");
-    const variables = lines(variablesText);
     const data: Prompt = {
       key: entity?.key ?? key.trim(),
       body,
-      ...(variables.length > 0 ? { variables } : {}),
     };
     const ok = entity
       ? await admin.updatePrompt(entity.key, data)
@@ -60,12 +56,7 @@ export function PromptForm({
         rows={8}
         placeholder="Prompt template with {{var}} placeholders"
       />
-      <TextareaRow
-        label="variables (one per line)"
-        value={variablesText}
-        onInput={setVariablesText}
-        rows={3}
-      />
+      {variables.length > 0 && <List label="variables" items={variables} />}
     </FormShell>
   );
 }
