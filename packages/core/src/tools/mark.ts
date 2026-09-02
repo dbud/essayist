@@ -3,8 +3,7 @@ import { z } from "zod";
 import type { VFS } from "@/vfs/types.ts";
 import type { ToolPrompt } from "./index.ts";
 
-const inputSchema = z.object({
-  path: z.string().describe("The path of the file to mark"),
+const markSchema = z.object({
   selected_text: z
     .string()
     .describe(
@@ -25,20 +24,32 @@ const inputSchema = z.object({
     ),
 });
 
+const inputSchema = z.object({
+  path: z.string().describe("The path of the file to mark"),
+  marks: z.array(markSchema).min(1).describe("All marks to place in the file."),
+});
+
 const outputSchema = z.object({
-  mark_id: z.string().describe("Unique ID of the created mark."),
-  thread_id: z
-    .string()
-    .describe("Stable thread ID for tracking this mark across versions."),
-  marked: z
-    .boolean()
-    .describe(
-      "True if the mark was created successfully, false if the text was not found.",
-    ),
-  error: z
-    .string()
-    .optional()
-    .describe("Present when the mark could not be created."),
+  results: z.array(
+    z.object({
+      selected_text: z
+        .string()
+        .describe("The text span this result belongs to."),
+      mark_id: z
+        .string()
+        .describe("Unique ID of the created mark, empty when not marked."),
+      thread_id: z
+        .string()
+        .describe("Stable thread ID for tracking, empty when not marked."),
+      marked: z
+        .boolean()
+        .describe("True if the mark was created successfully."),
+      error: z
+        .string()
+        .optional()
+        .describe("Present when the mark could not be created."),
+    }),
+  ),
 });
 
 export type MarkInput = z.infer<typeof inputSchema>;
@@ -53,13 +64,14 @@ export interface MarkToolOptions {
 }
 
 const DEFAULT_INSTRUCTION =
-  "Use the mark tool to annotate a text span in a file with a comment. " +
-  "Read the file first to get the exact text.";
+  "After reading a file, place ALL of its annotations in a single mark call, " +
+  "passing every mark in the marks array. Each mark needs the exact " +
+  "selected_text from the file and a concise comment.";
 
 const DEFAULT_DESCRIPTION =
-  "Place a mark (annotation) on a text span in a file. " +
-  "Returns a mark_id and thread_id. " +
-  "If selected_text appears multiple times, use line_hint to specify which occurrence.";
+  "Place one or more marks (annotations) on text spans in a file in a " +
+  "single call. Returns a result per mark. If selected_text appears " +
+  "multiple times, use line_hint to specify which occurrence.";
 
 export function createMarkTool(
   vfs: VFS,
@@ -79,30 +91,36 @@ export function createMarkTool(
       description,
       inputSchema,
       outputSchema,
-      execute: async ({
-        path,
-        selected_text,
-        comment,
-        label,
-        line_hint,
-      }): Promise<MarkOutput> => {
-        if (
-          allowedLabels &&
-          allowedLabels.length > 0 &&
-          label !== undefined &&
-          !allowedLabels.includes(label)
-        ) {
-          return {
-            mark_id: "",
-            thread_id: "",
-            marked: false,
-            error: `Label "${label}" is not allowed. Use one of: ${allowedLabels.join(", ")}.`,
-          };
+      execute: async ({ path, marks }): Promise<MarkOutput> => {
+        const results = [];
+        for (const mark of marks) {
+          if (
+            allowedLabels &&
+            allowedLabels.length > 0 &&
+            mark.label !== undefined &&
+            !allowedLabels.includes(mark.label)
+          ) {
+            results.push({
+              selected_text: mark.selected_text,
+              mark_id: "",
+              thread_id: "",
+              marked: false,
+              error: `Label "${mark.label}" is not allowed. Use one of: ${allowedLabels.join(", ")}.`,
+            });
+            continue;
+          }
+          const result = await vfs.mark(
+            path,
+            mark.selected_text,
+            mark.comment,
+            {
+              label: mark.label,
+              lineHint: mark.line_hint,
+            },
+          );
+          results.push({ selected_text: mark.selected_text, ...result });
         }
-        return await vfs.mark(path, selected_text, comment, {
-          label,
-          lineHint: line_hint,
-        });
+        return { results };
       },
     }),
   };

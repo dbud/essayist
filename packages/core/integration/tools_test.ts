@@ -255,6 +255,31 @@ Deno.test({
 });
 
 Deno.test({
+  name: "integration: mark -- model batches multiple marks in one call",
+  ignore: !agent,
+  fn: async () => {
+    const vfs = await createMarkVFS();
+    const readTool = createReadFileTool(vfs);
+    const markTool = createMarkTool(vfs);
+    const result = require(agent).callModelWithTools(
+      "Read essay.txt with numbered=true, then make ONE mark tool call " +
+        "placing two marks: one on 'fox' with comment 'animal mention' " +
+        "and label 'note', one on 'lazy' with comment 'descriptor' " +
+        "and label 'verify'.",
+      [readTool, markTool],
+      TEST_MODELS,
+    );
+    await result.getText();
+
+    const file = await vfs.read("essay.txt");
+    const marks = await vfs.getMarks("essay.txt", file.version_id);
+    assertEquals(marks.length, 2);
+    assertMatch(marks[0].selected_text, /fox/);
+    assertMatch(marks[1].selected_text, /lazy/);
+  },
+});
+
+Deno.test({
   name: "integration: mark -- model uses line_hint to disambiguate duplicates",
   ignore: !agent,
   fn: async () => {

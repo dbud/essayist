@@ -142,7 +142,7 @@ await new Command()
         },
         {
           key: instructionsPromptKey,
-          body: "Read the relevant files, then use the mark tool to annotate specific text spans. Each mark must use one of the allowed labels and a concise, actionable comment.",
+          body: "Read the relevant files, then place all annotations for a file in a single mark call, passing every mark in the marks array. Each mark must use one of the allowed labels and a concise, actionable comment.",
           variables: [],
         },
         {
