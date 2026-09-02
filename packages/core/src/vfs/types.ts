@@ -51,6 +51,7 @@ export interface MarkOptions {
   lineHint?: number;
   threadId?: string;
   contextSpan?: number;
+  versionId?: string;
 }
 
 /**
@@ -137,7 +138,7 @@ export interface VFS {
   /** Search files for plain text (escaped as literal regex). */
   search(text: string, options?: GrepOptions): Promise<GrepResult>;
 
-  /** Place a mark on a text span in the latest version of a file. */
+  /** Place a mark on a text span; targets the version in options, or latest. */
   mark(
     path: string,
     selectedText: string,

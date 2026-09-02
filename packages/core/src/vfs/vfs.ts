@@ -68,21 +68,13 @@ export class VirtualFileSystem implements VFS {
     path: string,
     { versionId, startLine, endLine, numbered }: ReadOptions = {},
   ): Promise<FileReadResult> {
-    let snapshot: FileSnapshot = {
+    const snapshot: FileSnapshot = {
       content: "",
       version_id: versionId ?? "",
       timestamp: 0,
       lines: 0,
+      ...(await this.#getSnapshot(path, versionId)),
     };
-    if (versionId) {
-      const [version, content] = await Promise.all([
-        this.#getVersion(path, versionId),
-        this.#getVersionContent(path, versionId),
-      ]);
-      snapshot = { ...snapshot, ...version, content };
-    } else {
-      snapshot = { ...snapshot, ...(await this.#getFile(path)) };
-    }
 
     const start = Math.max(1, startLine ?? 1);
     const end = Math.min(snapshot.lines, endLine ?? snapshot.lines);
@@ -268,13 +260,15 @@ export class VirtualFileSystem implements VFS {
       lineHint,
       threadId,
       contextSpan = DEFAULT_CONTEXT_SPAN,
+      versionId,
     }: MarkOptions = {},
   ): Promise<MarkResult> {
-    const latest = await this.#getFile(path);
-    if (!latest) {
+    const snapshot = await this.#getSnapshot(path, versionId);
+    if (!snapshot) {
       return { mark_id: "", thread_id: "", marked: false };
     }
-    const { content, version_id } = latest;
+    const { content, version_id } = snapshot;
+
     const offsetHint =
       lineHint !== undefined ? lineToOffset(content, lineHint) : 0;
     const tt = new TokenizedText(content);
@@ -405,6 +399,20 @@ export class VirtualFileSystem implements VFS {
       });
       return { version_id, content, ...rest };
     }
+  }
+
+  /** Snapshot of the given version, or the latest when no version is given. */
+  async #getSnapshot(
+    path: string,
+    versionId?: string,
+  ): Promise<FileSnapshot | undefined> {
+    if (!versionId) return await this.#getFile(path);
+    const [version, content] = await Promise.all([
+      this.#getVersion(path, versionId),
+      this.#getVersionContent(path, versionId),
+    ]);
+    if (!version) return undefined;
+    return { ...version, content };
   }
 
   async #getVersion(

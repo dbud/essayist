@@ -156,6 +156,88 @@ Deno.test("VFS.mark -- stores label when provided", async () => {
   assertEquals(marks[0].label, "important");
 });
 
+// -- mark with versionId --
+
+Deno.test("VFS.mark -- versionId marks the given version, not latest", async () => {
+  const { vfs, versionId: v1 } = await createFile("f.txt", "hello world");
+  await vfs.write("f.txt", "goodbye world");
+
+  const result = await vfs.mark("f.txt", "hello", "greeting", {
+    versionId: v1,
+  });
+
+  assertEquals(result.marked, true);
+  const v1Marks = await vfs.getMarks("f.txt", v1);
+  assertEquals(v1Marks.length, 1);
+  assertEquals(v1Marks[0].version_id, v1);
+  assertEquals(v1Marks[0].selected_text, "hello");
+  assertEquals(v1Marks[0].comment, "greeting");
+  const latest = await vfs.read("f.txt");
+  assertEquals(await vfs.getMarks("f.txt", latest.version_id), []);
+});
+
+Deno.test("VFS.mark -- versionId resolves text against that version's content", async () => {
+  const { vfs, versionId: v1 } = await createFile("f.txt", "old draft text");
+  await vfs.write("f.txt", "new draft text");
+
+  // "old draft" only exists in v1; "new draft" only in latest.
+  const oldResult = await vfs.mark("f.txt", "old draft", "from v1", {
+    versionId: v1,
+  });
+  assertEquals(oldResult.marked, true);
+
+  const latestResult = await vfs.mark("f.txt", "old draft", "from latest");
+  assertEquals(latestResult.marked, false);
+});
+
+Deno.test("VFS.mark -- versionId uses lineHint against that version", async () => {
+  const { vfs, versionId: v1 } = await createFile(
+    "f.txt",
+    "first version line\nsecond version line",
+  );
+  await vfs.write("f.txt", "completely different");
+
+  const result = await vfs.mark("f.txt", "version line", "line 2 of v1", {
+    versionId: v1,
+    lineHint: 2,
+  });
+
+  assertEquals(result.marked, true);
+  const marks = await vfs.getMarks("f.txt", v1);
+  assertEquals(marks.length, 1);
+  assertEquals(marks[0].offset, 26);
+});
+
+Deno.test("VFS.mark -- versionId captures context from that version", async () => {
+  const { vfs, versionId: v1 } = await createFile(
+    "f.txt",
+    "alpha TARGET omega",
+  );
+  await vfs.write("f.txt", "TARGET");
+
+  await vfs.mark("f.txt", "TARGET", "pinned context", {
+    versionId: v1,
+    contextSpan: 5,
+  });
+
+  const marks = await vfs.getMarks("f.txt", v1);
+  assertObjectMatch(marks[0], {
+    before_context: "alpha ",
+    after_context: " omega",
+  });
+});
+
+Deno.test("VFS.mark -- returns marked false for unknown versionId", async () => {
+  const { vfs } = await createFile("f.txt", "hello world");
+
+  const result = await vfs.mark("f.txt", "hello", "greeting", {
+    versionId: "no-such-version",
+  });
+
+  assertEquals(result.marked, false);
+  assertEquals(result.mark_id, "");
+});
+
 // -- getMarks --
 
 Deno.test("VFS.getMarks -- returns empty array when no marks", async () => {
