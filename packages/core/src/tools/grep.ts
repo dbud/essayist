@@ -1,6 +1,6 @@
-import { tool } from "@openrouter/agent";
 import { z } from "zod";
 import type { VFS } from "@/vfs/types.ts";
+import { defineTool, type ToolDefinition } from "./define.ts";
 import type { ToolPrompt } from "./index.ts";
 
 const inputSchema = z.object({
@@ -51,23 +51,22 @@ const outputSchema = z.object({
 export type GrepInput = z.infer<typeof inputSchema>;
 export type GrepOutput = z.infer<typeof outputSchema>;
 
+export const grepDefinition: ToolDefinition<typeof inputSchema> = {
+  name: "grep",
+  description:
+    "Search for a regex pattern across files. Returns matching lines " +
+    "with file path, line number, and surrounding context. " +
+    "Case-insensitive by default.",
+  instruction:
+    "Use the grep tool to search for text patterns across files. " +
+    "Supports regex patterns. Use options.path to search a specific file, " +
+    "or omit it to search all files.",
+  inputSchema,
+  outputSchema,
+};
+
 export function createGrepTool(vfs: VFS): ToolPrompt {
-  return {
-    instruction:
-      "Use the grep tool to search for text patterns across files. " +
-      "Supports regex patterns. Use options.path to search a specific file, " +
-      "or omit it to search all files.",
-    tool: tool({
-      name: "grep",
-      description:
-        "Search for a regex pattern across files. Returns matching lines " +
-        "with file path, line number, and surrounding context. " +
-        "Case-insensitive by default.",
-      inputSchema,
-      outputSchema,
-      execute: async ({ pattern, options }): Promise<GrepOutput> => {
-        return await vfs.grep(pattern, options);
-      },
-    }),
-  };
+  return defineTool(grepDefinition, async ({ pattern, options }) => {
+    return await vfs.grep(pattern, options);
+  });
 }

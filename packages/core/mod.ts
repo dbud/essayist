@@ -57,6 +57,11 @@ export {
   createWriteFileTool,
 } from "@/tools/index.ts";
 export type { MarkToolOptions } from "@/tools/mark.ts";
+export type {
+  ToolInfo,
+  ToolParameters,
+} from "@/tools/registry.ts";
+export { getToolInfos } from "@/tools/registry.ts";
 export { setMyers } from "@/vfs/diff.ts";
 export type { ResolveInput, ResolveOptions } from "@/vfs/marks_resolver.ts";
 export { resolveMarks } from "@/vfs/marks_resolver.ts";

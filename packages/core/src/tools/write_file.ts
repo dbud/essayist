@@ -1,6 +1,6 @@
-import { tool } from "@openrouter/agent";
 import { z } from "zod";
 import type { VFS } from "@/vfs/types.ts";
+import { defineTool, type ToolDefinition } from "./define.ts";
 import type { ToolPrompt } from "./index.ts";
 
 const inputSchema = z.object({
@@ -24,22 +24,21 @@ const outputSchema = z.object({
 export type WriteFileInput = z.infer<typeof inputSchema>;
 export type WriteFileOutput = z.infer<typeof outputSchema>;
 
+export const writeFileDefinition: ToolDefinition<typeof inputSchema> = {
+  name: "write_file",
+  description:
+    "Create or overwrite a file with the given content. " +
+    "If the file already exists, the previous version is automatically " +
+    "snapshotted for version history. Returns whether the file was newly created.",
+  instruction:
+    "Use the write_file tool to create or overwrite a file. " +
+    "The previous version will be automatically saved for version history.",
+  inputSchema,
+  outputSchema,
+};
+
 export function createWriteFileTool(vfs: VFS): ToolPrompt {
-  return {
-    instruction:
-      "Use the write_file tool to create or overwrite a file. " +
-      "The previous version will be automatically saved for version history.",
-    tool: tool({
-      name: "write_file",
-      description:
-        "Create or overwrite a file with the given content. " +
-        "If the file already exists, the previous version is automatically " +
-        "snapshotted for version history. Returns whether the file was newly created.",
-      inputSchema,
-      outputSchema,
-      execute: async ({ path, content }): Promise<WriteFileOutput> => {
-        return await vfs.write(path, content);
-      },
-    }),
-  };
+  return defineTool(writeFileDefinition, async ({ path, content }) => {
+    return await vfs.write(path, content);
+  });
 }

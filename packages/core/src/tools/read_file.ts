@@ -1,6 +1,6 @@
-import { tool } from "@openrouter/agent";
 import { z } from "zod";
 import type { FileReadResult, VFS } from "@/vfs/types.ts";
+import { defineTool, type ToolDefinition } from "./define.ts";
 import type { ToolPrompt } from "./index.ts";
 
 const inputSchema = z.object({
@@ -35,33 +35,30 @@ const outputSchema = z.object({
 export type ReadFileInput = z.infer<typeof inputSchema>;
 export type ReadFileOutput = z.infer<typeof outputSchema>;
 
+export const readFileDefinition: ToolDefinition<typeof inputSchema> = {
+  name: "read_file",
+  description:
+    "Read the contents of a file by path. Returns the text content. " +
+    "Supports optional line range (start_line/end_line, 1-based inclusive) " +
+    "and optional line numbering for easy reference.",
+  instruction:
+    "Use the read_file tool to read file contents before answering. " +
+    "You can request a specific line range with start_line and end_line (1-based). " +
+    "Use numbered=true to see line numbers for referencing specific lines.",
+  inputSchema,
+  outputSchema,
+};
+
 export function createReadFileTool(vfs: VFS): ToolPrompt {
-  return {
-    instruction:
-      "Use the read_file tool to read file contents before answering. " +
-      "You can request a specific line range with start_line and end_line (1-based). " +
-      "Use numbered=true to see line numbers for referencing specific lines.",
-    tool: tool({
-      name: "read_file",
-      description:
-        "Read the contents of a file by path. Returns the text content. " +
-        "Supports optional line range (start_line/end_line, 1-based inclusive) " +
-        "and optional line numbering for easy reference.",
-      inputSchema,
-      outputSchema,
-      execute: async ({
-        path,
-        start_line,
-        end_line,
+  return defineTool(
+    readFileDefinition,
+    async ({ path, start_line, end_line, numbered }) => {
+      const result: FileReadResult = await vfs.read(path, {
+        startLine: start_line,
+        endLine: end_line,
         numbered,
-      }): Promise<ReadFileOutput> => {
-        const result: FileReadResult = await vfs.read(path, {
-          startLine: start_line,
-          endLine: end_line,
-          numbered,
-        });
-        return result;
-      },
-    }),
-  };
+      });
+      return result;
+    },
+  );
 }
