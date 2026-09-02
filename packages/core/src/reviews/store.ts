@@ -18,11 +18,13 @@ export class ReviewStore {
     workspaceId,
     fileId,
     reviewPassId,
+    versionId,
     startedAt = Date.now(),
   }: {
     workspaceId: string;
     fileId: string;
     reviewPassId: string;
+    versionId?: string;
     startedAt?: number;
   }): Promise<ReviewRun> {
     const id = crypto.randomUUID();
@@ -33,6 +35,7 @@ export class ReviewStore {
       reviewPassId,
       status: "running",
       startedAt,
+      ...(versionId && { versionId }),
     };
     await this.#adapter.set([REVIEWS, workspaceId, id], run);
     return run;

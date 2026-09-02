@@ -21,6 +21,24 @@ Deno.test("ReviewStore -- createRun + getRun", async () => {
   assertEquals(fetched?.id, run.id);
 });
 
+Deno.test("ReviewStore -- createRun stores versionId when given", async () => {
+  const store = createStore();
+  const run = await store.createRun({
+    workspaceId: "ws",
+    fileId: "essay.txt",
+    reviewPassId: "essay-review",
+    versionId: "v1",
+  });
+  assertEquals(run.versionId, "v1");
+
+  const plain = await store.createRun({
+    workspaceId: "ws",
+    fileId: "essay.txt",
+    reviewPassId: "essay-review",
+  });
+  assertEquals(plain.versionId, undefined);
+});
+
 Deno.test("ReviewStore -- completeRun sets status, summary, completedAt", async () => {
   const store = createStore();
   const run = await store.createRun({

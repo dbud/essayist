@@ -6,6 +6,7 @@ export interface ReviewRun {
   workspaceId: string;
   fileId: string;
   reviewPassId: string;
+  versionId?: string;
   status: ReviewRunStatus;
   startedAt: number;
   completedAt?: number;

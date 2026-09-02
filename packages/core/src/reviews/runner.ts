@@ -12,6 +12,7 @@ import {
   createReadFileTool,
   createWriteFileTool,
 } from "@/tools/index.ts";
+import { PinnedVFS } from "@/vfs/pin.ts";
 import type { VFS } from "@/vfs/types.ts";
 
 function buildTools(
@@ -63,17 +64,35 @@ export async function runReviewPass({
   workspaceId,
   fileId,
 }: RunReviewPassOptions): Promise<ReviewRun> {
+  const versionId = (await vfs.getHistory(fileId)).at(-1)?.version_id;
+  if (!versionId) {
+    const missing = await reviewStore.createRun({
+      workspaceId,
+      fileId,
+      reviewPassId: pass.reviewPass.id,
+    });
+    return (
+      (await reviewStore.failRun({
+        workspaceId,
+        id: missing.id,
+        error: `File not found: ${fileId}`,
+      })) ?? missing
+    );
+  }
+
   const run = await reviewStore.createRun({
     workspaceId,
     fileId,
     reviewPassId: pass.reviewPass.id,
+    versionId,
   });
   const recorder = traceStore?.recorder({ workspaceId, runId: run.id });
+  const pinned = new PinnedVFS(vfs, { path: fileId, versionId });
 
   try {
     const tools = buildTools(
       pass.reviewPass.enabledTools,
-      vfs,
+      pinned,
       pass.allowedLabels,
     );
     const directive = renderPrompt(pass.directive, { file: fileId });
@@ -88,6 +107,7 @@ export async function runReviewPass({
     recorder?.follow(result);
     const summary = await result.getText();
     await recorder?.flush();
+    await pinned.migrateMarks(fileId, versionId);
     return (
       (await reviewStore.completeRun({ workspaceId, id: run.id, summary })) ??
       run
@@ -96,6 +116,8 @@ export async function runReviewPass({
     const error = e instanceof Error ? e.message : String(e);
     recorder?.record({ type: "error", error });
     await recorder?.flush();
+    // Marks placed before the failure are still valid annotations.
+    await pinned.migrateMarks(fileId, versionId);
     return (
       (await reviewStore.failRun({ workspaceId, id: run.id, error })) ?? run
     );
