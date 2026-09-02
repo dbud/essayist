@@ -24,6 +24,7 @@ export function createMockVFS(overrides: MockVFSOverrides = {}): VFS {
     mark: wrap(overrides.mark),
     getMarks: wrap(overrides.getMarks),
     deleteMark: wrap(overrides.deleteMark),
+    migrateMarks: wrap(overrides.migrateMarks),
     getHistory: wrap(overrides.getHistory),
     revert: wrap(overrides.revert),
     diff: wrap(overrides.diff),

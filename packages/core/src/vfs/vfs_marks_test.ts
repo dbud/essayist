@@ -372,3 +372,89 @@ Deno.test("VFS.revert -- migrates marks through write", async () => {
     status: "resolved",
   });
 });
+
+// -- migrateMarks --
+
+Deno.test("VFS.migrateMarks -- re-anchors marks added to an old version", async () => {
+  const { vfs, versionId: v1 } = await createFile("f.txt", "hello world");
+  await vfs.mark("f.txt", "hello", "greeting");
+  await vfs.write("f.txt", "hello beautiful world");
+
+  // Added to v1 after the write, so the write migration missed it.
+  await vfs.mark("f.txt", "world", "noun", { versionId: v1 });
+
+  const result = await vfs.migrateMarks("f.txt", v1);
+
+  const latest = await vfs.read("f.txt");
+  const marks = await vfs.getMarks("f.txt", latest.version_id);
+  assertEquals(result, { migrated: 1, stale: 0 });
+  assertEquals(marks.length, 2);
+  assertObjectMatch(marks[1], {
+    selected_text: "world",
+    offset: 16,
+    status: "resolved",
+  });
+});
+
+Deno.test("VFS.migrateMarks -- skips marks already on the latest", async () => {
+  const { vfs, versionId: v1 } = await createFile("f.txt", "hello world");
+  await vfs.mark("f.txt", "hello", "greeting");
+  await vfs.write("f.txt", "hello there");
+
+  const result = await vfs.migrateMarks("f.txt", v1);
+
+  const latest = await vfs.read("f.txt");
+  const marks = await vfs.getMarks("f.txt", latest.version_id);
+  assertEquals(result, { migrated: 0, stale: 0 });
+  assertEquals(marks.length, 1);
+});
+
+Deno.test("VFS.migrateMarks -- no-op when source version is latest", async () => {
+  const { vfs, versionId } = await createFile("f.txt", "hello world");
+  await vfs.mark("f.txt", "hello", "greeting");
+
+  const result = await vfs.migrateMarks("f.txt", versionId);
+
+  assertEquals(result, { migrated: 0, stale: 0 });
+  const marks = await vfs.getMarks("f.txt", versionId);
+  assertEquals(marks.length, 1);
+});
+
+Deno.test("VFS.migrateMarks -- resolves shifted text", async () => {
+  const { vfs, versionId: v1 } = await createFile("f.txt", "alpha beta");
+  await vfs.write("f.txt", "alpha gamma beta");
+  await vfs.mark("f.txt", "beta", "noun", { versionId: v1 });
+
+  const result = await vfs.migrateMarks("f.txt", v1);
+
+  const latest = await vfs.read("f.txt");
+  const marks = await vfs.getMarks("f.txt", latest.version_id);
+  assertEquals(result, { migrated: 1, stale: 0 });
+  assertEquals(marks.length, 1);
+  assertObjectMatch(marks[0], {
+    selected_text: "beta",
+    offset: 12,
+    status: "resolved",
+  });
+});
+
+Deno.test("VFS.migrateMarks -- marks go stale when text is gone", async () => {
+  const { vfs, versionId: v1 } = await createFile("f.txt", "hello world");
+  await vfs.write("f.txt", "completely different");
+  await vfs.mark("f.txt", "world", "noun", { versionId: v1 });
+
+  const result = await vfs.migrateMarks("f.txt", v1);
+
+  const latest = await vfs.read("f.txt");
+  const marks = await vfs.getMarks("f.txt", latest.version_id);
+  assertEquals(result, { migrated: 1, stale: 1 });
+  assertEquals(marks[0].status, "stale");
+});
+
+Deno.test("VFS.migrateMarks -- returns zeros for unknown version", async () => {
+  const { vfs } = await createFile("f.txt", "hello world");
+
+  const result = await vfs.migrateMarks("f.txt", "no-such-version");
+
+  assertEquals(result, { migrated: 0, stale: 0 });
+});

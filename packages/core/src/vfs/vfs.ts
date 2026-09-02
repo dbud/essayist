@@ -24,6 +24,7 @@ import type {
   Mark,
   MarkOptions,
   MarkResult,
+  MigrateMarksResult,
   ReadOptions,
   VFS,
   WriteResult,
@@ -116,9 +117,6 @@ export class VirtualFileSystem implements VFS {
       versions.length > 0
         ? versions[versions.length - 1].version_id
         : undefined;
-    const oldContent = previousVersionId
-      ? await this.#getVersionContent(path, previousVersionId)
-      : "";
 
     const { manifest, extraChunks } = chunkContent(content);
 
@@ -152,19 +150,14 @@ export class VirtualFileSystem implements VFS {
 
     // Migrate marks from the previous version into the new version.
     if (previousVersionId) {
-      const oldMarks = await this.#getMarksList(path, previousVersionId);
-      if (oldMarks.length > 0) {
-        const newMarks = resolveMarks({
-          marks: oldMarks,
-          oldContent,
-          newContent: content,
-        });
-        ops.push({
-          type: "set",
-          key: this.#marksKey(path, versionId),
-          value: newMarks,
-        });
-      }
+      const migration = await this.#migrateMarksOp(
+        path,
+        previousVersionId,
+        versionId,
+        [],
+        content,
+      );
+      if (migration) ops.push(migration.op);
     }
 
     // Guard against a concurrent write to the same file: if the versions list
@@ -335,6 +328,93 @@ export class VirtualFileSystem implements VFS {
       checks: [{ key, versionstamp: entry?.versionstamp ?? null }],
     });
     return true;
+  }
+
+  // deno-lint-ignore require-await
+  async migrateMarks(
+    path: string,
+    fromVersionId: string,
+  ): Promise<MigrateMarksResult> {
+    return this.#retry(() => this.#migrateMarksAttempt(path, fromVersionId));
+  }
+
+  async #migrateMarksAttempt(
+    path: string,
+    fromVersionId: string,
+  ): Promise<MigrateMarksResult> {
+    const empty = { migrated: 0, stale: 0 };
+    const latestEntry = await this.#adapter.get<StoredSnapshot>(
+      this.#latestKey(path),
+    );
+    if (!latestEntry) return empty;
+    const targetVersionId = latestEntry.value.version_id;
+    if (targetVersionId === fromVersionId) return empty;
+
+    const targetEntry = await this.#adapter.get<Mark[]>(
+      this.#marksKey(path, targetVersionId),
+    );
+    const targetMarks = targetEntry?.value ?? [];
+    const targetContent = await this.#reassembleContent(
+      path,
+      targetVersionId,
+      latestEntry.value,
+    );
+
+    const resolved = await this.#migrateMarksOp(
+      path,
+      fromVersionId,
+      targetVersionId,
+      targetMarks,
+      targetContent,
+    );
+    if (!resolved) return empty;
+
+    // Checking latestKey guards against a save landing mid-commit: on a
+    // versionstamp mismatch the batch is rejected and the attempt reruns
+    // against the new latest.
+    await this.#adapter.batch([resolved.op], {
+      checks: [
+        { key: this.#latestKey(path), versionstamp: latestEntry.versionstamp },
+        {
+          key: this.#marksKey(path, targetVersionId),
+          versionstamp: targetEntry?.versionstamp ?? null,
+        },
+      ],
+    });
+
+    return {
+      migrated: resolved.marks.length,
+      stale: resolved.marks.filter((m) => m.status === "stale").length,
+    };
+  }
+
+  /**
+   * Set-op giving targetVersionId's marks plus fromVersionId's marks
+   * re-anchored onto newContent; undefined when nothing is pending.
+   * fromVersionId marks whose thread_id is already on the target are
+   * skipped.
+   */
+  async #migrateMarksOp(
+    path: string,
+    fromVersionId: string,
+    targetVersionId: string,
+    targetMarks: Mark[],
+    newContent: string,
+  ): Promise<{ op: WriteOp; marks: Mark[] } | undefined> {
+    const fromMarks = await this.#getMarksList(path, fromVersionId);
+    const existing = new Set(targetMarks.map((m) => m.thread_id));
+    const pending = fromMarks.filter((m) => !existing.has(m.thread_id));
+    if (pending.length === 0) return undefined;
+    const oldContent = await this.#getVersionContent(path, fromVersionId);
+    const marks = resolveMarks({ marks: pending, oldContent, newContent });
+    return {
+      op: {
+        type: "set",
+        key: this.#marksKey(path, targetVersionId),
+        value: [...targetMarks, ...marks],
+      },
+      marks,
+    };
   }
 
   async getHistory(path: string): Promise<FileVersion[]> {

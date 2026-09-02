@@ -86,6 +86,12 @@ export interface MarkResult {
   marked: boolean;
 }
 
+/** Counts from migrating marks onto the latest version. */
+export interface MigrateMarksResult {
+  migrated: number;
+  stale: number;
+}
+
 /** A file version snapshot -- version metadata + content. */
 export interface FileSnapshot extends FileVersion {
   content: string;
@@ -151,6 +157,16 @@ export interface VFS {
 
   /** Delete a mark by ID. Returns true if the mark existed. */
   deleteMark(path: string, versionId: string, markId: string): Promise<boolean>;
+
+  /**
+   * Re-anchor marks from one version onto the latest. Marks whose
+   * thread_id is already present on the latest are skipped. No-op when
+   * the given version is the latest.
+   */
+  migrateMarks(
+    path: string,
+    fromVersionId: string,
+  ): Promise<MigrateMarksResult>;
 
   /** Get version history for a file. */
   getHistory(path: string): Promise<FileVersion[]>;

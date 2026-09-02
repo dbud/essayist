@@ -8,6 +8,7 @@ import type {
   Mark,
   MarkOptions,
   MarkResult,
+  MigrateMarksResult,
   ReadOptions,
   VFS,
   WriteResult,
@@ -81,6 +82,13 @@ export class PinnedVFS implements VFS {
     markId: string,
   ): Promise<boolean> {
     return await this.#inner.deleteMark(path, versionId, markId);
+  }
+
+  async migrateMarks(
+    path: string,
+    fromVersionId: string,
+  ): Promise<MigrateMarksResult> {
+    return await this.#inner.migrateMarks(path, fromVersionId);
   }
 
   async getHistory(path: string): Promise<FileVersion[]> {
