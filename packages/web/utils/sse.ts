@@ -1,6 +1,60 @@
 import { extractProviderError } from "@essayist/core";
 import type { ModelResult, Tool } from "@openrouter/agent";
 
+export type SSESend = (event: string, data: unknown) => void;
+
+/**
+ * Creates a text/event-stream Response. `run` receives the sender and
+ * should settle when the stream is complete; events sent after the client
+ * disconnects are dropped, and the run keeps going. `onCancel` fires when
+ * the client disconnects.
+ */
+export function sseResponse(
+  run: (send: SSESend) => Promise<void>,
+  onCancel?: () => void | Promise<void>,
+): Response {
+  const encoder = new TextEncoder();
+  let open = true;
+
+  const stream = new ReadableStream<Uint8Array>({
+    start(controller) {
+      const send: SSESend = (event, data) => {
+        if (!open) return;
+        try {
+          controller.enqueue(
+            encoder.encode(
+              `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`,
+            ),
+          );
+        } catch {
+          open = false;
+        }
+      };
+
+      void run(send).finally(() => {
+        open = false;
+        try {
+          controller.close();
+        } catch {
+          // Client already gone.
+        }
+      });
+    },
+    cancel() {
+      open = false;
+      return onCancel?.();
+    },
+  });
+
+  return new Response(stream, {
+    headers: {
+      "Content-Type": "text/event-stream",
+      "Cache-Control": "no-cache",
+      Connection: "keep-alive",
+    },
+  });
+}
+
 async function* chunks(stream: ReadableStream<Uint8Array>) {
   const reader = stream.getReader();
   const decoder = new TextDecoder();
@@ -51,23 +105,15 @@ export async function* parseSSE(
 }
 
 /**
- * Stream a ModelResult as a ReadableStream of SSE events.
- * Yields text deltas, item updates (tool calls, results, reasoning),
- * and a final done event.
+ * Stream a ModelResult as SSE: text deltas, item updates (tool calls,
+ * results, reasoning), and a final done event. Cancels the model result
+ * when the client disconnects.
  */
 export function streamModelResultSSE<TTools extends readonly Tool[]>(
   result: ModelResult<TTools>,
-): ReadableStream<Uint8Array> {
-  const encoder = new TextEncoder();
-
-  return new ReadableStream<Uint8Array>({
-    async start(controller) {
-      const send = (event: string, data: unknown) => {
-        controller.enqueue(
-          encoder.encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`),
-        );
-      };
-
+): Response {
+  return sseResponse(
+    async (send) => {
       const textPromise = (async () => {
         for await (const delta of result.getTextStream()) {
           send("delta", { delta });
@@ -92,11 +138,8 @@ export function streamModelResultSSE<TTools extends readonly Tool[]>(
         send("error", extractProviderError(err));
       } finally {
         send("done", {});
-        controller.close();
       }
     },
-    async cancel() {
-      await result.cancel();
-    },
-  });
+    () => result.cancel(),
+  );
 }

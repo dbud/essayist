@@ -38,15 +38,7 @@ export const handler = {
         pass.modelRefs,
         pass.reviewPass.maxRounds,
       );
-      const stream = streamModelResultSSE(modelResult);
-
-      return new Response(stream, {
-        headers: {
-          "Content-Type": "text/event-stream",
-          "Cache-Control": "no-cache",
-          Connection: "keep-alive",
-        },
-      });
+      return streamModelResultSSE(modelResult);
     } catch (e) {
       if (e instanceof ResolveAgentError) {
         return Response.json({ error: e.message }, { status: 500 });
