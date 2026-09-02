@@ -65,6 +65,8 @@ export { getToolInfos } from "@/tools/registry.ts";
 export { setMyers } from "@/vfs/diff.ts";
 export type { ResolveInput, ResolveOptions } from "@/vfs/marks_resolver.ts";
 export { resolveMarks } from "@/vfs/marks_resolver.ts";
+export type { VersionPin } from "@/vfs/pin.ts";
+export { PinnedVFS } from "@/vfs/pin.ts";
 export type {
   DiffResult,
   FileEntry,
