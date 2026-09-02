@@ -7,7 +7,7 @@ interface AvatarProps {
 
 export default function Avatar({ user }: AvatarProps) {
   return (
-    <span class="grid place-items-center w-full h-full text-surface overflow-hidden">
+    <span class="grid place-items-center w-full h-full text-surface bg-ink overflow-hidden">
       {user.picture ? (
         <img
           src={user.picture}
