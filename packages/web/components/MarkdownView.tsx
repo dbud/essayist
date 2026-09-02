@@ -11,7 +11,7 @@ export default function MarkdownView({
 }: MarkdownViewProps) {
   return (
     <div
-      class={`prose max-w-none ${className}`}
+      class={`text-[0.85rem] prose max-w-none ${className}`}
       // deno-lint-ignore react-no-danger
       dangerouslySetInnerHTML={{
         __html: renderMarkdown(content),

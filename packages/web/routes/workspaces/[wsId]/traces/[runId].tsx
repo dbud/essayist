@@ -52,6 +52,11 @@ function duration(ms: number): string {
   return `${(ms / 1000).toFixed(1)}s`;
 }
 
+/** Offsets and short durations: ms below a second, seconds above. */
+function formatElapsed(ms: number): string {
+  return ms < 1000 ? `${ms}ms` : `${(ms / 1000).toFixed(1)}s`;
+}
+
 /** Truncated payloads arrive as string prefixes; others render as JSON. */
 function pretty(value: unknown): string {
   return typeof value === "string"
@@ -133,7 +138,7 @@ function SectionHeader({
   meta?: ComponentChildren;
 }) {
   return (
-    <div class="col-span-2 flex stack">
+    <div class="col-span-3 flex stack">
       <div class="cell cell--ink min-w-0 flex-1">{title}</div>
       {meta}
     </div>
@@ -143,9 +148,10 @@ function SectionHeader({
 type ToolCallEvent = Extract<TracedReviewEvent, { type: "tool_call" }>;
 type ToolOutputEvent = Extract<TracedReviewEvent, { type: "tool_output" }>;
 
-function ReasoningRow({ text }: { text: string }) {
+function ReasoningRow({ timing, text }: { timing: string; text: string }) {
   return (
     <>
+      <div class="cell--data">{timing}</div>
       <div class="cell--data">thinking</div>
       <div class="cell--data min-w-0">
         <div class="max-h-72 overflow-y-auto whitespace-pre-wrap">{text}</div>
@@ -154,9 +160,16 @@ function ReasoningRow({ text }: { text: string }) {
   );
 }
 
-function ToolCallRow({ event }: { event: ToolCallEvent }) {
+function ToolCallRow({
+  timing,
+  event,
+}: {
+  timing: string;
+  event: ToolCallEvent;
+}) {
   return (
     <>
+      <div class="cell--data">{timing}</div>
       <div class="cell--data">
         <Wrench size={14} />
         {event.name}
@@ -171,9 +184,16 @@ function ToolCallRow({ event }: { event: ToolCallEvent }) {
   );
 }
 
-function ToolOutputRow({ event }: { event: ToolOutputEvent }) {
+function ToolOutputRow({
+  timing,
+  event,
+}: {
+  timing: string;
+  event: ToolOutputEvent;
+}) {
   return (
     <>
+      <div class="cell--data">{timing}</div>
       <div class="cell--data">
         <ArrowRight size={14} />
         output
@@ -190,9 +210,10 @@ function ToolOutputRow({ event }: { event: ToolOutputEvent }) {
   );
 }
 
-function MessageRow({ text }: { text: string }) {
+function MessageRow({ timing, text }: { timing: string; text: string }) {
   return (
     <>
+      <div class="cell--data">{timing}</div>
       <div class="cell--data">message</div>
       <div class="cell--data min-w-0 break-words">
         <MarkdownView content={text} />
@@ -201,9 +222,10 @@ function MessageRow({ text }: { text: string }) {
   );
 }
 
-function ErrorRow({ error }: { error: string }) {
+function ErrorRow({ timing, error }: { timing: string; error: string }) {
   return (
     <>
+      <div class="cell--data">{timing}</div>
       <div class="cell--data">
         <span class="badge badge--error self-start">error</span>
       </div>
@@ -212,25 +234,74 @@ function ErrorRow({ error }: { error: string }) {
   );
 }
 
-function RoundRows({ events }: { events: TracedReviewEvent[] }) {
+function RoundRows({ group }: { group: RoundGroup }) {
+  const callAt = new Map<string, number>();
+  for (const event of group.events) {
+    if (event.type === "tool_call") callAt.set(event.callId, event.at);
+  }
   const rows: ComponentChildren[] = [];
-  for (const event of events) {
+  // Model-side spans (reasoning, call args, message) chain from the
+  // previous item's completion (or round start) and sum to the round
+  // total; tool outputs show their execution duration (output.at -
+  // call.at).
+  let prevAt = group.start;
+  for (const event of group.events) {
     if (event.type === "usage") continue;
     switch (event.type) {
       case "reasoning":
-        rows.push(<ReasoningRow key={event.seq} text={event.text} />);
+        rows.push(
+          <ReasoningRow
+            key={event.seq}
+            timing={`gen ${formatElapsed(event.at - prevAt)}`}
+            text={event.text}
+          />,
+        );
+        prevAt = event.at;
         break;
       case "tool_call":
-        rows.push(<ToolCallRow key={event.seq} event={event} />);
+        rows.push(
+          <ToolCallRow
+            key={event.seq}
+            timing={`gen ${formatElapsed(event.at - prevAt)}`}
+            event={event}
+          />,
+        );
+        prevAt = event.at;
         break;
-      case "tool_output":
-        rows.push(<ToolOutputRow key={event.seq} event={event} />);
+      case "tool_output": {
+        const callStart = callAt.get(event.callId);
+        rows.push(
+          <ToolOutputRow
+            key={event.seq}
+            timing={
+              callStart === undefined
+                ? ""
+                : `exec ${formatElapsed(event.at - callStart)}`
+            }
+            event={event}
+          />,
+        );
         break;
+      }
       case "message":
-        rows.push(<MessageRow key={event.seq} text={event.text} />);
+        rows.push(
+          <MessageRow
+            key={event.seq}
+            timing={`gen ${formatElapsed(event.at - prevAt)}`}
+            text={event.text}
+          />,
+        );
+        prevAt = event.at;
         break;
       case "error":
-        rows.push(<ErrorRow key={event.seq} error={event.error} />);
+        rows.push(
+          <ErrorRow
+            key={event.seq}
+            timing={formatElapsed(event.at - prevAt)}
+            error={event.error}
+          />,
+        );
+        prevAt = event.at;
         break;
     }
   }
@@ -259,7 +330,7 @@ function RoundSection({ group }: { group: RoundGroup }) {
           </>
         }
       />
-      {RoundRows({ events: group.events })}
+      {RoundRows({ group })}
     </>
   );
 }
@@ -309,7 +380,7 @@ export default function ReviewTracePage({
         <div class="flex-1 min-h-0 overflow-y-auto bg-surface">
           <div class="content-layout">
             <div class="content-main min-w-0 py-10">
-              <div class="grid grid-cols-[auto_1fr] stack stack--col stack--row">
+              <div class="grid grid-cols-[auto_auto_1fr] stack stack--col stack--row">
                 {input && (
                   <>
                     <SectionHeader
@@ -320,7 +391,7 @@ export default function ReviewTracePage({
                         </div>
                       }
                     />
-                    <div class="cell--data col-span-2 min-w-0">
+                    <div class="cell--data col-span-3 min-w-0">
                       <div class="whitespace-pre-wrap">{input.text}</div>
                     </div>
                   </>
@@ -331,6 +402,7 @@ export default function ReviewTracePage({
                 {orphans.map((event) => (
                   <ErrorRow
                     key={event.seq}
+                    timing=""
                     error={event.type === "error" ? event.error : pretty(event)}
                   />
                 ))}
