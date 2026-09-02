@@ -1,10 +1,23 @@
-import type { ReviewPass } from "@essayist/core";
+import type { Prompt, ReviewPass } from "@essayist/core";
 import { CircleCheck, Pencil, Trash2 } from "lucide-preact";
 import { ActionBtn, EntityCard } from "@/components/ui/EntityCard.tsx";
 import { Field, List } from "@/components/ui/EntityRows.tsx";
 
+function PromptField({ label, prompt }: { label: string; prompt?: Prompt }) {
+  return (
+    <>
+      <div class={`cell--data text-ink/60 ${prompt ? "row-span-2" : ""}`}>
+        {label}
+      </div>
+      <div class="cell--data min-w-0">{prompt?.key ?? "missing"}</div>
+      {prompt && <div class="cell--data min-w-0">{prompt.body}</div>}
+    </>
+  );
+}
+
 export function ReviewPassRow({
   pass,
+  prompts,
   active,
   busy,
   showActivate,
@@ -13,6 +26,7 @@ export function ReviewPassRow({
   onDelete,
 }: {
   pass: ReviewPass;
+  prompts: Prompt[];
   active: boolean;
   busy: boolean;
   showActivate: boolean;
@@ -20,6 +34,7 @@ export function ReviewPassRow({
   onEdit: () => void;
   onDelete: () => void;
 }) {
+  const byKey = (key: string) => prompts.find((p) => p.key === key);
   return (
     <EntityCard
       title={
@@ -57,10 +72,13 @@ export function ReviewPassRow({
       }
     >
       <Field label="pool" value={pass.modelPoolId} />
-      <Field label="system" value={pass.systemPromptKey} />
-      <Field label="directive" value={pass.directivePromptKey} />
+      <PromptField label="system" prompt={byKey(pass.systemPromptKey)} />
+      <PromptField label="directive" prompt={byKey(pass.directivePromptKey)} />
       {pass.instructionsPromptKey && (
-        <Field label="instructions" value={pass.instructionsPromptKey} />
+        <PromptField
+          label="instructions"
+          prompt={byKey(pass.instructionsPromptKey)}
+        />
       )}
       <List label="tools" items={pass.enabledTools} />
       <List label="categories" items={pass.allowedCategoryIds} />

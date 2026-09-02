@@ -12,6 +12,11 @@ const TOOLS: ToolName[] = ToolNameSchema.options;
 
 const NONE: Option = { value: "", label: "none" };
 
+function PromptPreview({ text }: { text?: string }) {
+  if (!text) return null;
+  return <div class="cell--data col-span-2 min-w-0">{text}</div>;
+}
+
 export function ReviewPassForm({
   entity,
   open,
@@ -83,6 +88,8 @@ export function ReviewPassForm({
     value: p.key,
     label: p.key,
   }));
+  const promptBody = (key: string) =>
+    admin.prompts.value.find((p) => p.key === key)?.body;
   const categoryOptions: Option[] = admin.categories.value.map((c) => ({
     value: c.id,
     label: c.label,
@@ -114,6 +121,7 @@ export function ReviewPassForm({
         values={[systemKey]}
         onToggle={setSystemKey}
       />
+      <PromptPreview text={promptBody(systemKey)} />
       <OptionsRow
         kind="radio"
         name="directive-prompt"
@@ -122,6 +130,7 @@ export function ReviewPassForm({
         values={[directiveKey]}
         onToggle={setDirectiveKey}
       />
+      <PromptPreview text={promptBody(directiveKey)} />
       <OptionsRow
         kind="radio"
         name="instructions-prompt"
@@ -130,6 +139,7 @@ export function ReviewPassForm({
         values={[instructionsKey]}
         onToggle={setInstructionsKey}
       />
+      <PromptPreview text={promptBody(instructionsKey)} />
       <TextareaRow
         label="instructions"
         value={instructions}

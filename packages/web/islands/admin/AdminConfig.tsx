@@ -102,6 +102,7 @@ export default function AdminConfig() {
                 <ReviewPassRow
                   key={p.id}
                   pass={p}
+                  prompts={prompts.value}
                   active={p.id === activeReviewPassId.value}
                   busy={mutating.value}
                   showActivate={p.id !== activeReviewPassId.value}
