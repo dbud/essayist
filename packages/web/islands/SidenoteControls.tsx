@@ -1,7 +1,21 @@
+import type { ReviewProgress } from "@essayist/core";
 import { Highlighter } from "lucide-preact";
-import Spinner from "@/components/ui/Spinner.tsx";
+import WaveBars from "@/components/ui/WaveBars.tsx";
 import { getReview } from "@/signals/review.ts";
 import { showToast } from "@/signals/toast.ts";
+
+function phaseLabel(progress: ReviewProgress | null): string {
+  switch (progress?.phase) {
+    case "reading":
+      return "Reading";
+    case "annotating":
+      return progress.notes > 0 ? `Marks · ${progress.notes}` : "Marking";
+    case "summarizing":
+      return "Writing up";
+    default:
+      return "Reviewing";
+  }
+}
 
 export default function SidenoteControls({
   wsId,
@@ -11,7 +25,7 @@ export default function SidenoteControls({
   path: string;
 }) {
   const review = getReview(wsId, path);
-  const { loading, error } = review;
+  const { loading, error, progress } = review;
 
   async function onReview() {
     await review.submit();
@@ -26,22 +40,21 @@ export default function SidenoteControls({
   }
 
   return (
-    <div class="flex gap-2">
-      <button
-        type="button"
-        class="btn cell--accent"
-        disabled={loading.value}
-        onClick={onReview}
-      >
-        <Highlighter size={14} />
-        {loading.value ? (
-          <>
-            Reviewing <Spinner />
-          </>
-        ) : (
-          "Review"
-        )}
-      </button>
+    <div class="relative flex min-w-72 flex-1 items-center">
+      {loading.value ? (
+        <div class="cell--data flex-1">{phaseLabel(progress.value)}</div>
+      ) : (
+        <button type="button" class="btn cell--accent" onClick={onReview}>
+          <Highlighter size={14} />
+          Review
+        </button>
+      )}
+      <div class="flex-1 self-stretch bg-surface" />
+      <WaveBars
+        fill
+        amplitude={loading.value ? 1 : 0}
+        class="pointer-events-none text-accent"
+      />
     </div>
   );
 }

@@ -1,12 +1,14 @@
-import type { ReviewRun } from "@essayist/core";
+import type { ReviewProgress, ReviewRun } from "@essayist/core";
 import { createModel, signal } from "@preact/signals";
 import { IS_BROWSER } from "fresh/runtime";
 import { getMarks } from "@/signals/marks.ts";
 import createAsyncState from "@/utils/asyncState.ts";
 import { ensureOk } from "@/utils/ensureOk.ts";
+import { parseSSE } from "@/utils/sse.ts";
 
 export const ReviewModel = createModel((workspaceId: string, path: string) => {
   const run = signal<ReviewRun | null>(null);
+  const progress = signal<ReviewProgress | null>(null);
   const runs = signal<ReviewRun[]>([]);
   const [runAsync, { loading, error }] = createAsyncState();
   const [historyAsync, { loading: historyLoading, error: historyError }] =
@@ -32,8 +34,21 @@ export const ReviewModel = createModel((workspaceId: string, path: string) => {
         { method: "POST" },
       );
       await ensureOk(res);
-      return (await res.json()) as ReviewRun;
+      if (!res.body) throw new Error("Empty review response");
+
+      let done: ReviewRun | undefined;
+      for await (const { event, data } of parseSSE(res.body)) {
+        if (event === "progress") progress.value = data as ReviewProgress;
+        if (event === "done") done = data as ReviewRun;
+        if (event === "error") {
+          throw new Error((data as { error: string }).error);
+        }
+      }
+      if (!done) throw new Error("Review stream ended without a result");
+      return done;
     });
+
+    progress.value = null;
     if (result) {
       run.value = result;
       if (result.status === "completed") getMarks(workspaceId, path).reload();
@@ -46,6 +61,7 @@ export const ReviewModel = createModel((workspaceId: string, path: string) => {
   return {
     run,
     runs,
+    progress,
     loading,
     error,
     historyLoading,
