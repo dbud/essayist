@@ -1,7 +1,8 @@
 import { defineExtension, type LexicalEditor, mergeRegister } from "lexical";
-import { cacheMarkdownUpdate } from "@/utils/incrementalMarkdown.ts";
+import { markdownFold } from "@/utils/incrementalMarkdown.ts";
+import { wordCountFold } from "@/utils/wordCount.ts";
 
-// Keeps the incremental markdown cache warm by re-serializing only dirty
+// Keeps the incremental monoid folds warm by recomputing only dirty
 // top-level blocks on each editor update.
 export const PartialUpdateExtension = defineExtension({
   name: "partial-update",
@@ -10,12 +11,14 @@ export const PartialUpdateExtension = defineExtension({
     return mergeRegister(
       editor.registerUpdateListener(
         ({ editorState, prevEditorState, dirtyElements, dirtyLeaves }) => {
-          cacheMarkdownUpdate(
-            editorState,
-            prevEditorState,
-            dirtyElements,
-            dirtyLeaves,
-          );
+          for (const fold of [markdownFold, wordCountFold]) {
+            fold.update(
+              editorState,
+              prevEditorState,
+              dirtyElements,
+              dirtyLeaves,
+            );
+          }
         },
       ),
     );

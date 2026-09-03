@@ -14,6 +14,7 @@ import {
 } from "@/hooks/useScrollViewport.ts";
 import Editor from "@/islands/Editor.tsx";
 import EditorToolbar from "@/islands/EditorToolbar.tsx";
+import FileStats from "@/islands/FileStats.tsx";
 import FontSelect from "@/islands/FontSelect.tsx";
 import SidenoteControls from "@/islands/SidenoteControls.tsx";
 import { activeEditor } from "@/signals/activeEditor.ts";
@@ -73,18 +74,16 @@ function FileViewerBody({ wsId, path }: { wsId: string; path: string }) {
             <div class="flex w-fit stack stack--row">
               <FontSelect />
               <EditorToolbar wsId={wsId} path={path} />
-              <WaveBars
-                amplitude={editorLoading ? 1 : 0}
-                class="text-ink bg-surface"
-              />
+              <FileStats wsId={wsId} path={path} />
             </div>
           </div>
           <div class="content-side flex items-center">
-            {editorLoading || resolvingVisible.value ? (
-              <WaveBars class="text-accent" />
-            ) : (
-              <SidenoteControls wsId={wsId} path={path} />
-            )}
+            {!editorLoading &&
+              (resolvingVisible.value ? (
+                <WaveBars class="text-accent" />
+              ) : (
+                <SidenoteControls wsId={wsId} path={path} />
+              ))}
           </div>
         </div>
       </div>
