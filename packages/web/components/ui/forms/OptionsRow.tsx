@@ -93,7 +93,7 @@ function OptionList({
 interface OptionsRowProps {
   kind: "radio" | "checkbox";
   name: string;
-  label: string;
+  label?: string;
   options: Option[];
   values: string[];
   onToggle: (value: string) => void;
@@ -110,7 +110,7 @@ export function OptionsRow({
 }: OptionsRowProps) {
   return (
     <>
-      <span class="cell--data text-ink/60">{label}</span>
+      {label && <span class="cell--data text-ink/60">{label}</span>}
       <OptionList
         kind={kind}
         name={name}

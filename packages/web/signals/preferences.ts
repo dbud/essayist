@@ -69,3 +69,12 @@ export function toggleTheme() {
   const target = theme.value === "dark" ? "light" : "dark";
   themeOverride.value = target === system ? null : target;
 }
+
+export type FileStatSection = "words" | "chars" | "charsWithSpaces";
+
+const FILE_STATS_DEFAULT: FileStatSection[] = ["words", "chars"];
+
+export const fileStatsSections = persistentSignal<FileStatSection[]>(
+  "fileStatsSections",
+  FILE_STATS_DEFAULT,
+);
