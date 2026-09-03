@@ -16,9 +16,19 @@ export default function FileStats({ wsId, path }: FileStatsProps) {
   return (
     <div class="flex cell cell--data relative min-w-42">
       {ready && (
-        <span class="whitespace-nowrap text-xs">
-          {formatCount(stats.wordCount.value, "word")}
-        </span>
+        <div class="flex flex-col leading-none whitespace-nowrap text-[0.7rem]">
+          <span>{formatCount(stats.wordCount.value, "word")}</span>
+          <span title="Characters (no spaces)">
+            {formatCount(stats.charCount.value, "char")}
+          </span>
+          <span title="Characters (with spaces)">
+            {formatCount(
+              stats.charCountWithSpaces.value,
+              "char w/ space",
+              "chars w/ spaces",
+            )}
+          </span>
+        </div>
       )}
       <WaveBars fill amplitude={ready ? 0 : 1} />
     </div>
