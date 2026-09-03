@@ -7,6 +7,7 @@ import { getOpenedFiles } from "@/signals/openedFiles.ts";
 import { navigationOpened } from "@/signals/sidebar.ts";
 import { showToast } from "@/signals/toast.ts";
 import { workspaces } from "@/signals/workspace.ts";
+import { formatCount } from "@/utils/format.ts";
 import type { PickerDoc } from "@/utils/googlePicker.ts";
 
 interface PickedMessage {
@@ -27,7 +28,7 @@ export default function GoogleDocImporter() {
     }
     importing.value = true;
     const toast = showToast(
-      `Importing ${docs.length} document${docs.length === 1 ? "" : "s"}…`,
+      `Importing ${formatCount(docs.length, "document")}…`,
     );
     const errors: string[] = [];
     let firstPath: string | null = null;
@@ -65,7 +66,7 @@ export default function GoogleDocImporter() {
       message:
         errors.length > 0
           ? `Imported ${docs.length - errors.length}/${docs.length} (${errors.length} failed)`
-          : `Imported ${docs.length} document${docs.length === 1 ? "" : "s"}`,
+          : `Imported ${formatCount(docs.length, "document")}`,
       type: errors.length > 0 ? "error" : "success",
       progress: undefined,
     };

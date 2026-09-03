@@ -3,6 +3,7 @@ import { Upload } from "lucide-preact";
 import { getFileTree } from "@/signals/fileTree.ts";
 import { showToast } from "@/signals/toast.ts";
 import { filesFromFileInput, readFilesAsText } from "@/utils/fileUpload.ts";
+import { formatCount } from "@/utils/format.ts";
 
 /**
  * The upload button + hidden file input. On selection, files are read as
@@ -31,7 +32,7 @@ export default function FileUploader() {
       toast.value = {
         id,
         message: complete
-          ? `Uploaded ${total} file${total === 1 ? "" : "s"}${
+          ? `Uploaded ${formatCount(total, "file")}${
               errors.length > 0 ? ` (${errors.length} failed)` : ""
             }`
           : `Uploading ${done}/${total}…`,

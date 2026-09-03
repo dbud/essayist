@@ -16,6 +16,7 @@ import {
   type User,
   WorkspaceStore,
 } from "@essayist/core";
+import { pluralize } from "@/utils/format.ts";
 
 const ROLE = new EnumType([...USER_ROLES]);
 
@@ -86,7 +87,7 @@ await new Command()
         printEntry(entry);
       }
       // footer goes to stderr so piped stdout stays pure JSON
-      console.error(`(${n} entries)`);
+      console.error(`(${n} ${pluralize(n, "entry", "entries")})`);
     }),
   )
   .command("grant-role", "Set a user's site-wide role.")
