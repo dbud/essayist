@@ -35,6 +35,11 @@
   white-space: normal;
 }
 
+@utility note {
+  @apply italic self-start ms-auto whitespace-nowrap text-[0.7rem] ps-5 -me-4 leading-none;
+  color: color-mix(in oklch, currentColor, transparent 50%);
+}
+
 @utility btn {
   @apply cell;
   @apply cursor-pointer;

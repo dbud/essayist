@@ -101,11 +101,7 @@ export default function GoogleDocImporter() {
     >
       <Download size={14} />
       Import from Google Docs&hellip;
-      {!importing.value && (
-        <span class="badge flex gap-1 self-start ms-auto">
-          opens in a new tab
-        </span>
-      )}
+      {!importing.value && <span class="note">opens in a new tab</span>}
       <WaveBars fill amplitude={importing.value ? 1 : 0} />
     </button>
   );

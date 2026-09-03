@@ -106,7 +106,7 @@ function BreadcrumbsTrigger() {
             </button>
             <button type="button" class="btn max-w-xs" onClick={open}>
               <FileText size={14} />
-              <span class="truncate min-w-0 pb-px">{selectedPath}</span>
+              <span class="truncate min-w-0">{selectedPath}</span>
               <ChevronDown size={14} />
             </button>
           </>
