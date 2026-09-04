@@ -2,7 +2,7 @@
   @apply striped;
   --overlay-duration: 120ms;
   z-index: var(--z-overlay);
-  background-color: color-mix(in oklch, var(--color-surface), transparent 40%);
+  background-color: color-mix(in oklch, var(--color-surface), transparent 20%);
   opacity: 0;
   display: none;
   transition:

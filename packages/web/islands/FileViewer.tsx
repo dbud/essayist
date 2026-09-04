@@ -22,6 +22,7 @@ import { getEditorSelection } from "@/signals/editorSelection.ts";
 import { getFile } from "@/signals/file.ts";
 import { getMarks } from "@/signals/marks.ts";
 import { getOpenedFiles } from "@/signals/openedFiles.ts";
+import { navigationOpened } from "@/signals/sidebar.ts";
 import type {
   SidenoteEntry,
   SidenoteHeights,
@@ -65,7 +66,8 @@ function FileViewerBody({ wsId, path }: { wsId: string; path: string }) {
   const editorLoading = loading.value || !state.value;
 
   return (
-    <div class="relative flex-1 min-h-0 flex flex-col stack @container">
+    <div class="relative isolate flex-1 min-h-0 flex flex-col stack @container">
+      <Overlay when={navigationOpened.value} local />
       <div class="z-toolbar flex flex-col bg-surface shadow-md">
         <div
           class={`content-layout ${withSidePane ? "content-layout--side" : ""}`}
