@@ -6,7 +6,6 @@
   },
   "imports": {
     "@biomejs/biome": "npm:@biomejs/biome@^2.5.10",
-    "@fontsource-variable/atkinson-hyperlegible-next": "npm:@fontsource-variable/atkinson-hyperlegible-next@^5.3.0",
     "husky": "npm:husky@^9.1.7",
     "pino": "npm:pino@^10.3.1",
     "pino-pretty": "npm:pino-pretty@^13.1.3"

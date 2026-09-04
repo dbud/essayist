@@ -52,7 +52,9 @@ export function createEditorExtension(
     namespace: "essayist-editor",
     theme: {
       text: {
+        italic: "italic",
         strikethrough: "line-through",
+        underline: "underline",
       },
     },
     dependencies: [

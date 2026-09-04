@@ -82,7 +82,7 @@
 }
 
 @theme {
-  --font-serif: "Source Serif 4 Variable", ui-serif, Georgia, serif;
+  --font-serif: "IBM Plex Serif", ui-serif, Georgia, serif;
   --font-sans:
     "Atkinson Hyperlegible Next Variable", "Special Gothic Variable",
     ui-sans-serif, system-ui, sans-serif;
