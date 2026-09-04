@@ -1,11 +1,5 @@
 import { useSignal } from "@preact/signals";
-import {
-  ArrowDownRight,
-  Briefcase,
-  ChevronDown,
-  FileText,
-  Plus,
-} from "lucide-preact";
+import { ArrowDownRight, ChevronDown, Plus, Slash } from "lucide-preact";
 import type { TargetedMouseEvent } from "preact";
 import Overlay from "@/components/ui/Overlay.tsx";
 import Panel from "@/components/ui/Panel.tsx";
@@ -98,18 +92,16 @@ function BreadcrumbsTrigger() {
             Projects
           </div>
         ) : (
-          <>
-            <button type="button" class="btn" onClick={open}>
-              <Briefcase size={14} />
-              {selectedWorkspace}
-              <ChevronDown size={14} />
-            </button>
-            <button type="button" class="btn max-w-xs" onClick={open}>
-              <FileText size={14} />
-              <span class="truncate min-w-0">{selectedPath}</span>
-              <ChevronDown size={14} />
-            </button>
-          </>
+          <button type="button" class="btn max-w-lg" onClick={open}>
+            <span class="truncate min-w-0">{selectedWorkspace}</span>
+            {selectedPath && (
+              <>
+                <Slash size={14} />
+                <span class="truncate min-w-0">{selectedPath}</span>
+              </>
+            )}
+            <ChevronDown size={14} />
+          </button>
         )}
       </div>
     </Swappable>
