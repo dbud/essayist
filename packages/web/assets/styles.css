@@ -1,22 +1,21 @@
 @import "tailwindcss";
-@import "./motion.css";
-@import "./logo.css";
-@import "./pane.css";
-@import "./layers.css";
-@import "./squircle.css";
-@import "./buttons.css";
 @import "./badges.css";
-@import "./dropdown.css";
-@import "./dialog.css";
-@import "./overlay.css";
-@import "./toast.css";
-@import "./input.css";
-@import "./content.css";
-@import "./tooltip.css";
-@import "./wavebars.css";
-@import "./marks.css";
+@import "./buttons.css";
 @import "./caret.css";
+@import "./content.css";
+@import "./dialog.css";
+@import "./dropdown.css";
+@import "./input.css";
+@import "./layers.css";
+@import "./logo.css";
+@import "./marks.css";
+@import "./motion.css";
+@import "./overlay.css";
+@import "./pane.css";
+@import "./toast.css";
+@import "./tooltip.css";
 @import "./view-transitions.css";
+@import "./wavebars.css";
 @plugin "@tailwindcss/typography";
 
 :root {
@@ -38,39 +37,6 @@
 
 :root:where([data-theme="dark"]) {
   color-scheme: dark;
-}
-
-@utility pane-noise {
-  background-image:
-    linear-gradient(to right, oklch(100% 0 0 / 1), oklch(100% 0 0 / 0.01)),
-    url("./noise.png?w=1200&h=1200&seed=1337&alpha=0&min=150");
-  background-size:
-    100% 100%,
-    1600px 1600px;
-}
-
-@utility striped-* {
-  --sqrt2: 1.4142135624;
-  --stripe-line: calc(1 * var(--sqrt2) * 1px);
-  --stripe-period: calc(4 * var(--sqrt2) * 1px);
-  --stripe-opacity: --value(integer, --default(10));
-  --stripe-opacity: --modifier(integer);
-  --stripe-color: color-mix(
-    in oklch,
-    var(--color-ink),
-    transparent calc(100% - var(--stripe-opacity) * 1%)
-  );
-  background-image: repeating-linear-gradient(
-    -45deg,
-    var(--stripe-color) 0,
-    var(--stripe-color) var(--stripe-line),
-    transparent var(--stripe-line),
-    transparent var(--stripe-period)
-  );
-}
-
-@utility separator {
-  @apply h-3 bg-surface/90 striped/5;
 }
 
 @theme inline {
@@ -112,25 +78,6 @@
 
   html[data-app-font="system"] {
     --font-sans: ui-sans-serif, system-ui, sans-serif;
-  }
-}
-
-@utility loading {
-  @apply relative cursor-wait;
-  animation: loading-blur 2s ease-in-out infinite;
-  & * {
-    @apply pointer-events-none;
-  }
-}
-
-@keyframes loading-blur {
-  0%,
-  100% {
-    filter: blur(1px);
-  }
-  50% {
-    filter: blur(2px);
-    opacity: 50%;
   }
 }
 
@@ -178,27 +125,32 @@
   h6 {
     font-weight: 400;
   }
+
+  .font-mono & {
+    font-size: 1em;
+  }
 }
 
-.font-mono .prose {
-  font-size: 1em;
-}
-
-@utility shadow-inset-bottom {
-  box-shadow: inset 0 -4px 4px -2px oklch(0% 0 0 / 0.02);
-}
-
-@utility border-top-dashed {
-  --dash-len: 3px;
-  --dash-gap: 5px;
-  --dash-color: color-mix(in oklch, var(--color-stroke), transparent 10%);
-
-  background-image: repeating-linear-gradient(
-    90deg,
-    var(--dash-color) 0 var(--dash-len),
-    transparent 0 calc(var(--dash-len) + var(--dash-gap))
+@utility striped-* {
+  --sqrt2: 1.4142135624;
+  --stripe-line: calc(1 * var(--sqrt2) * 1px);
+  --stripe-period: calc(4 * var(--sqrt2) * 1px);
+  --stripe-opacity: --value(integer, --default(10));
+  --stripe-opacity: --modifier(integer);
+  --stripe-color: color-mix(
+    in oklch,
+    var(--color-ink),
+    transparent calc(100% - var(--stripe-opacity) * 1%)
   );
-  background-size: 100% 1px;
-  background-position: top;
-  background-repeat: no-repeat;
+  background-image: repeating-linear-gradient(
+    -45deg,
+    var(--stripe-color) 0,
+    var(--stripe-color) var(--stripe-line),
+    transparent var(--stripe-line),
+    transparent var(--stripe-period)
+  );
+}
+
+@utility separator {
+  @apply h-3 bg-surface/90 striped/5;
 }
