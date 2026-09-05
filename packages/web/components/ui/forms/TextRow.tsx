@@ -16,7 +16,7 @@ export function TextRow({
 }) {
   return (
     <>
-      <span class="cell text-ink/60">{label}</span>
+      <span class="cell">{label}</span>
       <input
         type={type}
         class="input-text"

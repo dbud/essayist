@@ -64,7 +64,7 @@ function OptionList({
   onToggle: (value: string) => void;
 }) {
   if (options.length === 0) {
-    return <div class="cell--data min-w-0 text-ink/60">none available</div>;
+    return <div class="cell--data min-w-0">none available</div>;
   }
   return (
     <div class="flex min-w-0 flex-col stack">
@@ -110,7 +110,7 @@ export function OptionsRow({
 }: OptionsRowProps) {
   return (
     <>
-      {label && <span class="cell--data text-ink/60">{label}</span>}
+      {label && <span class="cell--data">{label}</span>}
       <OptionList
         kind={kind}
         name={name}
