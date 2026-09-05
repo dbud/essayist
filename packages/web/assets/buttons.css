@@ -49,7 +49,7 @@
   @apply cell;
   @apply cursor-pointer;
 
-  &:hover:where(:not(.dropdown-open)) {
+  &:hover:where(:not(.dropdown-open, .is-selected)) {
     --btn-bg: var(--btn-bg-hover);
   }
   &:focus-visible {
