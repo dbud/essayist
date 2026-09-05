@@ -2,18 +2,22 @@ import { buildEditorFromExtensions } from "@lexical/extension";
 import { $isMarkNode, MarkNode } from "@lexical/mark";
 import { $convertToMarkdownString, TRANSFORMERS } from "@lexical/markdown";
 import { RichTextExtension } from "@lexical/rich-text";
-import { assertEquals } from "@std/assert";
+import { assert, assertEquals } from "@std/assert";
 import {
   $createParagraphNode,
   $createTextNode,
   $getRoot,
+  $getSelection,
   $isElementNode,
+  $isRangeSelection,
   configExtension,
   defineExtension,
+  IS_ITALIC,
   type LexicalEditor,
   type LexicalNode,
 } from "lexical";
 import { $applyMarks } from "./markExtension.ts";
+import { $restoreSelection, $saveSelection } from "./selection.ts";
 import { $collectTextNodeSpans, type TextNodeSpan } from "./textNodeSpans.ts";
 
 // Minimal extension that just contributes MarkNode.
@@ -231,4 +235,48 @@ Deno.test("$applyMarks -- re-applying unwraps previous marks before wrapping", (
     { offset: 10, length: 5, thread_id: "c" },
   ]);
   assertEquals(fragments, [{ ids: ["c"], text: "CCCCC" }]);
+});
+
+Deno.test("$restoreSelection -- collapsed caret keeps its toggled format across a re-mark", () => {
+  const editor = createEditor();
+  setParagraph(editor, "AAAAABBBBBCCCCC");
+
+  // Collapsed caret at offset 5 with italic toggled on the selection only.
+  editor.update(
+    () => {
+      const node = $getRoot().getAllTextNodes()[0];
+      node.select(5, 5);
+      const sel = $getSelection();
+      assert($isRangeSelection(sel));
+      sel.setFormat(IS_ITALIC);
+    },
+    { discrete: true },
+  );
+
+  // The re-mark update: save, re-wrap "CCCCC", restore (the real effect).
+  const content = exportMarkdown(editor);
+  const spans = collectSpans(editor, content);
+  const nodeKeys = collectMarkKeys(editor);
+  editor.update(
+    () => {
+      const saved = $saveSelection(spans);
+      $applyMarks([{ offset: 10, length: 5, thread_id: "c" }], nodeKeys, spans);
+      $restoreSelection(saved, content);
+    },
+    { discrete: true },
+  );
+
+  assertEquals(collectMarkFragments(editor), [{ ids: ["c"], text: "CCCCC" }]);
+
+  let anchorOffset = -1;
+  let italic = false;
+  editor.getEditorState().read(() => {
+    const sel = $getSelection();
+    if (!$isRangeSelection(sel)) return;
+    anchorOffset = sel.anchor.offset;
+    italic = sel.hasFormat("italic");
+  });
+  // Caret still at markdown offset 5, still typing italic.
+  assertEquals(anchorOffset, 5);
+  assert(italic);
 });

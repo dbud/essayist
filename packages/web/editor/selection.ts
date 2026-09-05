@@ -89,22 +89,32 @@ export function $saveSelection(spans: TextNodeSpan[]): SavedSelection {
  * it could set an out-of-bounds offset. That only happens in the rare case
  * where an apply runs before onChange refreshes the spans, so the selection is
  * dropped rather than risk a crash.
+ *
+ * Carries the saved selection's format and style onto the rebuilt selection:
+ * $createRangeSelection() starts at format 0, so restoring by offsets alone
+ * would drop a collapsed caret's toggled format (italic, bold, code) on every
+ * re-mark.
  */
 export function $restoreSelection(
   saved: SavedSelection,
   content?: string,
 ): void {
+  const clone = saved.selection;
   if (saved.anchor !== null && saved.focus !== null) {
     const md = content ?? $convertToMarkdownString(TRANSFORMERS, $getRoot());
     const postSpans = $collectTextNodeSpans(md);
     const anchor = findPosition(postSpans, saved.anchor);
     const focus = findPosition(postSpans, saved.focus);
     if (anchor !== null && focus !== null) {
-      $setSelection($createSelection({ anchor, focus }));
+      const selection = $createSelection({ anchor, focus });
+      if ($isRangeSelection(clone)) {
+        selection.format = clone.format;
+        selection.style = clone.style;
+      }
+      $setSelection(selection);
       return;
     }
   }
-  const clone = saved.selection;
   if (
     clone !== null &&
     $isRangeSelection(clone) &&
