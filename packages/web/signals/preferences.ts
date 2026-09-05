@@ -13,18 +13,13 @@ export const highlightStyle = persistentSignal<HighlightStyle>(
 
 export type AppFont = "atkinson" | "gothic" | "system";
 
-const APP_FONT_DEFAULT: AppFont = "atkinson";
+const APP_FONT_DEFAULT: AppFont = "gothic";
 export const appFont = persistentSignal<AppFont>("appFont", APP_FONT_DEFAULT);
 
 // data-app-font is consumed by the font axis rules in assets/styles.css
 if (IS_BROWSER) {
   effect(() => {
-    const root = document.documentElement;
-    if (appFont.value === APP_FONT_DEFAULT) {
-      root.removeAttribute("data-app-font");
-    } else {
-      root.dataset.appFont = appFont.value;
-    }
+    document.documentElement.dataset.appFont = appFont.value;
   });
 }
 

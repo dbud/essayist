@@ -51,8 +51,9 @@
 @theme {
   --font-serif: "IBM Plex Serif", ui-serif, Georgia, serif;
   --font-sans:
-    "Atkinson Hyperlegible Next Variable", "Special Gothic Variable",
+    "Special Gothic Variable", "Atkinson Hyperlegible Next Variable",
     ui-sans-serif, system-ui, sans-serif;
+  --font-sans--font-variation-settings: "wdth" 97;
   --font-mono: "Recursive Variable", ui-monospace, SFMono-Regular, monospace;
   --font-mono--font-variation-settings: "MONO" 1;
   --shadow-md:
@@ -70,6 +71,12 @@
     background-color: var(--color-surface);
     color: var(--color-ink);
     font-size: 18px;
+  }
+
+  html[data-app-font="atkinson"] {
+    --font-sans:
+      "Atkinson Hyperlegible Next Variable", ui-sans-serif, system-ui,
+      sans-serif;
   }
 
   html[data-app-font="gothic"] {
