@@ -5,7 +5,7 @@ import {
   PanelRightClose,
   PanelRightOpen,
   RotateCcw,
-  Settings,
+  Settings2,
   SlidersVertical,
 } from "lucide-preact";
 import Avatar from "@/components/Avatar.tsx";
@@ -27,7 +27,7 @@ export default function SettingsMenu({ user }: SettingsMenuProps) {
       triggerClass="btn"
       trigger={
         <>
-          <Settings size={16} />
+          <Settings2 size={14} />
           <span class="hidden @lg:inline">Settings</span>
           <ChevronDown size={14} class="hidden @sm:inline rotate-on-open" />
         </>

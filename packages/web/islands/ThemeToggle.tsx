@@ -16,7 +16,7 @@ export default function ThemeToggle() {
       onClick={toggleTheme}
     >
       <Swappable swapKey={String(dark)} class="swap-rotate">
-        {dark ? <Moon size={16} /> : <Sun size={16} />}
+        {dark ? <Moon size={14} /> : <Sun size={14} />}
       </Swappable>
     </button>
   );
