@@ -1,0 +1,26 @@
+/* CheckboxIcon: pill track with a knob circle. Off: empty knob at the left
+   end. On: knob at the right end, filled. Slide and fill both transition.
+   The slide distance arrives from the component as --knob-travel. */
+
+.checkbox-icon {
+  --checkbox-duration: 180ms;
+}
+
+.checkbox-knob {
+  fill: transparent;
+  transform: translateX(0);
+  transition:
+    transform var(--checkbox-duration) ease-out,
+    fill var(--checkbox-duration) ease-out;
+}
+
+.checkbox-icon.is-selected .checkbox-knob {
+  fill: currentColor;
+  transform: translateX(var(--knob-travel));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .checkbox-knob {
+    transition: none;
+  }
+}
