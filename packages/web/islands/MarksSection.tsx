@@ -1,4 +1,4 @@
-import type { Mark, MarkStatus } from "@essayist/core";
+import type { Mark } from "@essayist/core";
 import type { LexicalEditor } from "lexical";
 import { Crosshair } from "lucide-preact";
 import { SELECT_MARK_COMMAND } from "@/editor/markExtension.ts";
@@ -8,12 +8,6 @@ import { getEditorSelection } from "@/signals/editorSelection.ts";
 import { getMarks } from "@/signals/marks.ts";
 import { getOpenedFiles } from "@/signals/openedFiles.ts";
 import { workspaces } from "@/signals/workspace.ts";
-
-function statusBadge(status: MarkStatus) {
-  const classes =
-    status === "resolved" ? "badge badge--success" : "badge badge--warning";
-  return <span class={classes}>{status}</span>;
-}
 
 function MarkDetail({
   mark,
@@ -25,14 +19,17 @@ function MarkDetail({
   editor: LexicalEditor | null;
 }) {
   return (
-    <div
-      class={`text-sm p-2 rounded ${
-        active ? "bg-accent/10 ring-1 ring-accent/30" : ""
-      }`}
-    >
-      <div class="flex items-center gap-2 mb-1">
-        <span class="font-semibold text-ink/70">{mark.label || "Mark"}</span>
-        {statusBadge(mark.status)}
+    <div class="flex flex-col stack">
+      <div class="flex stack shadow-md">
+        <div class={`cell flex-1 gap-3 ${active ? "is-selected" : ""}`}>
+          <span>{mark.label || "Mark"}</span>
+          <span
+            class={`self-start
+              ${mark.status === "resolved" ? "badge" : "badge badge--warning"}`}
+          >
+            {mark.status}
+          </span>
+        </div>
         <button
           type="button"
           class="btn btn-ghost btn-xs btn-square ml-auto"
@@ -46,12 +43,15 @@ function MarkDetail({
           <Crosshair size={14} />
         </button>
       </div>
-      <div class="text-ink/50 italic">&ldquo;{mark.selected_text}&rdquo;</div>
-      <div class="text-ink/80 mt-1">{mark.comment}</div>
-      <div class="text-xs text-ink/60 mt-2 flex gap-3">
-        <span>offset: {mark.offset}</span>
-        <span>length: {mark.length}</span>
-        <span>thread_id: {mark.thread_id}</span>
+      <div class="cell--data flex-col gap-2">
+        <div class="italic">&ldquo;{mark.selected_text}&rdquo;</div>
+        <div class="">{mark.comment}</div>
+        <div class="flex gap-2 text-ink/60 font-mono">
+          <span>offset: {mark.offset}</span>
+          <span>length: {mark.length}</span>
+          <span>id: {mark.id}</span>
+          <span>thread_id: {mark.thread_id}</span>
+        </div>
       </div>
     </div>
   );
@@ -75,7 +75,7 @@ function Marks({ wsId, path }: { wsId: string; path: string }) {
 
   return (
     <Section title="Marks">
-      <div class="flex flex-col gap-3">
+      <div class="flex flex-col stack">
         {resolved.value.map((mark) => (
           <MarkDetail
             key={mark.id}
