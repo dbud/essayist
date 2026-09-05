@@ -16,7 +16,7 @@ import ActiveEditorRef from "./ActiveEditorRef.tsx";
 interface EditorProps {
   wsId: string;
   path: string;
-  state: EditorState;
+  initialState: EditorState;
   onChange?: (state: EditorState) => void;
   className?: string;
 }
@@ -24,7 +24,7 @@ interface EditorProps {
 export default function Editor({
   wsId,
   path,
-  state,
+  initialState,
   onChange,
   className,
 }: EditorProps) {
@@ -49,19 +49,9 @@ export default function Editor({
         markBadges,
         markRects,
       }),
-      $initialEditorState: state,
+      $initialEditorState: initialState,
     }),
-    // Signals/model are stable per path, so the memo effectively keys on path/state.
-    [
-      path,
-      state,
-      resolved,
-      markdown,
-      selection,
-      markNumbers,
-      markBadges,
-      markRects,
-    ],
+    [path, resolved, markdown, selection, markNumbers, markBadges, markRects],
   );
 
   const contentEditable = useMemo(

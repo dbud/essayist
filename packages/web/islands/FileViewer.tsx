@@ -8,6 +8,7 @@ import Sidenote from "@/components/Sidenote.tsx";
 import Overlay from "@/components/ui/Overlay.tsx";
 import WaveBars from "@/components/ui/WaveBars.tsx";
 import { useElementHeights } from "@/hooks/useElementHeights.ts";
+import { useKeydown } from "@/hooks/useKeydown.ts";
 import {
   type ScrollContainerRef,
   useScrollViewport,
@@ -16,6 +17,7 @@ import Editor from "@/islands/Editor.tsx";
 import EditorToolbar from "@/islands/EditorToolbar.tsx";
 import FileStats from "@/islands/FileStats.tsx";
 import FontSelect from "@/islands/FontSelect.tsx";
+import SaveStatus from "@/islands/SaveStatus.tsx";
 import SidenoteControls from "@/islands/SidenoteControls.tsx";
 import { activeEditor } from "@/signals/activeEditor.ts";
 import { getEditorSelection } from "@/signals/editorSelection.ts";
@@ -41,10 +43,7 @@ export default function FileViewer() {
 }
 
 function FileViewerBody({ wsId, path }: { wsId: string; path: string }) {
-  const { state, initialState, setModifiedState, loading, error } = getFile(
-    wsId,
-    path,
-  );
+  const { state, setModifiedState, loading, error, save } = getFile(wsId, path);
   const { resolving, resolved } = getMarks(wsId, path);
   const sidenotes = getSidenotes(wsId, path);
   const selection = getEditorSelection(wsId, path);
@@ -52,11 +51,17 @@ function FileViewerBody({ wsId, path }: { wsId: string; path: string }) {
     () => delayedRise(resolving, 150),
     [resolving],
   );
-  const editorState = useMemo(() => state.value, [path, initialState.value]);
   const scrollRef = useScrollViewport(
     sidenotes.scrollTop,
     sidenotes.viewportHeight,
   );
+
+  useKeydown((e) => {
+    if ((e.metaKey || e.ctrlKey) && e.key === "s") {
+      e.preventDefault();
+      void save();
+    }
+  });
 
   if (error.value) {
     return <div class="text-error p-4 flex-1 min-h-0">{error.value}</div>;
@@ -77,6 +82,7 @@ function FileViewerBody({ wsId, path }: { wsId: string; path: string }) {
               <FontSelect />
               <EditorToolbar wsId={wsId} path={path} />
               <FileStats wsId={wsId} path={path} />
+              <SaveStatus wsId={wsId} path={path} />
             </div>
           </div>
           <div class="content-side flex items-center">
@@ -98,11 +104,11 @@ function FileViewerBody({ wsId, path }: { wsId: string; path: string }) {
         >
           {/* isolate: stacking context for MarkHighlights z-index */}
           <div class="relative min-w-0 isolate">
-            {editorState && (
+            {state.value && (
               <Editor
                 wsId={wsId}
                 path={path}
-                state={editorState}
+                initialState={state.value}
                 onChange={setModifiedState}
                 className={`content-main pt-16 pb-32`}
               />

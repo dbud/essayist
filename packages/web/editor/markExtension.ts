@@ -128,7 +128,10 @@ export function $applyMarks(
 ): void {
   for (const key of nodeKeys) {
     const node = $getNodeByKey(key);
-    assert($isMarkNode(node));
+    assert(
+      $isMarkNode(node),
+      `stale mark key ${key}: ${node === null ? "null" : node.getType()}`,
+    );
     $unwrapMarkNode(node);
   }
 

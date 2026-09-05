@@ -1,5 +1,5 @@
 import type { Mark } from "@essayist/core";
-import { createModel, signal } from "@preact/signals";
+import { createModel, effect, signal, untracked } from "@preact/signals";
 import { IS_BROWSER } from "fresh/runtime";
 import { getFile } from "@/signals/file.ts";
 import { asyncComputed } from "@/utils/asyncComputed.ts";
@@ -8,21 +8,22 @@ import { ensureOk } from "@/utils/ensureOk.ts";
 import { resolveMarksViaWorker } from "@/wasm/client.ts";
 
 export const MarksModel = createModel((workspaceId: string, path: string) => {
-  const { content, markdown } = getFile(workspaceId, path);
-  const marks = signal<Mark[]>([]);
+  const { markdown, snapshot } = getFile(workspaceId, path);
   const [run, { loading, error }] = createAsyncState(true);
 
-  // Resolve marks in the wasm worker, debounced so a burst of edits
-  // coalesces into one call. A new edit aborts the in-flight resolve and
-  // terminates the blocked worker, so stale computes don't block the latest.
+  const loaded = signal<{ marks: Mark[]; content: string }>({
+    marks: [],
+    content: "",
+  });
+
   const { value: resolved, stale: resolving } = asyncComputed(
-    () => [marks.value, content.value, markdown.value] as const,
+    () => [loaded.value.marks, loaded.value.content, markdown.value] as const,
     ([marks, oldContent, newContent], signal) =>
       resolveMarksViaWorker(marks, oldContent, newContent, signal),
     { debounce: 60, initial: [] as Mark[] },
   );
 
-  async function load() {
+  async function load(content = snapshot.value?.content ?? ""): Promise<void> {
     const result = await run(async () => {
       const res = await fetch(
         `/api/workspaces/${encodeURIComponent(workspaceId)}/files/${encodeURIComponent(path)}/marks`,
@@ -30,19 +31,21 @@ export const MarksModel = createModel((workspaceId: string, path: string) => {
       await ensureOk(res);
       return (await res.json()) as Mark[];
     });
-    if (result) marks.value = result;
+    if (result === undefined) return;
+    loaded.value = { marks: result, content };
   }
 
-  if (IS_BROWSER) void load();
+  // Marks are migrated on write server-side, so reload whenever the snapshot changes.
+  if (IS_BROWSER) {
+    effect(() => {
+      const content = snapshot.value?.content;
+      if (content === undefined) return;
+      // untracked: load()'s runner state writes must not re-trigger this effect
+      untracked(() => void load(content));
+    });
+  }
 
-  return {
-    marks,
-    resolved,
-    loading,
-    error,
-    reload: load,
-    resolving,
-  };
+  return { resolved, loading, error, reload: load, resolving };
 });
 
 const cache = new Map<string, InstanceType<typeof MarksModel>>();

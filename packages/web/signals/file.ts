@@ -1,4 +1,4 @@
-import type { FileSnapshot } from "@essayist/core";
+import type { FileSnapshot, WriteResult } from "@essayist/core";
 import { computed, createModel, signal } from "@preact/signals";
 import { IS_BROWSER } from "fresh/runtime";
 import type { EditorState } from "lexical";
@@ -13,6 +13,7 @@ import {
 export const FileModel = createModel((workspaceId: string, path: string) => {
   const snapshot = signal<FileSnapshot | null>(null);
   const [run, { loading, error }] = createAsyncState(true);
+  const [runSave, { loading: saving, error: saveError }] = createAsyncState();
   const isSelected = computed(
     () => getOpenedFilesFor(workspaceId).selected.value === path,
   );
@@ -55,6 +56,28 @@ export const FileModel = createModel((workspaceId: string, path: string) => {
     if (result) snapshot.value = result;
   }
 
+  async function save(): Promise<boolean> {
+    if (!dirty.value) return true;
+    const content = markdown.value;
+
+    const result = await runSave(async () => {
+      const res = await fetch(
+        `/api/workspaces/${encodeURIComponent(workspaceId)}/files/${encodeURIComponent(path)}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ content }),
+        },
+      );
+      await ensureOk(res);
+      return (await res.json()) as WriteResult;
+    });
+
+    if (result === undefined) return false;
+    snapshot.value = { ...result, content };
+    return true;
+  }
+
   if (IS_BROWSER) void load();
 
   return {
@@ -68,6 +91,9 @@ export const FileModel = createModel((workspaceId: string, path: string) => {
     markdown,
     dirty,
     isSelected,
+    save,
+    saving,
+    saveError,
   };
 });
 
