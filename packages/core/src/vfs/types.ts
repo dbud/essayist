@@ -11,9 +11,8 @@ export interface ReadOptions {
 }
 
 /** Result of a write operation. */
-export interface WriteResult {
+export interface WriteResult extends FileVersion {
   path: string;
-  lines: number;
   created: boolean;
 }
 

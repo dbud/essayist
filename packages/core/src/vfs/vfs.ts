@@ -173,8 +173,8 @@ export class VirtualFileSystem implements VFS {
 
     return {
       path,
-      lines,
       created: versions.length === 0,
+      ...version,
     };
   }
 

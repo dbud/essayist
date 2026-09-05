@@ -5,7 +5,13 @@ import { createWriteFileTool } from "./write_file.ts";
 
 Deno.test("createWriteFileTool -- delegates to VFS and returns result", async () => {
   const vfs = createMockVFS({
-    write: () => ({ path: "f.txt", lines: 2, created: true }),
+    write: () => ({
+      path: "f.txt",
+      lines: 2,
+      created: true,
+      version_id: "v-test-1",
+      timestamp: 0,
+    }),
   });
   const { tool } = createWriteFileTool(vfs);
   const fn = tool as ToolWithExecute;
@@ -25,7 +31,13 @@ Deno.test("createWriteFileTool -- passes path and content to VFS", async () => {
     write: (path: string, content: string) => {
       capturedPath = path;
       capturedContent = content;
-      return { path, lines: 1, created: true };
+      return {
+        path,
+        lines: 1,
+        created: true,
+        version_id: "v-test-1",
+        timestamp: 0,
+      };
     },
   });
   const { tool } = createWriteFileTool(vfs);

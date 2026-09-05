@@ -75,7 +75,10 @@ Deno.test("VFS.read -- specific version", async () => {
 Deno.test("VFS.write -- creates new file", async () => {
   const vfs = await createVFS();
   const result = await vfs.write("new.txt", "hello\nworld");
-  assertEquals(result, { created: true, lines: 2, path: "new.txt" });
+  assertEquals(result.created, true);
+  assertEquals(result.path, "new.txt");
+  assertEquals(result.lines, 2);
+  assertEquals(typeof result.version_id, "string");
 });
 
 Deno.test("VFS.write -- overwrites existing file", async () => {
