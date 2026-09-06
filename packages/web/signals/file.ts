@@ -34,7 +34,9 @@ export const FileModel = createModel((workspaceId: string, path: string) => {
   // Editor seed, parsed once; autosave adopts strings without re-parsing.
   const seedContent = signal<string | null>(null);
   const initialState = computed(() =>
-    seedContent.value ? markdownToEditorState(seedContent.value) : null,
+    seedContent.value === null
+      ? null
+      : markdownToEditorState(seedContent.value),
   );
 
   const modifiedState = signal<EditorState | null>(null);
