@@ -2,6 +2,7 @@ import { CircleCheck, CircleDashed } from "lucide-preact";
 import WaveBars from "@/components/ui/WaveBars.tsx";
 import { useTick } from "@/hooks/useTick.ts";
 import { getFile } from "@/signals/file.ts";
+import { autoSave } from "@/signals/preferences.ts";
 import { formatDateTime, formatRelativeTime } from "@/utils/format.ts";
 
 interface SaveStatusProps {
@@ -26,12 +27,16 @@ export default function SaveStatus({ wsId, path }: SaveStatusProps) {
       savedAt === undefined ? "Saved" : `Saved ${formatRelativeTime(savedAt)}`;
     if (saving.value) label = "Saving...";
     else if (dirty.value && saveError.value) label = "Save failed";
-    else if (dirty.value) label = "Unsaved";
+    else if (dirty.value) {
+      label = autoSave.value ? "Save pending" : "Unsaved changes";
+    }
   }
 
   const tooltip =
     saveError.value ||
-    (savedAt === undefined ? undefined : formatDateTime(savedAt));
+    (savedAt === undefined
+      ? undefined
+      : `Last saved: ${formatDateTime(savedAt)}`);
 
   const saved = !loadingFile && !saving.value && !dirty.value;
   const active = saving.value || loadingFile;
