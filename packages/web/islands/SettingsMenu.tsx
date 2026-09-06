@@ -53,7 +53,7 @@ export default function SettingsMenu({ user }: SettingsMenuProps) {
           </li>
           <DropdownItem onClick={() => (autoSave.value = !autoSave.value)}>
             <CheckboxIcon selected={autoSave.value} size={15} />
-            Autosave
+            Autosave {autoSave.value ? "on" : "off"}
           </DropdownItem>
           <DropdownItem
             onClick={() => {

@@ -76,14 +76,7 @@ export const FileModel = createModel((workspaceId: string, path: string) => {
     nextCheckpoint = Date.now() + AUTO_SAVE_MAX_WAIT_MS;
 
     const result = await runSave(async () => {
-      const res = await fetch(
-        `/api/workspaces/${encodeURIComponent(workspaceId)}/files/${encodeURIComponent(path)}`,
-        {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ content }),
-        },
-      );
+      const res = await putFile(content);
       await ensureOk(res);
       return (await res.json()) as WriteResult;
     });
@@ -96,6 +89,26 @@ export const FileModel = createModel((workspaceId: string, path: string) => {
     }
     snapshot.value = { ...result, content };
     return true;
+  }
+
+  function putFile(
+    content: string,
+    { keepalive = false }: { keepalive?: boolean } = {},
+  ): Promise<Response> {
+    return fetch(
+      `/api/workspaces/${encodeURIComponent(workspaceId)}/files/${encodeURIComponent(path)}`,
+      {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content }),
+        keepalive,
+      },
+    );
+  }
+
+  function flush() {
+    if (!dirty.value) return;
+    void putFile(markdown.value, { keepalive: true }).catch(() => {});
   }
 
   if (IS_BROWSER) {
@@ -151,6 +164,7 @@ export const FileModel = createModel((workspaceId: string, path: string) => {
     save,
     saving,
     saveError,
+    flush,
   };
 });
 
@@ -159,4 +173,12 @@ const cache = new Map<string, InstanceType<typeof FileModel>>();
 export function getFile(workspaceId: string, path: string) {
   const key = `${workspaceId}:${path}`;
   return cache.getOrInsertComputed(key, () => new FileModel(workspaceId, path));
+}
+
+export function flushAllDirty(): void {
+  for (const model of cache.values()) model.flush();
+}
+
+export function anyFileDirty(): boolean {
+  return [...cache.values()].some((model) => model.dirty.value);
 }
