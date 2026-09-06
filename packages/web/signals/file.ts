@@ -1,4 +1,4 @@
-import type { FileSnapshot, WriteResult } from "@essayist/core";
+import type { DraftSnapshot, FileSnapshot } from "@essayist/core";
 import {
   computed,
   createModel,
@@ -22,17 +22,20 @@ const AUTO_SAVE_IDLE_MS = 2000;
 const AUTO_SAVE_MAX_WAIT_MS = 30000;
 
 export const FileModel = createModel((workspaceId: string, path: string) => {
-  const snapshot = signal<FileSnapshot | null>(null);
+  // Latest promoted version; marks anchor to its content.
+  const checkpoint = signal<FileSnapshot | null>(null);
+  const draft = signal<DraftSnapshot | null>(null);
   const [run, { loading, error }] = createAsyncState(true);
   const [runSave, { loading: saving, error: saveError }] = createAsyncState();
   const isSelected = computed(
     () => getOpenedFilesFor(workspaceId).selected.value === path,
   );
 
+  // Editor seed, parsed once; autosave adopts strings without re-parsing.
+  const seedContent = signal<string | null>(null);
   const initialState = computed(() =>
-    snapshot.value ? markdownToEditorState(snapshot.value.content) : null,
+    seedContent.value ? markdownToEditorState(seedContent.value) : null,
   );
-  const content = computed(() => snapshot.value?.content ?? "");
 
   const modifiedState = signal<EditorState | null>(null);
   function setModifiedState(state: EditorState) {
@@ -46,17 +49,16 @@ export const FileModel = createModel((workspaceId: string, path: string) => {
     return editorStateToMarkdown(state.value);
   });
 
-  const initialMarkdown = computed(() => {
-    if (!initialState.value) return "";
-    return editorStateToMarkdown(initialState.value);
-  });
+  const checkpointContent = computed(() => checkpoint.value?.content ?? "");
 
   const dirty = computed(
     () =>
-      modifiedState.value !== null && markdown.value !== initialMarkdown.value,
+      modifiedState.value !== null &&
+      markdown.value !==
+        (draft.value?.content ?? checkpoint.value?.content ?? ""),
   );
 
-  let nextCheckpoint: number | null = null;
+  let nextSaveAt: number | null = null;
   let failureToast: Signal<Toast> | null = null;
 
   async function load() {
@@ -65,20 +67,26 @@ export const FileModel = createModel((workspaceId: string, path: string) => {
         `/api/workspaces/${encodeURIComponent(workspaceId)}/files/${encodeURIComponent(path)}`,
       );
       await ensureOk(res);
-      return (await res.json()) as FileSnapshot;
+      return (await res.json()) as {
+        checkpoint: FileSnapshot;
+        draft: DraftSnapshot | null;
+      };
     });
-    if (result) snapshot.value = result;
+    if (!result) return;
+    checkpoint.value = result.checkpoint;
+    draft.value = result.draft;
+    seedContent.value = result.draft?.content ?? result.checkpoint.content;
   }
 
   async function save(): Promise<boolean> {
     if (!dirty.value) return true;
     const content = markdown.value;
-    nextCheckpoint = Date.now() + AUTO_SAVE_MAX_WAIT_MS;
+    nextSaveAt = Date.now() + AUTO_SAVE_MAX_WAIT_MS;
 
     const result = await runSave(async () => {
-      const res = await putFile(content);
+      const res = await putDraft(content);
       await ensureOk(res);
-      return (await res.json()) as WriteResult;
+      return (await res.json()) as { timestamp: number };
     });
 
     if (result === undefined) return false;
@@ -87,16 +95,16 @@ export const FileModel = createModel((workspaceId: string, path: string) => {
       dismissToast(failureToast);
       failureToast = null;
     }
-    snapshot.value = { ...result, content };
+    draft.value = { ...result, content };
     return true;
   }
 
-  function putFile(
+  function putDraft(
     content: string,
     { keepalive = false }: { keepalive?: boolean } = {},
   ): Promise<Response> {
     return fetch(
-      `/api/workspaces/${encodeURIComponent(workspaceId)}/files/${encodeURIComponent(path)}`,
+      `/api/workspaces/${encodeURIComponent(workspaceId)}/files/${encodeURIComponent(path)}/draft`,
       {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -108,7 +116,7 @@ export const FileModel = createModel((workspaceId: string, path: string) => {
 
   function flush() {
     if (!dirty.value) return;
-    void putFile(markdown.value, { keepalive: true }).catch(() => {});
+    void putDraft(markdown.value, { keepalive: true }).catch(() => {});
   }
 
   if (IS_BROWSER) {
@@ -122,18 +130,17 @@ export const FileModel = createModel((workspaceId: string, path: string) => {
       return () => clearTimeout(t);
     });
 
-    // Max wait: while continuously dirty, checkpoint at most this often so
-    // a no-pause burst still saves.
+    // Max wait: while continuously dirty, save at most this often.
     effect(() => {
       if (!autoSave.value || !dirty.value) {
-        nextCheckpoint = null;
+        nextSaveAt = null;
         return;
       }
       void markdown.value;
-      if (nextCheckpoint === null) {
-        nextCheckpoint = Date.now() + AUTO_SAVE_MAX_WAIT_MS;
+      if (nextSaveAt === null) {
+        nextSaveAt = Date.now() + AUTO_SAVE_MAX_WAIT_MS;
       }
-      const t = setTimeout(save, Math.max(0, nextCheckpoint - Date.now()));
+      const t = setTimeout(save, Math.max(0, nextSaveAt - Date.now()));
       return () => clearTimeout(t);
     });
 
@@ -151,8 +158,9 @@ export const FileModel = createModel((workspaceId: string, path: string) => {
   }
 
   return {
-    snapshot,
-    content,
+    checkpoint,
+    draft,
+    checkpointContent,
     initialState,
     state,
     setModifiedState,

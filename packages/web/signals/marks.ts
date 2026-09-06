@@ -8,7 +8,7 @@ import { ensureOk } from "@/utils/ensureOk.ts";
 import { resolveMarksViaWorker } from "@/wasm/client.ts";
 
 export const MarksModel = createModel((workspaceId: string, path: string) => {
-  const { markdown, snapshot } = getFile(workspaceId, path);
+  const { markdown, checkpoint } = getFile(workspaceId, path);
   const [run, { loading, error }] = createAsyncState(true);
 
   const loaded = signal<{ marks: Mark[]; content: string }>({
@@ -23,7 +23,9 @@ export const MarksModel = createModel((workspaceId: string, path: string) => {
     { debounce: 60, initial: [] as Mark[] },
   );
 
-  async function load(content = snapshot.value?.content ?? ""): Promise<void> {
+  async function load(
+    baseline = checkpoint.value?.content ?? "",
+  ): Promise<void> {
     const result = await run(async () => {
       const res = await fetch(
         `/api/workspaces/${encodeURIComponent(workspaceId)}/files/${encodeURIComponent(path)}/marks`,
@@ -32,13 +34,14 @@ export const MarksModel = createModel((workspaceId: string, path: string) => {
       return (await res.json()) as Mark[];
     });
     if (result === undefined) return;
-    loaded.value = { marks: result, content };
+    loaded.value = { marks: result, content: baseline };
   }
 
-  // Marks are migrated on write server-side, so reload whenever the snapshot changes.
+  // Marks are migrated on write server-side, so reload whenever the
+  // checkpoint changes.
   if (IS_BROWSER) {
     effect(() => {
-      const content = snapshot.value?.content;
+      const content = checkpoint.value?.content;
       if (content === undefined) return;
       // untracked: load()'s runner state writes must not re-trigger this effect
       untracked(() => void load(content));

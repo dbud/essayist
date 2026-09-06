@@ -2,9 +2,10 @@ import { define } from "@/define.ts";
 
 export const handler = {
   GET: define.handlers(async (ctx) => {
-    const { path } = ctx.params;
-    const result = await ctx.state.vfs.read(decodeURIComponent(path));
-    return Response.json(result);
+    const path = decodeURIComponent(ctx.params.path);
+    const checkpoint = await ctx.state.vfs.read(path);
+    const draft = await ctx.state.vfs.readDraft(path);
+    return Response.json({ checkpoint, draft });
   }),
 
   // Create-only. Returns 409 if the file already exists; use PUT to upsert.
