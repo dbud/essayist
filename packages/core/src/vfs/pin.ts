@@ -45,6 +45,18 @@ export class PinnedVFS implements VFS {
     return await this.#inner.write(path, content);
   }
 
+  async writeDraft(path: string, content: string): Promise<void> {
+    return await this.#inner.writeDraft(path, content);
+  }
+
+  async readDraft(path: string): Promise<FileReadResult | null> {
+    return await this.#inner.readDraft(path);
+  }
+
+  async promoteDraft(path: string): Promise<WriteResult | null> {
+    return await this.#inner.promoteDraft(path);
+  }
+
   async list(prefix?: string): Promise<FileEntry[]> {
     return await this.#inner.list(prefix);
   }

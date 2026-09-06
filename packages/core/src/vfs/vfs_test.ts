@@ -1,5 +1,6 @@
 import { assertEquals } from "@std/assert";
 import { InMemoryAdapter } from "../persistence/mod.ts";
+import { CHUNK_SIZE } from "./chunked_content.ts";
 import { createVFS } from "./testing/helpers.ts";
 import { VirtualFileSystem } from "./vfs.ts";
 
@@ -100,6 +101,66 @@ Deno.test("VFS.write -- first write also creates a version", async () => {
   await vfs.write("f.txt", "hello");
   const history = await vfs.getHistory("f.txt");
   assertEquals(history.length, 1);
+});
+
+// Draft head
+
+Deno.test("VFS.writeDraft -- stores and reads the draft without creating a version", async () => {
+  const vfs = await createVFS(new Map([["f.txt", "checkpoint"]]));
+  await vfs.writeDraft("f.txt", "draft text");
+
+  const draft = await vfs.readDraft("f.txt");
+  assertEquals(draft?.content, "draft text");
+  assertEquals(draft?.version_id, "draft");
+  assertEquals((await vfs.getHistory("f.txt")).length, 1);
+  assertEquals((await vfs.read("f.txt")).content, "checkpoint");
+});
+
+Deno.test("VFS.promoteDraft -- creates a version from the draft and clears it", async () => {
+  const vfs = await createVFS(new Map([["f.txt", "checkpoint"]]));
+  await vfs.writeDraft("f.txt", "draft text");
+
+  const result = await vfs.promoteDraft("f.txt");
+  assertEquals(result?.created, false);
+  assertEquals((await vfs.read("f.txt")).content, "draft text");
+  assertEquals(await vfs.readDraft("f.txt"), null);
+  assertEquals((await vfs.getHistory("f.txt")).length, 2);
+});
+
+Deno.test("VFS.promoteDraft -- migrates marks onto the promoted version", async () => {
+  const vfs = await createVFS(new Map([["f.txt", "the quick brown fox"]]));
+  await vfs.mark("f.txt", "quick brown", "comment");
+
+  await vfs.writeDraft("f.txt", "the quick brown fox was spotted again");
+  await vfs.promoteDraft("f.txt");
+
+  const latest = await vfs.read("f.txt");
+  const marks = await vfs.getMarks("f.txt", latest.version_id);
+  assertEquals(marks.length, 1);
+  assertEquals(marks[0].status, "resolved");
+});
+
+Deno.test("VFS.promoteDraft -- null when no draft exists", async () => {
+  const vfs = await createVFS(new Map([["f.txt", "checkpoint"]]));
+  assertEquals(await vfs.promoteDraft("f.txt"), null);
+});
+
+Deno.test("VFS.write -- clears a pending draft", async () => {
+  const vfs = await createVFS(new Map([["f.txt", "checkpoint"]]));
+  await vfs.writeDraft("f.txt", "draft text");
+  await vfs.write("f.txt", "direct write");
+
+  assertEquals(await vfs.readDraft("f.txt"), null);
+  assertEquals((await vfs.read("f.txt")).content, "direct write");
+});
+
+Deno.test("VFS.writeDraft -- shrinks cleanly across chunk boundaries", async () => {
+  const vfs = await createVFS();
+  await vfs.writeDraft("f.txt", "x".repeat(CHUNK_SIZE * 2 + 10));
+  await vfs.writeDraft("f.txt", "short");
+
+  const draft = await vfs.readDraft("f.txt");
+  assertEquals(draft?.content, "short");
 });
 
 // List

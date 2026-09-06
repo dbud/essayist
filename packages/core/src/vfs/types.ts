@@ -129,10 +129,23 @@ export interface VFS {
   read(path: string, options?: ReadOptions): Promise<FileReadResult>;
 
   /**
-   * Write new content, creating a new version.
-   * Snapshots the old version and migrates its marks to the new version.
+   * Write new content, creating a new version. Snapshots the old version
+   * and migrates its marks to the new version. Clears any pending draft.
    */
   write(path: string, content: string): Promise<WriteResult>;
+
+  /**
+   * Writes the mutable draft head. Overwrites any existing draft.
+   */
+  writeDraft(path: string, content: string): Promise<void>;
+
+  /** Reads the draft head, or null when no draft exists. */
+  readDraft(path: string): Promise<FileReadResult | null>;
+
+  /**
+   * Promotes the draft to a version and clears it.
+   */
+  promoteDraft(path: string): Promise<WriteResult | null>;
 
   /** List files, optionally filtered by path prefix. */
   list(prefix?: string): Promise<FileEntry[]>;

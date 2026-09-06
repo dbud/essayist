@@ -18,6 +18,9 @@ export function createMockVFS(overrides: MockVFSOverrides = {}): VFS {
   return {
     read: wrap(overrides.read),
     write: wrap(overrides.write),
+    writeDraft: wrap(overrides.writeDraft),
+    readDraft: wrap(overrides.readDraft),
+    promoteDraft: wrap(overrides.promoteDraft),
     list: wrap(overrides.list),
     grep: wrap(overrides.grep),
     search: wrap(overrides.search),

@@ -40,6 +40,7 @@ const FILE_VERSIONS = "file:versions";
 const FILE_CONTENT = "file:content";
 const FILE_MANIFEST = "file:manifest";
 const FILE_CHUNK = "file:chunk";
+const FILE_DRAFT = "file:draft";
 const MARKS = "marks";
 const WORKSPACES = "ws";
 const GREP_CONTEXT_LINES = 2;
@@ -50,6 +51,9 @@ function escapeRegex(text: string): string {
 
 let markCounter = 0;
 let versionCounter = 0;
+
+/** Reserved version id for the mutable draft head. Not in the versions list. */
+const DRAFT_VERSION_ID = "draft";
 
 export class VirtualFileSystem implements VFS {
   #adapter: PersistenceAdapter;
@@ -113,6 +117,10 @@ export class VirtualFileSystem implements VFS {
     const versionsEntry = await this.#adapter.get<FileVersion[]>(versionsKey);
     const versions = versionsEntry?.value ?? [];
 
+    const draftManifest = await this.#adapter.get<ContentManifest>(
+      this.#contentManifestKey(path, DRAFT_VERSION_ID),
+    );
+
     const previousVersionId =
       versions.length > 0
         ? versions[versions.length - 1].version_id
@@ -158,6 +166,21 @@ export class VirtualFileSystem implements VFS {
         content,
       );
       if (migration) ops.push(migration.op);
+    }
+
+    // A direct write supersedes any pending draft: clear it with the version.
+    if (draftManifest) {
+      ops.push({ type: "delete", key: this.#draftKey(path) });
+      ops.push({
+        type: "delete",
+        key: this.#contentManifestKey(path, DRAFT_VERSION_ID),
+      });
+      for (let i = 1; i < draftManifest.value.chunkCount; i++) {
+        ops.push({
+          type: "delete",
+          key: this.#contentChunkKey(path, DRAFT_VERSION_ID, i),
+        });
+      }
     }
 
     // Guard against a concurrent write to the same file: if the versions list
@@ -424,6 +447,74 @@ export class VirtualFileSystem implements VFS {
     return versions.sort((a, b) => a.timestamp - b.timestamp);
   }
 
+  async writeDraft(path: string, content: string): Promise<void> {
+    const { manifest, extraChunks } = chunkContent(content);
+
+    // Drop chunk keys left over from a larger previous draft.
+    const previous = await this.#adapter.get<ContentManifest>(
+      this.#contentManifestKey(path, DRAFT_VERSION_ID),
+    );
+    const ops: WriteOp[] = [];
+    if (previous) {
+      for (let i = extraChunks.length + 1; i < previous.value.chunkCount; i++) {
+        ops.push({
+          type: "delete",
+          key: this.#contentChunkKey(path, DRAFT_VERSION_ID, i + 1),
+        });
+      }
+    }
+    ops.push({
+      type: "set",
+      key: this.#contentManifestKey(path, DRAFT_VERSION_ID),
+      value: manifest,
+    });
+    ops.push({
+      type: "set",
+      key: this.#draftKey(path),
+      value: { updatedAt: Date.now() },
+    });
+    await this.#adapter.batch(ops);
+  }
+
+  async readDraft(path: string): Promise<FileReadResult | null> {
+    const meta = await this.#adapter.get<{ updatedAt: number }>(
+      this.#draftKey(path),
+    );
+    if (!meta) return null;
+    const manifestEntry = await this.#adapter.get<ContentManifest>(
+      this.#contentManifestKey(path, DRAFT_VERSION_ID),
+    );
+    if (!manifestEntry) return null;
+
+    const content = await this.#reassembleContent(
+      path,
+      DRAFT_VERSION_ID,
+      manifestEntry.value,
+    );
+    const lines = content.split("\n").length;
+    return {
+      content,
+      version_id: DRAFT_VERSION_ID,
+      timestamp: meta.value.updatedAt,
+      lines,
+      start_line: 1,
+      end_line: lines,
+    };
+  }
+
+  async promoteDraft(path: string): Promise<WriteResult | null> {
+    const manifestEntry = await this.#adapter.get<ContentManifest>(
+      this.#contentManifestKey(path, DRAFT_VERSION_ID),
+    );
+    if (!manifestEntry) return null;
+    const content = await this.#reassembleContent(
+      path,
+      DRAFT_VERSION_ID,
+      manifestEntry.value,
+    );
+    return await this.write(path, content);
+  }
+
   async revert(path: string, versionId: string): Promise<boolean> {
     const content = await this.#getVersionContent(path, versionId);
     if (content === "") return false;
@@ -542,6 +633,10 @@ export class VirtualFileSystem implements VFS {
 
   #versionsKey(path: string): Key {
     return [WORKSPACES, this.#workspaceId, FILE_VERSIONS, path];
+  }
+
+  #draftKey(path: string): Key {
+    return [WORKSPACES, this.#workspaceId, FILE_DRAFT, path];
   }
 
   #marksKey(path: string, versionId: string): Key {
