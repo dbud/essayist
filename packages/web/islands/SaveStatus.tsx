@@ -1,4 +1,6 @@
-import { CircleCheck, CircleDashed } from "lucide-preact";
+import { CircleDashed } from "lucide-preact";
+import { CircleCheckIcon } from "@/components/ui/icons.tsx";
+import Swappable from "@/components/ui/Swappable.tsx";
 import WaveBars from "@/components/ui/WaveBars.tsx";
 import { useTick } from "@/hooks/useTick.ts";
 import { getFile } from "@/signals/file.ts";
@@ -23,12 +25,19 @@ export default function SaveStatus({ wsId, path }: SaveStatusProps) {
     : (draft.value?.timestamp ?? checkpoint.value?.timestamp);
 
   let label: string | null = null;
+  let statusKey = "";
   if (!loadingFile) {
+    statusKey = "saved";
     label =
       savedAt === undefined ? "Saved" : `Saved ${formatRelativeTime(savedAt)}`;
-    if (saving.value) label = "Saving...";
-    else if (dirty.value && saveError.value) label = "Save failed";
-    else if (dirty.value) {
+    if (saving.value) {
+      statusKey = "saving";
+      label = "Saving...";
+    } else if (dirty.value && saveError.value) {
+      statusKey = "failed";
+      label = "Save failed";
+    } else if (dirty.value) {
+      statusKey = "dirty";
       label = autoSave.value ? "Save pending..." : "Unsaved changes";
     }
   }
@@ -50,15 +59,23 @@ export default function SaveStatus({ wsId, path }: SaveStatusProps) {
       data-tooltip={tooltip}
     >
       <WaveBars fill amplitude={active ? 0.5 : 0} class="text-ink" />
-      {!loadingFile &&
-        (saved ? (
-          <CircleCheck size={14} class="shrink-0 text-ink" />
-        ) : (
-          <CircleDashed size={14} class="shrink-0 text-accent" />
-        ))}
+      {!loadingFile && (
+        <Swappable
+          swapKey={saved ? "check" : "dashed"}
+          class="swap-rotate shrink-0"
+        >
+          {saved ? (
+            <CircleCheckIcon size={14} class="text-ink" />
+          ) : (
+            <CircleDashed size={14} class="text-accent" />
+          )}
+        </Swappable>
+      )}
       {showHint ? (
         <span class="flex flex-col items-start gap-1 leading-none">
-          <span>{label}</span>
+          <Swappable swapKey={statusKey} class="swap-shift">
+            {label}
+          </Swappable>
           <span class="text-[0.7rem] text-ink opacity-50 hover:opacity-100">
             <kbd>{META_KEY}</kbd>
             <kbd>S</kbd>
@@ -66,7 +83,9 @@ export default function SaveStatus({ wsId, path }: SaveStatusProps) {
           </span>
         </span>
       ) : (
-        label
+        <Swappable swapKey={statusKey} class="swap-shift">
+          {label}
+        </Swappable>
       )}
     </div>
   );

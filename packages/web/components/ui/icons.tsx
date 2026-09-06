@@ -3,6 +3,33 @@ interface ChoiceIconProps {
   selected?: boolean;
 }
 
+interface IconProps {
+  size?: number;
+  class?: string;
+}
+
+/** Circle outline with an oversized checkmark; matches lucide's
+    CircleDashed outline weight for pairing in status cells. */
+export function CircleCheckIcon({ size = 24, class: className }: IconProps) {
+  return (
+    <svg
+      class={className}
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      aria-hidden="true"
+    >
+      <circle cx="12" cy="12" r="10" />
+      <path d="m7.5 12.5 3.3 3.3 5.7-6.3" />
+    </svg>
+  );
+}
+
 /** Circle outline; filled disc inside when selected. */
 export function RadioIcon({ selected, size = 24 }: ChoiceIconProps) {
   return (
