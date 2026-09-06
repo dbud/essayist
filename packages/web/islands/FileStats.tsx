@@ -4,7 +4,6 @@ import Dropdown, {
   DropdownMenu,
 } from "@/components/ui/Dropdown.tsx";
 import { CheckboxIcon } from "@/components/ui/icons.tsx";
-import WaveBars from "@/components/ui/WaveBars.tsx";
 import { getFile } from "@/signals/file.ts";
 import { getFileStats } from "@/signals/fileStats.ts";
 import {
@@ -27,16 +26,9 @@ const STAT_OPTIONS: { value: FileStatSection; label: string }[] = [
 export default function FileStats({ wsId, path }: FileStatsProps) {
   const { state, loading } = getFile(wsId, path);
   const stats = getFileStats(wsId, path);
-  const ready = !loading.value && state.value !== null;
   const enabled = fileStatsSections.value;
 
-  if (!ready) {
-    return (
-      <div class="flex cell cell--data relative min-w-42">
-        <WaveBars fill amplitude={1} />
-      </div>
-    );
-  }
+  if (loading.value || state.value === null) return null;
 
   function statValue(section: FileStatSection): string {
     switch (section) {
