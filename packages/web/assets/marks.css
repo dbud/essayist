@@ -51,6 +51,27 @@
       opacity: var(--mark-inner-pct);
     }
   }
+  .sidenote {
+    --mark-active-pct: 25%;
+    @apply text-left text-sm p-2 cursor-pointer border-0 appearance-none transition-[background-color,box-shadow] duration-200;
+    background-color: color-mix(in oklch, var(--color-paper) 60%, transparent);
+
+    &.is-active {
+      background-color: color-mix(
+        in oklch,
+        var(--mark-color) var(--mark-active-pct),
+        transparent
+      );
+    }
+    &.is-ghost {
+      opacity: 0.65;
+      background-color: color-mix(
+        in oklch,
+        var(--color-paper) 50%,
+        transparent
+      );
+    }
+  }
   .mark-wavy path {
     transition:
       stroke-opacity var(--mark-duration) ease,
@@ -72,27 +93,6 @@
     line-height: 1;
     margin-inline-start: 0.25em;
     transform: translateY(-0.5em);
-  }
-  .sidenote {
-    --mark-active-pct: 25%;
-    @apply text-left text-sm p-2 cursor-pointer border-0 appearance-none transition-[background-color,box-shadow] duration-200;
-    background-color: color-mix(in oklch, var(--color-paper) 60%, transparent);
-
-    &.is-active {
-      background-color: color-mix(
-        in oklch,
-        var(--mark-color) var(--mark-active-pct),
-        transparent
-      );
-    }
-    &.is-ghost {
-      opacity: 0.65;
-      background-color: color-mix(
-        in oklch,
-        var(--color-paper) 50%,
-        transparent
-      );
-    }
   }
 }
 
