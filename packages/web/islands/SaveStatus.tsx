@@ -4,6 +4,7 @@ import { useTick } from "@/hooks/useTick.ts";
 import { getFile } from "@/signals/file.ts";
 import { autoSave } from "@/signals/preferences.ts";
 import { formatDateTime, formatRelativeTime } from "@/utils/format.ts";
+import { META_KEY } from "@/utils/platform.ts";
 
 interface SaveStatusProps {
   wsId: string;
@@ -28,7 +29,7 @@ export default function SaveStatus({ wsId, path }: SaveStatusProps) {
     if (saving.value) label = "Saving...";
     else if (dirty.value && saveError.value) label = "Save failed";
     else if (dirty.value) {
-      label = autoSave.value ? "Save pending" : "Unsaved changes";
+      label = autoSave.value ? "Save pending..." : "Unsaved changes";
     }
   }
 
@@ -40,6 +41,8 @@ export default function SaveStatus({ wsId, path }: SaveStatusProps) {
 
   const saved = !loadingFile && !saving.value && !dirty.value;
   const active = saving.value || loadingFile;
+  const showHint =
+    !loadingFile && !saving.value && dirty.value && !autoSave.value;
 
   return (
     <div
@@ -53,7 +56,18 @@ export default function SaveStatus({ wsId, path }: SaveStatusProps) {
         ) : (
           <CircleDashed size={14} class="shrink-0 text-accent" />
         ))}
-      {label}
+      {showHint ? (
+        <span class="flex flex-col items-start gap-1 leading-none">
+          <span>{label}</span>
+          <span class="text-[0.7rem] text-ink opacity-50 hover:opacity-100">
+            <kbd>{META_KEY}</kbd>
+            <kbd>S</kbd>
+            {" to save"}
+          </span>
+        </span>
+      ) : (
+        label
+      )}
     </div>
   );
 }
