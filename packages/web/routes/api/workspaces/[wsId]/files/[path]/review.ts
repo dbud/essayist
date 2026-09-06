@@ -12,6 +12,9 @@ export const handler = {
     }
 
     const { config, vfs, workspaceId } = ctx.state;
+    // Promote the pending draft first: the review reads the latest
+    // checkpoint, so it covers the current content.
+    await vfs.promoteDraft(fileId);
     try {
       const { agent, pass } = await resolveAgent(config);
       return sseResponse(async (send) => {
