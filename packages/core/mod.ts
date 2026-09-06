@@ -71,6 +71,7 @@ export type { VersionPin } from "@/vfs/pin.ts";
 export { PinnedVFS } from "@/vfs/pin.ts";
 export type {
   DiffResult,
+  DraftSnapshot,
   FileEntry,
   FileSnapshot,
   FileVersion,

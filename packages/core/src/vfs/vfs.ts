@@ -16,6 +16,7 @@ import { TokenizedText } from "@/vfs/text_search.ts";
 import { unifiedDiff } from "@/vfs/unified_diff.ts";
 import type {
   DiffResult,
+  DraftSnapshot,
   FileEntry,
   FileReadResult,
   FileVersion,
@@ -447,10 +448,7 @@ export class VirtualFileSystem implements VFS {
     return versions.sort((a, b) => a.timestamp - b.timestamp);
   }
 
-  async writeDraft(
-    path: string,
-    content: string,
-  ): Promise<{ timestamp: number }> {
+  async writeDraft(path: string, content: string): Promise<DraftSnapshot> {
     const timestamp = Date.now();
     const { manifest, extraChunks } = chunkContent(content);
 
@@ -478,10 +476,10 @@ export class VirtualFileSystem implements VFS {
       value: { timestamp },
     });
     await this.#adapter.batch(ops);
-    return { timestamp };
+    return { content, timestamp };
   }
 
-  async readDraft(path: string): Promise<FileReadResult | null> {
+  async readDraft(path: string): Promise<DraftSnapshot | null> {
     const meta = await this.#adapter.get<{ timestamp: number }>(
       this.#draftKey(path),
     );
@@ -496,15 +494,7 @@ export class VirtualFileSystem implements VFS {
       DRAFT_VERSION_ID,
       manifestEntry.value,
     );
-    const lines = content.split("\n").length;
-    return {
-      content,
-      version_id: DRAFT_VERSION_ID,
-      timestamp: meta.value.timestamp,
-      lines,
-      start_line: 1,
-      end_line: lines,
-    };
+    return { content, timestamp: meta.value.timestamp };
   }
 
   async promoteDraft(path: string): Promise<WriteResult | null> {

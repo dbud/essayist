@@ -1,5 +1,6 @@
 import type {
   DiffResult,
+  DraftSnapshot,
   FileEntry,
   FileReadResult,
   FileVersion,
@@ -45,14 +46,11 @@ export class PinnedVFS implements VFS {
     return await this.#inner.write(path, content);
   }
 
-  async writeDraft(
-    path: string,
-    content: string,
-  ): Promise<{ timestamp: number }> {
+  async writeDraft(path: string, content: string): Promise<DraftSnapshot> {
     return await this.#inner.writeDraft(path, content);
   }
 
-  async readDraft(path: string): Promise<FileReadResult | null> {
+  async readDraft(path: string): Promise<DraftSnapshot | null> {
     return await this.#inner.readDraft(path);
   }
 

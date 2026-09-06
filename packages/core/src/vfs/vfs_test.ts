@@ -111,7 +111,7 @@ Deno.test("VFS.writeDraft -- stores and reads the draft without creating a versi
 
   const draft = await vfs.readDraft("f.txt");
   assertEquals(draft?.content, "draft text");
-  assertEquals(draft?.version_id, "draft");
+  assertEquals(typeof draft?.timestamp, "number");
   assertEquals((await vfs.getHistory("f.txt")).length, 1);
   assertEquals((await vfs.read("f.txt")).content, "checkpoint");
 });

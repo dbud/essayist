@@ -109,6 +109,12 @@ export interface FileVersion {
   lines: number;
 }
 
+/** The persisted draft head. */
+export interface DraftSnapshot {
+  content: string;
+  timestamp: number;
+}
+
 /** Result of a diff operation. */
 export interface DiffResult {
   diff: string;
@@ -136,13 +142,12 @@ export interface VFS {
 
   /**
    * Writes the mutable draft head. No version, no marks migration.
-   * Overwrites any existing draft. Returns the draft metadata
-   * (`timestamp`) for future extension.
+   * Overwrites any existing draft. Returns the draft snapshot.
    */
-  writeDraft(path: string, content: string): Promise<{ timestamp: number }>;
+  writeDraft(path: string, content: string): Promise<DraftSnapshot>;
 
   /** Reads the draft head, or null when no draft exists. */
-  readDraft(path: string): Promise<FileReadResult | null>;
+  readDraft(path: string): Promise<DraftSnapshot | null>;
 
   /**
    * Promotes the draft to a version and clears it.
