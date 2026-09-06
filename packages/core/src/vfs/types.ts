@@ -137,9 +137,9 @@ export interface VFS {
   /**
    * Writes the mutable draft head. No version, no marks migration.
    * Overwrites any existing draft. Returns the draft metadata
-   * (`updatedAt`) for future extension.
+   * (`timestamp`) for future extension.
    */
-  writeDraft(path: string, content: string): Promise<{ updatedAt: number }>;
+  writeDraft(path: string, content: string): Promise<{ timestamp: number }>;
 
   /** Reads the draft head, or null when no draft exists. */
   readDraft(path: string): Promise<FileReadResult | null>;

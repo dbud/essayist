@@ -450,8 +450,8 @@ export class VirtualFileSystem implements VFS {
   async writeDraft(
     path: string,
     content: string,
-  ): Promise<{ updatedAt: number }> {
-    const updatedAt = Date.now();
+  ): Promise<{ timestamp: number }> {
+    const timestamp = Date.now();
     const { manifest, extraChunks } = chunkContent(content);
 
     // Drop chunk keys left over from a larger previous draft.
@@ -475,14 +475,14 @@ export class VirtualFileSystem implements VFS {
     ops.push({
       type: "set",
       key: this.#draftKey(path),
-      value: { updatedAt },
+      value: { timestamp },
     });
     await this.#adapter.batch(ops);
-    return { updatedAt };
+    return { timestamp };
   }
 
   async readDraft(path: string): Promise<FileReadResult | null> {
-    const meta = await this.#adapter.get<{ updatedAt: number }>(
+    const meta = await this.#adapter.get<{ timestamp: number }>(
       this.#draftKey(path),
     );
     if (!meta) return null;
@@ -500,7 +500,7 @@ export class VirtualFileSystem implements VFS {
     return {
       content,
       version_id: DRAFT_VERSION_ID,
-      timestamp: meta.value.updatedAt,
+      timestamp: meta.value.timestamp,
       lines,
       start_line: 1,
       end_line: lines,
