@@ -73,3 +73,5 @@ export const fileStatsSections = persistentSignal<FileStatSection[]>(
   "fileStatsSections",
   FILE_STATS_DEFAULT,
 );
+
+export const autoSave = persistentSignal<boolean>("autoSave", true);

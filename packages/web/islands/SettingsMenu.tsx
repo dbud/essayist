@@ -14,7 +14,9 @@ import Dropdown, {
   DropdownItem,
   DropdownMenu,
 } from "@/components/ui/Dropdown.tsx";
+import { CheckboxIcon } from "@/components/ui/icons.tsx";
 import MarkStyleSelect from "@/components/ui/MarkStyleSelect.tsx";
+import { autoSave } from "@/signals/preferences.ts";
 import { rightSidebarOpened } from "@/signals/sidebar.ts";
 
 interface SettingsMenuProps {
@@ -49,6 +51,10 @@ export default function SettingsMenu({ user }: SettingsMenuProps) {
               <MarkStyleSelect />
             </div>
           </li>
+          <DropdownItem onClick={() => (autoSave.value = !autoSave.value)}>
+            <CheckboxIcon selected={autoSave.value} size={15} />
+            Autosave
+          </DropdownItem>
           <DropdownItem
             onClick={() => {
               rightSidebarOpened.value = !rightSidebarOpened.value;
