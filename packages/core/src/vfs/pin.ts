@@ -45,7 +45,10 @@ export class PinnedVFS implements VFS {
     return await this.#inner.write(path, content);
   }
 
-  async writeDraft(path: string, content: string): Promise<void> {
+  async writeDraft(
+    path: string,
+    content: string,
+  ): Promise<{ updatedAt: number }> {
     return await this.#inner.writeDraft(path, content);
   }
 

@@ -135,9 +135,11 @@ export interface VFS {
   write(path: string, content: string): Promise<WriteResult>;
 
   /**
-   * Writes the mutable draft head. Overwrites any existing draft.
+   * Writes the mutable draft head. No version, no marks migration.
+   * Overwrites any existing draft. Returns the draft metadata
+   * (`updatedAt`) for future extension.
    */
-  writeDraft(path: string, content: string): Promise<void>;
+  writeDraft(path: string, content: string): Promise<{ updatedAt: number }>;
 
   /** Reads the draft head, or null when no draft exists. */
   readDraft(path: string): Promise<FileReadResult | null>;
