@@ -85,6 +85,7 @@
     "npm:@types/node@^26.2.0": "26.2.0",
     "npm:culori@4.0.2": "4.0.2",
     "npm:culori@^4.0.2": "4.0.2",
+    "npm:date-fns@^4.1.0": "4.4.0",
     "npm:dompurify@^3.4.14": "3.4.14",
     "npm:esbuild-wasm@~0.25.11": "0.25.12",
     "npm:esbuild@0.25.7": "0.25.7",
@@ -1656,6 +1657,9 @@
     "culori@4.0.2": {
       "integrity": "sha512-1+BhOB8ahCn4O0cep0Sh2l9KCOfOdY+BXJnKMHFFzDEouSr/el18QwXEMRlOj9UY5nCeA8UN3a/82rUWRBeyBw=="
     },
+    "date-fns@4.4.0": {
+      "integrity": "sha512-+1UMbeh68lH1SegH83CGWwpb6OHHbpSgr3+s5Eww5M4CAgswBpoWS0AjTOfEJ33HiYKz1hdj/KTFprzXHmq/6w=="
+    },
     "dateformat@4.6.3": {
       "integrity": "sha512-2P0p0pFGzHS5EMnhdxQi7aJN+iMheud0UhG4dlE1DLAlvL8JHjJJTX/CSm4JXwV0Ka5nGk3zC5mcb5bUQUxxMA=="
     },
@@ -2296,6 +2300,7 @@
           "npm:@types/google.picker@^0.0.52",
           "npm:@types/node@^26.2.0",
           "npm:culori@^4.0.2",
+          "npm:date-fns@^4.1.0",
           "npm:dompurify@^3.4.14",
           "npm:lexical@0.49",
           "npm:lucide-preact@^1.34.0",
