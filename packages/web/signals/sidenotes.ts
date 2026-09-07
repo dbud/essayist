@@ -40,17 +40,22 @@ export interface SidenoteEntry {
   active: boolean;
 }
 
-// One render slot for the sidenote column. `top` is the render position
-// (pinned to the viewport edge for ghosts); `trueTop` is the stacked layout
-// position (scroll target). `ghost` is set only for offscreen sidenotes
-// pulled to the viewport edge.
-export interface SidenoteView {
+interface SidenoteViewBase {
   key: string;
   entry: SidenoteEntry;
+}
+
+// Real render slot, rendered by Sidenote at its stacked position.
+export interface SidenoteView extends SidenoteViewBase {
   top: number;
-  trueTop: number;
-  height: number;
-  ghost?: "up" | "down";
+  height: number; // measured height, 0 while unmeasured
+}
+
+// Ghost render slot: offscreen sidenote pinned to a viewport edge by CSS in
+// GhostSidenote (no render position).
+export interface GhostSidenoteView extends SidenoteViewBase {
+  ghost: "top" | "bottom";
+  trueTop: number; // scroll target on click
 }
 
 // Vertical gap (px) between stacked sidenotes.
@@ -122,66 +127,51 @@ export const SidenotesModel = createModel(
       return out;
     });
 
-    // Render slots: each entry at its stacked top, plus up to two ghosts for
-    // the nearest sidenotes entirely offscreen above/below, pulled to the
-    // viewport edge. A ghost is skipped if its pinned slot would overlap an
-    // on-screen sidenote (no room) or its height is unmeasured.
-    const viewportLayout = computed((): SidenoteView[] => {
-      // Real views: one per entry at its stacked top. Ghosts are appended after
-      // the offscreen/overlap checks, so this is exactly the real-view set
-      // while those run.
-      const out: SidenoteView[] = entries.value.map((entry) => {
+    // Render slots: one per entry at its stacked top.
+    const viewportLayout = computed((): SidenoteView[] =>
+      entries.value.map((entry) => {
         const top = layout.value.get(entry.mark.thread_id) ?? entry.markTop;
         const height = heights.value.get(entry.mark.thread_id) ?? 0;
-        return { key: entry.mark.thread_id, entry, top, trueTop: top, height };
-      });
+        return { key: entry.mark.thread_id, entry, top, height };
+      }),
+    );
+
+    // Ghost: the nearest sidenote entirely offscreen on this edge, if its
+    // height is measured and the pinned edge zone is free of sidenotes.
+    const edgeGhost = (
+      direction: "top" | "bottom",
+    ): GhostSidenoteView | undefined => {
       const vh = viewportHeight.value;
-      if (vh <= 0) return out;
+      if (vh <= 0) return undefined;
       const vTop = scrollTop.value;
       const vBottom = vTop + vh;
-
-      // Does [lo, hi) overlap any real view's box (other than skipTid)?
-      const overlaps = (lo: number, hi: number, skipTid: string): boolean =>
-        out.some(
-          (v) =>
-            v.entry.mark.thread_id !== skipTid &&
-            v.height > 0 &&
-            v.top < hi &&
-            v.top + v.height > lo,
-        );
-
-      // Pull an offscreen view to a viewport edge as a ghost, if there's room.
-      // The ghost renders one clamped line, so its rendered height is less than
-      // the real `height`; we pin by edge (bottom for down, top for up) and let
-      // the component translate the down ghost up by its own height. The fit
-      // check uses the real height (conservative: taller than the ghost).
-      const ghost = (
-        { entry, top, height }: SidenoteView,
-        direction: "up" | "down",
-      ): SidenoteView | undefined => {
-        if (height <= 0) return undefined;
-        const pinnedTop = direction === "down" ? vBottom : vTop;
-        const lo = direction === "down" ? vBottom - height : vTop;
-        const hi = direction === "down" ? vBottom : vTop + height;
-        if (overlaps(lo, hi, entry.mark.thread_id)) return undefined;
-        return {
-          key: `${entry.mark.thread_id}:ghost-${direction}`,
-          entry,
-          top: pinnedTop,
-          trueTop: top,
-          height,
-          ghost: direction,
-        };
+      const views = viewportLayout.value;
+      const offscreen =
+        direction === "bottom"
+          ? views.find((v) => v.top >= vBottom)
+          : views.findLast((v) => v.top + v.height <= vTop);
+      if (!offscreen || offscreen.height <= 0) return undefined;
+      const { entry, top, height } = offscreen;
+      const lo = direction === "bottom" ? vBottom - height : vTop;
+      const hi = direction === "bottom" ? vBottom : vTop + height;
+      const blocked = views.some(
+        (v) =>
+          v.entry.mark.thread_id !== entry.mark.thread_id &&
+          v.height > 0 &&
+          v.top < hi &&
+          v.top + v.height > lo,
+      );
+      if (blocked) return undefined;
+      return {
+        key: `${entry.mark.thread_id}:ghost-${direction}`,
+        entry,
+        trueTop: top,
+        ghost: direction,
       };
+    };
 
-      const down = out.find((v) => v.top >= vBottom);
-      const up = out.findLast((v) => v.top + v.height <= vTop);
-      const downGhost = down && ghost(down, "down");
-      if (downGhost) out.push(downGhost);
-      const upGhost = up && ghost(up, "up");
-      if (upGhost) out.push(upGhost);
-      return out;
-    });
+    const topGhost = computed(() => edgeGhost("top"));
+    const bottomGhost = computed(() => edgeGhost("bottom"));
 
     return {
       positions,
@@ -190,6 +180,8 @@ export const SidenotesModel = createModel(
       entries,
       layout,
       viewportLayout,
+      topGhost,
+      bottomGhost,
       markBadges,
       markRects,
       scrollTop,

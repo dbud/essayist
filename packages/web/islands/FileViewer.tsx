@@ -1,18 +1,12 @@
-import type { ReadonlySignal, Signal } from "@preact/signals";
-import type { LexicalEditor } from "lexical";
 import { useMemo } from "preact/hooks";
 import { Caret } from "@/components/Caret.tsx";
 import { MarkBadges } from "@/components/MarkBadges.tsx";
 import { MarkHighlights } from "@/components/MarkHighlights.tsx";
-import Sidenote from "@/components/Sidenote.tsx";
+import Sidenotes from "@/components/Sidenotes.tsx";
 import Overlay from "@/components/ui/Overlay.tsx";
 import WaveBars from "@/components/ui/WaveBars.tsx";
-import { useElementHeights } from "@/hooks/useElementHeights.ts";
 import { useKeydown } from "@/hooks/useKeydown.ts";
-import {
-  type ScrollContainerRef,
-  useScrollViewport,
-} from "@/hooks/useScrollViewport.ts";
+import { useScrollViewport } from "@/hooks/useScrollViewport.ts";
 import Editor from "@/islands/Editor.tsx";
 import EditorToolbar from "@/islands/EditorToolbar.tsx";
 import FileStats from "@/islands/FileStats.tsx";
@@ -25,11 +19,6 @@ import { getFile } from "@/signals/file.ts";
 import { getMarks } from "@/signals/marks.ts";
 import { getOpenedFiles } from "@/signals/openedFiles.ts";
 import { navigationOpened } from "@/signals/sidebar.ts";
-import type {
-  SidenoteEntry,
-  SidenoteHeights,
-  SidenoteView,
-} from "@/signals/sidenotes.ts";
 import { getSidenotes } from "@/signals/sidenotes.ts";
 import { workspaces } from "@/signals/workspace.ts";
 import { delayedRise } from "@/utils/delayedRise.ts";
@@ -123,9 +112,8 @@ function FileViewerBody({ wsId, path }: { wsId: string; path: string }) {
           </div>
           <div class="content-side">
             <Sidenotes
-              heights={sidenotes.heights}
-              entries={sidenotes.entries}
-              views={sidenotes.viewportLayout}
+              wsId={wsId}
+              path={path}
               editor={activeEditor.value}
               scrollContainerRef={scrollRef}
             />
@@ -133,52 +121,6 @@ function FileViewerBody({ wsId, path }: { wsId: string; path: string }) {
         </div>
         <Overlay when={editorLoading} local capture />
       </div>
-    </div>
-  );
-}
-
-interface SidenotesProps {
-  heights: Signal<SidenoteHeights>;
-  entries: ReadonlySignal<SidenoteEntry[]>;
-  views: ReadonlySignal<SidenoteView[]>;
-  editor: LexicalEditor | null;
-  scrollContainerRef: ScrollContainerRef;
-}
-
-function Sidenotes({
-  heights,
-  entries,
-  views,
-  editor,
-  scrollContainerRef,
-}: SidenotesProps) {
-  // Measure rendered sidenote heights for stacking. Re-measure when the
-  // entries change and on marks-column width changes. `entries` is independent
-  // of `heights`, so this can't cycle with its own output. Sidenotes stay
-  // visibility:hidden until measured so the unstacked first paint never shows
-  // overlap. Ghosts omit data-thread-id so they aren't measured.
-  const innerRef = useElementHeights<HTMLDivElement>(heights, {
-    selector: "[data-thread-id]",
-    key: "threadId",
-    deps: [entries.value],
-  });
-
-  return (
-    <div class="relative" ref={innerRef}>
-      {views.value.map((v) => (
-        <Sidenote
-          key={v.key}
-          mark={v.entry.mark}
-          number={v.entry.number}
-          top={v.top}
-          active={v.entry.active}
-          hidden={!heights.value.has(v.entry.mark.thread_id)}
-          editor={editor}
-          ghost={v.ghost}
-          trueTop={v.trueTop}
-          scrollContainerRef={scrollContainerRef}
-        />
-      ))}
     </div>
   );
 }
