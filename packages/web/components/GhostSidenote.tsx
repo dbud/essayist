@@ -45,7 +45,7 @@ export default function GhostSidenote({
       >
         <Icon size={16} class="ghost-arrow" />
         <div class="flex items-start gap-2">
-          <span class="font-semibold">{number}</span>
+          <span class="sidenote-number">{number}</span>
           <div class="min-w-0 flex flex-col gap-1">
             <div class="text-ink">
               {mark.label && <span class="badge mr-2">{mark.label}</span>}

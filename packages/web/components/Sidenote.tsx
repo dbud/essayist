@@ -27,7 +27,7 @@ export default function Sidenote({ view, editor, hidden }: SidenoteProps) {
       }
     >
       <div class="flex items-start gap-2">
-        <span class="font-semibold">{number}</span>
+        <span class="sidenote-number">{number}</span>
         <div class="min-w-0 flex flex-col gap-1">
           <div class="text-ink">
             {mark.label && (

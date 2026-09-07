@@ -134,6 +134,9 @@
   .ghost-arrow {
     animation: mark-fade-in 300ms ease;
   }
+  .sidenote-number {
+    @apply w-4 shrink-0 font-semibold;
+  }
 }
 
 @keyframes mark-fade-in {
