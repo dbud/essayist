@@ -39,13 +39,15 @@ export default function GhostSidenote({
         }}
         title="Offscreen; jump to mark"
         onClick={() => {
-          if (scrollContainerRef.current) {
-            scrollContainerRef.current.scrollTo({
+          editor?.dispatchCommand(SELECT_MARK_COMMAND, mark.thread_id);
+          // The selection's scroll-into-view fires inside the dispatch; defer
+          // ours one frame so the jump target is the final scroll position.
+          requestAnimationFrame(() => {
+            scrollContainerRef.current?.scrollTo({
               top: trueTop,
               behavior: reducedMotion.value ? "instant" : "smooth",
             });
-          }
-          editor?.dispatchCommand(SELECT_MARK_COMMAND, mark.thread_id);
+          });
         }}
       >
         <Icon size={16} class="ghost-arrow" />

@@ -65,7 +65,8 @@
     }
     &.is-ghost {
       @apply pointer-events-auto sticky top-0 w-full;
-      opacity: var(--ghost-opacity, 1);
+      opacity: calc(var(--ghost-opacity, 1) * 0.9);
+      animation: ghost-fade-in 300ms ease;
     }
     &.is-ghost.ghost-bottom {
       translate: 0 calc(var(--vp-h) - 100%);
@@ -105,7 +106,7 @@
     --panel-bleed: -1.5rem;
     --panel-shadow-offset: 3px;
     --panel-shadow-blur: 4px;
-    --panel-shadow-strength: 35%;
+    --panel-shadow-strength: 20%;
     --panel-shadow-up: 0 0 0 rgb(0 0 0 / 0%);
     --panel-shadow-down: 0 0 0 rgb(0 0 0 / 0%);
     box-shadow: var(--panel-shadow-up), var(--panel-shadow-down);
@@ -131,9 +132,6 @@
         rgb(0 0 0 / var(--panel-shadow-alpha-down));
     }
   }
-  .ghost-arrow {
-    animation: mark-fade-in 300ms ease;
-  }
   .sidenote-number {
     @apply w-4 shrink-0 font-semibold;
   }
@@ -142,5 +140,11 @@
 @keyframes mark-fade-in {
   from {
     opacity: 0;
+  }
+}
+
+@keyframes ghost-fade-in {
+  from {
+    opacity: 1;
   }
 }
