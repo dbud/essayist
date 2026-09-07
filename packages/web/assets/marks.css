@@ -102,10 +102,10 @@
   }
   .sidenote-panel {
     @apply pointer-events-none absolute inset-x-0 bg-paper;
-    --panel-bleed: -1rem;
-    --panel-shadow-offset: 4px;
-    --panel-shadow-blur: 6px;
-    --panel-shadow-strength: 25%;
+    --panel-bleed: -1.5rem;
+    --panel-shadow-offset: 3px;
+    --panel-shadow-blur: 4px;
+    --panel-shadow-strength: 35%;
     --panel-shadow-up: 0 0 0 rgb(0 0 0 / 0%);
     --panel-shadow-down: 0 0 0 rgb(0 0 0 / 0%);
     box-shadow: var(--panel-shadow-up), var(--panel-shadow-down);

@@ -2,6 +2,7 @@ import type { LexicalEditor } from "lexical";
 import { MoveDown, MoveUp } from "lucide-preact";
 import { colorForMark } from "@/editor/markColors.ts";
 import { SELECT_MARK_COMMAND } from "@/editor/markExtension.ts";
+import { useMediaQuery } from "@/hooks/useMediaQuery.ts";
 import type { ScrollContainerRef } from "@/hooks/useScrollViewport.ts";
 import type { GhostSidenoteView } from "@/signals/sidenotes.ts";
 
@@ -22,6 +23,7 @@ export default function GhostSidenote({
   const { mark, number } = entry;
   const Icon = ghost === "bottom" ? MoveDown : MoveUp;
   const color = colorForMark(mark);
+  const reducedMotion = useMediaQuery("(prefers-reduced-motion: reduce)");
   return (
     // Full-height slot with a flow origin at the column top so the sticky
     // button is always in the stuck state. The slot never intercepts clicks.
@@ -38,7 +40,10 @@ export default function GhostSidenote({
         title="Offscreen; jump to mark"
         onClick={() => {
           if (scrollContainerRef.current) {
-            scrollContainerRef.current.scrollTop = trueTop;
+            scrollContainerRef.current.scrollTo({
+              top: trueTop,
+              behavior: reducedMotion.value ? "instant" : "smooth",
+            });
           }
           editor?.dispatchCommand(SELECT_MARK_COMMAND, mark.thread_id);
         }}
