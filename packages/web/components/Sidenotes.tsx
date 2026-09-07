@@ -41,15 +41,15 @@ export default function Sidenotes({
     deps: [entries.value],
   });
 
-  // Sidenotes stay invisible until measured, and whenever they touch a
-  // viewport edge (inclusive), where the pinned ghost takes over. Visible
-  // is the exact complement of the ghost conditions, so the handoff is
-  // seamless.
+  // Sidenotes stay invisible until measured, and whenever they extend past
+  // a viewport edge, where the pinned ghost takes over. At exact edge
+  // alignment the regular sidenote wins: visible, with no ghost -- so a
+  // ghost click lands on the solid note.
   const isHidden = (v: SidenoteView) =>
     !heights.value.has(v.entry.mark.thread_id) ||
     (viewportHeight.value > 0 &&
-      (v.top <= scrollTop.value ||
-        v.top + v.height >= scrollTop.value + viewportHeight.value));
+      (v.top < scrollTop.value ||
+        v.top + v.height > scrollTop.value + viewportHeight.value));
 
   // Ghost boxes in content coordinates; absent ghosts fall outside the
   // panel derivation via infinities.

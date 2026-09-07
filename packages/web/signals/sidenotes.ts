@@ -136,9 +136,10 @@ export const SidenotesModel = createModel(
       }),
     );
 
-    // Ghost: the nearest sidenote crossing this viewport edge (any part of
-    // it beyond the edge), with a measured height. Ghosts render beneath
-    // real sidenotes, whose backgrounds occlude them where they overlap.
+    // Ghost: the nearest sidenote extending past this viewport edge (strict:
+    // at exact edge alignment the regular sidenote wins and no ghost is
+    // mounted), with a measured height. Ghosts render beneath real
+    // sidenotes, whose backgrounds occlude them where they overlap.
     const edgeGhost = (
       direction: "top" | "bottom",
     ): GhostSidenoteView | undefined => {
@@ -149,8 +150,8 @@ export const SidenotesModel = createModel(
       const views = viewportLayout.value;
       const candidate =
         direction === "bottom"
-          ? views.find((v) => v.top + v.height >= vBottom)
-          : views.findLast((v) => v.top <= vTop);
+          ? views.find((v) => v.top + v.height > vBottom)
+          : views.findLast((v) => v.top < vTop);
       if (!candidate || candidate.height <= 0) return undefined;
       const { entry, top } = candidate;
       return {
