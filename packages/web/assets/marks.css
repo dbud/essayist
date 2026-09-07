@@ -53,7 +53,7 @@
   }
   .sidenote {
     --mark-active-pct: 25%;
-    @apply text-left text-sm p-2 cursor-pointer border-0 appearance-none transition-[background-color,box-shadow] duration-200;
+    @apply absolute left-0 right-0 text-left text-sm p-2 cursor-pointer border-0 appearance-none transition-[background-color,box-shadow] duration-200;
     background-color: color-mix(in oklch, var(--color-paper) 100%, transparent);
 
     &.is-active {
@@ -64,8 +64,19 @@
       );
     }
     &.is-ghost {
-      opacity: 0.5;
+      @apply pointer-events-auto sticky top-0 w-full;
+      opacity: var(--ghost-opacity, 1);
     }
+    &.is-ghost.ghost-bottom {
+      translate: 0 calc(var(--vp-h) - 100%);
+    }
+  }
+  .ghost-slot {
+    @apply pointer-events-none absolute inset-x-0 top-0 h-full;
+  }
+  .ghost-arrow {
+    @apply absolute left-0 top-3 -translate-x-full;
+    animation: mark-fade-in 250ms ease;
   }
   .mark-wavy path {
     transition:
@@ -90,9 +101,11 @@
     transform: translateY(-0.5em);
   }
   .sidenote-panel {
+    @apply pointer-events-none absolute inset-x-0 bg-paper;
     --panel-bleed: -1rem;
-    --panel-shadow-offset: 8px;
-    --panel-shadow-blur: 12px;
+    --panel-shadow-offset: 4px;
+    --panel-shadow-blur: 6px;
+    --panel-shadow-strength: 25%;
     --panel-shadow-up: 0 0 0 rgb(0 0 0 / 0%);
     --panel-shadow-down: 0 0 0 rgb(0 0 0 / 0%);
     box-shadow: var(--panel-shadow-up), var(--panel-shadow-down);
@@ -100,14 +113,26 @@
     margin-inline: var(--panel-bleed);
 
     &.is-covered-top {
+      --panel-shadow-alpha-up: calc(
+        var(--occlusion-top, 0) *
+        var(--panel-shadow-strength)
+      );
       --panel-shadow-up: 0 calc(-1 * var(--panel-shadow-offset))
         var(--panel-shadow-blur) calc(-1 * var(--panel-shadow-offset))
-        rgb(0 0 0 / 20%);
+        rgb(0 0 0 / var(--panel-shadow-alpha-up));
     }
     &.is-covered-bottom {
+      --panel-shadow-alpha-down: calc(
+        var(--occlusion-bottom, 0) *
+        var(--panel-shadow-strength)
+      );
       --panel-shadow-down: 0 var(--panel-shadow-offset) var(--panel-shadow-blur)
-        calc(-1 * var(--panel-shadow-offset)) rgb(0 0 0 / 20%);
+        calc(-1 * var(--panel-shadow-offset))
+        rgb(0 0 0 / var(--panel-shadow-alpha-down));
     }
+  }
+  .ghost-arrow {
+    animation: mark-fade-in 300ms ease;
   }
 }
 

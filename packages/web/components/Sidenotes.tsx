@@ -6,6 +6,8 @@ import type { ScrollContainerRef } from "@/hooks/useScrollViewport.ts";
 import type { SidenoteView } from "@/signals/sidenotes.ts";
 import { getSidenotes } from "@/signals/sidenotes.ts";
 
+const clamp = (x: number) => Math.min(1, Math.max(0, x));
+
 interface SidenotesProps {
   wsId: string;
   path: string;
@@ -87,6 +89,17 @@ export default function Sidenotes({
   const coversTopGhost = hasPanel && panelTop < topGhostBottom;
   const coversBottomGhost = hasPanel && panelBottom > bottomGhostTop;
 
+  // Partial occlusion of each ghost (0..1): drives the ghost's fade and
+  // the panel shadow intensity.
+  const topOcclusion =
+    topGhost.value && hasPanel
+      ? clamp((topGhostBottom - panelTop) / topGhostHeight)
+      : 0;
+  const bottomOcclusion =
+    bottomGhost.value && hasPanel
+      ? clamp((panelBottom - bottomGhostTop) / bottomGhostHeight)
+      : 0;
+
   return (
     <div
       class="relative h-full"
@@ -100,6 +113,7 @@ export default function Sidenotes({
           view={bottomGhost.value}
           editor={editor}
           scrollContainerRef={scrollContainerRef}
+          occlusion={bottomOcclusion}
         />
       )}
       {topGhost.value && (
@@ -108,14 +122,20 @@ export default function Sidenotes({
           view={topGhost.value}
           editor={editor}
           scrollContainerRef={scrollContainerRef}
+          occlusion={topOcclusion}
         />
       )}
       {hasPanel && (
         <div
-          class={`pointer-events-none absolute inset-x-0 bg-paper sidenote-panel${
-            coversTopGhost ? " is-covered-top" : ""
-          }${coversBottomGhost ? " is-covered-bottom" : ""}`}
-          style={{ top: panelTop, height: panelBottom - panelTop }}
+          class={`sidenote-panel${coversTopGhost ? " is-covered-top" : ""}${
+            coversBottomGhost ? " is-covered-bottom" : ""
+          }`}
+          style={{
+            top: panelTop,
+            height: panelBottom - panelTop,
+            "--occlusion-top": String(topOcclusion),
+            "--occlusion-bottom": String(bottomOcclusion),
+          }}
         />
       )}
       {viewportLayout.value.map((v) => (

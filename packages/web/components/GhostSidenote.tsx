@@ -9,12 +9,14 @@ interface GhostSidenoteProps {
   view: GhostSidenoteView;
   editor: LexicalEditor | null;
   scrollContainerRef: ScrollContainerRef;
+  occlusion: number;
 }
 
 export default function GhostSidenote({
   view,
   editor,
   scrollContainerRef,
+  occlusion,
 }: GhostSidenoteProps) {
   const { entry, ghost, trueTop } = view;
   const { mark, number } = entry;
@@ -23,14 +25,15 @@ export default function GhostSidenote({
   return (
     // Full-height slot with a flow origin at the column top so the sticky
     // button is always in the stuck state. The slot never intercepts clicks.
-    <div class="pointer-events-none absolute inset-x-0 top-0 h-full">
+    // Full-height slot with a flow origin at the column top so the sticky
+    // button is always in the stuck state. The slot never intercepts clicks.
+    <div class="ghost-slot">
       <button
         type="button"
-        class="pointer-events-auto sticky top-0 w-full sidenote is-ghost"
+        class={`sidenote is-ghost${ghost === "bottom" ? " ghost-bottom" : ""}`}
         style={{
           "--mark-color": color,
-          translate:
-            ghost === "bottom" ? "0 calc(var(--vp-h) - 100%)" : undefined,
+          "--ghost-opacity": String(1 - 0.8 * Math.sqrt(occlusion)),
         }}
         title="Offscreen; jump to mark"
         onClick={() => {
@@ -40,7 +43,7 @@ export default function GhostSidenote({
           editor?.dispatchCommand(SELECT_MARK_COMMAND, mark.thread_id);
         }}
       >
-        <Icon size={16} class="absolute left-0 -translate-x-full top-3" />
+        <Icon size={16} class="ghost-arrow" />
         <div class="flex items-start gap-2">
           <span class="font-semibold">{number}</span>
           <div class="min-w-0 flex flex-col gap-1">

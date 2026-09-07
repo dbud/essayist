@@ -17,7 +17,7 @@ export default function Sidenote({ view, editor, hidden }: SidenoteProps) {
     <button
       type="button"
       data-thread-id={mark.thread_id}
-      class={`absolute left-0 right-0 sidenote ${active ? "is-active" : ""} ${
+      class={`sidenote ${active ? "is-active" : ""} ${
         hidden ? "invisible" : ""
       }`}
       style={{ "--mark-color": color, top }}
