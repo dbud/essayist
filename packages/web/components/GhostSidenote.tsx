@@ -25,12 +25,12 @@ export default function GhostSidenote({
   return (
     // Full-height slot with a flow origin at the column top so the sticky
     // button is always in the stuck state. The slot never intercepts clicks.
-    // Full-height slot with a flow origin at the column top so the sticky
-    // button is always in the stuck state. The slot never intercepts clicks.
     <div class="ghost-slot">
       <button
         type="button"
-        class={`sidenote is-ghost${ghost === "bottom" ? " ghost-bottom" : ""}`}
+        class={`sidenote is-ghost ${entry.active ? "is-active" : ""}${
+          ghost === "bottom" ? " ghost-bottom" : ""
+        }`}
         style={{
           "--mark-color": color,
           "--ghost-opacity": String(1 - 0.8 * Math.sqrt(occlusion)),
