@@ -136,8 +136,9 @@ export const SidenotesModel = createModel(
       }),
     );
 
-    // Ghost: the nearest sidenote entirely offscreen on this edge, if its
-    // height is measured and the pinned edge zone is free of sidenotes.
+    // Ghost: the nearest sidenote crossing this viewport edge (any part of
+    // it beyond the edge), with a measured height. Ghosts render beneath
+    // real sidenotes, whose backgrounds occlude them where they overlap.
     const edgeGhost = (
       direction: "top" | "bottom",
     ): GhostSidenoteView | undefined => {
@@ -146,22 +147,12 @@ export const SidenotesModel = createModel(
       const vTop = scrollTop.value;
       const vBottom = vTop + vh;
       const views = viewportLayout.value;
-      const offscreen =
+      const candidate =
         direction === "bottom"
-          ? views.find((v) => v.top >= vBottom)
-          : views.findLast((v) => v.top + v.height <= vTop);
-      if (!offscreen || offscreen.height <= 0) return undefined;
-      const { entry, top, height } = offscreen;
-      const lo = direction === "bottom" ? vBottom - height : vTop;
-      const hi = direction === "bottom" ? vBottom : vTop + height;
-      const blocked = views.some(
-        (v) =>
-          v.entry.mark.thread_id !== entry.mark.thread_id &&
-          v.height > 0 &&
-          v.top < hi &&
-          v.top + v.height > lo,
-      );
-      if (blocked) return undefined;
+          ? views.find((v) => v.top + v.height >= vBottom)
+          : views.findLast((v) => v.top <= vTop);
+      if (!candidate || candidate.height <= 0) return undefined;
+      const { entry, top } = candidate;
       return {
         key: `${entry.mark.thread_id}:ghost-${direction}`,
         entry,

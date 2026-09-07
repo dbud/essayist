@@ -3,6 +3,7 @@ import GhostSidenote from "@/components/GhostSidenote.tsx";
 import Sidenote from "@/components/Sidenote.tsx";
 import { useElementHeights } from "@/hooks/useElementHeights.ts";
 import type { ScrollContainerRef } from "@/hooks/useScrollViewport.ts";
+import type { SidenoteView } from "@/signals/sidenotes.ts";
 import { getSidenotes } from "@/signals/sidenotes.ts";
 
 interface SidenotesProps {
@@ -21,6 +22,7 @@ export default function Sidenotes({
   const {
     heights,
     entries,
+    scrollTop,
     viewportLayout,
     topGhost,
     bottomGhost,
@@ -37,15 +39,61 @@ export default function Sidenotes({
     deps: [entries.value],
   });
 
+  // Sidenotes stay invisible until measured, and whenever they touch a
+  // viewport edge (inclusive), where the pinned ghost takes over. Visible
+  // is the exact complement of the ghost conditions, so the handoff is
+  // seamless.
+  const isHidden = (v: SidenoteView) =>
+    !heights.value.has(v.entry.mark.thread_id) ||
+    (viewportHeight.value > 0 &&
+      (v.top <= scrollTop.value ||
+        v.top + v.height >= scrollTop.value + viewportHeight.value));
+
+  // Ghost boxes in content coordinates; absent ghosts fall outside the
+  // panel derivation via infinities.
+  const topGhostHeight = topGhost.value
+    ? (heights.value.get(topGhost.value.entry.mark.thread_id) ?? 0)
+    : 0;
+  const bottomGhostHeight = bottomGhost.value
+    ? (heights.value.get(bottomGhost.value.entry.mark.thread_id) ?? 0)
+    : 0;
+  const topGhostBottom = topGhost.value
+    ? scrollTop.value + topGhostHeight
+    : Number.NEGATIVE_INFINITY;
+  const bottomGhostTop = bottomGhost.value
+    ? scrollTop.value + viewportHeight.value - bottomGhostHeight
+    : Number.POSITIVE_INFINITY;
+
+  // Paper panel behind the fully-visible sidenotes: it spans from the first
+  // visible note (or the bottom ghost's head, when it pokes above) to the
+  // last visible note (or the top ghost's tail, when it hangs below), and
+  // occludes the ghost parts in between. The ghosts' edge-anchored parts
+  // outside the panel stay visible.
+  const visible = viewportLayout.value.filter((v) => !isHidden(v));
+  const first = visible.at(0);
+  const last = visible.at(-1);
+  const panelTop = Math.min(
+    first ? first.top : Number.POSITIVE_INFINITY,
+    bottomGhostTop,
+  );
+  const panelBottom = Math.max(
+    last ? last.top + last.height : Number.NEGATIVE_INFINITY,
+    topGhostBottom,
+  );
+  const hasPanel = panelTop < panelBottom;
+
+  // The panel casts a shadow onto a ghost only while its edge sits inside
+  // that ghost's box (partial coverage).
+  const coversTopGhost = hasPanel && panelTop < topGhostBottom;
+  const coversBottomGhost = hasPanel && panelBottom > bottomGhostTop;
+
   return (
     <div
       class="relative h-full"
       ref={innerRef}
       style={{ "--vp-h": `${viewportHeight.value}px` }}
     >
-      {viewportLayout.value.map((v) => (
-        <Sidenote key={v.key} view={v} editor={editor} />
-      ))}
+      {/* Ghost slots render first, so real sidenotes paint over them. */}
       {bottomGhost.value && (
         <GhostSidenote
           key={bottomGhost.value.key}
@@ -62,6 +110,17 @@ export default function Sidenotes({
           scrollContainerRef={scrollContainerRef}
         />
       )}
+      {hasPanel && (
+        <div
+          class={`pointer-events-none absolute inset-x-0 bg-paper sidenote-panel${
+            coversTopGhost ? " is-covered-top" : ""
+          }${coversBottomGhost ? " is-covered-bottom" : ""}`}
+          style={{ top: panelTop, height: panelBottom - panelTop }}
+        />
+      )}
+      {viewportLayout.value.map((v) => (
+        <Sidenote key={v.key} view={v} editor={editor} hidden={isHidden(v)} />
+      ))}
     </div>
   );
 }

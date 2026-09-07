@@ -6,20 +6,19 @@ import type { SidenoteView } from "@/signals/sidenotes.ts";
 interface SidenoteProps {
   view: SidenoteView;
   editor: LexicalEditor | null;
+  hidden: boolean;
 }
 
-export default function Sidenote({ view, editor }: SidenoteProps) {
-  const { entry, top, height } = view;
+export default function Sidenote({ view, editor, hidden }: SidenoteProps) {
+  const { entry, top } = view;
   const { mark, number, active } = entry;
   const color = colorForMark(mark);
   return (
     <button
       type="button"
       data-thread-id={mark.thread_id}
-      // visibility:hidden until measured so the unstacked first paint never
-      // shows overlap.
       class={`absolute left-0 right-0 sidenote ${active ? "is-active" : ""} ${
-        height > 0 ? "" : "invisible"
+        hidden ? "invisible" : ""
       }`}
       style={{ "--mark-color": color, top }}
       title="Jump to mark in editor"

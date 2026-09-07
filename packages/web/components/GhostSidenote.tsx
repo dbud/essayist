@@ -1,5 +1,5 @@
 import type { LexicalEditor } from "lexical";
-import { ChevronDown, ChevronUp } from "lucide-preact";
+import { MoveDown, MoveUp } from "lucide-preact";
 import { colorForMark } from "@/editor/markColors.ts";
 import { SELECT_MARK_COMMAND } from "@/editor/markExtension.ts";
 import type { ScrollContainerRef } from "@/hooks/useScrollViewport.ts";
@@ -18,7 +18,7 @@ export default function GhostSidenote({
 }: GhostSidenoteProps) {
   const { entry, ghost, trueTop } = view;
   const { mark, number } = entry;
-  const Icon = ghost === "bottom" ? ChevronDown : ChevronUp;
+  const Icon = ghost === "bottom" ? MoveDown : MoveUp;
   const color = colorForMark(mark);
   return (
     // Full-height slot with a flow origin at the column top so the sticky
@@ -40,16 +40,13 @@ export default function GhostSidenote({
           editor?.dispatchCommand(SELECT_MARK_COMMAND, mark.thread_id);
         }}
       >
-        <Icon
-          size={16}
-          class="absolute left-0 -translate-x-full top-1/2 -translate-y-1/2"
-        />
+        <Icon size={16} class="absolute left-0 -translate-x-full top-3" />
         <div class="flex items-start gap-2">
           <span class="font-semibold">{number}</span>
           <div class="min-w-0 flex flex-col gap-1">
             <div class="text-ink">
               {mark.label && <span class="badge mr-2">{mark.label}</span>}
-              <span class="min-w-0 flex-1 line-clamp-1">{mark.comment}</span>
+              <span class="min-w-0 flex-1">{mark.comment}</span>
             </div>
           </div>
         </div>
