@@ -119,10 +119,13 @@ export async function seedDemo(
     return loadDemo(store);
   }
 
-  const demoUser = await store.createUser({
+  // Dev demo data; the only caller gates on DENO_ENV=development. Granting
+  // admin here keeps /admin reachable after a wipe without kvctl.
+  const created = await store.createUser({
     email: "demo@example.com",
     name: "Demo User",
   });
+  const demoUser = (await store.setUserRole(created.id, "admin")) ?? created;
   const demoWorkspace = await store.createWorkspace("Demo", demoUser.id);
 
   await seedDemoFiles(new VirtualFileSystem(adapter, demoWorkspace.id));
