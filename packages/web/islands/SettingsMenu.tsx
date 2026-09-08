@@ -10,12 +10,14 @@ import {
 } from "lucide-preact";
 import Avatar from "@/components/Avatar.tsx";
 import AppFontSelect from "@/components/ui/AppFontSelect.tsx";
+import AutoSaveIntervalSelect from "@/components/ui/AutoSaveIntervalSelect.tsx";
 import Dropdown, {
   DropdownItem,
   DropdownMenu,
 } from "@/components/ui/Dropdown.tsx";
 import { CheckboxIcon } from "@/components/ui/icons.tsx";
 import MarkStyleSelect from "@/components/ui/MarkStyleSelect.tsx";
+import Panel from "@/components/ui/Panel.tsx";
 import { autoSave } from "@/signals/preferences.ts";
 import { rightSidebarOpened } from "@/signals/sidebar.ts";
 
@@ -51,10 +53,20 @@ export default function SettingsMenu({ user }: SettingsMenuProps) {
               <MarkStyleSelect />
             </div>
           </li>
-          <DropdownItem onClick={() => (autoSave.value = !autoSave.value)}>
-            <CheckboxIcon selected={autoSave.value} size={15} />
-            Autosave {autoSave.value ? "on" : "off"}
-          </DropdownItem>
+          <li class="flex w-full flex-col">
+            <button
+              type="button"
+              class="dropdown-item"
+              onClick={() => (autoSave.value = !autoSave.value)}
+            >
+              <CheckboxIcon selected={autoSave.value} size={15} />
+              Autosave {autoSave.value ? "on" : "off"}
+            </button>
+            <Panel open={autoSave.value}>
+              <div class="h-px bg-stroke" />
+              <AutoSaveIntervalSelect />
+            </Panel>
+          </li>
           <DropdownItem
             onClick={() => {
               rightSidebarOpened.value = !rightSidebarOpened.value;

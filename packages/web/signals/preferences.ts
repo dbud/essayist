@@ -75,3 +75,4 @@ export const fileStatsSections = persistentSignal<FileStatSection[]>(
 );
 
 export const autoSave = persistentSignal<boolean>("autoSave", true);
+export const autoSaveInterval = persistentSignal<number>("autoSaveInterval", 5);
