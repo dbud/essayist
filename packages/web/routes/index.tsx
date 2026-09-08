@@ -1,8 +1,8 @@
 import type { PageProps } from "fresh";
-// import { MarkSwatches } from "@/components/MarkSwatches.tsx";
 import type { State } from "@/define.ts";
 import FileNavigation from "@/islands/FileNavigation.tsx";
 import FileViewer from "@/islands/FileViewer.tsx";
+import MarkSwatches from "@/islands/MarkSwatches.tsx";
 import Navigation from "@/islands/Navigation.tsx";
 import RightSidebar from "@/islands/RightSidebar.tsx";
 
@@ -19,8 +19,8 @@ export default function HomePage({ state }: PageProps<unknown, State>) {
 
       <RightSidebar />
 
-      {/* TEMPORARY palette preview. */}
-      {/*<MarkSwatches />*/}
+      {/* TEMPORARY category color preview -- remove once settled. */}
+      <MarkSwatches />
     </div>
   );
 }

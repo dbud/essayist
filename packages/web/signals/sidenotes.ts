@@ -24,7 +24,7 @@ export interface MarkBadge {
 // ids yields N bands stacked vertically within each of its line-rects.
 export interface MarkRect {
   id: string; // thread id this band belongs to
-  color: string; // oklch(var(--mark-l) var(--mark-c) <hue>)
+  color: string; // category color or FALLBACK_COLOR (from markColors.ts)
   left: number; // editor-column-local
   top: number;
   width: number;

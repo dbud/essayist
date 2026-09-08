@@ -1,10 +1,9 @@
 /* Marks: highlight renderers (band, wavy), ordinal badges, and sidenote
-   states. Color/opacity knobs (--mark-l, --mark-c, --mark-pct,
-   --mark-active-pct) live here, scoped per renderer with :root defaults. */
+   states. Colors come from category config via markColors.ts; opacity knobs
+   (--mark-pct, --mark-active-pct, --mark-inner-pct) live here, scoped per
+   renderer with :root defaults. */
 
 :root {
-  --mark-l: 85%;
-  --mark-c: 0.3;
   --mark-pct: 30%;
   --mark-active-pct: 70%;
   --mark-inner-pct: 100%;
@@ -12,8 +11,6 @@
 
 .mark-wavy {
   @apply absolute inset-0 w-full h-full overflow-visible pointer-events-none;
-  --mark-l: 65%;
-  --mark-c: 0.4;
   --mark-pct: 90%;
   --mark-active-pct: 100%;
   --mark-stroke: 1.2;
@@ -23,8 +20,6 @@
 
 .mark-band {
   @apply absolute rounded-none;
-  --mark-l: 85%;
-  --mark-c: 0.3;
   --mark-pct: 30%;
   --mark-active-pct: var(--mark-pct);
   --mark-inner-pct: 50%;
