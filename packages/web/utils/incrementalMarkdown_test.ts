@@ -4,7 +4,7 @@ import {
   $convertToMarkdownString,
   TRANSFORMERS,
 } from "@lexical/markdown";
-import { assertEquals } from "@std/assert";
+import { assert, assertEquals } from "@std/assert";
 import {
   $createParagraphNode,
   $createTextNode,
@@ -58,6 +58,22 @@ function applyEdit(
     payload = p;
   });
   editor.update(fn, { discrete: true });
+  off();
+  if (!payload) throw new Error("update listener did not fire");
+  return payload;
+}
+
+// Restore a previous state wholesale (the undo path): setEditorState with
+// its captured update payload.
+function applyRestore(
+  editor: LexicalEditor,
+  state: EditorState,
+): UpdateListenerPayload {
+  let payload: UpdateListenerPayload | null = null;
+  const off = editor.registerUpdateListener((p) => {
+    payload = p;
+  });
+  editor.setEditorState(state);
   off();
   if (!payload) throw new Error("update listener did not fire");
   return payload;
@@ -181,5 +197,72 @@ Deno.test("markdownFold -- unprimed prev falls back to full serialize", () => {
   assertEquals(
     editorStateToMarkdown(p.editorState),
     groundTruth(p.editorState),
+  );
+});
+
+// Selection-only commits pass empty dirty sets (no content changed), so
+// carrying the previous aggregate forward is valid and keeps caret movement
+// off the full-serialize path.
+Deno.test("markdownFold -- selection-only commits carry the fold forward", () => {
+  const editor = createEditor();
+  importMarkdown(editor, "hello");
+  const p = applyEdit(editor, () => {
+    const text = $getRoot().getAllTextNodes()[0];
+    text.select(0, 0);
+  });
+  assertEquals(p.dirtyElements.size, 0);
+  assertEquals(p.dirtyLeaves.size, 0);
+  markdownFold.update(
+    p.editorState,
+    p.prevEditorState,
+    p.dirtyElements,
+    p.dirtyLeaves,
+  );
+  assertEquals(
+    editorStateToMarkdown(p.editorState),
+    groundTruth(p.editorState),
+  );
+});
+
+// Undo restores the previous state via setEditorState. Lexical reports such
+// whole-state replaces with only `root` in dirtyElements and no dirty
+// leaves, while the content can differ arbitrarily from the previous state.
+// The fold must not carry the previous content forward in that case.
+Deno.test("markdownFold -- undo restore folds the restored content", () => {
+  const editor = createEditor();
+  const restored = importMarkdown(editor, "hello");
+
+  // One character typed on top: normal update, incremental fold tracks it.
+  const p1 = applyEdit(editor, () => {
+    const text = $getRoot().getAllTextNodes()[0];
+    text.setTextContent("hello!");
+  });
+  markdownFold.update(
+    p1.editorState,
+    p1.prevEditorState,
+    p1.dirtyElements,
+    p1.dirtyLeaves,
+  );
+  assertEquals(
+    editorStateToMarkdown(p1.editorState),
+    groundTruth(p1.editorState),
+  );
+
+  // The restore changed the content for real -- it is not a selection
+  // no-op.
+  const p2 = applyRestore(editor, restored);
+  assertEquals(groundTruth(p2.editorState), groundTruth(restored));
+  assert(p2.dirtyElements.has("root"));
+  assertEquals(p2.dirtyLeaves.size, 0);
+
+  markdownFold.update(
+    p2.editorState,
+    p2.prevEditorState,
+    p2.dirtyElements,
+    p2.dirtyLeaves,
+  );
+  assertEquals(
+    editorStateToMarkdown(p2.editorState),
+    groundTruth(p2.editorState),
   );
 });

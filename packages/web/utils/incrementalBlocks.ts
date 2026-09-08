@@ -69,6 +69,7 @@ export class BlockFold<T> {
       return;
     }
 
+    const hadDirty = dirtyElements.size > 0 || dirtyLeaves.size > 0;
     next.read(() => {
       const children = $getRoot().getChildren();
       const newKeys = new Set(children.map((child) => child.getKey()));
@@ -88,6 +89,13 @@ export class BlockFold<T> {
       }
       for (const key of newKeys) {
         if (!parts.has(key)) dirtyTop.add(key);
+      }
+
+      // setEditorState (undo/redo) marks only root dirty, which maps to no
+      // top-level block: content may have changed anywhere, so full-fold.
+      if (hadDirty && dirtyTop.size === 0) {
+        this.#cache.set(next, this.#fullFold(next));
+        return;
       }
 
       for (const key of dirtyTop) {
