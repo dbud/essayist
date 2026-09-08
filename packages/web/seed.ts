@@ -6,228 +6,90 @@ import type {
 } from "@essayist/core";
 import { VirtualFileSystem } from "@essayist/core";
 
+// Original demo essay. Paragraphs are single lines so mark selections can
+// match exact substrings without whitespace ambiguity.
 const files: Record<string, string> = {
-  "essay.txt": `The quick brown fox jumps over the lazy dog.
-This sentence contains every letter of the alphabet.
-It has been used as a typing test since **the** late 1800s.`,
-  "report.txt": `Q3 revenue grew 12% year-over-year.
-Operating margins improved due to cost optimization.
-Customer acquisition cost decreased by 8%.`,
-  "notes/ideas.md": `# Ideas
+  "essay.md": `# On Drafts
 
-- Build a writing assistant
-- Support markdown
-- Version history`,
-  "notes/todo.md": `# TODO
+Every piece of writing begins as a draft, and every draft begins as an excuse. The blank page promises nothing, so the first draft exists to give the second draft something to argue with. Treating a first pass as finished work protects it; treating it as raw material improves it.
 
-[x] Set up project
-[ ] Write tests
-[ ] Deploy to production`,
-  "notes/archive/old-draft.txt": `This is an old draft.
-It has been archived for safekeeping.`,
-  "notes/archive/outline.md": `# Outline
+## First Thoughts
 
-1. Introduction
-2. Body
-3. Conclusion`,
-  "src/main.ts": 'console.log("Hello, world!");',
-  "src/utils.ts": `export function helper() {
-  return true;
-}`,
-  "markdown-showcase.md": `# Markdown Showcase
+The useful fiction about first drafts is that they are private. Nobody reads them, so they can be honest. A first draft can admit that a section does not work yet, or lean on a stock phrase while it waits for the right one. That freedom is temporary -- revision is the process of paying for it -- but while it lasts, it lets a writer find out what the piece is actually about.
 
-This file demonstrates the markdown rendering capabilities.
+What surprises most new writers is how much of the work happens after the draft exists. The psychologist Ronald Kellogg described composing as three activities that share one mind: planning what to say, translating intention into sentences, and reviewing what appears on the page. Expert writers spend more of their time reviewing than beginners do, not less. The draft is not the end of writing; it is the switch that turns writing into editing.
 
-## Longer Content
+## The Case for Ugly Drafts
 
-### The Art of Writing
+An ugly draft is not a failed draft. A sentence that says the wrong thing in eight words can be repaired. A page that says nothing at all cannot be repaired, because there is nothing there to work on. This is why drafting and editing fight each other when they run at the same time: the internal editor wants every line to be defensible, and that demand slows the production of raw material to a crawl.
 
-Writing is a form of art that has been practiced for thousands of years, evolving from ancient cave paintings and cuneiform tablets to the digital documents we create today. At its core, writing is about communication -- the transfer of ideas, emotions, and knowledge from one mind to another across time and space. The best writing makes the reader feel something, whether it's the thrill of a suspenseful narrative, the clarity of a well-explained concept, or the comfort of a familiar voice.
+The fix is procedural rather than motivational. Write badly on purpose, then edit ruthlessly, and keep the two jobs in separate rooms. Writers who cannot tolerate their own bad prose usually write less, and writers who write less improve more slowly than writers who keep producing material to fix.
 
-Good writing doesn't happen by accident. It requires careful thought about structure, word choice, rhythm, and purpose. Every sentence should serve a function, every paragraph should build upon the last, and every section should guide the reader toward a deeper understanding of the subject at hand. As the famous author William Zinsser once wrote, "Writing is thinking on paper." The act of putting words into sentences and paragraphs forces clarity of thought that mere contemplation cannot achieve.
+## Reading Like a Stranger
 
-### On Software Craftsmanship
+Revision has an order of operations. Structure comes before paragraphs, paragraphs before sentences, and words last, because polishing a sentence inside a paragraph that is about to be cut is work thrown away. Reading the draft as a stranger would, without the charity extended to yesterday's intentions, is what makes that ordering visible.
 
-Building software is remarkably similar to writing. Both activities require the creator to balance structure with creativity, precision with expressiveness, and simplicity with completeness. A well-crafted codebase tells a story -- it has a beginning (the entry point), a middle (the core logic), and an end (the output or response). Just as a rambling essay loses its reader, a tangled codebase loses its maintainers.
+Distance does the rest. Setting a draft aside for a day is the cheapest revision tool there is, and the gap between how the piece felt when it was written and how it reads a day later is exactly the information a revision needs.
 
-The best software engineers, like the best writers, revise relentlessly. They refactor for clarity, rename for precision, and delete for simplicity. They understand that code is read far more often than it is written, and they optimize accordingly. Comments serve as annotations, function names act as chapter headings, and module boundaries provide the structural paragraphs that organize complex systems into comprehensible wholes.
+## Small Mechanics
 
-### A Note on Markdown
+Some flaws are architectural, but plenty are local. A paragraph that opens three sentences with the same subject sags. A sentence stuffed with qualifiers hedges its own point into silence. Neither flaw is fatal, and both are cheap to fix once someone points at them.
 
-Markdown was designed to be as readable as possible in its raw form. The syntax is minimal by intention -- it provides just enough structure to convey meaning without overwhelming the writer with formatting concerns. Headings use hash marks, emphasis uses asterisks, and lists use simple dashes or numbers. This simplicity is why Markdown has become the de facto standard for documentation, README files, blog posts, and even entire books.
+The comma deserves special mention, because it is the smallest tool in the kit and the most abused. A comma splice joins two independent clauses with nothing but a comma, and readers feel the joint creak even when they cannot name the fault. The remedy is usually simple: split the sentence, or add a conjunction that earns the connection.
 
-What makes Markdown particularly powerful is its portability. A Markdown file can be rendered as HTML, converted to PDF, transformed into a presentation, or displayed directly in a web browser with minimal tooling. The plain-text format ensures that your content is never locked into a proprietary system, and the human-readable syntax means you'll never need special software to edit your files.
+## Endings
 
-## Text Formatting
-
-**Bold text**, *italic text*, ~~strikethrough~~, and \`inline code\`.
-
-## Links
-
-[Deno](https://deno.land) -- the secure runtime for JavaScript and TypeScript.
-
-## Lists
-
-### Unordered
-
-- Item one
-- Item two
-  - Nested item
-  - Another nested item
-- Item three
-
-### Ordered
-
-1. First step
-2. Second step
-3. Third step
-
-### Task List
-
-- [x] Set up the project
-- [x] Add markdown rendering
-- [ ] Write more tests
-- [ ] Deploy to production
-
-## Blockquotes
-
-> The best way to predict the future is to invent it.
-> -- Alan Kay
-
-## Code Blocks
-
-\`\`\`typescript
-function greet(name: string): string {
-  return \`Hello, \${name}!\`;
-}
-
-console.log(greet('World'));
-\`\`\`
-
-## Tables
-
-| Feature       | Status | Notes               |
-|---------------|--------|---------------------|
-| Markdown      | Done   | Using marked        |
-| Code blocks   | Done   | Syntax highlighting |
-| Tables        | Done   | GFM support         |
-
-## Horizontal Rule
-
----
-
-## More Headings
-
-### Level 3
-
-#### Level 4
-
-##### Level 5
-
-###### Level 6
-
-That's all folks!`,
+An ending has to be earned twice -- once by the argument, and once by the reader's patience. The best endings rarely summarize. They return to the opening question carrying an answer the middle of the piece has made credible, and then they stop. A draft that knows where it is going can afford to walk; a revision knows the way, and can run.`,
 };
 
-// Second showcase file shares the same content as the first; the seed marks
-// it with simple + long overlapping marks, while the first file gets only the
-// simple marks -- a side-by-side repro for nested/overlapping mark rendering.
-files["markdown-showcase-overlap.md"] = files["markdown-showcase.md"];
-
-/** Seed the given workspace with sample files, a few marks, and a
- * workspace-specific readme (`workspace-{id}.md`) that records the
- * workspace's name and id. */
-export async function seedDemoFiles(
-  vfs: VirtualFileSystem,
-  workspace: Workspace,
-): Promise<void> {
+/** Seed the given workspace with a sample essay and marks exercising every
+ * category label. */
+export async function seedDemoFiles(vfs: VirtualFileSystem): Promise<void> {
   for (const [path, content] of Object.entries(files)) {
     await vfs.write(path, content);
   }
 
-  await vfs.write(
-    `workspace-${workspace.id}.md`,
-    `# ${workspace.name}
-
-Welcome to the "${workspace.name}" workspace.
-
-- Name: ${workspace.name}
-- ID: ${workspace.id}
-
-This file was created automatically when the workspace was set up. Feel free to edit or delete it.`,
+  await vfs.mark(
+    "essay.md",
+    "The blank page promises nothing, so the first draft exists to give the second draft something to argue with.",
+    "The claim the whole piece defends. Keep it early and unqualified.",
+    { label: "thesis" },
   );
 
+  // Long mark spanning two paragraphs; fully contains the evidence mark below,
+  // exercising nested/overlapping mark rendering and band stacking.
   await vfs.mark(
-    "essay.txt",
-    "The quick brown fox jumps over the lazy dog.",
-    "Classic pangram -- every letter of the alphabet.",
-  );
-  await vfs.mark(
-    "essay.txt",
-    "since **the** late",
-    "Historical context would strengthen this claim.",
-  );
-  await vfs.mark(
-    "notes/ideas.md",
-    "Build a writing assistant",
-    "Core product idea -- prioritize this.",
-  );
-  // Simple marks applied to both showcase files. The first file keeps only
-  // these; the second additionally gets the long overlapping marks below.
-  const showcasePaths = [
-    "markdown-showcase.md",
-    "markdown-showcase-overlap.md",
-  ];
-  const simpleShowcaseMarks: ReadonlyArray<[string, string]> = [
-    [
-      "Writing is a form of art that has been practiced for thousands of years",
-      "Strong opening -- sets the historical stakes for the whole section.",
-    ],
-    [
-      "Writing is thinking on paper.",
-      "Zinsser quote worth pulling out -- could anchor the intro.",
-    ],
-    [
-      "code is read far more often than it is written",
-      "Key principle -- reuse as a guiding maxim for the craftsmanship chapter.",
-    ],
-    ["That's all folks!", "Closing line -- consider a stronger send-off."],
-  ];
-  for (const path of showcasePaths) {
-    for (const [selected, comment] of simpleShowcaseMarks) {
-      await vfs.mark(path, selected, comment);
-    }
-  }
+    "essay.md",
+    `The useful fiction about first drafts is that they are private. Nobody reads them, so they can be honest. A first draft can admit that a section does not work yet, or lean on a stock phrase while it waits for the right one. That freedom is temporary -- revision is the process of paying for it -- but while it lasts, it lets a writer find out what the piece is actually about.
 
-  // Long multiline marks on the overlap showcase only: selections spanning
-  // whole paragraphs (and multiline comments) that fully contain the short
-  // marks above, to exercise overlapping/nested mark rendering and ghosting.
-  await vfs.mark(
-    "markdown-showcase-overlap.md",
-    `Writing is a form of art that has been practiced for thousands of years, evolving from ancient cave paintings and cuneiform tablets to the digital documents we create today. At its core, writing is about communication -- the transfer of ideas, emotions, and knowledge from one mind to another across time and space. The best writing makes the reader feel something, whether it's the thrill of a suspenseful narrative, the clarity of a well-explained concept, or the comfort of a familiar voice.
-
-Good writing doesn't happen by accident. It requires careful thought about structure, word choice, rhythm, and purpose. Every sentence should serve a function, every paragraph should build upon the last, and every section should guide the reader toward a deeper understanding of the subject at hand. As the famous author William Zinsser once wrote, "Writing is thinking on paper." The act of putting words into sentences and paragraphs forces clarity of thought that mere contemplation cannot achieve.`,
-    `This opening is doing a lot of work.
-Consider splitting it: the historical framing could stand on its own,
-and the Zinsser pull-quote deserves a callout rather than a buried cite.`,
+What surprises most new writers is how much of the work happens after the draft exists. The psychologist Ronald Kellogg described composing as three activities that share one mind: planning what to say, translating intention into sentences, and reviewing what appears on the page. Expert writers spend more of their time reviewing than beginners do, not less. The draft is not the end of writing; it is the switch that turns writing into editing.`,
+    "The section carries the main argument. Consider a sharper topic sentence for the second paragraph.",
+    { label: "structure" },
   );
   await vfs.mark(
-    "markdown-showcase-overlap.md",
-    `Building software is remarkably similar to writing. Both activities require the creator to balance structure with creativity, precision with expressiveness, and simplicity with completeness. A well-crafted codebase tells a story -- it has a beginning (the entry point), a middle (the core logic), and an end (the output or response). Just as a rambling essay loses its reader, a tangled codebase loses its maintainers.
+    "essay.md",
+    "Expert writers spend more of their time reviewing than beginners do, not less.",
+    "Kellogg's model earns this generalization; name the book or study when you cite it.",
+    { label: "evidence" },
+  );
 
-The best software engineers, like the best writers, revise relentlessly. They refactor for clarity, rename for precision, and delete for simplicity. They understand that code is read far more often than it is written, and they optimize accordingly. Comments serve as annotations, function names act as chapter headings, and module boundaries provide the structural paragraphs that organize complex systems into comprehensible wholes.`,
-    `The analogy holds but runs long.
-Tighten the second paragraph; "revise relentlessly" is the line to keep.
-The trailing metaphor catalog (annotations, headings, paragraphs) could move to a sidebar.`,
+  // No label: exercises the ink fallback alongside categorized marks.
+  await vfs.mark(
+    "essay.md",
+    "Setting a draft aside for a day is the cheapest revision tool there is",
+    "The distance point repeats; consider cutting one of the two.",
   );
   await vfs.mark(
-    "markdown-showcase-overlap.md",
-    `Markdown was designed to be as readable as possible in its raw form. The syntax is minimal by intention -- it provides just enough structure to convey meaning without overwhelming the writer with formatting concerns. Headings use hash marks, emphasis uses asterisks, and lists use simple dashes or numbers. This simplicity is why Markdown has become the de facto standard for documentation, README files, blog posts, and even entire books.
-
-What makes Markdown particularly powerful is its portability. A Markdown file can be rendered as HTML, converted to PDF, transformed into a presentation, or displayed directly in a web browser with minimal tooling. The plain-text format ensures that your content is never locked into a proprietary system, and the human-readable syntax means you'll never need special software to edit your files.`,
-    `Two paragraphs, one point each.
-Portability is the real selling point -- lead with it.
-The "raw form" readability is worth a code-block example.`,
+    "essay.md",
+    "Neither flaw is fatal, and both are cheap to fix once someone points at them.",
+    "The dry, even register here is the voice of the piece; hold it through the mechanics section.",
+    { label: "tone" },
+  );
+  await vfs.mark(
+    "essay.md",
+    "A comma splice joins two independent clauses with nothing but a comma",
+    "Concrete usage note; the piece could use one or two more like this.",
+    { label: "grammar" },
   );
 }
 
@@ -268,10 +130,7 @@ export async function seedDemo(
   });
   const demoWorkspace = await store.createWorkspace("Demo", demoUser.id);
 
-  await seedDemoFiles(
-    new VirtualFileSystem(adapter, demoWorkspace.id),
-    demoWorkspace,
-  );
+  await seedDemoFiles(new VirtualFileSystem(adapter, demoWorkspace.id));
 
   await adapter.batch([{ type: "set", key: SEED_SENTINEL, value: true }]);
   return { demoUser, demoUser2, demoWorkspace };

@@ -156,22 +156,31 @@ await new Command()
           id: "thesis",
           label: "thesis",
           description: "Thesis and argument clarity",
+          color: "oklch(65% 0.4 260)",
         },
         {
           id: "evidence",
           label: "evidence",
           description: "Evidence and support",
+          color: "oklch(65% 0.4 130)",
         },
         {
           id: "structure",
           label: "structure",
           description: "Organization and flow",
+          color: "oklch(65% 0.4 90)",
         },
-        { id: "tone", label: "tone", description: "Voice, tone, and register" },
+        {
+          id: "tone",
+          label: "tone",
+          description: "Voice, tone, and register",
+          color: "oklch(65% 0.4 300)",
+        },
         {
           id: "grammar",
           label: "grammar",
           description: "Grammar, mechanics, usage",
+          color: "oklch(65% 0.4 355)",
         },
       ] as const;
       for (const c of categories) await config.saveCategory(c);
