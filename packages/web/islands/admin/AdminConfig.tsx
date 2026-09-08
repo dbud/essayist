@@ -13,6 +13,7 @@ import { PromptRow } from "@/islands/admin/rows/PromptRow.tsx";
 import { ReviewPassRow } from "@/islands/admin/rows/ReviewPassRow.tsx";
 import type { DialogRequest } from "@/islands/admin/types.ts";
 import { getAdminConfig } from "@/signals/admin.ts";
+import { persistentSignal } from "@/utils/persistentSignal.ts";
 
 type TabKey = "passes" | "pools" | "prompts" | "categories" | "tools";
 
@@ -23,6 +24,8 @@ const TAB_ITEMS: TabItem<TabKey>[] = [
   { value: "categories", label: "Categories" },
   { value: "tools", label: "Tools" },
 ];
+
+const tab = persistentSignal<TabKey>("adminTab", "passes");
 
 function Empty() {
   return <p class="text-sm text-ink/60">None configured.</p>;
@@ -44,7 +47,6 @@ export default function AdminConfig() {
     deleteReviewPass,
     setActiveReviewPass,
   } = getAdminConfig();
-  const tab = useSignal<TabKey>("passes");
   const dialogOpen = useSignal(false);
   const dialogRequest = useSignal<DialogRequest | null>(null);
   const dialogStamp = useSignal(0);
