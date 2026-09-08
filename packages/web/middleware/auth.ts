@@ -10,9 +10,8 @@ const isDev = Deno.env.get("DENO_ENV") === "development";
  * Resolves `ctx.state.user` for each request.
  *
  * Resolution order:
- *  1. `X-User-Id` header, dev only — lets local scripts/tests act as a
- *     specific seeded user (e.g. demoUser2 for sharing tests). Disabled in
- *     production, where trusting a client-supplied id would be an auth bypass.
+ * 1. `X-User-Id` header, dev only -- lets local scripts/tests act as a
+ *    seeded user; disabled in production.
  *  2. Valid Google OAuth session cookie (see routes/oauth/*).
  *  3. The seeded demo user, in dev only.
  *  4. Otherwise unauthenticated: API routes get 401 JSON, browser routes
@@ -28,8 +27,8 @@ const authMiddleware: Middleware<State> = define.middleware(async (ctx) => {
     return ctx.next();
   }
 
-  // Dev only: lets local scripts/tests act as a specific seeded user
-  // (e.g. demoUser2 for sharing tests). Disabled in production.
+  // Dev only: lets local scripts/tests act as a specific seeded user.
+  // Disabled in production.
   if (isDev) {
     const headerId = ctx.req.headers.get("X-User-Id");
     if (headerId) {

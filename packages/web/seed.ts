@@ -98,7 +98,6 @@ const SEED_SENTINEL = ["__seeded", "demo"] as const;
 
 export interface DemoData {
   demoUser: User;
-  demoUser2: User;
   demoWorkspace: Workspace;
 }
 
@@ -124,23 +123,18 @@ export async function seedDemo(
     email: "demo@example.com",
     name: "Demo User",
   });
-  const demoUser2 = await store.createUser({
-    email: "demo2@example.com",
-    name: "Demo User 2",
-  });
   const demoWorkspace = await store.createWorkspace("Demo", demoUser.id);
 
   await seedDemoFiles(new VirtualFileSystem(adapter, demoWorkspace.id));
 
   await adapter.batch([{ type: "set", key: SEED_SENTINEL, value: true }]);
-  return { demoUser, demoUser2, demoWorkspace };
+  return { demoUser, demoWorkspace };
 }
 
 /** Load the previously-seeded demo entities (sentinel already set). */
 async function loadDemo(store: WorkspaceStore): Promise<DemoData> {
   const demoUser = await store.getUserByEmail("demo@example.com");
-  const demoUser2 = await store.getUserByEmail("demo2@example.com");
-  if (!demoUser || !demoUser2) {
+  if (!demoUser) {
     throw new Error(
       "Seed sentinel is set but demo users are missing; run `deno task kvctl wipe` and restart.",
     );
@@ -152,5 +146,5 @@ async function loadDemo(store: WorkspaceStore): Promise<DemoData> {
       "Seed sentinel is set but the demo workspace is missing; run `deno task kvctl wipe` and restart.",
     );
   }
-  return { demoUser, demoUser2, demoWorkspace };
+  return { demoUser, demoWorkspace };
 }

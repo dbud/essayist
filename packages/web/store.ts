@@ -40,5 +40,4 @@ export const traceStore = new EventTraceStore(adapter);
  */
 const demo = isDev ? await seedDemo(store, adapter) : undefined;
 export const demoUser: User | undefined = demo?.demoUser;
-export const demoUser2: User | undefined = demo?.demoUser2;
 export const demoWorkspace: Workspace | undefined = demo?.demoWorkspace;
