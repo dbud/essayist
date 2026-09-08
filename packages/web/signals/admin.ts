@@ -1,6 +1,7 @@
 import type { Category, ModelPool, Prompt, ReviewPass } from "@essayist/core";
 import { createModel, signal } from "@preact/signals";
 import { IS_BROWSER } from "fresh/runtime";
+import { categories as markCategories } from "@/signals/categories.ts";
 import createAsyncState from "@/utils/asyncState.ts";
 import { createMutations } from "@/utils/createMutations.ts";
 import { ensureOk } from "@/utils/ensureOk.ts";
@@ -64,15 +65,29 @@ export const AdminConfigModel = createModel(() => {
     del(`/api/admin/prompts/${encodeURIComponent(key)}`);
 
   // -- categories --
+  // Category colors feed mark rendering via the global categories singleton,
+  // so refresh it alongside the admin config after each mutation.
 
-  const createCategory = (data: CategoryInput) =>
-    post("/api/admin/categories", data);
+  const createCategory = async (data: CategoryInput) => {
+    const ok = await post("/api/admin/categories", data);
+    if (ok) void markCategories.reload();
+    return ok;
+  };
 
-  const updateCategory = (id: string, data: CategoryInput) =>
-    put(`/api/admin/categories/${encodeURIComponent(id)}`, data);
+  const updateCategory = async (id: string, data: CategoryInput) => {
+    const ok = await put(
+      `/api/admin/categories/${encodeURIComponent(id)}`,
+      data,
+    );
+    if (ok) void markCategories.reload();
+    return ok;
+  };
 
-  const deleteCategory = (id: string) =>
-    del(`/api/admin/categories/${encodeURIComponent(id)}`);
+  const deleteCategory = async (id: string) => {
+    const ok = await del(`/api/admin/categories/${encodeURIComponent(id)}`);
+    if (ok) void markCategories.reload();
+    return ok;
+  };
 
   // -- review passes --
 

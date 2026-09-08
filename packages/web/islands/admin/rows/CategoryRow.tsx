@@ -16,7 +16,17 @@ export function CategoryRow({
 }) {
   return (
     <EntityCard
-      title={<span>{category.label}</span>}
+      title={
+        <span class="flex gap-1">
+          {category.color && (
+            <span
+              class="h-3 w-3 shrink-0"
+              style={{ backgroundColor: category.color }}
+            />
+          )}
+          {category.label}
+        </span>
+      }
       id={category.id}
       actions={
         <>
