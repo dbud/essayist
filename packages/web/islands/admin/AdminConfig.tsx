@@ -12,6 +12,7 @@ import { ModelPoolRow } from "@/islands/admin/rows/ModelPoolRow.tsx";
 import { PromptRow } from "@/islands/admin/rows/PromptRow.tsx";
 import { ReviewPassRow } from "@/islands/admin/rows/ReviewPassRow.tsx";
 import type { DialogRequest } from "@/islands/admin/types.ts";
+import MarkSwatches from "@/islands/MarkSwatches.tsx";
 import { getAdminConfig } from "@/signals/admin.ts";
 import { persistentSignal } from "@/utils/persistentSignal.ts";
 
@@ -84,6 +85,7 @@ export default function AdminConfig() {
   const loadingEmpty = loading.value && modelPools.value.length === 0;
 
   let body: ComponentChildren;
+  let side: ComponentChildren;
   if (error.value) {
     body = <p class="text-sm text-ink/60">{error.value}</p>;
   } else if (loadingEmpty) {
@@ -164,6 +166,7 @@ export default function AdminConfig() {
         );
         break;
       case "categories":
+        side = <MarkSwatches />;
         body = (
           <div class="flex flex-col gap-10">
             <NewButton
@@ -225,8 +228,9 @@ export default function AdminConfig() {
         </div>
       </div>
       <div class="flex-1 min-h-0 overflow-y-auto bg-surface">
-        <div class="content-layout">
+        <div class={`content-layout ${side ? "content-layout--side" : ""}`}>
           <div class="content-main min-w-0 flex flex-col py-10">{body}</div>
+          {side && <div class="content-side py-10">{side}</div>}
         </div>
       </div>
       <EntityDialog

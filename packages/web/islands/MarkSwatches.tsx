@@ -19,7 +19,7 @@ export default function MarkSwatches() {
     { key: "__ink", label: "(unlabeled)", color: FALLBACK_COLOR },
   ];
   return (
-    <div class="fixed bottom-10 right-10 z-toast flex flex-col gap-1 shadow-md bg-paper border border-stroke p-2 text-xs">
+    <div class="flex w-fit flex-col gap-5 bg-paper border border-stroke shadow-md p-5 text-xs">
       {entries.map(({ key, label, color }) => {
         const id = `swatch-${key}`;
         const rect: MarkRect = {
@@ -34,7 +34,15 @@ export default function MarkSwatches() {
         };
         return (
           <div key={key} class="flex items-center gap-2">
-            <span class="w-24 truncate text-right">{label}</span>
+            <span class="w-24">{label}</span>
+            <span class="relative inline-flex h-6 w-16 items-center justify-center">
+              <WavyRenderer rects={[rect]} activeIds={EMPTY} innerId={null} />
+              <span class="relative">text</span>
+            </span>
+            <span class="relative inline-flex h-6 w-16 items-center justify-center">
+              <WavyRenderer rects={[rect]} activeIds={EMPTY} innerId={id} />
+              <span class="relative">text</span>
+            </span>
             <span class="relative inline-flex h-6 w-16 items-center justify-center">
               <span
                 class="mark-band inset-0"
@@ -47,14 +55,6 @@ export default function MarkSwatches() {
                 class="mark-band is-inner inset-0"
                 style={{ backgroundColor: color, color }}
               />
-              <span class="relative">text</span>
-            </span>
-            <span class="relative inline-flex h-6 w-16 items-center justify-center">
-              <WavyRenderer rects={[rect]} activeIds={EMPTY} innerId={null} />
-              <span class="relative">text</span>
-            </span>
-            <span class="relative inline-flex h-6 w-16 items-center justify-center">
-              <WavyRenderer rects={[rect]} activeIds={EMPTY} innerId={id} />
               <span class="relative">text</span>
             </span>
           </div>
