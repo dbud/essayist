@@ -9,7 +9,7 @@ import {
 import { IS_BROWSER } from "fresh/runtime";
 import type { EditorState } from "lexical";
 import { getOpenedFilesFor } from "@/signals/openedFiles.ts";
-import { autoSave } from "@/signals/preferences.ts";
+import { autoSave, autoSaveInterval } from "@/signals/preferences.ts";
 import { dismissToast, showToast, type Toast } from "@/signals/toast.ts";
 import createAsyncState from "@/utils/asyncState.ts";
 import { ensureOk } from "@/utils/ensureOk.ts";
@@ -18,7 +18,6 @@ import {
   markdownToEditorState,
 } from "@/utils/markdown.ts";
 
-const AUTO_SAVE_IDLE_MS = 2000;
 const AUTO_SAVE_MAX_WAIT_MS = 30000;
 
 export const FileModel = createModel((workspaceId: string, path: string) => {
@@ -128,7 +127,7 @@ export const FileModel = createModel((workspaceId: string, path: string) => {
     effect(() => {
       if (!autoSave.value || !dirty.value) return;
       void markdown.value;
-      const t = setTimeout(save, AUTO_SAVE_IDLE_MS);
+      const t = setTimeout(save, autoSaveInterval.value * 1000);
       return () => clearTimeout(t);
     });
 
@@ -140,7 +139,9 @@ export const FileModel = createModel((workspaceId: string, path: string) => {
       }
       void markdown.value;
       if (nextSaveAt === null) {
-        nextSaveAt = Date.now() + AUTO_SAVE_MAX_WAIT_MS;
+        nextSaveAt =
+          Date.now() +
+          Math.max(autoSaveInterval.value * 1000, AUTO_SAVE_MAX_WAIT_MS);
       }
       const t = setTimeout(save, Math.max(0, nextSaveAt - Date.now()));
       return () => clearTimeout(t);

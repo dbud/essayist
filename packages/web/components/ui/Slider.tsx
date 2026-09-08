@@ -51,7 +51,7 @@ export default function Slider({
 
   return (
     <label
-      class={`flex w-full cursor-pointer${className ? ` ${className}` : ""}`}
+      class={`flex w-full gap-2 cursor-pointer${className ? ` ${className}` : ""}`}
     >
       <span>{label}</span>
       <input
