@@ -1,5 +1,14 @@
 {
   "allowScripts": {},
+  "compilerOptions": {
+    "lib": [
+      "deno.ns",
+      "deno.window",
+      "esnext",
+      "esnext.iterator",
+      "deno.unstable"
+    ]
+  },
   "deploy": {
     "app": "essayist",
     "org": "dbud"
