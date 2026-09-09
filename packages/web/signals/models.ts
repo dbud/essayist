@@ -26,7 +26,7 @@ interface Scope {
   instances: Map<string, Map<string, unknown>>;
 }
 
-function createScope(): Scope {
+export function createScope(): Scope {
   return { seeds: new Map(), instances: new Map() };
 }
 
