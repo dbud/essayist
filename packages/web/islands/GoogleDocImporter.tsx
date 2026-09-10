@@ -57,7 +57,7 @@ export default function GoogleDocImporter() {
       }
     }
 
-    await getFileTree()?.load();
+    await getFileTree()?.refresh();
     if (firstPath) getOpenedFiles()?.open(firstPath);
     if (docs.length === 1) navigationOpened.value = false;
 
