@@ -1,5 +1,10 @@
 import { AsyncLocalStorage } from "node:async_hooks";
-import { createScope, setScopeProvider } from "@/signals/models.ts";
+import {
+  createScope,
+  type Namespace,
+  setResolver,
+  setScopeProvider,
+} from "@/signals/models.ts";
 
 /**
  * Server-only ALS wiring for the model store: installs the scope provider
@@ -20,3 +25,24 @@ setScopeProvider(() => {
 export function runRequest<T>(fn: () => T | Promise<T>): T | Promise<T> {
   return als.run(createScope(), fn);
 }
+
+// loaders
+
+const loaders = new Map<string, (key: string) => Promise<unknown>>();
+
+export function registerLoader<S>(
+  ns: Namespace<S, unknown>,
+  loader: (key: string) => Promise<S>,
+): void {
+  loaders.set(ns.name, loader);
+}
+
+setResolver((ns, key) => {
+  const loader = loaders.get(ns);
+  if (!loader) {
+    return Promise.reject(
+      new Error(`model store: no loader registered for ${ns} (${key})`),
+    );
+  }
+  return loader(key);
+});
