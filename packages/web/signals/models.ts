@@ -142,24 +142,22 @@ export async function drain(): Promise<void> {
 
 // seed artifact
 
-interface SerializedCache {
-  cache: Record<string, Record<string, unknown>>;
-}
+type SerializedCache = Record<string, Record<string, unknown>>;
 
 /** The request's seed: run the page's priming calls, drain the collected
  * acquisitions, and serialize the cache for the client. */
-export async function seed(prime: () => void | Promise<void>): Promise<string> {
+export async function seed(prime: () => unknown): Promise<string> {
   await prime();
   await drain();
-  const snapshot: SerializedCache = { cache: {} };
+  const snapshot: SerializedCache = {};
   for (const [ns, m] of scope().cache) {
-    snapshot.cache[ns] = Object.fromEntries(m);
+    snapshot[ns] = Object.fromEntries(m);
   }
   return JSON.stringify(snapshot);
 }
 
 function ingest(snapshot: SerializedCache): void {
-  for (const [ns, entries] of Object.entries(snapshot.cache)) {
+  for (const [ns, entries] of Object.entries(snapshot)) {
     const token = { name: ns } as Namespace<unknown>;
     for (const [k, v] of Object.entries(entries)) cacheSet(token, k, v);
   }
