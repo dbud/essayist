@@ -31,7 +31,7 @@ export function runRequest<T>(fn: () => T | Promise<T>): T | Promise<T> {
 const loaders = new Map<string, (key: string) => Promise<unknown>>();
 
 export function registerLoader<S>(
-  ns: Namespace<S, unknown>,
+  ns: Namespace<S>,
   loader: (key: string) => Promise<S>,
 ): void {
   loaders.set(ns.name, loader);

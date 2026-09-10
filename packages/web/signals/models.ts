@@ -9,19 +9,16 @@ import { IS_BROWSER } from "fresh/runtime";
 import createAsyncState from "@/utils/asyncState.ts";
 
 /**
- * A namespace token: the cache key plus the model's seed and instance
- * shapes. The runtime value is just `name`; the `*Type` markers exist for
- * inference only and are never set.
+ * A namespace token: the cache key plus the model's data shape. The runtime
+ * value is just `name`; the marker exists for inference only and is never
+ * set.
  */
-export interface Namespace<Seed = unknown, Instance = unknown> {
+export interface Namespace<Seed = unknown> {
   readonly name: string;
   readonly seedType?: Seed;
-  readonly instanceType?: Instance;
 }
 
-export function namespace<Seed, Instance>(
-  name: string,
-): Namespace<Seed, Instance> {
+export function namespace<Seed = unknown>(name: string): Namespace<Seed> {
   return { name };
 }
 
@@ -46,18 +43,11 @@ export function setScopeProvider(p: () => Scope): void {
 
 // cache
 
-export function cacheGet<S>(
-  ns: Namespace<S, unknown>,
-  key: string,
-): S | undefined {
+export function cacheGet<S>(ns: Namespace<S>, key: string): S | undefined {
   return scope().cache.get(ns.name)?.get(key) as S | undefined;
 }
 
-export function cacheSet<S>(
-  ns: Namespace<S, unknown>,
-  key: string,
-  data: S,
-): void {
+export function cacheSet<S>(ns: Namespace<S>, key: string, data: S): void {
   scope()
     .cache.getOrInsertComputed(ns.name, () => new Map())
     .set(key, data);
@@ -65,13 +55,9 @@ export function cacheSet<S>(
 
 // instances
 
-export function get<Instance>(
-  ns: Namespace<unknown, Instance>,
-  key: string,
-  build: () => Instance,
-): Instance {
+export function get<T>(ns: Namespace<unknown>, key: string, build: () => T): T {
   const map = scope().instances.getOrInsertComputed(ns.name, () => new Map());
-  let inst = map.get(key) as Instance | undefined;
+  let inst = map.get(key) as T | undefined;
   if (!inst) {
     inst = build();
     map.set(key, inst);
@@ -105,7 +91,7 @@ export interface ModelData {
  * client fetch, used on a cache miss in the browser.
  */
 export function modelData<S>(
-  ns: Namespace<S, unknown>,
+  ns: Namespace<S>,
   key: string,
   apply: (data: S) => void,
   transport?: () => Promise<S>,
@@ -174,7 +160,7 @@ export async function seed(prime: () => void | Promise<void>): Promise<string> {
 
 function ingest(snapshot: SerializedCache): void {
   for (const [ns, entries] of Object.entries(snapshot.cache)) {
-    const token = { name: ns } as Namespace<unknown, unknown>;
+    const token = { name: ns } as Namespace<unknown>;
     for (const [k, v] of Object.entries(entries)) cacheSet(token, k, v);
   }
 }
