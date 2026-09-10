@@ -1,3 +1,4 @@
+import "@/signals/models.ts";
 import "@fontsource/ibm-plex-serif/400.css";
 import "@fontsource/ibm-plex-serif/600.css";
 import "@fontsource/ibm-plex-serif/400-italic.css";
