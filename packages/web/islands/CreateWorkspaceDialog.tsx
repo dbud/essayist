@@ -1,7 +1,7 @@
 import { type Signal, useSignal } from "@preact/signals";
 import Dialog from "@/components/ui/Dialog.tsx";
 import WaveBars from "@/components/ui/WaveBars.tsx";
-import { workspaces } from "@/signals/workspace.ts";
+import { getWorkspaces } from "@/signals/workspace.ts";
 
 interface CreateWorkspaceDialogProps {
   open: Signal<boolean>;
@@ -21,7 +21,7 @@ export default function CreateWorkspaceDialog({
     submitting.value = true;
     error.value = null;
     try {
-      await workspaces.create(trimmed);
+      await getWorkspaces().create(trimmed);
       name.value = "";
       open.value = false;
     } catch (err) {

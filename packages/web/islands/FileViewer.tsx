@@ -20,14 +20,14 @@ import { getMarks } from "@/signals/marks.ts";
 import { getOpenedFiles } from "@/signals/openedFiles.ts";
 import { navigationOpened } from "@/signals/sidebar.ts";
 import { getSidenotes } from "@/signals/sidenotes.ts";
-import { workspaces } from "@/signals/workspace.ts";
+import { getWorkspaces } from "@/signals/workspace.ts";
 import { delayedRise } from "@/utils/delayedRise.ts";
 
 export default function FileViewer() {
   const openedFiles = getOpenedFiles();
   const path = openedFiles?.selected.value ?? "";
   if (!openedFiles || !path) return null;
-  const wsId = workspaces.currentWorkspaceId.value;
+  const wsId = getWorkspaces().currentWorkspaceId.value;
   return <FileViewerBody key={path} wsId={wsId} path={path} />;
 }
 

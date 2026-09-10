@@ -6,7 +6,7 @@ import { getFileTree } from "@/signals/fileTree.ts";
 import { getOpenedFiles } from "@/signals/openedFiles.ts";
 import { navigationOpened } from "@/signals/sidebar.ts";
 import { showToast } from "@/signals/toast.ts";
-import { workspaces } from "@/signals/workspace.ts";
+import { getWorkspaces } from "@/signals/workspace.ts";
 import { formatCount } from "@/utils/format.ts";
 import type { PickerDoc } from "@/utils/googlePicker.ts";
 
@@ -87,7 +87,7 @@ export default function GoogleDocImporter() {
 
   function handleImport() {
     if (importing.value) return;
-    wsIdRef.current = workspaces.currentWorkspaceId.value;
+    wsIdRef.current = getWorkspaces().currentWorkspaceId.value;
     globalThis.open("/import/google-docs", "_blank");
   }
 

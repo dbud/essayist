@@ -1,6 +1,7 @@
 import type { Workspace } from "@essayist/core";
 import { computed, createModel, signal } from "@preact/signals";
 import { IS_BROWSER } from "fresh/runtime";
+import { get, namespace } from "@/signals/models.ts";
 import createAsyncState from "@/utils/asyncState.ts";
 import { ensureOk } from "@/utils/ensureOk.ts";
 import { persistentSignal } from "@/utils/persistentSignal.ts";
@@ -60,4 +61,10 @@ export const WorkspacesModel = createModel(() => {
   };
 });
 
-export const workspaces = new WorkspacesModel();
+export type Workspaces = InstanceType<typeof WorkspacesModel>;
+
+export const workspacesNs = namespace("workspaces");
+
+export function getWorkspaces(): Workspaces {
+  return get(workspacesNs, "singleton", () => new WorkspacesModel());
+}

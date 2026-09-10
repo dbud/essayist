@@ -12,7 +12,7 @@ import GoogleDocImporter from "@/islands/GoogleDocImporter.tsx";
 import { getFileTree, type TreeNode } from "@/signals/fileTree.ts";
 import { getOpenedFiles } from "@/signals/openedFiles.ts";
 import { navigationOpened } from "@/signals/sidebar.ts";
-import { workspaces } from "@/signals/workspace.ts";
+import { getWorkspaces } from "@/signals/workspace.ts";
 
 interface PathPart {
   segment: string;
@@ -58,7 +58,7 @@ function buildFileEntries(
 }
 
 function BreadcrumbsTrigger() {
-  const selectedWorkspace = workspaces.current.value?.name ?? "";
+  const selectedWorkspace = getWorkspaces().current.value?.name ?? "";
   const selectedPath = getOpenedFiles()?.selected.value ?? "";
 
   const open = (e: TargetedMouseEvent<HTMLButtonElement>) => {
@@ -69,7 +69,7 @@ function BreadcrumbsTrigger() {
   return (
     <Swappable
       swapKey={
-        workspaces.loading.value
+        getWorkspaces().loading.value
           ? "loading"
           : navigationOpened.value
             ? "open"
@@ -78,13 +78,13 @@ function BreadcrumbsTrigger() {
       class="swap-slide leading-none relative z-dropdown"
     >
       <div class="flex stack stack--row">
-        {workspaces.loading.value ? (
+        {getWorkspaces().loading.value ? (
           <WaveBars class="h-10 text-ink/70 bg-surface" />
         ) : navigationOpened.value ? (
           <div class="cell cell--ink w-48 relative">
             <WaveBars
               fill
-              amplitude={workspaces.loading.value ? 1 : 0}
+              amplitude={getWorkspaces().loading.value ? 1 : 0}
               class="text-surface"
             />
             <ArrowDownRight size={14} />
@@ -183,14 +183,14 @@ export default function FileNavigation() {
     </button>
   );
 
-  const workspacesList = workspaces.list.value.map(({ id, name }) => {
-    const selected = id === workspaces.currentWorkspaceId.value;
+  const workspacesList = getWorkspaces().list.value.map(({ id, name }) => {
+    const selected = id === getWorkspaces().currentWorkspaceId.value;
     return (
       <div class="relative flex" key={id}>
         <button
           type="button"
           class={`btn min-w-48 ${selected ? "is-selected" : ""}`}
-          onClick={() => workspaces.select(id)}
+          onClick={() => getWorkspaces().select(id)}
         >
           {name}
           {selected && <ArrowDownRight size={14} class="absolute right-1" />}
@@ -217,7 +217,7 @@ export default function FileNavigation() {
         >
           <div class="flex flex-col stack min-w-48" data-stagger-children>
             {workspacesList}
-            {workspaces.list.value.length > 0 && <div class="separator" />}
+            {getWorkspaces().list.value.length > 0 && <div class="separator" />}
             {createWorkspace}
           </div>
         </Panel>

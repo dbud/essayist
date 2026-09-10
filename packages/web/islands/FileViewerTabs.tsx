@@ -2,7 +2,7 @@ import { FileText, X } from "lucide-preact";
 import Tabs from "@/islands/Tabs.tsx";
 import { getFile } from "@/signals/file.ts";
 import { getOpenedFiles, type OpenedFiles } from "@/signals/openedFiles.ts";
-import { workspaces } from "@/signals/workspace.ts";
+import { getWorkspaces } from "@/signals/workspace.ts";
 
 function Tab({
   wsId,
@@ -50,7 +50,7 @@ function Tab({
 export default function FileViewerTabs() {
   const openedFiles = getOpenedFiles();
   if (!openedFiles) return null;
-  const wsId = workspaces.currentWorkspaceId.value;
+  const wsId = getWorkspaces().currentWorkspaceId.value;
   const files = openedFiles.opened.value;
   const selected = openedFiles.selected.value;
 
