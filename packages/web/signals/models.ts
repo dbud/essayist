@@ -43,11 +43,11 @@ export function setScopeProvider(p: () => Scope): void {
 
 // cache
 
-export function cacheGet<S>(ns: Namespace<S>, key: string): S | undefined {
+function cacheGet<S>(ns: Namespace<S>, key: string): S | undefined {
   return scope().cache.get(ns.name)?.get(key) as S | undefined;
 }
 
-export function cacheSet<S>(ns: Namespace<S>, key: string, data: S): void {
+function cacheSet<S>(ns: Namespace<S>, key: string, data: S): void {
   scope()
     .cache.getOrInsertComputed(ns.name, () => new Map())
     .set(key, data);
@@ -135,7 +135,7 @@ export function modelData<S>(
 // drain
 
 /** Awaits every acquisition collected in the current scope. */
-export async function drain(): Promise<void> {
+async function drain(): Promise<void> {
   const pending = scope().pending.splice(0);
   await Promise.allSettled(pending);
 }
