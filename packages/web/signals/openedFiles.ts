@@ -1,9 +1,12 @@
 import { createModel, effect } from "@preact/signals";
 import { IS_BROWSER } from "fresh/runtime";
 import { getFileTree } from "@/signals/fileTree.ts";
+import { get, namespace } from "@/signals/models.ts";
 import { leftSidebarOpened } from "@/signals/sidebar.ts";
 import { getWorkspaces } from "@/signals/workspace.ts";
 import { persistentSignal } from "@/utils/persistentSignal.ts";
+
+export const openedFilesNs = namespace("openedFiles");
 
 export const OpenedFilesModel = createModel((workspaceId: string) => {
   const selected = persistentSignal(`selectedFile:${workspaceId}`, "");
@@ -32,12 +35,11 @@ export const OpenedFilesModel = createModel((workspaceId: string) => {
   return { opened, selected, open, close };
 });
 
-const cache = new Map<string, OpenedFiles>();
-
 export type OpenedFiles = InstanceType<typeof OpenedFilesModel>;
 
 export function getOpenedFilesFor(workspaceId: string): OpenedFiles {
-  return cache.getOrInsertComputed(
+  return get(
+    openedFilesNs,
     workspaceId,
     () => new OpenedFilesModel(workspaceId),
   );
