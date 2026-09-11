@@ -8,6 +8,7 @@ import {
 } from "@preact/signals";
 import { IS_BROWSER } from "fresh/runtime";
 import type { EditorState } from "lexical";
+import { get, instances, modelData, namespace } from "@/signals/models.ts";
 import { getOpenedFilesFor } from "@/signals/openedFiles.ts";
 import { autoSave, autoSaveInterval } from "@/signals/preferences.ts";
 import { dismissToast, showToast, type Toast } from "@/signals/toast.ts";
@@ -18,13 +19,24 @@ import {
   markdownToEditorState,
 } from "@/utils/markdown.ts";
 
-const AUTO_SAVE_MAX_WAIT_MS = 30000;
+const AUTO_SAVE_MAX_WAIT_MS = 30_000;
+
+export interface FileKey {
+  workspaceId: string;
+  path: string;
+}
+
+export interface FileData {
+  checkpoint: FileSnapshot;
+  draft: DraftSnapshot | null;
+}
+
+export const fileNs = namespace<FileData, FileKey>("file");
 
 export const FileModel = createModel((workspaceId: string, path: string) => {
   // Latest promoted version; marks anchor to its content.
   const checkpoint = signal<FileSnapshot | null>(null);
   const draft = signal<DraftSnapshot | null>(null);
-  const [run, { loading, error }] = createAsyncState(true);
   const [runSave, { loading: saving, error: saveError }] = createAsyncState();
   const isSelected = computed(
     () => getOpenedFilesFor(workspaceId).selected.value === path,
@@ -62,22 +74,22 @@ export const FileModel = createModel((workspaceId: string, path: string) => {
   let nextSaveAt: number | null = null;
   let failureToast: Signal<Toast> | null = null;
 
-  async function load() {
-    const result = await run(async () => {
+  const { loading, error } = modelData(
+    fileNs,
+    { workspaceId, path },
+    (data) => {
+      checkpoint.value = data.checkpoint;
+      draft.value = data.draft;
+      seedContent.value = data.draft?.content ?? data.checkpoint.content;
+    },
+    async () => {
       const res = await fetch(
         `/api/workspaces/${encodeURIComponent(workspaceId)}/files/${encodeURIComponent(path)}`,
       );
       await ensureOk(res);
-      return (await res.json()) as {
-        checkpoint: FileSnapshot;
-        draft: DraftSnapshot | null;
-      };
-    });
-    if (!result) return;
-    checkpoint.value = result.checkpoint;
-    draft.value = result.draft;
-    seedContent.value = result.draft?.content ?? result.checkpoint.content;
-  }
+      return (await res.json()) as FileData;
+    },
+  );
 
   async function save(): Promise<boolean> {
     if (!dirty.value) return true;
@@ -121,8 +133,6 @@ export const FileModel = createModel((workspaceId: string, path: string) => {
   }
 
   if (IS_BROWSER) {
-    void load();
-
     // Idle debounce: save once edits pause.
     effect(() => {
       if (!autoSave.value || !dirty.value) return;
@@ -179,17 +189,20 @@ export const FileModel = createModel((workspaceId: string, path: string) => {
   };
 });
 
-const cache = new Map<string, InstanceType<typeof FileModel>>();
+export type File = InstanceType<typeof FileModel>;
 
-export function getFile(workspaceId: string, path: string) {
-  const key = `${workspaceId}:${path}`;
-  return cache.getOrInsertComputed(key, () => new FileModel(workspaceId, path));
+export function getFile(workspaceId: string, path: string): File {
+  return get(
+    fileNs,
+    { workspaceId, path },
+    () => new FileModel(workspaceId, path),
+  );
 }
 
 export function flushAllDirty(): void {
-  for (const model of cache.values()) model.flush();
+  for (const model of instances<File>(fileNs)) model.flush();
 }
 
 export function anyFileDirty(): boolean {
-  return [...cache.values()].some((model) => model.dirty.value);
+  return instances<File>(fileNs).some((model) => model.dirty.value);
 }

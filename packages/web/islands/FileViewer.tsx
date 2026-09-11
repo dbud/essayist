@@ -1,3 +1,4 @@
+import { IS_BROWSER } from "fresh/runtime";
 import { useMemo } from "preact/hooks";
 import { Caret } from "@/components/Caret.tsx";
 import { MarkBadges } from "@/components/MarkBadges.tsx";
@@ -20,14 +21,14 @@ import { getMarks } from "@/signals/marks.ts";
 import { getOpenedFiles } from "@/signals/openedFiles.ts";
 import { navigationOpened } from "@/signals/sidebar.ts";
 import { getSidenotes } from "@/signals/sidenotes.ts";
-import { workspaces } from "@/signals/workspace.ts";
+import { getWorkspaces } from "@/signals/workspace.ts";
 import { delayedRise } from "@/utils/delayedRise.ts";
 
 export default function FileViewer() {
   const openedFiles = getOpenedFiles();
   const path = openedFiles?.selected.value ?? "";
   if (!openedFiles || !path) return null;
-  const wsId = workspaces.currentWorkspaceId.value;
+  const wsId = getWorkspaces().currentWorkspaceId.value;
   return <FileViewerBody key={path} wsId={wsId} path={path} />;
 }
 
@@ -93,7 +94,9 @@ function FileViewerBody({ wsId, path }: { wsId: string; path: string }) {
         >
           {/* isolate: stacking context for MarkHighlights z-index */}
           <div class="relative min-w-0 isolate">
-            {state.value && (
+            {IS_BROWSER && state.value && (
+              // Lexical SSR is pending (ESS-31); the editor hydrates from
+              // the warm cache instead of rendering its content.
               <Editor
                 wsId={wsId}
                 path={path}

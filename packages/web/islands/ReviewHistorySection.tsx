@@ -4,7 +4,7 @@ import MarkdownView from "@/components/MarkdownView.tsx";
 import Section from "@/islands/Section.tsx";
 import { getOpenedFiles } from "@/signals/openedFiles.ts";
 import { getReview } from "@/signals/review.ts";
-import { workspaces } from "@/signals/workspace.ts";
+import { getWorkspaces } from "@/signals/workspace.ts";
 
 function statusBadge(status: ReviewRunStatus) {
   const classes =
@@ -50,7 +50,10 @@ export default function ReviewHistorySection() {
   const path = openedFiles?.selected.value ?? "";
   if (!openedFiles || !path) return null;
   return (
-    <ReviewHistory wsId={workspaces.currentWorkspaceId.value} path={path} />
+    <ReviewHistory
+      wsId={getWorkspaces().currentWorkspaceId.value}
+      path={path}
+    />
   );
 }
 

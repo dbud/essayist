@@ -1,29 +1,31 @@
 import type { FileEntry } from "@essayist/core";
 import { computed, createModel, signal } from "@preact/signals";
-import { IS_BROWSER } from "fresh/runtime";
-import { workspaces } from "@/signals/workspace.ts";
-import createAsyncState from "@/utils/asyncState.ts";
+import { get, modelData, namespace } from "@/signals/models.ts";
+import { getWorkspaces } from "@/signals/workspace.ts";
 import { ensureOk } from "@/utils/ensureOk.ts";
 import type { UploadedFile } from "@/utils/fileUpload.ts";
 import createProgressState from "@/utils/progressState.ts";
 
+export const treeNs = namespace<FileEntry[]>("tree");
+
 export const FileTreeModel = createModel((workspaceId: string) => {
   const files = signal<FileEntry[]>([]);
-  const [run, { loading, error }] = createAsyncState(true);
   const [runUpload, { progress: uploadProgress }] = createProgressState();
 
   const tree = computed(() => buildFileTree(files.value));
 
-  async function load() {
-    const result = await run(async () => {
+  const { loading, error, refresh } = modelData(
+    treeNs,
+    workspaceId,
+    (data) => (files.value = data),
+    async () => {
       const res = await fetch(
         `/api/workspaces/${encodeURIComponent(workspaceId)}/files`,
       );
       await ensureOk(res);
       return (await res.json()) as FileEntry[];
-    });
-    if (result) files.value = result;
-  }
+    },
+  );
 
   /** Create a new file via POST to the files endpoint, then reload the tree. */
   async function createFile(path: string, content = ""): Promise<void> {
@@ -36,7 +38,7 @@ export const FileTreeModel = createModel((workspaceId: string) => {
       },
     );
     await ensureOk(res);
-    await load();
+    await refresh();
   }
 
   /**
@@ -66,10 +68,8 @@ export const FileTreeModel = createModel((workspaceId: string) => {
       }
     });
 
-    await load();
+    await refresh();
   }
-
-  if (IS_BROWSER) void load();
 
   return {
     files,
@@ -79,24 +79,19 @@ export const FileTreeModel = createModel((workspaceId: string) => {
     createFile,
     uploadFiles,
     uploadProgress,
-    load,
+    refresh,
   };
 });
-
-const cache = new Map<string, FileTree>();
 
 export type FileTree = InstanceType<typeof FileTreeModel>;
 
 export function getFileTreeFor(workspaceId: string): FileTree {
-  return cache.getOrInsertComputed(
-    workspaceId,
-    () => new FileTreeModel(workspaceId),
-  );
+  return get(treeNs, workspaceId, () => new FileTreeModel(workspaceId));
 }
 
 // Returns `null` while no workspace is selected (bootstrap, login page).
 export function getFileTree(): FileTree | null {
-  const wsId = workspaces.currentWorkspaceId.value;
+  const wsId = getWorkspaces().currentWorkspaceId.value;
   return wsId ? getFileTreeFor(wsId) : null;
 }
 

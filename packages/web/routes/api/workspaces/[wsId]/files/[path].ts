@@ -1,11 +1,13 @@
 import { define } from "@/define.ts";
 
+import { fileLoader } from "@/signals/file.server.ts";
+
 export const handler = {
   GET: define.handlers(async (ctx) => {
     const path = decodeURIComponent(ctx.params.path);
-    const checkpoint = await ctx.state.vfs.read(path);
-    const draft = await ctx.state.vfs.readDraft(path);
-    return Response.json({ checkpoint, draft });
+    return Response.json(
+      await fileLoader({ workspaceId: ctx.params.wsId, path }),
+    );
   }),
 
   // Create-only. Returns 409 if the file already exists; use PUT to upsert.

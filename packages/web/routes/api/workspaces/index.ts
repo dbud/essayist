@@ -1,12 +1,12 @@
 import { VirtualFileSystem } from "@essayist/core";
 import { define } from "@/define.ts";
 import { seedDemoFiles } from "@/seed.ts";
+import { workspacesLoader } from "@/signals/workspace.server.ts";
 import { adapter, store } from "@/store.ts";
 
 export const handler = {
   GET: define.handlers(async (ctx) => {
-    const workspaces = await store.listWorkspacesForUser(ctx.state.user.id);
-    return Response.json(workspaces);
+    return Response.json(await workspacesLoader(ctx.state.user));
   }),
 
   POST: define.handlers(async (ctx) => {

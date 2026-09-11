@@ -4,7 +4,7 @@ import Section from "@/islands/Section.tsx";
 import { getFile } from "@/signals/file.ts";
 import { getMarks } from "@/signals/marks.ts";
 import { getOpenedFiles } from "@/signals/openedFiles.ts";
-import { workspaces } from "@/signals/workspace.ts";
+import { getWorkspaces } from "@/signals/workspace.ts";
 
 export default function ExportPreviewSection() {
   const openedFiles = getOpenedFiles();
@@ -12,7 +12,10 @@ export default function ExportPreviewSection() {
   if (!openedFiles || !path) return null;
   return (
     <Section title="Export Preview">
-      <MarkdownPreview wsId={workspaces.currentWorkspaceId.value} path={path} />
+      <MarkdownPreview
+        wsId={getWorkspaces().currentWorkspaceId.value}
+        path={path}
+      />
     </Section>
   );
 }

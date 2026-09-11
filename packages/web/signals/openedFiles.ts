@@ -1,9 +1,12 @@
 import { createModel, effect } from "@preact/signals";
 import { IS_BROWSER } from "fresh/runtime";
 import { getFileTree } from "@/signals/fileTree.ts";
+import { get, namespace } from "@/signals/models.ts";
 import { leftSidebarOpened } from "@/signals/sidebar.ts";
-import { workspaces } from "@/signals/workspace.ts";
+import { getWorkspaces } from "@/signals/workspace.ts";
 import { persistentSignal } from "@/utils/persistentSignal.ts";
+
+export const openedFilesNs = namespace("openedFiles");
 
 export const OpenedFilesModel = createModel((workspaceId: string) => {
   const selected = persistentSignal(`selectedFile:${workspaceId}`, "");
@@ -32,12 +35,11 @@ export const OpenedFilesModel = createModel((workspaceId: string) => {
   return { opened, selected, open, close };
 });
 
-const cache = new Map<string, OpenedFiles>();
-
 export type OpenedFiles = InstanceType<typeof OpenedFilesModel>;
 
 export function getOpenedFilesFor(workspaceId: string): OpenedFiles {
-  return cache.getOrInsertComputed(
+  return get(
+    openedFilesNs,
     workspaceId,
     () => new OpenedFilesModel(workspaceId),
   );
@@ -45,7 +47,7 @@ export function getOpenedFilesFor(workspaceId: string): OpenedFiles {
 
 // Returns `null` while no workspace is selected (bootstrap, login page).
 export function getOpenedFiles(): OpenedFiles | null {
-  const wsId = workspaces.currentWorkspaceId.value;
+  const wsId = getWorkspaces().currentWorkspaceId.value;
   return wsId ? getOpenedFilesFor(wsId) : null;
 }
 
@@ -54,7 +56,7 @@ export function getOpenedFiles(): OpenedFiles | null {
 // the left sidebar so the file browser is visible to pick one.
 if (IS_BROWSER) {
   effect(() => {
-    const wsId = workspaces.currentWorkspaceId.value;
+    const wsId = getWorkspaces().currentWorkspaceId.value;
     if (!wsId) return;
     const of = getOpenedFilesFor(wsId);
     of.opened.value; // track so opening the first file can re-collapse it

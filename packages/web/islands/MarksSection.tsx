@@ -7,7 +7,7 @@ import { activeEditor } from "@/signals/activeEditor.ts";
 import { getEditorSelection } from "@/signals/editorSelection.ts";
 import { getMarks } from "@/signals/marks.ts";
 import { getOpenedFiles } from "@/signals/openedFiles.ts";
-import { workspaces } from "@/signals/workspace.ts";
+import { getWorkspaces } from "@/signals/workspace.ts";
 
 function MarkDetail({
   mark,
@@ -61,7 +61,7 @@ export default function MarksSection() {
   const openedFiles = getOpenedFiles();
   const path = openedFiles?.selected.value ?? "";
   if (!openedFiles || !path) return null;
-  return <Marks wsId={workspaces.currentWorkspaceId.value} path={path} />;
+  return <Marks wsId={getWorkspaces().currentWorkspaceId.value} path={path} />;
 }
 
 function Marks({ wsId, path }: { wsId: string; path: string }) {
