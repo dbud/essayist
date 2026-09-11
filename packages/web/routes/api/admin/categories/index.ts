@@ -1,6 +1,6 @@
 import { CategorySchema } from "@essayist/core";
 import { define } from "@/define.ts";
-import { configStore } from "@/store.ts";
+import { saveCategory } from "@/signals/categories.server.ts";
 
 export const handler = {
   POST: define.handlers(async (ctx) => {
@@ -15,7 +15,7 @@ export const handler = {
         { status: 400 },
       );
     }
-    await configStore.saveCategory(parsed.data);
+    await saveCategory(parsed.data);
     return Response.json(parsed.data, { status: 201 });
   }),
 };
