@@ -77,7 +77,7 @@ export function get<T, K>(
   return inst;
 }
 
-export function instances<T>(ns: Namespace): MapIterator<T> {
+export function instances<T>(ns: Namespace<unknown, unknown>): MapIterator<T> {
   const map = scope().instances.get(ns.name);
   return (map ?? new Map<string, T>()).values() as MapIterator<T>;
 }

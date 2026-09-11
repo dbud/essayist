@@ -3,6 +3,7 @@ import FileNavigation from "@/islands/FileNavigation.tsx";
 import FileViewer from "@/islands/FileViewer.tsx";
 import Navigation from "@/islands/Navigation.tsx";
 import RightSidebar from "@/islands/RightSidebar.tsx";
+import { getFile } from "@/signals/file.ts";
 import { getFileTreeFor } from "@/signals/fileTree.ts";
 import { seed } from "@/signals/models.ts";
 import { getOpenedFilesFor } from "@/signals/openedFiles.ts";
@@ -22,7 +23,10 @@ export default define.page(async ({ url, state }) => {
           // client (persisted signals, auto-select effects) and the server
           // (this priming block). Unify into one selection flow (ESS-32).
           const path = fileParam ?? getFileTreeFor(wsId).files.value[0]?.path;
-          if (path) getOpenedFilesFor(wsId).open(path);
+          if (path) {
+            getOpenedFilesFor(wsId).open(path);
+            getFile(wsId, path);
+          }
         })
       : null;
 

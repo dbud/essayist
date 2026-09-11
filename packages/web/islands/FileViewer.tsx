@@ -1,3 +1,4 @@
+import { IS_BROWSER } from "fresh/runtime";
 import { useMemo } from "preact/hooks";
 import { Caret } from "@/components/Caret.tsx";
 import { MarkBadges } from "@/components/MarkBadges.tsx";
@@ -93,7 +94,9 @@ function FileViewerBody({ wsId, path }: { wsId: string; path: string }) {
         >
           {/* isolate: stacking context for MarkHighlights z-index */}
           <div class="relative min-w-0 isolate">
-            {state.value && (
+            {IS_BROWSER && state.value && (
+              // Lexical SSR is pending (ESS-31); the editor hydrates from
+              // the warm cache instead of rendering its content.
               <Editor
                 wsId={wsId}
                 path={path}
