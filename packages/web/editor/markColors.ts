@@ -1,10 +1,10 @@
 import type { Mark } from "@essayist/core";
-import { categories } from "@/signals/categories.ts";
+import { getCategories } from "@/signals/categories.ts";
 
 export const FALLBACK_COLOR = "var(--color-ink)";
 
 export function colorForMark(mark: Mark): string {
-  const category = categories.byLabel.value.get(mark.label ?? "");
+  const category = getCategories().byLabel.value.get(mark.label ?? "");
   return category?.color ?? FALLBACK_COLOR;
 }
 

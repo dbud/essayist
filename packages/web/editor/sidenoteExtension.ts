@@ -4,7 +4,7 @@ import { $isMarkNode, MarkNode } from "@lexical/mark";
 import type { Signal } from "@preact/signals";
 import type { LexicalEditor } from "lexical";
 import { $getRoot } from "lexical";
-import { categories } from "@/signals/categories.ts";
+import { getCategories } from "@/signals/categories.ts";
 import type {
   MarkBadge,
   MarkNumbers,
@@ -53,7 +53,7 @@ export const SidenoteExtension = defineExtension({
       getIds: (node) => node.getIDs(),
       output: sidenotePositions,
       // Recolor bands when categories (color source) load or change.
-      remeasureOn: [markNumbers, categories.byLabel],
+      remeasureOn: [markNumbers, getCategories().byLabel],
       // Zero-length marks wrap no text and produce no MarkNode, so measure them
       // from a collapsed Range at their anchor. Resolve the anchor against the
       // fresh committed tree (not a lagging signal) so the position tracks the

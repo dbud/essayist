@@ -3,6 +3,7 @@ import FileNavigation from "@/islands/FileNavigation.tsx";
 import FileViewer from "@/islands/FileViewer.tsx";
 import Navigation from "@/islands/Navigation.tsx";
 import RightSidebar from "@/islands/RightSidebar.tsx";
+import { getCategories } from "@/signals/categories.ts";
 import { getFile } from "@/signals/file.ts";
 import { getFileTreeFor } from "@/signals/fileTree.ts";
 import { seed } from "@/signals/models.ts";
@@ -18,6 +19,7 @@ export default define.page(async ({ url, state }) => {
       ? await seed(async (drain) => {
           getWorkspaces().select(wsId);
           getFileTreeFor(wsId);
+          getCategories();
           await drain();
           // TODO: first workspace/file selection is scattered across the
           // client (persisted signals, auto-select effects) and the server

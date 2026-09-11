@@ -1,6 +1,6 @@
 import { WavyRenderer } from "@/components/highlights/WavyRenderer.tsx";
 import { FALLBACK_COLOR } from "@/editor/markColors.ts";
-import { categories } from "@/signals/categories.ts";
+import { getCategories } from "@/signals/categories.ts";
 import type { MarkRect } from "@/signals/sidenotes.ts";
 
 const EMPTY: ReadonlySet<string> = new Set();
@@ -11,7 +11,7 @@ const SWATCH_H = 24;
 // One row per category: label, band, band-inner, wavy, wavy-inner.
 export default function MarkSwatches() {
   const entries = [
-    ...categories.list.value.map((c) => ({
+    ...getCategories().list.value.map((c) => ({
       key: c.id,
       label: c.label,
       color: c.color ?? FALLBACK_COLOR,

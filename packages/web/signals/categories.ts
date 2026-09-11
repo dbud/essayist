@@ -1,29 +1,35 @@
 import type { Category } from "@essayist/core";
 import { computed, createModel, signal } from "@preact/signals";
-import { IS_BROWSER } from "fresh/runtime";
-import createAsyncState from "@/utils/asyncState.ts";
+import { get, modelData, namespace } from "@/signals/models.ts";
 import { ensureOk } from "@/utils/ensureOk.ts";
+
+export const categoriesNs = namespace<Category[]>("categories");
 
 export const CategoriesModel = createModel(() => {
   const list = signal<Category[]>([]);
-  const [run, { loading, error }] = createAsyncState(true);
 
   const byLabel = computed(
     () => new Map(list.value.map((c) => [c.label, c] as const)),
   );
 
-  async function load() {
-    const result = await run(async () => {
+  const { loading, error, refresh } = modelData(
+    categoriesNs,
+    "singleton",
+    (data) => {
+      list.value = data;
+    },
+    async () => {
       const res = await fetch("/api/categories");
       await ensureOk(res);
       return (await res.json()) as Category[];
-    });
-    if (result) list.value = result;
-  }
+    },
+  );
 
-  if (IS_BROWSER) void load();
-
-  return { list, byLabel, loading, error, reload: load };
+  return { list, byLabel, loading, error, refresh };
 });
 
-export const categories = new CategoriesModel();
+export type Categories = InstanceType<typeof CategoriesModel>;
+
+export function getCategories(): Categories {
+  return get(categoriesNs, "singleton", () => new CategoriesModel());
+}
