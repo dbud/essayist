@@ -6,8 +6,8 @@ import "@/signals/fileTree.server.ts";
 
 export const app: App<State> = new App<State>()
   .use(staticFiles())
-  .use(modelsMiddleware)
-  .use(authMiddleware);
+  .use(authMiddleware)
+  .use(modelsMiddleware);
 
 app.fsRoutes();
 

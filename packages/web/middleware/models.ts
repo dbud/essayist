@@ -4,7 +4,7 @@ import { runRequest } from "@/signals/models.server.ts";
 
 /** Each request runs in a fresh model scope. */
 const modelsMiddleware: Middleware<State> = define.middleware((ctx) =>
-  runRequest(() => ctx.next()),
+  runRequest(() => ctx.next(), ctx.state.user),
 );
 
 export default modelsMiddleware;
