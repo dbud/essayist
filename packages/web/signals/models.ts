@@ -9,16 +9,20 @@ import { IS_BROWSER } from "fresh/runtime";
 import createAsyncState from "@/utils/asyncState.ts";
 
 /**
- * A namespace token: the cache key plus the model's data shape. The runtime
- * value is just `name`; the marker exists for inference only and is never
- * set.
+ * A namespace token: the cache key's shape plus the model's data shape.
+ * The runtime value is just `name`; the markers exist for inference only
+ * and are never set. Keys may be strings or structured values -- the store
+ * canonicalizes them internally.
  */
-export interface Namespace<Seed = unknown> {
+export interface Namespace<Seed = unknown, Key = string> {
   readonly name: string;
   readonly seedType?: Seed;
+  readonly keyType?: Key;
 }
 
-export function namespace<Seed = unknown>(name: string): Namespace<Seed> {
+export function namespace<Seed = unknown, Key = string>(
+  name: string,
+): Namespace<Seed, Key> {
   return { name };
 }
 
@@ -43,32 +47,45 @@ export function setScopeProvider(p: () => Scope): void {
 
 // cache
 
-function cacheGet<S>(ns: Namespace<S>, key: string): S | undefined {
-  return scope().cache.get(ns.name)?.get(key) as S | undefined;
+function canonicalKey(key: unknown): string {
+  return typeof key === "string" ? key : JSON.stringify(key);
 }
 
-function cacheSet<S>(ns: Namespace<S>, key: string, data: S): void {
+function cacheGet<S, K>(ns: Namespace<S, K>, key: K): S | undefined {
+  return scope().cache.get(ns.name)?.get(canonicalKey(key)) as S | undefined;
+}
+
+function cacheSet<S, K>(ns: Namespace<S, K>, key: K, data: S): void {
   scope()
     .cache.getOrInsertComputed(ns.name, () => new Map())
-    .set(key, data);
+    .set(canonicalKey(key), data);
 }
 
 // instances
 
-export function get<T>(ns: Namespace<unknown>, key: string, build: () => T): T {
+export function get<T, K>(
+  ns: Namespace<unknown, K>,
+  key: K,
+  build: () => T,
+): T {
   const map = scope().instances.getOrInsertComputed(ns.name, () => new Map());
-  let inst = map.get(key) as T | undefined;
+  let inst = map.get(canonicalKey(key)) as T | undefined;
   if (!inst) {
     inst = build();
-    map.set(key, inst);
+    map.set(canonicalKey(key), inst);
   }
   return inst;
+}
+
+export function instances<T>(ns: Namespace): MapIterator<T> {
+  const map = scope().instances.get(ns.name);
+  return (map ?? new Map<string, T>()).values() as MapIterator<T>;
 }
 
 // model data
 
 // Server-only: resolves data for a cache miss.
-type Resolver = (ns: string, key: string) => Promise<unknown>;
+type Resolver = (ns: string, key: unknown) => Promise<unknown>;
 
 let resolver: Resolver = () => {
   throw new Error("model store: no resolver installed on the server");
@@ -90,9 +107,9 @@ export interface ModelData {
  * absorbs data into the model's signals; `transport` is the colocated
  * client fetch, used on a cache miss in the browser.
  */
-export function modelData<S>(
-  ns: Namespace<S>,
-  key: string,
+export function modelData<S, K>(
+  ns: Namespace<S, K>,
+  key: K,
   apply: (data: S) => void,
   transport?: () => Promise<S>,
 ): ModelData {
@@ -112,7 +129,7 @@ export function modelData<S>(
     });
   };
 
-  const cached = cacheGet<S>(ns, key);
+  const cached = cacheGet<S, K>(ns, key);
   if (cached !== undefined) {
     settle(cached);
   } else if (!IS_BROWSER) {
@@ -145,9 +162,12 @@ async function drain(): Promise<void> {
 type SerializedCache = Record<string, Record<string, unknown>>;
 
 /** The request's seed: run the page's priming calls, drain the collected
- * acquisitions, and serialize the cache for the client. */
-export async function seed(prime: () => unknown): Promise<string> {
-  await prime();
+ * acquisitions, and serialize the cache for the client. The priming
+ * callback may drain mid-way to resolve dependent models. */
+export async function seed(
+  prime: (drain: () => Promise<void>) => unknown,
+): Promise<string> {
+  await prime(drain);
   await drain();
   const snapshot: SerializedCache = {};
   for (const [ns, m] of scope().cache) {

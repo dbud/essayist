@@ -40,14 +40,14 @@ export function runRequest<T>(
 
 const loaders = new Map<
   string,
-  (key: string, user: User) => Promise<unknown>
+  (key: unknown, user: User) => Promise<unknown>
 >();
 
-export function registerLoader<S>(
-  ns: Namespace<S>,
-  loader: (key: string, user: User) => Promise<S>,
+export function registerLoader<S, K>(
+  ns: Namespace<S, K>,
+  loader: (key: K, user: User) => Promise<S>,
 ): void {
-  loaders.set(ns.name, loader);
+  loaders.set(ns.name, (key, user) => loader(key as K, user));
 }
 
 setResolver((ns, key) => {
