@@ -5,13 +5,17 @@ import Navigation from "@/islands/Navigation.tsx";
 import RightSidebar from "@/islands/RightSidebar.tsx";
 import { getFileTreeFor } from "@/signals/fileTree.ts";
 import { seed } from "@/signals/models.ts";
+import { getWorkspaces } from "@/signals/workspace.ts";
 import { store } from "@/store.ts";
 
 export default define.page(async ({ url, state }) => {
   const wsId = url.searchParams.get("ws");
   const snapshot =
     wsId && (await store.hasAccess(wsId, state.user.id))
-      ? await seed(() => getFileTreeFor(wsId))
+      ? await seed(() => {
+          getWorkspaces().select(wsId);
+          getFileTreeFor(wsId);
+        })
       : null;
 
   return (
