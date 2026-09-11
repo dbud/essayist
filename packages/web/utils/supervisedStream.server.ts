@@ -2,8 +2,8 @@
  * A supervised long-lived stream: reopens via `open()` when the iterator
  * ends or errors (with doubling, capped backoff), and reopens immediately
  * when `restart()` is requested (e.g. because the stream's input set
- * grew). Values are delivered to `onItem`; `onStart` lets the consumer
- * reset per-stream state before each open.
+ * grew). Each value from the stream is delivered to `onItem` together
+ * with the per-run state that `start` creates before each open.
  */
 
 import { delay } from "@/utils/delay.ts";
@@ -12,12 +12,13 @@ import { delay } from "@/utils/delay.ts";
 const RESTART_BACKOFF_MS = 1_000;
 const RESTART_BACKOFF_CAP_MS = 30_000;
 
-/** Race sentinel: the restart signal fired, not an iterator value. */
+/** Settles when the restart signal fires, instead of the iterator
+ * delivering a value. */
 const RESTARTED = Symbol("supervisedStream: restarted");
 
 /** A one-shot restart request: `trigger()` marks it fired and wakes the
  * stream waiting on `promise`. The flag survives the wait, so a request
- * landing while the stream is processing is not lost. */
+ * arriving while the stream is busy is not lost. */
 interface RestartSignal {
   promise: Promise<typeof RESTARTED>;
   trigger: () => void;
@@ -37,54 +38,54 @@ function restartSignal(): RestartSignal {
   return signal;
 }
 
-/** The restart signal of the stream that is currently parked, replaced
+/** The restart signal of the run that is currently waiting, replaced
  * before every run so `restart()` always reaches the live one. */
 interface SupervisorState {
   signal?: RestartSignal;
 }
 
-export interface StreamHooks<T> {
+export interface StreamHooks<T, S> {
   /** Log label for reconnect and error lines. */
   name: string;
-  /** Open a fresh iterator; called after `onStart` on every run, so it
-   * may read input state that changed since the last run. */
-  open: () => AsyncIterator<T>;
-  /** A stream is about to open: reset per-stream state here. */
-  onStart: () => void;
-  /** Process one item. */
-  onItem: (item: T) => void;
+  /** Create the per-run state; called before every open. */
+  start: () => S;
+  /** Open a fresh iterator for this run, so it may read input state
+   * that changed since the last run. */
+  open: (state: S) => AsyncIterator<T>;
+  /** Process one item for this run. */
+  onItem: (item: T, state: S) => void;
 }
 
 export interface SupervisedStream {
-  /** Reopen the stream immediately (e.g. its input set grew). A request
-   * landing during the backoff window is absorbed by the pending
-   * reconnect, which reads fresh input state anyway. */
+  /** Reopen the stream immediately (e.g. its input set grew). If it
+   * arrives while the stream is waiting out a backoff, the reconnect
+   * that follows reads fresh input state anyway. */
   restart: () => void;
 }
 
-/** Start supervising a stream. Runs detached: failures are logged, not
- * thrown. */
-export function supervise<T>(hooks: StreamHooks<T>): SupervisedStream {
+/** Start supervising a stream. The loop runs for the lifetime of the
+ * caller; failures are logged, not thrown. */
+export function supervise<T, S>(hooks: StreamHooks<T, S>): SupervisedStream {
   const state: SupervisorState = {};
   void loop(hooks, state);
   return { restart: () => state.signal?.trigger() };
 }
 
-async function loop<T>(
-  hooks: StreamHooks<T>,
+async function loop<T, S>(
+  hooks: StreamHooks<T, S>,
   state: SupervisorState,
 ): Promise<void> {
   let attempt = 0;
   for (;;) {
-    // A fresh signal per run: a fired flag must never leak into the next
-    // stream, or the next run would restart instantly, forever.
-    const signal = restartSignal();
-    state.signal = signal;
-    const outcome = await runStream(hooks, signal);
+    // Each run gets its own signal, so a fired flag never carries over.
+    state.signal = restartSignal();
+    const run = hooks.start();
+    const outcome = await runStream(hooks, state.signal, run);
     if (outcome !== "failed") attempt = 0;
     if (outcome === "restarted") continue;
-    // The stream ended or errored: reconnect with backoff. Consumers'
-    // own staleness bounds apply while the stream is down.
+    // The stream ended or errored: reconnect with backoff. Consumers
+    // handle their own freshness (for example, a TTL) while the stream
+    // is down.
     await delay(
       Math.min(RESTART_BACKOFF_MS * 2 ** attempt, RESTART_BACKOFF_CAP_MS),
     );
@@ -95,20 +96,20 @@ async function loop<T>(
 /**
  * Run one stream until it is restarted (a restart was requested), ends,
  * or errors. "delivered" marks a run that processed at least one item,
- * which lets the retry policy treat a healthy stream's end differently
- * from a cold failure when backing off.
+ * which lets the retry policy treat the end of a healthy stream
+ * differently from a stream that died before delivering anything.
  */
-async function runStream<T>(
-  hooks: StreamHooks<T>,
+async function runStream<T, S>(
+  hooks: StreamHooks<T, S>,
   signal: RestartSignal,
+  run: S,
 ): Promise<"restarted" | "delivered" | "failed"> {
-  hooks.onStart();
   let delivered = false;
   try {
-    const it = hooks.open();
+    const it = hooks.open(run);
     try {
       for await (const item of items(it, signal.promise)) {
-        hooks.onItem(item);
+        hooks.onItem(item, run);
         delivered = true;
       }
     } finally {
