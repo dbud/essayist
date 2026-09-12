@@ -4,22 +4,18 @@ import {
   KvAdapter,
   ReviewStore,
   type User,
+  UserStateStore,
   type Workspace,
   WorkspaceStore,
 } from "@essayist/core";
 import { seedDemo } from "@/seed.ts";
 
 /**
- * Shared backing store for the web app.
+ * Backing stores for the web app, over one shared `KvAdapter`.
  *
  * On Deno Deploy, `Deno.openKv()` connects to the platform KV. In local dev
  * (`DENO_ENV=development`) it opens a project-relative SQLite file
- * (`local-kv.sqlite3`, gitignored) so the database is easy to find, inspect, and
- * reset.
- *
- * The {@link WorkspaceStore} and per-request `VirtualFileSystem` instances share
- * this one adapter, keyed under disjoint top-level parts (`users`, `workspaces`,
- * `members_*` for the workspace store; `ws` for the VFS).
+ * (`local-kv.sqlite3`, gitignored).
  */
 const isDev = Deno.env.get("DENO_ENV") === "development";
 
@@ -29,6 +25,7 @@ export const kv = isDev
 
 export const adapter = new KvAdapter(kv);
 export const workspaceStore = new WorkspaceStore(adapter);
+export const userStateStore = new UserStateStore(adapter);
 export const configStore = new ConfigStore(adapter);
 export const reviewStore = new ReviewStore(adapter);
 export const traceStore = new EventTraceStore(adapter);

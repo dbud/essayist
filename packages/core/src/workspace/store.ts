@@ -14,7 +14,7 @@ import type {
 } from "./types.ts";
 import { LastOwnerError, UserEmailTakenError } from "./types.ts";
 
-// Key layout (all top-level parts are distinct to avoid prefix collisions):
+// Key layout:
 //   ["users", userId]                        -> User
 //   ["user_emails", email]                   -> userId   (unique-email index)
 //   ["workspaces", wsId]                     -> Workspace

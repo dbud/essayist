@@ -64,6 +64,7 @@ export type {
   ToolParameters,
 } from "@/tools/registry.ts";
 export { getToolInfos } from "@/tools/registry.ts";
+export { UserStateStore } from "@/user_state/store.ts";
 export { setMyers } from "@/vfs/diff.ts";
 export type { ResolveInput, ResolveOptions } from "@/vfs/marks_resolver.ts";
 export { resolveMarks } from "@/vfs/marks_resolver.ts";
