@@ -5,8 +5,8 @@ import { workspacesLoader } from "@/signals/workspace.server.ts";
 import { adapter, workspaceStore } from "@/store.ts";
 
 export const handler = {
-  GET: define.handlers(async (ctx) => {
-    return Response.json(await workspacesLoader(ctx.state.user));
+  GET: define.handlers(async ({ state, url }) => {
+    return Response.json(await workspacesLoader({ user: state.user, url }));
   }),
 
   POST: define.handlers(async (ctx) => {

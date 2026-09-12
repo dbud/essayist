@@ -4,13 +4,13 @@ import { userStateStore } from "@/store.ts";
 
 registerLoader(
   selectedWorkspaceNs,
-  async (_key, user) =>
+  async (_key, { user }) =>
     (await userStateStore.getSelectedWorkspace(user.id)) ?? null,
 );
 
 registerLoader(
   selectedFileNs,
-  async (workspaceId, user) =>
+  async (workspaceId, { user }) =>
     (await userStateStore.getSelectedFile(user.id, String(workspaceId))) ??
     null,
 );

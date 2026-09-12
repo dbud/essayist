@@ -12,9 +12,15 @@ import {
  * reaches the client bundle, and model access outside a request throws.
  */
 
+/** Request environment available to loaders. */
+export interface Context {
+  user: User;
+  url: URL;
+}
+
 interface RequestStore {
   scope: ReturnType<typeof createScope>;
-  user: User;
+  ctx: Context;
 }
 
 const als = new AsyncLocalStorage<RequestStore>();
@@ -31,32 +37,32 @@ setScopeProvider(() => request().scope);
 
 export function runRequest<T>(
   fn: () => T | Promise<T>,
-  user: User,
+  ctx: Context,
 ): T | Promise<T> {
-  return als.run({ scope: createScope(), user }, fn);
+  return als.run({ scope: createScope(), ctx }, fn);
 }
 
 // loaders
 
 const loaders = new Map<
   string,
-  (key: unknown, user: User) => Promise<unknown>
+  (key: unknown, ctx: Context) => Promise<unknown>
 >();
 
 export function registerLoader<S, K>(
   ns: Namespace<S, K>,
-  loader: (key: K, user: User) => Promise<S>,
+  loader: (key: K, ctx: Context) => Promise<S>,
 ): void {
-  loaders.set(ns.name, (key, user) => loader(key as K, user));
+  loaders.set(ns.name, (key, ctx) => loader(key as K, ctx));
 }
 
 setResolver((ns, key) => {
-  const { user } = request();
+  const { ctx } = request();
   const loader = loaders.get(ns);
   if (!loader) {
     return Promise.reject(
       new Error(`model store: no loader registered for ${ns} (${key})`),
     );
   }
-  return loader(key, user);
+  return loader(key, ctx);
 });
