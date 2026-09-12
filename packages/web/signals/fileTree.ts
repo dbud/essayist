@@ -6,10 +6,16 @@ import { ensureOk } from "@/utils/ensureOk.ts";
 import type { UploadedFile } from "@/utils/fileUpload.ts";
 import createProgressState from "@/utils/progressState.ts";
 
-export const treeNs = namespace<FileEntry[]>("tree");
+export interface TreeData {
+  files: FileEntry[];
+  selectedPath: string | null;
+}
+
+export const treeNs = namespace<TreeData>("tree");
 
 export const FileTreeModel = createModel((workspaceId: string) => {
   const files = signal<FileEntry[]>([]);
+  const selectedPath = signal<string | null>(null);
   const [runUpload, { progress: uploadProgress }] = createProgressState();
 
   const tree = computed(() => buildFileTree(files.value));
@@ -17,15 +23,28 @@ export const FileTreeModel = createModel((workspaceId: string) => {
   const { loading, error, refresh } = modelData(
     treeNs,
     workspaceId,
-    (data) => (files.value = data),
+    (data) => {
+      files.value = data.files;
+      // Interactive selection survives a refresh while its file still exists.
+      // TODO -- drop once interactive selections are persisted server-side.
+      const current = selectedPath.value;
+      selectedPath.value =
+        current && data.files.some((f) => f.path === current)
+          ? current
+          : data.selectedPath;
+    },
     async () => {
       const res = await fetch(
         `/api/workspaces/${encodeURIComponent(workspaceId)}/files`,
       );
       await ensureOk(res);
-      return (await res.json()) as FileEntry[];
+      return (await res.json()) as TreeData;
     },
   );
+
+  function select(path: string | null): void {
+    selectedPath.value = path;
+  }
 
   /** Create a new file via POST to the files endpoint, then reload the tree. */
   async function createFile(path: string, content = ""): Promise<void> {
@@ -73,9 +92,11 @@ export const FileTreeModel = createModel((workspaceId: string) => {
 
   return {
     files,
+    selectedPath,
+    select,
+    tree,
     loading,
     error,
-    tree,
     createFile,
     uploadFiles,
     uploadProgress,
@@ -137,7 +158,7 @@ function buildFileTree(files: FileEntry[]): TreeNode {
   return root;
 }
 
-function sortTree(node: TreeNode): void {
+function sortTree(node: TreeNode) {
   node.children.sort((a, b) => {
     if (a.isFile !== b.isFile) return a.isFile ? 1 : -1;
     return a.name.localeCompare(b.name);

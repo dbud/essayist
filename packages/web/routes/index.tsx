@@ -8,12 +8,9 @@ import { getFile } from "@/signals/file.ts";
 import { getFileTreeFor } from "@/signals/fileTree.ts";
 import { seed } from "@/signals/models.ts";
 import { getOpenedFilesFor } from "@/signals/openedFiles.ts";
-import { getSelectedFileFor } from "@/signals/selection.ts";
 import { getWorkspaces } from "@/signals/workspace.ts";
 
-export default define.page(async ({ url, state }) => {
-  const urlFile = url.searchParams.get("file");
-
+export default define.page(async ({ state }) => {
   const snapshot = await seed(async (drain) => {
     const workspaces = getWorkspaces();
     getCategories();
@@ -23,18 +20,9 @@ export default define.page(async ({ url, state }) => {
     if (!wsId) return;
 
     getFileTreeFor(wsId);
-    getSelectedFileFor(wsId);
     await drain();
 
-    const files = getFileTreeFor(wsId).files.value;
-    const known = (p: string | null | undefined): p is string =>
-      !!p && files.some((f) => f.path === p);
-    const persisted = getSelectedFileFor(wsId).path.value;
-    const path = known(urlFile)
-      ? urlFile
-      : known(persisted)
-        ? persisted
-        : files[0]?.path;
+    const path = getFileTreeFor(wsId).selectedPath.value;
     if (path) {
       getOpenedFilesFor(wsId).open(path);
       getFile(wsId, path);

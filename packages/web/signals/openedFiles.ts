@@ -1,6 +1,6 @@
-import { createModel, effect } from "@preact/signals";
+import { computed, createModel, effect } from "@preact/signals";
 import { IS_BROWSER } from "fresh/runtime";
-import { getFileTree } from "@/signals/fileTree.ts";
+import { getFileTreeFor } from "@/signals/fileTree.ts";
 import { get, namespace } from "@/signals/models.ts";
 import { leftSidebarOpened } from "@/signals/sidebar.ts";
 import { getWorkspaces } from "@/signals/workspace.ts";
@@ -9,12 +9,16 @@ import { persistentSignal } from "@/utils/persistentSignal.ts";
 export const openedFilesNs = namespace("openedFiles");
 
 export const OpenedFilesModel = createModel((workspaceId: string) => {
-  const selected = persistentSignal(`selectedFile:${workspaceId}`, "");
+  const tree = getFileTreeFor(workspaceId);
   const opened = persistentSignal<string[]>(`openedFiles:${workspaceId}`, []);
   const history = persistentSignal<string[]>(`fileHistory:${workspaceId}`, []);
 
+  // Projection of the tree model's selection; "" while nothing is selected.
+  // TODO -- cleanup
+  const selected = computed(() => tree.selectedPath.value ?? "");
+
   function open(path: string) {
-    selected.value = path;
+    tree.select(path);
     const current = opened.value;
     if (!current.includes(path)) {
       opened.value = [...current, path];
@@ -28,7 +32,7 @@ export const OpenedFilesModel = createModel((workspaceId: string) => {
     history.value = history.value.filter((p) => p !== path);
     if (selected.value === path) {
       const mostRecent = history.value.find((p) => remaining.includes(p));
-      selected.value = mostRecent ?? remaining[0] ?? "";
+      tree.select(mostRecent ?? remaining[0] ?? null);
     }
   }
 
@@ -63,14 +67,21 @@ if (IS_BROWSER) {
     if (of.opened.value.length === 0) leftSidebarOpened.value = true;
   });
 
-  // Auto-select the first file when no file is selected and files are available.
-  // TODO -- simplify?
+  // Keep the opened-tabs list in sync with a seeded or restored selection.
   effect(() => {
-    const ft = getFileTree();
-    if (!ft) return;
     const of = getOpenedFiles();
-    if (!of || of.selected.value) return;
-    const files = ft.files.value;
-    if (files.length > 0) of.open(files[0].path);
+    if (!of) return;
+    const selected = of.selected.value;
+    if (selected && !of.opened.value.includes(selected)) of.open(selected);
+  });
+
+  // Auto-select the first file once the tree is settled and nothing is selected.
+  effect(() => {
+    const wsId = getWorkspaces().selectedId.value;
+    if (!wsId) return;
+    const tree = getFileTreeFor(wsId);
+    if (tree.loading.value || tree.selectedPath.value) return;
+    const files = tree.files.value;
+    if (files.length > 0) getOpenedFilesFor(wsId).open(files[0].path);
   });
 }
