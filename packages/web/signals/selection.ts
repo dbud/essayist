@@ -1,31 +1,6 @@
 import { createModel, signal } from "@preact/signals";
 import { get, modelData, namespace } from "@/signals/models.ts";
 
-/** The user's persisted selected workspace. */
-export const selectedWorkspaceNs = namespace<string | null>(
-  "selectedWorkspace",
-);
-
-export const SelectedWorkspaceModel = createModel(() => {
-  const workspaceId = signal<string | null>(null);
-  const { loading, error } = modelData(
-    selectedWorkspaceNs,
-    "singleton",
-    (data) => (workspaceId.value = data),
-  );
-  return { workspaceId, loading, error };
-});
-
-export type SelectedWorkspace = InstanceType<typeof SelectedWorkspaceModel>;
-
-export function getSelectedWorkspace(): SelectedWorkspace {
-  return get(
-    selectedWorkspaceNs,
-    "singleton",
-    () => new SelectedWorkspaceModel(),
-  );
-}
-
 /** The user's persisted selected file within one workspace. */
 export const selectedFileNs = namespace<string | null>("selectedFile");
 

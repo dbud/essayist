@@ -2,35 +2,40 @@ import type { Workspace } from "@essayist/core";
 import { computed, createModel, signal } from "@preact/signals";
 import { get, modelData, namespace } from "@/signals/models.ts";
 import { ensureOk } from "@/utils/ensureOk.ts";
-import { persistentSignal } from "@/utils/persistentSignal.ts";
 
-export const workspacesNs = namespace<Workspace[]>("workspaces");
+export interface WorkspacesData {
+  workspaces: Workspace[];
+  selectedId: string | null;
+}
+
+export const workspacesNs = namespace<WorkspacesData>("workspaces");
 
 export const WorkspacesModel = createModel(() => {
-  const currentWorkspaceId = persistentSignal<string>("workspaceId", "");
   const list = signal<Workspace[]>([]);
+  const selectedId = signal<string | null>(null);
 
   const current = computed(() =>
-    list.value.find((w) => w.id === currentWorkspaceId.value),
+    list.value.find((w) => w.id === selectedId.value),
   );
 
+  /** TODO -- refactor consumers */
+  const currentWorkspaceId = computed(() => selectedId.value ?? "");
+
   function select(id: string): void {
-    currentWorkspaceId.value = id;
+    selectedId.value = id;
   }
 
   const { loading, error, refresh } = modelData(
     workspacesNs,
     "singleton",
     (data) => {
-      list.value = data;
-      const persisted = currentWorkspaceId.value;
-      const stillExists = data.some((w) => w.id === persisted);
-      currentWorkspaceId.value = stillExists ? persisted : (data[0]?.id ?? "");
+      list.value = data.workspaces;
+      selectedId.value = data.selectedId;
     },
     async () => {
       const res = await fetch("/api/workspaces");
       await ensureOk(res);
-      return (await res.json()) as Workspace[];
+      return (await res.json()) as WorkspacesData;
     },
   );
 
@@ -44,14 +49,15 @@ export const WorkspacesModel = createModel(() => {
     await ensureOk(res);
     const workspace = (await res.json()) as Workspace;
     await refresh();
-    currentWorkspaceId.value = workspace.id;
+    select(workspace.id);
     return workspace;
   }
 
   return {
-    currentWorkspaceId,
     list,
+    selectedId,
     current,
+    currentWorkspaceId,
     loading,
     error,
     select,
