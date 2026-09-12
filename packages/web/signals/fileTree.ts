@@ -25,13 +25,7 @@ export const FileTreeModel = createModel((workspaceId: string) => {
     workspaceId,
     (data) => {
       files.value = data.files;
-      // Interactive selection survives a refresh while its file still exists.
-      // TODO -- drop once interactive selections are persisted server-side.
-      const current = selectedPath.value;
-      selectedPath.value =
-        current && data.files.some((f) => f.path === current)
-          ? current
-          : data.selectedPath;
+      selectedPath.value = data.selectedPath;
     },
     async () => {
       const res = await fetch(
