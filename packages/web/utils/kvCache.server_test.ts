@@ -3,7 +3,7 @@ import { delay } from "@/utils/delay.ts";
 import { cached } from "@/utils/kvCache.server.ts";
 
 /** Loads resolve to distinct "v1", "v2", ... values so value assertions
- * never read like counts; `loads()` counts load invocations. */
+ * never read like counts; `loads` counts load invocations. */
 function versionedLoader() {
   let n = 0;
   return {
@@ -47,7 +47,7 @@ Deno.test("kvCache -- invalidate forces the next get to reload", async () => {
   const loader = versionedLoader();
   const cache = cached("test", loader.load, { ttlMs: 60_000 });
   assertEquals(await cache.get(), "v1");
-  cache.invalidate();
+  await cache.invalidate();
   assertEquals(await cache.get(), "v2");
   assertEquals(loader.loads, 2);
 });
@@ -58,7 +58,7 @@ Deno.test("kvCache -- invalidate during a fill discards the fill's result", asyn
   const cache = cached("test", load, { ttlMs: 60_000 });
   const first = cache.get();
   // Invalidate while the fill is still in flight (before its callbacks run).
-  cache.invalidate();
+  await cache.invalidate();
   // The caller that started before invalidation still resolves...
   assertEquals(await first, "v1");
   // ...but its result must not repopulate the cache.

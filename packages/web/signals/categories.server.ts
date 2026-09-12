@@ -1,31 +1,32 @@
 import type { Category } from "@essayist/core";
 import { categoriesNs } from "@/signals/categories.ts";
 import { registerLoader } from "@/signals/models.server.ts";
-import { configStore } from "@/store.ts";
+import { configStore, kv } from "@/store.ts";
 import { cached } from "@/utils/kvCache.server.ts";
 
 const cache = cached<Category[]>(
   "categories",
   () => configStore.listCategories(),
-  // Mark colors are display-only, so cross-isolate staleness within the
-  // TTL is acceptable.
-  { ttlMs: 60_000 },
+  {
+    ttlMs: 60_000,
+    watch: { kv, key: ["cache_epoch", "categories"] },
+  },
 );
 
 export function categoriesLoader(): Promise<Category[]> {
   return cache.get();
 }
 
-// Category writes go through these wrappers so invalidation always
+// Category writes go through these wrappers so the invalidation always
 // travels with the write.
 export async function saveCategory(category: Category): Promise<void> {
   await configStore.saveCategory(category);
-  cache.invalidate();
+  await cache.invalidate();
 }
 
 export async function deleteCategory(id: string): Promise<void> {
   await configStore.deleteCategory(id);
-  cache.invalidate();
+  await cache.invalidate();
 }
 
 registerLoader(categoriesNs, () => categoriesLoader());
