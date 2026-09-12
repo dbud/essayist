@@ -75,7 +75,7 @@ function renderItem(item: StreamableOutputItem) {
 export default function Chat() {
   const { messages, streaming, send } = useChat(
     () =>
-      `/api/workspaces/${encodeURIComponent(getWorkspaces().currentWorkspaceId.value)}/chat`,
+      `/api/workspaces/${encodeURIComponent(getWorkspaces().selectedId.value ?? "")}/chat`,
   );
   const input = useSignal("");
   const scrollRef = useRef<HTMLDivElement>(null);

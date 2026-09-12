@@ -27,8 +27,8 @@ import { delayedRise } from "@/utils/delayedRise.ts";
 export default function FileViewer() {
   const openedFiles = getOpenedFiles();
   const path = openedFiles?.selected.value ?? "";
-  if (!openedFiles || !path) return null;
-  const wsId = getWorkspaces().currentWorkspaceId.value;
+  const wsId = getWorkspaces().selectedId.value;
+  if (!openedFiles || !path || !wsId) return null;
   return <FileViewerBody key={path} wsId={wsId} path={path} />;
 }
 

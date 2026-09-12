@@ -87,7 +87,7 @@ export default function GoogleDocImporter() {
 
   function handleImport() {
     if (importing.value) return;
-    wsIdRef.current = getWorkspaces().currentWorkspaceId.value;
+    wsIdRef.current = getWorkspaces().selectedId.value;
     globalThis.open("/import/google-docs", "_blank");
   }
 

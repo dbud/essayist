@@ -91,7 +91,7 @@ export function getFileTreeFor(workspaceId: string): FileTree {
 
 // Returns `null` while no workspace is selected (bootstrap, login page).
 export function getFileTree(): FileTree | null {
-  const wsId = getWorkspaces().currentWorkspaceId.value;
+  const wsId = getWorkspaces().selectedId.value;
   return wsId ? getFileTreeFor(wsId) : null;
 }
 

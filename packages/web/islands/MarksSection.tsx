@@ -60,8 +60,9 @@ function MarkDetail({
 export default function MarksSection() {
   const openedFiles = getOpenedFiles();
   const path = openedFiles?.selected.value ?? "";
-  if (!openedFiles || !path) return null;
-  return <Marks wsId={getWorkspaces().currentWorkspaceId.value} path={path} />;
+  const wsId = getWorkspaces().selectedId.value;
+  if (!openedFiles || !path || !wsId) return null;
+  return <Marks wsId={wsId} path={path} />;
 }
 
 function Marks({ wsId, path }: { wsId: string; path: string }) {

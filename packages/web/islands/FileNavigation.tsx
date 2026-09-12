@@ -184,7 +184,7 @@ export default function FileNavigation() {
   );
 
   const workspacesList = getWorkspaces().list.value.map(({ id, name }) => {
-    const selected = id === getWorkspaces().currentWorkspaceId.value;
+    const selected = id === getWorkspaces().selectedId.value;
     return (
       <div class="relative flex" key={id}>
         <button

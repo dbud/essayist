@@ -47,7 +47,7 @@ export function getOpenedFilesFor(workspaceId: string): OpenedFiles {
 
 // Returns `null` while no workspace is selected (bootstrap, login page).
 export function getOpenedFiles(): OpenedFiles | null {
-  const wsId = getWorkspaces().currentWorkspaceId.value;
+  const wsId = getWorkspaces().selectedId.value;
   return wsId ? getOpenedFilesFor(wsId) : null;
 }
 
@@ -56,7 +56,7 @@ export function getOpenedFiles(): OpenedFiles | null {
 // the left sidebar so the file browser is visible to pick one.
 if (IS_BROWSER) {
   effect(() => {
-    const wsId = getWorkspaces().currentWorkspaceId.value;
+    const wsId = getWorkspaces().selectedId.value;
     if (!wsId) return;
     const of = getOpenedFilesFor(wsId);
     of.opened.value; // track so opening the first file can re-collapse it

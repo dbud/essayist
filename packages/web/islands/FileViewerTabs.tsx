@@ -49,8 +49,8 @@ function Tab({
 
 export default function FileViewerTabs() {
   const openedFiles = getOpenedFiles();
-  if (!openedFiles) return null;
-  const wsId = getWorkspaces().currentWorkspaceId.value;
+  const wsId = getWorkspaces().selectedId.value;
+  if (!openedFiles || !wsId) return null;
   const files = openedFiles.opened.value;
   const selected = openedFiles.selected.value;
 

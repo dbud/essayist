@@ -18,9 +18,6 @@ export const WorkspacesModel = createModel(() => {
     list.value.find((w) => w.id === selectedId.value),
   );
 
-  /** TODO -- refactor consumers */
-  const currentWorkspaceId = computed(() => selectedId.value ?? "");
-
   function select(id: string): void {
     selectedId.value = id;
   }
@@ -57,7 +54,6 @@ export const WorkspacesModel = createModel(() => {
     list,
     selectedId,
     current,
-    currentWorkspaceId,
     loading,
     error,
     select,

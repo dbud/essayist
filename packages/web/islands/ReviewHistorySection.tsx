@@ -48,13 +48,9 @@ function RunItem({ run, wsId }: { run: ReviewRun; wsId: string }) {
 export default function ReviewHistorySection() {
   const openedFiles = getOpenedFiles();
   const path = openedFiles?.selected.value ?? "";
-  if (!openedFiles || !path) return null;
-  return (
-    <ReviewHistory
-      wsId={getWorkspaces().currentWorkspaceId.value}
-      path={path}
-    />
-  );
+  const wsId = getWorkspaces().selectedId.value;
+  if (!openedFiles || !path || !wsId) return null;
+  return <ReviewHistory wsId={wsId} path={path} />;
 }
 
 function ReviewHistory({ wsId, path }: { wsId: string; path: string }) {

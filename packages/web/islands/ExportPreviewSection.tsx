@@ -9,13 +9,11 @@ import { getWorkspaces } from "@/signals/workspace.ts";
 export default function ExportPreviewSection() {
   const openedFiles = getOpenedFiles();
   const path = openedFiles?.selected.value ?? "";
-  if (!openedFiles || !path) return null;
+  const wsId = getWorkspaces().selectedId.value;
+  if (!openedFiles || !path || !wsId) return null;
   return (
     <Section title="Export Preview">
-      <MarkdownPreview
-        wsId={getWorkspaces().currentWorkspaceId.value}
-        path={path}
-      />
+      <MarkdownPreview wsId={wsId} path={path} />
     </Section>
   );
 }
