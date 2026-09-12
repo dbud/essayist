@@ -9,5 +9,6 @@ import "@fontsource-variable/recursive/mono.css";
 import "@fontsource-variable/special-gothic/wdth.css";
 import "./assets/styles.css";
 import "@/signals/preferences.ts";
+import "@/signals/persist.ts";
 import "@/signals/unload.ts";
 import "@/signals/url.ts";
