@@ -1,6 +1,7 @@
 import { FileText, X } from "lucide-preact";
 import Tabs from "@/islands/Tabs.tsx";
 import { getFile } from "@/signals/file.ts";
+import { getFileTree } from "@/signals/fileTree.ts";
 import { getOpenedFiles, type OpenedFiles } from "@/signals/openedFiles.ts";
 import { getWorkspaces } from "@/signals/workspace.ts";
 
@@ -50,14 +51,14 @@ function Tab({
 export default function FileViewerTabs() {
   const openedFiles = getOpenedFiles();
   const wsId = getWorkspaces().selectedId.value;
-  if (!openedFiles || !wsId) return null;
+  const selectedPath = getFileTree()?.selectedPath.value ?? "";
+  if (!openedFiles || !wsId || !selectedPath) return null;
   const files = openedFiles.opened.value;
-  const selected = openedFiles.selected.value;
 
   if (files.length === 0) return null;
 
   return (
-    <Tabs activeIndex={files.indexOf(selected)}>
+    <Tabs activeIndex={files.indexOf(selectedPath)}>
       {files.map((path) => (
         <Tab key={path} wsId={wsId} path={path} openedFiles={openedFiles} />
       ))}

@@ -2,7 +2,7 @@ import type { ReviewRun, ReviewRunStatus } from "@essayist/core";
 import { ScrollText } from "lucide-preact";
 import MarkdownView from "@/components/MarkdownView.tsx";
 import Section from "@/islands/Section.tsx";
-import { getOpenedFiles } from "@/signals/openedFiles.ts";
+import { getFileTree } from "@/signals/fileTree.ts";
 import { getReview } from "@/signals/review.ts";
 import { getWorkspaces } from "@/signals/workspace.ts";
 
@@ -46,10 +46,9 @@ function RunItem({ run, wsId }: { run: ReviewRun; wsId: string }) {
 }
 
 export default function ReviewHistorySection() {
-  const openedFiles = getOpenedFiles();
-  const path = openedFiles?.selected.value ?? "";
   const wsId = getWorkspaces().selectedId.value;
-  if (!openedFiles || !path || !wsId) return null;
+  const path = getFileTree()?.selectedPath.value ?? "";
+  if (!wsId || !path) return null;
   return <ReviewHistory wsId={wsId} path={path} />;
 }
 

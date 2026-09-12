@@ -8,8 +8,8 @@ import {
 } from "@preact/signals";
 import { IS_BROWSER } from "fresh/runtime";
 import type { EditorState } from "lexical";
+import { getFileTreeFor } from "@/signals/fileTree.ts";
 import { get, instances, modelData, namespace } from "@/signals/models.ts";
-import { getOpenedFilesFor } from "@/signals/openedFiles.ts";
 import { autoSave, autoSaveInterval } from "@/signals/preferences.ts";
 import { dismissToast, showToast, type Toast } from "@/signals/toast.ts";
 import createAsyncState from "@/utils/asyncState.ts";
@@ -39,7 +39,7 @@ export const FileModel = createModel((workspaceId: string, path: string) => {
   const draft = signal<DraftSnapshot | null>(null);
   const [runSave, { loading: saving, error: saveError }] = createAsyncState();
   const isSelected = computed(
-    () => getOpenedFilesFor(workspaceId).selected.value === path,
+    () => getFileTreeFor(workspaceId).selectedPath.value === path,
   );
 
   // Editor seed, parsed once; autosave adopts strings without re-parsing.

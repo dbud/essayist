@@ -5,8 +5,8 @@ import { SELECT_MARK_COMMAND } from "@/editor/markExtension.ts";
 import Section from "@/islands/Section.tsx";
 import { activeEditor } from "@/signals/activeEditor.ts";
 import { getEditorSelection } from "@/signals/editorSelection.ts";
+import { getFileTree } from "@/signals/fileTree.ts";
 import { getMarks } from "@/signals/marks.ts";
-import { getOpenedFiles } from "@/signals/openedFiles.ts";
 import { getWorkspaces } from "@/signals/workspace.ts";
 
 function MarkDetail({
@@ -58,10 +58,9 @@ function MarkDetail({
 }
 
 export default function MarksSection() {
-  const openedFiles = getOpenedFiles();
-  const path = openedFiles?.selected.value ?? "";
   const wsId = getWorkspaces().selectedId.value;
-  if (!openedFiles || !path || !wsId) return null;
+  const path = getFileTree()?.selectedPath.value ?? "";
+  if (!wsId || !path) return null;
   return <Marks wsId={wsId} path={path} />;
 }
 

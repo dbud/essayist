@@ -17,18 +17,17 @@ import SidenoteControls from "@/islands/SidenoteControls.tsx";
 import { activeEditor } from "@/signals/activeEditor.ts";
 import { getEditorSelection } from "@/signals/editorSelection.ts";
 import { getFile } from "@/signals/file.ts";
+import { getFileTree } from "@/signals/fileTree.ts";
 import { getMarks } from "@/signals/marks.ts";
-import { getOpenedFiles } from "@/signals/openedFiles.ts";
 import { navigationOpened } from "@/signals/sidebar.ts";
 import { getSidenotes } from "@/signals/sidenotes.ts";
 import { getWorkspaces } from "@/signals/workspace.ts";
 import { delayedRise } from "@/utils/delayedRise.ts";
 
 export default function FileViewer() {
-  const openedFiles = getOpenedFiles();
-  const path = openedFiles?.selected.value ?? "";
   const wsId = getWorkspaces().selectedId.value;
-  if (!openedFiles || !path || !wsId) return null;
+  const path = getFileTree()?.selectedPath.value ?? "";
+  if (!wsId || !path) return null;
   return <FileViewerBody key={path} wsId={wsId} path={path} />;
 }
 

@@ -59,7 +59,7 @@ function buildFileEntries(
 
 function BreadcrumbsTrigger() {
   const selectedWorkspace = getWorkspaces().current.value?.name ?? "";
-  const selectedPath = getOpenedFiles()?.selected.value ?? "";
+  const selectedPath = getFileTree()?.selectedPath.value ?? "";
 
   const open = (e: TargetedMouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
@@ -115,7 +115,7 @@ export default function FileNavigation() {
   const ref = useClickOutside(() => (navigationOpened.value = false));
 
   const files = getFileTree();
-  const selectedPath = getOpenedFiles()?.selected.value ?? "";
+  const selectedPath = getFileTree()?.selectedPath.value ?? "";
   const fileEntries = buildFileEntries(
     files?.tree.value.children ?? [],
     selectedPath,

@@ -2,15 +2,14 @@ import type { Mark } from "@essayist/core";
 import { segmentMarks } from "@/editor/markSegments.ts";
 import Section from "@/islands/Section.tsx";
 import { getFile } from "@/signals/file.ts";
+import { getFileTree } from "@/signals/fileTree.ts";
 import { getMarks } from "@/signals/marks.ts";
-import { getOpenedFiles } from "@/signals/openedFiles.ts";
 import { getWorkspaces } from "@/signals/workspace.ts";
 
 export default function ExportPreviewSection() {
-  const openedFiles = getOpenedFiles();
-  const path = openedFiles?.selected.value ?? "";
   const wsId = getWorkspaces().selectedId.value;
-  if (!openedFiles || !path || !wsId) return null;
+  const path = getFileTree()?.selectedPath.value ?? "";
+  if (!wsId || !path) return null;
   return (
     <Section title="Export Preview">
       <MarkdownPreview wsId={wsId} path={path} />
