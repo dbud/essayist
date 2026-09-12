@@ -19,11 +19,7 @@ interface SelectedFile {
 
 /**
  * Per-user server-side state: the user's most recent selection and, over
- * time, other cross-device preferences. The selection is persisted so a
- * session can restore it; a URL-specified selection overrides it.
- *
- * Writes are last-write-wins single-key sets; there are no cross-entity
- * invariants or concurrency checks.
+ * time, other cross-device preferences.
  */
 export class UserStateStore {
   #adapter: PersistenceAdapter;
