@@ -9,13 +9,13 @@ import { getFileTreeFor } from "@/signals/fileTree.ts";
 import { seed } from "@/signals/models.ts";
 import { getOpenedFilesFor } from "@/signals/openedFiles.ts";
 import { getWorkspaces } from "@/signals/workspace.ts";
-import { store } from "@/store.ts";
+import { workspaceStore } from "@/store.ts";
 
 export default define.page(async ({ url, state }) => {
   const wsId = url.searchParams.get("ws");
   const fileParam = url.searchParams.get("file");
   const snapshot =
-    wsId && (await store.hasAccess(wsId, state.user.id))
+    wsId && (await workspaceStore.hasAccess(wsId, state.user.id))
       ? await seed(async (drain) => {
           getWorkspaces().select(wsId);
           getFileTreeFor(wsId);

@@ -16,7 +16,7 @@ import type { ComponentChildren } from "preact";
 import MarkdownView from "@/components/MarkdownView.tsx";
 import { define, type State } from "@/define.ts";
 import Navigation from "@/islands/Navigation.tsx";
-import { reviewStore, store, traceStore } from "@/store.ts";
+import { reviewStore, traceStore, workspaceStore } from "@/store.ts";
 
 interface TracePageData {
   run: ReviewRun;
@@ -26,7 +26,7 @@ interface TracePageData {
 export const handler = define.handlers({
   async GET(ctx) {
     const { wsId, runId } = ctx.params;
-    if (!(await store.hasAccess(wsId, ctx.state.user.id))) {
+    if (!(await workspaceStore.hasAccess(wsId, ctx.state.user.id))) {
       return ctx.redirect("/");
     }
     const run = await reviewStore.getRun({ workspaceId: wsId, id: runId });

@@ -2,7 +2,7 @@ import { VirtualFileSystem } from "@essayist/core";
 import { define } from "@/define.ts";
 import { seedDemoFiles } from "@/seed.ts";
 import { workspacesLoader } from "@/signals/workspace.server.ts";
-import { adapter, store } from "@/store.ts";
+import { adapter, workspaceStore } from "@/store.ts";
 
 export const handler = {
   GET: define.handlers(async (ctx) => {
@@ -17,7 +17,10 @@ export const handler = {
     if (!name) {
       return Response.json({ error: "Missing 'name'" }, { status: 400 });
     }
-    const workspace = await store.createWorkspace(name, ctx.state.user.id);
+    const workspace = await workspaceStore.createWorkspace(
+      name,
+      ctx.state.user.id,
+    );
     // Seed the new workspace with the same sample essay + marks used by the
     // demo workspace, so it isn't empty on first open.
     await seedDemoFiles(new VirtualFileSystem(adapter, workspace.id));

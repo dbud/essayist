@@ -1,17 +1,17 @@
 import { LastOwnerError, type Role } from "@essayist/core";
 import { define } from "@/define.ts";
-import { store } from "@/store.ts";
+import { workspaceStore } from "@/store.ts";
 
 export const handler = {
   // Any member can list members.
   GET: define.handlers(async (ctx) => {
-    const members = await store.getMembers(ctx.state.workspaceId);
+    const members = await workspaceStore.getMembers(ctx.state.workspaceId);
     return Response.json(members);
   }),
 
   // Only owners can add/update members.
   POST: define.handlers(async (ctx) => {
-    const isOwner = await store.hasAccess(
+    const isOwner = await workspaceStore.hasAccess(
       ctx.state.workspaceId,
       ctx.state.user.id,
       "owner",
@@ -33,13 +33,17 @@ export const handler = {
       );
     }
 
-    const user = await store.getUser(userId);
+    const user = await workspaceStore.getUser(userId);
     if (!user) {
       return Response.json({ error: "Unknown user" }, { status: 404 });
     }
 
     try {
-      const member = await store.addMember(ctx.state.workspaceId, userId, role);
+      const member = await workspaceStore.addMember(
+        ctx.state.workspaceId,
+        userId,
+        role,
+      );
       return Response.json(member, { status: 201 });
     } catch (error) {
       if (error instanceof LastOwnerError) {

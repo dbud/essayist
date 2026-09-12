@@ -19,7 +19,7 @@ import { seedDemo } from "@/seed.ts";
  *
  * The {@link WorkspaceStore} and per-request `VirtualFileSystem` instances share
  * this one adapter, keyed under disjoint top-level parts (`users`, `workspaces`,
- * `members_*` for the store; `ws` for the VFS).
+ * `members_*` for the workspace store; `ws` for the VFS).
  */
 const isDev = Deno.env.get("DENO_ENV") === "development";
 
@@ -28,7 +28,7 @@ export const kv = isDev
   : await Deno.openKv();
 
 export const adapter = new KvAdapter(kv);
-export const store = new WorkspaceStore(adapter);
+export const workspaceStore = new WorkspaceStore(adapter);
 export const configStore = new ConfigStore(adapter);
 export const reviewStore = new ReviewStore(adapter);
 export const traceStore = new EventTraceStore(adapter);
@@ -38,6 +38,6 @@ export const traceStore = new EventTraceStore(adapter);
  * boot via {@link seedDemo}. `undefined` outside dev; real auth/identity
  * replaces this later. IDs are stable across restarts once seeded.
  */
-const demo = isDev ? await seedDemo(store, adapter) : undefined;
+const demo = isDev ? await seedDemo(workspaceStore, adapter) : undefined;
 export const demoUser: User | undefined = demo?.demoUser;
 export const demoWorkspace: Workspace | undefined = demo?.demoWorkspace;

@@ -1,6 +1,6 @@
 import { UserEmailTakenError } from "@essayist/core";
 import { define } from "@/define.ts";
-import { store } from "@/store.ts";
+import { workspaceStore } from "@/store.ts";
 import { getGoogleUserInfo, getOAuthHelpers } from "@/utils/oauth.ts";
 import {
   createSession,
@@ -21,14 +21,14 @@ export const handler = define.handlers(async (ctx) => {
   const { response, sessionId, tokens } = await helpers.handleCallback(ctx.req);
 
   const info = await getGoogleUserInfo(tokens.accessToken);
-  let user = await store.getUserByEmail(info.email);
+  let user = await workspaceStore.getUserByEmail(info.email);
   if (!user) {
     try {
-      user = await store.createUser(info);
+      user = await workspaceStore.createUser(info);
     } catch (error) {
       // Race: another concurrent login created the same email first.
       if (error instanceof UserEmailTakenError) {
-        user = await store.getUserByEmail(info.email);
+        user = await workspaceStore.getUserByEmail(info.email);
       } else {
         throw error;
       }
@@ -40,7 +40,7 @@ export const handler = define.handlers(async (ctx) => {
 
   // Refresh name/picture from Google on each login (they can change).
   if (info.name !== user.name || info.picture !== user.picture) {
-    const updated = await store.updateUser(user.id, {
+    const updated = await workspaceStore.updateUser(user.id, {
       name: info.name,
       picture: info.picture,
     });

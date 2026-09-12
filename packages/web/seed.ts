@@ -111,22 +111,26 @@ export interface DemoData {
  * file; the next boot re-seeds from scratch.
  */
 export async function seedDemo(
-  store: WorkspaceStore,
+  workspaceStore: WorkspaceStore,
   adapter: PersistenceAdapter,
 ): Promise<DemoData> {
   const seeded = (await adapter.get<boolean>(SEED_SENTINEL))?.value;
   if (seeded) {
-    return loadDemo(store);
+    return loadDemo(workspaceStore);
   }
 
   // Dev demo data; the only caller gates on DENO_ENV=development. Granting
   // admin here keeps /admin reachable after a wipe without kvctl.
-  const created = await store.createUser({
+  const created = await workspaceStore.createUser({
     email: "demo@example.com",
     name: "Demo User",
   });
-  const demoUser = (await store.setUserRole(created.id, "admin")) ?? created;
-  const demoWorkspace = await store.createWorkspace("Demo", demoUser.id);
+  const demoUser =
+    (await workspaceStore.setUserRole(created.id, "admin")) ?? created;
+  const demoWorkspace = await workspaceStore.createWorkspace(
+    "Demo",
+    demoUser.id,
+  );
 
   await seedDemoFiles(new VirtualFileSystem(adapter, demoWorkspace.id));
 
@@ -135,14 +139,14 @@ export async function seedDemo(
 }
 
 /** Load the previously-seeded demo entities (sentinel already set). */
-async function loadDemo(store: WorkspaceStore): Promise<DemoData> {
-  const demoUser = await store.getUserByEmail("demo@example.com");
+async function loadDemo(workspaceStore: WorkspaceStore): Promise<DemoData> {
+  const demoUser = await workspaceStore.getUserByEmail("demo@example.com");
   if (!demoUser) {
     throw new Error(
       "Seed sentinel is set but demo users are missing; run `deno task kvctl wipe` and restart.",
     );
   }
-  const workspaces = await store.listWorkspacesForUser(demoUser.id);
+  const workspaces = await workspaceStore.listWorkspacesForUser(demoUser.id);
   const demoWorkspace = workspaces.find((w) => w.name === "Demo");
   if (!demoWorkspace) {
     throw new Error(
