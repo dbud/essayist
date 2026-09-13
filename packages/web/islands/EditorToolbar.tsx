@@ -34,14 +34,15 @@ interface EditorToolbarProps {
 export default function EditorToolbar({ wsId, path }: EditorToolbarProps) {
   const editor = activeEditor.value;
   const sel = getEditorSelection(wsId, path);
-  if (editor === null) return null;
 
   const format = (fmt: FormatType) => {
+    if (!editor) return;
     editor.focus();
     editor.dispatchCommand(FORMAT_TEXT_COMMAND, fmt);
   };
 
   const setBlock = (type: BlockType) => {
+    if (!editor) return;
     editor.focus();
     if (type === "bullet") {
       editor.dispatchCommand(INSERT_UNORDERED_LIST_COMMAND, undefined);
@@ -62,7 +63,7 @@ export default function EditorToolbar({ wsId, path }: EditorToolbarProps) {
     editor.update(() => $setBlocksType(type));
   };
 
-  const inlineDisabled = sel.inCodeBlock.value;
+  const inlineDisabled = editor === null || sel.inCodeBlock.value;
 
   return (
     <div class="flex stack">
