@@ -6,26 +6,23 @@ import RightSidebar from "@/islands/RightSidebar.tsx";
 import { getCategories } from "@/signals/categories.ts";
 import { getFile } from "@/signals/file.ts";
 import { getFileTreeFor } from "@/signals/fileTree.ts";
-import { seed } from "@/signals/models.ts";
+import { seed, settle, settleAll } from "@/signals/models.ts";
 import { getOpenedFilesFor } from "@/signals/openedFiles.ts";
 import { getWorkspaces } from "@/signals/workspace.ts";
 
 export default define.page(async ({ state }) => {
-  const snapshot = await seed(async (drain) => {
-    const workspaces = getWorkspaces();
-    getCategories();
-    await drain();
+  const snapshot = await seed(function* () {
+    const [workspaces] = yield* settleAll(getWorkspaces(), getCategories());
 
     const wsId = workspaces.selectedId.value;
     if (!wsId) return;
 
-    getFileTreeFor(wsId);
-    await drain();
+    const tree = yield* settle(getFileTreeFor(wsId));
 
-    const path = getFileTreeFor(wsId).selectedPath.value;
+    const path = tree.selectedPath.value;
     if (path) {
       getOpenedFilesFor(wsId).open(path);
-      getFile(wsId, path);
+      yield* settle(getFile(wsId, path));
     }
   });
 
