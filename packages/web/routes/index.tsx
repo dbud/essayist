@@ -6,6 +6,7 @@ import RightSidebar from "@/islands/RightSidebar.tsx";
 import { getCategories } from "@/signals/categories.ts";
 import { getFile } from "@/signals/file.ts";
 import { getFileTreeFor } from "@/signals/fileTree.ts";
+import { getMarks } from "@/signals/marks.ts";
 import { seed, settle, settleAll } from "@/signals/models.ts";
 import { getOpenedFilesFor } from "@/signals/openedFiles.ts";
 import { getWorkspaces } from "@/signals/workspace.ts";
@@ -22,7 +23,7 @@ export default define.page(async ({ state }) => {
     const path = tree.selectedPath.value;
     if (path) {
       getOpenedFilesFor(wsId).open(path);
-      yield* settle(getFile(wsId, path));
+      yield* settleAll(getFile(wsId, path), getMarks(wsId, path));
     }
   });
 
