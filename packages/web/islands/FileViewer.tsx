@@ -1,10 +1,8 @@
-import { useMemo } from "preact/hooks";
 import { Caret } from "@/components/Caret.tsx";
 import { MarkBadges } from "@/components/MarkBadges.tsx";
 import { MarkHighlights } from "@/components/MarkHighlights.tsx";
 import Sidenotes from "@/components/Sidenotes.tsx";
 import Overlay from "@/components/ui/Overlay.tsx";
-import WaveBars from "@/components/ui/WaveBars.tsx";
 import { useKeydown } from "@/hooks/useKeydown.ts";
 import { useScrollViewport } from "@/hooks/useScrollViewport.ts";
 import Editor from "@/islands/Editor.tsx";
@@ -21,7 +19,6 @@ import { getMarks } from "@/signals/marks.ts";
 import { navigationOpened } from "@/signals/sidebar.ts";
 import { getSidenotes } from "@/signals/sidenotes.ts";
 import { getWorkspaces } from "@/signals/workspace.ts";
-import { delayedRise } from "@/utils/delayedRise.ts";
 
 export default function FileViewer() {
   const wsId = getWorkspaces().selectedId.value;
@@ -32,13 +29,9 @@ export default function FileViewer() {
 
 function FileViewerBody({ wsId, path }: { wsId: string; path: string }) {
   const { state, setModifiedState, loading, error, save } = getFile(wsId, path);
-  const { resolving, resolved } = getMarks(wsId, path);
+  const { resolved } = getMarks(wsId, path);
   const sidenotes = getSidenotes(wsId, path);
   const selection = getEditorSelection(wsId, path);
-  const resolvingVisible = useMemo(
-    () => delayedRise(resolving, 150),
-    [resolving],
-  );
   const scrollRef = useScrollViewport(
     sidenotes.scrollTop,
     sidenotes.viewportHeight,
@@ -74,12 +67,7 @@ function FileViewerBody({ wsId, path }: { wsId: string; path: string }) {
             </div>
           </div>
           <div class="content-side flex items-center">
-            {!editorLoading &&
-              (resolvingVisible.value ? (
-                <WaveBars class="text-accent" />
-              ) : (
-                <SidenoteControls wsId={wsId} path={path} />
-              ))}
+            {!editorLoading && <SidenoteControls wsId={wsId} path={path} />}
           </div>
         </div>
       </div>

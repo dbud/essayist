@@ -1,8 +1,11 @@
 import type { ReviewProgress } from "@essayist/core";
 import { Highlighter } from "lucide-preact";
+import { useMemo } from "preact/hooks";
 import WaveBars from "@/components/ui/WaveBars.tsx";
+import { getMarks } from "@/signals/marks.ts";
 import { getReview } from "@/signals/review.ts";
 import { showToast } from "@/signals/toast.ts";
+import { delayedRise } from "@/utils/delayedRise.ts";
 
 function phaseLabel(progress: ReviewProgress | null): string {
   switch (progress?.phase) {
@@ -26,6 +29,14 @@ export default function SidenoteControls({
 }) {
   const review = getReview(wsId, path);
   const { loading, error, progress } = review;
+  const { resolving } = getMarks(wsId, path);
+
+  // Bars only rise when marks resolution outlives the delay, so quick
+  // re-resolutions after typing never flash the pane.
+  const resolvingVisible = useMemo(
+    () => delayedRise(resolving, 150),
+    [resolving],
+  );
 
   async function onReview() {
     await review.submit();
@@ -52,7 +63,7 @@ export default function SidenoteControls({
       <div class="flex-1 self-stretch bg-surface" />
       <WaveBars
         fill
-        amplitude={loading.value ? 1 : 0}
+        amplitude={loading.value || resolvingVisible.value ? 1 : 0}
         class="pointer-events-none text-accent"
       />
     </div>
