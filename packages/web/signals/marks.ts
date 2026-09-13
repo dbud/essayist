@@ -20,7 +20,7 @@ export const marksNs = namespace<MarksData, FileKey>("marks");
 export const MarksModel = createModel((workspaceId: string, path: string) => {
   const { checkpoint, markdown } = getFile(workspaceId, path);
 
-  const loaded = signal<MarksData>({
+  const baseline = signal<MarksData>({
     marks: [],
     versionId: "",
     content: "",
@@ -29,9 +29,7 @@ export const MarksModel = createModel((workspaceId: string, path: string) => {
   const { loading, error, refresh } = modelData(
     marksNs,
     { workspaceId, path },
-    (data) => {
-      loaded.value = data;
-    },
+    (data) => (baseline.value = data),
     async () => {
       const res = await fetch(
         `/api/workspaces/${encodeURIComponent(workspaceId)}/files/${encodeURIComponent(path)}/marks`,
@@ -43,25 +41,26 @@ export const MarksModel = createModel((workspaceId: string, path: string) => {
 
   // Marks ship resolved; the resolver only re-anchors diverged (draft) content.
   const { value: reanchored, stale: resolving } = asyncComputed(
-    () => [loaded.value.marks, loaded.value.content, markdown.value] as const,
+    () =>
+      [baseline.value.marks, baseline.value.content, markdown.value] as const,
     ([marks, oldContent, newContent], signal) =>
       resolveMarksViaWorker(marks, oldContent, newContent, signal),
     { debounce: 60, initial: [] as Mark[] },
   );
 
   const resolved = deepComputed(() =>
-    markdown.value === loaded.value.content
-      ? loaded.value.marks
+    markdown.value === baseline.value.content
+      ? baseline.value.marks
       : reanchored.value,
   );
 
-  // Marks are migrated server-side on write, so refetch when the loaded
-  // marks belong to a different version than the checkpoint.
+  // Marks are migrated server-side on write, so refetch when the baseline
+  // version differs from the checkpoint.
   if (IS_BROWSER) {
     effect(() => {
       const versionId = checkpoint.value?.version_id;
       if (!versionId) return;
-      if (loaded.value.versionId === versionId) return;
+      if (baseline.value.versionId === versionId) return;
       // untracked: refresh()'s runner state writes must not re-trigger
       untracked(() => void refresh());
     });
