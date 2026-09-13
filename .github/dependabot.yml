@@ -1,0 +1,44 @@
+version: 2
+updates:
+  - package-ecosystem: "deno"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    groups:
+      minor-and-patch:
+        update-types:
+          - "minor"
+          - "patch"
+
+  - package-ecosystem: "deno"
+    directory: "/packages/web"
+    schedule:
+      interval: "weekly"
+    ignore:
+      # vite 8 breaks fresh 2; revisit when fresh supports it
+      - dependency-name: "vite"
+        versions: [">=8"]
+    groups:
+      minor-and-patch:
+        update-types:
+          - "minor"
+          - "patch"
+      lexical:
+        patterns:
+          - "lexical"
+          - "@lexical/*"
+
+  - package-ecosystem: "deno"
+    directory: "/packages/core"
+    schedule:
+      interval: "weekly"
+
+  - package-ecosystem: "cargo"
+    directory: "/crates/wasm"
+    schedule:
+      interval: "weekly"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
