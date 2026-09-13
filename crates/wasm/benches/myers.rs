@@ -7,7 +7,9 @@
 //! contrast. `myers_ops` is the linear-space (O((N+M)D) time, O(N+M) memory)
 //! implementation.
 
-use criterion::{BenchmarkId, Criterion, black_box, criterion_group, criterion_main};
+use std::hint::black_box;
+
+use criterion::{BenchmarkId, Criterion, criterion_group, criterion_main};
 
 use essayist_wasm::myers_ops;
 
