@@ -1,18 +1,27 @@
 import type { Mark } from "@essayist/core";
 import { createModel, effect, signal, untracked } from "@preact/signals";
 import { IS_BROWSER } from "fresh/runtime";
+import type { FileKey } from "@/signals/file.ts";
 import { getFile } from "@/signals/file.ts";
+import { get, modelData, namespace } from "@/signals/models.ts";
 import { asyncComputed } from "@/utils/asyncComputed.ts";
-import createAsyncState from "@/utils/asyncState.ts";
 import { ensureOk } from "@/utils/ensureOk.ts";
 import { resolveMarksViaWorker } from "@/wasm/client.ts";
 
-export const MarksModel = createModel((workspaceId: string, path: string) => {
-  const { markdown, checkpoint } = getFile(workspaceId, path);
-  const [run, { loading, error }] = createAsyncState(true);
+export interface MarksData {
+  marks: Mark[];
+  versionId: string;
+  content: string;
+}
 
-  const loaded = signal<{ marks: Mark[]; content: string }>({
+export const marksNs = namespace<MarksData, FileKey>("marks");
+
+export const MarksModel = createModel((workspaceId: string, path: string) => {
+  const { checkpoint, markdown } = getFile(workspaceId, path);
+
+  const loaded = signal<MarksData>({
     marks: [],
+    versionId: "",
     content: "",
   });
 
@@ -23,40 +32,40 @@ export const MarksModel = createModel((workspaceId: string, path: string) => {
     { debounce: 60, initial: [] as Mark[] },
   );
 
-  async function load(
-    baseline = checkpoint.value?.content ?? "",
-  ): Promise<void> {
-    const result = await run(async () => {
+  const { loading, error, refresh } = modelData(
+    marksNs,
+    { workspaceId, path },
+    (data) => {
+      loaded.value = data;
+    },
+    async () => {
       const res = await fetch(
         `/api/workspaces/${encodeURIComponent(workspaceId)}/files/${encodeURIComponent(path)}/marks`,
       );
       await ensureOk(res);
-      return (await res.json()) as Mark[];
-    });
-    if (result === undefined) return;
-    loaded.value = { marks: result, content: baseline };
-  }
+      return (await res.json()) as MarksData;
+    },
+  );
 
-  // Marks are migrated on write server-side, so reload whenever the
-  // checkpoint changes.
+  // Marks are migrated server-side on write, so refetch when the loaded
+  // marks belong to a different version than the checkpoint.
   if (IS_BROWSER) {
     effect(() => {
-      const content = checkpoint.value?.content;
-      if (content === undefined) return;
-      // untracked: load()'s runner state writes must not re-trigger this effect
-      untracked(() => void load(content));
+      const versionId = checkpoint.value?.version_id;
+      if (!versionId) return;
+      if (loaded.value.versionId === versionId) return;
+      // untracked: refresh()'s runner state writes must not re-trigger
+      untracked(() => void refresh());
     });
   }
 
-  return { resolved, loading, error, reload: load, resolving };
+  return { resolved, loading, error, refresh, resolving };
 });
 
-const cache = new Map<string, InstanceType<typeof MarksModel>>();
-
 export function getMarks(workspaceId: string, path: string) {
-  const key = `${workspaceId}:${path}`;
-  return cache.getOrInsertComputed(
-    key,
+  return get(
+    marksNs,
+    { workspaceId, path },
     () => new MarksModel(workspaceId, path),
   );
 }

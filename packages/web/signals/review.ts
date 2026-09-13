@@ -51,7 +51,7 @@ export const ReviewModel = createModel((workspaceId: string, path: string) => {
     progress.value = null;
     if (result) {
       run.value = result;
-      if (result.status === "completed") getMarks(workspaceId, path).reload();
+      if (result.status === "completed") getMarks(workspaceId, path).refresh();
       void loadHistory();
     }
   }
