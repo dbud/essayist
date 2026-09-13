@@ -206,7 +206,7 @@ Deno.test("generateInstructions handles intersection types", () => {
     generateInstructions(schema),
     `Return only one valid JSON object matching this shape. Do not use markdown fences, code blocks, comments, or any extra text:
 
-- value: intersection`,
+- value: object`,
   );
 });
 

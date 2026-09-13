@@ -59,12 +59,21 @@ function resolve(
   return schema;
 }
 
+function isNullType(prop: JsonSchema): boolean {
+  if (typeof prop === "boolean") return false;
+  return (
+    prop.type === "null" ||
+    (Array.isArray(prop.type) && prop.type.includes("null"))
+  );
+}
+
 function isNullable(prop: JsonSchema): boolean {
   if (typeof prop === "boolean") return false;
+  if (isNullType(prop)) return true;
 
   const variants = prop.anyOf ?? prop.oneOf;
   if (variants) {
-    return variants.some((s) => typeof s !== "boolean" && s.type === "null");
+    return variants.some((s) => typeof s !== "boolean" && isNullType(s));
   }
   return false;
 }
@@ -75,7 +84,7 @@ function getTypeName(prop: JsonSchema): string {
   const variants = prop.anyOf ?? prop.oneOf;
   if (variants) {
     const nonNull = variants.filter(
-      (s) => typeof s !== "boolean" && s.type !== "null",
+      (s) => typeof s !== "boolean" && !isNullType(s),
     );
     if (nonNull.length === 1) {
       return describeType(nonNull[0]);
@@ -116,7 +125,11 @@ function describeType(prop: JsonSchema): string {
     return "object";
   }
 
-  if (Array.isArray(prop.type)) return prop.type.join(" | ");
+  if (Array.isArray(prop.type)) {
+    const nonNull = prop.type.filter((t) => t !== "null");
+    if (nonNull.length === 0) return "null";
+    return nonNull.join(" | ");
+  }
   return prop.type ?? "any";
 }
 
