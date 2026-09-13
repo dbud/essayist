@@ -5,6 +5,7 @@ import type { FileKey } from "@/signals/file.ts";
 import { getFile } from "@/signals/file.ts";
 import { get, modelData, namespace } from "@/signals/models.ts";
 import { asyncComputed } from "@/utils/asyncComputed.ts";
+import { deepComputed } from "@/utils/deepComputed.ts";
 import { ensureOk } from "@/utils/ensureOk.ts";
 import { resolveMarksViaWorker } from "@/wasm/client.ts";
 
@@ -25,13 +26,6 @@ export const MarksModel = createModel((workspaceId: string, path: string) => {
     content: "",
   });
 
-  const { value: resolved, stale: resolving } = asyncComputed(
-    () => [loaded.value.marks, loaded.value.content, markdown.value] as const,
-    ([marks, oldContent, newContent], signal) =>
-      resolveMarksViaWorker(marks, oldContent, newContent, signal),
-    { debounce: 60, initial: [] as Mark[] },
-  );
-
   const { loading, error, refresh } = modelData(
     marksNs,
     { workspaceId, path },
@@ -45,6 +39,20 @@ export const MarksModel = createModel((workspaceId: string, path: string) => {
       await ensureOk(res);
       return (await res.json()) as MarksData;
     },
+  );
+
+  // Marks ship resolved; the resolver only re-anchors diverged (draft) content.
+  const { value: reanchored, stale: resolving } = asyncComputed(
+    () => [loaded.value.marks, loaded.value.content, markdown.value] as const,
+    ([marks, oldContent, newContent], signal) =>
+      resolveMarksViaWorker(marks, oldContent, newContent, signal),
+    { debounce: 60, initial: [] as Mark[] },
+  );
+
+  const resolved = deepComputed(() =>
+    markdown.value === loaded.value.content
+      ? loaded.value.marks
+      : reanchored.value,
   );
 
   // Marks are migrated server-side on write, so refetch when the loaded

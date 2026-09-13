@@ -19,6 +19,9 @@ import { deepComputed } from "./deepComputed.ts";
  * clears `stale`. A run rejected with an AbortError its own signal did not
  * raise (e.g. a shared worker was terminated by another caller) gives up and
  * clears `stale` itself, so the UI does not get stuck "resolving".
+ *
+ * The creation-time run is initialization: `stale` stays false for it, so the
+ * initial value is treated as settled.
  */
 export interface AsyncComputed<T> {
   value: ReadonlySignal<T>;
@@ -67,7 +70,6 @@ export function asyncComputed<D, T>(
 
   effect(() => {
     const d = deps();
-    stale.value = true;
     if (first) {
       first = false;
       run(d);
@@ -77,6 +79,7 @@ export function asyncComputed<D, T>(
     current?.abort();
     clearTimeout(timer);
     timer = setTimeout(() => run(d), opts.debounce ?? 0);
+    stale.value = true;
   });
 
   return { value: deepComputed(() => out.value), stale };
