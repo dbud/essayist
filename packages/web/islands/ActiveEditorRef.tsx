@@ -8,14 +8,7 @@ export default function ActiveEditorRef() {
 
   return (
     <EditorRefPlugin
-      editorRef={(editor: LexicalEditor) => {
-        console.log(
-          "[editor] root attached",
-          performance.now().toFixed(1),
-          "ms",
-        );
-        activeEditor.value = editor;
-      }}
+      editorRef={(editor: LexicalEditor) => (activeEditor.value = editor)}
     />
   );
 }
