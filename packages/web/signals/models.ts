@@ -4,6 +4,7 @@
  * (models.server.ts), module-scoped on the client.
  */
 
+import { measure } from "@essayist/core";
 import type { ReadonlySignal } from "@preact/signals";
 import { IS_BROWSER } from "fresh/runtime";
 import createAsyncState from "@/utils/asyncState.ts";
@@ -218,7 +219,8 @@ if (IS_BROWSER) {
   const el = document.getElementById("__essayist_seed__");
   if (el?.dataset.seed) {
     try {
-      ingest(JSON.parse(el.dataset.seed) as SerializedCache);
+      const snapshot = JSON.parse(el.dataset.seed) as SerializedCache;
+      measure(() => ingest(snapshot), "seed.ingest");
     } catch {
       // malformed seed -- fall back to normal REST loading
     }

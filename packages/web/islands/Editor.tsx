@@ -1,3 +1,4 @@
+import { measure } from "@essayist/core";
 import { LexicalBuilder } from "@lexical/extension";
 import { withDOM } from "@lexical/headless/dom";
 import { $generateHtmlFromNodes } from "@lexical/html";
@@ -64,12 +65,14 @@ export default function Editor({
   // exported HTML is removed client-side once the real editor mounts.
   const prerenderedHtml = useMemo(() => {
     if (IS_BROWSER) return undefined;
-    const editor = LexicalBuilder.fromExtensions([extension]).buildEditor();
-    const html = withDOM(() =>
-      editor.read(() => $generateHtmlFromNodes(editor, null)),
-    );
-    editor.dispose();
-    return html;
+    return measure(() => {
+      const editor = LexicalBuilder.fromExtensions([extension]).buildEditor();
+      const html = withDOM(() =>
+        editor.read(() => $generateHtmlFromNodes(editor, null)),
+      );
+      editor.dispose();
+      return html;
+    }, "ssr.prerender");
   }, [extension]);
 
   const contentEditable = useMemo(

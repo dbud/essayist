@@ -16,7 +16,7 @@ export {
   ReviewPassSchema,
   ToolNameSchema,
 } from "@/config/types.ts";
-export { measure } from "@/measure.ts";
+export { measure, measureAsync } from "@/measure.ts";
 export { KvAdapter } from "@/persistence/kv_adapter.ts";
 export {
   type BatchOptions,

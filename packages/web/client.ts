@@ -1,3 +1,9 @@
+console.log(
+  "[boot] client entry after",
+  performance.now().toFixed(1),
+  "ms since navigation",
+);
+
 import "@/signals/models.ts";
 import "@fontsource/ibm-plex-serif/400.css";
 import "@fontsource/ibm-plex-serif/600.css";
