@@ -1,21 +1,11 @@
 version: 2
 updates:
+  # Deno workspace: root, packages/web, packages/core
   - package-ecosystem: "deno"
     directory: "/"
     schedule:
       interval: "weekly"
-    groups:
-      minor-and-patch:
-        update-types:
-          - "minor"
-          - "patch"
-
-  - package-ecosystem: "deno"
-    directory: "/packages/web"
-    schedule:
-      interval: "weekly"
     ignore:
-      # vite 8 breaks fresh 2; revisit when fresh supports it
       - dependency-name: "vite"
         versions: [">=8"]
     groups:
@@ -27,11 +17,6 @@ updates:
         patterns:
           - "lexical"
           - "@lexical/*"
-
-  - package-ecosystem: "deno"
-    directory: "/packages/core"
-    schedule:
-      interval: "weekly"
 
   - package-ecosystem: "cargo"
     directory: "/crates/wasm"
