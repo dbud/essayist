@@ -69,7 +69,7 @@
     "npm:@lexical/react@0.50": "0.50.0_react@19.3.0_react-dom@19.3.0__react@19.3.0_yjs@13.6.32",
     "npm:@lexical/rich-text@0.50": "0.50.0",
     "npm:@openrouter/agent@0.11": "0.11.0",
-    "npm:@openrouter/sdk@~0.13.67": "0.13.67",
+    "npm:@openrouter/sdk@^1.2.116": "1.2.119",
     "npm:@opentelemetry/api@^1.9.0": "1.9.1",
     "npm:@preact/signals@^2.11.2": "2.11.2_preact@10.29.8__preact-render-to-string@6.7.0",
     "npm:@preact/signals@^2.5.1": "2.11.2_preact@10.29.8__preact-render-to-string@6.7.0",
@@ -1292,12 +1292,19 @@
     "@openrouter/agent@0.11.0": {
       "integrity": "sha512-8idTYNZ4MjQyNJ2HKMTSmocVgQYajB43xG3rqa7ronK8Xfqx6XnIKvfhtqmAeJTPkhYppVuuQ+DKkMXlVEA+SA==",
       "dependencies": [
-        "@openrouter/sdk",
+        "@openrouter/sdk@0.13.67",
         "zod"
       ]
     },
     "@openrouter/sdk@0.13.67": {
       "integrity": "sha512-kUVaFYA9Xehq67ndTk98i+tRLfYH/F6xSf/WuC8dsukBzcgBvYQydoeKw4Xe+peXG/wOVtDxukWt5SqzhbloKw==",
+      "dependencies": [
+        "zod"
+      ],
+      "scripts": true
+    },
+    "@openrouter/sdk@1.2.119": {
+      "integrity": "sha512-HpfsANnkAQqBG9i+TpBQ2ab1zc60Lv/M+IMdQTZf44y+begYds6xSmJEI8SPGjKU+s6Vs4aQ3fuV0MJJUfJtHg==",
       "dependencies": [
         "zod"
       ],
@@ -2304,7 +2311,7 @@
         "dependencies": [
           "jsr:@std/assert@^1.0.19",
           "npm:@openrouter/agent@0.11",
-          "npm:@openrouter/sdk@~0.13.67",
+          "npm:@openrouter/sdk@^1.2.116",
           "npm:zod@^4.6.1"
         ]
       },
