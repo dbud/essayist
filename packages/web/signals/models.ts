@@ -157,18 +157,48 @@ async function drain(): Promise<void> {
   await Promise.allSettled(pending);
 }
 
+// seed plan
+
+type Plan = Generator<unknown, void, unknown>;
+
+/**
+ * A plan step for `seed`: suspends the plan until every acquisition
+ * queued so far has settled, then resumes with the same model. Read the
+ * model's signals after settling; always yield via `settle`/`settleAll`.
+ */
+export function* settle<T>(model: T): Generator<T, T, unknown> {
+  return (yield model) as T;
+}
+
+/** Parallel `settle`: one drain for all models, resumed as a tuple. */
+export function* settleAll<T extends unknown[]>(
+  ...models: T
+): Generator<T, T, unknown> {
+  return (yield models) as T;
+}
+
+/** Drives a plan: settles pending acquisitions after every step,
+ * including completion, so models queued by the plan's last step are
+ * included. */
+async function drive(gen: Plan): Promise<void> {
+  let resume: unknown;
+  for (;;) {
+    const next = gen.next(resume);
+    await drain();
+    if (next.done) break;
+    resume = next.value;
+  }
+}
+
 // seed artifact
 
 type SerializedCache = Record<string, Record<string, unknown>>;
 
-/** The request's seed: run the page's priming calls, drain the collected
- * acquisitions, and serialize the cache for the client. The priming
- * callback may drain mid-way to resolve dependent models. */
-export async function seed(
-  prime: (drain: () => Promise<void>) => unknown,
-): Promise<string> {
-  await prime(drain);
-  await drain();
+/** The request's seed: run the page's plan to a fully settled state and
+ * serialize the cache for the client. The plan yields with
+ * `settle`/`settleAll` at each data dependency. */
+export async function seed(plan: () => Plan): Promise<string> {
+  await drive(plan());
   const snapshot: SerializedCache = {};
   for (const [ns, m] of scope().cache) {
     snapshot[ns] = Object.fromEntries(m);
