@@ -2,11 +2,15 @@ import type { LexicalEditor } from "lexical";
 
 // Coalesce many schedule() calls into a single fn() on the next animation
 // frame; dispose() cancels a pending frame. For extensions that re-measure the
-// DOM only after Lexical has reconciled.
+// DOM only after Lexical has reconciled. With no animation frame loop
+// (SSR, headless) measurements cannot run, so scheduling is a no-op.
 export function createRafScheduler(fn: () => void): {
   schedule: () => void;
   dispose: () => void;
 } {
+  if (typeof requestAnimationFrame === "undefined") {
+    return { schedule: () => {}, dispose: () => {} };
+  }
   let rafId = 0;
   const run = () => {
     rafId = 0;
