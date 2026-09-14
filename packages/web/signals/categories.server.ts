@@ -8,7 +8,7 @@ const cache = cached<Category[]>(
   "categories",
   () => configStore.listCategories(),
   {
-    ttlMs: 60_000,
+    ttlMs: 24 * 60 * 60_000, // 1d
     watch: { kv, key: ["cache_epoch", "categories"] },
   },
 );
