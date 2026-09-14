@@ -11,6 +11,25 @@ export interface PlayTraceOptions {
 const defaultSleep = (ms: number): Promise<void> =>
   new Promise((resolve) => setTimeout(resolve, Math.max(0, ms)));
 
+export interface ReplayParams {
+  runId: string;
+  speed: number;
+}
+
+/**
+ * Reads the replay mode from a query string: `?replay=<runId>` arms the
+ * replay for that run, `?speed=<n>` is the time multiplier (>1 faster,
+ * <1 slower, default 1, invalid or non-positive values fall back to 1).
+ */
+export function parseReplayParams(search: string): ReplayParams | null {
+  const params = new URLSearchParams(search);
+  const runId = params.get("replay")?.trim();
+  if (!runId) return null;
+  let speed = Number(params.get("speed") ?? "1");
+  speed = Number.isFinite(speed) && speed > 0 ? speed : 1;
+  return { runId, speed };
+}
+
 /**
  * Drives `onEvent` for each trace event at its recorded relative timing:
  * offsets are normalized against the first event's timestamp, and each

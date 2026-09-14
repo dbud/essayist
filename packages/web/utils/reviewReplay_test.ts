@@ -5,7 +5,7 @@ import type {
 } from "@essayist/core";
 import { ReviewProgressTracker } from "@essayist/core";
 import { assertEquals } from "@std/assert";
-import { playTrace } from "./reviewReplay.ts";
+import { parseReplayParams, playTrace } from "./reviewReplay.ts";
 
 function traced(
   seq: number,
@@ -141,4 +141,39 @@ Deno.test("playTrace -- client wraps events via ReviewProgressTracker", async ()
     snapshots.map((s) => s.progress.notes),
     [0, 0, 0, 1, 1],
   );
+});
+
+Deno.test("parseReplayParams -- absent or blank replay param", () => {
+  assertEquals(parseReplayParams(""), null);
+  assertEquals(parseReplayParams("ws=1&file=essay.md"), null);
+  assertEquals(parseReplayParams("replay="), null);
+  assertEquals(parseReplayParams("replay=%20"), null);
+});
+
+Deno.test("parseReplayParams -- run id and speed", () => {
+  assertEquals(parseReplayParams("replay=r-1"), {
+    runId: "r-1",
+    speed: 1,
+  });
+  assertEquals(parseReplayParams("ws=1&replay=r-1&speed=4"), {
+    runId: "r-1",
+    speed: 4,
+  });
+  assertEquals(parseReplayParams("replay=r-1&speed=0.25"), {
+    runId: "r-1",
+    speed: 0.25,
+  });
+  assertEquals(parseReplayParams("replay=+r-1+"), {
+    runId: "r-1",
+    speed: 1,
+  });
+});
+
+Deno.test("parseReplayParams -- invalid speed falls back to 1", () => {
+  for (const speed of ["0", "-2", "abc", "", "Infinity", "NaN"]) {
+    assertEquals(parseReplayParams(`replay=r-1&speed=${speed}`), {
+      runId: "r-1",
+      speed: 1,
+    });
+  }
 });
