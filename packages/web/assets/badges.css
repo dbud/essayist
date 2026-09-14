@@ -31,6 +31,11 @@
   --slant-bg: var(--badge-bg);
 }
 
+@utility badge--surface {
+  --badge-bg: var(--color-surface);
+  --slant-stroke: var(--color-stroke);
+}
+
 @utility badge--success {
   --badge-bg: oklch(62% 0.13 145);
   --badge-fg: white;
