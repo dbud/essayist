@@ -2,6 +2,7 @@ import { CircleDashed } from "lucide-preact";
 import { CircleCheckIcon } from "@/components/ui/icons.tsx";
 import Swappable from "@/components/ui/Swappable.tsx";
 import WaveBars from "@/components/ui/WaveBars.tsx";
+import { useBooting } from "@/hooks/useBooting.ts";
 import { useTick } from "@/hooks/useTick.ts";
 import { getFile } from "@/signals/file.ts";
 import { autoSave } from "@/signals/preferences.ts";
@@ -15,10 +16,12 @@ interface SaveStatusProps {
 
 export default function SaveStatus({ wsId, path }: SaveStatusProps) {
   useTick(30_000);
+  const booting = useBooting();
   const file = getFile(wsId, path);
   const { saving, saveError, dirty, draft, checkpoint, loading, initialState } =
     file;
-  const loadingFile = loading.value || initialState.value === null;
+  const loadingFile =
+    loading.value || initialState.value === null || booting.value;
 
   const savedAt = loadingFile
     ? undefined
