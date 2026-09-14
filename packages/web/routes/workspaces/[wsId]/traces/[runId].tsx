@@ -10,6 +10,7 @@ import {
   ArrowRight,
   ArrowUp,
   MoveLeft,
+  RotateCcw,
   Wrench,
 } from "lucide-preact";
 import type { ComponentChildren } from "preact";
@@ -46,6 +47,15 @@ function statusBadge(status: ReviewRunStatus) {
         ? "badge badge--error"
         : "badge badge--warning";
   return <span class={classes}>{status}</span>;
+}
+
+/** Editor URL that opens this run's file in replay mode. */
+function replayHref(run: ReviewRun): string {
+  return (
+    `/?ws=${encodeURIComponent(run.workspaceId)}` +
+    `&file=${encodeURIComponent(run.fileId)}` +
+    `&replay=${run.id}`
+  );
 }
 
 function duration(ms: number): string {
@@ -351,6 +361,14 @@ export default function ReviewTracePage({
               <MoveLeft size={16} />
             </a>
             <div class="cell">Review trace</div>
+            <a
+              href={replayHref(run)}
+              class="btn"
+              title="Replay this run in the editor"
+            >
+              <RotateCcw size={16} />
+              Replay...
+            </a>
           </div>
         </Navigation>
         <div class="z-toolbar flex flex-col bg-surface shadow-md">
