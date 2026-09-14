@@ -2,21 +2,37 @@ import { effect } from "@preact/signals";
 import { IS_BROWSER } from "fresh/runtime";
 import { getFileTreeFor } from "@/signals/fileTree.ts";
 import { getWorkspaces } from "@/signals/workspace.ts";
+import { parseReplayParams, type ReplayParams } from "@/utils/reviewReplay.ts";
 
 /**
  * Keeps the URL query at ?ws=<workspaceId>&file=<path>, matching the
  * selected workspace and file. Changes the user makes push a new history
  * entry; changes that arrive with loaded data update the current entry
  * instead. Back and forward re-apply the URL's workspace and file to the
- * app. These are the only query params the page manages; any other params
- * in the URL are dropped on the next update.
+ * app. Replay params (?replay, ?speed) ride along on in-place rewrites
+ * and are dropped when the workspace or file selection changes, since a
+ * replay belongs to one file's run. These are the only query params the
+ * page manages; any other params in the URL are dropped on the next
+ * update.
  */
 
 const MARKER = "essayist";
 
-function selectionUrl(wsId: string, file: string | null): string {
+function selectionUrl({
+  wsId,
+  file,
+  replay,
+}: {
+  wsId: string;
+  file: string | null;
+  replay?: ReplayParams | null;
+}): string {
   const params = new URLSearchParams({ ws: wsId });
   if (file) params.set("file", file);
+  if (replay) {
+    params.set("replay", replay.runId);
+    if (replay.speed !== 1) params.set("speed", String(replay.speed));
+  }
   return `${location.pathname}?${params.toString()}`;
 }
 
@@ -28,7 +44,6 @@ if (IS_BROWSER) {
 
     const tree = getFileTreeFor(wsId);
     const file = tree.selectedPath.value;
-    const url = selectionUrl(wsId, file);
 
     const current = new URLSearchParams(location.search);
     const locationWs = current.get("ws");
@@ -39,6 +54,8 @@ if (IS_BROWSER) {
       return;
     }
 
+    const replay = parseReplayParams(location.search);
+
     const knownWs =
       locationWs !== null &&
       workspaces.list.value.some((w) => w.id === locationWs);
@@ -48,18 +65,18 @@ if (IS_BROWSER) {
 
     // Workspace navigation: the URL pins a different live workspace.
     if (knownWs && locationWs !== wsId) {
-      history.pushState(MARKER, "", url);
+      history.pushState(MARKER, "", selectionUrl({ wsId, file }));
       return;
     }
 
     // File navigation: the URL pins a different existing file.
     if (knownWs && locationFile !== null && knownFile) {
-      history.pushState(MARKER, "", url);
+      history.pushState(MARKER, "", selectionUrl({ wsId, file }));
       return;
     }
 
-    // Blank or stale: fill or rewrite in place.
-    history.replaceState(MARKER, "", url);
+    // Blank or stale: fill or rewrite in place, preserving replay params.
+    history.replaceState(MARKER, "", selectionUrl({ wsId, file, replay }));
   });
 
   addEventListener("popstate", (e: PopStateEvent) => {
