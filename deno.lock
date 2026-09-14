@@ -52,6 +52,7 @@
     "jsr:@std/uuid@^1.0.9": "1.1.1",
     "npm:@babel/core@^7.28.0": "7.29.7",
     "npm:@babel/preset-react@^7.27.1": "7.29.7_@babel+core@7.29.7",
+    "npm:@biomejs/biome@*": "2.5.13",
     "npm:@biomejs/biome@^2.5.13": "2.5.13",
     "npm:@fontsource-variable/atkinson-hyperlegible-next@^5.3.0": "5.3.0",
     "npm:@fontsource-variable/recursive@^5.3.0": "5.3.0",
