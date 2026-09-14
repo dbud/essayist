@@ -1,9 +1,15 @@
-import type { ReviewProgress, ReviewRun } from "@essayist/core";
+import type {
+  ReviewProgress,
+  ReviewRun,
+  TracedReviewEvent,
+} from "@essayist/core";
+import { ReviewProgressTracker } from "@essayist/core";
 import { createModel, signal } from "@preact/signals";
 import { getMarks } from "@/signals/marks.ts";
 import { get, modelData, namespace } from "@/signals/models.ts";
 import createAsyncState from "@/utils/asyncState.ts";
 import { ensureOk } from "@/utils/ensureOk.ts";
+import { playTrace } from "@/utils/reviewReplay.ts";
 import { parseSSE } from "@/utils/sse.ts";
 
 export interface ReviewKey {
@@ -71,6 +77,42 @@ export const ReviewModel = createModel((workspaceId: string, path: string) => {
     }
   }
 
+  /**
+   * Replays a recorded run's trace at its recorded relative timing,
+   * wrapping events in the same ReviewProgressTracker the live run uses
+   * server-side. Completes like a live run: progress reset, run set,
+   * marks refreshed when the run completed. The run must belong to this
+   * file's history.
+   */
+  async function replayRun(
+    runId: string,
+    { speed = () => 1 }: { speed?: () => number } = {},
+  ) {
+    const result = await runAsync(async () => {
+      const stored = runs.value.find((r) => r.id === runId);
+      if (!stored) {
+        throw new Error(`Review run not found for this file: ${runId}`);
+      }
+
+      const res = await fetch(
+        `/api/workspaces/${encodeURIComponent(workspaceId)}/review-runs/${encodeURIComponent(runId)}/trace`,
+      );
+      await ensureOk(res);
+      const trace = (await res.json()) as TracedReviewEvent[];
+      if (trace.length === 0) throw new Error("Trace is empty");
+
+      const tracker = new ReviewProgressTracker((p) => (progress.value = p));
+      await playTrace(trace, (event) => tracker.handle(event), { speed });
+      return stored;
+    });
+
+    progress.value = null;
+    if (result) {
+      run.value = result;
+      if (result.status === "completed") getMarks(workspaceId, path).refresh();
+    }
+  }
+
   return {
     run,
     runs,
@@ -80,6 +122,7 @@ export const ReviewModel = createModel((workspaceId: string, path: string) => {
     historyLoading,
     historyError,
     submit,
+    replayRun,
     reloadHistory: refresh,
   };
 });
