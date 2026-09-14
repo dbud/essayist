@@ -70,7 +70,10 @@ export default function SaveStatus({ wsId, path }: SaveStatusProps) {
           {saved ? (
             <CircleCheckIcon size={14} class="text-ink" />
           ) : (
-            <CircleDashed size={14} class="text-accent" />
+            <CircleDashed
+              size={14}
+              class="text-accent animate-[spin_3s_linear_infinite]"
+            />
           )}
         </Swappable>
       )}
