@@ -1,7 +1,7 @@
 import type { Category } from "@essayist/core";
 import type { Signal } from "@preact/signals";
 import { useState } from "preact/hooks";
-import { WavyRenderer } from "@/components/highlights/WavyRenderer.tsx";
+import { ColorSwatch } from "@/components/highlights/ColorSwatch.tsx";
 import { FormShell } from "@/components/ui/forms/FormShell.tsx";
 import { TextareaRow } from "@/components/ui/forms/TextareaRow.tsx";
 import { TextRow } from "@/components/ui/forms/TextRow.tsx";
@@ -9,7 +9,6 @@ import { CheckboxIcon } from "@/components/ui/icons.tsx";
 import Slider from "@/components/ui/Slider.tsx";
 import { FALLBACK_COLOR } from "@/editor/markColors.ts";
 import { type CategoryInput, getAdminConfig } from "@/signals/admin.ts";
-import type { MarkRect } from "@/signals/sidenotes.ts";
 
 // Canonical stored form: oklch(<L>% <C> <H>).
 const OKLCH_RE = /^oklch\(([\d.]+)%\s+([\d.]+)\s+([\d.]+)\)$/;
@@ -21,9 +20,6 @@ function parseOklch(color: string | undefined) {
     ? { l: Number(m[1]), c: Number(m[2]), h: Number(m[3]) }
     : { ...DEFAULTS };
 }
-
-const EMPTY: ReadonlySet<string> = new Set();
-const ACTIVE: ReadonlySet<string> = new Set(["preview"]);
 
 export function CategoryForm({
   entity,
@@ -45,16 +41,6 @@ export function CategoryForm({
 
   const canonical = `oklch(${Math.round(l)}% ${Number(c.toFixed(2))} ${Math.round(h)})`;
   const previewColor = colorEnabled ? canonical : FALLBACK_COLOR;
-  const previewRect: MarkRect = {
-    id: "preview",
-    color: previewColor,
-    left: 0,
-    top: 0,
-    width: 64,
-    height: 24,
-    order: 0,
-    bandCount: 1,
-  };
 
   async function handleSubmit(e: Event) {
     e.preventDefault();
@@ -126,29 +112,7 @@ export function CategoryForm({
       )}
       <span class="cell">preview</span>
       <div class="cell w-full gap-2">
-        <span class="relative inline-flex h-6 w-16 items-center justify-center">
-          <WavyRenderer
-            rects={[previewRect]}
-            activeIds={EMPTY}
-            innerId={null}
-          />
-          <span class="relative">text</span>
-        </span>
-        <span class="relative inline-flex h-6 w-16 items-center justify-center">
-          <WavyRenderer
-            rects={[previewRect]}
-            activeIds={ACTIVE}
-            innerId={null}
-          />
-          <span class="relative">text</span>
-        </span>
-        <span class="relative inline-flex h-6 w-16 items-center justify-center">
-          <span
-            class="mark-band inset-0"
-            style={{ backgroundColor: previewColor, color: previewColor }}
-          />
-          <span class="relative">text</span>
-        </span>
+        <ColorSwatch color={previewColor} />
         <span class="min-w-0 truncate font-mono text-xs text-ink/60">
           {colorEnabled ? canonical : "fallback"}
         </span>

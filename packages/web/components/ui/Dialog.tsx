@@ -6,6 +6,8 @@ import Panel from "@/components/ui/Panel.tsx";
 interface DialogProps {
   open: Signal<boolean>;
   children: ComponentChildren;
+  /** Optional side column rendered beside the panel, outside its frame. */
+  aside?: ComponentChildren;
 }
 
 /** Modal dialog using native <dialog> with Panel animation.
@@ -16,9 +18,9 @@ interface DialogProps {
  *  renders the 0fr state before transitioning to 1fr.
  *  On close: panelOpen flips to false (by close, useEffect, or consumer),
  *  Panel animates closed, then onSettled calls dialog.close().
- *  Clicks landing outside the panel (striped frame or backdrop) close
- *  via the Panel's built-in click-outside. */
-export default function Dialog({ open, children }: DialogProps) {
+ *  Clicks landing outside the panel (striped frame or backdrop, or the
+ *  aside) close via the Panel's built-in click-outside. */
+export default function Dialog({ open, children, aside }: DialogProps) {
   const ref = useRef<HTMLDialogElement>(null);
   const panelOpen = useSignal(false);
 
@@ -58,7 +60,7 @@ export default function Dialog({ open, children }: DialogProps) {
 
   return (
     <dialog ref={ref} class="dialog-backdrop" onClose={close}>
-      <div class="content-layout">
+      <div class={`content-layout ${aside ? "content-layout--side" : ""}`}>
         <div class="content-main p-10 min-w-0 max-w-lg md:max-w-2xl xl:max-w-3xl">
           <Panel
             open={panelOpen.value}
@@ -69,6 +71,7 @@ export default function Dialog({ open, children }: DialogProps) {
             {children}
           </Panel>
         </div>
+        {aside && <div class="content-side py-10">{aside}</div>}
       </div>
     </dialog>
   );

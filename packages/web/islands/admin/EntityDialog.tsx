@@ -6,6 +6,7 @@ import { ModelPoolForm } from "@/islands/admin/forms/ModelPoolForm.tsx";
 import { PromptForm } from "@/islands/admin/forms/PromptForm.tsx";
 import { ReviewPassForm } from "@/islands/admin/forms/ReviewPassForm.tsx";
 import type { DialogRequest } from "@/islands/admin/types.ts";
+import MarkSwatches from "@/islands/MarkSwatches.tsx";
 
 export default function EntityDialog({
   open,
@@ -18,6 +19,7 @@ export default function EntityDialog({
 }) {
   if (!request) return null;
   let form: ComponentChildren;
+  let aside: ComponentChildren;
   switch (request.kind) {
     case "pool":
       form = <ModelPoolForm entity={request.entity} open={open} />;
@@ -27,13 +29,14 @@ export default function EntityDialog({
       break;
     case "category":
       form = <CategoryForm entity={request.entity} open={open} />;
+      aside = <MarkSwatches />;
       break;
     case "pass":
       form = <ReviewPassForm entity={request.entity} open={open} />;
       break;
   }
   return (
-    <Dialog open={open}>
+    <Dialog open={open} aside={aside}>
       <div key={stamp}>{form}</div>
     </Dialog>
   );

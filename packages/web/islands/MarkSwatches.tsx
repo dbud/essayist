@@ -1,14 +1,7 @@
-import { WavyRenderer } from "@/components/highlights/WavyRenderer.tsx";
+import { ColorSwatch } from "@/components/highlights/ColorSwatch.tsx";
 import { FALLBACK_COLOR } from "@/editor/markColors.ts";
 import { getCategories } from "@/signals/categories.ts";
-import type { MarkRect } from "@/signals/sidenotes.ts";
 
-const EMPTY: ReadonlySet<string> = new Set();
-const SWATCH_W = 64;
-const SWATCH_H = 24;
-
-// TEMPORARY category color preview -- remove once colors/opacities are settled.
-// One row per category: label, band, band-inner, wavy, wavy-inner.
 export default function MarkSwatches() {
   const entries = [
     ...getCategories().list.value.map((c) => ({
@@ -20,46 +13,12 @@ export default function MarkSwatches() {
   ];
   return (
     <div class="flex w-fit flex-col gap-5 bg-paper border border-stroke shadow-md p-5 text-xs">
-      {entries.map(({ key, label, color }) => {
-        const id = `swatch-${key}`;
-        const rect: MarkRect = {
-          id,
-          color,
-          left: 0,
-          top: 0,
-          width: SWATCH_W,
-          height: SWATCH_H,
-          order: 0,
-          bandCount: 1,
-        };
-        return (
-          <div key={key} class="flex items-center gap-2">
-            <span class="w-24">{label}</span>
-            <span class="relative inline-flex h-6 w-16 items-center justify-center">
-              <WavyRenderer rects={[rect]} activeIds={EMPTY} innerId={null} />
-              <span class="relative">text</span>
-            </span>
-            <span class="relative inline-flex h-6 w-16 items-center justify-center">
-              <WavyRenderer rects={[rect]} activeIds={EMPTY} innerId={id} />
-              <span class="relative">text</span>
-            </span>
-            <span class="relative inline-flex h-6 w-16 items-center justify-center">
-              <span
-                class="mark-band inset-0"
-                style={{ backgroundColor: color, color }}
-              />
-              <span class="relative">text</span>
-            </span>
-            <span class="relative inline-flex h-6 w-16 items-center justify-center">
-              <span
-                class="mark-band is-inner inset-0"
-                style={{ backgroundColor: color, color }}
-              />
-              <span class="relative">text</span>
-            </span>
-          </div>
-        );
-      })}
+      {entries.map(({ key, label, color }) => (
+        <div key={key} class="flex items-center gap-2">
+          <span class="w-24">{label}</span>
+          <ColorSwatch color={color} />
+        </div>
+      ))}
     </div>
   );
 }
