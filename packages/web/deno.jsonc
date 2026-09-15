@@ -50,7 +50,7 @@
     "dompurify": "npm:dompurify@^3.4.15",
     "fresh": "jsr:@fresh/core@^2.3.3",
     "lexical": "npm:lexical@^0.50.0",
-    "lucide-preact": "npm:lucide-preact@^1.44.0",
+    "lucide-preact": "npm:lucide-preact@^1.45.0",
     "marked": "npm:marked@^18.0.12",
     "node:url": "node:url",
     "pngjs": "npm:pngjs@^7.0.0",
