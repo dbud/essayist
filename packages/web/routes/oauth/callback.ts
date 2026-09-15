@@ -1,6 +1,5 @@
-import { UserEmailTakenError } from "@essayist/core";
 import { define } from "@/define.ts";
-import { workspaceStore } from "@/store.ts";
+import { resolveGoogleUser } from "@/utils/googleUser.ts";
 import { getGoogleUserInfo, getOAuthHelpers } from "@/utils/oauth.ts";
 import {
   createSession,
@@ -21,31 +20,7 @@ export const handler = define.handlers(async (ctx) => {
   const { response, sessionId, tokens } = await helpers.handleCallback(ctx.req);
 
   const info = await getGoogleUserInfo(tokens.accessToken);
-  let user = await workspaceStore.getUserByEmail(info.email);
-  if (!user) {
-    try {
-      user = await workspaceStore.createUser(info);
-    } catch (error) {
-      // Race: another concurrent login created the same email first.
-      if (error instanceof UserEmailTakenError) {
-        user = await workspaceStore.getUserByEmail(info.email);
-      } else {
-        throw error;
-      }
-    }
-  }
-  if (!user) {
-    throw new Error(`failed to resolve user for ${info.email}`);
-  }
-
-  // Refresh name/picture from Google on each login (they can change).
-  if (info.name !== user.name || info.picture !== user.picture) {
-    const updated = await workspaceStore.updateUser(user.id, {
-      name: info.name,
-      picture: info.picture,
-    });
-    if (updated) user = updated;
-  }
+  const user = await resolveGoogleUser(info);
 
   // Persist the OAuth tokens onto the app session so server-side Google API
   // calls (Drive export) can re-use the grant; see utils/googleToken.ts.
