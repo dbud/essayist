@@ -5,6 +5,7 @@ import { getOAuthHelpers } from "@/utils/oauth.ts";
 import { getUserIdForSession } from "@/utils/sessions.ts";
 
 const isDev = Deno.env.get("DENO_ENV") === "development";
+const demoUserDisabled = Deno.env.get("DISABLE_DEMO_USER") === "1";
 
 /**
  * Resolves `ctx.state.user` for each request.
@@ -12,9 +13,9 @@ const isDev = Deno.env.get("DENO_ENV") === "development";
  * Resolution order:
  * 1. `X-User-Id` header, dev only -- lets local scripts/tests act as a
  *    seeded user; disabled in production.
- *  2. Valid Google OAuth session cookie (see routes/oauth/*).
- *  3. The seeded demo user, in dev only.
- *  4. Otherwise unauthenticated: API routes get 401 JSON, browser routes
+ * 2. Valid Google OAuth session cookie (see routes/oauth/*).
+ * 3. The seeded demo user, in dev only (skip with DISABLE_DEMO_USER=1).
+ * 4. Otherwise unauthenticated: API routes get 401 JSON, browser routes
  *     redirect to /login.
  *
  * The /oauth/* routes and /login page are skipped so sign-in / sign-out /
@@ -60,7 +61,7 @@ const authMiddleware: Middleware<State> = define.middleware(async (ctx) => {
     // Fall through to the dev demo-user fallback below.
   }
 
-  if (isDev && demoUser) {
+  if (isDev && demoUser && !demoUserDisabled) {
     ctx.state.user = demoUser;
     return ctx.next();
   }

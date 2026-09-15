@@ -9,7 +9,12 @@
       "deno.ns",
       "deno.unstable"
     ],
-    "types": ["vite/client", "@types/gapi", "@types/google.picker"]
+    "types": [
+      "vite/client",
+      "@types/gapi",
+      "@types/google.picker",
+      "@types/google.accounts"
+    ]
   },
   "exclude": ["**/_fresh/*"],
   "exports": "./main.ts",
@@ -38,17 +43,21 @@
     "@preact/signals": "npm:@preact/signals@^2.11.2",
     "@resvg/resvg-wasm": "npm:@resvg/resvg-wasm@2.6.2",
     "@std/assert": "jsr:@std/assert@^1.0.19",
+    "@std/encoding": "jsr:@std/encoding@^1.0.0",
+    "@std/http": "jsr:@std/http@^0.221.0",
     "@std/text": "jsr:@std/text@^1.0.19",
     "@tailwindcss/typography": "npm:@tailwindcss/typography@^0.5.20",
     "@tailwindcss/vite": "npm:@tailwindcss/vite@^4.3.3",
     "@types/babel__core": "npm:@types/babel__core@^7.20.5",
     "@types/gapi": "npm:@types/gapi@^0.0.47",
+    "@types/google.accounts": "npm:@types/google.accounts@^0.0.18",
     "@types/google.picker": "npm:@types/google.picker@^0.0.52",
     "@types/node": "npm:@types/node@^26.5.1",
     "culori": "npm:culori@^4.0.2",
     "date-fns": "npm:date-fns@^4.4.0",
     "dompurify": "npm:dompurify@^3.4.15",
     "fresh": "jsr:@fresh/core@^2.3.3",
+    "jose": "npm:jose@^6.0.0",
     "lexical": "npm:lexical@^0.50.0",
     "lucide-preact": "npm:lucide-preact@^1.44.0",
     "marked": "npm:marked@^18.0.12",
@@ -69,7 +78,7 @@
   "tasks": {
     "build": "vite build",
     "check": "deno run -A npm:@biomejs/biome check && deno lint . && deno check",
-    "dev": "DENO_ENV=development vite | pino-pretty --colorize --translateTime SYS:standard --ignore pid,hostname",
+    "dev": "DENO_ENV=development DENO_KV_PATH=./local-kv.sqlite3 vite | pino-pretty --colorize --translateTime SYS:standard --ignore pid,hostname",
     "favicon": "deno run -A favicon/generate.ts",
     "favicon:check": "deno run -A favicon/generate.ts --check",
     "kvctl": "deno run -A --env-file=.env kvctl.ts",

@@ -1,4 +1,5 @@
 import type { Tokens } from "@deno/kv-oauth";
+import { setCookie } from "@std/http/cookie";
 import { kv } from "@/store.ts";
 
 // Maps the kv-oauth session id (from the signed cookie) to an app user id and
@@ -73,6 +74,43 @@ export async function updateSessionTokens(
 
 export async function deleteSession(sessionId: string): Promise<void> {
   await kv.delete([APP_SESSIONS, sessionId]);
+}
+
+// One Tap sign-in creates sessions outside the kv-oauth flow, so we
+// replicate kv-oauth 0.11's site session here: a `site-session` cookie
+// (prefixed `__Host-` on https) plus a `site_sessions` KV row that its
+// `getSessionId` validates against. kv-oauth must read the same KV: the dev
+// task sets DENO_KV_PATH to our sqlite file; on Deno Deploy both open the
+// platform KV.
+const SITE_SESSION_COOKIE = "site-session";
+// kv-oauth's cookie maxAge is in seconds and backs the KV row with the same
+// TTL; derive both from our session TTL.
+const SITE_SESSION_MAX_AGE_SECONDS = SESSION_TTL_MS / 1000;
+
+/**
+ * Sets a kv-oauth-compatible site session cookie on the response and writes
+ * the backing KV row, so the auth middleware resolves it like any OAuth
+ * sign-in session.
+ */
+export async function createSiteSession(
+  request: Request,
+  response: Response,
+  sessionId: string,
+): Promise<Response> {
+  const isHttps = new URL(request.url).protocol === "https:";
+  setCookie(response.headers, {
+    name: isHttps ? `__Host-${SITE_SESSION_COOKIE}` : SITE_SESSION_COOKIE,
+    value: sessionId,
+    path: "/",
+    httpOnly: true,
+    secure: isHttps,
+    maxAge: SITE_SESSION_MAX_AGE_SECONDS,
+    sameSite: "Lax",
+  });
+  await kv.set(["site_sessions", sessionId], true, {
+    expireIn: SESSION_TTL_MS,
+  });
+  return response;
 }
 
 export async function setUserRefreshToken(

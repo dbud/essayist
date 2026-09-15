@@ -53,6 +53,17 @@ deno task -f web build      # Production build (vite build → _fresh/)
 deno task -f web favicon    # Regenerate favicon assets
 ```
 
+To exercise the real sign-in flows (Google One Tap, OAuth) instead of the
+seeded demo user, disable the fallback (Google credentials come from the
+`.env` file):
+
+```
+DISABLE_DEMO_USER=1 deno task -f web dev
+```
+
+The Google Cloud OAuth client needs `http://localhost:5173` in its
+Authorized JavaScript origins for One Tap to appear.
+
 Production builds and serving are handled by Deno Deploy.
 
 ## Favicon

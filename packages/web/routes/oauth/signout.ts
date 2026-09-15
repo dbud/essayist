@@ -8,5 +8,10 @@ export const handler = define.handlers(async (ctx) => {
   if (sessionId) {
     await deleteSession(sessionId);
   }
-  return await helpers.signOut(ctx.req);
+  const response = await helpers.signOut(ctx.req);
+  // Land on the login page with a marker so the GoogleOneTap island clears
+  // GSI's remembered auto selection (otherwise the user would be silently
+  // signed back in on the next visit).
+  response.headers.set("location", "/login?signedout=1");
+  return response;
 });
