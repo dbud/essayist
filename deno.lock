@@ -82,7 +82,7 @@
     "npm:@tailwindcss/vite@^4.3.3": "4.3.3_vite@7.3.6_@types+node@26.5.1",
     "npm:@types/babel__core@^7.20.5": "7.20.5",
     "npm:@types/gapi@^0.0.47": "0.0.47",
-    "npm:@types/google.accounts@^0.0.7": "0.0.7",
+    "npm:@types/google.accounts@^0.0.18": "0.0.18",
     "npm:@types/google.picker@^0.0.52": "0.0.52",
     "npm:@types/node@^26.5.1": "26.5.1",
     "npm:culori@^4.0.2": "4.0.2",
@@ -1631,8 +1631,8 @@
     "@types/gapi@0.0.47": {
       "integrity": "sha512-/ZsLuq6BffMgbKMtZyDZ8vwQvTyKhKQ1G2K6VyWCgtHHhfSSXbk4+4JwImZiTjWNXfI2q1ZStAwFFHSkNoTkHA=="
     },
-    "@types/google.accounts@0.0.7": {
-      "integrity": "sha512-AAA2+/s/Oa9ETgaWY6JM2P3h8RiQ1FkdyI7QYKMY3hbIkwGbjEBLX0L6FpazVxHnq68ruDyl8Fi5v0tEwSyfeg=="
+    "@types/google.accounts@0.0.18": {
+      "integrity": "sha512-yHaPznll97ZnMJlPABHyeiIlLn3u6gQaUjA5k/O9lrrpgFB9VT10CKPLuKM0qTHMl50uXpW5sIcG+utm8jMOHw=="
     },
     "@types/google.picker@0.0.52": {
       "integrity": "sha512-k0HyW8HxJePomM2r0JWq9nE9XG6qY93lVpoVnaV4WjQggDHrGwDKq3G8CGpcBWhQlJBTxX9jDIrI7RQnqjM63w=="
@@ -2363,7 +2363,7 @@
           "npm:@tailwindcss/vite@^4.3.3",
           "npm:@types/babel__core@^7.20.5",
           "npm:@types/gapi@^0.0.47",
-          "npm:@types/google.accounts@^0.0.7",
+          "npm:@types/google.accounts@^0.0.18",
           "npm:@types/google.picker@^0.0.52",
           "npm:@types/node@^26.5.1",
           "npm:culori@^4.0.2",

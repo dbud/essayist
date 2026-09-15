@@ -1,6 +1,9 @@
 import type { PageProps } from "fresh";
 import { ArrowUpRight } from "lucide-preact";
+import GoogleOneTap from "@/islands/GoogleOneTap.tsx";
 import { safeNext } from "@/utils/nextUrl.ts";
+
+const clientId = Deno.env.get("GOOGLE_CLIENT_ID");
 
 /**
  * Sign-in landing page. Shown to unauthenticated browser users (the auth
@@ -23,6 +26,7 @@ export default function LoginPage({ url }: PageProps) {
           Sign in with Google
         </a>
       </div>
+      {clientId && <GoogleOneTap clientId={clientId} next={next} />}
     </main>
   );
 }
