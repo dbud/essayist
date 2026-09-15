@@ -1,0 +1,13 @@
+{
+  "exports": "./kvctl.ts",
+  "imports": {
+    "@/": "./",
+    "@cliffy/command": "jsr:@cliffy/command@^1.2.1",
+    "node:url": "node:url"
+  },
+  "name": "@essayist/kvctl",
+  "tasks": {
+    "kvctl": "deno run -A --env-file=../../.env kvctl.ts"
+  },
+  "version": "0.1.0"
+}

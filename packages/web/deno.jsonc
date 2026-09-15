@@ -81,7 +81,6 @@
     "dev": "DENO_ENV=development DENO_KV_PATH=./local-kv.sqlite3 vite | pino-pretty --colorize --translateTime SYS:standard --ignore pid,hostname",
     "favicon": "deno run -A favicon/generate.ts",
     "favicon:check": "deno run -A favicon/generate.ts --check",
-    "kvctl": "deno run -A --env-file=.env kvctl.ts",
     "start": "deno serve -A _fresh/server.js",
     "update": "deno run -A -r jsr:@fresh/update ."
   },

@@ -16,6 +16,7 @@ export {
   ReviewPassSchema,
   ToolNameSchema,
 } from "@/config/types.ts";
+export { pluralize } from "@/format.ts";
 export { measure, measureAsync } from "@/measure.ts";
 export { KvAdapter } from "@/persistence/kv_adapter.ts";
 export {

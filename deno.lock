@@ -2328,6 +2328,11 @@
           "jsr:@std/assert@^1.0.19"
         ]
       },
+      "packages/kvctl": {
+        "dependencies": [
+          "jsr:@cliffy/command@^1.2.1"
+        ]
+      },
       "packages/web": {
         "dependencies": [
           "jsr:@cliffy/command@^1.2.1",

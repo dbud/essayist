@@ -23,6 +23,7 @@
   "tasks": {
     "fmt": "deno run -A npm:@biomejs/biome check --write --error-on-warnings",
     "fmt:check": "deno lint && deno check && deno run -A npm:@biomejs/biome check --error-on-warnings",
+    "kvctl": "deno run -A --env-file=.env packages/kvctl/kvctl.ts",
     "rust:check": "cargo check",
     "rust:clippy": "cargo clippy --all-targets -- -D warnings",
     "wasm:build": "wasm-pack build crates/wasm --target web --out-dir pkg --out-name wasm",
@@ -33,6 +34,7 @@
     "./crates/wasm",
     "./packages/web",
     "./packages/core",
-    "./packages/core/integration"
+    "./packages/core/integration",
+    "./packages/kvctl"
   ]
 }

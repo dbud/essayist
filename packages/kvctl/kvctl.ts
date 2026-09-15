@@ -5,9 +5,10 @@
 //
 // For a remote instance, set DENO_KV_ACCESS_TOKEN=ddo_... in .env (loaded via
 // --env-file=.env by the kvctl task). Optionally set REMOTE_URL in .env to use
-// it as the default target when --target is omitted. Run `deno task kvctl help`
+// it as the default target when --target is omitted. Run `deno task kvctl --help`
 // for full usage.
 
+import { fileURLToPath } from "node:url";
 import { Command, EnumType } from "@cliffy/command";
 import {
   CategorySchema,
@@ -16,16 +17,18 @@ import {
   type ModelPool,
   ModelPoolSchema,
   PromptSchema,
+  pluralize,
   ReviewPassSchema,
   USER_ROLES,
   type User,
   WorkspaceStore,
 } from "@essayist/core";
-import { pluralize } from "@/utils/format.ts";
 
-// The local playground KV: default sync source, and the default target when
-// no remote is configured.
-const LOCAL_KV = "./local-kv.sqlite3";
+// The local playground KV, the web dev server's KV. Resolved from this
+// module so the default works from any working directory.
+const LOCAL_KV = fileURLToPath(
+  new URL("../web/local-kv.sqlite3", import.meta.url),
+);
 
 // The categories cache on a running instance watches this key; a bump makes
 // every isolate drop its cache instead of waiting out the TTL.
