@@ -79,8 +79,9 @@ export async function deleteSession(sessionId: string): Promise<void> {
 // One Tap sign-in creates sessions outside the kv-oauth flow, so we
 // replicate kv-oauth 0.11's site session here: a `site-session` cookie
 // (prefixed `__Host-` on https) plus a `site_sessions` KV row that its
-// `getSessionId` validates against. Keep in sync with kv-oauth's
-// lib/_http.ts and lib/_kv.ts.
+// `getSessionId` validates against. kv-oauth must read the same KV: the dev
+// task sets DENO_KV_PATH to our sqlite file; on Deno Deploy both open the
+// platform KV.
 const SITE_SESSION_COOKIE = "site-session";
 // kv-oauth's cookie maxAge is in seconds and backs the KV row with the same
 // TTL; derive both from our session TTL.
