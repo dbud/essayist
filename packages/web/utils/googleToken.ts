@@ -35,7 +35,7 @@ export async function getValidAccessToken(
     session.tokens.refreshToken ?? (await getUserRefreshToken(session.userId));
   if (!refreshToken) return accessToken; // can't refresh; let Google reject it
 
-  const refreshed = await refreshWithGoogle(refreshToken);
+  const refreshed = await refreshTokens(refreshToken);
   await updateSessionTokens(sessionId, refreshed);
   if (refreshed.refreshToken) {
     await setUserRefreshToken(session.userId, refreshed.refreshToken);
@@ -43,7 +43,25 @@ export async function getValidAccessToken(
   return refreshed.accessToken;
 }
 
-async function refreshWithGoogle(refreshToken: string): Promise<SessionTokens> {
+/**
+ * Returns fresh session tokens refreshed with the user's stored refresh
+ * token, or `null` when none is stored (One Tap sign-ins have no tokens of
+ * their own) or when Google rejects the stored token (revoked). On failure
+ * the sign-in still succeeds, just without Google API access.
+ */
+export async function refreshTokensForUser(
+  userId: string,
+): Promise<SessionTokens | null> {
+  const refreshToken = await getUserRefreshToken(userId);
+  if (!refreshToken) return null;
+  try {
+    return await refreshTokens(refreshToken);
+  } catch {
+    return null;
+  }
+}
+
+async function refreshTokens(refreshToken: string): Promise<SessionTokens> {
   const body = new URLSearchParams({
     client_id: Deno.env.get("GOOGLE_CLIENT_ID") ?? "",
     client_secret: Deno.env.get("GOOGLE_CLIENT_SECRET") ?? "",
