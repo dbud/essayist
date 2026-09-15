@@ -1,32 +1,38 @@
 import type { PageProps } from "fresh";
-import { ArrowUpRight } from "lucide-preact";
 import GoogleOneTap from "@/islands/GoogleOneTap.tsx";
+import Navigation from "@/islands/Navigation.tsx";
 import { safeNext } from "@/utils/nextUrl.ts";
 
 const clientId = Deno.env.get("GOOGLE_CLIENT_ID");
 
 /**
  * Sign-in landing page. Shown to unauthenticated browser users (the auth
- * middleware redirects them here with a `next` query param). The button starts
- * the Google OAuth flow and passes `next` as `success_url` so
- * `@deno/kv-oauth` sends the user back to the page they originally requested
- * instead of falling back to the `/login` referer.
+ * middleware redirects them here with a `next` query param). The Google
+ * island handles both the native button and the One Tap prompt; its
+ * credential callback posts to /oauth/onetap with `next` so the user lands
+ * back on the page they originally requested.
  */
 export default function LoginPage({ url }: PageProps) {
   const next = safeNext(url.searchParams.get("next"));
-  const href = `/oauth/signin?success_url=${encodeURIComponent(next)}`;
   return (
-    <main class="flex items-start bg-surface h-full">
-      <div class="flex flex-col stack w-1/2 max-w-128">
-        <p class="text-ink bg-surface h-20 p-4 w-full">
-          Sign in with your Google account to continue.
-        </p>
-        <a href={href} class="btn cell--accent self-end">
-          <ArrowUpRight size={16} />
-          Sign in with Google
-        </a>
-      </div>
-      {clientId && <GoogleOneTap clientId={clientId} next={next} />}
-    </main>
+    <div class="flex flex-1 min-h-0">
+      <main class="flex flex-1 flex-col stack stack--col min-h-0 @container">
+        <Navigation>
+          <div class="flex stack stack--row">
+            <div class="cell">Sign in to Essayist</div>
+          </div>
+        </Navigation>
+        <div class="flex-1 min-h-0 overflow-y-auto bg-paper">
+          <div class="content-layout">
+            <div class="content-main flex flex-col gap-5 py-10">
+              <p class="text-ink max-w-prose">
+                Use your Google account to open your workspaces.
+              </p>
+              {clientId && <GoogleOneTap clientId={clientId} next={next} />}
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
   );
 }
