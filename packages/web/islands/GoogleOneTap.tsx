@@ -27,6 +27,7 @@ export default function GoogleOneTap({ clientId, next }: GoogleOneTapProps) {
         if (cancelled || !buttonRef.current) return;
         google.accounts.id.initialize({
           client_id: clientId,
+          auto_select: true,
           use_fedcm_for_prompt: true,
           callback: (response) => {
             if (!response.credential || !credentialRef.current) return;
@@ -34,6 +35,11 @@ export default function GoogleOneTap({ clientId, next }: GoogleOneTapProps) {
             formRef.current?.submit();
           },
         });
+        // Arriving from /oauth/signout: clear GSI's remembered auto selection
+        // so the user is not silently signed back in.
+        if (new URLSearchParams(globalThis.location.search).has("signedout")) {
+          google.accounts.id.disableAutoSelect();
+        }
         google.accounts.id.renderButton(buttonRef.current, {
           type: "standard",
           theme: "filled_blue",
