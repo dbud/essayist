@@ -35,7 +35,7 @@ export default function GhostSidenote({
         }`}
         style={{
           "--mark-color": color,
-          "--ghost-opacity": String(1 - 0.8 * Math.sqrt(occlusion)),
+          "--ghost-opacity": String(1 - 0.9 * Math.sqrt(occlusion)),
         }}
         title="Offscreen; jump to mark"
         onClick={() => {

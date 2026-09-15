@@ -60,7 +60,7 @@
     }
     &.is-ghost {
       @apply pointer-events-auto sticky top-0 w-full;
-      opacity: calc(var(--ghost-opacity, 1) * 0.9);
+      opacity: calc(var(--ghost-opacity, 1) * 0.5);
       animation: ghost-fade-in 300ms ease;
     }
     &.is-ghost.ghost-bottom {
