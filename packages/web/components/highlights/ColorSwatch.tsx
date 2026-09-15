@@ -5,9 +5,8 @@ const EMPTY: ReadonlySet<string> = new Set();
 const SWATCH_W = 64;
 const SWATCH_H = 24;
 
-// One color rendered in the four candidate mark styles: wavy, wavy-inner,
-// band, band-inner. Shared by the admin swatches panel and the category
-// form preview so both screens show the same renderings.
+// One color in the four candidate mark styles: wavy, wavy-inner, band,
+// band-inner.
 export function ColorSwatch({ color }: { color: string }) {
   const id = "swatch";
   const rect: MarkRect = {
