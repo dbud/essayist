@@ -144,8 +144,7 @@ Deno.test("verifyGoogleIdToken -- rejects an unverified email", async () => {
 Deno.test("verifyGoogleIdToken -- rejects a tampered signature", async () => {
   const idToken = await signIdToken(claims());
   const [header, payload, signature] = idToken.split(".");
-  const tampered =
-    signature.slice(0, -1) + (signature.endsWith("A") ? "B" : "A");
+  const tampered = `A${signature.slice(1)}`;
   await assertRejects(
     () =>
       verifyGoogleIdToken(`${header}.${payload}.${tampered}`, {
