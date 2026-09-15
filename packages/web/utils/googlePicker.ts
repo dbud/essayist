@@ -1,6 +1,8 @@
 // Google Picker client wrapper: opens the picker and resolves with the
 // selected documents.
 
+import { loadScript } from "@/utils/loadScript.ts";
+
 export interface PickerDoc {
   id: string;
   name: string;
@@ -12,28 +14,10 @@ export interface PickerConfig {
   appId?: string;
 }
 
-let gapiPromise: Promise<void> | undefined;
+const GAPI_SRC = "https://apis.google.com/js/api.js";
 
-async function loadGapi(): Promise<void> {
-  if (gapiPromise) return gapiPromise;
-  gapiPromise = new Promise((resolve, reject) => {
-    if (typeof gapi !== "undefined") {
-      resolve();
-      return;
-    }
-    const script = document.querySelector<HTMLScriptElement>(
-      'script[src="https://apis.google.com/js/api.js"]',
-    );
-    if (!script) {
-      reject(new Error("Google Picker script not on this page"));
-      return;
-    }
-    script.addEventListener("load", () => resolve());
-    script.addEventListener("error", () =>
-      reject(new Error("Failed to load Google Picker script")),
-    );
-  });
-  await gapiPromise;
+function loadGapi(): Promise<void> {
+  return loadScript(GAPI_SRC, () => typeof gapi !== "undefined");
 }
 
 export async function openGooglePicker(

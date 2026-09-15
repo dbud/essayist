@@ -9,7 +9,12 @@
       "deno.ns",
       "deno.unstable"
     ],
-    "types": ["vite/client", "@types/gapi", "@types/google.picker"]
+    "types": [
+      "vite/client",
+      "@types/gapi",
+      "@types/google.picker",
+      "@types/google.accounts"
+    ]
   },
   "exclude": ["**/_fresh/*"],
   "exports": "./main.ts",
@@ -45,6 +50,7 @@
     "@tailwindcss/vite": "npm:@tailwindcss/vite@^4.3.3",
     "@types/babel__core": "npm:@types/babel__core@^7.20.5",
     "@types/gapi": "npm:@types/gapi@^0.0.47",
+    "@types/google.accounts": "npm:@types/google.accounts@^0.0.7",
     "@types/google.picker": "npm:@types/google.picker@^0.0.52",
     "@types/node": "npm:@types/node@^26.5.1",
     "culori": "npm:culori@^4.0.2",
