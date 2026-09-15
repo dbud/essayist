@@ -25,9 +25,6 @@ export default function LoginPage({ url }: PageProps) {
         <div class="flex-1 min-h-0 overflow-y-auto bg-paper">
           <div class="content-layout">
             <div class="content-main flex flex-col gap-5 py-10">
-              <p class="text-ink max-w-prose">
-                Use your Google account to open your workspaces.
-              </p>
               {clientId && <GoogleOneTap clientId={clientId} next={next} />}
             </div>
           </div>
