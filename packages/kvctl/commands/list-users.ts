@@ -10,7 +10,9 @@ export const listUsers = new Command<KvctlGlobals>()
       let n = 0;
       for await (const entry of kv.list<User>({ prefix: ["users"] })) {
         const u = entry.value;
-        console.log(`${u.id}  ${u.email}  role=${u.role ?? "writer"}`);
+        console.log(
+          `${u.id}  ${u.email.padEnd(24)}  role=${u.role ?? "writer"}`,
+        );
         n++;
       }
       console.log(`(${n} users)`);
