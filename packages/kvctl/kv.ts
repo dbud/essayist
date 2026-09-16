@@ -2,6 +2,7 @@
 
 import { fileURLToPath } from "node:url";
 import { ConfigStore, KvAdapter, WorkspaceStore } from "@essayist/core";
+import type { KvctlGlobals } from "@/globals.ts";
 
 // The local playground KV, the web dev server's KV. Resolved from this
 // module so the default works from any working directory.
@@ -19,15 +20,19 @@ interface KvCtx {
   config: ConfigStore;
 }
 
-export function resolveTarget(target: string | undefined): string {
-  return target ?? Deno.env.get("REMOTE_URL") ?? LOCAL_KV;
+export function resolveTarget(globals: KvctlGlobals): string {
+  return (
+    globals.target ??
+    (globals.local ? LOCAL_KV : Deno.env.get("REMOTE_URL")) ??
+    LOCAL_KV
+  );
 }
 
 export async function withKv<T>(
-  target: string | undefined,
+  globals: KvctlGlobals,
   fn: (ctx: KvCtx) => Promise<T>,
 ): Promise<T> {
-  const kv = await Deno.openKv(resolveTarget(target));
+  const kv = await Deno.openKv(resolveTarget(globals));
   const adapter = new KvAdapter(kv);
   try {
     return await fn({

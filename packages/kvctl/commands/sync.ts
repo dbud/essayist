@@ -7,6 +7,7 @@ import {
   type SyncCtx,
   warnBrokenRefs,
 } from "@/families.ts";
+import type { KvctlGlobals } from "@/globals.ts";
 import { CATEGORIES_EPOCH, LOCAL_KV, resolveTarget } from "@/kv.ts";
 
 const FAMILY = new EnumType([
@@ -17,7 +18,7 @@ const FAMILY = new EnumType([
   "all",
 ]);
 
-export const sync = new Command<{ target?: string }>()
+export const sync = new Command<KvctlGlobals>()
   .description(
     "Copy config entities from a source KV into the target. Non-destructive unless --prune. Review passes are checked for dangling references after syncing.",
   )
@@ -31,9 +32,9 @@ export const sync = new Command<{ target?: string }>()
   .option("--prune", "Also delete target entries missing from the source.", {
     default: false,
   })
-  .action(async ({ target, from, prune }, family) => {
+  .action(async ({ target, local, from, prune }, family) => {
     const sourcePath = from ?? LOCAL_KV;
-    const targetPath = resolveTarget(target);
+    const targetPath = resolveTarget({ target, local });
     if (sourcePath === targetPath) {
       console.error(
         `source and target are both ${sourcePath}; nothing to sync`,

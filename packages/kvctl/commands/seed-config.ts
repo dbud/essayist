@@ -1,10 +1,11 @@
 import { Command } from "@cliffy/command";
+import type { KvctlGlobals } from "@/globals.ts";
 import { withKv } from "@/kv.ts";
 
-export const seedConfig = new Command<{ target?: string }>()
+export const seedConfig = new Command<KvctlGlobals>()
   .description("Seed default review config.")
-  .action(({ target }) =>
-    withKv(target, async ({ config }) => {
+  .action(({ target, local }) =>
+    withKv({ target, local }, async ({ config }) => {
       const poolId = "free-pool";
       await config.saveModelPool({
         id: poolId,

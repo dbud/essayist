@@ -5,7 +5,8 @@
 //
 // For a remote instance, set DENO_KV_ACCESS_TOKEN=ddo_... in .env (loaded via
 // --env-file=.env by the kvctl task). Optionally set REMOTE_URL in .env to use
-// it as the default target when --target is omitted. Run `deno task kvctl --help`
+// it as the default target when --target is omitted; pass --local to ignore
+// REMOTE_URL and use the local playground KV. Run `deno task kvctl --help`
 // for full usage.
 
 import { Command } from "@cliffy/command";
@@ -24,6 +25,9 @@ await new Command()
     "KV target (path or URL). Defaults to REMOTE_URL from .env, then local SQLite.",
     { global: true },
   )
+  .option("--local", "Use the local KV, overriding REMOTE_URL from .env.", {
+    global: true,
+  })
   .command("wipe", wipe)
   .command("explore", explore)
   .command("grant-role", grantRole)
