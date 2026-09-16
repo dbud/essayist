@@ -6,7 +6,7 @@ import Panel from "@/components/ui/Panel.tsx";
 interface DialogProps {
   open: Signal<boolean>;
   children: ComponentChildren;
-  /** Optional side column rendered beside the panel, outside its frame. */
+  /** Side column rendered beside the panel, outside its frame. */
   aside?: ComponentChildren;
 }
 
@@ -18,8 +18,8 @@ interface DialogProps {
  *  renders the 0fr state before transitioning to 1fr.
  *  On close: panelOpen flips to false (by close, useEffect, or consumer),
  *  Panel animates closed, then onSettled calls dialog.close().
- *  Clicks landing outside the panel (striped frame or backdrop, or the
- *  aside) close via the Panel's built-in click-outside. */
+ *  Clicks outside the panel (backdrop or aside) close via the Panel's
+ *  click-outside. */
 export default function Dialog({ open, children, aside }: DialogProps) {
   const ref = useRef<HTMLDialogElement>(null);
   const panelOpen = useSignal(false);

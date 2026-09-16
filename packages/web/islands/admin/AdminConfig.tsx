@@ -6,6 +6,7 @@ import { EntityCard, NewButton } from "@/components/ui/EntityCard.tsx";
 import { Field } from "@/components/ui/EntityRows.tsx";
 import Tabs, { type TabItem } from "@/components/ui/Tabs.tsx";
 import WaveBars from "@/components/ui/WaveBars.tsx";
+import { CategoriesExport } from "@/islands/admin/CategoriesExport.tsx";
 import EntityDialog from "@/islands/admin/EntityDialog.tsx";
 import { CategoryRow } from "@/islands/admin/rows/CategoryRow.tsx";
 import { ModelPoolRow } from "@/islands/admin/rows/ModelPoolRow.tsx";
@@ -166,7 +167,12 @@ export default function AdminConfig() {
         );
         break;
       case "categories":
-        side = <MarkSwatches />;
+        side = (
+          <div class="flex flex-col gap-10">
+            <MarkSwatches />
+            <CategoriesExport categories={categories.value} />
+          </div>
+        );
         body = (
           <div class="flex flex-col gap-10">
             <NewButton
