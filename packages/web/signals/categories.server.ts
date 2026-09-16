@@ -17,8 +17,6 @@ export function categoriesLoader(): Promise<Category[]> {
   return cache.get();
 }
 
-// Category writes go through these wrappers so the invalidation always
-// travels with the write.
 export async function saveCategory(category: Category): Promise<void> {
   await configStore.saveCategory(category);
   await cache.invalidate();

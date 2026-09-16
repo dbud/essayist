@@ -45,8 +45,6 @@ export function setScopeProvider(p: () => Scope): void {
   scope = p;
 }
 
-// cache
-
 function canonicalKey(key: unknown): string {
   return typeof key === "string" ? key : JSON.stringify(key);
 }
@@ -60,8 +58,6 @@ function cacheSet<S, K>(ns: Namespace<S, K>, key: K, data: S): void {
     .cache.getOrInsertComputed(ns.name, () => new Map())
     .set(canonicalKey(key), data);
 }
-
-// instances
 
 export function get<T, K>(
   ns: Namespace<unknown, K>,
@@ -148,8 +144,6 @@ export function modelData<S, K>(
 
   return { loading, error, refresh };
 }
-
-// drain
 
 /** Awaits every acquisition collected in the current scope. */
 async function drain(): Promise<void> {

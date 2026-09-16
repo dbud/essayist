@@ -49,7 +49,7 @@ if (IS_BROWSER) {
     const locationWs = current.get("ws");
     const locationFile = current.get("file");
 
-    // Converged: the current query already describes this selection.
+    // Already in sync: the query matches this selection.
     if (locationWs === wsId && locationFile === (file ?? null)) {
       return;
     }

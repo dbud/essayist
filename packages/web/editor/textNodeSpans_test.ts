@@ -73,7 +73,7 @@ Deno.test("buildTextNodeSpans -- heading syntax chars snap to nearest text", () 
   assertEquals(pos1.key, heading.key);
   assertEquals(pos1.offset, 0);
 
-  // Offset 2 is "M" — directly in the span
+  // Offset 2 is "M" -- directly in the span
   const pos2 = findPosition(spans, 2);
   assert(pos2);
   assertEquals(pos2.key, heading.key);
@@ -132,7 +132,7 @@ Deno.test("findRange -- focus is exclusive (one past last char)", () => {
   const md = "ABCDEF";
   const spans = buildTextNodeSpans(importMarkdown(md), md);
 
-  // Select "CDE" — offset 2, length 3.
+  // Select "CDE" -- offset 2, length 3.
   // Anchor at 2 ("C"), focus at 5 (one past "E").
   const range = findRange(spans, { offset: 2, length: 3 });
   assert(range);
@@ -148,12 +148,12 @@ Deno.test("findPosition -- past end snaps to caret after last char", () => {
   const pos1 = findPosition(spans, 1);
   assert(pos0 && pos1);
 
-  // Offset 2 is exactly the text length — caret after last char.
+  // Offset 2 is exactly the text length -- caret after last char.
   const pos2 = findPosition(spans, 2);
   assert(pos2);
   assertEquals(pos2.offset, 2);
 
-  // Offset 99 is past the end — snaps to caret after last char.
+  // Offset 99 is past the end -- snaps to caret after last char.
   const pos99 = findPosition(spans, 99);
   assert(pos99);
   assertEquals(pos99.offset, 2);
@@ -163,7 +163,7 @@ Deno.test("findPosition -- gap between spans snaps to end of preceding span", ()
   const md = "Hello **world**";
   const spans = buildTextNodeSpans(importMarkdown(md), md);
   // Two spans: "Hello " at 0, "world" at 8 (after "**")
-  // Offset 6 is "*" — in the gap between spans.
+  // Offset 6 is "*" -- in the gap between spans.
   // Snaps to end of "Hello " (offset 6), staying in the same TextNode.
   const pos = findPosition(spans, 6);
   assert(pos);
@@ -175,7 +175,7 @@ Deno.test("findPosition -- gap between spans snaps forward", () => {
   const md = "Hello **world**";
   const spans = buildTextNodeSpans(importMarkdown(md), md);
   // Two spans: "Hello " at 0, "world" at 8 (after "**")
-  // Offset 7 is "*" — in the gap between spans, past end of "Hello ".
+  // Offset 7 is "*" -- in the gap between spans, past end of "Hello ".
   // Snaps to start of next span.
   const pos = findPosition(spans, 7);
   assert(pos);

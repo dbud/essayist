@@ -14,15 +14,15 @@ Deno.test("deepComputed -- downstream effect does not re-fire when result is dee
 
   assertEquals(effectRuns, 1);
 
-  // New signal reference, but deeply-equal result — effect should not re-fire
+  // New signal reference, but deeply-equal result -- effect should not re-fire
   s.value = [1, 2];
   assertEquals(effectRuns, 1);
 
-  // Different value — effect re-fires
+  // Different value -- effect re-fires
   s.value = [1, 3];
   assertEquals(effectRuns, 2);
 
-  // Same value again — no re-fire
+  // Same value again -- no re-fire
   s.value = [1, 3];
   assertEquals(effectRuns, 2);
 });
@@ -88,11 +88,11 @@ Deno.test("deepComputed -- nested objects are compared deeply", () => {
 
   assertEquals(effectRuns, 1);
 
-  // Same nested structure — no re-fire
+  // Same nested structure -- no re-fire
   s.value = { a: { b: 1 } };
   assertEquals(effectRuns, 1);
 
-  // Different nested value — re-fires
+  // Different nested value -- re-fires
   s.value = { a: { b: 2 } };
   assertEquals(effectRuns, 2);
 });

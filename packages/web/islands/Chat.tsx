@@ -94,7 +94,6 @@ export default function Chat() {
   return (
     <div class="flex-1 min-h-0 max-h-[50vh] flex flex-col">
       <div class="flex flex-1 flex-col gap-2 min-h-0">
-        {/* Messages area */}
         {messages.value.length > 0 && (
           <div
             ref={scrollRef}
@@ -113,7 +112,6 @@ export default function Chat() {
                         : "self-start bg-paper text-ink"
                     }`}
                   >
-                    {/* Tool calls and reasoning items */}
                     <div class="flex flex-col gap-4">
                       {Array.from(message.items.entries()).map(
                         ([key, item]) => (
@@ -122,10 +120,8 @@ export default function Chat() {
                       )}
                     </div>
 
-                    {/* Provider error */}
                     {message.error && <ErrorMessage error={message.error} />}
 
-                    {/* Text content */}
                     {message.text &&
                       (isUser ? (
                         <div>{message.text}</div>
@@ -136,7 +132,6 @@ export default function Chat() {
                         />
                       ))}
 
-                    {/* Streaming indicator */}
                     {i === messages.value.length - 1 &&
                       streaming.value &&
                       !message.text &&
@@ -147,7 +142,6 @@ export default function Chat() {
           </div>
         )}
 
-        {/* Input area */}
         <form
           class="grow flex items-center gap-2"
           onSubmit={(e) => {

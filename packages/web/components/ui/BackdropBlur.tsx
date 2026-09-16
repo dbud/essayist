@@ -15,8 +15,7 @@ function clamp(value: number, min = 0, max = 1) {
 }
 
 function smoothStepQuintic(t: number) {
-  return t;
-  // return 6 * t ** 5 - 15 * t ** 4 + 10 * t ** 3;
+  return 6 * t ** 5 - 15 * t ** 4 + 10 * t ** 3;
 }
 
 /** Opacity at position x in [0,1] for a band with plateau l and range r.

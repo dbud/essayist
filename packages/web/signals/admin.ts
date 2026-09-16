@@ -43,8 +43,6 @@ export const AdminConfigModel = createModel(() => {
 
   const { mutating, post, put, del } = createMutations(load);
 
-  // -- model pools --
-
   const createModelPool = (data: ModelPoolInput) =>
     post("/api/admin/model-pools", data);
 
@@ -54,8 +52,6 @@ export const AdminConfigModel = createModel(() => {
   const deleteModelPool = (id: string) =>
     del(`/api/admin/model-pools/${encodeURIComponent(id)}`);
 
-  // -- prompts --
-
   const createPrompt = (data: Prompt) => post("/api/admin/prompts", data);
 
   const updatePrompt = (key: string, data: Prompt) =>
@@ -63,8 +59,6 @@ export const AdminConfigModel = createModel(() => {
 
   const deletePrompt = (key: string) =>
     del(`/api/admin/prompts/${encodeURIComponent(key)}`);
-
-  // -- categories --
 
   const createCategory = async (data: CategoryInput) => {
     const ok = await post("/api/admin/categories", data);
@@ -87,8 +81,6 @@ export const AdminConfigModel = createModel(() => {
     return ok;
   };
 
-  // -- review passes --
-
   const createReviewPass = (data: ReviewPassInput) =>
     post("/api/admin/review-passes", data);
 
@@ -97,8 +89,6 @@ export const AdminConfigModel = createModel(() => {
 
   const deleteReviewPass = (id: string) =>
     del(`/api/admin/review-passes/${encodeURIComponent(id)}`);
-
-  // -- active review pass --
 
   const setActiveReviewPass = (reviewPassId: string) =>
     put("/api/admin/active-review-pass", { reviewPassId });

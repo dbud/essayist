@@ -82,7 +82,7 @@ function FileViewerBody({ wsId, path }: { wsId: string; path: string }) {
           <div class="relative min-w-0 isolate">
             {state.value && (
               // Lexical SSR is pending (ESS-31); the editor hydrates from
-              // the warm cache instead of rendering its content.
+              // the SSR-seeded cache instead of rendering its content.
               <Editor
                 wsId={wsId}
                 path={path}
