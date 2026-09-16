@@ -10,13 +10,7 @@ import {
 import type { KvctlGlobals } from "@/globals.ts";
 import { CATEGORIES_EPOCH, LOCAL_KV, resolveTarget } from "@/kv.ts";
 
-const FAMILY = new EnumType([
-  "pools",
-  "prompts",
-  "categories",
-  "passes",
-  "all",
-]);
+const FAMILY = new EnumType([...FAMILY_ORDER, "all"]);
 
 export const sync = new Command<KvctlGlobals>()
   .description(
