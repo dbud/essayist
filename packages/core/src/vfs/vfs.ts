@@ -75,8 +75,9 @@ export class VirtualFileSystem implements VFS {
     { versionId, startLine, endLine, numbered }: ReadOptions = {},
   ): Promise<FileReadResult> {
     const snapshot: FileSnapshot = {
+      // version_id "" marks a miss; read never throws by design.
       content: "",
-      version_id: versionId ?? "",
+      version_id: "",
       timestamp: 0,
       lines: 0,
       ...(await this.#getSnapshot(path, versionId)),
