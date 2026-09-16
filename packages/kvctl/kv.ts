@@ -39,17 +39,3 @@ export async function withKv<T>(
     kv.close();
   }
 }
-
-// colored inspect on a TTY; plain JSON when stdout is piped, one document
-// per entry, so jq can parse the stream
-export function printEntry(entry: Deno.KvEntry<unknown>): void {
-  const tuple = [entry.key, entry.value];
-  const body = Deno.stdout.isTerminal()
-    ? Deno.inspect(tuple, {
-        colors: !Deno.env.has("NO_COLOR"),
-        sorted: true,
-        compact: true,
-      })
-    : JSON.stringify(tuple, null, 2);
-  console.log(`${body}\n`);
-}
