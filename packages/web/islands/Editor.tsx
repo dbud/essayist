@@ -38,7 +38,7 @@ export default function Editor({
     markBadges,
     markRects,
   } = getSidenotes(wsId, path, versionId);
-  const { markdown } = getFile(wsId, path, versionId);
+  const { markdown, readOnly } = getFile(wsId, path, versionId);
   const selection = getEditorSelection(wsId, path, versionId);
 
   const extension = useMemo(
@@ -51,7 +51,7 @@ export default function Editor({
         markNumbers,
         markBadges,
         markRects,
-        readOnly: versionId !== undefined,
+        readOnly: readOnly.value,
       }),
       $initialEditorState: initialState,
     }),

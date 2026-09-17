@@ -36,7 +36,7 @@ export const fileNs = namespace<FileData, FileKey>("file");
 
 export const FileModel = createModel((key: FileKey) => {
   const { wsId, path, versionId } = key;
-  const readOnly = versionId !== undefined;
+  const readOnly = computed(() => versionId !== undefined);
   // Latest promoted version, or the pinned version for snapshot views;
   // marks anchor to its content.
   const checkpoint = signal<FileSnapshot | null>(null);
@@ -99,7 +99,7 @@ export const FileModel = createModel((key: FileKey) => {
   );
 
   async function save(): Promise<boolean> {
-    if (readOnly || !dirty.value) return true;
+    if (readOnly.value || !dirty.value) return true;
     const content = markdown.value;
     nextSaveAt = Date.now() + AUTO_SAVE_MAX_WAIT_MS;
 
@@ -135,11 +135,11 @@ export const FileModel = createModel((key: FileKey) => {
   }
 
   function flush() {
-    if (readOnly || !dirty.value) return;
+    if (readOnly.value || !dirty.value) return;
     void putDraft(markdown.value, { keepalive: true }).catch(() => {});
   }
 
-  if (IS_BROWSER && !readOnly) {
+  if (IS_BROWSER && !readOnly.value) {
     // Idle debounce: save once edits pause.
     effect(() => {
       if (!autoSave.value || !dirty.value) return;
@@ -189,6 +189,7 @@ export const FileModel = createModel((key: FileKey) => {
     markdown,
     dirty,
     isSelected,
+    readOnly,
     save,
     saving,
     saveError,

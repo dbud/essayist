@@ -39,11 +39,15 @@ export default function FileViewer() {
 }
 
 function FileViewerBody({ wsId, path, versionId }: FileKey) {
-  const { state, checkpoint, setModifiedState, loading, error, save } = getFile(
-    wsId,
-    path,
-    versionId,
-  );
+  const {
+    state,
+    checkpoint,
+    readOnly,
+    setModifiedState,
+    loading,
+    error,
+    save,
+  } = getFile(wsId, path, versionId);
   const { resolved } = getMarks(wsId, path, versionId);
   const sidenotes = getSidenotes(wsId, path, versionId);
   const selection = getEditorSelection(wsId, path, versionId);
@@ -66,7 +70,7 @@ function FileViewerBody({ wsId, path, versionId }: FileKey) {
   const withSidePane = resolved.value.length > 0;
   const editorLoading = loading.value || !state.value;
   const viewingMissing =
-    versionId !== undefined &&
+    readOnly.value &&
     checkpoint.value !== null &&
     checkpoint.value.version_id === "";
 
