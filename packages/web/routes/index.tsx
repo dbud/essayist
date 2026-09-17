@@ -24,9 +24,10 @@ export default define.page(async ({ state }) => {
     const path = tree.selectedPath.value;
     if (path) {
       getOpenedFilesFor(wsId).open(path);
+      const versionId = tree.selectedVersionId.value ?? undefined;
       yield* settleAll(
-        getFile(wsId, path),
-        getMarks(wsId, path),
+        getFile(wsId, path, versionId),
+        getMarks(wsId, path, versionId),
         getReview(wsId, path),
       );
     }

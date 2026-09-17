@@ -24,6 +24,7 @@ const AUTO_SAVE_MAX_WAIT_MS = 30_000;
 export interface FileKey {
   workspaceId: string;
   path: string;
+  versionId?: string;
 }
 
 export interface FileData {
@@ -33,8 +34,11 @@ export interface FileData {
 
 export const fileNs = namespace<FileData, FileKey>("file");
 
-export const FileModel = createModel((workspaceId: string, path: string) => {
-  // Latest promoted version; marks anchor to its content.
+export const FileModel = createModel((key: FileKey) => {
+  const { workspaceId, path, versionId } = key;
+  const readOnly = versionId !== undefined;
+  // Latest promoted version, or the pinned version for snapshot views;
+  // marks anchor to its content.
   const checkpoint = signal<FileSnapshot | null>(null);
   const draft = signal<DraftSnapshot | null>(null);
   const [runSave, { loading: saving, error: saveError }] = createAsyncState();
@@ -76,15 +80,18 @@ export const FileModel = createModel((workspaceId: string, path: string) => {
 
   const { loading, error } = modelData(
     fileNs,
-    { workspaceId, path },
+    { workspaceId, path, versionId },
     (data) => {
       checkpoint.value = data.checkpoint;
       draft.value = data.draft;
       seedContent.value = data.draft?.content ?? data.checkpoint.content;
     },
     async () => {
+      const versionParam = versionId
+        ? `?v=${encodeURIComponent(versionId)}`
+        : "";
       const res = await fetch(
-        `/api/workspaces/${encodeURIComponent(workspaceId)}/files/${encodeURIComponent(path)}`,
+        `/api/workspaces/${encodeURIComponent(workspaceId)}/files/${encodeURIComponent(path)}${versionParam}`,
       );
       await ensureOk(res);
       return (await res.json()) as FileData;
@@ -92,7 +99,7 @@ export const FileModel = createModel((workspaceId: string, path: string) => {
   );
 
   async function save(): Promise<boolean> {
-    if (!dirty.value) return true;
+    if (readOnly || !dirty.value) return true;
     const content = markdown.value;
     nextSaveAt = Date.now() + AUTO_SAVE_MAX_WAIT_MS;
 
@@ -128,11 +135,11 @@ export const FileModel = createModel((workspaceId: string, path: string) => {
   }
 
   function flush() {
-    if (!dirty.value) return;
+    if (readOnly || !dirty.value) return;
     void putDraft(markdown.value, { keepalive: true }).catch(() => {});
   }
 
-  if (IS_BROWSER) {
+  if (IS_BROWSER && !readOnly) {
     // Idle debounce: save once edits pause.
     effect(() => {
       if (!autoSave.value || !dirty.value) return;
@@ -191,11 +198,15 @@ export const FileModel = createModel((workspaceId: string, path: string) => {
 
 export type File = InstanceType<typeof FileModel>;
 
-export function getFile(workspaceId: string, path: string): File {
+export function getFile(
+  workspaceId: string,
+  path: string,
+  versionId?: string,
+): File {
   return get(
     fileNs,
-    { workspaceId, path },
-    () => new FileModel(workspaceId, path),
+    { workspaceId, path, versionId },
+    () => new FileModel({ workspaceId, path, versionId }),
   );
 }
 

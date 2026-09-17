@@ -9,6 +9,7 @@ import createProgressState from "@/utils/progressState.ts";
 export interface TreeData {
   files: FileEntry[];
   selectedPath: string | null;
+  selectedVersionId: string | null;
 }
 
 export const treeNs = namespace<TreeData>("tree");
@@ -16,6 +17,7 @@ export const treeNs = namespace<TreeData>("tree");
 export const FileTreeModel = createModel((workspaceId: string) => {
   const files = signal<FileEntry[]>([]);
   const selectedPath = signal<string | null>(null);
+  const selectedVersionId = signal<string | null>(null);
   const [runUpload, { progress: uploadProgress }] = createProgressState();
 
   const tree = computed(() => buildFileTree(files.value));
@@ -26,6 +28,7 @@ export const FileTreeModel = createModel((workspaceId: string) => {
     (data) => {
       files.value = data.files;
       selectedPath.value = data.selectedPath;
+      selectedVersionId.value = data.selectedVersionId;
     },
     async () => {
       const res = await fetch(
@@ -87,6 +90,7 @@ export const FileTreeModel = createModel((workspaceId: string) => {
   return {
     files,
     selectedPath,
+    selectedVersionId,
     select,
     tree,
     loading,

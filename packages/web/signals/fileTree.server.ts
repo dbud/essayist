@@ -20,7 +20,11 @@ export async function fileTreeLoader(
     : known(persisted)
       ? persisted
       : (files[0]?.path ?? null);
-  return { files, selectedPath };
+  return {
+    files,
+    selectedPath,
+    selectedVersionId: ctx.url.searchParams.get("v"),
+  };
 }
 
 registerLoader(treeNs, (workspaceId, ctx) => fileTreeLoader(workspaceId, ctx));

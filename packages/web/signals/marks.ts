@@ -17,8 +17,9 @@ export interface MarksData {
 
 export const marksNs = namespace<MarksData, FileKey>("marks");
 
-export const MarksModel = createModel((workspaceId: string, path: string) => {
-  const { checkpoint, markdown } = getFile(workspaceId, path);
+export const MarksModel = createModel((key: FileKey) => {
+  const { workspaceId, path, versionId } = key;
+  const { checkpoint, markdown } = getFile(workspaceId, path, versionId);
 
   const baseline = signal<MarksData>({
     marks: [],
@@ -28,11 +29,14 @@ export const MarksModel = createModel((workspaceId: string, path: string) => {
 
   const { loading, error, refresh } = modelData(
     marksNs,
-    { workspaceId, path },
+    { workspaceId, path, versionId },
     (data) => (baseline.value = data),
     async () => {
+      const versionParam = versionId
+        ? `?v=${encodeURIComponent(versionId)}`
+        : "";
       const res = await fetch(
-        `/api/workspaces/${encodeURIComponent(workspaceId)}/files/${encodeURIComponent(path)}/marks`,
+        `/api/workspaces/${encodeURIComponent(workspaceId)}/files/${encodeURIComponent(path)}/marks${versionParam}`,
       );
       await ensureOk(res);
       return (await res.json()) as MarksData;
@@ -58,9 +62,9 @@ export const MarksModel = createModel((workspaceId: string, path: string) => {
   // version differs from the checkpoint.
   if (IS_BROWSER) {
     effect(() => {
-      const versionId = checkpoint.value?.version_id;
-      if (!versionId) return;
-      if (baseline.value.versionId === versionId) return;
+      const checkpointVersionId = checkpoint.value?.version_id;
+      if (!checkpointVersionId) return;
+      if (baseline.value.versionId === checkpointVersionId) return;
       // untracked: refresh()'s runner state writes must not re-trigger
       untracked(() => void refresh());
     });
@@ -69,10 +73,14 @@ export const MarksModel = createModel((workspaceId: string, path: string) => {
   return { resolved, loading, error, refresh, resolving };
 });
 
-export function getMarks(workspaceId: string, path: string) {
+export function getMarks(
+  workspaceId: string,
+  path: string,
+  versionId?: string,
+) {
   return get(
     marksNs,
-    { workspaceId, path },
-    () => new MarksModel(workspaceId, path),
+    { workspaceId, path, versionId },
+    () => new MarksModel({ workspaceId, path, versionId }),
   );
 }

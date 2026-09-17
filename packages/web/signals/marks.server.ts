@@ -7,9 +7,10 @@ import { adapter } from "@/store.ts";
 export async function marksLoader({
   workspaceId,
   path,
+  versionId,
 }: FileKey): Promise<MarksData> {
   const vfs = new VirtualFileSystem(adapter, workspaceId);
-  const checkpoint = await vfs.read(path);
+  const checkpoint = await vfs.read(path, { versionId });
   const marks = checkpoint.version_id
     ? await vfs.getMarks(path, checkpoint.version_id)
     : [];

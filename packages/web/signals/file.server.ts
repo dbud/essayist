@@ -7,11 +7,12 @@ import { adapter } from "@/store.ts";
 export async function fileLoader({
   workspaceId,
   path,
+  versionId,
 }: FileKey): Promise<FileData> {
   const vfs = new VirtualFileSystem(adapter, workspaceId);
   return {
-    checkpoint: await vfs.read(path),
-    draft: await vfs.readDraft(path),
+    checkpoint: await vfs.read(path, { versionId }),
+    draft: versionId ? null : await vfs.readDraft(path),
   };
 }
 
