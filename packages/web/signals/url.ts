@@ -81,7 +81,12 @@ if (IS_BROWSER) {
 
     // File navigation: the URL pins a different existing file. The
     // viewed version belongs to the old file and is dropped.
-    if (knownWs && locationFile !== null && knownFile) {
+    if (
+      knownWs &&
+      locationFile !== null &&
+      knownFile &&
+      locationFile !== (file ?? null)
+    ) {
       history.pushState(MARKER, "", selectionUrl({ wsId, file }));
       return;
     }
