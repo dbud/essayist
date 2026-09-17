@@ -4,6 +4,7 @@ import Dropdown, {
   DropdownMenu,
 } from "@/components/ui/Dropdown.tsx";
 import { CheckboxIcon } from "@/components/ui/icons.tsx";
+import type { FileKey } from "@/signals/file.ts";
 import { getFile } from "@/signals/file.ts";
 import { getFileStats } from "@/signals/fileStats.ts";
 import {
@@ -12,11 +13,7 @@ import {
 } from "@/signals/preferences.ts";
 import { formatCount } from "@/utils/format.ts";
 
-interface FileStatsProps {
-  wsId: string;
-  path: string;
-  versionId?: string;
-}
+type FileStatsProps = FileKey;
 
 const STAT_OPTIONS: { value: FileStatSection; label: string }[] = [
   { value: "words", label: "Words" },

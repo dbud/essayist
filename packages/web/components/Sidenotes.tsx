@@ -3,15 +3,13 @@ import GhostSidenote from "@/components/GhostSidenote.tsx";
 import Sidenote from "@/components/Sidenote.tsx";
 import { useElementHeights } from "@/hooks/useElementHeights.ts";
 import type { ScrollContainerRef } from "@/hooks/useScrollViewport.ts";
+import type { FileKey } from "@/signals/file.ts";
 import type { SidenoteView } from "@/signals/sidenotes.ts";
 import { getSidenotes } from "@/signals/sidenotes.ts";
 
 const clamp = (x: number) => Math.min(1, Math.max(0, x));
 
-interface SidenotesProps {
-  wsId: string;
-  path: string;
-  versionId?: string;
+interface SidenotesProps extends FileKey {
   editor: LexicalEditor | null;
   scrollContainerRef: ScrollContainerRef;
 }

@@ -3,15 +3,12 @@ import Dropdown, {
   DropdownItem,
   DropdownMenu,
 } from "@/components/ui/Dropdown.tsx";
+import type { FileKey } from "@/signals/file.ts";
 import { getFileTreeFor } from "@/signals/fileTree.ts";
 import { getVersionHistory } from "@/signals/versionHistory.ts";
 import { formatRelativeTime } from "@/utils/format.ts";
 
-interface VersionPickerProps {
-  wsId: string;
-  path: string;
-  versionId?: string;
-}
+type VersionPickerProps = FileKey;
 
 export default function VersionPicker({
   wsId,

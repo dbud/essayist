@@ -14,7 +14,7 @@ import SaveStatus from "@/islands/SaveStatus.tsx";
 import SidenoteControls from "@/islands/SidenoteControls.tsx";
 import { activeEditor } from "@/signals/activeEditor.ts";
 import { getEditorSelection } from "@/signals/editorSelection.ts";
-import { getFile } from "@/signals/file.ts";
+import { type FileKey, getFile } from "@/signals/file.ts";
 import { getFileTree, getFileTreeFor } from "@/signals/fileTree.ts";
 import { getMarks } from "@/signals/marks.ts";
 import { navigationOpened } from "@/signals/sidebar.ts";
@@ -38,15 +38,7 @@ export default function FileViewer() {
   );
 }
 
-function FileViewerBody({
-  wsId,
-  path,
-  versionId,
-}: {
-  wsId: string;
-  path: string;
-  versionId?: string;
-}) {
+function FileViewerBody({ wsId, path, versionId }: FileKey) {
   const { state, checkpoint, setModifiedState, loading, error, save } = getFile(
     wsId,
     path,

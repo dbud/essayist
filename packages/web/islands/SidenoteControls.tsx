@@ -7,6 +7,7 @@ import Dropdown, {
 } from "@/components/ui/Dropdown.tsx";
 import WaveBars from "@/components/ui/WaveBars.tsx";
 import VersionPicker from "@/islands/VersionPicker.tsx";
+import type { FileKey } from "@/signals/file.ts";
 import { getMarks } from "@/signals/marks.ts";
 import { replayParams, setReplayParams } from "@/signals/replay.ts";
 import { getReview } from "@/signals/review.ts";
@@ -34,15 +35,7 @@ function phaseLabel(progress: ReviewProgress | null): string {
   }
 }
 
-export default function SidenoteControls({
-  wsId,
-  path,
-  versionId,
-}: {
-  wsId: string;
-  path: string;
-  versionId?: string;
-}) {
+export default function SidenoteControls({ wsId, path, versionId }: FileKey) {
   const review = getReview(wsId, path);
   const { loading, error, progress } = review;
   const { resolving } = getMarks(wsId, path);
