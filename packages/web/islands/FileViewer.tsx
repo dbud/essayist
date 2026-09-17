@@ -83,6 +83,7 @@ function FileViewerBody({ wsId, path, versionId }: FileKey) {
               <EditorToolbar
                 wsId={wsId}
                 path={path}
+                versionId={versionId}
                 disabled={readOnly.value}
               />
               <FileStats wsId={wsId} path={path} versionId={versionId} />
