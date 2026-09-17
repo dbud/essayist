@@ -1,6 +1,8 @@
 import type { FileVersion } from "@essayist/core";
-import { createModel, signal } from "@preact/signals";
+import { createModel, effect, signal, untracked } from "@preact/signals";
+import { IS_BROWSER } from "fresh/runtime";
 import type { FileKey } from "@/signals/file.ts";
+import { getFile } from "@/signals/file.ts";
 import { get, modelData, namespace } from "@/signals/models.ts";
 import { ensureOk } from "@/utils/ensureOk.ts";
 
@@ -28,6 +30,19 @@ export const VersionHistoryModel = createModel((key: FileKey) => {
       return (await res.json()) as VersionHistoryData;
     },
   );
+
+  // Refetch when the live file gains a new version, so the picker stays
+  // current after writes. untracked: refresh()'s runner state writes must
+  // not re-trigger.
+  if (IS_BROWSER) {
+    const file = getFile(wsId, path);
+    effect(() => {
+      const latest = file.checkpoint.value?.version_id;
+      if (!latest) return;
+      if (versions.value.at(-1)?.version_id === latest) return;
+      untracked(() => void refresh());
+    });
+  }
 
   return { versions, loading, error, refresh };
 });

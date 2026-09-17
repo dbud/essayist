@@ -6,6 +6,7 @@ import Dropdown, {
   DropdownMenu,
 } from "@/components/ui/Dropdown.tsx";
 import WaveBars from "@/components/ui/WaveBars.tsx";
+import VersionPicker from "@/islands/VersionPicker.tsx";
 import { getMarks } from "@/signals/marks.ts";
 import { replayParams, setReplayParams } from "@/signals/replay.ts";
 import { getReview } from "@/signals/review.ts";
@@ -54,10 +55,6 @@ export default function SidenoteControls({
     [resolving],
   );
 
-  // Snapshot views host the version picker here instead (no review runs on
-  // old versions).
-  if (versionId) return null;
-
   async function runAndToast(action: () => Promise<unknown>) {
     await action();
     if (error.value) {
@@ -83,8 +80,20 @@ export default function SidenoteControls({
     );
   }
 
+  // Snapshot views host the version picker here instead (no review runs on
+  // old versions).
+  if (versionId) {
+    return (
+      <div class="relative flex flex-1 items-center stack stack--row">
+        <VersionPicker wsId={wsId} path={path} versionId={versionId} />
+        <div class="flex-1 self-stretch bg-surface" />
+      </div>
+    );
+  }
+
   return (
-    <div class="relative flex min-w-72 flex-1 items-center stack">
+    <div class="relative flex min-w-72 flex-1 items-center stack stack--row">
+      <VersionPicker wsId={wsId} path={path} versionId={versionId} />
       {loading.value ? (
         <div class="cell--data flex-1">{phaseLabel(progress.value)}</div>
       ) : replay ? (
