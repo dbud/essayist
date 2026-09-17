@@ -39,11 +39,15 @@ export default function FileViewer() {
 }
 
 function FileViewerBody({ wsId, path, versionId }: FileKey) {
-  const { state, checkpoint, setModifiedState, loading, error, save } = getFile(
-    wsId,
-    path,
-    versionId,
-  );
+  const {
+    state,
+    checkpoint,
+    readOnly,
+    setModifiedState,
+    loading,
+    error,
+    save,
+  } = getFile(wsId, path, versionId);
   const { resolved } = getMarks(wsId, path, versionId);
   const sidenotes = getSidenotes(wsId, path, versionId);
   const selection = getEditorSelection(wsId, path, versionId);
@@ -76,7 +80,11 @@ function FileViewerBody({ wsId, path, versionId }: FileKey) {
           <div class="content-main min-w-0">
             <div class="flex w-fit stack stack--row">
               <FontSelect />
-              {!versionId && <EditorToolbar wsId={wsId} path={path} />}
+              <EditorToolbar
+                wsId={wsId}
+                path={path}
+                disabled={readOnly.value}
+              />
               <FileStats wsId={wsId} path={path} versionId={versionId} />
               {versionId ? (
                 <VersionChip

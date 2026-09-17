@@ -29,9 +29,14 @@ const INLINE_BUTTONS: InlineButton[] = [
 interface EditorToolbarProps {
   wsId: string;
   path: string;
+  disabled?: boolean;
 }
 
-export default function EditorToolbar({ wsId, path }: EditorToolbarProps) {
+export default function EditorToolbar({
+  wsId,
+  path,
+  disabled,
+}: EditorToolbarProps) {
   const editor = activeEditor.value;
   const sel = getEditorSelection(wsId, path);
 
@@ -63,11 +68,15 @@ export default function EditorToolbar({ wsId, path }: EditorToolbarProps) {
     editor.update(() => $setBlocksType(type));
   };
 
-  const inlineDisabled = editor === null || sel.inCodeBlock.value;
+  const inlineDisabled = disabled || editor === null || sel.inCodeBlock.value;
 
   return (
     <div class="flex stack">
-      <BlockTypeSelect block={sel.block.value} onChange={setBlock} />
+      <BlockTypeSelect
+        block={sel.block.value}
+        onChange={setBlock}
+        disabled={disabled}
+      />
       {INLINE_BUTTONS.map(({ fmt, tooltip, icon: Icon }) => (
         <button
           type="button"
