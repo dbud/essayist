@@ -15,6 +15,7 @@ import { formatCount } from "@/utils/format.ts";
 interface FileStatsProps {
   wsId: string;
   path: string;
+  versionId?: string;
 }
 
 const STAT_OPTIONS: { value: FileStatSection; label: string }[] = [
@@ -23,9 +24,9 @@ const STAT_OPTIONS: { value: FileStatSection; label: string }[] = [
   { value: "charsWithSpaces", label: "Characters (with spaces)" },
 ];
 
-export default function FileStats({ wsId, path }: FileStatsProps) {
-  const { state, loading } = getFile(wsId, path);
-  const stats = getFileStats(wsId, path);
+export default function FileStats({ wsId, path, versionId }: FileStatsProps) {
+  const { state, loading } = getFile(wsId, path, versionId);
+  const stats = getFileStats(wsId, path, versionId);
   const enabled = fileStatsSections.value;
 
   if (loading.value || state.value === null) return null;

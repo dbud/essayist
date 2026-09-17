@@ -36,9 +36,11 @@ function phaseLabel(progress: ReviewProgress | null): string {
 export default function SidenoteControls({
   wsId,
   path,
+  versionId,
 }: {
   wsId: string;
   path: string;
+  versionId?: string;
 }) {
   const review = getReview(wsId, path);
   const { loading, error, progress } = review;
@@ -51,6 +53,10 @@ export default function SidenoteControls({
     () => delayedRise(resolving, 150),
     [resolving],
   );
+
+  // Snapshot views host the version picker here instead (no review runs on
+  // old versions).
+  if (versionId) return null;
 
   async function runAndToast(action: () => Promise<unknown>) {
     await action();

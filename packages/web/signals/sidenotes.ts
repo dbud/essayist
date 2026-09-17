@@ -2,6 +2,7 @@ import type { Mark } from "@essayist/core";
 import { computed, createModel, signal } from "@preact/signals";
 import type { NodeKey } from "lexical";
 import { getEditorSelection } from "@/signals/editorSelection.ts";
+import type { FileKey } from "@/signals/file.ts";
 import { getMarks } from "@/signals/marks.ts";
 
 // thread_id -> min MarkNode.offsetTop (relative to the editor column).
@@ -66,12 +67,14 @@ const SIDENOTE_GAP = 8;
  * the editor extension via trackNodePositions) and heights (written by the
  * FileViewer layout hook via useElementHeights), and derives the ordinal per
  * mark, the cursor's active flag, the raw sorted entries, and the stacked
- * tops. Per (workspace, path) so each file keeps its own measured state.
+ * tops. Per (workspace, path, version) so each file and view keeps its own
+ * measured state.
  *
  * `entries` is independent of `heights`; `layout` is the only reader of
  * `heights`.
  */
-export const SidenotesModel = createModel((wsId: string, path: string) => {
+export const SidenotesModel = createModel((key: FileKey) => {
+  const { wsId, path, versionId } = key;
   const positions = signal<SidenotePositions>(new Map());
   const heights = signal<SidenoteHeights>(new Map());
   const markBadges = signal<MarkBadge[]>([]);
@@ -80,8 +83,8 @@ export const SidenotesModel = createModel((wsId: string, path: string) => {
   const scrollTop = signal(0);
   const viewportHeight = signal(0);
 
-  const { resolved } = getMarks(wsId, path);
-  const { markIds: activeMarkIds } = getEditorSelection(wsId, path);
+  const { resolved } = getMarks(wsId, path, versionId);
+  const { markIds: activeMarkIds } = getEditorSelection(wsId, path, versionId);
 
   // 1-based ordinal per thread id, in document order. Shared by the editor
   // (data-number badges) and the sidenote column so the numbers always match.
@@ -182,7 +185,10 @@ export const SidenotesModel = createModel((wsId: string, path: string) => {
 
 const cache = new Map<string, InstanceType<typeof SidenotesModel>>();
 
-export function getSidenotes(wsId: string, path: string) {
-  const key = `${wsId}:${path}`;
-  return cache.getOrInsertComputed(key, () => new SidenotesModel(wsId, path));
+export function getSidenotes(wsId: string, path: string, versionId?: string) {
+  const key = `${wsId}:${path}:${versionId ?? ""}`;
+  return cache.getOrInsertComputed(
+    key,
+    () => new SidenotesModel({ wsId, path, versionId }),
+  );
 }

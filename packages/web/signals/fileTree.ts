@@ -40,8 +40,10 @@ export const FileTreeModel = createModel((wsId: string) => {
   );
 
   function select(path: string | null): void {
+    if (selectedPath.value !== path) {
+      selectedVersionId.value = null;
+    }
     selectedPath.value = path;
-    selectedVersionId.value = null;
   }
 
   function selectVersion(versionId: string | null): void {

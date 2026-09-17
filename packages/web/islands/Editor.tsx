@@ -20,6 +20,7 @@ import ActiveEditorRef from "./ActiveEditorRef.tsx";
 interface EditorProps {
   wsId: string;
   path: string;
+  versionId?: string;
   initialState: EditorState;
   onChange?: (state: EditorState) => void;
   className?: string;
@@ -28,19 +29,20 @@ interface EditorProps {
 export default function Editor({
   wsId,
   path,
+  versionId,
   initialState,
   onChange,
   className,
 }: EditorProps) {
-  const { resolved } = getMarks(wsId, path);
+  const { resolved } = getMarks(wsId, path, versionId);
   const {
     positions: sidenotePositions,
     numbers: markNumbers,
     markBadges,
     markRects,
-  } = getSidenotes(wsId, path);
-  const { markdown } = getFile(wsId, path);
-  const selection = getEditorSelection(wsId, path);
+  } = getSidenotes(wsId, path, versionId);
+  const { markdown } = getFile(wsId, path, versionId);
+  const selection = getEditorSelection(wsId, path, versionId);
 
   const extension = useMemo(
     () => ({
@@ -52,10 +54,20 @@ export default function Editor({
         markNumbers,
         markBadges,
         markRects,
+        readOnly: versionId !== undefined,
       }),
       $initialEditorState: initialState,
     }),
-    [path, resolved, markdown, selection, markNumbers, markBadges, markRects],
+    [
+      path,
+      versionId,
+      resolved,
+      markdown,
+      selection,
+      markNumbers,
+      markBadges,
+      markRects,
+    ],
   );
 
   // Server-only: rebuild the editor headlessly, commit the initial state
