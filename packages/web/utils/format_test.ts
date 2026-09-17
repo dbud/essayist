@@ -1,4 +1,4 @@
-import { assertEquals, assertStringIncludes } from "@std/assert";
+import { assertEquals } from "@std/assert";
 import { formatCount, formatDateTime, formatRelativeTime } from "./format.ts";
 
 Deno.test("formatCount -- locale number with pluralized noun", () => {
@@ -25,9 +25,22 @@ Deno.test("formatRelativeTime -- minutes, hours, days", () => {
   assertEquals(formatRelativeTime(now - 48 * 3_600_000, now), "2 days ago");
 });
 
-Deno.test("formatDateTime -- full date and time", () => {
-  const ts = new Date(2026, 8, 6, 14, 31, 5).getTime();
-  const text = formatDateTime(ts);
-  assertStringIncludes(text, "2026");
-  assertStringIncludes(text, ":31:05");
+Deno.test("formatDateTime -- relative day, 12-hour clock", () => {
+  const now = new Date(2026, 8, 17, 17, 49).getTime();
+  assertEquals(
+    formatDateTime(new Date(2026, 8, 17, 9, 49).getTime(), now),
+    "today, 9:49 am",
+  );
+  assertEquals(
+    formatDateTime(new Date(2026, 8, 17, 0, 5).getTime(), now),
+    "today, 12:05 am",
+  );
+  assertEquals(
+    formatDateTime(new Date(2026, 8, 16, 23, 5).getTime(), now),
+    "yesterday, 11:05 pm",
+  );
+  assertEquals(
+    formatDateTime(new Date(2026, 8, 6, 14, 31).getTime(), now),
+    "Sep 6, 2026, 2:31 pm",
+  );
 });

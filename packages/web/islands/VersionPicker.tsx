@@ -1,4 +1,4 @@
-import { ChevronDown, History } from "lucide-preact";
+import { ChevronDown, LockKeyhole } from "lucide-preact";
 import Dropdown, {
   DropdownItem,
   DropdownMenu,
@@ -28,18 +28,15 @@ export default function VersionPicker({
 
   return (
     <Dropdown
-      tooltip="Version history"
+      // tooltip="Version history" TODO -- rework tooltip
       triggerClass="cell cell--data relative w-52 whitespace-nowrap"
       trigger={
         <>
           {viewed ? (
             <>
-              <History size={14} class="text-ink" />
+              <LockKeyhole size={14} />
               <span class="flex flex-col items-start leading-none">
-                <span>Version view</span>
-                <span class="text-[0.7rem] text-ink/50">
-                  {formatDateTime(viewed.timestamp)}
-                </span>
+                {formatDateTime(viewed.timestamp)}
               </span>
             </>
           ) : (
@@ -69,7 +66,12 @@ export default function VersionPicker({
                 close();
               }}
             >
-              {formatRelativeTime(version.timestamp)}
+              <div class="flex flex-col items-start">
+                <span>{formatDateTime(version.timestamp)}</span>
+                <span class="text-[0.7rem] opacity-70">
+                  {formatRelativeTime(version.timestamp)}
+                </span>
+              </div>
             </DropdownItem>
           ))}
         </DropdownMenu>

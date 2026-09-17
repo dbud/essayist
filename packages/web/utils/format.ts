@@ -1,5 +1,5 @@
 import { pluralize } from "@essayist/core";
-import { formatDistance } from "date-fns";
+import { format, formatDistance, isSameDay, subDays } from "date-fns";
 
 // Locale-formatted count with a pluralized noun: "1 word", "1,234 words".
 export function formatCount(count: number, singular: string, plural?: string) {
@@ -13,10 +13,15 @@ export function formatRelativeTime(ts: number, now: number = Date.now()) {
   return formatDistance(ts, now, { addSuffix: true });
 }
 
-// Exact date and time for tooltips: "Sep 6, 2026, 2:31:05 PM".
-export function formatDateTime(ts: number) {
-  return new Date(ts).toLocaleString([], {
-    dateStyle: "medium",
-    timeStyle: "medium",
-  });
+// Deterministic timestamp shared by SSR and the client: relative day
+// and a 12-hour clock without a leading hour zero.
+// `now` is injectable for tests.
+export function formatDateTime(ts: number, now: number = Date.now()) {
+  const date = new Date(ts);
+  const day = isSameDay(date, now)
+    ? "today"
+    : isSameDay(date, subDays(now, 1))
+      ? "yesterday"
+      : format(date, "MMM d, yyyy");
+  return `${day}, ${format(date, "h:mm a").toLowerCase()}`;
 }
