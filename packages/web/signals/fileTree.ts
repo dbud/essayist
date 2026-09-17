@@ -41,6 +41,11 @@ export const FileTreeModel = createModel((wsId: string) => {
 
   function select(path: string | null): void {
     selectedPath.value = path;
+    selectedVersionId.value = null;
+  }
+
+  function selectVersion(versionId: string | null): void {
+    selectedVersionId.value = versionId;
   }
 
   /** Create a new file via POST to the files endpoint, then reload the tree. */
@@ -92,6 +97,7 @@ export const FileTreeModel = createModel((wsId: string) => {
     selectedPath,
     selectedVersionId,
     select,
+    selectVersion,
     tree,
     loading,
     error,
