@@ -15,14 +15,14 @@ export class ReviewStore {
 
   /** Create a run in the "running" state. */
   async createRun({
-    workspaceId,
-    fileId,
+    wsId,
+    path,
     reviewPassId,
     versionId,
     startedAt = Date.now(),
   }: {
-    workspaceId: string;
-    fileId: string;
+    wsId: string;
+    path: string;
     reviewPassId: string;
     versionId?: string;
     startedAt?: number;
@@ -30,77 +30,73 @@ export class ReviewStore {
     const id = crypto.randomUUID();
     const run: ReviewRun = {
       id,
-      workspaceId,
-      fileId,
+      wsId,
+      path,
       reviewPassId,
       status: "running",
       startedAt,
       ...(versionId && { versionId }),
     };
-    await this.#adapter.set([REVIEWS, workspaceId, id], run);
+    await this.#adapter.set([REVIEWS, wsId, id], run);
     return run;
   }
 
   completeRun({
-    workspaceId,
+    wsId,
     id,
     summary,
   }: {
-    workspaceId: string;
+    wsId: string;
     id: string;
     summary: string;
   }): Promise<ReviewRun | undefined> {
-    return this.#end(workspaceId, id, "completed", { summary });
+    return this.#end(wsId, id, "completed", { summary });
   }
 
   failRun({
-    workspaceId,
+    wsId,
     id,
     error,
   }: {
-    workspaceId: string;
+    wsId: string;
     id: string;
     error: string;
   }): Promise<ReviewRun | undefined> {
-    return this.#end(workspaceId, id, "failed", { error });
+    return this.#end(wsId, id, "failed", { error });
   }
 
   async getRun({
-    workspaceId,
+    wsId,
     id,
   }: {
-    workspaceId: string;
+    wsId: string;
     id: string;
   }): Promise<ReviewRun | undefined> {
-    return (await this.#adapter.get<ReviewRun>([REVIEWS, workspaceId, id]))
-      ?.value;
+    return (await this.#adapter.get<ReviewRun>([REVIEWS, wsId, id]))?.value;
   }
 
   /** List runs for a workspace, newest first. Optionally filtered by file. */
   async listRuns({
-    workspaceId,
-    fileId,
+    wsId,
+    path,
   }: {
-    workspaceId: string;
-    fileId?: string;
+    wsId: string;
+    path?: string;
   }): Promise<ReviewRun[]> {
-    const { entries } = await this.#adapter.list<ReviewRun>([
-      REVIEWS,
-      workspaceId,
-    ]);
+    const { entries } = await this.#adapter.list<ReviewRun>([REVIEWS, wsId]);
     return entries
       .map((e) => e.value)
-      .filter((run) => fileId === undefined || run.fileId === fileId)
+      .filter((run) => path === undefined || run.path === path)
       .sort((a, b) => b.startedAt - a.startedAt);
   }
 
   async #end(
-    workspaceId: string,
+    wsId: string,
     id: string,
     status: ReviewRunStatus,
     extra: { summary?: string; error?: string },
   ): Promise<ReviewRun | undefined> {
-    const key: Key = [REVIEWS, workspaceId, id];
+    const key: Key = [REVIEWS, wsId, id];
     const entry = await this.#adapter.get<ReviewRun>(key);
     if (!entry) return undefined;
     const run: ReviewRun = {

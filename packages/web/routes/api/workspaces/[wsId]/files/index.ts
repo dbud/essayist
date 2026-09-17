@@ -5,7 +5,7 @@ import { userStateStore } from "@/store.ts";
 export const handler = {
   GET: define.handlers(async (ctx) => {
     return Response.json(
-      await fileTreeLoader(ctx.state.workspaceId, {
+      await fileTreeLoader(ctx.state.wsId, {
         user: ctx.state.user,
         url: ctx.url,
       }),
@@ -25,7 +25,7 @@ export const handler = {
     }
     await userStateStore.setSelectedFile(
       ctx.state.user.id,
-      ctx.state.workspaceId,
+      ctx.state.wsId,
       selectedPath,
     );
     return new Response(null, { status: 204 });

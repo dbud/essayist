@@ -18,8 +18,8 @@ export interface MarksData {
 export const marksNs = namespace<MarksData, FileKey>("marks");
 
 export const MarksModel = createModel((key: FileKey) => {
-  const { workspaceId, path, versionId } = key;
-  const { checkpoint, markdown } = getFile(workspaceId, path, versionId);
+  const { wsId, path, versionId } = key;
+  const { checkpoint, markdown } = getFile(wsId, path, versionId);
 
   const baseline = signal<MarksData>({
     marks: [],
@@ -29,14 +29,14 @@ export const MarksModel = createModel((key: FileKey) => {
 
   const { loading, error, refresh } = modelData(
     marksNs,
-    { workspaceId, path, versionId },
+    { wsId, path, versionId },
     (data) => (baseline.value = data),
     async () => {
       const versionParam = versionId
         ? `?v=${encodeURIComponent(versionId)}`
         : "";
       const res = await fetch(
-        `/api/workspaces/${encodeURIComponent(workspaceId)}/files/${encodeURIComponent(path)}/marks${versionParam}`,
+        `/api/workspaces/${encodeURIComponent(wsId)}/files/${encodeURIComponent(path)}/marks${versionParam}`,
       );
       await ensureOk(res);
       return (await res.json()) as MarksData;
@@ -73,14 +73,10 @@ export const MarksModel = createModel((key: FileKey) => {
   return { resolved, loading, error, refresh, resolving };
 });
 
-export function getMarks(
-  workspaceId: string,
-  path: string,
-  versionId?: string,
-) {
+export function getMarks(wsId: string, path: string, versionId?: string) {
   return get(
     marksNs,
-    { workspaceId, path, versionId },
-    () => new MarksModel({ workspaceId, path, versionId }),
+    { wsId, path, versionId },
+    () => new MarksModel({ wsId, path, versionId }),
   );
 }

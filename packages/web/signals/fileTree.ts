@@ -14,7 +14,7 @@ export interface TreeData {
 
 export const treeNs = namespace<TreeData>("tree");
 
-export const FileTreeModel = createModel((workspaceId: string) => {
+export const FileTreeModel = createModel((wsId: string) => {
   const files = signal<FileEntry[]>([]);
   const selectedPath = signal<string | null>(null);
   const selectedVersionId = signal<string | null>(null);
@@ -24,7 +24,7 @@ export const FileTreeModel = createModel((workspaceId: string) => {
 
   const { loading, error, refresh } = modelData(
     treeNs,
-    workspaceId,
+    wsId,
     (data) => {
       files.value = data.files;
       selectedPath.value = data.selectedPath;
@@ -32,7 +32,7 @@ export const FileTreeModel = createModel((workspaceId: string) => {
     },
     async () => {
       const res = await fetch(
-        `/api/workspaces/${encodeURIComponent(workspaceId)}/files`,
+        `/api/workspaces/${encodeURIComponent(wsId)}/files`,
       );
       await ensureOk(res);
       return (await res.json()) as TreeData;
@@ -46,7 +46,7 @@ export const FileTreeModel = createModel((workspaceId: string) => {
   /** Create a new file via POST to the files endpoint, then reload the tree. */
   async function createFile(path: string, content = ""): Promise<void> {
     const res = await fetch(
-      `/api/workspaces/${encodeURIComponent(workspaceId)}/files/${encodeURIComponent(path)}`,
+      `/api/workspaces/${encodeURIComponent(wsId)}/files/${encodeURIComponent(path)}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -68,7 +68,7 @@ export const FileTreeModel = createModel((workspaceId: string) => {
 
     await runUpload(items, async ({ path, content }) => {
       const res = await fetch(
-        `/api/workspaces/${encodeURIComponent(workspaceId)}/files/${encodeURIComponent(path)}`,
+        `/api/workspaces/${encodeURIComponent(wsId)}/files/${encodeURIComponent(path)}`,
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
@@ -104,8 +104,8 @@ export const FileTreeModel = createModel((workspaceId: string) => {
 
 export type FileTree = InstanceType<typeof FileTreeModel>;
 
-export function getFileTreeFor(workspaceId: string): FileTree {
-  return get(treeNs, workspaceId, () => new FileTreeModel(workspaceId));
+export function getFileTreeFor(wsId: string): FileTree {
+  return get(treeNs, wsId, () => new FileTreeModel(wsId));
 }
 
 // Returns `null` while no workspace is selected (bootstrap, login page).

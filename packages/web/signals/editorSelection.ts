@@ -15,7 +15,7 @@ export interface CaretRect {
  * toolbar state.
  */
 export const EditorSelectionModel = createModel(
-  (_workspaceId: string, _path: string) => {
+  (_wsId: string, _path: string) => {
     const block = signal<BlockType>("normal");
     const bold = signal(false);
     const italic = signal(false);
@@ -50,12 +50,12 @@ export const defaultEditorSelection: EditorSelection = new EditorSelectionModel(
 const cache = new Map<string, EditorSelection>();
 
 export function getEditorSelection(
-  workspaceId: string,
+  wsId: string,
   path: string,
 ): EditorSelection {
-  const key = `${workspaceId}:${path}`;
+  const key = `${wsId}:${path}`;
   return cache.getOrInsertComputed(
     key,
-    () => new EditorSelectionModel(workspaceId, path),
+    () => new EditorSelectionModel(wsId, path),
   );
 }

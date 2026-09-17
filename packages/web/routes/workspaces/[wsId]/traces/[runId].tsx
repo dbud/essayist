@@ -30,11 +30,11 @@ export const handler = define.handlers({
     if (!(await workspaceStore.hasAccess(wsId, ctx.state.user.id))) {
       return ctx.redirect("/");
     }
-    const run = await reviewStore.getRun({ workspaceId: wsId, id: runId });
+    const run = await reviewStore.getRun({ wsId, id: runId });
     if (!run) {
       return new Response("Review run not found", { status: 404 });
     }
-    const trace = (await traceStore.get({ workspaceId: wsId, runId })) ?? [];
+    const trace = (await traceStore.get({ wsId, runId })) ?? [];
     return page({ run, trace });
   },
 });
@@ -52,8 +52,8 @@ function statusBadge(status: ReviewRunStatus) {
 /** Editor URL that opens this run's file in replay mode. */
 function replayHref(run: ReviewRun): string {
   return (
-    `/?ws=${encodeURIComponent(run.workspaceId)}` +
-    `&file=${encodeURIComponent(run.fileId)}` +
+    `/?ws=${encodeURIComponent(run.wsId)}` +
+    `&file=${encodeURIComponent(run.path)}` +
     `&replay=${run.id}`
   );
 }
@@ -378,7 +378,7 @@ export default function ReviewTracePage({
                 <div class="cell shrink-0">
                   <span class="self-start">{statusBadge(run.status)}</span>
                 </div>
-                <div class="cell min-w-0 flex-1 truncate">{run.fileId}</div>
+                <div class="cell min-w-0 flex-1 truncate">{run.path}</div>
                 <div class="cell shrink-0">
                   {new Date(run.startedAt).toLocaleString()}
                   {run.completedAt &&

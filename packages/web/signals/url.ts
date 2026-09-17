@@ -5,7 +5,7 @@ import { getWorkspaces } from "@/signals/workspace.ts";
 import { parseReplayParams, type ReplayParams } from "@/utils/reviewReplay.ts";
 
 /**
- * Keeps the URL query at ?ws=<workspaceId>&file=<path>, matching the
+ * Keeps the URL query at ?ws=<wsId>&file=<path>, matching the
  * selected workspace and file. Changes the user makes push a new history
  * entry; changes that arrive with loaded data update the current entry
  * instead. Back and forward re-apply the URL's workspace and file to the

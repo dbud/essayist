@@ -52,42 +52,42 @@ export interface RunReviewPassOptions {
   reviewStore: ReviewStore;
   traceStore?: TraceStore;
   pass: ResolvedReviewPass;
-  workspaceId: string;
-  fileId: string;
+  wsId: string;
+  path: string;
   /** Receives text-free progress snapshots as the run advances. */
   onProgress?: (progress: ReviewProgress) => void;
 }
 
-/** Run a review pass over `fileId` and record a ReviewRun. */
+/** Run a review pass over `path` and record a ReviewRun. */
 export async function runReviewPass({
   agent,
   vfs,
   reviewStore,
   traceStore,
   pass,
-  workspaceId,
-  fileId,
+  wsId,
+  path,
   onProgress,
 }: RunReviewPassOptions): Promise<ReviewRun> {
-  const versionId = (await vfs.getHistory(fileId)).at(-1)?.version_id;
+  const versionId = (await vfs.getHistory(path)).at(-1)?.version_id;
   if (!versionId) {
     const missing = await reviewStore.createRun({
-      workspaceId,
-      fileId,
+      wsId,
+      path,
       reviewPassId: pass.reviewPass.id,
     });
     return (
       (await reviewStore.failRun({
-        workspaceId,
+        wsId,
         id: missing.id,
-        error: `File not found: ${fileId}`,
+        error: `File not found: ${path}`,
       })) ?? missing
     );
   }
 
   const run = await reviewStore.createRun({
-    workspaceId,
-    fileId,
+    wsId,
+    path,
     reviewPassId: pass.reviewPass.id,
     versionId,
   });
@@ -95,10 +95,10 @@ export async function runReviewPass({
     ? new ReviewProgressTracker(onProgress)
     : undefined;
   const recorder = traceStore?.recorder(
-    { workspaceId, runId: run.id },
+    { wsId, runId: run.id },
     progress ? (event) => progress.handle(event) : undefined,
   );
-  const pinned = new PinnedVFS(vfs, { path: fileId, versionId });
+  const pinned = new PinnedVFS(vfs, { path, versionId });
 
   try {
     const tools = buildTools(
@@ -106,7 +106,7 @@ export async function runReviewPass({
       pinned,
       pass.allowedLabels,
     );
-    const directive = renderPrompt(pass.directive, { file: fileId });
+    const directive = renderPrompt(pass.directive, { file: path });
     const input = `${pass.systemPrompt}\n\n${pass.instructions}\n\n${directive}`;
     const result = agent.callModelWithTools(
       input,
@@ -118,19 +118,16 @@ export async function runReviewPass({
     recorder?.follow(result);
     const summary = await result.getText();
     await recorder?.flush();
-    await pinned.migrateMarks(fileId, versionId);
+    await pinned.migrateMarks(path, versionId);
     return (
-      (await reviewStore.completeRun({ workspaceId, id: run.id, summary })) ??
-      run
+      (await reviewStore.completeRun({ wsId, id: run.id, summary })) ?? run
     );
   } catch (e) {
     const error = e instanceof Error ? e.message : String(e);
     recorder?.record({ type: "error", error });
     await recorder?.flush();
     // Marks placed before the failure are still valid annotations.
-    await pinned.migrateMarks(fileId, versionId);
-    return (
-      (await reviewStore.failRun({ workspaceId, id: run.id, error })) ?? run
-    );
+    await pinned.migrateMarks(path, versionId);
+    return (await reviewStore.failRun({ wsId, id: run.id, error })) ?? run;
   }
 }

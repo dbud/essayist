@@ -4,10 +4,10 @@ import { type ReviewData, reviewNs } from "@/signals/review.ts";
 import { reviewStore } from "@/store.ts";
 
 export async function reviewLoader({
-  workspaceId,
+  wsId,
   path,
 }: ReviewKey): Promise<ReviewData> {
-  return { runs: await reviewStore.listRuns({ workspaceId, fileId: path }) };
+  return { runs: await reviewStore.listRuns({ wsId, path }) };
 }
 
 registerLoader(reviewNs, reviewLoader);

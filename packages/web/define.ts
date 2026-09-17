@@ -5,7 +5,7 @@ export interface State {
   config: ConfigStore;
   user: User;
   vfs: VirtualFileSystem;
-  workspaceId: string;
+  wsId: string;
   sessionId?: string;
 }
 

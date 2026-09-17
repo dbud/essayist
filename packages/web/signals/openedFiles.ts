@@ -6,10 +6,10 @@ import { persistentSignal } from "@/utils/persistentSignal.ts";
 
 export const openedFilesNs = namespace("openedFiles");
 
-export const OpenedFilesModel = createModel((workspaceId: string) => {
-  const tree = getFileTreeFor(workspaceId);
-  const tabs = persistentSignal<string[]>(`openedFiles:${workspaceId}`, []);
-  const history = persistentSignal<string[]>(`fileHistory:${workspaceId}`, []);
+export const OpenedFilesModel = createModel((wsId: string) => {
+  const tree = getFileTreeFor(wsId);
+  const tabs = persistentSignal<string[]>(`openedFiles:${wsId}`, []);
+  const history = persistentSignal<string[]>(`fileHistory:${wsId}`, []);
 
   const opened = computed(() => {
     const selected = tree.selectedPath.value;
@@ -41,12 +41,8 @@ export const OpenedFilesModel = createModel((workspaceId: string) => {
 
 export type OpenedFiles = InstanceType<typeof OpenedFilesModel>;
 
-export function getOpenedFilesFor(workspaceId: string): OpenedFiles {
-  return get(
-    openedFilesNs,
-    workspaceId,
-    () => new OpenedFilesModel(workspaceId),
-  );
+export function getOpenedFilesFor(wsId: string): OpenedFiles {
+  return get(openedFilesNs, wsId, () => new OpenedFilesModel(wsId));
 }
 
 // Returns `null` while no workspace is selected (bootstrap, login page).

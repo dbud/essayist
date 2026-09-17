@@ -22,7 +22,7 @@ import {
 const AUTO_SAVE_MAX_WAIT_MS = 30_000;
 
 export interface FileKey {
-  workspaceId: string;
+  wsId: string;
   path: string;
   versionId?: string;
 }
@@ -35,7 +35,7 @@ export interface FileData {
 export const fileNs = namespace<FileData, FileKey>("file");
 
 export const FileModel = createModel((key: FileKey) => {
-  const { workspaceId, path, versionId } = key;
+  const { wsId, path, versionId } = key;
   const readOnly = versionId !== undefined;
   // Latest promoted version, or the pinned version for snapshot views;
   // marks anchor to its content.
@@ -43,7 +43,7 @@ export const FileModel = createModel((key: FileKey) => {
   const draft = signal<DraftSnapshot | null>(null);
   const [runSave, { loading: saving, error: saveError }] = createAsyncState();
   const isSelected = computed(
-    () => getFileTreeFor(workspaceId).selectedPath.value === path,
+    () => getFileTreeFor(wsId).selectedPath.value === path,
   );
 
   // Editor seed, parsed once; autosave adopts strings without re-parsing.
@@ -80,7 +80,7 @@ export const FileModel = createModel((key: FileKey) => {
 
   const { loading, error } = modelData(
     fileNs,
-    { workspaceId, path, versionId },
+    { wsId, path, versionId },
     (data) => {
       checkpoint.value = data.checkpoint;
       draft.value = data.draft;
@@ -91,7 +91,7 @@ export const FileModel = createModel((key: FileKey) => {
         ? `?v=${encodeURIComponent(versionId)}`
         : "";
       const res = await fetch(
-        `/api/workspaces/${encodeURIComponent(workspaceId)}/files/${encodeURIComponent(path)}${versionParam}`,
+        `/api/workspaces/${encodeURIComponent(wsId)}/files/${encodeURIComponent(path)}${versionParam}`,
       );
       await ensureOk(res);
       return (await res.json()) as FileData;
@@ -124,7 +124,7 @@ export const FileModel = createModel((key: FileKey) => {
     { keepalive = false }: { keepalive?: boolean } = {},
   ): Promise<Response> {
     return fetch(
-      `/api/workspaces/${encodeURIComponent(workspaceId)}/files/${encodeURIComponent(path)}/draft`,
+      `/api/workspaces/${encodeURIComponent(wsId)}/files/${encodeURIComponent(path)}/draft`,
       {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -198,15 +198,11 @@ export const FileModel = createModel((key: FileKey) => {
 
 export type File = InstanceType<typeof FileModel>;
 
-export function getFile(
-  workspaceId: string,
-  path: string,
-  versionId?: string,
-): File {
+export function getFile(wsId: string, path: string, versionId?: string): File {
   return get(
     fileNs,
-    { workspaceId, path, versionId },
-    () => new FileModel({ workspaceId, path, versionId }),
+    { wsId, path, versionId },
+    () => new FileModel({ wsId, path, versionId }),
   );
 }
 

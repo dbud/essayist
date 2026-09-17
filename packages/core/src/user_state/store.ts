@@ -1,7 +1,7 @@
 import type { PersistenceAdapter } from "@/persistence/mod.ts";
 
 // Key layout:
-//   ["user_state", userId, "workspace"]      -> { workspaceId }
+//   ["user_state", userId, "workspace"]      -> { wsId }
 //   ["user_state", userId, "file", wsId]     -> { path }
 const USER_STATE = "user_state";
 const WORKSPACE = "workspace";
@@ -9,7 +9,7 @@ const FILE = "file";
 
 /** Persisted record of the user's selected workspace. */
 interface SelectedWorkspace {
-  workspaceId: string;
+  wsId: string;
 }
 
 /** Persisted record of the user's selected file within one workspace. */
@@ -36,37 +36,34 @@ export class UserStateStore {
       userId,
       WORKSPACE,
     ]);
-    return entry?.value.workspaceId;
+    return entry?.value.wsId;
   }
 
-  async setSelectedWorkspace(
-    userId: string,
-    workspaceId: string,
-  ): Promise<void> {
+  async setSelectedWorkspace(userId: string, wsId: string): Promise<void> {
     await this.#adapter.set([USER_STATE, userId, WORKSPACE], {
-      workspaceId,
+      wsId,
     } satisfies SelectedWorkspace);
   }
 
   async getSelectedFile(
     userId: string,
-    workspaceId: string,
+    wsId: string,
   ): Promise<string | undefined> {
     const entry = await this.#adapter.get<SelectedFile>([
       USER_STATE,
       userId,
       FILE,
-      workspaceId,
+      wsId,
     ]);
     return entry?.value.path;
   }
 
   async setSelectedFile(
     userId: string,
-    workspaceId: string,
+    wsId: string,
     path: string,
   ): Promise<void> {
-    await this.#adapter.set([USER_STATE, userId, FILE, workspaceId], {
+    await this.#adapter.set([USER_STATE, userId, FILE, wsId], {
       path,
     } satisfies SelectedFile);
   }

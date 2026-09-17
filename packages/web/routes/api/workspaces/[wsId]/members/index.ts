@@ -5,14 +5,14 @@ import { workspaceStore } from "@/store.ts";
 export const handler = {
   // Any member can list members.
   GET: define.handlers(async (ctx) => {
-    const members = await workspaceStore.getMembers(ctx.state.workspaceId);
+    const members = await workspaceStore.getMembers(ctx.state.wsId);
     return Response.json(members);
   }),
 
   // Only owners can add/update members.
   POST: define.handlers(async (ctx) => {
     const isOwner = await workspaceStore.hasAccess(
-      ctx.state.workspaceId,
+      ctx.state.wsId,
       ctx.state.user.id,
       "owner",
     );
@@ -40,7 +40,7 @@ export const handler = {
 
     try {
       const member = await workspaceStore.addMember(
-        ctx.state.workspaceId,
+        ctx.state.wsId,
         userId,
         role,
       );

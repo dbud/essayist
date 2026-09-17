@@ -8,7 +8,7 @@ export const handler = {
     const { userId } = ctx.params;
 
     const isOwner = await workspaceStore.hasAccess(
-      ctx.state.workspaceId,
+      ctx.state.wsId,
       ctx.state.user.id,
       "owner",
     );
@@ -17,10 +17,7 @@ export const handler = {
     }
 
     try {
-      const removed = await workspaceStore.removeMember(
-        ctx.state.workspaceId,
-        userId,
-      );
+      const removed = await workspaceStore.removeMember(ctx.state.wsId, userId);
       if (!removed) {
         return Response.json({ error: "Not a member" }, { status: 404 });
       }

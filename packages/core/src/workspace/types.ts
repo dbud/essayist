@@ -39,7 +39,7 @@ export interface Workspace {
 
 /** The many-to-many share edge between a user and a workspace. */
 export interface WorkspaceMember {
-  workspaceId: string;
+  wsId: string;
   userId: string;
   role: Role;
   createdAt: number;
@@ -57,7 +57,7 @@ export class UserEmailTakenError extends Error {
  * (removing or demoting the last owner).
  */
 export class LastOwnerError extends Error {
-  constructor(public readonly workspaceId: string) {
-    super(`Cannot remove the last owner of workspace ${workspaceId}`);
+  constructor(public readonly wsId: string) {
+    super(`Cannot remove the last owner of workspace ${wsId}`);
   }
 }

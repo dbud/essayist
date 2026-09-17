@@ -5,11 +5,11 @@ import { registerLoader } from "@/signals/models.server.ts";
 import { adapter } from "@/store.ts";
 
 export async function fileLoader({
-  workspaceId,
+  wsId,
   path,
   versionId,
 }: FileKey): Promise<FileData> {
-  const vfs = new VirtualFileSystem(adapter, workspaceId);
+  const vfs = new VirtualFileSystem(adapter, wsId);
   return {
     checkpoint: await vfs.read(path, { versionId }),
     draft: versionId ? null : await vfs.readDraft(path),

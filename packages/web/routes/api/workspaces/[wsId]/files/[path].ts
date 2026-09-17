@@ -7,7 +7,7 @@ export const handler = {
     const path = decodeURIComponent(ctx.params.path);
     const versionId = ctx.url.searchParams.get("v") ?? undefined;
     return Response.json(
-      await fileLoader({ workspaceId: ctx.params.wsId, path, versionId }),
+      await fileLoader({ wsId: ctx.state.wsId, path, versionId }),
     );
   }),
 
