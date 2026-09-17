@@ -3,10 +3,11 @@ import Dropdown, {
   DropdownItem,
   DropdownMenu,
 } from "@/components/ui/Dropdown.tsx";
+import SaveStatus from "@/islands/SaveStatus.tsx";
 import type { FileKey } from "@/signals/file.ts";
 import { getFileTreeFor } from "@/signals/fileTree.ts";
 import { getVersionHistory } from "@/signals/versionHistory.ts";
-import { formatRelativeTime } from "@/utils/format.ts";
+import { formatDateTime, formatRelativeTime } from "@/utils/format.ts";
 
 type VersionPickerProps = FileKey;
 
@@ -28,13 +29,22 @@ export default function VersionPicker({
   return (
     <Dropdown
       tooltip="Version history"
-      triggerClass="btn"
+      triggerClass="cell cell--data relative w-52 whitespace-nowrap"
       trigger={
         <>
-          <History size={14} class="shrink-0" />
-          <span class="hidden @sm:inline">
-            {viewed ? formatRelativeTime(viewed.timestamp) : "Latest"}
-          </span>
+          {viewed ? (
+            <>
+              <History size={14} class="text-ink" />
+              <span class="flex flex-col items-start leading-none">
+                <span>Version view</span>
+                <span class="text-[0.7rem] text-ink/50">
+                  {formatDateTime(viewed.timestamp)}
+                </span>
+              </span>
+            </>
+          ) : (
+            <SaveStatus wsId={wsId} path={path} />
+          )}
           <ChevronDown size={14} class="rotate-on-open" />
         </>
       }

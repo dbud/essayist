@@ -6,7 +6,6 @@ import Dropdown, {
   DropdownMenu,
 } from "@/components/ui/Dropdown.tsx";
 import WaveBars from "@/components/ui/WaveBars.tsx";
-import VersionPicker from "@/islands/VersionPicker.tsx";
 import type { FileKey } from "@/signals/file.ts";
 import { getMarks } from "@/signals/marks.ts";
 import { replayParams, setReplayParams } from "@/signals/replay.ts";
@@ -73,20 +72,12 @@ export default function SidenoteControls({ wsId, path, versionId }: FileKey) {
     );
   }
 
-  // Snapshot views host the version picker here instead (no review runs on
-  // old versions).
-  if (versionId) {
-    return (
-      <div class="relative flex flex-1 items-center stack stack--row">
-        <VersionPicker wsId={wsId} path={path} versionId={versionId} />
-        <div class="flex-1 self-stretch bg-surface" />
-      </div>
-    );
-  }
+  // Snapshot views have no review controls
+  // TODO -- rework when sidenotes filters arrive
+  if (versionId) return null;
 
   return (
     <div class="relative flex min-w-72 flex-1 items-center stack stack--row">
-      <VersionPicker wsId={wsId} path={path} versionId={versionId} />
       {loading.value ? (
         <div class="cell--data flex-1">{phaseLabel(progress.value)}</div>
       ) : replay ? (

@@ -1,4 +1,3 @@
-import { History, X } from "lucide-preact";
 import { Caret } from "@/components/Caret.tsx";
 import { MarkBadges } from "@/components/MarkBadges.tsx";
 import { MarkHighlights } from "@/components/MarkHighlights.tsx";
@@ -10,17 +9,16 @@ import Editor from "@/islands/Editor.tsx";
 import EditorToolbar from "@/islands/EditorToolbar.tsx";
 import FileStats from "@/islands/FileStats.tsx";
 import FontSelect from "@/islands/FontSelect.tsx";
-import SaveStatus from "@/islands/SaveStatus.tsx";
 import SidenoteControls from "@/islands/SidenoteControls.tsx";
+import VersionPicker from "@/islands/VersionPicker.tsx";
 import { activeEditor } from "@/signals/activeEditor.ts";
 import { getEditorSelection } from "@/signals/editorSelection.ts";
 import { type FileKey, getFile } from "@/signals/file.ts";
-import { getFileTree, getFileTreeFor } from "@/signals/fileTree.ts";
+import { getFileTree } from "@/signals/fileTree.ts";
 import { getMarks } from "@/signals/marks.ts";
 import { navigationOpened } from "@/signals/sidebar.ts";
 import { getSidenotes } from "@/signals/sidenotes.ts";
 import { getWorkspaces } from "@/signals/workspace.ts";
-import { formatDateTime } from "@/utils/format.ts";
 
 export default function FileViewer() {
   const wsId = getWorkspaces().selectedId.value;
@@ -39,15 +37,11 @@ export default function FileViewer() {
 }
 
 function FileViewerBody({ wsId, path, versionId }: FileKey) {
-  const {
-    state,
-    checkpoint,
-    readOnly,
-    setModifiedState,
-    loading,
-    error,
-    save,
-  } = getFile(wsId, path, versionId);
+  const { state, readOnly, setModifiedState, loading, error, save } = getFile(
+    wsId,
+    path,
+    versionId,
+  );
   const { resolved } = getMarks(wsId, path, versionId);
   const sidenotes = getSidenotes(wsId, path, versionId);
   const selection = getEditorSelection(wsId, path, versionId);
@@ -87,19 +81,7 @@ function FileViewerBody({ wsId, path, versionId }: FileKey) {
                 disabled={readOnly.value}
               />
               <FileStats wsId={wsId} path={path} versionId={versionId} />
-              {versionId ? (
-                <VersionChip
-                  title="Version view"
-                  detail={
-                    checkpoint.value === null
-                      ? undefined
-                      : formatDateTime(checkpoint.value.timestamp)
-                  }
-                  onExit={() => getFileTreeFor(wsId).selectVersion(null)}
-                />
-              ) : (
-                <SaveStatus wsId={wsId} path={path} />
-              )}
+              <VersionPicker wsId={wsId} path={path} versionId={versionId} />
             </div>
           </div>
           <div class="content-side flex items-center">
@@ -150,40 +132,6 @@ function FileViewerBody({ wsId, path, versionId }: FileKey) {
         </div>
         <Overlay when={editorLoading} local capture />
       </div>
-    </div>
-  );
-}
-
-// Toolbar chip shown while a snapshot is viewed: read-only, with an exit
-// back to the live file.
-function VersionChip({
-  title,
-  detail,
-  onExit,
-}: {
-  title: string;
-  detail?: string;
-  onExit: () => void;
-}) {
-  return (
-    <div
-      class="flex w-52 items-center stack"
-      data-tooltip="Viewing a saved version; editing is disabled"
-    >
-      <div class="cell cell--data relative min-w-0 flex-1 whitespace-nowrap">
-        <History size={14} class="text-ink" />
-        <span class="flex flex-col items-start leading-none">
-          <span>{title}</span>
-          {detail && <span class="text-[0.7rem] text-ink/50">{detail}</span>}
-        </span>
-      </div>
-      <button
-        type="button"
-        class="btn btn-ghost btn-xs btn-square"
-        onClick={onExit}
-      >
-        <X size={14} />
-      </button>
     </div>
   );
 }
