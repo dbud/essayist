@@ -3,7 +3,7 @@ import { workspaceStore } from "@/store.ts";
 
 export const handler = {
   GET: define.handlers(async (ctx) => {
-    const workspace = await workspaceStore.getWorkspace(ctx.state.workspaceId);
+    const workspace = await workspaceStore.getWorkspace(ctx.state.wsId);
     if (!workspace) {
       return Response.json({ error: "Not found" }, { status: 404 });
     }

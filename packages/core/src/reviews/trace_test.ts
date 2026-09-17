@@ -20,10 +20,10 @@ function setup() {
 
 async function readTrace(
   store: EventTraceStore,
-  workspaceId: string,
+  wsId: string,
   runId: string,
 ): Promise<TracedReviewEvent[]> {
-  const trace = await store.get({ workspaceId, runId });
+  const trace = await store.get({ wsId, runId });
   if (!trace) throw new Error(`no trace for run ${runId}`);
   return trace;
 }
@@ -38,7 +38,7 @@ function assertEvent<T extends ReviewTraceEvent["type"]>(
 
 Deno.test("EventTraceStore -- roundtrips events through append and get", async () => {
   const { store } = setup();
-  const recorder = store.recorder({ workspaceId: "ws", runId: "run1" });
+  const recorder = store.recorder({ wsId: "ws", runId: "run1" });
   recorder.record({ type: "input", text: "the prompt" });
   recorder.record({ type: "round_start", round: 0 });
   recorder.record({ type: "message", round: 0, text: "final answer" });
@@ -53,13 +53,13 @@ Deno.test("EventTraceStore -- roundtrips events through append and get", async (
 
 Deno.test("EventTraceStore -- get returns undefined for absent trace", async () => {
   const { store } = setup();
-  const trace = await store.get({ workspaceId: "ws", runId: "missing" });
+  const trace = await store.get({ wsId: "ws", runId: "missing" });
   assertEquals(trace, undefined);
 });
 
 Deno.test("EventTraceStore -- persists each event individually in order", async () => {
   const { store } = setup();
-  const recorder = store.recorder({ workspaceId: "ws", runId: "big" });
+  const recorder = store.recorder({ wsId: "ws", runId: "big" });
   for (let i = 0; i < 300; i++) {
     recorder.record({ type: "message", round: 0, text: "x".repeat(2_000) });
   }
@@ -75,7 +75,7 @@ Deno.test("EventTraceStore -- persists each event individually in order", async 
 
 Deno.test("TraceRecorder -- maps stream events into trace events", async () => {
   const { store } = setup();
-  const recorder = store.recorder({ workspaceId: "ws", runId: "run2" });
+  const recorder = store.recorder({ wsId: "ws", runId: "run2" });
   recorder.record({ type: "input", text: "the prompt" });
   recorder.follow(
     makeStream([
@@ -188,7 +188,7 @@ Deno.test("TraceRecorder -- maps stream events into trace events", async () => {
 
 Deno.test("TraceRecorder -- truncates oversized tool outputs", async () => {
   const { store } = setup();
-  const recorder = store.recorder({ workspaceId: "ws", runId: "run3" });
+  const recorder = store.recorder({ wsId: "ws", runId: "run3" });
   recorder.follow(
     makeStream([
       {
@@ -214,7 +214,7 @@ Deno.test("TraceRecorder -- truncates oversized tool outputs", async () => {
 
 Deno.test("TraceRecorder -- records an error event when the stream throws", async () => {
   const { store } = setup();
-  const recorder = store.recorder({ workspaceId: "ws", runId: "run4" });
+  const recorder = store.recorder({ wsId: "ws", runId: "run4" });
   recorder.follow({
     getFullResponsesStream: () =>
       ({
@@ -236,12 +236,12 @@ Deno.test("TraceRecorder -- records an error event when the stream throws", asyn
 
 Deno.test("TraceRecorder -- flush is idempotent", async () => {
   const { store } = setup();
-  const recorder = store.recorder({ workspaceId: "ws", runId: "run5" });
+  const recorder = store.recorder({ wsId: "ws", runId: "run5" });
   recorder.record({ type: "input", text: "prompt" });
   await recorder.flush();
   recorder.record({ type: "message", round: 0, text: "late" });
   await recorder.flush();
 
-  const trace = await store.get({ workspaceId: "ws", runId: "run5" });
+  const trace = await store.get({ wsId: "ws", runId: "run5" });
   assertEquals(trace?.length, 1);
 });

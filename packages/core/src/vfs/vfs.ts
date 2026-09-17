@@ -58,16 +58,16 @@ const DRAFT_VERSION_ID = "draft";
 
 export class VirtualFileSystem implements VFS {
   #adapter: PersistenceAdapter;
-  #workspaceId: string;
+  #wsId: string;
 
   /**
-   * @param adapter      Backing key/value store.
-   * @param workspaceId  All file/mark keys are scoped under `["ws", workspaceId, ...]`,
+   * @param adapter Backing key/value store.
+   * @param wsId    All file/mark keys are scoped under `["ws", wsId, ...]`,
    *   so multiple workspaces can share one adapter without colliding.
    */
-  constructor(adapter: PersistenceAdapter, workspaceId: string) {
+  constructor(adapter: PersistenceAdapter, wsId: string) {
     this.#adapter = adapter;
-    this.#workspaceId = workspaceId;
+    this.#wsId = wsId;
   }
 
   async read(
@@ -75,8 +75,9 @@ export class VirtualFileSystem implements VFS {
     { versionId, startLine, endLine, numbered }: ReadOptions = {},
   ): Promise<FileReadResult> {
     const snapshot: FileSnapshot = {
+      // version_id "" marks a miss; read never throws by design.
       content: "",
-      version_id: versionId ?? "",
+      version_id: "",
       timestamp: 0,
       lines: 0,
       ...(await this.#getSnapshot(path, versionId)),
@@ -205,7 +206,7 @@ export class VirtualFileSystem implements VFS {
   async list(prefix?: string): Promise<FileEntry[]> {
     const { entries } = await this.#adapter.list<StoredSnapshot>([
       WORKSPACES,
-      this.#workspaceId,
+      this.#wsId,
       FILE_LATEST,
     ]);
     const result: FileEntry[] = [];
@@ -600,13 +601,13 @@ export class VirtualFileSystem implements VFS {
   }
 
   #latestKey(path: string): Key {
-    return [WORKSPACES, this.#workspaceId, FILE_LATEST, path];
+    return [WORKSPACES, this.#wsId, FILE_LATEST, path];
   }
 
   #contentManifestKey(path: string, versionId: string): Key {
     return [
       WORKSPACES,
-      this.#workspaceId,
+      this.#wsId,
       FILE_CONTENT,
       path,
       versionId,
@@ -617,7 +618,7 @@ export class VirtualFileSystem implements VFS {
   #contentChunkKey(path: string, versionId: string, index: number): Key {
     return [
       WORKSPACES,
-      this.#workspaceId,
+      this.#wsId,
       FILE_CONTENT,
       path,
       versionId,
@@ -627,15 +628,15 @@ export class VirtualFileSystem implements VFS {
   }
 
   #versionsKey(path: string): Key {
-    return [WORKSPACES, this.#workspaceId, FILE_VERSIONS, path];
+    return [WORKSPACES, this.#wsId, FILE_VERSIONS, path];
   }
 
   #draftKey(path: string): Key {
-    return [WORKSPACES, this.#workspaceId, FILE_DRAFT, path];
+    return [WORKSPACES, this.#wsId, FILE_DRAFT, path];
   }
 
   #marksKey(path: string, versionId: string): Key {
-    return [WORKSPACES, this.#workspaceId, MARKS, path, versionId];
+    return [WORKSPACES, this.#wsId, MARKS, path, versionId];
   }
 
   // deno-lint-ignore require-await

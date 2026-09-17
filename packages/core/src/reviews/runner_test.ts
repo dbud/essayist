@@ -118,17 +118,17 @@ Deno.test("runReviewPass -- completes a run with the agent summary", async () =>
     reviewStore,
     traceStore,
     pass,
-    workspaceId: "ws",
-    fileId: "essay.txt",
+    wsId: "ws",
+    path: "essay.txt",
   });
 
   assertEquals(run.status, "completed");
   assertEquals(run.summary, "Strong thesis; evidence needs work.");
-  assertEquals(run.fileId, "essay.txt");
+  assertEquals(run.path, "essay.txt");
   assertEquals(run.reviewPassId, "essay-review");
   assertEquals(run.versionId, versionId);
 
-  const stored = await reviewStore.getRun({ workspaceId: "ws", id: run.id });
+  const stored = await reviewStore.getRun({ wsId: "ws", id: run.id });
   assertEquals(stored?.status, "completed");
 
   if (!captured) throw new Error("agent was not called");
@@ -153,7 +153,7 @@ Deno.test("runReviewPass -- completes a run with the agent summary", async () =>
     "Allowed labels: thesis, evidence",
   );
 
-  const trace = await traceStore.get({ workspaceId: "ws", runId: run.id });
+  const trace = await traceStore.get({ wsId: "ws", runId: run.id });
   assertEquals(
     trace?.map((e) => e.type),
     ["input"],
@@ -176,19 +176,19 @@ Deno.test("runReviewPass -- records a failed run on agent error", async () => {
     reviewStore,
     traceStore,
     pass,
-    workspaceId: "ws",
-    fileId: "essay.txt",
+    wsId: "ws",
+    path: "essay.txt",
   });
 
   assertEquals(run.status, "failed");
   assertEquals(run.error, "upstream down");
   assertEquals(typeof run.versionId, "string");
   assertEquals(
-    (await reviewStore.getRun({ workspaceId: "ws", id: run.id }))?.status,
+    (await reviewStore.getRun({ wsId: "ws", id: run.id }))?.status,
     "failed",
   );
 
-  const trace = await traceStore.get({ workspaceId: "ws", runId: run.id });
+  const trace = await traceStore.get({ wsId: "ws", runId: run.id });
   const error = trace?.[0] as Extract<TracedReviewEvent, { type: "error" }>;
   assertEquals(error.type, "error");
   assertEquals(error.error, "upstream down");
@@ -202,15 +202,15 @@ Deno.test("runReviewPass -- fails fast when the file does not exist", async () =
     vfs,
     reviewStore,
     pass,
-    workspaceId: "ws",
-    fileId: "ghost.txt",
+    wsId: "ws",
+    path: "ghost.txt",
   });
 
   assertEquals(run.status, "failed");
   assertEquals(run.error, "File not found: ghost.txt");
   assertEquals(run.versionId, undefined);
   assertEquals(
-    (await reviewStore.getRun({ workspaceId: "ws", id: run.id }))?.status,
+    (await reviewStore.getRun({ wsId: "ws", id: run.id }))?.status,
     "failed",
   );
 });
@@ -234,8 +234,8 @@ Deno.test("runReviewPass -- commits pinned marks onto latest moved mid-run", asy
     vfs,
     reviewStore,
     pass,
-    workspaceId: "ws",
-    fileId: "essay.txt",
+    wsId: "ws",
+    path: "essay.txt",
   });
 
   assertEquals(run.status, "completed");
@@ -262,8 +262,8 @@ Deno.test("runReviewPass -- commits marks placed before a failure", async () => 
     vfs,
     reviewStore,
     pass,
-    workspaceId: "ws",
-    fileId: "essay.txt",
+    wsId: "ws",
+    path: "essay.txt",
   });
 
   assertEquals(run.status, "failed");
@@ -284,8 +284,8 @@ Deno.test("runReviewPass -- emits progress snapshots via the trace recorder", as
     reviewStore,
     traceStore,
     pass,
-    workspaceId: "ws",
-    fileId: "essay.txt",
+    wsId: "ws",
+    path: "essay.txt",
     onProgress: (p) => progress.push(p),
   });
 

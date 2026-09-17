@@ -4,14 +4,11 @@ import { type Context, registerLoader } from "@/signals/models.server.ts";
 import { adapter, userStateStore } from "@/store.ts";
 
 export async function fileTreeLoader(
-  workspaceId: string,
+  wsId: string,
   ctx: Context,
 ): Promise<TreeData> {
-  const files = await new VirtualFileSystem(adapter, workspaceId).list();
-  const persisted = await userStateStore.getSelectedFile(
-    ctx.user.id,
-    workspaceId,
-  );
+  const files = await new VirtualFileSystem(adapter, wsId).list();
+  const persisted = await userStateStore.getSelectedFile(ctx.user.id, wsId);
   const intent = ctx.url.searchParams.get("file");
   const known = (p: string | null | undefined): p is string =>
     !!p && files.some((f) => f.path === p);
@@ -20,7 +17,11 @@ export async function fileTreeLoader(
     : known(persisted)
       ? persisted
       : (files[0]?.path ?? null);
-  return { files, selectedPath };
+  return {
+    files,
+    selectedPath,
+    selectedVersionId: ctx.url.searchParams.get("v"),
+  };
 }
 
-registerLoader(treeNs, (workspaceId, ctx) => fileTreeLoader(workspaceId, ctx));
+registerLoader(treeNs, (wsId, ctx) => fileTreeLoader(wsId, ctx));

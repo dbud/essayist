@@ -9,11 +9,11 @@ import Editor from "@/islands/Editor.tsx";
 import EditorToolbar from "@/islands/EditorToolbar.tsx";
 import FileStats from "@/islands/FileStats.tsx";
 import FontSelect from "@/islands/FontSelect.tsx";
-import SaveStatus from "@/islands/SaveStatus.tsx";
 import SidenoteControls from "@/islands/SidenoteControls.tsx";
+import VersionPicker from "@/islands/VersionPicker.tsx";
 import { activeEditor } from "@/signals/activeEditor.ts";
 import { getEditorSelection } from "@/signals/editorSelection.ts";
-import { getFile } from "@/signals/file.ts";
+import { type FileKey, getFile } from "@/signals/file.ts";
 import { getFileTree } from "@/signals/fileTree.ts";
 import { getMarks } from "@/signals/marks.ts";
 import { navigationOpened } from "@/signals/sidebar.ts";
@@ -22,16 +22,29 @@ import { getWorkspaces } from "@/signals/workspace.ts";
 
 export default function FileViewer() {
   const wsId = getWorkspaces().selectedId.value;
-  const path = getFileTree()?.selectedPath.value ?? "";
-  if (!wsId || !path) return null;
-  return <FileViewerBody key={path} wsId={wsId} path={path} />;
+  const tree = getFileTree();
+  const path = tree?.selectedPath.value ?? "";
+  if (!tree || !wsId || !path) return null;
+  const versionId = tree.selectedVersionId.value ?? undefined;
+  return (
+    <FileViewerBody
+      key={`${path}:${versionId ?? ""}`}
+      wsId={wsId}
+      path={path}
+      versionId={versionId}
+    />
+  );
 }
 
-function FileViewerBody({ wsId, path }: { wsId: string; path: string }) {
-  const { state, setModifiedState, loading, error, save } = getFile(wsId, path);
-  const { resolved } = getMarks(wsId, path);
-  const sidenotes = getSidenotes(wsId, path);
-  const selection = getEditorSelection(wsId, path);
+function FileViewerBody({ wsId, path, versionId }: FileKey) {
+  const { state, readOnly, setModifiedState, loading, error, save } = getFile(
+    wsId,
+    path,
+    versionId,
+  );
+  const { resolved } = getMarks(wsId, path, versionId);
+  const sidenotes = getSidenotes(wsId, path, versionId);
+  const selection = getEditorSelection(wsId, path, versionId);
   const scrollRef = useScrollViewport(
     sidenotes.scrollTop,
     sidenotes.viewportHeight,
@@ -61,13 +74,20 @@ function FileViewerBody({ wsId, path }: { wsId: string; path: string }) {
           <div class="content-main min-w-0">
             <div class="flex w-fit stack stack--row">
               <FontSelect />
-              <EditorToolbar wsId={wsId} path={path} />
-              <FileStats wsId={wsId} path={path} />
-              <SaveStatus wsId={wsId} path={path} />
+              <EditorToolbar
+                wsId={wsId}
+                path={path}
+                versionId={versionId}
+                disabled={readOnly.value}
+              />
+              <FileStats wsId={wsId} path={path} versionId={versionId} />
+              <VersionPicker wsId={wsId} path={path} versionId={versionId} />
             </div>
           </div>
           <div class="content-side flex items-center">
-            {!editorLoading && <SidenoteControls wsId={wsId} path={path} />}
+            {!editorLoading && (
+              <SidenoteControls wsId={wsId} path={path} versionId={versionId} />
+            )}
           </div>
         </div>
       </div>
@@ -86,6 +106,7 @@ function FileViewerBody({ wsId, path }: { wsId: string; path: string }) {
               <Editor
                 wsId={wsId}
                 path={path}
+                versionId={versionId}
                 initialState={state.value}
                 onChange={setModifiedState}
                 className={`content-main pt-16 pb-32`}
@@ -103,6 +124,7 @@ function FileViewerBody({ wsId, path }: { wsId: string; path: string }) {
             <Sidenotes
               wsId={wsId}
               path={path}
+              versionId={versionId}
               editor={activeEditor.value}
               scrollContainerRef={scrollRef}
             />

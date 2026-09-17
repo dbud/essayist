@@ -131,7 +131,11 @@ export interface DiffResult {
  * specific versions and are migrated on write.
  */
 export interface VFS {
-  /** Read file content. By default reads the latest version. */
+  /**
+   * Read file content. By default reads the latest version. Missing files
+   * and versions return an empty snapshot with version_id "" (reads never
+   * throw by design).
+   */
   read(path: string, options?: ReadOptions): Promise<FileReadResult>;
 
   /**

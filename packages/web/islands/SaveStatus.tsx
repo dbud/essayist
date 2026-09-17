@@ -4,17 +4,13 @@ import Swappable from "@/components/ui/Swappable.tsx";
 import WaveBars from "@/components/ui/WaveBars.tsx";
 import { useBooting } from "@/hooks/useBooting.ts";
 import { useTick } from "@/hooks/useTick.ts";
+import type { FileKey } from "@/signals/file.ts";
 import { getFile } from "@/signals/file.ts";
 import { autoSave } from "@/signals/preferences.ts";
-import { formatDateTime, formatRelativeTime } from "@/utils/format.ts";
+import { formatRelativeTime } from "@/utils/format.ts";
 import { META_KEY } from "@/utils/platform.ts";
 
-interface SaveStatusProps {
-  wsId: string;
-  path: string;
-}
-
-export default function SaveStatus({ wsId, path }: SaveStatusProps) {
+export default function SaveStatus({ wsId, path }: FileKey) {
   useTick(30_000);
   const booting = useBooting();
   const file = getFile(wsId, path);
@@ -45,11 +41,11 @@ export default function SaveStatus({ wsId, path }: SaveStatusProps) {
     }
   }
 
-  const tooltip =
-    saveError.value ||
-    (savedAt === undefined
-      ? undefined
-      : `Last saved: ${formatDateTime(savedAt)}`);
+  // const tooltip =
+  //   saveError.value ||
+  //   (savedAt === undefined
+  //     ? undefined
+  //     : `Last saved: ${formatDateTime(savedAt)}`);
 
   const saved = !loadingFile && !saving.value && !dirty.value;
   const active = saving.value || loadingFile;
@@ -57,10 +53,7 @@ export default function SaveStatus({ wsId, path }: SaveStatusProps) {
     !loadingFile && !saving.value && dirty.value && !autoSave.value;
 
   return (
-    <div
-      class="cell cell--data relative w-52 whitespace-nowrap"
-      data-tooltip={tooltip}
-    >
+    <>
       <WaveBars fill amplitude={active ? 0.5 : 0} class="text-ink" />
       {!loadingFile && (
         <Swappable
@@ -93,6 +86,6 @@ export default function SaveStatus({ wsId, path }: SaveStatusProps) {
           {label}
         </Swappable>
       )}
-    </div>
+    </>
   );
 }

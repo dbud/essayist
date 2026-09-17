@@ -22,8 +22,9 @@ import {
 const AUTO_SAVE_MAX_WAIT_MS = 30_000;
 
 export interface FileKey {
-  workspaceId: string;
+  wsId: string;
   path: string;
+  versionId?: string;
 }
 
 export interface FileData {
@@ -33,13 +34,16 @@ export interface FileData {
 
 export const fileNs = namespace<FileData, FileKey>("file");
 
-export const FileModel = createModel((workspaceId: string, path: string) => {
-  // Latest promoted version; marks anchor to its content.
+export const FileModel = createModel((key: FileKey) => {
+  const { wsId, path, versionId } = key;
+  const readOnly = computed(() => versionId !== undefined);
+  // Latest promoted version, or the pinned version for snapshot views;
+  // marks anchor to its content.
   const checkpoint = signal<FileSnapshot | null>(null);
   const draft = signal<DraftSnapshot | null>(null);
   const [runSave, { loading: saving, error: saveError }] = createAsyncState();
   const isSelected = computed(
-    () => getFileTreeFor(workspaceId).selectedPath.value === path,
+    () => getFileTreeFor(wsId).selectedPath.value === path,
   );
 
   // Editor seed, parsed once; autosave adopts strings without re-parsing.
@@ -76,15 +80,18 @@ export const FileModel = createModel((workspaceId: string, path: string) => {
 
   const { loading, error } = modelData(
     fileNs,
-    { workspaceId, path },
+    { wsId, path, versionId },
     (data) => {
       checkpoint.value = data.checkpoint;
       draft.value = data.draft;
       seedContent.value = data.draft?.content ?? data.checkpoint.content;
     },
     async () => {
+      const versionParam = versionId
+        ? `?v=${encodeURIComponent(versionId)}`
+        : "";
       const res = await fetch(
-        `/api/workspaces/${encodeURIComponent(workspaceId)}/files/${encodeURIComponent(path)}`,
+        `/api/workspaces/${encodeURIComponent(wsId)}/files/${encodeURIComponent(path)}${versionParam}`,
       );
       await ensureOk(res);
       return (await res.json()) as FileData;
@@ -92,7 +99,7 @@ export const FileModel = createModel((workspaceId: string, path: string) => {
   );
 
   async function save(): Promise<boolean> {
-    if (!dirty.value) return true;
+    if (readOnly.value || !dirty.value) return true;
     const content = markdown.value;
     nextSaveAt = Date.now() + AUTO_SAVE_MAX_WAIT_MS;
 
@@ -117,7 +124,7 @@ export const FileModel = createModel((workspaceId: string, path: string) => {
     { keepalive = false }: { keepalive?: boolean } = {},
   ): Promise<Response> {
     return fetch(
-      `/api/workspaces/${encodeURIComponent(workspaceId)}/files/${encodeURIComponent(path)}/draft`,
+      `/api/workspaces/${encodeURIComponent(wsId)}/files/${encodeURIComponent(path)}/draft`,
       {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -128,11 +135,11 @@ export const FileModel = createModel((workspaceId: string, path: string) => {
   }
 
   function flush() {
-    if (!dirty.value) return;
+    if (readOnly.value || !dirty.value) return;
     void putDraft(markdown.value, { keepalive: true }).catch(() => {});
   }
 
-  if (IS_BROWSER) {
+  if (IS_BROWSER && !readOnly.value) {
     // Idle debounce: save once edits pause.
     effect(() => {
       if (!autoSave.value || !dirty.value) return;
@@ -182,6 +189,7 @@ export const FileModel = createModel((workspaceId: string, path: string) => {
     markdown,
     dirty,
     isSelected,
+    readOnly,
     save,
     saving,
     saveError,
@@ -191,11 +199,11 @@ export const FileModel = createModel((workspaceId: string, path: string) => {
 
 export type File = InstanceType<typeof FileModel>;
 
-export function getFile(workspaceId: string, path: string): File {
+export function getFile(wsId: string, path: string, versionId?: string): File {
   return get(
     fileNs,
-    { workspaceId, path },
-    () => new FileModel(workspaceId, path),
+    { wsId, path, versionId },
+    () => new FileModel({ wsId, path, versionId }),
   );
 }
 

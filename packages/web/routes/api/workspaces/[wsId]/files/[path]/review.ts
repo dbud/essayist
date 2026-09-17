@@ -6,15 +6,15 @@ import { sseResponse } from "@/utils/sse.ts";
 
 export const handler = {
   POST: define.handlers(async (ctx) => {
-    const fileId = decodeURIComponent(ctx.params.path);
-    if (!fileId.trim()) {
+    const path = decodeURIComponent(ctx.params.path);
+    if (!path.trim()) {
       return Response.json({ error: "Missing 'path'" }, { status: 400 });
     }
 
-    const { config, vfs, workspaceId } = ctx.state;
+    const { config, vfs, wsId } = ctx.state;
     // Promote the pending draft first: the review reads the latest
     // checkpoint, so it covers the current content.
-    await vfs.promoteDraft(fileId);
+    await vfs.promoteDraft(path);
     try {
       const { agent, pass } = await resolveAgent(config);
       return sseResponse(async (send) => {
@@ -25,8 +25,8 @@ export const handler = {
             reviewStore,
             traceStore,
             pass,
-            workspaceId,
-            fileId,
+            wsId,
+            path,
             onProgress: (progress) => send("progress", progress),
           });
           send("done", run);

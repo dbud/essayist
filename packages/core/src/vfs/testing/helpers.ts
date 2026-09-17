@@ -3,10 +3,10 @@ import { VirtualFileSystem } from "../vfs.ts";
 
 export async function createVFS(
   files?: Map<string, string>,
-  workspaceId = "default",
+  wsId = "default",
 ): Promise<VirtualFileSystem> {
   const adapter = new InMemoryAdapter();
-  const vfs = new VirtualFileSystem(adapter, workspaceId);
+  const vfs = new VirtualFileSystem(adapter, wsId);
   if (files) {
     for (const [path, content] of files) {
       await vfs.write(path, content);

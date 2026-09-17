@@ -13,7 +13,7 @@ import { playTrace } from "@/utils/reviewReplay.ts";
 import { parseSSE } from "@/utils/sse.ts";
 
 export interface ReviewKey {
-  workspaceId: string;
+  wsId: string;
   path: string;
 }
 
@@ -23,7 +23,7 @@ export interface ReviewData {
 
 export const reviewNs = namespace<ReviewData, ReviewKey>("review");
 
-export const ReviewModel = createModel((workspaceId: string, path: string) => {
+export const ReviewModel = createModel((wsId: string, path: string) => {
   const run = signal<ReviewRun | null>(null);
   const progress = signal<ReviewProgress | null>(null);
   const runs = signal<ReviewRun[]>([]);
@@ -35,11 +35,11 @@ export const ReviewModel = createModel((workspaceId: string, path: string) => {
     refresh,
   } = modelData(
     reviewNs,
-    { workspaceId, path },
+    { wsId, path },
     (data) => (runs.value = data.runs),
     async () => {
       const res = await fetch(
-        `/api/workspaces/${encodeURIComponent(workspaceId)}/review-runs?file=${encodeURIComponent(
+        `/api/workspaces/${encodeURIComponent(wsId)}/review-runs?file=${encodeURIComponent(
           path,
         )}`,
       );
@@ -51,7 +51,7 @@ export const ReviewModel = createModel((workspaceId: string, path: string) => {
   async function submit() {
     const result = await runAsync(async () => {
       const res = await fetch(
-        `/api/workspaces/${encodeURIComponent(workspaceId)}/files/${encodeURIComponent(path)}/review`,
+        `/api/workspaces/${encodeURIComponent(wsId)}/files/${encodeURIComponent(path)}/review`,
         { method: "POST" },
       );
       await ensureOk(res);
@@ -72,7 +72,7 @@ export const ReviewModel = createModel((workspaceId: string, path: string) => {
     progress.value = null;
     if (result) {
       run.value = result;
-      if (result.status === "completed") getMarks(workspaceId, path).refresh();
+      if (result.status === "completed") getMarks(wsId, path).refresh();
       void refresh();
     }
   }
@@ -95,7 +95,7 @@ export const ReviewModel = createModel((workspaceId: string, path: string) => {
       }
 
       const res = await fetch(
-        `/api/workspaces/${encodeURIComponent(workspaceId)}/review-runs/${encodeURIComponent(runId)}/trace`,
+        `/api/workspaces/${encodeURIComponent(wsId)}/review-runs/${encodeURIComponent(runId)}/trace`,
       );
       await ensureOk(res);
       const trace = (await res.json()) as TracedReviewEvent[];
@@ -109,7 +109,7 @@ export const ReviewModel = createModel((workspaceId: string, path: string) => {
     progress.value = null;
     if (result) {
       run.value = result;
-      if (result.status === "completed") getMarks(workspaceId, path).refresh();
+      if (result.status === "completed") getMarks(wsId, path).refresh();
     }
   }
 
@@ -127,10 +127,6 @@ export const ReviewModel = createModel((workspaceId: string, path: string) => {
   };
 });
 
-export function getReview(workspaceId: string, path: string) {
-  return get(
-    reviewNs,
-    { workspaceId, path },
-    () => new ReviewModel(workspaceId, path),
-  );
+export function getReview(wsId: string, path: string) {
+  return get(reviewNs, { wsId, path }, () => new ReviewModel(wsId, path));
 }

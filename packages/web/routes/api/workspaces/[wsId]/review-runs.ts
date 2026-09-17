@@ -4,13 +4,13 @@ import { reviewStore } from "@/store.ts";
 
 export const handler = {
   GET: define.handlers(async (ctx) => {
-    const { workspaceId } = ctx.state;
+    const { wsId } = ctx.state;
     const file = ctx.url.searchParams.get("file");
     if (!file?.trim()) {
       return Response.json({
-        runs: await reviewStore.listRuns({ workspaceId }),
+        runs: await reviewStore.listRuns({ wsId }),
       });
     }
-    return Response.json(await reviewLoader({ workspaceId, path: file }));
+    return Response.json(await reviewLoader({ wsId, path: file }));
   }),
 };

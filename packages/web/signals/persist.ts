@@ -9,30 +9,27 @@ import { getWorkspaces } from "@/signals/workspace.ts";
 const DEBOUNCE_MS = 500;
 
 let timer: ReturnType<typeof setTimeout> | undefined;
-let pendingWorkspaceId: string | null = null;
-let pendingFile: { workspaceId: string; path: string } | null = null;
+let pendingWsId: string | null = null;
+let pendingFile: { wsId: string; path: string } | null = null;
 
 function flush(keepalive: boolean): void {
-  if (pendingWorkspaceId !== null) {
+  if (pendingWsId !== null) {
     fetch("/api/workspaces", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ selectedId: pendingWorkspaceId }),
+      body: JSON.stringify({ selectedId: pendingWsId }),
       keepalive,
     }).catch(() => {});
   }
   if (pendingFile) {
-    fetch(
-      `/api/workspaces/${encodeURIComponent(pendingFile.workspaceId)}/files`,
-      {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ selectedPath: pendingFile.path }),
-        keepalive,
-      },
-    ).catch(() => {});
+    fetch(`/api/workspaces/${encodeURIComponent(pendingFile.wsId)}/files`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ selectedPath: pendingFile.path }),
+      keepalive,
+    }).catch(() => {});
   }
-  pendingWorkspaceId = null;
+  pendingWsId = null;
   pendingFile = null;
 }
 
@@ -45,7 +42,7 @@ if (IS_BROWSER) {
   effect(() => {
     const wsId = getWorkspaces().selectedId.value;
     if (!wsId) return;
-    pendingWorkspaceId = wsId;
+    pendingWsId = wsId;
     schedule();
   });
 
@@ -54,7 +51,7 @@ if (IS_BROWSER) {
     if (!wsId) return;
     const path = getFileTreeFor(wsId).selectedPath.value;
     if (!path) return;
-    pendingFile = { workspaceId: wsId, path };
+    pendingFile = { wsId, path };
     schedule();
   });
 

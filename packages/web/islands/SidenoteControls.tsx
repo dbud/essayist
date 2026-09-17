@@ -6,6 +6,7 @@ import Dropdown, {
   DropdownMenu,
 } from "@/components/ui/Dropdown.tsx";
 import WaveBars from "@/components/ui/WaveBars.tsx";
+import type { FileKey } from "@/signals/file.ts";
 import { getMarks } from "@/signals/marks.ts";
 import { replayParams, setReplayParams } from "@/signals/replay.ts";
 import { getReview } from "@/signals/review.ts";
@@ -33,13 +34,7 @@ function phaseLabel(progress: ReviewProgress | null): string {
   }
 }
 
-export default function SidenoteControls({
-  wsId,
-  path,
-}: {
-  wsId: string;
-  path: string;
-}) {
+export default function SidenoteControls({ wsId, path, versionId }: FileKey) {
   const review = getReview(wsId, path);
   const { loading, error, progress } = review;
   const { resolving } = getMarks(wsId, path);
@@ -77,8 +72,12 @@ export default function SidenoteControls({
     );
   }
 
+  // Snapshot views have no review controls
+  // TODO -- rework when sidenotes filters arrive
+  if (versionId) return null;
+
   return (
-    <div class="relative flex min-w-72 flex-1 items-center stack">
+    <div class="relative flex min-w-72 flex-1 items-center stack stack--row">
       {loading.value ? (
         <div class="cell--data flex-1">{phaseLabel(progress.value)}</div>
       ) : replay ? (

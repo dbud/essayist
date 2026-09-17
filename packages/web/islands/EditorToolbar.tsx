@@ -10,6 +10,7 @@ import BlockTypeSelect from "@/components/BlockTypeSelect.tsx";
 import { $setBlocksType, type BlockType } from "@/editor/blockFormat.ts";
 import { activeEditor } from "@/signals/activeEditor.ts";
 import { getEditorSelection } from "@/signals/editorSelection.ts";
+import type { FileKey } from "@/signals/file.ts";
 
 type FormatType = "bold" | "italic" | "strikethrough" | "code";
 
@@ -26,14 +27,18 @@ const INLINE_BUTTONS: InlineButton[] = [
   { fmt: "code", tooltip: "Monospaced / code", icon: Code },
 ];
 
-interface EditorToolbarProps {
-  wsId: string;
-  path: string;
+interface EditorToolbarProps extends FileKey {
+  disabled?: boolean;
 }
 
-export default function EditorToolbar({ wsId, path }: EditorToolbarProps) {
+export default function EditorToolbar({
+  wsId,
+  path,
+  versionId,
+  disabled,
+}: EditorToolbarProps) {
   const editor = activeEditor.value;
-  const sel = getEditorSelection(wsId, path);
+  const sel = getEditorSelection(wsId, path, versionId);
 
   const format = (fmt: FormatType) => {
     if (!editor) return;
@@ -63,11 +68,15 @@ export default function EditorToolbar({ wsId, path }: EditorToolbarProps) {
     editor.update(() => $setBlocksType(type));
   };
 
-  const inlineDisabled = editor === null || sel.inCodeBlock.value;
+  const inlineDisabled = disabled || editor === null || sel.inCodeBlock.value;
 
   return (
     <div class="flex stack">
-      <BlockTypeSelect block={sel.block.value} onChange={setBlock} />
+      <BlockTypeSelect
+        block={sel.block.value}
+        onChange={setBlock}
+        disabled={disabled}
+      />
       {INLINE_BUTTONS.map(({ fmt, tooltip, icon: Icon }) => (
         <button
           type="button"

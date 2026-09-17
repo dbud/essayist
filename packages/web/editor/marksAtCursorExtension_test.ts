@@ -23,7 +23,10 @@ import {
 } from "@/signals/editorSelection.ts";
 import { MarksAtCursorExtension } from "./marksAtCursorExtension.ts";
 
-const selection: EditorSelection = new EditorSelectionModel("", "");
+const selection: EditorSelection = new EditorSelectionModel({
+  wsId: "",
+  path: "",
+});
 
 const testExtension = defineExtension({
   name: "marks-at-cursor-test",

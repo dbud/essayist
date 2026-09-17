@@ -37,11 +37,13 @@ const OPTIONS: BlockOption[] = [
 interface BlockTypeSelectProps {
   block: BlockType;
   onChange: (type: BlockType) => void;
+  disabled?: boolean;
 }
 
 export default function BlockTypeSelect({
   block,
   onChange,
+  disabled,
 }: BlockTypeSelectProps) {
   const current = OPTIONS.find((o) => o.value === block) ?? OPTIONS[0];
 
@@ -49,6 +51,7 @@ export default function BlockTypeSelect({
     <Dropdown
       tooltip="Paragraph style"
       triggerClass="btn @sm:w-36"
+      disabled={disabled}
       trigger={
         <>
           <Swappable swapKey={current.value} class="swap-rotate">

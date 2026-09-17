@@ -15,7 +15,7 @@ export default define.middleware(async (ctx) => {
   if (!hasAccess) {
     return Response.json({ error: "Forbidden" }, { status: 403 });
   }
-  ctx.state.workspaceId = wsId;
+  ctx.state.wsId = wsId;
   ctx.state.vfs = new VirtualFileSystem(adapter, wsId);
   return ctx.next();
 });

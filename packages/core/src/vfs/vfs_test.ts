@@ -48,6 +48,7 @@ Deno.test("VFS.read -- missing file returns empty", async () => {
   const vfs = await createVFS();
   const result = await vfs.read("missing.txt");
   assertEquals(result.content, "");
+  assertEquals(result.version_id, "");
   assertEquals(result.lines, 0);
 });
 
@@ -69,6 +70,14 @@ Deno.test("VFS.read -- specific version", async () => {
   assertEquals(original.content, "original");
   const latest = await vfs.read("f.txt", { versionId: history[1].version_id });
   assertEquals(latest.content, "modified");
+});
+
+Deno.test("VFS.read -- unknown version returns empty miss", async () => {
+  const vfs = await createVFS(new Map([["f.txt", "original"]]));
+  const miss = await vfs.read("f.txt", { versionId: "no_such_version" });
+  assertEquals(miss.version_id, "");
+  assertEquals(miss.content, "");
+  assertEquals(miss.lines, 0);
 });
 
 // Write

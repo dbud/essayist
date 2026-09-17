@@ -5,11 +5,15 @@ import { registerLoader } from "@/signals/models.server.ts";
 import { adapter } from "@/store.ts";
 
 export async function marksLoader({
-  workspaceId,
+  wsId,
   path,
+  versionId,
 }: FileKey): Promise<MarksData> {
-  const vfs = new VirtualFileSystem(adapter, workspaceId);
-  const checkpoint = await vfs.read(path);
+  const vfs = new VirtualFileSystem(adapter, wsId);
+  const checkpoint = await vfs.read(path, { versionId });
+  if (versionId && checkpoint.version_id === "") {
+    throw new Error(`Version not found: ${versionId}`);
+  }
   const marks = checkpoint.version_id
     ? await vfs.getMarks(path, checkpoint.version_id)
     : [];

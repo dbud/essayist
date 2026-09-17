@@ -135,7 +135,7 @@ export class WorkspaceStore {
     const createdAt = Date.now();
     const workspace: Workspace = { id, name, ownerId, createdAt };
     const ownerMember: WorkspaceMember = {
-      workspaceId: id,
+      wsId: id,
       userId: ownerId,
       role: "owner",
       createdAt,
@@ -173,20 +173,20 @@ export class WorkspaceStore {
 
   /** Add a member, or update their role if already a member (upsert). */
   async addMember(
-    workspaceId: string,
+    wsId: string,
     userId: string,
     role: Role,
   ): Promise<WorkspaceMember> {
-    const memberKey: Key = [MEMBERS_BY_WS, workspaceId, userId];
+    const memberKey: Key = [MEMBERS_BY_WS, wsId, userId];
     const existing = await this.#adapter.get<WorkspaceMember>(memberKey);
 
     // Refuse to demote the last owner.
     if (existing?.value.role === "owner" && role !== "owner") {
-      await this.#assertMultipleOwners(workspaceId);
+      await this.#assertMultipleOwners(wsId);
     }
 
     const member: WorkspaceMember = {
-      workspaceId,
+      wsId,
       userId,
       role,
       createdAt: existing?.value.createdAt ?? Date.now(),
@@ -196,7 +196,7 @@ export class WorkspaceStore {
         { type: "set", key: memberKey, value: member },
         {
           type: "set",
-          key: [MEMBERS_BY_USER, userId, workspaceId],
+          key: [MEMBERS_BY_USER, userId, wsId],
           value: true,
         },
       ],
@@ -211,20 +211,20 @@ export class WorkspaceStore {
   }
 
   /** Remove a member. Returns false if they were not a member. */
-  async removeMember(workspaceId: string, userId: string): Promise<boolean> {
-    const memberKey: Key = [MEMBERS_BY_WS, workspaceId, userId];
+  async removeMember(wsId: string, userId: string): Promise<boolean> {
+    const memberKey: Key = [MEMBERS_BY_WS, wsId, userId];
     const existing = await this.#adapter.get<WorkspaceMember>(memberKey);
     if (!existing) return false;
 
     // Refuse to remove the last owner.
     if (existing.value.role === "owner") {
-      await this.#assertMultipleOwners(workspaceId);
+      await this.#assertMultipleOwners(wsId);
     }
 
     await this.#adapter.batch(
       [
         { type: "delete", key: memberKey },
-        { type: "delete", key: [MEMBERS_BY_USER, userId, workspaceId] },
+        { type: "delete", key: [MEMBERS_BY_USER, userId, wsId] },
       ],
       { checks: [{ key: memberKey, versionstamp: existing.versionstamp }] },
     );
@@ -232,17 +232,17 @@ export class WorkspaceStore {
   }
 
   /** Throw {@link LastOwnerError} if the workspace has only one owner. */
-  async #assertMultipleOwners(workspaceId: string): Promise<void> {
-    const members = await this.getMembers(workspaceId);
+  async #assertMultipleOwners(wsId: string): Promise<void> {
+    const members = await this.getMembers(wsId);
     const owners = members.filter((m) => m.role === "owner");
-    if (owners.length <= 1) throw new LastOwnerError(workspaceId);
+    if (owners.length <= 1) throw new LastOwnerError(wsId);
   }
 
   /** List all members of a workspace. */
-  async getMembers(workspaceId: string): Promise<WorkspaceMember[]> {
+  async getMembers(wsId: string): Promise<WorkspaceMember[]> {
     const { entries } = await this.#adapter.list<WorkspaceMember>([
       MEMBERS_BY_WS,
-      workspaceId,
+      wsId,
     ]);
     return entries
       .map((e) => e.value)
@@ -251,28 +251,20 @@ export class WorkspaceStore {
 
   /** Get a specific membership, or undefined if the user is not a member. */
   async getMembership(
-    workspaceId: string,
+    wsId: string,
     userId: string,
   ): Promise<WorkspaceMember | undefined> {
     return (
-      await this.#adapter.get<WorkspaceMember>([
-        MEMBERS_BY_WS,
-        workspaceId,
-        userId,
-      ])
+      await this.#adapter.get<WorkspaceMember>([MEMBERS_BY_WS, wsId, userId])
     )?.value;
   }
 
   /**
-   * Whether `userId` can access `workspaceId`, optionally requiring a role.
+   * Whether `userId` can access `wsId`, optionally requiring a role.
    * `owner` satisfies an `editor` requirement (owner >= editor).
    */
-  async hasAccess(
-    workspaceId: string,
-    userId: string,
-    role?: Role,
-  ): Promise<boolean> {
-    const membership = await this.getMembership(workspaceId, userId);
+  async hasAccess(wsId: string, userId: string, role?: Role): Promise<boolean> {
+    const membership = await this.getMembership(wsId, userId);
     if (!membership) return false;
     if (!role) return true;
     if (role === "editor") return true; // any member can edit

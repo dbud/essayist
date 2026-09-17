@@ -10,6 +10,7 @@ import { getMarks } from "@/signals/marks.ts";
 import { seed, settle, settleAll } from "@/signals/models.ts";
 import { getOpenedFilesFor } from "@/signals/openedFiles.ts";
 import { getReview } from "@/signals/review.ts";
+import { getVersionHistory } from "@/signals/versionHistory.ts";
 import { getWorkspaces } from "@/signals/workspace.ts";
 
 export default define.page(async ({ state }) => {
@@ -24,9 +25,11 @@ export default define.page(async ({ state }) => {
     const path = tree.selectedPath.value;
     if (path) {
       getOpenedFilesFor(wsId).open(path);
+      const versionId = tree.selectedVersionId.value ?? undefined;
       yield* settleAll(
-        getFile(wsId, path),
-        getMarks(wsId, path),
+        getFile(wsId, path, versionId),
+        getMarks(wsId, path, versionId),
+        getVersionHistory(wsId, path),
         getReview(wsId, path),
       );
     }

@@ -30,7 +30,7 @@ const MAX_PAYLOAD_CHARS = 16_000;
 
 /** The run a trace belongs to. */
 export interface TraceScope {
-  workspaceId: string;
+  wsId: string;
   runId: string;
 }
 
@@ -42,19 +42,16 @@ export interface TraceScope {
 export interface TraceStore {
   /** Append one event; calls arrive in seq order. */
   append({
-    workspaceId,
+    wsId,
     runId,
     event,
   }: TraceScope & { event: TracedReviewEvent }): Promise<void>;
 
   /** Mark the trace complete. */
-  end({ workspaceId, runId }: TraceScope): Promise<void>;
+  end({ wsId, runId }: TraceScope): Promise<void>;
 
   /** Read a run's trace in order; undefined when nothing was written. */
-  get({
-    workspaceId,
-    runId,
-  }: TraceScope): Promise<TracedReviewEvent[] | undefined>;
+  get({ wsId, runId }: TraceScope): Promise<TracedReviewEvent[] | undefined>;
 
   /** Recorder bound to one run. onEvent receives each derived event. */
   recorder(
@@ -72,24 +69,21 @@ export class EventTraceStore implements TraceStore {
   }
 
   async append({
-    workspaceId,
+    wsId,
     runId,
     event,
   }: TraceScope & { event: TracedReviewEvent }): Promise<void> {
-    await this.#adapter.set(
-      this.#eventKey(workspaceId, runId, event.seq),
-      event,
-    );
+    await this.#adapter.set(this.#eventKey(wsId, runId, event.seq), event);
   }
 
   async end(_scope: TraceScope): Promise<void> {
     // Events are already persisted.
   }
 
-  async get({ workspaceId, runId }: TraceScope) {
+  async get({ wsId, runId }: TraceScope) {
     const { entries } = await this.#adapter.list<TracedReviewEvent>([
       TRACES,
-      workspaceId,
+      wsId,
       runId,
     ]);
     if (entries.length === 0) return undefined;
@@ -100,11 +94,11 @@ export class EventTraceStore implements TraceStore {
     scope: TraceScope,
     onEvent?: (event: TracedReviewEvent) => void,
   ): TraceRecorder {
-    return new TraceRecorder(this, scope.workspaceId, scope.runId, onEvent);
+    return new TraceRecorder(this, scope.wsId, scope.runId, onEvent);
   }
 
-  #eventKey(workspaceId: string, runId: string, seq: number): string[] {
-    return [TRACES, workspaceId, runId, String(seq).padStart(6, "0")];
+  #eventKey(wsId: string, runId: string, seq: number): string[] {
+    return [TRACES, wsId, runId, String(seq).padStart(6, "0")];
   }
 }
 
@@ -178,7 +172,7 @@ function logTraceEvent(event: ReviewTraceEvent): void {
  */
 export class TraceRecorder implements ReviewTraceSink {
   #store: TraceStore;
-  #workspaceId: string;
+  #wsId: string;
   #runId: string;
   #seq = 0;
   #round = 0;
@@ -190,12 +184,12 @@ export class TraceRecorder implements ReviewTraceSink {
 
   constructor(
     store: TraceStore,
-    workspaceId: string,
+    wsId: string,
     runId: string,
     onEvent?: (event: TracedReviewEvent) => void,
   ) {
     this.#store = store;
-    this.#workspaceId = workspaceId;
+    this.#wsId = wsId;
     this.#runId = runId;
     this.#onEvent = onEvent;
   }
@@ -213,7 +207,7 @@ export class TraceRecorder implements ReviewTraceSink {
     this.#writes = this.#writes
       .then(() =>
         this.#store.append({
-          workspaceId: this.#workspaceId,
+          wsId: this.#wsId,
           runId: this.#runId,
           event: entry,
         }),
@@ -247,7 +241,7 @@ export class TraceRecorder implements ReviewTraceSink {
     }
     try {
       await this.#store.end({
-        workspaceId: this.#workspaceId,
+        wsId: this.#wsId,
         runId: this.#runId,
       });
     } catch (err) {
