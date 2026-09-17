@@ -11,6 +11,9 @@ export async function marksLoader({
 }: FileKey): Promise<MarksData> {
   const vfs = new VirtualFileSystem(adapter, wsId);
   const checkpoint = await vfs.read(path, { versionId });
+  if (versionId && checkpoint.version_id === "") {
+    throw new Error(`Version not found: ${versionId}`);
+  }
   const marks = checkpoint.version_id
     ? await vfs.getMarks(path, checkpoint.version_id)
     : [];

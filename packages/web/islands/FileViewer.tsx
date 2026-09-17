@@ -39,15 +39,11 @@ export default function FileViewer() {
 }
 
 function FileViewerBody({ wsId, path, versionId }: FileKey) {
-  const {
-    state,
-    checkpoint,
-    readOnly,
-    setModifiedState,
-    loading,
-    error,
-    save,
-  } = getFile(wsId, path, versionId);
+  const { state, checkpoint, setModifiedState, loading, error, save } = getFile(
+    wsId,
+    path,
+    versionId,
+  );
   const { resolved } = getMarks(wsId, path, versionId);
   const sidenotes = getSidenotes(wsId, path, versionId);
   const selection = getEditorSelection(wsId, path, versionId);
@@ -69,10 +65,6 @@ function FileViewerBody({ wsId, path, versionId }: FileKey) {
 
   const withSidePane = resolved.value.length > 0;
   const editorLoading = loading.value || !state.value;
-  const viewingMissing =
-    readOnly.value &&
-    checkpoint.value !== null &&
-    checkpoint.value.version_id === "";
 
   return (
     <div class="relative isolate flex-1 min-h-0 flex flex-col stack @container">
@@ -88,9 +80,9 @@ function FileViewerBody({ wsId, path, versionId }: FileKey) {
               <FileStats wsId={wsId} path={path} versionId={versionId} />
               {versionId ? (
                 <VersionChip
-                  title={viewingMissing ? "Version not found" : "Version view"}
+                  title="Version view"
                   detail={
-                    viewingMissing || checkpoint.value === null
+                    checkpoint.value === null
                       ? undefined
                       : formatDateTime(checkpoint.value.timestamp)
                   }

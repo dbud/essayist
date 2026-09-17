@@ -10,8 +10,12 @@ export async function fileLoader({
   versionId,
 }: FileKey): Promise<FileData> {
   const vfs = new VirtualFileSystem(adapter, wsId);
+  const checkpoint = await vfs.read(path, { versionId });
+  if (versionId && checkpoint.version_id === "") {
+    throw new Error(`Version not found: ${versionId}`);
+  }
   return {
-    checkpoint: await vfs.read(path, { versionId }),
+    checkpoint,
     draft: versionId ? null : await vfs.readDraft(path),
   };
 }
