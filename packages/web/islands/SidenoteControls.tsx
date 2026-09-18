@@ -37,7 +37,7 @@ function phaseLabel(progress: ReviewProgress | null): string {
 export default function SidenoteControls({ wsId, path, versionId }: FileKey) {
   const review = getReview(wsId, path);
   const { loading, error, progress } = review;
-  const { resolving } = getMarks(wsId, path);
+  const { resolving } = getMarks(wsId, path, versionId);
   const replay = replayParams.value;
 
   // Bars only rise when marks resolution outlives the delay, so quick
