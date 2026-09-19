@@ -11,6 +11,7 @@ import { effect, type Signal, untracked } from "@preact/signals";
 import { assert } from "@std/assert/assert";
 import {
   $getNodeByKey,
+  $nodesOfType,
   COMMAND_PRIORITY_LOW,
   createCommand,
   HISTORIC_TAG,
@@ -53,6 +54,14 @@ export const MarksExtension = defineExtension({
     { path, resolved, markdown }: MarksExtensionConfig,
   ) => {
     const nodeKeys = new Set<NodeKey>();
+
+    // The editor starts from a state that may still hold MarkNodes
+    editor.update(
+      () => {
+        for (const node of $nodesOfType(MarkNode)) $unwrapMarkNode(node);
+      },
+      { discrete: true, tag: [MARK_RANGE_TAG, HISTORIC_TAG] },
+    );
 
     return mergeRegister(
       registerNodeKeyTracker(editor, MarkNode, nodeKeys),
