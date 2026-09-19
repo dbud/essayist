@@ -92,14 +92,17 @@ function SaveStatus({ wsId, path }: FileKey) {
   );
 }
 
-/** Chip for the picker trigger while a version is viewed. */
-function ViewedVersion({ timestamp }: { timestamp: number }) {
+function VersionChip({
+  timestamp,
+  lock,
+}: {
+  timestamp: number;
+  lock?: boolean;
+}) {
   return (
-    <span class="inline-flex items-center gap-1">
-      <LockKeyhole size={14} />
-      <span class="flex flex-col items-start leading-none">
-        {formatDateTime(timestamp)}
-      </span>
+    <span class="inline-flex items-start gap-1">
+      {lock && <LockKeyhole size={14} />}
+      <span class="leading-none">{formatDateTime(timestamp)}</span>
     </span>
   );
 }
@@ -133,7 +136,7 @@ export default function VersionPicker({
             class="swap-shift self-start"
           >
             {viewed ? (
-              <ViewedVersion timestamp={viewed.timestamp} />
+              <VersionChip timestamp={viewed.timestamp} lock />
             ) : (
               <SaveStatus wsId={wsId} path={path} />
             )}
@@ -162,9 +165,7 @@ export default function VersionPicker({
                 close();
               }}
             >
-              <div class="flex flex-col items-start">
-                <span>{formatDateTime(version.timestamp)}</span>
-              </div>
+              <VersionChip timestamp={version.timestamp} />
             </DropdownItem>
           ))}
         </DropdownMenu>
