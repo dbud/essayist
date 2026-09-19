@@ -66,6 +66,9 @@
   --btn-bg: var(--color-accent);
   --btn-bg-hover: oklch(from var(--color-accent) l calc(c * 1.3) h);
   color: white;
+  box-shadow:
+    -1px 0 0 var(--btn-bg),
+    1px 0 0 var(--btn-bg);
 }
 
 @utility cell--ink {

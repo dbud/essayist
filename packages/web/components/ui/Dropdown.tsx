@@ -43,14 +43,19 @@ export default function Dropdown({
 
 export function DropdownMenu({
   end,
+  class: className,
   children,
 }: {
   end?: boolean;
+  class?: string;
   children: ComponentChildren;
 }) {
   const align = end ? "dropdown-menu--end" : "";
   return (
-    <ul class={`dropdown-menu ${align}`} data-stagger-children>
+    <ul
+      class={`dropdown-menu ${align} ${className ?? ""}`}
+      data-stagger-children
+    >
       {children}
     </ul>
   );

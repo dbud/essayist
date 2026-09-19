@@ -31,6 +31,10 @@
   z-index: var(--z-dropdown);
   animation: dropdown-in var(--dropdown-duration) ease-out;
 
+  &.dropdown-menu--full {
+    width: calc(100% + 2px);
+  }
+
   &.dropdown-menu--end {
     left: auto;
     right: -1px;
@@ -47,6 +51,9 @@
   &.is-selected {
     --btn-bg: var(--color-accent);
     color: white;
+    box-shadow:
+      -1px 0 0 var(--btn-bg),
+      1px 0 0 var(--btn-bg);
   }
 }
 
