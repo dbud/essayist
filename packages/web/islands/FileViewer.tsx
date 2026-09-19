@@ -27,12 +27,7 @@ export default function FileViewer() {
   if (!tree || !wsId || !path) return null;
   const versionId = tree.selectedVersionId.value ?? undefined;
   return (
-    <FileViewerBody
-      key={`${path}:${versionId ?? ""}`}
-      wsId={wsId}
-      path={path}
-      versionId={versionId}
-    />
+    <FileViewerBody key={path} wsId={wsId} path={path} versionId={versionId} />
   );
 }
 

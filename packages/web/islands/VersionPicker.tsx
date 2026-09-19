@@ -52,19 +52,11 @@ function SaveStatus({ wsId, path }: FileKey) {
     }
   }
 
-  // const tooltip =
-  //   saveError.value ||
-  //   (savedAt === undefined
-  //     ? undefined
-  //     : `Last saved: ${formatDateTime(savedAt)}`);
-
   const saved = !pending && !saving.value && !dirty.value;
-  const active = saving.value || pending;
   const showHint = !pending && !saving.value && dirty.value && !autoSave.value;
 
   return (
-    <>
-      <WaveBars fill amplitude={active ? 0.5 : 0} class="text-ink" />
+    <span class="inline-flex items-start gap-1">
       {!pending && (
         <Swappable
           swapKey={saved ? "check" : "dashed"}
@@ -96,19 +88,19 @@ function SaveStatus({ wsId, path }: FileKey) {
           {label}
         </Swappable>
       )}
-    </>
+    </span>
   );
 }
 
 /** Chip for the picker trigger while a version is viewed. */
 function ViewedVersion({ timestamp }: { timestamp: number }) {
   return (
-    <>
+    <span class="inline-flex items-center gap-1">
       <LockKeyhole size={14} />
       <span class="flex flex-col items-start leading-none">
         {formatDateTime(timestamp)}
       </span>
-    </>
+    </span>
   );
 }
 
@@ -123,6 +115,7 @@ export default function VersionPicker({
     ? list.find((version) => version.version_id === versionId)
     : undefined;
   const pending = useFileLoading(wsId, path);
+  const active = getFile(wsId, path).saving.value || pending;
 
   function select(next: string | null) {
     getFileTreeFor(wsId).selectVersion(next);
@@ -134,11 +127,17 @@ export default function VersionPicker({
       triggerClass="cell cell--data cursor-pointer relative w-52 whitespace-nowrap"
       trigger={
         <>
-          {viewed ? (
-            <ViewedVersion timestamp={viewed.timestamp} />
-          ) : (
-            <SaveStatus wsId={wsId} path={path} />
-          )}
+          <WaveBars fill amplitude={active ? 0.5 : 0} class="text-ink" />
+          <Swappable
+            swapKey={versionId ?? "latest"}
+            class="swap-shift self-start"
+          >
+            {viewed ? (
+              <ViewedVersion timestamp={viewed.timestamp} />
+            ) : (
+              <SaveStatus wsId={wsId} path={path} />
+            )}
+          </Swappable>
           {!pending && <ChevronDown size={14} class="rotate-on-open" />}
         </>
       }
@@ -165,9 +164,6 @@ export default function VersionPicker({
             >
               <div class="flex flex-col items-start">
                 <span>{formatDateTime(version.timestamp)}</span>
-                <span class="text-[0.7rem] opacity-70">
-                  {formatRelativeTime(version.timestamp)}
-                </span>
               </div>
             </DropdownItem>
           ))}

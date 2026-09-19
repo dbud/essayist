@@ -16,7 +16,8 @@
   transition:
     background-color var(--btn-duration) ease-out,
     color var(--btn-duration) ease-out,
-    transform calc(var(--btn-duration) / 2) ease-out;
+    transform calc(var(--btn-duration) / 2) ease-out,
+    opacity var(--btn-duration) ease-out;
 
   & > * {
     @apply relative z-1;
