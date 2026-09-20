@@ -111,7 +111,9 @@ export const SidenotesModel = createModel((key: FileKey) => {
         active: activeMarkIds.value.has(mark.thread_id),
       });
     }
-    return out.sort((a, b) => a.markTop - b.markTop);
+    return out.sort(
+      (a, b) => a.markTop - b.markTop || a.mark.offset - b.mark.offset,
+    );
   });
 
   // Stacked tops so sidenotes never overlap: walk in mark order, pushing each
