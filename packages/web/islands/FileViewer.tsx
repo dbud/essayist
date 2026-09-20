@@ -107,13 +107,13 @@ function FileViewerBody({ wsId, path, versionId }: FileKey) {
                 className={`content-main pt-16 pb-32`}
               />
             )}
-            <MarkBadges badges={sidenotes.markBadges.value} />
             <Caret rect={selection.caretRect} />
             <MarkHighlights
               rects={sidenotes.markRects.value}
               activeIds={selection.markIds.value}
               innerId={selection.innerMarkId.value}
             />
+            <MarkBadges badges={sidenotes.markBadges.value} />
           </div>
           <div class="content-side">
             <Sidenotes
