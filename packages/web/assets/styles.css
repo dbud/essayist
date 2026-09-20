@@ -91,6 +91,7 @@
 
   html[data-serif-font="vollkorn"] {
     --font-serif: "Vollkorn Variable", ui-serif, Georgia, serif;
+    --prose-font-size: 1.15em;
   }
 
   html[data-serif-font="plex"] {
@@ -103,6 +104,8 @@
 }
 
 .prose {
+  font-size: var(--prose-font-size, 1em);
+
   --tw-prose-body: var(--color-ink);
   --tw-prose-headings: var(--color-ink);
   --tw-prose-lead: color-mix(in oklch, var(--color-ink) 70%, transparent);
