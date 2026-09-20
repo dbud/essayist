@@ -51,6 +51,7 @@
 
 @theme {
   --font-serif: "Vollkorn Variable", "IBM Plex Serif", ui-serif, Georgia, serif;
+  --font-serif--font-feature-settings: "lnum" 1, "zero" 1, "dlig" 1;
   --font-sans:
     "Special Gothic Variable", "Atkinson Hyperlegible Next Variable",
     ui-sans-serif, system-ui, sans-serif;
