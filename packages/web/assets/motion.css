@@ -159,6 +159,21 @@
   --swap-in: swap-shift-in;
 }
 
+@keyframes pulse-accent-ink {
+  0%,
+  100% {
+    color: var(--color-ink);
+  }
+
+  50% {
+    color: var(--color-accent);
+  }
+}
+
+@utility pulse-accent-ink {
+  animation: pulse-accent-ink 2s ease-in-out infinite;
+}
+
 .swappable {
   display: inline-grid;
   place-items: start;
