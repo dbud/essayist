@@ -26,6 +26,7 @@
     "@fontsource-variable/atkinson-hyperlegible-next": "npm:@fontsource-variable/atkinson-hyperlegible-next@^5.3.0",
     "@fontsource-variable/recursive": "npm:@fontsource-variable/recursive@^5.3.0",
     "@fontsource-variable/special-gothic": "npm:@fontsource-variable/special-gothic@^5.3.0",
+    "@fontsource-variable/vollkorn": "npm:@fontsource-variable/vollkorn@^5.3.0",
     "@fontsource/ibm-plex-serif": "npm:@fontsource/ibm-plex-serif@^5.3.0",
     "@fresh/plugin-vite": "jsr:@fresh/plugin-vite@^1.1.2",
     "@lexical/code": "npm:@lexical/code@^0.50.0",

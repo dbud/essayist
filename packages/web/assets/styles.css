@@ -50,7 +50,7 @@
 }
 
 @theme {
-  --font-serif: "IBM Plex Serif", ui-serif, Georgia, serif;
+  --font-serif: "Vollkorn Variable", "IBM Plex Serif", ui-serif, Georgia, serif;
   --font-sans:
     "Special Gothic Variable", "Atkinson Hyperlegible Next Variable",
     ui-sans-serif, system-ui, sans-serif;
