@@ -12,6 +12,11 @@ export interface FontAxis<F extends string> {
   options: FontOption[];
 }
 
+const SANS_FONT_KEY = "sansFont";
+const SERIF_FONT_KEY = "serifFont";
+
+export const FONT_AXIS_KEYS = [SANS_FONT_KEY, SERIF_FONT_KEY] as const;
+
 /**
  * A font setting: a persistent signal plus the radio options for the
  * settings menu. The key names the localStorage entry and the html
@@ -47,7 +52,7 @@ const SANS_FONT_LABELS = {
 };
 export type SansFont = keyof typeof SANS_FONT_LABELS;
 
-export const sansFont = fontAxis("sansFont", SANS_FONT_LABELS, "gothic");
+export const sansFont = fontAxis(SANS_FONT_KEY, SANS_FONT_LABELS, "gothic");
 
 const SERIF_FONT_LABELS = {
   vollkorn: "Vollkorn",
@@ -56,4 +61,8 @@ const SERIF_FONT_LABELS = {
 };
 export type SerifFont = keyof typeof SERIF_FONT_LABELS;
 
-export const serifFont = fontAxis("serifFont", SERIF_FONT_LABELS, "vollkorn");
+export const serifFont = fontAxis(
+  SERIF_FONT_KEY,
+  SERIF_FONT_LABELS,
+  "vollkorn",
+);
