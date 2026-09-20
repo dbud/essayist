@@ -96,6 +96,11 @@
     margin-inline-start: 0.25em;
     transform: translateY(-0.5em);
   }
+  .mark-badge-stroke {
+    position: absolute;
+    inset: 0;
+    -webkit-text-stroke: 1.5px var(--color-paper);
+  }
   .sidenote-panel {
     @apply pointer-events-none absolute inset-x-0 bg-paper;
     --panel-bleed: -1.5rem;
