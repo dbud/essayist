@@ -50,11 +50,12 @@ export interface PointSpec {
 
 /**
  * Tracks the vertical position of every instance of `nodeClass` in the editor
- * and publishes id -> minimum offsetTop into `output` (a node spanning a
- * paragraph break yields several nodes sharing ids; the min aligns to the
- * first). Re-measures on editor update, node mutation, root resize, and any
- * `remeasureOn` signal change -- never on scroll, since offsetTop is stable
- * under scroll. rAF-deferred so DOM and mutation callbacks have settled.
+ * and publishes id -> minimum offsetTop into `output` (a node spanning
+ * a paragraph break yields several nodes sharing ids; the min aligns to
+ * the first). Re-measures on editor update, node mutation, root resize,
+ * any `remeasureOn` signal change, and font loads -- never on scroll, since
+ * offsetTop is stable under scroll. rAF-deferred so DOM and mutation
+ * callbacks have settled.
  *
  * Returns a cleanup function. The measured elements must not affect the
  * observed root's size (e.g. they are inline), so repositioning doesn't loop
@@ -114,6 +115,13 @@ export function trackNodePositions<T extends LexicalNode>(
     registerNodeKeyTracker(editor, nodeClass, nodeKeys, scheduleMeasure),
     editor.registerUpdateListener(scheduleMeasure),
   ];
+  // re-measure when any font finishes loading
+  if (typeof document !== "undefined") {
+    document.fonts.addEventListener("loadingdone", scheduleMeasure);
+    disposers.push(() =>
+      document.fonts.removeEventListener("loadingdone", scheduleMeasure),
+    );
+  }
   for (const s of remeasureOn ?? []) {
     disposers.push(
       effect(() => {
