@@ -9,15 +9,16 @@ import {
   SlidersVertical,
 } from "lucide-preact";
 import Avatar from "@/components/Avatar.tsx";
-import AppFontSelect from "@/components/ui/AppFontSelect.tsx";
 import AutoSaveIntervalSelect from "@/components/ui/AutoSaveIntervalSelect.tsx";
 import Dropdown, {
   DropdownItem,
   DropdownMenu,
 } from "@/components/ui/Dropdown.tsx";
+import FontAxisSelect from "@/components/ui/FontAxisSelect.tsx";
 import { CheckboxIcon } from "@/components/ui/icons.tsx";
 import MarkStyleSelect from "@/components/ui/MarkStyleSelect.tsx";
 import Panel from "@/components/ui/Panel.tsx";
+import { sansFont, serifFont } from "@/signals/fonts.ts";
 import { autoSave } from "@/signals/preferences.ts";
 import { rightSidebarOpened } from "@/signals/sidebar.ts";
 
@@ -49,7 +50,16 @@ export default function SettingsMenu({ user }: SettingsMenuProps) {
           </li>
           <li class="flex w-full">
             <div class="form-grid w-full">
-              <AppFontSelect />
+              <FontAxisSelect
+                axis={sansFont}
+                name="sans-font"
+                label="Interface font"
+              />
+              <FontAxisSelect
+                axis={serifFont}
+                name="serif-font"
+                label="Serif font"
+              />
               <MarkStyleSelect />
             </div>
           </li>

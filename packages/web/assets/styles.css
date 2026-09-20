@@ -74,19 +74,31 @@
     font-size: 18px;
   }
 
-  html[data-app-font="atkinson"] {
+  html[data-sans-font="atkinson"] {
     --font-sans:
       "Atkinson Hyperlegible Next Variable", ui-sans-serif, system-ui,
       sans-serif;
   }
 
-  html[data-app-font="gothic"] {
+  html[data-sans-font="gothic"] {
     --font-sans:
       "Special Gothic Variable", ui-sans-serif, system-ui, sans-serif;
   }
 
-  html[data-app-font="system"] {
+  html[data-sans-font="system"] {
     --font-sans: ui-sans-serif, system-ui, sans-serif;
+  }
+
+  html[data-serif-font="vollkorn"] {
+    --font-serif: "Vollkorn Variable", ui-serif, Georgia, serif;
+  }
+
+  html[data-serif-font="plex"] {
+    --font-serif: "IBM Plex Serif", ui-serif, Georgia, serif;
+  }
+
+  html[data-serif-font="system"] {
+    --font-serif: ui-serif, Georgia, serif;
   }
 }
 

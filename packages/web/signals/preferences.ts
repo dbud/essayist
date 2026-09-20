@@ -11,18 +11,6 @@ export const highlightStyle = persistentSignal<HighlightStyle>(
   "wavy",
 );
 
-export type AppFont = "atkinson" | "gothic" | "system";
-
-const APP_FONT_DEFAULT: AppFont = "gothic";
-export const appFont = persistentSignal<AppFont>("appFont", APP_FONT_DEFAULT);
-
-// data-app-font is consumed by the font axis rules in assets/styles.css
-if (IS_BROWSER) {
-  effect(() => {
-    document.documentElement.dataset.appFont = appFont.value;
-  });
-}
-
 export type Theme = "light" | "dark";
 
 const DARK_QUERY = "(prefers-color-scheme: dark)";
