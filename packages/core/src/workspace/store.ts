@@ -1,3 +1,4 @@
+import { mapNotNullish, sortBy } from "@std/collections";
 import {
   ConcurrentModificationError,
   type Key,
@@ -160,13 +161,10 @@ export class WorkspaceStore {
     const results = await this.#adapter.getMany<Workspace>(
       wsIds.map((id) => [WORKSPACES, id]),
     );
-    return results
-      .filter(
-        (r): r is { key: Key; value: Workspace; versionstamp: string } =>
-          r !== undefined,
-      )
-      .map((r) => r.value)
-      .sort((a, b) => a.createdAt - b.createdAt);
+    return sortBy(
+      mapNotNullish(results, (r) => r?.value),
+      (workspace) => workspace.createdAt,
+    );
   }
 
   // -- members --
@@ -244,9 +242,10 @@ export class WorkspaceStore {
       MEMBERS_BY_WS,
       wsId,
     ]);
-    return entries
-      .map((e) => e.value)
-      .sort((a, b) => a.createdAt - b.createdAt);
+    return sortBy(
+      entries.map((e) => e.value),
+      (member) => member.createdAt,
+    );
   }
 
   /** Get a specific membership, or undefined if the user is not a member. */

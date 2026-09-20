@@ -1,3 +1,4 @@
+import { sortBy } from "@std/collections";
 import type { Key, PersistenceAdapter } from "@/persistence/mod.ts";
 import type { ReviewRun, ReviewRunStatus } from "./types.ts";
 
@@ -84,10 +85,13 @@ export class ReviewStore {
     path?: string;
   }): Promise<ReviewRun[]> {
     const { entries } = await this.#adapter.list<ReviewRun>([REVIEWS, wsId]);
-    return entries
-      .map((e) => e.value)
-      .filter((run) => path === undefined || run.path === path)
-      .sort((a, b) => b.startedAt - a.startedAt);
+    return sortBy(
+      entries
+        .map((e) => e.value)
+        .filter((run) => path === undefined || run.path === path),
+      (run) => run.startedAt,
+      { order: "desc" },
+    );
   }
 
   async #end(

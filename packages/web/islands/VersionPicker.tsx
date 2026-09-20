@@ -1,3 +1,4 @@
+import { sortBy } from "@std/collections";
 import { ChevronDown, CircleDashed, LockKeyhole } from "lucide-preact";
 import Dropdown, {
   DropdownItem,
@@ -113,10 +114,8 @@ export default function VersionPicker({
   versionId,
 }: VersionPickerProps) {
   const { versions } = getVersionHistory(wsId, path);
-  const list = [...versions.value].sort((a, b) => b.timestamp - a.timestamp);
-  const viewed = versionId
-    ? list.find((version) => version.version_id === versionId)
-    : undefined;
+  const list = sortBy(versions.value, (v) => v.timestamp, { order: "desc" });
+  const selected = list.find((version) => version.version_id === versionId);
   const pending = useFileLoading(wsId, path);
   const active = getFile(wsId, path).saving.value || pending;
 
@@ -135,8 +134,8 @@ export default function VersionPicker({
             swapKey={versionId ?? "latest"}
             class="swap-shift self-start"
           >
-            {viewed ? (
-              <VersionChip timestamp={viewed.timestamp} lock />
+            {selected ? (
+              <VersionChip timestamp={selected.timestamp} lock />
             ) : (
               <SaveStatus wsId={wsId} path={path} />
             )}

@@ -8,6 +8,7 @@ import {
   PromptSchema,
   ReviewPassSchema,
 } from "@essayist/core";
+import { mapNotNullish } from "@std/collections";
 
 export type FamilyKey = "pools" | "prompts" | "categories" | "passes";
 export const FAMILY_ORDER: FamilyKey[] = [
@@ -74,7 +75,7 @@ async function copyEntries<T>({
   prune,
   keep,
 }: CopyArgs<T>): Promise<{ line: string; changed: boolean }> {
-  const issues = source.map(validate).filter((s): s is string => s !== null);
+  const issues = mapNotNullish(source, validate);
   if (issues.length > 0) {
     throw new Error(`invalid ${name} in source:\n  ${issues.join("\n  ")}`);
   }

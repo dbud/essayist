@@ -1,5 +1,6 @@
 import type { Mark } from "@essayist/core";
 import { computed, createModel, signal } from "@preact/signals";
+import { sortBy } from "@std/collections";
 import type { NodeKey } from "lexical";
 import { getEditorSelection } from "@/signals/editorSelection.ts";
 import type { FileKey } from "@/signals/file.ts";
@@ -91,9 +92,9 @@ export const SidenotesModel = createModel((key: FileKey) => {
   const numbers = computed(
     (): MarkNumbers =>
       new Map(
-        [...resolved.value]
-          .sort((a, b) => a.offset - b.offset)
-          .map((item, i) => [item.thread_id, i + 1] as const),
+        sortBy(resolved.value, (mark) => mark.offset).map(
+          (item, i) => [item.thread_id, i + 1] as const,
+        ),
       ),
   );
 

@@ -1,3 +1,5 @@
+import { maxBy } from "@std/collections";
+
 interface SliderProps {
   label: string;
   value: number;
@@ -45,8 +47,9 @@ export default function Slider({
     : Math.min(lastIndex, Math.max(0, Math.round((value - min) / step)));
   const fmt = (v: number) => (format ? format(v) : String(v));
   const text = fmt(value);
-  const widest = (list ?? [min, max]).reduce((a, b) =>
-    fmt(b).length > fmt(a).length ? b : a,
+  const widestLabel = maxBy(
+    (list ?? [min, max]).map(fmt),
+    (label) => label.length,
   );
 
   return (
@@ -71,7 +74,7 @@ export default function Slider({
       />
       <span class="relative shrink-0">
         <span class="invisible" aria-hidden="true">
-          {fmt(widest)}
+          {widestLabel}
         </span>
         <span class="absolute inset-y-0 right-0" aria-hidden="true">
           {text}

@@ -1,4 +1,5 @@
 import type { FileSnapshot } from "@essayist/core";
+import { sortBy } from "@std/collections";
 import {
   ConcurrentModificationError,
   type Entry,
@@ -446,7 +447,7 @@ export class VirtualFileSystem implements VFS {
     const versions =
       (await this.#adapter.get<FileVersion[]>(this.#versionsKey(path)))
         ?.value ?? [];
-    return versions.sort((a, b) => a.timestamp - b.timestamp);
+    return sortBy(versions, (version) => version.timestamp);
   }
 
   async writeDraft(path: string, content: string): Promise<DraftSnapshot> {

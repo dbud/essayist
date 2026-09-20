@@ -1,4 +1,5 @@
 import type { Mark } from "@essayist/core";
+import { mapNotNullish } from "@std/collections";
 import { segmentMarks } from "@/editor/markSegments.ts";
 import Section from "@/islands/Section.tsx";
 import { getFile } from "@/signals/file.ts";
@@ -100,7 +101,7 @@ function buildSegments(markdown: string, marks: Mark[]): TextSegment[] {
 
   const byThread = new Map(marks.map((m) => [m.thread_id, m]));
   const resolve = (ids: readonly string[]): Mark[] =>
-    ids.map((id) => byThread.get(id)).filter((m): m is Mark => m !== undefined);
+    mapNotNullish(ids, (id) => byThread.get(id));
 
   // Non-zero marks -> non-overlapping intervals via segmentMarks; zero-length
   // marks -> point intervals at their offset. Merge by offset and walk with a

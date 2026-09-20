@@ -8,6 +8,7 @@
 // Drift check (CI): deno task -f web favicon:check
 
 import { initWasm, Resvg } from "@resvg/resvg-wasm";
+import { sumOf } from "@std/collections";
 import { formatHex } from "culori";
 import { logoMark } from "@/components/ui/logo-mark.ts";
 
@@ -45,7 +46,7 @@ export function buildIco(
 ): Uint8Array {
   const count = images.length;
   const headerSize = 6 + count * 16;
-  const dataSize = images.reduce((n, image) => n + image.data.length, 0);
+  const dataSize = sumOf(images, (image) => image.data.length);
   const buffer = new Uint8Array(headerSize + dataSize);
   const view = new DataView(buffer.buffer);
   view.setUint16(2, 1, true); // Resource type: icon.
