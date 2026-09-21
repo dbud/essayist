@@ -26,8 +26,8 @@
   --color-accent: oklch(62% 0.22 29);
   --color-surface: light-dark(oklch(99% 0 0), oklch(30% 0 0));
   --color-stroke: light-dark(
-    color-mix(in oklch, var(--color-ink) 20%, white),
-    color-mix(in oklch, var(--color-ink) 45%, black)
+    color-mix(in oklch, var(--color-ink) 30%, white),
+    color-mix(in oklch, var(--color-ink) 60%, black)
   );
   --color-opposite: light-dark(black, white);
   color-scheme: light dark;

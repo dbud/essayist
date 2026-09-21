@@ -4,4 +4,4 @@ export function isApplePlatform() {
   return IS_BROWSER && /Mac|iPhone|iPad/.test(navigator.platform);
 }
 
-export const META_KEY = isApplePlatform() ? "⌘" : "Ctrl";
+export const META_KEY = isApplePlatform() ? "⌘" : "ctrl";
