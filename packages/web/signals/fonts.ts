@@ -61,8 +61,4 @@ const SERIF_FONT_LABELS = {
 };
 export type SerifFont = keyof typeof SERIF_FONT_LABELS;
 
-export const serifFont = fontAxis(
-  SERIF_FONT_KEY,
-  SERIF_FONT_LABELS,
-  "vollkorn",
-);
+export const serifFont = fontAxis(SERIF_FONT_KEY, SERIF_FONT_LABELS, "plex");

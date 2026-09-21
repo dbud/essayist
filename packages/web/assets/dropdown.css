@@ -27,7 +27,7 @@
   @apply absolute flex flex-col isolate stack;
   top: 100%;
   left: -1px;
-  min-width: 12rem;
+  min-width: 11rem;
   z-index: var(--z-dropdown);
   animation: dropdown-in var(--dropdown-duration) ease-out;
 

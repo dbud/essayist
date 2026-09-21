@@ -30,7 +30,7 @@ export default function Sidenote({ view, editor, hidden }: SidenoteProps) {
         <span class="sidenote-number">{number}</span>
         <div class="min-w-0 flex flex-col gap-1">
           <div class="text-ink">
-            {mark.label && <span class="badge mr-2">{mark.label}</span>}
+            {mark.label && <span class="badge">{mark.label}</span>}
             <span class="min-w-0 flex-1">{mark.comment}</span>
           </div>
           {mark.status === "stale" && mark.selected_text && (

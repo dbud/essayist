@@ -47,8 +47,8 @@
     }
   }
   .sidenote {
-    --mark-active-pct: 25%;
-    @apply absolute left-0 right-0 text-left text-sm p-2 cursor-pointer border-0 appearance-none transition-[background-color,box-shadow] duration-200;
+    --mark-active-pct: 10%;
+    @apply absolute left-0 right-0 text-left text-sm p-2 cursor-pointer border-0 rounded-xs appearance-none transition-[background-color,box-shadow] duration-200;
     background-color: color-mix(in oklch, var(--color-paper) 100%, transparent);
 
     &.is-active {
@@ -134,6 +134,18 @@
   }
   .sidenote-number {
     @apply w-4 shrink-0 font-semibold;
+  }
+}
+
+.sidenote {
+  .badge {
+    @apply mr-2;
+    --slant-inset-y: 0.15rem;
+    translate: 0 -0.15em;
+  }
+  &.is-active .badge {
+    --badge-bg: var(--mark-color, var(--color-ink));
+    --badge-fg: var(--color-paper);
   }
 }
 
