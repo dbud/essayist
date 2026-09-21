@@ -1,5 +1,6 @@
 import { sortBy } from "@std/collections";
-import { ChevronDown, LockKeyhole, SquarePen } from "lucide-preact";
+import { ChevronDown, CircleDashed, LockKeyhole } from "lucide-preact";
+import type { ComponentChild } from "preact";
 import Dropdown, {
   DropdownItem,
   DropdownMenu,
@@ -35,7 +36,7 @@ function SaveStatus({ wsId, path }: FileKey) {
     ? undefined
     : (draft.value?.timestamp ?? checkpoint.value?.timestamp);
 
-  let label: string | null = null;
+  let label: ComponentChild | null = null;
   let statusKey = "";
   if (!pending) {
     statusKey = "saved";
@@ -49,12 +50,18 @@ function SaveStatus({ wsId, path }: FileKey) {
       label = "Save failed";
     } else if (dirty.value) {
       statusKey = "dirty";
-      label = autoSave.value ? "Save pending..." : "Unsaved changes";
+      label = autoSave.value ? (
+        "Save pending..."
+      ) : (
+        <>
+          <kbd>{META_KEY}</kbd>
+          <kbd>S</kbd> to save changes
+        </>
+      );
     }
   }
 
   const saved = !pending && !saving.value && !dirty.value;
-  const showHint = !pending && !saving.value && dirty.value && !autoSave.value;
 
   return (
     <span class="inline-flex items-start gap-1">
@@ -66,26 +73,16 @@ function SaveStatus({ wsId, path }: FileKey) {
           {saved ? (
             <CircleCheckIcon size={14} class="text-ink" />
           ) : (
-            <SquarePen size={14} class="pulse-accent-ink" />
+            <CircleDashed
+              size={14}
+              class="text-accent animate-[spin_3s_linear_infinite]"
+            />
           )}
         </Swappable>
       )}
-      {showHint ? (
-        <span class="flex flex-col items-start gap-1 leading-none">
-          <Swappable swapKey={statusKey} class="swap-shift">
-            {label}
-          </Swappable>
-          <span class="text-[0.7rem] text-ink opacity-50 hover:opacity-100">
-            <kbd>{META_KEY}</kbd>
-            <kbd>S</kbd>
-            {" to save"}
-          </span>
-        </span>
-      ) : (
-        <Swappable swapKey={statusKey} class="swap-shift">
-          {label}
-        </Swappable>
-      )}
+      <Swappable swapKey={statusKey} class="swap-shift">
+        {label}
+      </Swappable>
     </span>
   );
 }
@@ -123,7 +120,7 @@ export default function VersionPicker({
   return (
     <Dropdown
       // tooltip="Version history" TODO -- rework tooltip
-      triggerClass="cell cell--data cursor-pointer relative w-52 whitespace-nowrap"
+      triggerClass="btn relative w-52 whitespace-nowrap"
       trigger={
         <>
           <WaveBars fill amplitude={active ? 0.5 : 0} class="text-ink" />
