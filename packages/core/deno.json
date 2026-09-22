@@ -2,7 +2,7 @@
   "exports": "./mod.ts",
   "imports": {
     "@/": "./src/",
-    "zod": "npm:zod@^4.6.2"
+    "zod": "npm:zod@^4.6.5"
   },
   "lint": {
     "rules": {
