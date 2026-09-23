@@ -79,7 +79,7 @@
   },
   "name": "@essayist/web",
   "tasks": {
-    "build": "vite build",
+    "build": "DENO_V8_FLAGS=--max-old-space-size=2048 NODE_OPTIONS=--max-old-space-size=2048 vite build",
     "check": "deno run -A npm:@biomejs/biome check && deno lint . && deno check",
     "dev": "DENO_ENV=development DENO_KV_PATH=./local-kv.sqlite3 vite | pino-pretty --colorize --translateTime SYS:standard --ignore pid,hostname",
     "favicon": "deno run -A favicon/generate.ts",
