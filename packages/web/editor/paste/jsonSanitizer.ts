@@ -49,10 +49,11 @@ export class JsonSanitizer {
         return this.#linkToMarkdownText(record);
       case "heading": {
         const tag = typeof record.tag === "string" ? record.tag : "h1";
-        const element = this.#policy.allowedHeadingTags.has(tag)
-          ? record
-          : { ...record, type: "paragraph", tag: undefined };
-        return [this.#sanitizeElement(element)];
+        if (this.#policy.allowedHeadingTags.has(tag)) {
+          return [this.#sanitizeElement(record)];
+        }
+        const { tag: _dropped, ...demoted } = record;
+        return [this.#sanitizeElement({ ...demoted, type: "paragraph" })];
       }
       default:
         if (this.#policy.allowedBlocks.has(record.type)) {

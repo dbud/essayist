@@ -57,6 +57,7 @@
     "date-fns": "npm:date-fns@^4.4.0",
     "dompurify": "npm:dompurify@^3.4.15",
     "fresh": "jsr:@fresh/core@^2.3.3",
+    "happy-dom": "npm:happy-dom@^20.14.5",
     "jose": "npm:jose@^6.2.12",
     "lexical": "npm:lexical@^0.51.0",
     "lucide-preact": "npm:lucide-preact@^1.47.0",
