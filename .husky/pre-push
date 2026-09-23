@@ -1,0 +1,9 @@
+# Block any push that targets refs/heads/main unless the source is main
+# itself. Deliberate override: git push --no-verify.
+while read -r local_ref local_sha remote_ref remote_sha; do
+  if [ "$remote_ref" = "refs/heads/main" ] && [ "$local_ref" != "refs/heads/main" ]; then
+    echo "refusing to push $local_ref to main" >&2
+    echo "push a feature branch, or switch to main and fast-forward" >&2
+    exit 1
+  fi
+done
