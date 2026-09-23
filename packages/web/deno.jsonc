@@ -29,6 +29,7 @@
     "@fontsource-variable/vollkorn": "npm:@fontsource-variable/vollkorn@^5.3.0",
     "@fontsource/ibm-plex-serif": "npm:@fontsource/ibm-plex-serif@^5.3.0",
     "@fresh/plugin-vite": "jsr:@fresh/plugin-vite@^1.1.2",
+    "@lexical/clipboard": "npm:@lexical/clipboard@^0.51.0",
     "@lexical/code": "npm:@lexical/code@^0.51.0",
     "@lexical/extension": "npm:@lexical/extension@^0.51.0",
     "@lexical/headless": "npm:@lexical/headless@^0.51.0",

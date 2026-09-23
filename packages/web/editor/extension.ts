@@ -22,6 +22,7 @@ import type {
 import { CaretExtension } from "./caretExtension.ts";
 import { MarksExtension } from "./markExtension.ts";
 import { MarksAtCursorExtension } from "./marksAtCursorExtension.ts";
+import { PastePolicyExtension } from "./paste/pastePolicyExtension.ts";
 import { SidenoteExtension } from "./sidenoteExtension.ts";
 import { ToolbarStateExtension } from "./toolbarStateExtension.ts";
 
@@ -68,6 +69,7 @@ export function createEditorExtension(
       ListExtension,
       CodeExtension,
       HorizontalRuleExtension,
+      PastePolicyExtension,
       configExtension(MarksExtension, {
         path,
         resolved,
