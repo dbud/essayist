@@ -1,3 +1,4 @@
+import "@/utils/sentry.server.ts";
 import { App, staticFiles } from "fresh";
 import type { State } from "@/define.ts";
 import authMiddleware from "@/middleware/auth.ts";
