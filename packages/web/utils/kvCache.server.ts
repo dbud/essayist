@@ -1,3 +1,4 @@
+import { logger } from "@essayist/core";
 import { bumpKey, watchKey } from "@/utils/kvWatch.server.ts";
 
 /**
@@ -56,7 +57,7 @@ export function cached<S>(
     gen++;
     value = undefined;
     filledAt = 0;
-    console.debug(`kvCache: ${name} invalidated (${reason})`);
+    logger.debug({ cache: name, reason }, "kvCache invalidated");
   }
 
   function fill(reason: string): Promise<S> {
@@ -70,12 +71,12 @@ export function cached<S>(
         if (g === gen) {
           value = fresh;
           filledAt = Date.now();
-          console.debug(`kvCache: ${name} revalidated (${reason})`);
+          logger.debug({ cache: name, reason }, "kvCache revalidated");
         }
         return fresh;
       })
       .catch((err) => {
-        console.error(`kvCache: ${name} refresh failed (${reason})`, err);
+        logger.error({ err, cache: name, reason }, "kvCache refresh failed");
         throw err;
       })
       .finally(() => {

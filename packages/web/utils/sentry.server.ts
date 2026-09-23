@@ -8,6 +8,7 @@ if (dsn) {
   Sentry.init({
     dsn,
     environment: Deno.env.get("DENO_ENV") ?? "production",
+    release: Deno.env.get("DENO_DEPLOYMENT_ID"),
     dataCollection: {
       httpBodies: [],
       httpHeaders: false,

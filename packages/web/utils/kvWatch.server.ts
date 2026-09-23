@@ -6,6 +6,7 @@
  * only the new versionstamp matters).
  */
 
+import { reportError } from "@/utils/reportError.server.ts";
 import {
   type SupervisedStream,
   supervise,
@@ -103,6 +104,6 @@ export async function bumpKey(kv: Deno.Kv, key: Deno.KvKey): Promise<void> {
   try {
     await kv.set(key, Date.now());
   } catch (err) {
-    console.error(`kvWatch: bump failed for ${keyId(key)}`, err);
+    reportError(`kvWatch: bump failed for ${keyId(key)}`, err);
   }
 }

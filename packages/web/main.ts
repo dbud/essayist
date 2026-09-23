@@ -4,6 +4,7 @@ import type { State } from "@/define.ts";
 import authMiddleware from "@/middleware/auth.ts";
 import compressMiddleware from "@/middleware/compress.ts";
 import modelsMiddleware from "@/middleware/models.ts";
+import requestLogMiddleware from "@/middleware/requestLog.ts";
 import sentryMiddleware from "@/middleware/sentry.ts";
 import "@/signals/categories.server.ts";
 import "@/signals/file.server.ts";
@@ -14,6 +15,7 @@ import "@/signals/workspace.server.ts";
 export const app: App<State> = new App<State>()
   .use(compressMiddleware)
   .use(staticFiles())
+  .use(requestLogMiddleware)
   .use(authMiddleware)
   .use(sentryMiddleware)
   .use(modelsMiddleware);

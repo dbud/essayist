@@ -6,6 +6,7 @@
  * with the per-run state that `start` creates before each open.
  */
 
+import { logger } from "@essayist/core";
 import { delay } from "@/utils/delay.ts";
 
 /** Delay before the first stream reconnect (doubling, capped). */
@@ -116,7 +117,7 @@ async function runStream<T, S>(
       await it.return?.();
     }
   } catch (err) {
-    console.error(`${hooks.name}: stream failed`, err);
+    logger.warn({ err, stream: hooks.name }, "stream failed");
   }
   return signal.fired ? "restarted" : delivered ? "delivered" : "failed";
 }
