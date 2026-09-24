@@ -5,9 +5,6 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
-    ignore:
-      - dependency-name: "vite"
-        versions: [">=8"]
     groups:
       minor-and-patch:
         update-types:
