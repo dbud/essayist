@@ -7,7 +7,14 @@ Deno.test("ReviewProgressTracker -- emits initial state on construction", () => 
   const events: ReviewProgress[] = [];
   new ReviewProgressTracker((p) => events.push(p));
 
-  assertEquals(events, [{ phase: "working", notes: 0 }]);
+  assertEquals(events, [
+    {
+      stepId: undefined,
+      stepName: undefined,
+      phase: "working",
+      notes: 0,
+    },
+  ]);
 });
 
 Deno.test("ReviewProgressTracker -- derives step phases and note counts", () => {
@@ -72,7 +79,12 @@ Deno.test("ReviewProgressTracker -- derives step phases and note counts", () => 
   for (const event of sequence) tracker.handle(event);
 
   assertEquals(events, [
-    { phase: "working", notes: 0 },
+    {
+      stepId: undefined,
+      stepName: undefined,
+      phase: "working",
+      notes: 0,
+    },
     {
       stepId: "understand",
       stepName: "Understand",

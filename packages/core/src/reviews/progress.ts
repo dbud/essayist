@@ -62,12 +62,11 @@ export class ReviewProgressTracker {
   }
 
   #emit(): void {
-    const progress: ReviewProgress = {
+    this.#onProgress({
+      stepId: this.#stepId,
+      stepName: this.#stepName,
       phase: this.#phase,
       notes: this.#notes,
-    };
-    if (this.#stepId !== undefined) progress.stepId = this.#stepId;
-    if (this.#stepName !== undefined) progress.stepName = this.#stepName;
-    this.#onProgress(progress);
+    });
   }
 }
