@@ -16,6 +16,14 @@ Local changes, taken from https://github.com/freshframework/fresh/pull/3760
     environments. The SSR block adds an `onwarn` filter and externalizes
     `.cjs` files to work around "Cannot use export statement outside a
     module" errors in the SSR build.
+  - New `fresh()` option `environmentsWithoutPatches: string[]`: Vite
+    environment names that skip the `fresh:patches` babel transforms.
+    Used by the app for its `worker` environment (first-party TS + ESM
+    glue only), which cuts ~13s of babel CPU per build.
+- `src/plugins/patches.ts`
+  - Accepts the environment skip list and gates `applyToEnvironment`
+    on it; `sourceMaps: false` in build mode (the production build
+    emits no source maps, so generating them was wasted work).
 - `src/plugins/deno.ts`
   - Drop the `resolvedBy !== "vite:resolve"` check (rolldown does not
     support `resolvedBy`).

@@ -10,7 +10,13 @@ import { removePolyfills } from "./patches/remove_polyfills.ts";
 // @ts-expect-error Workaround for https://github.com/denoland/deno/issues/30850
 const { default: babelReact } = await import("npm:@babel/preset-react@^7.27.1");
 
-export function patches(): Plugin {
+// Necessary conditions for any of the patch visitors to apply. If none
+// of these appear in the source, babel cannot change the module, so we
+// skip the parse entirely.
+const PATCH_TRIGGER =
+  /@jsx|\brequire\b|\bexports\b|\bmodule\.exports\b|__esModule|\bprocess\b|\bDeno\.env\b|String\.fromCodePoint|Object\.keys|Object\.create|useLegacyCrypto/;
+
+export function patches(skipEnvironments: readonly string[] = []): Plugin {
   let isDev = false;
 
   return {
@@ -19,14 +25,15 @@ export function patches(): Plugin {
     config(_, env) {
       isDev = env.command === "serve";
     },
-    applyToEnvironment() {
-      return true;
+    applyToEnvironment(env) {
+      return !skipEnvironments.includes(env.name);
     },
     transform: {
       filter: {
         id: JS_REG,
       },
       handler(code, id) {
+        if (!PATCH_TRIGGER.test(code)) return null;
         const presets = [];
         if (this.environment.config.consumer === "client" && JSX_REG.test(id)) {
           presets.push([
@@ -56,7 +63,7 @@ export function patches(): Plugin {
           compact: false,
           plugins,
           presets,
-          sourceMaps: "both",
+          sourceMaps: isDev ? "both" : false,
         });
 
         if (res?.code) {

@@ -72,12 +72,22 @@ export interface FreshViteConfig {
    * are not imported in Islands running in the browser.
    */
   checkImports?: ImportCheck[];
+  /**
+   * Vite environment names that should skip the fresh transform
+   * patches (babel). Useful for custom environments that only bundle
+   * first-party ESM code, e.g. a web worker environment.
+   */
+  environmentsWithoutPatches?: string[];
 }
 
 export type ResolvedFreshViteConfig = Required<
-  Omit<FreshViteConfig, "islandSpecifiers" | "staticDir">
+  Omit<
+    FreshViteConfig,
+    "islandSpecifiers" | "staticDir" | "environmentsWithoutPatches"
+  >
 > & {
   staticDir: string[];
   islandSpecifiers: Map<string, string>;
+  environmentsWithoutPatches: string[];
   namer: UniqueNamer;
 };

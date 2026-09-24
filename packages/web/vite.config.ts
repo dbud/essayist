@@ -46,7 +46,7 @@ export default defineConfig({
   plugins: [
     assetGenerate(),
     serveWorkers(),
-    fresh(),
+    fresh({ environmentsWithoutPatches: ["worker"] }),
     tailwindcss(),
     watchCore(),
   ],

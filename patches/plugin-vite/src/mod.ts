@@ -66,6 +66,7 @@ export function fresh(config?: FreshViteConfig): Plugin[] {
     islandSpecifiers: new Map(),
     namer: new UniqueNamer(),
     checkImports: config?.checkImports ?? [],
+    environmentsWithoutPatches: config?.environmentsWithoutPatches ?? [],
   };
 
   fConfig.checkImports.push((id, env) => {
@@ -316,7 +317,7 @@ export function fresh(config?: FreshViteConfig): Plugin[] {
       },
     },
     serverEntryPlugin(fConfig),
-    patches(),
+    patches(fConfig.environmentsWithoutPatches),
     ...serverSnapshot(fConfig),
     clientEntryPlugin(fConfig),
     ...clientSnapshot(fConfig),
