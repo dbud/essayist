@@ -70,7 +70,7 @@
     "react": "npm:preact@^10.29.8/compat",
     "react-dom": "npm:preact@^10.29.8/compat",
     "tailwindcss": "npm:tailwindcss@^4.3.3",
-    "vite": "npm:vite@^7.3.6"
+    "vite": "npm:vite@^8.3.0"
   },
   "lint": {
     "rules": {
@@ -79,9 +79,9 @@
   },
   "name": "@essayist/web",
   "tasks": {
-    "build": "DENO_V8_FLAGS=--max-old-space-size=2048 NODE_OPTIONS=--max-old-space-size=2048 vite build",
+    "build": "vite --configLoader=native build",
     "check": "deno run -A npm:@biomejs/biome check && deno lint . && deno check",
-    "dev": "DENO_ENV=development DENO_KV_PATH=./local-kv.sqlite3 vite | pino-pretty --colorize --translateTime SYS:standard --ignore pid,hostname",
+    "dev": "DENO_ENV=development DENO_KV_PATH=./local-kv.sqlite3 vite --configLoader=native | pino-pretty --colorize --translateTime SYS:standard --ignore pid,hostname",
     "favicon": "deno run -A favicon/generate.ts",
     "favicon:check": "deno run -A favicon/generate.ts --check",
     "start": "deno serve -A _fresh/server.js",
