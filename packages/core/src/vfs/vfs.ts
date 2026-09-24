@@ -280,6 +280,7 @@ export class VirtualFileSystem implements VFS {
       threadId,
       contextSpan = DEFAULT_CONTEXT_SPAN,
       versionId,
+      provenance,
     }: MarkOptions = {},
   ): Promise<MarkResult> {
     const snapshot = await this.#getSnapshot(path, versionId);
@@ -316,6 +317,7 @@ export class VirtualFileSystem implements VFS {
       offset,
       length: selectedText.length,
       status: "resolved",
+      ...(provenance && { meta: provenance }),
     };
 
     await this.#saveMark(mark);

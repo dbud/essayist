@@ -82,6 +82,7 @@ export type {
   GrepResult,
   Mark,
   MarkOptions,
+  MarkProvenance,
   MarkResult,
   MarkStatus,
   ReadOptions,
