@@ -1,3 +1,7 @@
+// Parked during the multipass rework. The replay tests cover the single-pass
+// trace event shape; they return with the step-based trace format.
+
+/*
 import type {
   ReviewProgress,
   ReviewTraceEvent,
@@ -15,7 +19,7 @@ function traced(
   return { seq, at, ...event };
 }
 
-/** A trace with gaps long enough to make timing scaling visible. */
+// A trace with gaps long enough to make timing scaling visible.
 function sampleTrace(): TracedReviewEvent[] {
   return [
     traced(0, 1000, { type: "input", text: "review this" }),
@@ -177,3 +181,4 @@ Deno.test("parseReplayParams -- invalid speed falls back to 1", () => {
     });
   }
 });
+*/

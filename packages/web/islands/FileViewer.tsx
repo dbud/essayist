@@ -9,7 +9,7 @@ import Editor from "@/islands/Editor.tsx";
 import EditorToolbar from "@/islands/EditorToolbar.tsx";
 import FileStats from "@/islands/FileStats.tsx";
 import FontSelect from "@/islands/FontSelect.tsx";
-import SidenoteControls from "@/islands/SidenoteControls.tsx";
+// import SidenoteControls from "@/islands/SidenoteControls.tsx";
 import VersionPicker from "@/islands/VersionPicker.tsx";
 import { activeEditor } from "@/signals/activeEditor.ts";
 import { getEditorSelection } from "@/signals/editorSelection.ts";
@@ -80,9 +80,9 @@ function FileViewerBody({ wsId, path, versionId }: FileKey) {
             </div>
           </div>
           <div class="content-side flex items-center">
-            {!editorLoading && (
+            {/* {!editorLoading && (
               <SidenoteControls wsId={wsId} path={path} versionId={versionId} />
-            )}
+            )} */}
           </div>
         </div>
       </div>

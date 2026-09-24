@@ -1,3 +1,15 @@
+// Parked during the multipass rework. The trace viewer renders round and
+// tool events from the single-pass runner; it returns with the step-based
+// trace format.
+
+export const handler = {
+  GET: () =>
+    new Response("trace viewer is parked during the multipass rework", {
+      status: 404,
+    }),
+};
+
+/*
 import type {
   ReviewRun,
   ReviewRunStatus,
@@ -49,7 +61,7 @@ function statusBadge(status: ReviewRunStatus) {
   return <span class={classes}>{status}</span>;
 }
 
-/** Editor URL that opens this run's file in replay mode. */
+// Editor URL that opens this run's file in replay mode.
 function replayHref(run: ReviewRun): string {
   return (
     `/?ws=${encodeURIComponent(run.wsId)}` +
@@ -62,12 +74,12 @@ function duration(ms: number): string {
   return `${(ms / 1000).toFixed(1)}s`;
 }
 
-/** Offsets and short durations: ms below a second, seconds above. */
+// Offsets and short durations: ms below a second, seconds above.
 function formatElapsed(ms: number): string {
   return ms < 1000 ? `${ms}ms` : `${(ms / 1000).toFixed(1)}s`;
 }
 
-/** Truncated payloads arrive as string prefixes; others render as JSON. */
+// Truncated payloads arrive as string prefixes; others render as JSON.
 function pretty(value: unknown): string {
   return typeof value === "string"
     ? value
@@ -81,10 +93,8 @@ interface RoundGroup {
   events: TracedReviewEvent[];
 }
 
-/**
- * Group the trace by round. Tool outputs arrive after their round's
- * round_end, so they are filed by the round recorded on the event.
- */
+// Group the trace by round. Tool outputs arrive after their round's
+// round_end, so they are filed by the round recorded on the event.
 function groupRounds(trace: TracedReviewEvent[]) {
   const input = trace.find((e) => e.type === "input");
   const rounds: RoundGroup[] = [];
@@ -139,7 +149,7 @@ function TokenUsage({
   );
 }
 
-/** Full-width ink section row inside the trace table. */
+// Full-width ink section row inside the trace table.
 function SectionHeader({
   title,
   meta,
@@ -431,3 +441,4 @@ export default function ReviewTracePage({
     </div>
   );
 }
+*/

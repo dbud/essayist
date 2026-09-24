@@ -1,3 +1,11 @@
+// Parked during the multipass rework. Review controls return with the new
+// runner and step-based progress.
+
+export default function SidenoteControls() {
+  return null;
+}
+
+/*
 import type { ReviewProgress } from "@essayist/core";
 import { ChevronDown, Highlighter, RotateCcw, X } from "lucide-preact";
 import { useMemo } from "preact/hooks";
@@ -138,3 +146,4 @@ export default function SidenoteControls({ wsId, path, versionId }: FileKey) {
     </div>
   );
 }
+*/
