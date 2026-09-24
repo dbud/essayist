@@ -66,3 +66,23 @@ jobs:
 
       - name: Favicon freshness
         run: deno task -f web favicon:check
+
+      # Production deploy: gated to pushes on main, after every check
+      # above. The deploy packer skips gitignored paths, so the artifact
+      # is staged outside the workspace before uploading.
+      - name: Build
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: deno task -f web build
+
+      - name: Stage build artifact
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          mkdir -p "$RUNNER_TEMP/artifact"
+          cp -R packages/web/_fresh/. "$RUNNER_TEMP/artifact/"
+
+      - name: Deploy to Deno Deploy
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        working-directory: ${{ runner.temp }}/artifact
+        env:
+          DENO_DEPLOY_TOKEN: ${{ secrets.DENO_DEPLOY_TOKEN }}
+        run: deno deploy --org dbud --app essayist --prod --json --non-interactive .
