@@ -42,7 +42,7 @@ export type Category = z.infer<typeof CategorySchema>;
 // -- review passes --
 
 /** What a step produces. */
-export const StepKindSchema = z.enum(["understand", "mark", "synthesize"]);
+export const StepKindSchema = z.enum(["analyze", "mark", "synthesize"]);
 export type StepKind = z.infer<typeof StepKindSchema>;
 
 /**

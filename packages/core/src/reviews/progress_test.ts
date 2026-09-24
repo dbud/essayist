@@ -24,13 +24,13 @@ Deno.test("ReviewProgressTracker -- derives step phases and note counts", () => 
   const sequence: ReviewTraceEvent[] = [
     {
       type: "step_start",
-      stepId: "understand",
-      stepName: "Understand",
-      kind: "understand",
+      stepId: "analyze",
+      stepName: "Analyze",
+      kind: "analyze",
     },
-    { type: "step_input", stepId: "understand", text: "secret" },
-    { type: "step_output", stepId: "understand", output: { thesis: "x" } },
-    { type: "step_end", stepId: "understand" },
+    { type: "step_input", stepId: "analyze", text: "secret" },
+    { type: "step_output", stepId: "analyze", output: { thesis: "x" } },
+    { type: "step_end", stepId: "analyze" },
     {
       type: "step_start",
       stepId: "mechanics",
@@ -86,8 +86,8 @@ Deno.test("ReviewProgressTracker -- derives step phases and note counts", () => 
       notes: 0,
     },
     {
-      stepId: "understand",
-      stepName: "Understand",
+      stepId: "analyze",
+      stepName: "Analyze",
       phase: "analyzing",
       notes: 0,
     },

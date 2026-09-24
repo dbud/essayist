@@ -26,12 +26,12 @@ Deno.test("TraceRecorder -- persists events with ordered seq and timestamps", as
   const { trace, derived } = await recorded([
     {
       type: "step_start",
-      stepId: "understand",
-      stepName: "Understand",
-      kind: "understand",
+      stepId: "analyze",
+      stepName: "Analyze",
+      kind: "analyze",
     },
-    { type: "step_input", stepId: "understand", text: "read the essay" },
-    { type: "step_end", stepId: "understand" },
+    { type: "step_input", stepId: "analyze", text: "read the essay" },
+    { type: "step_end", stepId: "analyze" },
   ]);
 
   assertEquals(derived.length, 3);
@@ -79,12 +79,12 @@ Deno.test("TraceRecorder -- oversized step outputs are truncated", async () => {
   const { trace } = await recorded([
     {
       type: "step_output",
-      stepId: "understand",
+      stepId: "analyze",
       output: { text: "x".repeat(15_000) },
     },
     {
       type: "step_output",
-      stepId: "understand",
+      stepId: "analyze",
       output: { text: "x".repeat(17_000) },
     },
   ]);

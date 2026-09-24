@@ -25,7 +25,7 @@ export const seedConfig = new Command<KvctlGlobals>()
           body: "You are an experienced editor and writing teacher. You review the user's literary work and leave constructive, specific annotations. You never rewrite the work; you only read and judge it.",
         },
         {
-          key: "directive.understand",
+          key: "directive.analyze",
           body: "Read the essay carefully. Describe the piece as its ideal reader would experience it: restate the thesis in your own words, name the intended audience, list the main claims in the order they are made, sketch a paragraph map keyed by line numbers, and note where the writing is strong and where a skeptical reader is likely to resist. Ground every observation in the text.",
         },
         {
@@ -88,11 +88,11 @@ export const seedConfig = new Command<KvctlGlobals>()
       const reviewPassId = "essay-review";
       const steps = [
         {
-          id: "understand",
-          name: "Understand",
-          kind: "understand" as const,
+          id: "analyze",
+          name: "Analyze",
+          kind: "analyze" as const,
           systemPromptKey,
-          directivePromptKey: "directive.understand",
+          directivePromptKey: "directive.analyze",
         },
         {
           id: "mechanics",
@@ -111,7 +111,7 @@ export const seedConfig = new Command<KvctlGlobals>()
           directivePromptKey: "directive.structure",
           instructionsPromptKey: "instructions.marks",
           allowedCategoryIds: ["structure"],
-          artifactsFromStepIds: ["understand"],
+          artifactsFromStepIds: ["analyze"],
         },
         {
           id: "argument",
@@ -121,7 +121,7 @@ export const seedConfig = new Command<KvctlGlobals>()
           directivePromptKey: "directive.argument",
           instructionsPromptKey: "instructions.marks",
           allowedCategoryIds: ["thesis", "evidence"],
-          artifactsFromStepIds: ["understand"],
+          artifactsFromStepIds: ["analyze"],
         },
         {
           id: "synthesize",

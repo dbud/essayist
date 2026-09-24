@@ -51,9 +51,9 @@ Deno.test("ReviewStore -- setRunSteps replaces step records", async () => {
   const startedAt = Date.now();
   const steps: StepRun[] = [
     {
-      stepId: "understand",
-      name: "Understand",
-      kind: "understand",
+      stepId: "analyze",
+      name: "Analyze",
+      kind: "analyze",
       status: "completed",
       startedAt,
       completedAt: startedAt + 100,

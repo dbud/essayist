@@ -22,7 +22,7 @@ export interface ReviewProgress {
 }
 
 const KIND_PHASE: Record<StepKind, ReviewPhase> = {
-  understand: "analyzing",
+  analyze: "analyzing",
   mark: "marking",
   synthesize: "summarizing",
 };

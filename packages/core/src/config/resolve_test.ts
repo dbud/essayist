@@ -29,7 +29,7 @@ async function seedFullConfig(store: ConfigStore) {
   });
   await store.savePrompt({ key: "system.reviewer", body: "You are {{role}}." });
   await store.savePrompt({
-    key: "directive.understand",
+    key: "directive.analyze",
     body: "Describe the piece as {{role}} would read it.",
   });
   await store.savePrompt({
@@ -70,11 +70,11 @@ async function seedFullConfig(store: ConfigStore) {
     variables: { role: "an editor" },
     steps: [
       {
-        id: "understand",
-        name: "Understand",
-        kind: "understand",
+        id: "analyze",
+        name: "Analyze",
+        kind: "analyze",
         systemPromptKey: "system.reviewer",
-        directivePromptKey: "directive.understand",
+        directivePromptKey: "directive.analyze",
       },
       {
         id: "mechanics",
@@ -93,7 +93,7 @@ async function seedFullConfig(store: ConfigStore) {
         systemPromptKey: "system.reviewer",
         directivePromptKey: "directive.argument",
         allowedCategoryIds: ["thesis", "evidence"],
-        artifactsFromStepIds: ["understand"],
+        artifactsFromStepIds: ["analyze"],
       },
       {
         id: "synthesize",
@@ -116,17 +116,17 @@ Deno.test("resolveActiveReviewPass -- resolves the active pass step by step", as
   assertEquals(resolved.pass.id, "essay-review");
   assertEquals(resolved.steps.length, 4);
 
-  const [understand, mechanics, argument, synthesize] = resolved.steps;
-  assertEquals(understand.step.id, "understand");
-  assertEquals(understand.modelRefs, FREE_MODELS);
-  assertEquals(understand.apiKeyEnvKey, "OPENROUTER_API_KEY");
-  assertEquals(understand.systemPrompt, "You are an editor.");
+  const [analyze, mechanics, argument, synthesize] = resolved.steps;
+  assertEquals(analyze.step.id, "analyze");
+  assertEquals(analyze.modelRefs, FREE_MODELS);
+  assertEquals(analyze.apiKeyEnvKey, "OPENROUTER_API_KEY");
+  assertEquals(analyze.systemPrompt, "You are an editor.");
   assertEquals(
-    understand.directive,
+    analyze.directive,
     "Describe the piece as an editor would read it.",
   );
-  assertEquals(understand.instructions, "");
-  assertEquals(understand.categories, []);
+  assertEquals(analyze.instructions, "");
+  assertEquals(analyze.categories, []);
 
   assertEquals(mechanics.allowedLabels, ["grammar"]);
   assertEquals(
@@ -368,7 +368,7 @@ Deno.test("resolveActiveReviewPass -- throws on forward artifactsFromStepIds", a
       {
         id: "first",
         name: "First",
-        kind: "understand",
+        kind: "analyze",
         systemPromptKey: "sys",
         directivePromptKey: "sys",
         artifactsFromStepIds: ["second"],
@@ -376,7 +376,7 @@ Deno.test("resolveActiveReviewPass -- throws on forward artifactsFromStepIds", a
       {
         id: "second",
         name: "Second",
-        kind: "understand",
+        kind: "analyze",
         systemPromptKey: "sys",
         directivePromptKey: "sys",
       },
@@ -402,7 +402,7 @@ Deno.test("resolveActiveReviewPass -- throws on unknown artifactsFromStepIds", a
       {
         id: "early",
         name: "Early",
-        kind: "understand",
+        kind: "analyze",
         systemPromptKey: "sys",
         directivePromptKey: "sys",
         artifactsFromStepIds: ["ghost"],
@@ -427,9 +427,9 @@ Deno.test("resolveActiveReviewPass -- throws on non-mark step with categories", 
     modelPoolId: "pool",
     steps: [
       {
-        id: "understand",
-        name: "Understand",
-        kind: "understand",
+        id: "analyze",
+        name: "Analyze",
+        kind: "analyze",
         systemPromptKey: "sys",
         directivePromptKey: "sys",
         allowedCategoryIds: ["c"],
@@ -440,6 +440,6 @@ Deno.test("resolveActiveReviewPass -- throws on non-mark step with categories", 
   await assertRejects(
     () => resolveActiveReviewPass(store),
     ConfigInvalidError,
-    "is understand but sets allowedCategoryIds",
+    "is analyze but sets allowedCategoryIds",
   );
 });

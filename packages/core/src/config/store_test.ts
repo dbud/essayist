@@ -29,9 +29,9 @@ Deno.test("ConfigStore -- CRUD round-trips", async () => {
     modelPoolId: "p",
     steps: [
       {
-        id: "understand",
-        name: "Understand",
-        kind: "understand" as const,
+        id: "analyze",
+        name: "Analyze",
+        kind: "analyze" as const,
         systemPromptKey: "sys",
         directivePromptKey: "sys",
       },
@@ -65,9 +65,9 @@ Deno.test("ConfigStore -- active pin set and clear", async () => {
     modelPoolId: "pool",
     steps: [
       {
-        id: "understand",
-        name: "Understand",
-        kind: "understand",
+        id: "analyze",
+        name: "Analyze",
+        kind: "analyze",
         systemPromptKey: "sys",
         directivePromptKey: "sys",
       },
@@ -92,9 +92,9 @@ Deno.test("ConfigStore -- list helpers", async () => {
     modelPoolId: "p",
     steps: [
       {
-        id: "understand",
-        name: "Understand",
-        kind: "understand",
+        id: "analyze",
+        name: "Analyze",
+        kind: "analyze",
         systemPromptKey: "k",
         directivePromptKey: "k",
       },
