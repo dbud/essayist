@@ -1,6 +1,10 @@
+import type { StepKind } from "@/config/types.ts";
+
 export type ReviewRunStatus = "running" | "completed" | "failed";
 
-/** A single review pass over one file in a workspace. */
+export type StepRunStatus = "running" | "completed" | "failed" | "skipped";
+
+/** A review pass run over one file in a workspace. */
 export interface ReviewRun {
   id: string;
   wsId: string;
@@ -11,10 +15,29 @@ export interface ReviewRun {
   startedAt: number;
   completedAt?: number;
   error?: string;
+  /** Final summary text, from the synthesize step when present. */
   summary?: string;
+  /** One record per pass step, in pass order. */
+  steps: StepRun[];
 }
 
-/** Normalized token usage for one model round. */
+export interface StepRun {
+  stepId: string;
+  name: string;
+  kind: StepKind;
+  status: StepRunStatus;
+  startedAt: number;
+  completedAt?: number;
+  error?: string;
+  /** Model ref that served the step's call, when known. */
+  model?: string;
+  marksProposed?: number;
+  marksPlaced?: number;
+  marksFailed?: number;
+  repairRoundsUsed?: number;
+}
+
+/** Normalized token usage for one model call. */
 export interface ReviewTraceUsage {
   inputTokens: number;
   outputTokens: number;
@@ -24,33 +47,37 @@ export interface ReviewTraceUsage {
   cost?: number;
 }
 
+/** One proposed mark and its application result. */
+export interface MarkAttempt {
+  selected_text: string;
+  comment: string;
+  label?: string;
+  line_hint?: number;
+  marked: boolean;
+  mark_id?: string;
+  thread_id?: string;
+  error?: string;
+}
+
 /**
- * One recorded event from a review run's agent loop, ordered by `seq`.
- * Rounds use the SDK's turn numbering: 0 is the initial request.
+ * One recorded event from a review run, ordered by `seq`. Events are
+ * step-scoped: structured steps emit input/output, mark steps additionally
+ * emit application and repair events.
  */
 export type ReviewTraceEvent =
-  | { type: "input"; text: string }
-  | { type: "round_start"; round: number }
-  | { type: "reasoning"; round: number; text: string }
-  | { type: "message"; round: number; text: string }
+  | { type: "step_start"; stepId: string; stepName: string; kind: StepKind }
+  | { type: "step_input"; stepId: string; text: string }
   | {
-      type: "tool_call";
-      round: number;
-      callId: string;
-      name: string;
-      args: unknown;
-      truncated?: boolean;
-    }
-  | {
-      type: "tool_output";
-      round: number;
-      callId: string;
+      type: "step_output";
+      stepId: string;
       output: unknown;
       truncated?: boolean;
     }
-  | { type: "round_end"; round: number }
-  | { type: "usage"; round: number; usage: ReviewTraceUsage }
-  | { type: "error"; round?: number; error: string };
+  | { type: "marks_applied"; stepId: string; attempts: MarkAttempt[] }
+  | { type: "step_repair"; stepId: string; round: number }
+  | { type: "step_end"; stepId: string }
+  | { type: "step_error"; stepId?: string; error: string }
+  | { type: "usage"; stepId: string; usage: ReviewTraceUsage };
 
 /** ReviewTraceEvent with its seq and wall-clock timestamp. */
 export type TracedReviewEvent = ReviewTraceEvent & {

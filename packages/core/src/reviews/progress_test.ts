@@ -7,76 +7,92 @@ Deno.test("ReviewProgressTracker -- emits initial state on construction", () => 
   const events: ReviewProgress[] = [];
   new ReviewProgressTracker((p) => events.push(p));
 
-  assertEquals(events, [{ phase: "working", round: 0, notes: 0 }]);
+  assertEquals(events, [{ phase: "working", notes: 0 }]);
 });
 
-Deno.test("ReviewProgressTracker -- derives phases and note counts", () => {
+Deno.test("ReviewProgressTracker -- derives step phases and note counts", () => {
   const events: ReviewProgress[] = [];
   const tracker = new ReviewProgressTracker((p) => events.push(p));
 
   const sequence: ReviewTraceEvent[] = [
-    { type: "round_start", round: 0 },
-    { type: "reasoning", round: 0, text: "secret thoughts" },
-    { type: "tool_call", round: 0, callId: "c1", name: "read_file", args: {} },
     {
-      type: "tool_output",
-      round: 0,
-      callId: "c1",
-      output: { content: "the whole essay" },
+      type: "step_start",
+      stepId: "understand",
+      stepName: "Understand",
+      kind: "understand",
     },
-    { type: "round_end", round: 0 },
-    { type: "round_start", round: 1 },
-    { type: "tool_call", round: 1, callId: "c2", name: "mark", args: {} },
+    { type: "step_input", stepId: "understand", text: "secret" },
+    { type: "step_output", stepId: "understand", output: { thesis: "x" } },
+    { type: "step_end", stepId: "understand" },
     {
-      type: "tool_output",
-      round: 1,
-      callId: "c2",
-      output: { results: [{ marked: true }, { marked: false }] },
+      type: "step_start",
+      stepId: "mechanics",
+      stepName: "Mechanics",
+      kind: "mark",
     },
-    { type: "round_start", round: 2 },
-    { type: "message", round: 2, text: "final summary words" },
+    {
+      type: "marks_applied",
+      stepId: "mechanics",
+      attempts: [
+        { selected_text: "a", comment: "c", marked: true },
+        { selected_text: "b", comment: "c", marked: true },
+        {
+          selected_text: "ghost",
+          comment: "c",
+          marked: false,
+          error: "no match",
+        },
+      ],
+    },
+    {
+      type: "marks_applied",
+      stepId: "mechanics",
+      attempts: [{ selected_text: "d", comment: "c", marked: true }],
+    },
+    { type: "step_repair", stepId: "mechanics", round: 1 },
+    { type: "step_end", stepId: "mechanics" },
+    {
+      type: "step_start",
+      stepId: "synthesize",
+      stepName: "Synthesize",
+      kind: "synthesize",
+    },
+    {
+      type: "usage",
+      stepId: "synthesize",
+      usage: {
+        inputTokens: 1,
+        outputTokens: 1,
+        totalTokens: 2,
+        cachedTokens: 0,
+        reasoningTokens: 0,
+      },
+    },
   ];
   for (const event of sequence) tracker.handle(event);
 
   assertEquals(events, [
-    { phase: "working", round: 0, notes: 0 },
-    { phase: "reading", round: 0, notes: 0 },
-    { phase: "reading", round: 1, notes: 0 },
-    { phase: "annotating", round: 1, notes: 0 },
-    { phase: "annotating", round: 1, notes: 1 },
-    { phase: "annotating", round: 2, notes: 1 },
-    { phase: "summarizing", round: 2, notes: 1 },
+    { phase: "working", notes: 0 },
+    {
+      stepId: "understand",
+      stepName: "Understand",
+      phase: "analyzing",
+      notes: 0,
+    },
+    { stepId: "mechanics", stepName: "Mechanics", phase: "marking", notes: 0 },
+    { stepId: "mechanics", stepName: "Mechanics", phase: "marking", notes: 2 },
+    { stepId: "mechanics", stepName: "Mechanics", phase: "marking", notes: 3 },
+    {
+      stepId: "mechanics",
+      stepName: "Mechanics",
+      phase: "repairing",
+      notes: 3,
+    },
+    {
+      stepId: "synthesize",
+      stepName: "Synthesize",
+      phase: "summarizing",
+      notes: 3,
+    },
   ]);
-});
-
-Deno.test("ReviewProgressTracker -- truncated mark output adds no notes", () => {
-  const events: ReviewProgress[] = [];
-  const tracker = new ReviewProgressTracker((p) => events.push(p));
-
-  tracker.handle({
-    type: "tool_output",
-    round: 0,
-    callId: "c1",
-    output: '{"results": truncated',
-    truncated: true,
-  });
-
-  assertEquals(events.length, 1);
-  assertEquals(events[0].notes, 0);
-});
-
-Deno.test("ReviewProgressTracker -- unknown tools stay in working phase", () => {
-  const events: ReviewProgress[] = [];
-  const tracker = new ReviewProgressTracker((p) => events.push(p));
-
-  tracker.handle({
-    type: "tool_call",
-    round: 0,
-    callId: "c1",
-    name: "write_file",
-    args: {},
-  });
-
-  assertEquals(events.length, 1);
-  assertEquals(events[0].phase, "working");
 });

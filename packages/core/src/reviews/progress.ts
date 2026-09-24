@@ -1,25 +1,39 @@
+import type { StepKind } from "@/config/types.ts";
 import type { ReviewTraceEvent } from "./types.ts";
 
 /** Coarse activity label for a running review. */
-export type ReviewPhase = "working" | "reading" | "annotating" | "summarizing";
+export type ReviewPhase =
+  | "working"
+  | "analyzing"
+  | "marking"
+  | "repairing"
+  | "summarizing";
 
 /**
  * Text-free progress snapshot for product UI. Never carries model content:
- * reasoning, message text, tool arguments, and usage are dropped at
- * derivation.
+ * inputs, outputs, and usage are dropped at derivation.
  */
 export interface ReviewProgress {
+  /** Current step, absent until the first step starts. */
+  stepId?: string;
+  stepName?: string;
   phase: ReviewPhase;
-  round: number;
   notes: number;
 }
+
+const KIND_PHASE: Record<StepKind, ReviewPhase> = {
+  understand: "analyzing",
+  mark: "marking",
+  synthesize: "summarizing",
+};
 
 /**
  * Maps trace events onto ReviewProgress snapshots, emitting on change.
  */
 export class ReviewProgressTracker {
+  #stepId: string | undefined;
+  #stepName: string | undefined;
   #phase: ReviewPhase = "working";
-  #round = 0;
   #notes = 0;
   #onProgress: (progress: ReviewProgress) => void;
 
@@ -29,53 +43,31 @@ export class ReviewProgressTracker {
   }
 
   handle(event: ReviewTraceEvent): void {
-    const prev = { phase: this.#phase, round: this.#round, notes: this.#notes };
     switch (event.type) {
-      case "round_start":
-        this.#round = event.round;
+      case "step_start":
+        this.#stepId = event.stepId;
+        this.#stepName = event.stepName;
+        this.#phase = KIND_PHASE[event.kind];
         break;
-      case "tool_call":
-        this.#phase = toolPhase(event.name);
+      case "marks_applied":
+        this.#notes += event.attempts.filter((a) => a.marked).length;
         break;
-      case "tool_output":
-        this.#notes += countPlaced(event.output);
-        break;
-      case "message":
-        this.#phase = "summarizing";
+      case "step_repair":
+        this.#phase = "repairing";
         break;
       default:
         return;
     }
-    if (
-      prev.phase !== this.#phase ||
-      prev.round !== this.#round ||
-      prev.notes !== this.#notes
-    ) {
-      this.#emit();
-    }
+    this.#emit();
   }
 
   #emit(): void {
-    this.#onProgress({
+    const progress: ReviewProgress = {
       phase: this.#phase,
-      round: this.#round,
       notes: this.#notes,
-    });
+    };
+    if (this.#stepId !== undefined) progress.stepId = this.#stepId;
+    if (this.#stepName !== undefined) progress.stepName = this.#stepName;
+    this.#onProgress(progress);
   }
-}
-
-function toolPhase(name: string): ReviewPhase {
-  if (name === "mark") return "annotating";
-  if (name === "read_file" || name === "list_files" || name === "grep") {
-    return "reading";
-  }
-  return "working";
-}
-
-/** Count successfully placed marks in a mark tool output, if parseable. */
-function countPlaced(output: unknown): number {
-  const results = (output as { results?: unknown } | null)?.results;
-  if (!Array.isArray(results)) return 0;
-  return results.filter((r) => (r as { marked?: boolean })?.marked === true)
-    .length;
 }

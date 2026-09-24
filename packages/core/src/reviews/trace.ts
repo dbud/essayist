@@ -1,22 +1,8 @@
-import type {
-  CorrelatedResponseStreamEvent,
-  ModelResult,
-  OutputItems,
-  ResponseOutputText,
-  Tool,
-  Usage,
-} from "@openrouter/agent";
-import {
-  isToolCallOutputEvent,
-  isTurnEndEvent,
-  isTurnStartEvent,
-} from "@openrouter/agent";
 import { logger } from "@/logger.ts";
 import type { PersistenceAdapter } from "@/persistence/mod.ts";
 import type {
   ReviewTraceEvent,
   ReviewTraceSink,
-  ReviewTraceUsage,
   TracedReviewEvent,
 } from "./types.ts";
 
@@ -24,8 +10,8 @@ import type {
 //   ["review_traces", wsId, runId, "000000"] -> TracedReviewEvent
 const TRACES = "review_traces";
 
-// Deno KV values cap at 64 KiB. Tool outputs embed whole file contents,
-// which the VFS already holds, so oversized payloads are elided here.
+// Deno KV values cap at 64 KiB. Step outputs embed structured artifacts,
+// so oversized payloads are elided here.
 const MAX_PAYLOAD_CHARS = 16_000;
 
 /** The run a trace belongs to. */
@@ -102,27 +88,26 @@ export class EventTraceStore implements TraceStore {
   }
 }
 
-function errorMessage(err: unknown): string {
-  return err instanceof Error ? err.message : String(err);
-}
-
-function mapUsage(usage: Usage): ReviewTraceUsage {
-  return {
-    inputTokens: usage.inputTokens ?? 0,
-    outputTokens: usage.outputTokens ?? 0,
-    totalTokens: usage.totalTokens ?? 0,
-    cachedTokens: usage.inputTokensDetails?.cachedTokens ?? 0,
-    reasoningTokens: usage.outputTokensDetails?.reasoningTokens ?? 0,
-    ...(usage.cost != null ? { cost: usage.cost } : {}),
-  };
-}
-
-/** Models emit malformed JSON; keep the raw text rather than dropping it. */
-function parseJsonOrRaw(raw: string): unknown {
-  try {
-    return JSON.parse(raw);
-  } catch {
-    return raw;
+/** Mirrors agent_logger's pino event names for console parity. */
+function logTraceEvent(event: ReviewTraceEvent): void {
+  switch (event.type) {
+    case "step_input":
+      logger.debug({ step: event.stepId, input: event.text }, "step_input");
+      break;
+    case "step_output":
+      logger.debug({ step: event.stepId, output: event.output }, "step_output");
+      break;
+    case "marks_applied":
+      logger.debug(
+        { step: event.stepId, attempts: event.attempts.length },
+        "marks_applied",
+      );
+      break;
+    case "step_error":
+      logger.debug({ step: event.stepId, error: event.error }, "step_error");
+      break;
+    default:
+      break;
   }
 }
 
@@ -137,49 +122,14 @@ function capValue(value: unknown): CappedValue {
   return { value: json.slice(0, MAX_PAYLOAD_CHARS), truncated: true };
 }
 
-/** Mirrors agent_logger's pino event names for console parity. */
-function logTraceEvent(event: ReviewTraceEvent): void {
-  switch (event.type) {
-    case "input":
-      logger.debug({ input: event.text }, "agent_call");
-      break;
-    case "tool_call":
-      logger.debug(
-        { fn: event.name, callId: event.callId, args: event.args },
-        "function_call",
-      );
-      break;
-    case "tool_output":
-      logger.debug(
-        { callId: event.callId, output: event.output },
-        "function_call_output",
-      );
-      break;
-    case "message":
-      logger.debug({ text: event.text }, "message");
-      break;
-    case "reasoning":
-      logger.debug({ text: event.text }, "reasoning");
-      break;
-    default:
-      break;
-  }
-}
-
-/**
- * Records one run's trace events. Consumes the model result's stream as a
- * side consumer while the runner reads getText() concurrently.
- */
+/** Records one run's trace events; record after flush is ignored. */
 export class TraceRecorder implements ReviewTraceSink {
   #store: TraceStore;
   #wsId: string;
   #runId: string;
   #seq = 0;
-  #round = 0;
   #onEvent: ((event: TracedReviewEvent) => void) | undefined;
   #writes: Promise<void> = Promise.resolve();
-  #consumer: Promise<void> | undefined;
-  #flushPromise: Promise<void> | undefined;
   #flushed = false;
 
   constructor(
@@ -199,7 +149,7 @@ export class TraceRecorder implements ReviewTraceSink {
     const entry: TracedReviewEvent = {
       seq: this.#seq++,
       at: Date.now(),
-      ...event,
+      ...this.#capPayload(event),
     };
     logTraceEvent(entry);
     this.#onEvent?.(entry);
@@ -215,25 +165,17 @@ export class TraceRecorder implements ReviewTraceSink {
       .catch((err) => logger.error({ err }, "review trace append failed"));
   }
 
-  /** Consume the result's stream. Call once, before flush(). */
-  follow(result: ModelResult<readonly Tool[]>): void {
-    this.#consumer = this.#consume(result);
+  #capPayload(event: ReviewTraceEvent): ReviewTraceEvent {
+    if (event.type !== "step_output") return event;
+    const capped = capValue(event.output);
+    if (!capped.truncated) return event;
+    return { ...event, output: capped.value, truncated: true };
   }
 
-  /** Await stream consumption and pending appends, then end. Never throws. */
-  flush(): Promise<void> {
-    this.#flushPromise ??= this.#doFlush();
-    return this.#flushPromise;
-  }
-
-  async #doFlush(): Promise<void> {
-    if (this.#consumer) {
-      try {
-        await this.#consumer;
-      } catch (err) {
-        logger.error({ err }, "review trace consumer failed");
-      }
-    }
+  /** Await pending appends and end. Never throws. */
+  async flush(): Promise<void> {
+    if (this.#flushed) return;
+    this.#flushed = true;
     try {
       await this.#writes;
     } catch (err) {
@@ -246,99 +188,6 @@ export class TraceRecorder implements ReviewTraceSink {
       });
     } catch (err) {
       logger.error({ err }, "review trace end failed");
-    }
-    this.#flushed = true;
-  }
-
-  async #consume(result: ModelResult<readonly Tool[]>): Promise<void> {
-    try {
-      for await (const event of result.getFullResponsesStream()) {
-        this.#handleStreamEvent(event);
-      }
-    } catch (err) {
-      logger.error({ err }, "review trace stream error");
-      this.record({
-        type: "error",
-        round: this.#round,
-        error: errorMessage(err),
-      });
-    }
-  }
-
-  #handleStreamEvent(event: CorrelatedResponseStreamEvent<readonly Tool[]>) {
-    if (isTurnStartEvent(event)) {
-      this.#round = event.turnNumber;
-      this.record({ type: "round_start", round: event.turnNumber });
-      return;
-    }
-    if (isTurnEndEvent(event)) {
-      this.record({ type: "round_end", round: event.turnNumber });
-      return;
-    }
-    if (isToolCallOutputEvent(event)) {
-      const raw = event.output.output;
-      const parsed = typeof raw === "string" ? parseJsonOrRaw(raw) : raw;
-      const capped = capValue(parsed);
-      this.record({
-        type: "tool_output",
-        round: this.#round,
-        callId: event.output.callId,
-        output: capped.value,
-        ...(capped.truncated ? { truncated: true } : {}),
-      });
-      return;
-    }
-    if (event.type === "response.output_item.done") {
-      this.#handleItem(event.item);
-      return;
-    }
-    if (event.type === "response.completed") {
-      const usage = event.response.usage;
-      if (usage) {
-        this.record({
-          type: "usage",
-          round: this.#round,
-          usage: mapUsage(usage),
-        });
-      }
-      return;
-    }
-    if (event.type === "response.failed") {
-      this.record({
-        type: "error",
-        round: this.#round,
-        error: JSON.stringify(event.response.error ?? event.response),
-      });
-    }
-  }
-
-  #handleItem(item: OutputItems): void {
-    if (item.type === "message") {
-      const text = item.content
-        .filter((c): c is ResponseOutputText => c.type === "output_text")
-        .map((c) => c.text)
-        .join("");
-      this.record({ type: "message", round: this.#round, text });
-      return;
-    }
-    if (item.type === "reasoning") {
-      const content = (item.content ?? []).map((c) => c.text).join("");
-      const summary = item.summary.map((c) => c.text).join("");
-      const text = [content, summary].filter(Boolean).join("\n");
-      if (text) this.record({ type: "reasoning", round: this.#round, text });
-      return;
-    }
-    if (item.type === "function_call") {
-      const parsed = parseJsonOrRaw(item.arguments || "{}");
-      const capped = capValue(parsed);
-      this.record({
-        type: "tool_call",
-        round: this.#round,
-        callId: item.callId,
-        name: item.name,
-        args: capped.value,
-        ...(capped.truncated ? { truncated: true } : {}),
-      });
     }
   }
 }

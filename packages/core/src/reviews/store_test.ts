@@ -1,6 +1,7 @@
-import { assertEquals } from "@std/assert";
+import { assertEquals, assertRejects } from "@std/assert";
 import { InMemoryAdapter } from "@/persistence/mod.ts";
 import { ReviewStore } from "./store.ts";
+import type { StepRun } from "./types.ts";
 
 function createStore() {
   return new ReviewStore(new InMemoryAdapter());
@@ -16,6 +17,7 @@ Deno.test("ReviewStore -- createRun + getRun", async () => {
   assertEquals(run.status, "running");
   assertEquals(run.path, "essay.txt");
   assertEquals(run.reviewPassId, "essay-review");
+  assertEquals(run.steps, []);
 
   const fetched = await store.getRun({ wsId: "ws", id: run.id });
   assertEquals(fetched?.id, run.id);
@@ -37,6 +39,55 @@ Deno.test("ReviewStore -- createRun stores versionId when given", async () => {
     reviewPassId: "essay-review",
   });
   assertEquals(plain.versionId, undefined);
+});
+
+Deno.test("ReviewStore -- setRunSteps replaces step records", async () => {
+  const store = createStore();
+  const run = await store.createRun({
+    wsId: "ws",
+    path: "essay.txt",
+    reviewPassId: "pass",
+  });
+  const startedAt = Date.now();
+  const steps: StepRun[] = [
+    {
+      stepId: "understand",
+      name: "Understand",
+      kind: "understand",
+      status: "completed",
+      startedAt,
+      completedAt: startedAt + 100,
+    },
+    {
+      stepId: "mechanics",
+      name: "Mechanics",
+      kind: "mark",
+      status: "running",
+      startedAt: startedAt + 100,
+    },
+  ];
+
+  await store.setRunSteps({ wsId: "ws", id: run.id, steps });
+
+  const fetched = await store.getRun({ wsId: "ws", id: run.id });
+  assertEquals(fetched?.steps, steps);
+
+  // Steps survive completion; #end preserves the whole record.
+  const completed = await store.completeRun({
+    wsId: "ws",
+    id: run.id,
+    summary: "s",
+  });
+  assertEquals(completed?.steps, steps);
+});
+
+Deno.test("ReviewStore -- setRunSteps throws on unknown runs", async () => {
+  const store = createStore();
+  await assertRejects(
+    () => store.setRunSteps({ wsId: "ws", id: "nope", steps: [] }),
+    Error,
+    "Review run not found",
+  );
 });
 
 Deno.test("ReviewStore -- completeRun sets status, summary, completedAt", async () => {

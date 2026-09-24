@@ -1,8 +1,7 @@
 import type { RequestOptions } from "@openrouter/agent";
 import { OpenRouter, stepCountIs } from "@openrouter/agent";
 import type { z } from "zod";
-import { logAgentCall, logAgentResult } from "@/agent_logger.ts";
-import type { ReviewTraceSink } from "@/reviews/types.ts";
+import { logAgentCall } from "@/agent_logger.ts";
 import { generateInstructions, stripMarkdownFences } from "@/schema.ts";
 import type { ToolPrompt } from "@/tools/index.ts";
 
@@ -55,21 +54,17 @@ export class Agent {
   /**
    * Call the model with tools. Returns the ModelResult for streaming,
    * or await .getText() for the final text.
-   *
-   * With `trace`, the caller owns stream consumption and the input is
-   * recorded through the sink. Without it, stream items are pino-logged
-   * here.
    */
   callModelWithTools(
     input: string,
     toolPrompts: readonly ToolPrompt[],
     models: string[],
     maxRounds = 5,
-    trace?: ReviewTraceSink,
   ) {
     const tools = toolPrompts.map((tp) => tp.tool);
     const instructions = toolPrompts.map((tp) => tp.instruction).join("\n");
     const fullInput = `${instructions}\n\n${input}`;
+    // TODO -- review/restructure how we provide instructions for tools use
 
     const request = {
       models,
@@ -78,13 +73,7 @@ export class Agent {
       stopWhen: stepCountIs(maxRounds),
     };
     logAgentCall(request);
-    const result = this.#client.callModel(request, RETRY_OPTIONS);
-    if (trace) {
-      trace.record({ type: "input", text: fullInput });
-    } else {
-      logAgentResult(result);
-    }
 
-    return result;
+    return this.#client.callModel(request, RETRY_OPTIONS);
   }
 }
