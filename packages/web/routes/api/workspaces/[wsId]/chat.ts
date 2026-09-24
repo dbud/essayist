@@ -1,3 +1,14 @@
+// Parked during the multipass rework. Chat was a PoC debug tool coupled to
+// the review pass config; the original handler is kept below.
+
+export const handler = {
+  GET: () =>
+    new Response("chat is parked during the multipass rework", {
+      status: 404,
+    }),
+};
+
+/*
 import {
   createGrepTool,
   createListFilesTool,
@@ -47,3 +58,4 @@ export const handler = {
     }
   }),
 };
+*/
