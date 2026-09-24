@@ -190,18 +190,28 @@ export async function warnBrokenRefs(ctx: SyncCtx): Promise<void> {
   const categoryIds = new Set(categories.map((c) => c.id));
   for (const pass of passes) {
     const missing: string[] = [];
-    if (!poolIds.has(pass.modelPoolId)) {
-      missing.push(`model pool "${pass.modelPoolId}"`);
-    }
-    for (const key of [
-      pass.systemPromptKey,
-      pass.directivePromptKey,
-      ...(pass.instructionsPromptKey ? [pass.instructionsPromptKey] : []),
+    for (const poolId of [
+      pass.modelPoolId,
+      ...pass.steps.map((s) => s.modelPoolId).filter((id) => id !== undefined),
     ]) {
-      if (!promptKeys.has(key)) missing.push(`prompt "${key}"`);
+      if (!poolIds.has(poolId)) missing.push(`model pool "${poolId}"`);
     }
-    for (const id of pass.allowedCategoryIds) {
-      if (!categoryIds.has(id)) missing.push(`category "${id}"`);
+    for (const step of pass.steps) {
+      for (const key of [
+        step.systemPromptKey,
+        step.directivePromptKey,
+        ...(step.instructionsPromptKey ? [step.instructionsPromptKey] : []),
+      ]) {
+        if (!promptKeys.has(key)) missing.push(`prompt "${key}"`);
+      }
+      for (const id of step.allowedCategoryIds ?? []) {
+        if (!categoryIds.has(id)) missing.push(`category "${id}"`);
+      }
+      for (const ref of step.artifactsFromStepIds ?? []) {
+        if (!pass.steps.some((s) => s.id === ref)) {
+          missing.push(`step reference "${ref}"`);
+        }
+      }
     }
     if (missing.length > 0) {
       console.error(

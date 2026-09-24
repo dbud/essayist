@@ -1,12 +1,5 @@
-import type { Key, PersistenceAdapter } from "@/persistence/mod.ts";
-import { renderPrompt } from "./template.ts";
-import type {
-  Category,
-  ModelPool,
-  Prompt,
-  ResolvedReviewPass,
-  ReviewPass,
-} from "./types.ts";
+import type { PersistenceAdapter } from "@/persistence/mod.ts";
+import type { Category, ModelPool, Prompt, ReviewPass } from "./types.ts";
 
 // Key layout:
 //   ["cfg","model_pools",  id]   -> ModelPool
@@ -21,21 +14,12 @@ const CATEGORIES = "categories";
 const REVIEW_PASSES = "review_passes";
 const ACTIVE = "active";
 
-const DEFAULT_API_KEY_ENV = "OPENROUTER_API_KEY";
-
 /** Active review-pass pin. */
 interface ActivePin {
   reviewPassId: string;
 }
 
-/** Thrown by resolveActiveReviewPass on missing config. */
-export class ConfigMissingError extends Error {
-  constructor(what: string) {
-    super(`Config missing: ${what}`);
-  }
-}
-
-/** CRUD + resolution for config entities. */
+/** CRUD over the config entities in KV. Resolution lives in resolve.ts. */
 export class ConfigStore {
   #adapter: PersistenceAdapter;
 
@@ -91,6 +75,14 @@ export class ConfigStore {
     return entries.map((e) => e.value);
   }
 
+  /** Batch fetch; results align with `ids`, undefined where absent. */
+  async getCategories(ids: string[]): Promise<(Category | undefined)[]> {
+    const entries = await this.#adapter.getMany<Category>(
+      ids.map((id) => [CFG, CATEGORIES, id]),
+    );
+    return entries.map((e) => e?.value);
+  }
+
   // -- review passes --
 
   async getReviewPass(id: string): Promise<ReviewPass | undefined> {
@@ -127,85 +119,5 @@ export class ConfigStore {
 
   async clearActiveReviewPass(): Promise<void> {
     await this.#adapter.delete([CFG, ACTIVE]);
-  }
-
-  // -- resolution --
-
-  /**
-   * Resolve the active review pass into a ResolvedReviewPass bundle.
-   * Returns undefined if none is pinned; throws ConfigMissingError on
-   * incomplete config (including a pass with zero resolved categories).
-   */
-  async resolveActiveReviewPass(): Promise<ResolvedReviewPass | undefined> {
-    const activeId = await this.getActiveReviewPassId();
-    if (!activeId) return undefined;
-
-    const reviewPass = await this.getReviewPass(activeId);
-    if (!reviewPass) throw new ConfigMissingError(`review pass "${activeId}"`);
-
-    const pool = await this.getModelPool(reviewPass.modelPoolId);
-    if (!pool) {
-      throw new ConfigMissingError(`model pool "${reviewPass.modelPoolId}"`);
-    }
-    if (pool.models.length === 0) {
-      throw new ConfigMissingError(`model pool "${pool.id}" has no models`);
-    }
-
-    const systemPromptEntry = await this.getPrompt(reviewPass.systemPromptKey);
-    if (!systemPromptEntry) {
-      throw new ConfigMissingError(`prompt "${reviewPass.systemPromptKey}"`);
-    }
-    const vars = reviewPass.variables ?? {};
-    const systemPrompt = renderPrompt(systemPromptEntry.body, vars);
-
-    let instructions = "";
-    if (reviewPass.instructionsPromptKey) {
-      const instrEntry = await this.getPrompt(reviewPass.instructionsPromptKey);
-      if (!instrEntry) {
-        throw new ConfigMissingError(
-          `prompt "${reviewPass.instructionsPromptKey}"`,
-        );
-      }
-      instructions = renderPrompt(instrEntry.body, vars);
-    } else if (reviewPass.instructions) {
-      instructions = renderPrompt(reviewPass.instructions, vars);
-    }
-
-    const directiveEntry = await this.getPrompt(reviewPass.directivePromptKey);
-    if (!directiveEntry) {
-      throw new ConfigMissingError(`prompt "${reviewPass.directivePromptKey}"`);
-    }
-    const directive = renderPrompt(directiveEntry.body, vars);
-
-    const catEntries = await this.#adapter.getMany<Category>(
-      reviewPass.allowedCategoryIds.map((id) => [CFG, CATEGORIES, id]),
-    );
-    const categories = catEntries
-      .filter(
-        (e): e is { value: Category; versionstamp: string; key: Key } =>
-          e !== undefined,
-      )
-      .map((e) => e.value);
-    if (categories.length === 0) {
-      throw new ConfigMissingError(
-        reviewPass.allowedCategoryIds.length === 0
-          ? `review pass "${reviewPass.id}" has no allowed categories`
-          : `review pass "${reviewPass.id}" references missing categories: ${reviewPass.allowedCategoryIds.join(
-              ", ",
-            )}`,
-      );
-    }
-    const allowedLabels = categories.map((c) => c.label);
-
-    return {
-      reviewPass,
-      modelRefs: pool.models,
-      apiKeyEnvKey: pool.apiKeyEnvKey ?? DEFAULT_API_KEY_ENV,
-      systemPrompt,
-      directive,
-      instructions,
-      categories,
-      allowedLabels,
-    };
   }
 }

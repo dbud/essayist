@@ -1,20 +1,29 @@
 export { Agent } from "@/agent.ts";
-export { ConfigMissingError, ConfigStore } from "@/config/store.ts";
+export {
+  ConfigInvalidError,
+  ConfigMissingError,
+  resolveActiveReviewPass,
+  resolveReviewPass,
+} from "@/config/resolve.ts";
+export { ConfigStore } from "@/config/store.ts";
 export { extractVariables, renderPrompt } from "@/config/template.ts";
 export type {
   Category,
   ModelPool,
   Prompt,
   ResolvedReviewPass,
+  ResolvedStep,
   ReviewPass,
-  ToolName,
+  Step,
+  StepKind,
 } from "@/config/types.ts";
 export {
   CategorySchema,
   ModelPoolSchema,
   PromptSchema,
   ReviewPassSchema,
-  ToolNameSchema,
+  StepKindSchema,
+  StepSchema,
 } from "@/config/types.ts";
 export { pluralize } from "@/format.ts";
 export { logger } from "@/logger.ts";

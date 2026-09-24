@@ -1,6 +1,5 @@
 import { assertEquals } from "@std/assert";
-import { ToolNameSchema } from "@/config/types.ts";
-import { getToolInfos, TOOL_DEFINITIONS } from "./registry.ts";
+import { getToolInfos } from "./registry.ts";
 
 Deno.test("getToolInfos -- exposes every registered tool", () => {
   const infos = getToolInfos();
@@ -12,13 +11,6 @@ Deno.test("getToolInfos -- exposes every registered tool", () => {
     assertEquals(typeof info.description, "string");
     assertEquals(typeof info.instruction, "string");
   }
-});
-
-Deno.test("ToolNameSchema -- matches the registered tool names", () => {
-  assertEquals(
-    [...ToolNameSchema.options],
-    TOOL_DEFINITIONS.map((definition) => definition.name),
-  );
 });
 
 Deno.test("getToolInfos -- mark parameters reflect the batch schema", () => {
