@@ -8,7 +8,7 @@ const client = createWorkerClient<
   Mark[]
 >(
   () =>
-    new Worker(new URL("./worker.ts", import.meta.url).href, {
+    new Worker("/wasm-worker.js", {
       type: "module",
     }),
 );

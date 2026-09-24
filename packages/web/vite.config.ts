@@ -1,5 +1,5 @@
 import { fileURLToPath } from "node:url";
-import { deno, fresh } from "@fresh/plugin-vite";
+import { fresh } from "@fresh/plugin-vite";
 import tailwindcss from "@tailwindcss/vite";
 import { defineConfig, type Plugin, type ViteDevServer } from "vite";
 import { assetGenerate } from "./vite/asset-generate.ts";
@@ -20,11 +20,13 @@ function serveWorkers(): Plugin {
     configureServer(server: ViteDevServer) {
       server.middlewares.use((req, res, next) => {
         const url = new URL(req.url ?? "", "http://localhost");
-        if (!url.searchParams.has("worker_file")) {
+        // Prod builds emit the worker via the "worker" environment; in
+        // dev, transform the entry through the client environment
+        if (url.pathname !== "/wasm-worker.js") {
           return next();
         }
         server.environments.client
-          .transformRequest(req.url ?? "")
+          .transformRequest("/wasm/worker.ts")
           .then((result) => {
             if (result == null) return next();
             res.setHeader(
@@ -48,10 +50,28 @@ export default defineConfig({
     tailwindcss(),
     watchCore(),
   ],
-  worker: {
-    // Only the Deno resolver is needed to bundle the worker; the full
-    // fresh() plugin stack made the inline worker build much slower.
-    plugins: () => [deno()],
+  environments: {
+    worker: {
+      consumer: "client",
+      build: {
+        // The deployed web root, shared with the client env output
+        outDir: "_fresh/client",
+        emptyOutDir: false,
+        copyPublicDir: false,
+        manifest: false,
+        emitAssets: true,
+        // Inline the wasm so the worker stays a single file
+        assetsInlineLimit: 100_000_000,
+        rolldownOptions: {
+          input: {
+            "wasm-worker": "wasm/worker.ts",
+          },
+          output: {
+            entryFileNames: "wasm-worker.js",
+          },
+        },
+      },
+    },
   },
   resolve: {
     alias: {
