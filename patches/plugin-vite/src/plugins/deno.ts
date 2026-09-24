@@ -6,6 +6,7 @@ import {
   Workspace,
 } from "jsr:@deno/loader@^0.4.0";
 import * as path from "jsr:@std/path@1";
+import { existsSync } from "node:fs";
 import { builtinModules } from "node:module";
 /* @ts-types="npm:@types/babel__core@^7.20.5" */ import * as babel from "npm:@babel/core@^7.28.0";
 import type { Plugin } from "npm:vite@^8.3.0";
@@ -26,6 +27,69 @@ export function deno(): Plugin {
   let browserLoader: Loader;
 
   let isDev = false;
+
+  async function resolveWithLoader(
+    loader: Loader,
+    id: string,
+    importer: string | undefined,
+  ): Promise<string> {
+    // Ensure we're passing a valid importer that Deno understands
+    const denoImporter =
+      importer && !importer.startsWith("\0") ? importer : undefined;
+
+    // For bare specifiers from non-deno importers, try resolving
+    // with the importer's file URL so workspace import maps work
+    let denoImporterUrl = denoImporter;
+    if (
+      denoImporter &&
+      !denoImporter.startsWith("file://") &&
+      !denoImporter.startsWith("http") &&
+      path.isAbsolute(denoImporter)
+    ) {
+      denoImporterUrl = path.toFileUrl(denoImporter).href;
+    }
+
+    return await loader.resolve(id, denoImporterUrl, ResolutionMode.Import);
+  }
+
+  function finalize(original: string, id: string, resolved: string) {
+    if (resolved.startsWith("node:")) {
+      return {
+        id: resolved,
+        external: true,
+      };
+    }
+
+    if (original === resolved) {
+      return null;
+    }
+
+    // Import attributes are not supported by rolldown, so there is
+    // no `attributes.type` to read here
+    // https://github.com/rolldown/rolldown/issues/2758
+    const type = getDenoType(id, "default");
+    if (
+      type !== RequestedModuleType.Default ||
+      /^(https?|jsr|npm):/.test(resolved)
+    ) {
+      // Returning a string here can lead to
+      // [UNLOADABLE_DEPENDENCY] errors under rolldown
+      return { id: toDenoSpecifier(resolved, type) };
+    }
+
+    if (resolved.startsWith("file://")) {
+      resolved = path.fromFileUrl(resolved);
+    }
+
+    return {
+      id: resolved,
+      meta: {
+        deno: {
+          type,
+        },
+      },
+    };
+  }
 
   return {
     name: "deno",
@@ -85,14 +149,39 @@ export function deno(): Plugin {
         id = `${url.origin}${id}`;
       }
 
-      // We still want to allow other plugins to participate in
-      // resolution, with us being in front due to `enforce: "pre"`.
-      // But we still want to ignore everything `vite:resolve` does
-      // because we're kinda replacing that plugin here.
-      const tmp = await this.resolve(id, importer, options);
+      // The deno loader resolves relative paths and import map
+      // specifiers natively. For relative and file ids we try it
+      // first; everything else (bare specifiers, virtual modules) goes
+      // to the plugin chain first so plugins can claim them, with the
+      // loader as fallback.
+      const looksLikeFile =
+        (id.startsWith("./") || id.startsWith("../") ||
+          id.startsWith("file://") || path.isAbsolute(id)) &&
+        !id.startsWith("/@id/");
+
+      if (looksLikeFile) {
+        try {
+          const resolved = await resolveWithLoader(loader, id, importer);
+          // The loader path-pretends for ids it cannot actually resolve
+          // (e.g. vite dev root-relative urls); verify the target exists
+          // and otherwise let the plugin chain resolve it.
+          if (
+            resolved.startsWith("file://") &&
+            !existsSync(path.fromFileUrl(resolved))
+          ) {
+            throw new Error("deno loader resolved to a missing file");
+          }
+          return finalize(original, id, resolved);
+        } catch {
+          // The deno loader cannot resolve this specifier; let the
+          // rest of the plugin chain participate.
+        }
+      }
+
       // The `resolveId` hook `resolvedBy` is not supported by rolldown
       // https://github.com/rolldown/rolldown/issues/8688
-      if (tmp) {
+      const tmp = await this.resolve(id, importer, options);
+      if (tmp !== null) {
         if (tmp.external && !/^https?:\/\//.test(tmp.id)) {
           return tmp;
         }
@@ -111,66 +200,10 @@ export function deno(): Plugin {
       }
 
       try {
-        // Ensure we're passing a valid importer that Deno understands
-        const denoImporter =
-          importer && !importer.startsWith("\0") ? importer : undefined;
-
-        // For bare specifiers from non-deno importers, try resolving
-        // with the importer's file URL so workspace import maps work
-        let denoImporterUrl = denoImporter;
-        if (
-          denoImporter &&
-          !denoImporter.startsWith("file://") &&
-          !denoImporter.startsWith("http") &&
-          path.isAbsolute(denoImporter)
-        ) {
-          denoImporterUrl = path.toFileUrl(denoImporter).href;
-        }
-
-        let resolved = await loader.resolve(
-          id,
-          denoImporterUrl,
-          ResolutionMode.Import,
-        );
-
-        if (resolved.startsWith("node:")) {
-          return {
-            id: resolved,
-            external: true,
-          };
-        }
-
-        if (original === resolved) {
-          return null;
-        }
-
-        // Import attributes are not supported by rolldown, so there is
-        // no `attributes.type` to read here
-        // https://github.com/rolldown/rolldown/issues/2758
-        const type = getDenoType(id, "default");
-        if (
-          type !== RequestedModuleType.Default ||
-          /^(https?|jsr|npm):/.test(resolved)
-        ) {
-          // Returning a string here can lead to
-          // [UNLOADABLE_DEPENDENCY] errors under rolldown
-          return { id: toDenoSpecifier(resolved, type) };
-        }
-
-        if (resolved.startsWith("file://")) {
-          resolved = path.fromFileUrl(resolved);
-        }
-
-        return {
-          id: resolved,
-          meta: {
-            deno: {
-              type,
-            },
-          },
-        };
+        const resolved = await resolveWithLoader(loader, id, importer);
+        return finalize(original, id, resolved);
       } catch {
-        // ignore
+        return undefined;
       }
     },
     async load(id) {
