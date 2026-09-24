@@ -6,6 +6,7 @@ if (dsn) {
     Sentry.init({
       dsn,
       environment: meta?.dataset.environment,
+      release: meta?.dataset.release,
       dataCollection: {
         httpBodies: [],
         httpHeaders: false,

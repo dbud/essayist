@@ -20,6 +20,7 @@ const fontAxisScript = `for (const key of ${JSON.stringify(FONT_AXIS_KEYS)}) {
 
 const sentryDsn = Deno.env.get("SENTRY_DSN");
 const sentryEnvironment = Deno.env.get("DENO_ENV") ?? "production";
+const sentryRelease = Deno.env.get("DENO_DEPLOYMENT_ID");
 
 export default function App({ Component }: PageProps<unknown, State>) {
   return (
@@ -32,6 +33,7 @@ export default function App({ Component }: PageProps<unknown, State>) {
             name="sentry-dsn"
             content={sentryDsn}
             data-environment={sentryEnvironment}
+            data-release={sentryRelease}
           />
         )}
         <script dangerouslySetInnerHTML={{ __html: fontAxisScript }} />
