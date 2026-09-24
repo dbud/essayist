@@ -1,4 +1,4 @@
-import type { Category, ModelPool, Prompt, ReviewPass } from "@essayist/core";
+import type { Category, ModelPool, Prompt } from "@essayist/core";
 import { getToolInfos } from "@essayist/core";
 import { useSignal } from "@preact/signals";
 import type { ComponentChildren } from "preact";
@@ -11,23 +11,22 @@ import EntityDialog from "@/islands/admin/EntityDialog.tsx";
 import { CategoryRow } from "@/islands/admin/rows/CategoryRow.tsx";
 import { ModelPoolRow } from "@/islands/admin/rows/ModelPoolRow.tsx";
 import { PromptRow } from "@/islands/admin/rows/PromptRow.tsx";
-import { ReviewPassRow } from "@/islands/admin/rows/ReviewPassRow.tsx";
+// import { ReviewPassRow } from "@/islands/admin/rows/ReviewPassRow.tsx";
 import type { DialogRequest } from "@/islands/admin/types.ts";
 import MarkSwatches from "@/islands/MarkSwatches.tsx";
 import { getAdminConfig } from "@/signals/admin.ts";
 import { persistentSignal } from "@/utils/persistentSignal.ts";
 
-type TabKey = "passes" | "pools" | "prompts" | "categories" | "tools";
+type TabKey = "pools" | "prompts" | "categories" | "tools";
 
 const TAB_ITEMS: TabItem<TabKey>[] = [
-  { value: "passes", label: "Review passes" },
   { value: "pools", label: "Model pools" },
   { value: "prompts", label: "Prompts" },
   { value: "categories", label: "Categories" },
   { value: "tools", label: "Tools" },
 ];
 
-const tab = persistentSignal<TabKey>("adminTab", "passes");
+const tab = persistentSignal<TabKey>("adminTab", "pools");
 
 function Empty() {
   return <p class="text-sm text-ink/60">None configured.</p>;
@@ -38,16 +37,12 @@ export default function AdminConfig() {
     modelPools,
     prompts,
     categories,
-    reviewPasses,
-    activeReviewPassId,
     loading,
     error,
     mutating,
     deleteModelPool,
     deletePrompt,
     deleteCategory,
-    deleteReviewPass,
-    setActiveReviewPass,
   } = getAdminConfig();
   const dialogOpen = useSignal(false);
   const dialogRequest = useSignal<DialogRequest | null>(null);
@@ -74,14 +69,14 @@ export default function AdminConfig() {
     void deleteCategory(category.id);
   }
 
-  function removeReviewPass(pass: ReviewPass) {
-    if (!confirm(`Delete review pass "${pass.name}"?`)) return;
-    void deleteReviewPass(pass.id);
-  }
+  // function removeReviewPass(pass: ReviewPass) {
+  //   if (!confirm(`Delete review pass "${pass.name}"?`)) return;
+  //   void deleteReviewPass(pass.id);
+  // }
 
-  function activateReviewPass(pass: ReviewPass) {
-    void setActiveReviewPass(pass.id);
-  }
+  // function activateReviewPass(pass: ReviewPass) {
+  //   void setActiveReviewPass(pass.id);
+  // }
 
   const loadingEmpty = loading.value && modelPools.value.length === 0;
 
@@ -93,33 +88,33 @@ export default function AdminConfig() {
     body = null;
   } else {
     switch (tab.value) {
-      case "passes":
-        body = (
-          <div class="flex flex-col gap-10">
-            <NewButton
-              label="New review pass"
-              onClick={() => openEntity({ kind: "pass" })}
-            />
-            {reviewPasses.value.length === 0 ? (
-              <Empty />
-            ) : (
-              reviewPasses.value.map((p) => (
-                <ReviewPassRow
-                  key={p.id}
-                  pass={p}
-                  prompts={prompts.value}
-                  active={p.id === activeReviewPassId.value}
-                  busy={mutating.value}
-                  showActivate={p.id !== activeReviewPassId.value}
-                  onActivate={() => activateReviewPass(p)}
-                  onEdit={() => openEntity({ kind: "pass", entity: p })}
-                  onDelete={() => removeReviewPass(p)}
-                />
-              ))
-            )}
-          </div>
-        );
-        break;
+      // case "passes":
+      //   body = (
+      //     <div class="flex flex-col gap-10">
+      //       <NewButton
+      //         label="New review pass"
+      //         onClick={() => openEntity({ kind: "pass" })}
+      //       />
+      //       {reviewPasses.value.length === 0 ? (
+      //         <Empty />
+      //       ) : (
+      //         reviewPasses.value.map((p) => (
+      //           <ReviewPassRow
+      //             key={p.id}
+      //             pass={p}
+      //             prompts={prompts.value}
+      //             active={p.id === activeReviewPassId.value}
+      //             busy={mutating.value}
+      //             showActivate={p.id !== activeReviewPassId.value}
+      //             onActivate={() => activateReviewPass(p)}
+      //             onEdit={() => openEntity({ kind: "pass", entity: p })}
+      //             onDelete={() => removeReviewPass(p)}
+      //           />
+      //         ))
+      //       )}
+      //     </div>
+      //   );
+      //   break;
       case "pools":
         body = (
           <div class="flex flex-col gap-10">

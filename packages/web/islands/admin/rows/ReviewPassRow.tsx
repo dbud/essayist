@@ -1,3 +1,6 @@
+// Parked during the multipass rework.
+
+/*
 import type { Prompt, ReviewPass } from "@essayist/core";
 import { CircleCheck, Pencil, Trash2 } from "lucide-preact";
 import { ActionBtn, EntityCard } from "@/components/ui/EntityCard.tsx";
@@ -86,3 +89,4 @@ export function ReviewPassRow({
     </EntityCard>
   );
 }
+*/

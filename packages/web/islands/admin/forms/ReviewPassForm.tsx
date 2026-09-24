@@ -1,3 +1,6 @@
+// Parked during the multipass rework.
+
+/*
 import type { ReviewPass, ToolName } from "@essayist/core";
 import { ToolNameSchema } from "@essayist/core";
 import type { Signal } from "@preact/signals";
@@ -182,3 +185,4 @@ export function ReviewPassForm({
     </FormShell>
   );
 }
+*/
