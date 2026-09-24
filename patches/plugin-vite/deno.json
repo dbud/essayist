@@ -4,6 +4,11 @@
     "jsxImportSource": "preact",
     "types": ["vite/client"]
   },
+  "lint": {
+    "rules": {
+      "exclude": ["no-import-prefix", "no-window"]
+    }
+  },
   "exports": {
     ".": "./src/mod.ts",
     "./client": "./src/client.ts"

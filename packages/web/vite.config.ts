@@ -1,5 +1,5 @@
 import { fileURLToPath } from "node:url";
-import { fresh } from "@fresh/plugin-vite";
+import { deno, fresh } from "@fresh/plugin-vite";
 import tailwindcss from "@tailwindcss/vite";
 import { defineConfig, type Plugin, type ViteDevServer } from "vite";
 import { assetGenerate } from "./vite/asset-generate.ts";
@@ -49,7 +49,9 @@ export default defineConfig({
     watchCore(),
   ],
   worker: {
-    plugins: () => [fresh()],
+    // Only the Deno resolver is needed to bundle the worker; the full
+    // fresh() plugin stack made the inline worker build much slower.
+    plugins: () => [deno()],
   },
   resolve: {
     alias: {

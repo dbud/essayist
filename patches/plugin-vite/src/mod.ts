@@ -26,6 +26,7 @@ import {
   type ResolvedFreshViteConfig,
 } from "./utils.ts";
 
+export { deno };
 export type {
   ImportCheck,
   ImportCheckDiagnostic,

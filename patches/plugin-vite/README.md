@@ -31,3 +31,18 @@ Local changes, taken from https://github.com/freshframework/fresh/pull/3760
 
 Remove this folder and the `patch` entry once `@fresh/plugin-vite`
 publishes Vite 8 support.
+
+## Verifying changes in this folder
+
+The root deno/biome configs exclude this folder (vendored code would
+fail the app's style gates), so run its own checks after editing:
+
+```
+deno check --config patches/plugin-vite/deno.json patches/plugin-vite/src/mod.ts patches/plugin-vite/src/client.ts
+deno lint --config patches/plugin-vite/deno.json patches/plugin-vite/src/
+deno task -f web check
+```
+
+The first two use this folder's own deno.json so `vite/client` types
+resolve; the web check covers the consumer side. A plain build does not
+type-check plugin code, so do not rely on it alone.
