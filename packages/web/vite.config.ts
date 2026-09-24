@@ -20,11 +20,13 @@ function serveWorkers(): Plugin {
     configureServer(server: ViteDevServer) {
       server.middlewares.use((req, res, next) => {
         const url = new URL(req.url ?? "", "http://localhost");
-        if (!url.searchParams.has("worker_file")) {
+        // Prod builds emit the worker via the "worker" environment; in
+        // dev, transform the entry through the client environment
+        if (url.pathname !== "/wasm-worker.js") {
           return next();
         }
         server.environments.client
-          .transformRequest(req.url ?? "")
+          .transformRequest("/wasm/worker.ts")
           .then((result) => {
             if (result == null) return next();
             res.setHeader(
@@ -44,12 +46,32 @@ export default defineConfig({
   plugins: [
     assetGenerate(),
     serveWorkers(),
-    fresh(),
+    fresh({ environmentsWithoutPatches: ["worker"] }),
     tailwindcss(),
     watchCore(),
   ],
-  worker: {
-    plugins: () => [fresh()],
+  environments: {
+    worker: {
+      consumer: "client",
+      build: {
+        // The deployed web root, shared with the client env output
+        outDir: "_fresh/client",
+        emptyOutDir: false,
+        copyPublicDir: false,
+        manifest: false,
+        emitAssets: true,
+        // Inline the wasm so the worker stays a single file
+        assetsInlineLimit: 100_000_000,
+        rolldownOptions: {
+          input: {
+            "wasm-worker": "wasm/worker.ts",
+          },
+          output: {
+            entryFileNames: "wasm-worker.js",
+          },
+        },
+      },
+    },
   },
   resolve: {
     alias: {

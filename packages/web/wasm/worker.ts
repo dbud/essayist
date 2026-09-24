@@ -21,6 +21,7 @@ interface MarksResponse {
 const ready = init().then(() => setMyers(myers));
 
 self.onmessage = async (e: MessageEvent<MarksRequest>) => {
+  console.debug(`marks worker: req ${e.data.id}, ${e.data.marks.length} marks`);
   await ready;
   const { id, marks, oldContent, newContent } = e.data;
   const input: ResolveInput = { marks, oldContent, newContent };

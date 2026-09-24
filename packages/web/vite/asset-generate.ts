@@ -50,52 +50,57 @@ export function assetGenerate(): Plugin {
       server = devServer;
     },
 
-    async transform(code, id) {
-      if (!code.includes(".png?") || !id.endsWith(".css")) return null;
+    transform: {
+      filter: {
+        id: /\.css$/,
+      },
+      async handler(code, id) {
+        if (!code.includes(".png?")) return null;
 
-      const urlPattern = /url\(\s*["']?([^)"']+\.png\?[^)"']+)["']?\s*\)/g;
+        const urlPattern = /url\(\s*["']?([^)"']+\.png\?[^)"']+)["']?\s*\)/g;
 
-      const replacements = new Map<string, string>();
-      const watchFiles: string[] = [];
+        const replacements = new Map<string, string>();
+        const watchFiles: string[] = [];
 
-      for (const match of code.matchAll(urlPattern)) {
-        const url = match[1];
-        if (replacements.has(url)) continue;
+        for (const match of code.matchAll(urlPattern)) {
+          const url = match[1];
+          if (replacements.has(url)) continue;
 
-        const [bare, queryString] = url.split("?");
-        const params = Object.fromEntries(new URLSearchParams(queryString));
+          const [bare, queryString] = url.split("?");
+          const params = Object.fromEntries(new URLSearchParams(queryString));
 
-        const dir = dirname(id);
-        const tsPath = resolve(dir, `${bare}.ts`);
+          const dir = dirname(id);
+          const tsPath = resolve(dir, `${bare}.ts`);
 
-        if (!existsSync(tsPath)) continue;
+          if (!existsSync(tsPath)) continue;
 
-        watchFiles.push(tsPath);
-        const generate = await loadGenerator(tsPath, server);
+          watchFiles.push(tsPath);
+          const generate = await loadGenerator(tsPath, server);
 
-        if (typeof generate !== "function") {
-          throw new Error(`${tsPath} must export a default function`);
+          if (typeof generate !== "function") {
+            throw new Error(`${tsPath} must export a default function`);
+          }
+
+          const result = generate(params);
+          const pngBuffer = encodePng(result.width, result.height, result.data);
+          const dataUri = `data:image/png;base64,${pngBuffer.toString("base64")}`;
+
+          replacements.set(url, dataUri);
         }
 
-        const result = generate(params);
-        const pngBuffer = encodePng(result.width, result.height, result.data);
-        const dataUri = `data:image/png;base64,${pngBuffer.toString("base64")}`;
+        if (replacements.size === 0) return null;
 
-        replacements.set(url, dataUri);
-      }
+        let newCode = code;
+        for (const [original, replacement] of replacements) {
+          newCode = newCode.replaceAll(original, replacement);
+        }
 
-      if (replacements.size === 0) return null;
+        for (const file of watchFiles) {
+          this.addWatchFile(file);
+        }
 
-      let newCode = code;
-      for (const [original, replacement] of replacements) {
-        newCode = newCode.replaceAll(original, replacement);
-      }
-
-      for (const file of watchFiles) {
-        this.addWatchFile(file);
-      }
-
-      return { code: newCode, map: null };
+        return { code: newCode, map: null };
+      },
     },
   };
 }
