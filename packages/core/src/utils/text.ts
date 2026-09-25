@@ -27,7 +27,7 @@ export function section(header: string): string {
   return `## ${header}`;
 }
 
-/** Bulleted items, one per line. */
+/** Bulleted items on separate lines. */
 export function bulletList(items: string[]): string {
   return items.map((item) => `- ${item}`).join("\n");
 }

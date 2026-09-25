@@ -12,7 +12,7 @@ function generateMarkId(): string {
 /** Default fuzzy threshold for matching context (Phase 2). */
 export const DEFAULT_CONTEXT_FUZZY_THRESHOLD = 0.8;
 
-/** Multiplier for the mark's word count to determine the search radius. */
+/** Multiplier for the word count of a mark, to determine the search radius. */
 export const DEFAULT_SEARCH_RADIUS_MULTIPLIER = 2;
 
 /** Minimum search radius, in tokens (words). */
@@ -106,7 +106,7 @@ function mapOffset(mark: Mark, hunks: DiffHunk[]): [boolean, number, number] {
         return [false, estimatedOffset, 0];
       }
       // Hunk is inside the mark -- offset stays, length adjusts by the
-      // hunk's own net length change.
+      // net length change of the hunk itself.
       lengthDelta +=
         hunk.newEnd - hunk.newStart - (hunk.oldEnd - hunk.oldStart);
       continue;
@@ -145,7 +145,7 @@ function fuzzyResolveMark(
     minSearchRadius = DEFAULT_MIN_SEARCH_RADIUS,
   } = options ?? {};
 
-  // Search radius is in word units, scaled by the mark's word count.
+  // Search radius is in word units, scaled by the word count of the mark.
   const markWords =
     wordTokens(mark.before_context).length +
     wordTokens(mark.selected_text).length +
@@ -211,7 +211,7 @@ function fuzzyResolveMark(
     "after",
   );
 
-  // One context exists but failed -- neighborhood is gone, go stale.
+  // A single context exists but failed -- neighborhood is gone, go stale.
   if (
     (mark.before_context.length > 0 && !beforeResult) ||
     (mark.after_context.length > 0 && !afterResult)
@@ -275,7 +275,7 @@ function fuzzyResolveMark(
   const trimmed = trimContextSeparators(raw, startsWithWord, endsWithWord);
   // If the selected text was deleted (empty gap), only treat it as a
   // zero-length resolved mark when BOTH contexts matched and abut --
-  // that confidently locates where the text was. With only one context
+  // that confidently locates where the text was. With a single context
   // (the other empty or missing), the selection is just gone: stale.
   if (trimmed.text.length === 0 && !(beforeResult && afterResult)) {
     return {

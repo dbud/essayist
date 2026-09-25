@@ -46,8 +46,8 @@ export function showToast(
   return toast;
 }
 
-/** Begin dismissal: plays the leave animation. The element's animationend
- * listener calls removeToast once the animation finishes. */
+/** Begin dismissal: plays the leave animation. The animationend listener of
+ * the element calls removeToast once the animation finishes. */
 export function dismissToast(toast: Signal<Toast>): void {
   if (toast.value.dismissing) return;
   toast.value = { ...toast.value, dismissing: true };

@@ -39,7 +39,7 @@ interface MarkdownBlock {
   empty: boolean;
 }
 
-// Monoid concatenation with createMarkdownExport's separators: double
+// Monoid concatenation with the separators of createMarkdownExport: double
 // newline between two non-empty blocks, single newline otherwise, and no
 // separator before the first block (the identity case).
 const markdownMonoid: Monoid<MarkdownBlock> = {

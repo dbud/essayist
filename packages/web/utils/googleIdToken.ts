@@ -31,10 +31,10 @@ export interface GoogleIdTokenClaims {
 }
 
 export interface VerifyGoogleIdTokenOptions {
-  /** OAuth2 client id expected in the token's `aud` claim. */
+  /** OAuth2 client id expected in the `aud` claim of the token. */
   clientId: string;
   /**
-   * Inject for tests; resolves the signing key for the token's header.
+   * Inject for tests; resolves the signing key for the header of the token.
    * Defaults to jose's remote JWK set for Google.
    */
   getKey?: (header: JWTHeaderParameters) => Promise<CryptoKey>;

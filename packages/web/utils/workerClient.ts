@@ -79,8 +79,8 @@ export function createWorkerClient<TParams extends object, TResponse>(
         signal.addEventListener(
           "abort",
           () => {
-            // Only act if this request is still the one in-flight; otherwise it
-            // already settled and there is nothing to do.
+            // Only act if this request is still the request in flight; otherwise
+            // it already settled and there is nothing to do.
             if (inFlight?.id === id) cancelInFlight(abortError());
           },
           { once: true },

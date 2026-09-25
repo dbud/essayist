@@ -133,7 +133,7 @@ export class VirtualFileSystem implements VFS {
 
     // Write extra chunks individually before the metadata batch. Deno KV caps
     // total atomic mutation size at 800 KiB, so large files can't fit all
-    // chunks in one batch. Chunks are keyed by versionId (unique per write),
+    // chunks in a single batch. Chunks are keyed by versionId (unique per write),
     // so if the metadata batch below fails, these are harmless orphans --
     // never referenced until the manifest commits.
     for (let i = 0; i < extraChunks.length; i++) {
@@ -672,7 +672,7 @@ export class VirtualFileSystem implements VFS {
     }
   }
 
-  /** Fetch many keys, batching around Deno KV's 10-key getMany limit. */
+  /** Fetch many keys, batching around the 10-key getMany limit of Deno KV. */
   async #getManyBatched<T>(keys: Key[]): Promise<(Entry<T> | undefined)[]> {
     const MAX_GET_MANY = 10;
     const results: (Entry<T> | undefined)[] = [];

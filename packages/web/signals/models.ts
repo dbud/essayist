@@ -91,7 +91,7 @@ export function setResolver(p: Resolver): void {
   resolver = p;
 }
 
-/** Loading/error state plus a way to re-run a model's transport. */
+/** Loading/error state plus a way to re-run the transport of a model. */
 export interface ModelData {
   loading: ReadonlySignal<boolean>;
   error: ReadonlySignal<string>;
@@ -164,7 +164,7 @@ export function* settle<T>(model: T): Generator<T, T, unknown> {
   return (yield model) as T;
 }
 
-/** Parallel `settle`: one drain for all models, resumed as a tuple. */
+/** Parallel `settle`: a single drain for all models, resumed as a tuple. */
 export function* settleAll<T extends unknown[]>(
   ...models: T
 ): Generator<T, T, unknown> {
@@ -188,8 +188,8 @@ async function drive(gen: Plan): Promise<void> {
 
 type SerializedCache = Record<string, Record<string, unknown>>;
 
-/** The request's seed: run the page's plan to a fully settled state and
- * serialize the cache for the client. The plan yields with
+/** The seed of the request: run the plan of the page to a fully settled
+ * state and serialize the cache for the client. The plan yields with
  * `settle`/`settleAll` at each data dependency. */
 export async function seed(plan: () => Plan): Promise<string> {
   await drive(plan());

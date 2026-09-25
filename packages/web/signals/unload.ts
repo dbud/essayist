@@ -4,7 +4,7 @@ import { autoSave } from "@/signals/preferences.ts";
 
 // Loss prevention at page unload. Autosave on: flush dirty files with a
 // keepalive PUT (best effort). Autosave off: never write silently; the
-// browser's native dialog guards unsaved changes instead.
+// native browser dialog guards unsaved changes instead.
 if (IS_BROWSER) {
   globalThis.addEventListener("pagehide", () => {
     if (autoSave.value) flushAllDirty();

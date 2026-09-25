@@ -25,7 +25,7 @@ export interface SyncCtx {
   kv: Deno.Kv;
 }
 
-/** Validate one entity against a zod schema; returns an error message or
+/** Validate a single entity against a zod schema; returns an error message or
  *  null. Structural so kvctl does not need a zod dependency of its own. */
 function check<T>(
   schema: {

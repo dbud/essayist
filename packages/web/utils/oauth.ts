@@ -36,7 +36,8 @@ export function getOAuthHelpers(request: Request): Helpers {
 
 export type GoogleUserInfo = UserInput;
 
-/** Fetch the authenticated user's profile from Google's userinfo endpoint. */
+/** Fetch the profile of the authenticated user from the Google userinfo
+ * endpoint. */
 export async function getGoogleUserInfo(
   accessToken: string,
 ): Promise<GoogleUserInfo> {

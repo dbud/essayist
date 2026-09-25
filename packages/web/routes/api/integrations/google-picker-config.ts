@@ -5,7 +5,8 @@ import { getValidAccessToken } from "@/utils/googleToken.ts";
 // appId? }. 503 if GOOGLE_API_KEY is unset, 401 if no session or no tokens.
 // appId is optional (GOOGLE_APP_ID). accessToken: short-lived (~1h),
 // drive.file-scoped OAuth token; required client-side by the Picker.
-// developerKey: GOOGLE_API_KEY, the Picker's required client-side API key.
+// developerKey: GOOGLE_API_KEY, the client-side API key required by the
+// Picker.
 // Not secret; quota abuse is mitigated by referrer + API restrictions set
 // in Cloud Console.
 export const handler = {

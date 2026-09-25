@@ -25,7 +25,7 @@ export const TOOL_DEFINITIONS: ToolDefinition[] = [
 
 /** zod input schema to the JSON Schema the model receives. */
 function toParameters(schema: z.ZodType): ToolParameters {
-  // Same target as the SDK's tool wire conversion.
+  // Same target as the tool wire conversion of the SDK.
   return z.toJSONSchema(schema, { target: "draft-7" }) as Record<
     string,
     unknown

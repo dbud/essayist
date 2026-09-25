@@ -42,8 +42,9 @@ export async function applyMarks(
   allowedLabels: readonly string[],
   provenance: MarkProvenance,
 ): Promise<MarkAttempt[]> {
-  // Sequential on purpose: a version's marks are one list under one KV key,
-  // so vfs.mark is a read-modify-write and concurrent marks would drop marks.
+  // Sequential on purpose: the marks of a version are a single list under a
+  // single KV key, so vfs.mark is a read-modify-write and concurrent
+  // applications would lose marks.
   const attempts: MarkAttempt[] = [];
   for (const mark of proposed.marks) {
     attempts.push(await applyMark(vfs, mark, allowedLabels, provenance));

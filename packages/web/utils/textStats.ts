@@ -2,8 +2,8 @@ import type { EditorState } from "lexical";
 import { BlockFold, type Monoid } from "./incrementalBlocks.ts";
 
 // Words are alphanumeric runs, optionally joined by single hyphens, so
-// hyphenated words count as one ("well-known" is one word). Note: core's
-// wordTokens (vfs/text_search.ts) still splits on hyphens.
+// hyphenated words count as a single word ("well-known" is a single word).
+// Note: the wordTokens from core (vfs/text_search.ts) still splits on hyphens.
 const WORD_REGEX = /[\p{L}\p{N}]+(?:-[\p{L}\p{N}]+)*/gu;
 
 // Non-whitespace characters for the "no spaces" count. \s matches NBSP too.

@@ -232,7 +232,7 @@ Deno.test("markdownFold -- undo restore folds the restored content", () => {
   const editor = createEditor();
   const restored = importMarkdown(editor, "hello");
 
-  // One character typed on top: normal update, incremental fold tracks it.
+  // A single character typed on top: normal update, incremental fold tracks it.
   const p1 = applyEdit(editor, () => {
     const text = $getRoot().getAllTextNodes()[0];
     text.setTextContent("hello!");

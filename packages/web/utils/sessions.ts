@@ -3,8 +3,8 @@ import { setCookie } from "@std/http/cookie";
 import { kv } from "@/store.ts";
 
 // Maps the kv-oauth session id (from the signed cookie) to an app user id and
-// optionally the user's Google OAuth tokens. kv-oauth 0.11 returns tokens at
-// callback but does not persist them; without this row they'd be discarded.
+// optionally the Google OAuth tokens of the user. kv-oauth 0.11 returns tokens
+// at callback but does not persist them; without this row they'd be discarded.
 // Refresh logic lives in utils/googleToken.ts.
 const APP_SESSIONS = "app_sessions";
 const USER_REFRESH_TOKENS = "user_refresh_tokens";
@@ -12,8 +12,8 @@ const USER_REFRESH_TOKENS = "user_refresh_tokens";
 // Sliding TTL re-applied by updateSessionTokens on each refresh.
 const SESSION_TTL_MS = 90 * 24 * 60 * 60 * 1000;
 
-// OAuth tokens stored on the session row. Extends kv-oauth's `Tokens` with a
-// derived `expiresAt` so we can check expiry without re-parsing `expiresIn`.
+// OAuth tokens stored on the session row. Extends the `Tokens` of kv-oauth
+// with a derived `expiresAt` so we can check expiry without re-parsing `expiresIn`.
 // The access token is short-lived; googleToken.ts refreshes it via the refresh
 // token before expiry.
 export interface SessionTokens extends Tokens {
@@ -77,14 +77,14 @@ export async function deleteSession(sessionId: string): Promise<void> {
 }
 
 // One Tap sign-in creates sessions outside the kv-oauth flow, so we
-// replicate kv-oauth 0.11's site session here: a `site-session` cookie
+// replicate the site session of kv-oauth 0.11 here: a `site-session` cookie
 // (prefixed `__Host-` on https) plus a `site_sessions` KV row that its
 // `getSessionId` validates against. kv-oauth must read the same KV: the dev
 // task sets DENO_KV_PATH to our sqlite file; on Deno Deploy both open the
 // platform KV.
 const SITE_SESSION_COOKIE = "site-session";
-// kv-oauth's cookie maxAge is in seconds and backs the KV row with the same
-// TTL; derive both from our session TTL.
+// The cookie maxAge of kv-oauth is in seconds and backs the KV row with the
+// same TTL; derive both from our session TTL.
 const SITE_SESSION_MAX_AGE_SECONDS = SESSION_TTL_MS / 1000;
 
 /**

@@ -17,7 +17,7 @@ export const seedConfig = new Command<KvctlGlobals>()
         ],
       });
 
-      // One shared reviewer persona; steps differentiate through directives.
+      // A shared reviewer persona; steps differentiate through directives.
       const systemPromptKey = "system.reviewer";
       const prompts = [
         {

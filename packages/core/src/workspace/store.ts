@@ -19,9 +19,9 @@ import { LastOwnerError, UserEmailTakenError } from "./types.ts";
 //   ["users", userId]                        -> User
 //   ["user_emails", email]                   -> userId   (unique-email index)
 //   ["workspaces", wsId]                     -> Workspace
-//   ["workspaces_by_owner", ownerId, wsId]   -> true     (owner's workspaces)
+//   ["workspaces_by_owner", ownerId, wsId]   -> true     (workspaces of the owner)
 //   ["members_by_ws", wsId, userId]          -> WorkspaceMember
-//   ["members_by_user", userId, wsId]        -> true     (user's workspaces)
+//   ["members_by_user", userId, wsId]        -> true     (workspaces of the user)
 const USERS = "users";
 const USER_EMAILS = "user_emails";
 const WORKSPACES = "workspaces";

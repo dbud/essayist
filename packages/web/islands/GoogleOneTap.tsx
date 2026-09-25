@@ -35,8 +35,8 @@ export default function GoogleOneTap({ clientId, next }: GoogleOneTapProps) {
             formRef.current?.submit();
           },
         });
-        // Arriving from /oauth/signout: clear GSI's remembered auto selection
-        // so the user is not silently signed back in.
+        // Arriving from /oauth/signout: clear the auto selection remembered
+        // by GSI so the user is not silently signed back in.
         if (new URLSearchParams(globalThis.location.search).has("signedout")) {
           google.accounts.id.disableAutoSelect();
         }

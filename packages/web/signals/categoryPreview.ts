@@ -18,8 +18,8 @@ export interface SwatchEntry {
   color: string;
 }
 
-/** Palette rows: one per category (edited row shows the live color), a
- *  "(new)" row while creating, then the fallback row for unlabeled marks. */
+/** Palette rows: a row per category (the edited row shows the live color),
+ *  a "(new)" row while creating, then the fallback row for unlabeled marks. */
 export const swatchEntries = computed<SwatchEntry[]>(() => {
   const preview = categoryPreview.value;
   const entries: SwatchEntry[] = getCategories().list.value.map(

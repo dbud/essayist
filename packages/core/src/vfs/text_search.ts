@@ -32,7 +32,7 @@ export function tokenDiceSimilarity(a: string[], b: string[]): number {
 }
 
 export interface TokenFuzzyMatch {
-  /** Char offset of the matched window's first word. */
+  /** Char offset of the first word in the matched window. */
   startOffset: number;
   /** Char offset of the next word after the match (end of text if none). */
   nextOffset: number;
@@ -140,14 +140,14 @@ export class TokenizedText {
     );
     if (windowEnd - windowStart < plen) return null;
 
-    // Distance (in token indices) from the window's gap-facing edge to
-    // center. The gap-facing edge is the one facing the selection:
+    // Distance (in token indices) from the gap-facing edge of the window
+    // to center. The gap-facing edge is the edge facing the selection:
     //   - "before" (before_context, sits left of the selection) faces it
     //     on its RIGHT edge = the word after the window.
     //   - "after" (after_context, sits right of the selection) faces it
-    //     on its LEFT edge = the window's first word.
+    //     on its LEFT edge = the first word of the window.
     // Anchoring on the gap-facing edge stops the window from drifting toward
-    // the mark and dropping the context's far words.
+    // the mark and dropping the far words of the context.
     const boundaryDist = (i: number, len: number): number => {
       const leftIdx = i;
       const rightIdx = Math.min(i + len, this.#tokens.length);
@@ -171,7 +171,7 @@ export class TokenizedText {
     let bestDist = Infinity;
     let bestExact = false;
 
-    // One pass over plen-token windows. Each window is scored 1 if it matches
+    // A single pass over plen-token windows. Each window is scored 1 if it matches
     // the pattern in order, else its word-multiset similarity. Ties prefer
     // an in-order match over a reordered multiset match, then the window whose
     // gap-facing edge is nearest center.

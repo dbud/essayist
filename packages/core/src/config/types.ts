@@ -67,7 +67,7 @@ export const StepSchema = z.object({
 });
 export type Step = z.infer<typeof StepSchema>;
 
-/** A review pass: an ordered pipeline of steps over one pinned file version. */
+/** A review pass: an ordered pipeline of steps over a pinned file version. */
 export const ReviewPassSchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -80,7 +80,7 @@ export type ReviewPass = z.infer<typeof ReviewPassSchema>;
 
 // -- resolved bundles (computed, not stored) --
 
-/** Resolved config for one step, produced by ConfigStore.resolveReviewPass. */
+/** Resolved config for a step, produced by ConfigStore.resolveReviewPass. */
 export interface ResolvedStep {
   step: Step;
   /** Ordered model refs. */

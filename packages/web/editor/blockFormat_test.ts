@@ -59,7 +59,7 @@ function caretAtStart(editor: LexicalEditor): void {
   );
 }
 
-// Select the entire first content block's text.
+// Select the text of the first content block.
 function selectFirstBlockText(editor: LexicalEditor): void {
   editor.update(
     () => {

@@ -12,7 +12,7 @@
 import { initSync, myers } from "@essayist/wasm";
 
 // `@essayist/wasm` resolves to `crates/wasm/pkg/wasm.js`; the wasm bytes sit
-// alongside it as `wasm_bg.wasm` (wasm-bindgen's --target web convention).
+// alongside it as `wasm_bg.wasm` (the --target web convention of wasm-bindgen).
 const wasmJsUrl = import.meta.resolve("@essayist/wasm");
 initSync({ module: Deno.readFileSync(new URL("wasm_bg.wasm", wasmJsUrl)) });
 

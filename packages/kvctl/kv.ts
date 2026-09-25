@@ -4,8 +4,8 @@ import { fileURLToPath } from "node:url";
 import { ConfigStore, KvAdapter, WorkspaceStore } from "@essayist/core";
 import type { KvctlGlobals } from "@/globals.ts";
 
-// The local playground KV, the web dev server's KV. Resolved from this
-// module so the default works from any working directory.
+// The local playground KV, also used by the web dev server. Resolved from
+// this module so the default works from any working directory.
 export const LOCAL_KV = fileURLToPath(
   new URL("../web/local-kv.sqlite3", import.meta.url),
 );

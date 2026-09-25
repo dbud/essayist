@@ -26,7 +26,7 @@ export interface TraceScope {
  * TODO -- blob strategy: buffer appends, commit one chunked blob in end().
  */
 export interface TraceStore {
-  /** Append one event; calls arrive in seq order. */
+  /** Append an event; calls arrive in seq order. */
   append({
     wsId,
     runId,
@@ -36,17 +36,17 @@ export interface TraceStore {
   /** Mark the trace complete. */
   end({ wsId, runId }: TraceScope): Promise<void>;
 
-  /** Read a run's trace in order; undefined when nothing was written. */
+  /** Read the trace of a run in order; undefined when nothing was written. */
   get({ wsId, runId }: TraceScope): Promise<TracedReviewEvent[] | undefined>;
 
-  /** Recorder bound to one run. onEvent receives each derived event. */
+  /** Recorder bound to a run. onEvent receives each derived event. */
   recorder(
     scope: TraceScope,
     onEvent?: (event: TracedReviewEvent) => void,
   ): TraceRecorder;
 }
 
-/** Persist one KV entry per event. */
+/** Persist a KV entry per event. */
 export class EventTraceStore implements TraceStore {
   #adapter: PersistenceAdapter;
 
@@ -122,7 +122,7 @@ function capValue(value: unknown): CappedValue {
   return { value: json.slice(0, MAX_PAYLOAD_CHARS), truncated: true };
 }
 
-/** Records one run's trace events; record after flush is ignored. */
+/** Records the trace events of a run; record after flush is ignored. */
 export class TraceRecorder implements ReviewTraceSink {
   #store: TraceStore;
   #wsId: string;

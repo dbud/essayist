@@ -43,7 +43,7 @@ export class ReviewStore {
     return run;
   }
 
-  /** Replace the run's step records; the runner persists them as steps change. */
+  /** Replace the step records of a run; the runner persists them as steps change. */
   async setRunSteps({
     wsId,
     id,

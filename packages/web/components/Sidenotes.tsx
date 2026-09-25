@@ -67,10 +67,10 @@ export default function Sidenotes({
     : Number.POSITIVE_INFINITY;
 
   // Paper panel behind the fully-visible sidenotes: it spans from the first
-  // visible note (or the bottom ghost's head, when it pokes above) to the
-  // last visible note (or the top ghost's tail, when it hangs below), and
-  // occludes the ghost parts in between. The ghosts' edge-anchored parts
-  // outside the panel stay visible.
+  // visible note (or the head of the bottom ghost, when it pokes above) to
+  // the last visible note (or the tail of the top ghost, when it hangs
+  // below), and occludes the ghost parts in between. The edge-anchored
+  // parts of the ghosts outside the panel stay visible.
   const visible = viewportLayout.value.filter((v) => !isHidden(v));
   const first = visible.at(0);
   const last = visible.at(-1);
@@ -85,12 +85,12 @@ export default function Sidenotes({
   const hasPanel = panelTop < panelBottom;
 
   // The panel casts a shadow onto a ghost only while its edge sits inside
-  // that ghost's box (partial coverage).
+  // the box of that ghost (partial coverage).
   const coversTopGhost = hasPanel && panelTop < topGhostBottom;
   const coversBottomGhost = hasPanel && panelBottom > bottomGhostTop;
 
-  // Partial occlusion of each ghost (0..1): drives the ghost's fade and
-  // the panel shadow intensity.
+  // Partial occlusion of each ghost (0..1): drives the fade of the ghost
+  // and the panel shadow intensity.
   const topOcclusion =
     topGhost.value && hasPanel
       ? clamp((topGhostBottom - panelTop) / topGhostHeight)

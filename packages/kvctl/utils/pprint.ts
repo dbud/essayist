@@ -1,5 +1,5 @@
-// colored inspect on a TTY; plain JSON when stdout is piped, one document
-// per call, so jq can parse the stream
+// colored inspect on a TTY; plain JSON when stdout is piped, a single
+// document per call, so jq can parse the stream
 export function pprint<T>(value: T): void {
   const body = Deno.stdout.isTerminal()
     ? Deno.inspect(value, {

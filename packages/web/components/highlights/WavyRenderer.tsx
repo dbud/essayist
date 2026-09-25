@@ -15,9 +15,9 @@ const WAVELENGTH = 10;
 // Trim to 1 decimal to keep path data compact.
 const r = (n: number): string => n.toFixed(1);
 
-/** A sine-like wave from x0..x0+w centered on y0. Built from cubic beziers, one
- *  per half-wave, alternating above/below y0. A trailing partial half-wave
- *  tapers so the wave fits exactly within w. */
+/** A sine-like wave from x0..x0+w centered on y0. Built from cubic beziers, a
+ *  single bezier per half-wave, alternating above/below y0. A trailing
+ *  partial half-wave tapers so the wave fits exactly within w. */
 function wavePath(x0: number, y0: number, w: number, amp: number): string {
   const half = WAVELENGTH / 2;
   const k = 0.36; // control-point ratio for a sine-ish cubic

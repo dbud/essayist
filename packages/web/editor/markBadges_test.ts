@@ -31,8 +31,8 @@ Deno.test("visibleBadgeNumbers -- multi-paragraph mark badges each block", () =>
   assertEquals(visibleBadgeNumbers(ordered, numbers([["1", 1]])), [[1], [1]]);
 });
 
-Deno.test("visibleBadgeNumbers -- partial overlap, one badge per mark at its end", () => {
-  // "AAAAA{1} BBB{1,2} BB{2}" within one paragraph.
+Deno.test("visibleBadgeNumbers -- partial overlap, a badge per mark at its end", () => {
+  // "AAAAA{1} BBB{1,2} BB{2}" within a single paragraph.
   const ordered = [
     { ids: ["1"], blockKey: "p" },
     { ids: ["1", "2"], blockKey: "p" },

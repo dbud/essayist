@@ -10,11 +10,11 @@ export interface StepRunContext {
   artifacts: Map<string, Analysis>;
   /** Marks placed by earlier mark steps in this run. */
   priorMarks: MarkAttempt[];
-  /** The pass's steps, used to name referenced steps. */
+  /** Steps of the pass, used to name referenced steps. */
   steps: ResolvedStep[];
 }
 
-/** Build the full prompt for one review step. */
+/** Build the full prompt for a review step. */
 export function composeStepInput(
   resolved: ResolvedStep,
   context: StepRunContext,

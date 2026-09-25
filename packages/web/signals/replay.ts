@@ -23,7 +23,7 @@ export function setReplayParams(next: ReplayParams | null): void {
     url.searchParams.delete("replay");
     url.searchParams.delete("speed");
   }
-  // Keep the history entry's state; url.ts manages back/forward.
+  // Keep the state of the history entry; url.ts manages back/forward.
   history.replaceState(history.state, "", url);
 }
 

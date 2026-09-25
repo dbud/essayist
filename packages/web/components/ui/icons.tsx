@@ -8,8 +8,8 @@ interface IconProps {
   class?: string;
 }
 
-/** Circle outline with an oversized checkmark; matches lucide's
-    CircleDashed outline weight for pairing in status cells. */
+/** Circle outline with an oversized checkmark; matches the CircleDashed
+    outline weight of lucide for pairing in status cells. */
 export function CircleCheckIcon({ size = 24, class: className }: IconProps) {
   return (
     <svg

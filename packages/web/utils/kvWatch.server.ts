@@ -27,7 +27,7 @@ interface Run {
   tracked: Map<string, Tracked>;
 }
 
-/** A subscription as tracked for one stream run: `stamp` is the last
+/** A subscription as tracked for a single stream run: `stamp` is the last
  * seen versionstamp of the key, unset until the stream's baseline
  * batch. */
 interface Tracked {

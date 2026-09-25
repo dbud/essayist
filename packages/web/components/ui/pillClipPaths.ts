@@ -22,7 +22,7 @@ const ANGLES: Record<Corner, [number, number]> = {
   br: [0, Math.PI / 2], // (1,0) -> (0,1)
 };
 
-/** Sampled quarter-superellipse for one corner at semi-axis `r`
+/** Sampled quarter-superellipse for a corner at semi-axis `r`
  *  (1 = fills the box, <1 = inset), in 0..1 objectBoundingBox coords. */
 function arcPoints(corner: Corner, r: number): Array<[number, number]> {
   const [cx, cy] = CENTERS[corner];
@@ -51,13 +51,13 @@ function path(pts: Array<[number, number]>): string {
   return `<path d="${d}" fill="#fff"/>`;
 }
 
-/** SVG path for one corner of a rounded rect: arc plus edges to inner vertex. */
+/** SVG path for a corner of a rounded rect: arc plus edges to inner vertex. */
 function cornerPath(corner: Corner, r = 1): string {
   const pts = [...arcPoints(corner, r), CENTERS[corner]];
   return path(pts);
 }
 
-/** Ring band for one corner, inset by fraction f of its radius (0..1),
+/** Ring band for a corner, inset by fraction f of its radius (0..1),
  *  drawn as one continuous path. */
 function cornerRingPath(corner: Corner, f: number): string {
   // outer arc out, then inner arc reversed back; Z closes radially to start.

@@ -18,9 +18,9 @@ export const MarksAtCursorExtension = defineExtension({
     { selection }: SelectionExtensionConfig,
   ) => {
     // Publish the mark ids at the caret into `selection.markIds`, and the
-    // innermost one into `selection.innerMarkId`. The active highlighting is
-    // rendered by the MarkHighlights overlay, which reads these signals; the
-    // <mark> element stays transparent.
+    // innermost of those into `selection.innerMarkId`. The active
+    // highlighting is rendered by the MarkHighlights overlay, which reads
+    // these signals; the <mark> element stays transparent.
     const read = (editorState: EditorState) => {
       editorState.read(() => {
         selection.markIds.value = $markIdsAtAnchor();
