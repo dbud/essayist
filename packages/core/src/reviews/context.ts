@@ -5,7 +5,7 @@ import type { Analysis } from "./steps/analyze.ts";
 
 export interface StepRunContext {
   /** Numbered content of the pinned version, in `NNNNNN: line` form. */
-  essay: string;
+  content: string;
   /** Artifacts from completed analysis steps, keyed by step id. */
   artifacts: Map<string, Analysis>;
   /** Marks placed by earlier mark steps in this run. */
@@ -33,7 +33,7 @@ export function composeStepInput(
       marks.length > 0 &&
       listOf(section("Marks placed"), marks.map(markLine)),
     section("Essay (numbered lines)"),
-    context.essay,
+    context.content,
   );
 }
 

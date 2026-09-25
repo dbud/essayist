@@ -49,6 +49,8 @@ export {
 } from "@/provider_error.ts";
 export type { ReviewPhase, ReviewProgress } from "@/reviews/progress.ts";
 export { ReviewProgressTracker } from "@/reviews/progress.ts";
+export type { RunReviewPassOptions } from "@/reviews/runner.ts";
+export { runReviewPass } from "@/reviews/runner.ts";
 export { ReviewStore } from "@/reviews/store.ts";
 export type { TraceStore } from "@/reviews/trace.ts";
 export { EventTraceStore } from "@/reviews/trace.ts";

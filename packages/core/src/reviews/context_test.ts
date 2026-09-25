@@ -44,7 +44,7 @@ const unlabeledAttempt: MarkAttempt = {
 
 function context(overrides?: Partial<StepRunContext>): StepRunContext {
   return {
-    essay: "     1: first line\n     2: second line",
+    content: "     1: first line\n     2: second line",
     artifacts: new Map([["analyze", analysis]]),
     priorMarks: [attempt, unlabeledAttempt],
     steps: [
@@ -156,7 +156,7 @@ Deno.test("composeStepInput -- empty prompts and sections are skipped", () => {
 
   const input = composeStepInput(
     step,
-    context({ artifacts: new Map(), essay: "     1: only line" }),
+    context({ artifacts: new Map(), content: "     1: only line" }),
   );
 
   assertEquals(input, "## Essay (numbered lines)\n\n     1: only line");

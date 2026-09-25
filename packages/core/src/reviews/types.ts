@@ -4,7 +4,7 @@ export type ReviewRunStatus = "running" | "completed" | "failed";
 
 export type StepRunStatus = "running" | "completed" | "failed" | "skipped";
 
-/** A review pass run over one file in a workspace. */
+/** A review pass run over a file in a workspace. */
 export interface ReviewRun {
   id: string;
   wsId: string;
@@ -17,7 +17,7 @@ export interface ReviewRun {
   error?: string;
   /** Final summary text, from the synthesize step when present. */
   summary?: string;
-  /** One record per pass step, in pass order. */
+  /** A record per pass step, in pass order. */
   steps: StepRun[];
 }
 
@@ -29,7 +29,7 @@ export interface StepRun {
   startedAt: number;
   completedAt?: number;
   error?: string;
-  /** Model ref that served the step's call, when known. */
+  /** Model ref that served the step call, when known. */
   model?: string;
   marksProposed?: number;
   marksPlaced?: number;
@@ -37,7 +37,7 @@ export interface StepRun {
   repairRoundsUsed?: number;
 }
 
-/** Normalized token usage for one model call. */
+/** Normalized token usage for a model call. */
 export interface ReviewTraceUsage {
   inputTokens: number;
   outputTokens: number;
@@ -47,7 +47,7 @@ export interface ReviewTraceUsage {
   cost?: number;
 }
 
-/** One proposed mark and its application result. */
+/** A proposed mark and its application result. */
 export interface MarkAttempt {
   selected_text: string;
   comment: string;
@@ -61,12 +61,19 @@ export interface MarkAttempt {
 
 /**
  * One recorded event from a review run, ordered by `seq`. Events are
- * step-scoped: structured steps emit input/output, mark steps additionally
- * emit application and repair events.
+ * step-scoped: structured steps emit input, reasoning, and output; mark
+ * steps additionally emit application and repair events.
  */
 export type ReviewTraceEvent =
   | { type: "step_start"; stepId: string; stepName: string; kind: StepKind }
   | { type: "step_input"; stepId: string; text: string }
+  | { type: "step_reasoning"; stepId: string; text: string }
+  | {
+      type: "step_output";
+      stepId: string;
+      output: unknown;
+      truncated?: boolean;
+    }
   | {
       type: "step_output";
       stepId: string;
@@ -88,4 +95,6 @@ export type TracedReviewEvent = ReviewTraceEvent & {
 /** Receives trace events as they happen. */
 export interface ReviewTraceSink {
   record(event: ReviewTraceEvent): void;
+  /** Await pending appends and close the sink. */
+  flush(): Promise<void>;
 }
