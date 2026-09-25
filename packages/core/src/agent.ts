@@ -12,6 +12,7 @@ import { logger } from "@/logger.ts";
 import type { ReviewTraceUsage } from "@/reviews/types.ts";
 import { generateInstructions, stripMarkdownFences } from "@/schema.ts";
 import type { ToolPrompt } from "@/tools/index.ts";
+import { joinBlocks } from "@/utils/text.ts";
 
 // The OpenRouter SDK retries only 5XX by default (retryCodes: ["5XX"]). Free
 // upstream providers commonly 429, so opt 429 into the same backoff loop.
@@ -162,14 +163,14 @@ function parseStructured<T extends z.ZodObject<z.ZodRawShape>>(
 }
 
 function repairInput(fullInput: string, raw: string, error: string): string {
-  return [
+  return joinBlocks([
     fullInput,
     "Your previous reply was not valid for the schema.",
     "Raw reply:",
     raw,
     `Validation error: ${error}`,
     "Return only one corrected JSON object matching the schema, with no extra text.",
-  ].join("\n\n");
+  ]);
 }
 
 function joinReasoning(
