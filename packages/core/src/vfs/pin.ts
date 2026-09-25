@@ -34,6 +34,11 @@ export class PinnedVFS implements VFS {
     this.#pin = pin;
   }
 
+  /** The path operations are pinned to. */
+  get path(): string {
+    return this.#pin.path;
+  }
+
   async read(path: string, options?: ReadOptions): Promise<FileReadResult> {
     if (path !== this.#pin.path) return await this.#inner.read(path, options);
     return await this.#inner.read(path, {
