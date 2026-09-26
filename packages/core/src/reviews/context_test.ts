@@ -104,7 +104,6 @@ Deno.test("composeStepInput -- mark steps include referenced artifacts and prior
     ),
     true,
   );
-  assertEquals(input.includes('## Analysis from step "Analyze"'), true);
   assertEquals(input.includes("Thesis: Drafts are raw material."), true);
   assertEquals(input.includes("- line 3: Opening claim"), true);
   assertEquals(input.includes("## Already flagged"), true);

@@ -1,9 +1,15 @@
+import { partition } from "@std/collections";
 import { z } from "zod";
-import type { ResolvedStep } from "@/config/types.ts";
+import type { Agent } from "@/agent.ts";
+import type { NodeRunner } from "@/flow/types.ts";
+import { callStructured } from "@/reviews/call.ts";
+import type { ReviewTypes } from "@/reviews/graph.ts";
 import type { MarkAttempt } from "@/reviews/types.ts";
-import { joinBlocks, joinLines, section } from "@/utils/text.ts";
+import { SerialTasks } from "@/utils/serial.ts";
 import type { PinnedVFS } from "@/vfs/pin.ts";
 import type { MarkProvenance } from "@/vfs/types.ts";
+import { renderAnalysis } from "./analyze.ts";
+import { composeCallInput, composeRepairInput } from "./compose.ts";
 
 export const MarkProposalSchema = z.object({
   selected_text: z
@@ -81,39 +87,85 @@ async function applyMark(
   };
 }
 
-const REPAIR_CONTEXT_LINES = 5;
-
-/** Build the repair prompt for failed marks. */
-export function composeRepairInput(
-  resolved: ResolvedStep,
-  essay: string,
-  failed: MarkAttempt[],
-): string {
-  return joinBlocks(
-    resolved.systemPrompt,
-    resolved.instructions,
-    "Repair the following marks: each one failed to match the essay text.",
-    "Return corrected marks for these attempts only, quoting text exactly as it appears in the content below.",
-    ...failed.map((attempt) =>
-      joinBlocks(section("Failed mark"), failedAttemptBody(attempt, essay)),
-    ),
-  );
+/** A serialized mark applier: marks of a version are a single list under
+ * one KV key, so vfs.mark is a read-modify-write and concurrent
+ * applications would lose marks. */
+export function createMarkApplier(pinned: PinnedVFS) {
+  const tasks = new SerialTasks();
+  return (
+    marks: MarkProposal[],
+    allowedLabels: readonly string[],
+    provenance: MarkProvenance,
+  ): Promise<MarkAttempt[]> =>
+    tasks.add(() => applyMarks(pinned, { marks }, allowedLabels, provenance));
 }
 
-function failedAttemptBody(attempt: MarkAttempt, essay: string): string {
-  const lines = essay.split("\n");
-  const hint = attempt.line_hint;
-  const from = Math.max(1, (hint ?? 1) - REPAIR_CONTEXT_LINES);
-  const to = Math.min(
-    lines.length,
-    (hint ?? lines.length) + REPAIR_CONTEXT_LINES,
-  );
-  return joinLines(
-    `Attempted span: "${attempt.selected_text}"`,
-    `Comment: ${attempt.comment}`,
-    `Error: ${attempt.error}`,
-    "",
-    hint ? `Content around line ${hint}:` : "Content:",
-    lines.slice(from - 1, to),
-  );
+/** Proposes marks for a step with a structured call. */
+export function createProposeRunner(
+  agent: Agent,
+): NodeRunner<ReviewTypes, "propose"> {
+  return {
+    async execute(prompts, { inputs, artifact, emit }) {
+      const result = await callStructured({
+        agent,
+        onEvent: emit,
+        input: composeCallInput(
+          prompts,
+          inputs.of("analysis").map(renderAnalysis),
+          inputs.one("content"),
+        ),
+        models: prompts.models,
+        schema: ProposedMarksSchema,
+      });
+      return [artifact("proposals", result.output.marks)];
+    },
+  };
+}
+
+/** Re-proposes corrected marks for the failed attempts delivered through
+ * its gate. */
+export function createRepairProposeRunner(
+  agent: Agent,
+): NodeRunner<ReviewTypes, "repairPropose"> {
+  return {
+    async execute(prompts, { inputs, artifact, emit }) {
+      const result = await callStructured({
+        agent,
+        onEvent: emit,
+        input: composeRepairInput(
+          prompts,
+          inputs.one("content"),
+          inputs.of("failed").flat(),
+        ),
+        models: prompts.models,
+        schema: ProposedMarksSchema,
+      });
+      return [artifact("proposals", result.output.marks)];
+    },
+  };
+}
+
+/** Applies proposed marks through the pinned VFS. */
+export function createApplyRunner(
+  apply: (
+    marks: MarkProposal[],
+    allowedLabels: readonly string[],
+    provenance: MarkProvenance,
+  ) => Promise<MarkAttempt[]>,
+): NodeRunner<ReviewTypes, "apply"> {
+  return {
+    async execute({ allowedLabels, provenance }, { inputs, artifact, emit }) {
+      const attempts = await apply(
+        inputs.of("proposals").flat(),
+        allowedLabels,
+        provenance,
+      );
+      emit({ type: "applied", attempts });
+      const [placed, failed] = partition(attempts, (attempt) => attempt.marked);
+      return [
+        artifact("placed", placed),
+        ...(failed.length > 0 ? [artifact("failed", failed)] : []),
+      ];
+    },
+  };
 }

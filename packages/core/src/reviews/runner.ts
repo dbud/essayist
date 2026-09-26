@@ -1,16 +1,13 @@
 import type { z } from "zod";
 import type { Agent, StructuredCall } from "@/agent.ts";
 import type { ResolvedReviewPass, ResolvedStep } from "@/config/types.ts";
-import { callStructured } from "@/reviews/call.ts";
+import { callStructured, stepRecorder } from "@/reviews/call.ts";
 import { composeStepInput, type StepRunContext } from "@/reviews/context.ts";
 import type { ReviewProgress } from "@/reviews/progress.ts";
 import { ReviewProgressTracker } from "@/reviews/progress.ts";
 import { AnalysisSchema } from "@/reviews/steps/analyze.ts";
-import {
-  applyMarks,
-  composeRepairInput,
-  ProposedMarksSchema,
-} from "@/reviews/steps/mark.ts";
+import { composeRepairInput } from "@/reviews/steps/compose.ts";
+import { applyMarks, ProposedMarksSchema } from "@/reviews/steps/mark.ts";
 import { StepSummarySchema } from "@/reviews/steps/synthesize.ts";
 import type { ReviewStore } from "@/reviews/store.ts";
 import type { TraceStore } from "@/reviews/trace.ts";
@@ -220,7 +217,14 @@ class ReviewPassRunner {
       });
       const repaired = await this.#proposeAndApply(
         resolved,
-        composeRepairInput(resolved, this.#stepCtx.content, failed),
+        composeRepairInput(
+          {
+            system: resolved.systemPrompt,
+            instructions: resolved.instructions,
+          },
+          this.#stepCtx.content,
+          failed,
+        ),
       );
       this.#recorder.record({
         type: "marks_applied",
@@ -252,10 +256,9 @@ class ReviewPassRunner {
   ): Promise<StructuredCall<z.output<T>>> {
     return await callStructured({
       agent: this.#agent,
-      sink: this.#recorder,
-      stepId: resolved.step.id,
-      modelRefs: resolved.modelRefs,
+      onEvent: stepRecorder(this.#recorder, resolved.step.id),
       input,
+      models: resolved.modelRefs,
       schema,
     });
   }

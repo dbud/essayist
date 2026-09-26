@@ -1,60 +1,11 @@
-import type { ModelResult, Tool } from "@openrouter/agent";
 import { assertEquals } from "@std/assert";
-import { Agent, type ModelClient } from "@/agent.ts";
 import type { ResolvedReviewPass, Step } from "@/config/types.ts";
 import { InMemoryAdapter } from "@/persistence/mod.ts";
 import { runReviewPass } from "@/reviews/runner.ts";
 import { ReviewStore } from "@/reviews/store.ts";
+import { createSpyClient } from "@/reviews/testing/agent.ts";
 import { EventTraceStore } from "@/reviews/trace.ts";
 import { createFile } from "@/vfs/testing/helpers.ts";
-
-interface FakeRound {
-  text: string;
-  reasoning?: string;
-}
-
-function fakeResult(round: FakeRound): ModelResult<readonly Tool[]> {
-  return {
-    getText: () => Promise.resolve(round.text),
-    getItemsStream: async function* () {},
-    getFullResponsesStream: async function* () {
-      if (round.reasoning !== undefined) {
-        yield {
-          type: "response.output_item.done",
-          item: {
-            type: "reasoning",
-            content: [{ text: round.reasoning }],
-            summary: [],
-          },
-        };
-      }
-    },
-    getUsage: () =>
-      Promise.resolve({
-        inputTokens: 1,
-        outputTokens: 1,
-        totalTokens: 2,
-        cachedTokens: 0,
-        reasoningTokens: 0,
-        modelCalls: 1,
-      }),
-    cancel: () => {},
-  } as unknown as ModelResult<readonly Tool[]>;
-}
-
-function createSpyClient(rounds: FakeRound[]): {
-  agent: Agent;
-  inputs: string[];
-} {
-  const inputs: string[] = [];
-  const client: ModelClient = {
-    callModel: (request: { input: string }) => {
-      inputs.push(request.input);
-      return fakeResult(rounds[Math.min(inputs.length - 1, rounds.length - 1)]);
-    },
-  };
-  return { agent: new Agent("test-key", client), inputs };
-}
 
 function stepFixture(partial: Partial<Step> & Pick<Step, "id" | "kind">): Step {
   return {

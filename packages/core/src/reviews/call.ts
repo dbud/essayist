@@ -1,50 +1,62 @@
 import type { z } from "zod";
 import type { Agent, StructuredCall } from "@/agent.ts";
-import type { ReviewTraceSink } from "@/reviews/types.ts";
+import type { ReviewTraceSink, ReviewTraceUsage } from "@/reviews/types.ts";
+
+/** Events of one structured call, delivered in order. */
+export type CallEvent =
+  | { type: "prompt"; text: string }
+  | { type: "reasoning"; text: string }
+  | { type: "output"; output: unknown }
+  | { type: "usage"; usage: ReviewTraceUsage };
 
 /** Options for {@linkcode callStructured}. */
 export interface CallStructuredOptions<T extends z.ZodObject<z.ZodRawShape>> {
   agent: Agent;
-  /** Receives the input, reasoning, output, and usage events. */
-  sink: ReviewTraceSink;
-  /** Id stamped on the recorded events. */
-  stepId: string;
+  /** Delivers the prompt before the call, then the result events. */
+  onEvent: (event: CallEvent) => void;
   input: string;
-  modelRefs: string[];
+  models: string[];
   schema: T;
 }
 
-/** Call the model for a structured output, recording the input before the
- * call and the reasoning, output, and usage after it. */
+/** Call the model for a structured output, delivering the prompt before
+ * the call and the reasoning, output, and usage after it. */
 export async function callStructured<T extends z.ZodObject<z.ZodRawShape>>(
   options: CallStructuredOptions<T>,
 ): Promise<StructuredCall<z.output<T>>> {
-  options.sink.record({
-    type: "step_input",
-    stepId: options.stepId,
-    text: options.input,
-  });
+  options.onEvent({ type: "prompt", text: options.input });
   const result = await options.agent.callModelStructured(
     options.input,
     options.schema,
-    options.modelRefs,
+    options.models,
   );
   if (result.reasoning !== undefined) {
-    options.sink.record({
-      type: "step_reasoning",
-      stepId: options.stepId,
-      text: result.reasoning,
-    });
+    options.onEvent({ type: "reasoning", text: result.reasoning });
   }
-  options.sink.record({
-    type: "step_output",
-    stepId: options.stepId,
-    output: result.output,
-  });
-  options.sink.record({
-    type: "usage",
-    stepId: options.stepId,
-    usage: result.usage,
-  });
+  options.onEvent({ type: "output", output: result.output });
+  options.onEvent({ type: "usage", usage: result.usage });
   return result;
+}
+
+/** Maps call events onto the step-scoped trace events. */
+export function stepRecorder(
+  sink: ReviewTraceSink,
+  stepId: string,
+): (event: CallEvent) => void {
+  return (event) => {
+    switch (event.type) {
+      case "prompt":
+        sink.record({ type: "step_input", stepId, text: event.text });
+        break;
+      case "reasoning":
+        sink.record({ type: "step_reasoning", stepId, text: event.text });
+        break;
+      case "output":
+        sink.record({ type: "step_output", stepId, output: event.output });
+        break;
+      case "usage":
+        sink.record({ type: "usage", stepId, usage: event.usage });
+        break;
+    }
+  };
 }

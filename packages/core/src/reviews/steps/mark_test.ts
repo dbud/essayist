@@ -3,7 +3,8 @@ import type { ResolvedStep } from "@/config/types.ts";
 import type { MarkAttempt } from "@/reviews/types.ts";
 import { PinnedVFS } from "@/vfs/pin.ts";
 import { createFile } from "@/vfs/testing/helpers.ts";
-import { applyMarks, composeRepairInput, type ProposedMarks } from "./mark.ts";
+import { composeRepairInput } from "./compose.ts";
+import { applyMarks, type ProposedMarks } from "./mark.ts";
 
 const PROVENANCE = { runId: "run-1", stepId: "mechanics" };
 
@@ -101,7 +102,11 @@ Deno.test("composeRepairInput -- windows content around the hinted line", () => 
     },
   ];
 
-  const input = composeRepairInput(resolved(), essay, failed);
+  const input = composeRepairInput(
+    { system: resolved().systemPrompt, instructions: resolved().instructions },
+    essay,
+    failed,
+  );
 
   assertEquals(input.includes("You are an editor."), true);
   assertEquals(input.includes('Attempted span: "line 10"'), true);
@@ -124,7 +129,11 @@ Deno.test("composeRepairInput -- attempts without a hint get the full essay", ()
     },
   ];
 
-  const input = composeRepairInput(resolved(), "     1: only line", failed);
+  const input = composeRepairInput(
+    { system: resolved().systemPrompt, instructions: resolved().instructions },
+    "     1: only line",
+    failed,
+  );
 
   assertEquals(input.includes("     1: only line"), true);
   assertEquals(input.includes("Content around line"), false);
