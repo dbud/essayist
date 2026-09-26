@@ -1,6 +1,7 @@
 import type { z } from "zod";
 import type { Agent, StructuredCall } from "@/agent.ts";
 import type { ResolvedReviewPass, ResolvedStep } from "@/config/types.ts";
+import { callStructured } from "@/reviews/call.ts";
 import { composeStepInput, type StepRunContext } from "@/reviews/context.ts";
 import type { ReviewProgress } from "@/reviews/progress.ts";
 import { ReviewProgressTracker } from "@/reviews/progress.ts";
@@ -17,7 +18,6 @@ import type {
   MarkAttempt,
   ReviewRun,
   ReviewTraceSink,
-  ReviewTraceUsage,
   StepRun,
 } from "@/reviews/types.ts";
 import { PinnedVFS } from "@/vfs/pin.ts";
@@ -250,18 +250,14 @@ class ReviewPassRunner {
     input: string,
     schema: T,
   ): Promise<StructuredCall<z.output<T>>> {
-    this.#recorder.record({
-      type: "step_input",
+    return await callStructured({
+      agent: this.#agent,
+      sink: this.#recorder,
       stepId: resolved.step.id,
-      text: input,
-    });
-    const result = await this.#agent.callModelStructured(
+      modelRefs: resolved.modelRefs,
       input,
       schema,
-      resolved.modelRefs,
-    );
-    this.#recordStructuredCall(resolved.step.id, result);
-    return result;
+    });
   }
 
   async #proposeAndApply(
@@ -279,25 +275,6 @@ class ReviewPassRunner {
       resolved.allowedLabels,
       this.#provenance(resolved),
     );
-  }
-
-  #recordStructuredCall(
-    stepId: string,
-    result: { reasoning?: string; output: unknown; usage: ReviewTraceUsage },
-  ): void {
-    if (result.reasoning !== undefined) {
-      this.#recorder.record({
-        type: "step_reasoning",
-        stepId,
-        text: result.reasoning,
-      });
-    }
-    this.#recorder.record({
-      type: "step_output",
-      stepId,
-      output: result.output,
-    });
-    this.#recorder.record({ type: "usage", stepId, usage: result.usage });
   }
 
   #provenance(resolved: ResolvedStep): MarkProvenance {
