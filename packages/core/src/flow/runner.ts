@@ -298,6 +298,7 @@ function view<T extends FlowTypes>(
     );
   return {
     all: inputs,
+    allOf: matching,
     of: <A extends ArtifactType<T>>(type: A): T["artifacts"][A][] =>
       matching(type).map((artifact) => artifact.data),
     one: <A extends ArtifactType<T>>(type: A): T["artifacts"][A] => {

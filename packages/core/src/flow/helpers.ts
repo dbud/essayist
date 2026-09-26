@@ -58,10 +58,5 @@ function picked<T extends FlowTypes>(
   inputs: Artifacts<T>,
   types: ReadonlyArray<ArtifactType<T>>,
 ): Artifact<T>[] {
-  return types.flatMap((type) =>
-    inputs.all.filter(
-      (artifact): artifact is Artifact<T, typeof type> =>
-        artifact.type === type,
-    ),
-  );
+  return types.flatMap((type) => inputs.allOf(type));
 }

@@ -45,6 +45,8 @@ export interface Artifacts<T extends FlowTypes> {
   of<A extends ArtifactType<T>>(type: A): T["artifacts"][A][];
   /** Exactly one dependency datum of a type; throws on zero or several. */
   one<A extends ArtifactType<T>>(type: A): T["artifacts"][A];
+  /** Dependency artifacts of one type, in commit order, with provenance. */
+  allOf<A extends ArtifactType<T>>(type: A): Artifact<T, A>[];
 }
 
 export interface NodeContext<
