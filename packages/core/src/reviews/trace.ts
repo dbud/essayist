@@ -1,5 +1,6 @@
 import { logger } from "@/logger.ts";
 import type { PersistenceAdapter } from "@/persistence/mod.ts";
+import { SerialTasks } from "@/utils/serial.ts";
 import type {
   ReviewTraceEvent,
   ReviewTraceSink,
@@ -129,7 +130,7 @@ export class TraceRecorder implements ReviewTraceSink {
   #runId: string;
   #seq = 0;
   #onEvent: ((event: TracedReviewEvent) => void) | undefined;
-  #writes: Promise<void> = Promise.resolve();
+  #writes = new SerialTasks();
   #flushed = false;
 
   constructor(
@@ -153,9 +154,9 @@ export class TraceRecorder implements ReviewTraceSink {
     };
     logTraceEvent(entry);
     this.#onEvent?.(entry);
-    // Appends are async; chain them to keep store order equal to seq order.
-    this.#writes = this.#writes
-      .then(() =>
+    // Appends are async; the queue keeps store order equal to seq order.
+    this.#writes
+      .add(() =>
         this.#store.append({
           wsId: this.#wsId,
           runId: this.#runId,
@@ -176,11 +177,7 @@ export class TraceRecorder implements ReviewTraceSink {
   async flush(): Promise<void> {
     if (this.#flushed) return;
     this.#flushed = true;
-    try {
-      await this.#writes;
-    } catch (err) {
-      logger.error({ err }, "review trace append failed");
-    }
+    await this.#writes.drain();
     try {
       await this.#store.end({
         wsId: this.#wsId,
