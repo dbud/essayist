@@ -231,6 +231,7 @@ Deno.test("resolveActiveReviewPass -- throws on empty unit pool", async () => {
 Deno.test("resolveActiveReviewPass -- throws on missing unit prompt", async () => {
   const store = seed();
   await store.saveModelPool({ id: "pool", name: "Pool", models: ["m/ref"] });
+  await store.savePrompt({ key: "sys", body: "hi" });
   await store.saveCategory({ id: "c", label: "c", description: "d" });
   await store.saveReviewPass({
     id: "r",
