@@ -1,4 +1,4 @@
-import type { Category, ModelPool, Prompt } from "@essayist/core";
+import type { Category, ModelPool, Prompt, ReviewPass } from "@essayist/core";
 import { createModel, signal } from "@preact/signals";
 import { IS_BROWSER } from "fresh/runtime";
 import { getCategories } from "@/signals/categories.ts";
@@ -10,22 +10,20 @@ export interface AdminConfig {
   modelPools: ModelPool[];
   prompts: Prompt[];
   categories: Category[];
+  reviewPasses: ReviewPass[];
+  activeReviewPassId?: string;
 }
 
 export type ModelPoolInput = Omit<ModelPool, "id">;
 export type CategoryInput = Omit<Category, "id">;
-
-// Pass surface parked during the multipass rework:
-// export interface AdminConfig {
-//   reviewPasses: ReviewPass[];
-//   activeReviewPassId?: string;
-// }
-// export type ReviewPassInput = Omit<ReviewPass, "id">;
+export type ReviewPassInput = Omit<ReviewPass, "id">;
 
 export const AdminConfigModel = createModel(() => {
   const modelPools = signal<ModelPool[]>([]);
   const prompts = signal<Prompt[]>([]);
   const categories = signal<Category[]>([]);
+  const reviewPasses = signal<ReviewPass[]>([]);
+  const activeReviewPassId = signal<string | undefined>(undefined);
   const [run, { loading, error }] = createAsyncState(true);
 
   async function load() {
@@ -38,6 +36,8 @@ export const AdminConfigModel = createModel(() => {
       modelPools.value = result.modelPools;
       prompts.value = result.prompts;
       categories.value = result.categories;
+      reviewPasses.value = result.reviewPasses;
+      activeReviewPassId.value = result.activeReviewPassId;
     }
   }
 
@@ -81,17 +81,17 @@ export const AdminConfigModel = createModel(() => {
     return ok;
   };
 
-  // const createReviewPass = (data: ReviewPassInput) =>
-  //   post("/api/admin/review-passes", data);
+  const createReviewPass = (data: ReviewPassInput) =>
+    post("/api/admin/review-passes", data);
 
-  // const updateReviewPass = (id: string, data: ReviewPassInput) =>
-  //   put(`/api/admin/review-passes/${encodeURIComponent(id)}`, data);
+  const updateReviewPass = (id: string, data: ReviewPassInput) =>
+    put(`/api/admin/review-passes/${encodeURIComponent(id)}`, data);
 
-  // const deleteReviewPass = (id: string) =>
-  //   del(`/api/admin/review-passes/${encodeURIComponent(id)}`);
+  const deleteReviewPass = (id: string) =>
+    del(`/api/admin/review-passes/${encodeURIComponent(id)}`);
 
-  // const setActiveReviewPass = (reviewPassId: string) =>
-  //   put("/api/admin/active-review-pass", { reviewPassId });
+  const setActiveReviewPass = (reviewPassId: string) =>
+    put("/api/admin/active-review-pass", { reviewPassId });
 
   if (IS_BROWSER) void load();
 
@@ -99,6 +99,8 @@ export const AdminConfigModel = createModel(() => {
     modelPools,
     prompts,
     categories,
+    reviewPasses,
+    activeReviewPassId,
     loading,
     error,
     reload: load,
@@ -112,6 +114,10 @@ export const AdminConfigModel = createModel(() => {
     createCategory,
     updateCategory,
     deleteCategory,
+    createReviewPass,
+    updateReviewPass,
+    deleteReviewPass,
+    setActiveReviewPass,
   };
 });
 
