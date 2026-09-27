@@ -94,9 +94,12 @@ export default function AdminConfig() {
   } else {
     switch (tab.value) {
       case "passes":
-        // New/Edit return with the pass form (units editor).
         body = (
           <div class="flex flex-col gap-10">
+            <NewButton
+              label="New review pass"
+              onClick={() => openEntity({ kind: "pass" })}
+            />
             {reviewPasses.value.length === 0 ? (
               <Empty />
             ) : (
@@ -109,6 +112,7 @@ export default function AdminConfig() {
                   busy={mutating.value}
                   showActivate={p.id !== activeReviewPassId.value}
                   onActivate={() => activateReviewPass(p)}
+                  onEdit={() => openEntity({ kind: "pass", entity: p })}
                   onDelete={() => removeReviewPass(p)}
                 />
               ))

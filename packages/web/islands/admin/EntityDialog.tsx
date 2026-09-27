@@ -4,7 +4,7 @@ import Dialog from "@/components/ui/Dialog.tsx";
 import { CategoryForm } from "@/islands/admin/forms/CategoryForm.tsx";
 import { ModelPoolForm } from "@/islands/admin/forms/ModelPoolForm.tsx";
 import { PromptForm } from "@/islands/admin/forms/PromptForm.tsx";
-// import { ReviewPassForm } from "@/islands/admin/forms/ReviewPassForm.tsx";
+import { ReviewPassForm } from "@/islands/admin/forms/ReviewPassForm.tsx";
 import type { DialogRequest } from "@/islands/admin/types.ts";
 import MarkSwatches from "@/islands/MarkSwatches.tsx";
 
@@ -31,9 +31,9 @@ export default function EntityDialog({
       form = <CategoryForm entity={request.entity} open={open} />;
       aside = <MarkSwatches />;
       break;
-    // case "pass":
-    //   form = <ReviewPassForm entity={request.entity} open={open} />;
-    //   break;
+    case "pass":
+      form = <ReviewPassForm entity={request.entity} open={open} />;
+      break;
   }
   return (
     <Dialog open={open} aside={aside}>

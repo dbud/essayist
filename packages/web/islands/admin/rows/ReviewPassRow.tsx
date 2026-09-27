@@ -1,5 +1,5 @@
 import type { Prompt, ReviewPass } from "@essayist/core";
-import { CircleCheck, Trash2 } from "lucide-preact";
+import { CircleCheck, Pencil, Trash2 } from "lucide-preact";
 import { Fragment } from "preact";
 import { ActionBtn, EntityCard } from "@/components/ui/EntityCard.tsx";
 import { Field, List } from "@/components/ui/EntityRows.tsx";
@@ -23,6 +23,7 @@ export function ReviewPassRow({
   busy,
   showActivate,
   onActivate,
+  onEdit,
   onDelete,
 }: {
   pass: ReviewPass;
@@ -31,6 +32,7 @@ export function ReviewPassRow({
   busy: boolean;
   showActivate: boolean;
   onActivate: () => void;
+  onEdit: () => void;
   onDelete: () => void;
 }) {
   const byKey = (key: string) => prompts.find((p) => p.key === key);
@@ -55,6 +57,12 @@ export function ReviewPassRow({
               onClick={onActivate}
             />
           )}
+          <ActionBtn
+            label="Edit review pass"
+            icon={Pencil}
+            disabled={busy}
+            onClick={onEdit}
+          />
           <ActionBtn
             label="Delete review pass"
             icon={Trash2}
