@@ -98,7 +98,7 @@ Deno.test("review runners -- analyze, propose, apply, and synthesize in a flow",
         dependsOn: ["mechanics.propose"],
         payload: {
           allowedLabels: ["grammar"],
-          provenance: { runId: "r", stepId: "mechanics" },
+          provenance: { runId: "r", unitId: "mechanics" },
         },
       },
       {
@@ -148,7 +148,7 @@ Deno.test("review runners -- analyze, propose, apply, and synthesize in a flow",
 
   const marks = await vfs.getMarks("essay.txt", versionId);
   assertEquals(marks.length, 1);
-  assertEquals(marks[0].meta, { runId: "r", stepId: "mechanics" });
+  assertEquals(marks[0].meta, { runId: "r", unitId: "mechanics" });
 });
 
 Deno.test("review runners -- repair propose stays idle without failures", async () => {
@@ -160,7 +160,7 @@ Deno.test("review runners -- repair propose stays idle without failures", async 
     },
   ]);
   const runners = createReviewRunners({ agent, pinned });
-  const provenance = { runId: "r", stepId: "m" };
+  const provenance = { runId: "r", unitId: "m" };
   const flow = new FlowRunner<ReviewTypes>({ runners });
 
   const result = await flow.run({
@@ -231,7 +231,7 @@ Deno.test("review runners -- a repair round re-quotes failed spans", async () =>
     },
   ]);
   const runners = createReviewRunners({ agent, pinned });
-  const provenance = { runId: "r", stepId: "m" };
+  const provenance = { runId: "r", unitId: "m" };
   const flow = new FlowRunner<ReviewTypes>({ runners });
 
   const result = await flow.run({

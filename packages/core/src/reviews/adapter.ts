@@ -60,7 +60,7 @@ function markNodes(
   const prompts = promptsOf(resolved);
   const applyPayload = {
     allowedLabels: resolved.allowedLabels,
-    provenance: { runId, stepId: step.id },
+    provenance: { runId, unitId: step.id },
   };
   const gatePayload: PassWhenSpec<ReviewTypes> = {
     when: (inputs) => inputs.of("mark.failed").length > 0,

@@ -43,10 +43,10 @@ export interface GrepResult {
   matches: GrepMatch[];
 }
 
-/** Which review run and step placed a mark. */
+/** Which review run and unit placed a mark. */
 export interface MarkProvenance {
   runId: string;
-  stepId: string;
+  unitId: string;
 }
 
 export type MarkStatus = "resolved" | "stale";

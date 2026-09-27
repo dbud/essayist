@@ -6,7 +6,7 @@ import { createFile } from "@/vfs/testing/helpers.ts";
 import { composeRepairInput } from "./compose.ts";
 import { applyMarks, type ProposedMarks } from "./mark.ts";
 
-const PROVENANCE = { runId: "run-1", stepId: "mechanics" };
+const PROVENANCE = { runId: "run-1", unitId: "mechanics" };
 
 function resolved(): ResolvedStep {
   return {

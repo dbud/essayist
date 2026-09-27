@@ -120,7 +120,7 @@ Deno.test("runReviewPass -- completes a pass with marks, summary, and a per-node
   assertEquals(marks[0].selected_text, "brave");
   assertEquals(marks[0].meta, {
     runId: run.id,
-    stepId: "mechanics",
+    unitId: "mechanics",
   });
 
   const trace = (await traceStore.get({ wsId: "ws", runId: run.id })) ?? [];

@@ -11,7 +11,7 @@ const PROMPTS = {
 
 const APPLY_PAYLOAD = {
   allowedLabels: ["grammar"],
-  provenance: { runId: "r", stepId: "mechanics" },
+  provenance: { runId: "r", unitId: "mechanics" },
 };
 
 function stepFixture(partial: Partial<Step> & Pick<Step, "id" | "kind">): Step {
