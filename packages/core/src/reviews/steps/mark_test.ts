@@ -1,17 +1,9 @@
 import { assertEquals } from "@std/assert";
-import type { MarkAttempt } from "@/reviews/types.ts";
 import { PinnedVFS } from "@/vfs/pin.ts";
 import { createFile } from "@/vfs/testing/helpers.ts";
-import { composeRepairInput } from "./compose.ts";
 import { applyMarks, type ProposedMarks } from "./mark.ts";
 
 const PROVENANCE = { runId: "run-1", unitId: "mechanics" };
-
-const PROMPTS = {
-  system: "You are an editor.",
-  directive: "Scan for grammar faults.",
-  instructions: "Quote exact spans.",
-};
 
 Deno.test("applyMarks -- places marks on the pinned version", async () => {
   const { vfs, versionId } = await createFile("essay.txt", "hello brave world");
@@ -71,56 +63,4 @@ Deno.test("applyMarks -- rejects labels outside the allowed set", async () => {
     attempts[0].error,
     'label "tone" is not allowed; use one of: grammar',
   );
-});
-
-Deno.test("composeRepairInput -- windows content around the hinted line", () => {
-  const essay = Array.from(
-    { length: 20 },
-    (_, i) => `${String(i + 1).padStart(6)}: line ${i + 1}`,
-  ).join("\n");
-  const failed: MarkAttempt[] = [
-    {
-      selected_text: "line 10",
-      comment: "fix this",
-      line_hint: 10,
-      marked: false,
-      error: "selected text not found",
-    },
-  ];
-
-  const input = composeRepairInput(
-    { system: PROMPTS.system, instructions: PROMPTS.instructions },
-    essay,
-    failed,
-  );
-
-  assertEquals(input.includes("You are an editor."), true);
-  assertEquals(input.includes('Attempted span: "line 10"'), true);
-  assertEquals(input.includes("Error: selected text not found"), true);
-  assertEquals(input.includes("Content around line 10:"), true);
-  // Window covers lines 5..15; line 4 and line 16 are outside.
-  assertEquals(input.includes("line 5"), true);
-  assertEquals(input.includes("line 15"), true);
-  assertEquals(input.includes("line 4:"), false);
-  assertEquals(input.includes("line 16:"), false);
-});
-
-Deno.test("composeRepairInput -- attempts without a hint get the full essay", () => {
-  const failed: MarkAttempt[] = [
-    {
-      selected_text: "nowhere to anchor",
-      comment: "find it",
-      marked: false,
-      error: "selected text not found",
-    },
-  ];
-
-  const input = composeRepairInput(
-    { system: PROMPTS.system, instructions: PROMPTS.instructions },
-    "     1: only line",
-    failed,
-  );
-
-  assertEquals(input.includes("     1: only line"), true);
-  assertEquals(input.includes("Content around line"), false);
 });

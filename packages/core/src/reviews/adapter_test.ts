@@ -61,16 +61,16 @@ Deno.test("buildReviewGraph -- decomposes a pass into nodes", () => {
     [
       ["content", "source", []],
       ["analyze", "analyze", ["content"]],
-      ["mechanics.propose", "mark.propose", ["content", "analyze"]],
+      ["mechanics.propose", "mark.propose", ["analyze", "content"]],
       ["mechanics.apply", "mark.apply", ["mechanics.propose"]],
       ["mechanics.repair1.gate", "mark.repair.gate", ["mechanics.apply"]],
       [
         "mechanics.repair1.propose",
         "mark.propose.repair",
-        ["content", "mechanics.repair1.gate"],
+        ["mechanics.repair1.gate", "content"],
       ],
       ["mechanics.repair1.apply", "mark.apply", ["mechanics.repair1.propose"]],
-      ["summary", "synthesize", ["content", "analyze"]],
+      ["summary", "synthesize", ["analyze", "content"]],
     ],
   );
   const payloadOf = (id: string) =>
@@ -100,7 +100,7 @@ Deno.test("buildReviewGraph -- unrolls two repair rounds in a chain", () => {
       [
         "mechanics.repair1.propose",
         "mark.propose.repair",
-        ["content", "mechanics.repair1.gate"],
+        ["mechanics.repair1.gate", "content"],
       ],
       ["mechanics.repair1.apply", "mark.apply", ["mechanics.repair1.propose"]],
       [
@@ -111,7 +111,7 @@ Deno.test("buildReviewGraph -- unrolls two repair rounds in a chain", () => {
       [
         "mechanics.repair2.propose",
         "mark.propose.repair",
-        ["content", "mechanics.repair2.gate"],
+        ["mechanics.repair2.gate", "content"],
       ],
       ["mechanics.repair2.apply", "mark.apply", ["mechanics.repair2.propose"]],
     ],
@@ -151,10 +151,10 @@ Deno.test("buildReviewGraph -- artifact references pass through as deps", () => 
     graph.nodes.map((node) => [node.id, node.dependsOn]),
     [
       ["content", []],
-      ["mechanics.propose", ["content", "analyze", "ghost"]],
+      ["mechanics.propose", ["analyze", "ghost", "content"]],
       ["mechanics.apply", ["mechanics.propose"]],
       ["mechanics.repair1.gate", ["mechanics.apply"]],
-      ["mechanics.repair1.propose", ["content", "mechanics.repair1.gate"]],
+      ["mechanics.repair1.propose", ["mechanics.repair1.gate", "content"]],
       ["mechanics.repair1.apply", ["mechanics.repair1.propose"]],
     ],
   );

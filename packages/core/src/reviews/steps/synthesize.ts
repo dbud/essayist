@@ -3,8 +3,7 @@ import type { Agent } from "@/agent.ts";
 import type { NodeRunner } from "@/flow/types.ts";
 import { callStructured } from "@/reviews/call.ts";
 import type { ReviewTypes } from "@/reviews/graph.ts";
-import { renderAnalysis } from "./analyze.ts";
-import { composeCallInput } from "./compose.ts";
+import { composeCallInput } from "./input.ts";
 
 export const StepSummarySchema = z.object({
   summary: z
@@ -19,15 +18,10 @@ export function createSynthesizeRunner(
 ): NodeRunner<ReviewTypes, "synthesize"> {
   return {
     async execute({ prompts, pool }, { inputs, artifact, emit }) {
-      const content = inputs.one("content");
       const result = await callStructured({
         agent,
         onEvent: emit,
-        input: composeCallInput(
-          prompts,
-          inputs.of("analysis").map(renderAnalysis),
-          content,
-        ),
+        input: composeCallInput(prompts, inputs),
         models: pool.models,
         schema: StepSummarySchema,
       });

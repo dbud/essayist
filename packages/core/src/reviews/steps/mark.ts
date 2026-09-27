@@ -8,8 +8,7 @@ import type { MarkAttempt } from "@/reviews/types.ts";
 import { SerialTasks } from "@/utils/serial.ts";
 import type { PinnedVFS } from "@/vfs/pin.ts";
 import type { MarkProvenance } from "@/vfs/types.ts";
-import { renderAnalysis } from "./analyze.ts";
-import { composeCallInput, composeRepairInput } from "./compose.ts";
+import { composeCallInput, composeRepairInput } from "./input.ts";
 
 export const MarkProposalSchema = z.object({
   selected_text: z
@@ -108,11 +107,7 @@ export function createMarkProposeRunner(
       const result = await callStructured({
         agent,
         onEvent: emit,
-        input: composeCallInput(
-          prompts,
-          inputs.of("analysis").map(renderAnalysis),
-          inputs.one("content"),
-        ),
+        input: composeCallInput(prompts, inputs),
         models: pool.models,
         schema: ProposedMarksSchema,
       });
@@ -136,7 +131,7 @@ export function createMarkRepairRunner(
       const result = await callStructured({
         agent,
         onEvent: emit,
-        input: composeRepairInput(prompts, inputs.one("content"), failed),
+        input: composeRepairInput(prompts, inputs),
         models: pool.models,
         schema: ProposedMarksSchema,
       });

@@ -3,8 +3,7 @@ import type { Agent } from "@/agent.ts";
 import type { NodeRunner } from "@/flow/types.ts";
 import { callStructured } from "@/reviews/call.ts";
 import type { ReviewTypes } from "@/reviews/graph.ts";
-import { joinBlocks, joinLines, listOf, section } from "@/utils/text.ts";
-import { composeCallInput } from "./compose.ts";
+import { composeCallInput } from "./input.ts";
 
 export const AnalysisSchema = z.object({
   thesis: z.string().optional(),
@@ -22,41 +21,15 @@ export const AnalysisSchema = z.object({
 
 export type Analysis = z.infer<typeof AnalysisSchema>;
 
-// TODO -- when a second artifact shape is needed, turn this renderer and
-// AnalysisSchema into named (schema, renderer) profiles selected per step.
-export function renderAnalysis(analysis: Analysis): string {
-  return joinBlocks(
-    section("Analysis"),
-    joinLines(
-      analysis.thesis && `Thesis: ${analysis.thesis}`,
-      analysis.audience && `Audience: ${analysis.audience}`,
-      listOf("Claims, in order:", analysis.claims, { numbered: true }),
-      listOf(
-        "Outline:",
-        analysis.outline.map(
-          (entry) => `line ${entry.first_line}: ${entry.gist}`,
-        ),
-      ),
-      listOf("Strengths:", analysis.strengths),
-      listOf("Where a skeptical reader may resist:", analysis.risks),
-    ),
-  );
-}
-
 export function createAnalyzeRunner(
   agent: Agent,
 ): NodeRunner<ReviewTypes, "analyze"> {
   return {
     async execute({ prompts, pool }, { inputs, artifact, emit }) {
-      const content = inputs.one("content");
       const result = await callStructured({
         agent,
         onEvent: emit,
-        input: composeCallInput(
-          prompts,
-          inputs.of("analysis").map(renderAnalysis),
-          content,
-        ),
+        input: composeCallInput(prompts, inputs),
         models: pool.models,
         schema: AnalysisSchema,
       });

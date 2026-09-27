@@ -32,7 +32,7 @@ function unitNodes(
       {
         id: unit.id,
         kind: "synthesize",
-        dependsOn: [CONTENT, ...unit.inputs],
+        dependsOn: [...unit.inputs, CONTENT],
         payload: unit,
       },
     ];
@@ -41,7 +41,7 @@ function unitNodes(
     {
       id: unit.id,
       kind: "analyze",
-      dependsOn: [CONTENT, ...unit.inputs],
+      dependsOn: [...unit.inputs, CONTENT],
       payload: unit,
     },
   ];
@@ -66,7 +66,7 @@ function markNodes(
     {
       id: `${unit.id}.propose`,
       kind: "mark.propose",
-      dependsOn: [CONTENT, ...unit.inputs],
+      dependsOn: [...unit.inputs, CONTENT],
       payload: unit,
     },
     {
@@ -91,7 +91,7 @@ function markNodes(
     nodes.push({
       id: propose,
       kind: "mark.propose.repair",
-      dependsOn: [CONTENT, gate],
+      dependsOn: [gate, CONTENT],
       payload: unit,
     });
     nodes.push({

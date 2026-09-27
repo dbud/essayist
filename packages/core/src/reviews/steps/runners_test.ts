@@ -87,7 +87,7 @@ Deno.test("review runners -- analyze, propose, apply, and synthesize in a flow",
       {
         id: "mechanics.propose",
         kind: "mark.propose",
-        dependsOn: ["content", "structure"],
+        dependsOn: ["structure", "content"],
         payload: unitPayload("mechanics", "Mark mechanics."),
       },
       {
@@ -180,7 +180,7 @@ Deno.test("review runners -- repair propose stays idle without failures", async 
       {
         id: "m.repair1.propose",
         kind: "mark.propose.repair",
-        dependsOn: ["content", "m.repair1.gate"],
+        dependsOn: ["m.repair1.gate", "content"],
         payload: unitPayload("m", "Mark mechanics."),
       },
       {
@@ -251,7 +251,7 @@ Deno.test("review runners -- a repair round re-quotes failed spans", async () =>
       {
         id: "m.repair1.propose",
         kind: "mark.propose.repair",
-        dependsOn: ["content", "m.repair1.gate"],
+        dependsOn: ["m.repair1.gate", "content"],
         payload: unitPayload("m", "Mark mechanics."),
       },
       {
