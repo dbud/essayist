@@ -1,8 +1,6 @@
-// Parked during the multipass rework.
-
-/*
 import type { Prompt, ReviewPass } from "@essayist/core";
-import { CircleCheck, Pencil, Trash2 } from "lucide-preact";
+import { CircleCheck, Trash2 } from "lucide-preact";
+import { Fragment } from "preact";
 import { ActionBtn, EntityCard } from "@/components/ui/EntityCard.tsx";
 import { Field, List } from "@/components/ui/EntityRows.tsx";
 
@@ -25,7 +23,6 @@ export function ReviewPassRow({
   busy,
   showActivate,
   onActivate,
-  onEdit,
   onDelete,
 }: {
   pass: ReviewPass;
@@ -34,7 +31,6 @@ export function ReviewPassRow({
   busy: boolean;
   showActivate: boolean;
   onActivate: () => void;
-  onEdit: () => void;
   onDelete: () => void;
 }) {
   const byKey = (key: string) => prompts.find((p) => p.key === key);
@@ -60,12 +56,6 @@ export function ReviewPassRow({
             />
           )}
           <ActionBtn
-            label="Edit review pass"
-            icon={Pencil}
-            disabled={busy}
-            onClick={onEdit}
-          />
-          <ActionBtn
             label="Delete review pass"
             icon={Trash2}
             disabled={busy}
@@ -76,17 +66,44 @@ export function ReviewPassRow({
     >
       <Field label="pool" value={pass.modelPoolId} />
       <PromptField label="system" prompt={byKey(pass.systemPromptKey)} />
-      <PromptField label="directive" prompt={byKey(pass.directivePromptKey)} />
-      {pass.instructionsPromptKey && (
-        <PromptField
-          label="instructions"
-          prompt={byKey(pass.instructionsPromptKey)}
-        />
-      )}
-      <List label="tools" items={pass.enabledTools} />
-      <List label="categories" items={pass.allowedCategoryIds} />
-      <Field label="max rounds" value={pass.maxRounds} />
+      {pass.units.map((unit) => (
+        <Fragment key={unit.id}>
+          <div class="col-span-2 cell cell--ink flex min-w-0 gap-2">
+            <span>{unit.id}</span>
+            {unit.attempt && (
+              <span class="badge badge--success self-start">marks</span>
+            )}
+            {unit.summary && (
+              <span class="badge badge--success self-start">summary</span>
+            )}
+          </div>
+          <PromptField label="prompt" prompt={byKey(unit.promptKey)} />
+          {unit.instructionsPromptKey && (
+            <PromptField
+              label="instructions"
+              prompt={byKey(unit.instructionsPromptKey)}
+            />
+          )}
+          {unit.modelPoolId && (
+            <Field label="pool override" value={unit.modelPoolId} />
+          )}
+          {unit.inputs && unit.inputs.length > 0 && (
+            <List label="inputs" items={unit.inputs} />
+          )}
+          {unit.attempt && (
+            <>
+              <List
+                label="categories"
+                items={unit.attempt.allowedCategoryIds}
+              />
+              <Field
+                label="repair rounds"
+                value={unit.attempt.repairRounds ?? 1}
+              />
+            </>
+          )}
+        </Fragment>
+      ))}
     </EntityCard>
   );
 }
-*/
