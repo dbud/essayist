@@ -1,7 +1,7 @@
 import type { ModelPool } from "@essayist/core";
 import { Pencil, Trash2 } from "lucide-preact";
 import { ActionBtn, EntityCard } from "@/components/ui/EntityCard.tsx";
-import { Field, List } from "@/components/ui/EntityRows.tsx";
+import { List } from "@/components/ui/EntityRows.tsx";
 
 export function ModelPoolRow({
   pool,
@@ -36,9 +36,6 @@ export function ModelPoolRow({
       }
     >
       <List label="models" items={pool.models} />
-      {pool.apiKeyEnvKey && (
-        <Field label="api key env" value={pool.apiKeyEnvKey} />
-      )}
     </EntityCard>
   );
 }

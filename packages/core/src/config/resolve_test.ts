@@ -143,34 +143,6 @@ Deno.test("resolveActiveReviewPass -- undefined when no pin", async () => {
   assertEquals(await resolveActiveReviewPass(store), undefined);
 });
 
-Deno.test("resolveActiveReviewPass -- respects pool.apiKeyEnvKey when set", async () => {
-  const store = seed();
-  await store.saveModelPool({
-    id: "p",
-    name: "P",
-    models: ["m/a"],
-    apiKeyEnvKey: "CUSTOM_KEY",
-  });
-  await store.savePrompt({ key: "sys", body: "hi" });
-  await store.saveCategory({ id: "c", label: "c", description: "d" });
-  await store.saveReviewPass({
-    id: "r",
-    name: "R",
-    systemPromptKey: "sys",
-    modelPoolId: "p",
-    units: [
-      {
-        id: "mark",
-        promptKey: "sys",
-        attempt: { allowedCategoryIds: ["c"] },
-      },
-    ],
-  });
-  await store.setActiveReviewPass("r");
-  const resolved = await resolveActiveReviewPass(store);
-  assertEquals(resolved?.units[0].pool.apiKeyEnvKey, "CUSTOM_KEY");
-});
-
 Deno.test("resolveActiveReviewPass -- throws on missing review pass", async () => {
   const store = seed();
   await store.setActiveReviewPass("nope");

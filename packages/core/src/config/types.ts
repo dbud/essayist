@@ -10,8 +10,6 @@ export const ModelPoolSchema = z.object({
   name: z.string(),
   /** Model ids in order. */
   models: z.string().array(),
-  /** Env var name holding the API key. Defaults to OPENROUTER_API_KEY. */
-  apiKeyEnvKey: z.string().optional(),
 });
 export type ModelPool = z.infer<typeof ModelPoolSchema>;
 

@@ -19,7 +19,6 @@ export function ModelPoolForm({
   const [modelsText, setModelsText] = useState(
     (entity?.models ?? []).join("\n"),
   );
-  const [env, setEnv] = useState(entity?.apiKeyEnvKey ?? "");
   const [error, setError] = useState<string | null>(null);
 
   async function handleSubmit(e: Event) {
@@ -32,7 +31,6 @@ export function ModelPoolForm({
     const data: ModelPoolInput = {
       name: name.trim(),
       models,
-      ...(env.trim() ? { apiKeyEnvKey: env.trim() } : {}),
     };
     const ok = entity
       ? await admin.updateModelPool(entity.id, data)
@@ -56,12 +54,6 @@ export function ModelPoolForm({
         onInput={setModelsText}
         rows={5}
         placeholder="one model id per line"
-      />
-      <TextRow
-        label="api key env"
-        value={env}
-        onInput={setEnv}
-        placeholder="OPENROUTER_API_KEY"
       />
     </FormShell>
   );
