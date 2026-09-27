@@ -25,6 +25,7 @@ export function ReviewPassRow({
   onActivate,
   onEdit,
   onDelete,
+  onDeleteUnit,
 }: {
   pass: ReviewPass;
   prompts: Prompt[];
@@ -34,6 +35,7 @@ export function ReviewPassRow({
   onActivate: () => void;
   onEdit: () => void;
   onDelete: () => void;
+  onDeleteUnit: (unitId: string) => void;
 }) {
   const byKey = (key: string) => prompts.find((p) => p.key === key);
   return (
@@ -76,14 +78,22 @@ export function ReviewPassRow({
       <PromptField label="system" prompt={byKey(pass.systemPromptKey)} />
       {pass.units.map((unit) => (
         <Fragment key={unit.id}>
-          <div class="col-span-2 cell cell--ink flex min-w-0 gap-2">
-            <span>{unit.id}</span>
-            {unit.attempt && (
-              <span class="badge badge--success self-start">marks</span>
-            )}
-            {unit.summary && (
-              <span class="badge badge--success self-start">summary</span>
-            )}
+          <div class="col-span-2 cell--base cell--ink flex min-w-0">
+            <div class="flex min-w-0 flex-1 gap-2 pl-1 pt-1">
+              <span>{unit.id}</span>
+              {unit.attempt && (
+                <span class="badge badge--success self-start">marks</span>
+              )}
+              {unit.summary && (
+                <span class="badge badge--success self-start">summary</span>
+              )}
+            </div>
+            <ActionBtn
+              label={`Delete unit ${unit.id}`}
+              icon={Trash2}
+              disabled={busy}
+              onClick={() => onDeleteUnit(unit.id)}
+            />
           </div>
           <PromptField label="prompt" prompt={byKey(unit.promptKey)} />
           {unit.instructionsPromptKey && (

@@ -48,6 +48,7 @@ export default function AdminConfig() {
     deleteCategory,
     deleteReviewPass,
     setActiveReviewPass,
+    updateReviewPass,
   } = getAdminConfig();
   const dialogOpen = useSignal(false);
   const dialogRequest = useSignal<DialogRequest | null>(null);
@@ -83,6 +84,25 @@ export default function AdminConfig() {
     void setActiveReviewPass(pass.id);
   }
 
+  function removeUnit(pass: ReviewPass, unitId: string) {
+    const referring = pass.units
+      .filter((u) => u.inputs?.includes(unitId))
+      .map((u) => u.id);
+    const warning =
+      referring.length > 0
+        ? ` It is referenced as input by: ${referring.join(", ")}.`
+        : "";
+    if (
+      !confirm(`Delete unit "${unitId}" from pass "${pass.name}"?${warning}`)
+    ) {
+      return;
+    }
+    void updateReviewPass(pass.id, {
+      ...pass,
+      units: pass.units.filter((u) => u.id !== unitId),
+    });
+  }
+
   const loadingEmpty = loading.value && modelPools.value.length === 0;
 
   let body: ComponentChildren;
@@ -114,6 +134,7 @@ export default function AdminConfig() {
                   onActivate={() => activateReviewPass(p)}
                   onEdit={() => openEntity({ kind: "pass", entity: p })}
                   onDelete={() => removeReviewPass(p)}
+                  onDeleteUnit={(unitId) => removeUnit(p, unitId)}
                 />
               ))
             )}
