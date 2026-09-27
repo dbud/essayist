@@ -10,4 +10,10 @@ function getEnv(key: string): string | undefined {
 const isDevelopment = getEnv("DENO_ENV") === "development";
 const level = getEnv("LOG_LEVEL") ?? (isDevelopment ? "debug" : "info");
 
-export const logger = pino({ level });
+export const logger = pino({
+  level,
+  redact: {
+    paths: ["query.code"],
+    censor: "[REDACTED]",
+  },
+});
