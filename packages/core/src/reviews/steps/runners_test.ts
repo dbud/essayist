@@ -1,7 +1,9 @@
 import { assertEquals } from "@std/assert";
+import type { PassWhenSpec } from "@/flow/helpers.ts";
 import { FlowRunner } from "@/flow/runner.ts";
 import type {
   Artifact,
+  Artifacts,
   FlowEvent,
   FlowGraph,
   FlowRunResult,
@@ -23,6 +25,11 @@ const CALL = {
   directive: "Mark mechanics.",
   instructions: "",
   models: ["m/a"],
+};
+
+const GATE_PAYLOAD: PassWhenSpec<ReviewTypes> = {
+  when: (inputs: Artifacts<ReviewTypes>) => inputs.of("mark.failed").length > 0,
+  types: ["mark.failed"],
 };
 
 function customs(events: FlowEvent[]): [string, string][] {
@@ -81,13 +88,13 @@ Deno.test("review runners -- analyze, propose, apply, and synthesize in a flow",
       },
       {
         id: "mechanics.propose",
-        kind: "propose",
+        kind: "mark.propose",
         dependsOn: ["content", "structure"],
         payload: CALL,
       },
       {
         id: "mechanics.apply",
-        kind: "apply",
+        kind: "mark.apply",
         dependsOn: ["mechanics.propose"],
         payload: {
           allowedLabels: ["grammar"],
@@ -114,10 +121,10 @@ Deno.test("review runners -- analyze, propose, apply, and synthesize in a flow",
   assertEquals(result.status, "completed");
   assertEquals(
     result.artifacts.map((artifact) => artifact.type),
-    ["content", "analysis", "proposals", "placed", "summary"],
+    ["content", "analysis", "mark.proposals", "mark.placed", "summary"],
   );
   assertEquals(result.artifacts[1].producedBy, "structure");
-  const placed = artifactsOf(result, "placed").flat();
+  const placed = artifactsOf(result, "mark.placed").flat();
   assertEquals(
     placed.map((attempt) => [attempt.selected_text, attempt.marked]),
     [["brave", true]],
@@ -144,6 +151,74 @@ Deno.test("review runners -- analyze, propose, apply, and synthesize in a flow",
   assertEquals(marks[0].meta, { runId: "r", stepId: "mechanics" });
 });
 
+Deno.test("review runners -- repair propose stays idle without failures", async () => {
+  const { vfs, versionId } = await createFile("essay.txt", "hello world");
+  const pinned = new PinnedVFS(vfs, { path: "essay.txt", versionId });
+  const { agent, inputs } = createSpyClient([
+    {
+      text: '{"marks":[{"selected_text":"hello","comment":"found it","label":"grammar"}]}',
+    },
+  ]);
+  const runners = createReviewRunners({ agent, pinned });
+  const provenance = { runId: "r", stepId: "m" };
+  const flow = new FlowRunner<ReviewTypes>({ runners });
+
+  const result = await flow.run({
+    nodes: [
+      { id: "content", kind: "source", dependsOn: [] },
+      {
+        id: "m.propose",
+        kind: "mark.propose",
+        dependsOn: ["content"],
+        payload: CALL,
+      },
+      {
+        id: "m.apply",
+        kind: "mark.apply",
+        dependsOn: ["m.propose"],
+        payload: { allowedLabels: ["grammar"], provenance },
+      },
+      {
+        id: "m.repair1.gate",
+        kind: "mark.repair.gate",
+        dependsOn: ["m.apply"],
+        payload: GATE_PAYLOAD,
+      },
+      {
+        id: "m.repair1.propose",
+        kind: "mark.propose.repair",
+        dependsOn: ["content", "m.repair1.gate"],
+        payload: CALL,
+      },
+      {
+        id: "m.repair1.apply",
+        kind: "mark.apply",
+        dependsOn: ["m.repair1.propose"],
+        payload: { allowedLabels: ["grammar"], provenance },
+      },
+    ],
+  } as FlowGraph<ReviewTypes>);
+
+  assertEquals(result.status, "completed");
+  // The gate forwarded nothing, so the repair propose never called the
+  // model and produced no proposals.
+  assertEquals(inputs.length, 1);
+  assertEquals(
+    result.nodeRuns.find((run) => run.nodeId === "m.repair1.propose")?.status,
+    "completed",
+  );
+  const proposals = result.artifacts.filter(
+    (artifact) => artifact.type === "mark.proposals",
+  );
+  assertEquals(proposals.length, 1);
+  assertEquals(proposals[0].producedBy, "m.propose");
+  const marks = await vfs.getMarks("essay.txt", versionId);
+  assertEquals(
+    marks.map((mark) => mark.selected_text),
+    ["hello"],
+  );
+});
+
 Deno.test("review runners -- a repair round re-quotes failed spans", async () => {
   const { vfs, versionId } = await createFile("essay.txt", "hello world");
   const pinned = new PinnedVFS(vfs, { path: "essay.txt", versionId });
@@ -164,35 +239,32 @@ Deno.test("review runners -- a repair round re-quotes failed spans", async () =>
       { id: "content", kind: "source", dependsOn: [] },
       {
         id: "m.propose",
-        kind: "propose",
+        kind: "mark.propose",
         dependsOn: ["content"],
         payload: CALL,
       },
       {
         id: "m.apply",
-        kind: "apply",
+        kind: "mark.apply",
         dependsOn: ["m.propose"],
         payload: { allowedLabels: ["grammar"], provenance },
       },
       {
-        id: "m.repairGate",
-        kind: "gate",
+        id: "m.repair1.gate",
+        kind: "mark.repair.gate",
         dependsOn: ["m.apply"],
-        payload: {
-          when: (inputs) => inputs.of("failed").length > 0,
-          types: ["failed"],
-        },
+        payload: GATE_PAYLOAD,
       },
       {
-        id: "m.repairPropose",
-        kind: "repairPropose",
-        dependsOn: ["content", "m.repairGate"],
+        id: "m.repair1.propose",
+        kind: "mark.propose.repair",
+        dependsOn: ["content", "m.repair1.gate"],
         payload: CALL,
       },
       {
-        id: "m.repairApply",
-        kind: "apply",
-        dependsOn: ["m.repairPropose"],
+        id: "m.repair1.apply",
+        kind: "mark.apply",
+        dependsOn: ["m.repair1.propose"],
         payload: { allowedLabels: ["grammar"], provenance },
       },
     ],
@@ -203,17 +275,17 @@ Deno.test("review runners -- a repair round re-quotes failed spans", async () =>
     result.artifacts.map((artifact) => [artifact.type, artifact.producedBy]),
     [
       ["content", "content"],
-      ["proposals", "m.propose"],
-      ["placed", "m.apply"],
-      ["failed", "m.apply"],
+      ["mark.proposals", "m.propose"],
+      ["mark.placed", "m.apply"],
+      ["mark.failed", "m.apply"],
       // The gate re-emits the failed artifact unchanged; provenance stays
       // with m.apply.
-      ["failed", "m.apply"],
-      ["proposals", "m.repairPropose"],
-      ["placed", "m.repairApply"],
+      ["mark.failed", "m.apply"],
+      ["mark.proposals", "m.repair1.propose"],
+      ["mark.placed", "m.repair1.apply"],
     ],
   );
-  const placed = artifactsOf(result, "placed");
+  const placed = artifactsOf(result, "mark.placed");
   assertEquals(placed[0], []);
   assertEquals(placed[1].length, 1);
   assertEquals(placed[1][0].marked, true);

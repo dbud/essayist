@@ -6,10 +6,10 @@ import type { Analysis } from "@/reviews/steps/analyze.ts";
 import { createAnalyzeRunner } from "@/reviews/steps/analyze.ts";
 import type { MarkProposal } from "@/reviews/steps/mark.ts";
 import {
-  createApplyRunner,
   createMarkApplier,
-  createProposeRunner,
-  createRepairProposeRunner,
+  createMarkApplyRunner,
+  createMarkProposeRunner,
+  createMarkRepairRunner,
 } from "@/reviews/steps/mark.ts";
 import { createSourceRunner } from "@/reviews/steps/source.ts";
 import { createSynthesizeRunner } from "@/reviews/steps/synthesize.ts";
@@ -25,8 +25,6 @@ export interface Prompts {
   models: string[];
 }
 
-/** Events a review node emits on the flow; the trace stamps nodeId onto
- * them. */
 export type ReviewNodeEvent =
   | { type: "prompt"; text: string }
   | { type: "reasoning"; text: string }
@@ -34,32 +32,29 @@ export type ReviewNodeEvent =
   | { type: "usage"; usage: ReviewTraceUsage }
   | { type: "applied"; attempts: MarkAttempt[] };
 
-/** The review host's typing vocabulary. */
 export interface ReviewTypes extends FlowTypes {
   nodes: {
     source: undefined;
     analyze: Prompts;
-    propose: Prompts;
-    /** Re-proposes corrected marks for failed attempts. */
-    repairPropose: Prompts;
-    apply: { allowedLabels: readonly string[]; provenance: MarkProvenance };
-    gate: PassWhenSpec<ReviewTypes>;
+    "mark.propose": Prompts;
+    "mark.propose.repair": Prompts;
+    "mark.apply": {
+      allowedLabels: readonly string[];
+      provenance: MarkProvenance;
+    };
+    "mark.repair.gate": PassWhenSpec<ReviewTypes>;
     synthesize: Prompts;
   };
   artifacts: {
-    /** Numbered content of the pinned version. */
     content: string;
     analysis: Analysis;
-    proposals: MarkProposal[];
-    placed: MarkAttempt[];
-    /** Only committed when non-empty; repair gates key on it. */
-    failed: MarkAttempt[];
+    "mark.proposals": MarkProposal[];
+    "mark.placed": MarkAttempt[];
+    "mark.failed": MarkAttempt[];
     summary: string;
   };
 }
 
-/** One runner set per review run: the applier queue is shared, so mark
- * application serializes across all apply nodes. */
 export function createReviewRunners(options: {
   agent: Agent;
   pinned: PinnedVFS;
@@ -67,10 +62,10 @@ export function createReviewRunners(options: {
   return {
     source: createSourceRunner(options.pinned),
     analyze: createAnalyzeRunner(options.agent),
-    propose: createProposeRunner(options.agent),
-    repairPropose: createRepairProposeRunner(options.agent),
-    apply: createApplyRunner(createMarkApplier(options.pinned)),
-    gate: passWhen<ReviewTypes, "gate">(),
+    "mark.propose": createMarkProposeRunner(options.agent),
+    "mark.propose.repair": createMarkRepairRunner(options.agent),
+    "mark.apply": createMarkApplyRunner(createMarkApplier(options.pinned)),
+    "mark.repair.gate": passWhen<ReviewTypes, "mark.repair.gate">(),
     synthesize: createSynthesizeRunner(options.agent),
   };
 }

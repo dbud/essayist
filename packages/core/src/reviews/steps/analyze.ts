@@ -6,7 +6,6 @@ import type { ReviewTypes } from "@/reviews/graph.ts";
 import { joinBlocks, joinLines, listOf, section } from "@/utils/text.ts";
 import { composeCallInput } from "./compose.ts";
 
-/** The analysis artifact an analyze step produces. */
 export const AnalysisSchema = z.object({
   thesis: z.string().optional(),
   audience: z.string().optional(),
@@ -44,7 +43,6 @@ export function renderAnalysis(analysis: Analysis): string {
   );
 }
 
-/** Analyzes the essay with a structured call. */
 export function createAnalyzeRunner(
   agent: Agent,
 ): NodeRunner<ReviewTypes, "analyze"> {

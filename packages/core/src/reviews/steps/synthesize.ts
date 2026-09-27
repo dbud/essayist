@@ -6,7 +6,6 @@ import type { ReviewTypes } from "@/reviews/graph.ts";
 import { renderAnalysis } from "./analyze.ts";
 import { composeCallInput } from "./compose.ts";
 
-/** The summary a synthesize step produces. */
 export const StepSummarySchema = z.object({
   summary: z
     .string()
@@ -15,7 +14,6 @@ export const StepSummarySchema = z.object({
 
 export type StepSummary = z.infer<typeof StepSummarySchema>;
 
-/** Summarizes the review with a structured call. */
 export function createSynthesizeRunner(
   agent: Agent,
 ): NodeRunner<ReviewTypes, "synthesize"> {

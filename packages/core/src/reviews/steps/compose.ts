@@ -2,8 +2,6 @@ import type { Prompts } from "@/reviews/graph.ts";
 import type { MarkAttempt } from "@/reviews/types.ts";
 import { joinBlocks, joinLines, section } from "@/utils/text.ts";
 
-/** Compose a step call prompt from the rendered prompts, artifact
- * sections, and the essay. */
 export function composeCallInput(
   prompts: Prompts,
   sections: string[],
@@ -21,7 +19,6 @@ export function composeCallInput(
 
 const REPAIR_CONTEXT_LINES = 5;
 
-/** Compose the repair prompt for failed marks. */
 export function composeRepairInput(
   prompts: Pick<Prompts, "system" | "instructions">,
   essay: string,

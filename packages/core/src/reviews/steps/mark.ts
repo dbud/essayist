@@ -100,10 +100,9 @@ export function createMarkApplier(pinned: PinnedVFS) {
     tasks.add(() => applyMarks(pinned, { marks }, allowedLabels, provenance));
 }
 
-/** Proposes marks for a step with a structured call. */
-export function createProposeRunner(
+export function createMarkProposeRunner(
   agent: Agent,
-): NodeRunner<ReviewTypes, "propose"> {
+): NodeRunner<ReviewTypes, "mark.propose"> {
   return {
     async execute(prompts, { inputs, artifact, emit }) {
       const result = await callStructured({
@@ -117,54 +116,54 @@ export function createProposeRunner(
         models: prompts.models,
         schema: ProposedMarksSchema,
       });
-      return [artifact("proposals", result.output.marks)];
+      return [artifact("mark.proposals", result.output.marks)];
     },
   };
 }
 
 /** Re-proposes corrected marks for the failed attempts delivered through
  * its gate. */
-export function createRepairProposeRunner(
+export function createMarkRepairRunner(
   agent: Agent,
-): NodeRunner<ReviewTypes, "repairPropose"> {
+): NodeRunner<ReviewTypes, "mark.propose.repair"> {
   return {
     async execute(prompts, { inputs, artifact, emit }) {
+      const failed = inputs.of("mark.failed").flat();
+      if (failed.length === 0) {
+        // Activated by its gate with nothing to repair; stays idle.
+        return [];
+      }
       const result = await callStructured({
         agent,
         onEvent: emit,
-        input: composeRepairInput(
-          prompts,
-          inputs.one("content"),
-          inputs.of("failed").flat(),
-        ),
+        input: composeRepairInput(prompts, inputs.one("content"), failed),
         models: prompts.models,
         schema: ProposedMarksSchema,
       });
-      return [artifact("proposals", result.output.marks)];
+      return [artifact("mark.proposals", result.output.marks)];
     },
   };
 }
 
-/** Applies proposed marks through the pinned VFS. */
-export function createApplyRunner(
+export function createMarkApplyRunner(
   apply: (
     marks: MarkProposal[],
     allowedLabels: readonly string[],
     provenance: MarkProvenance,
   ) => Promise<MarkAttempt[]>,
-): NodeRunner<ReviewTypes, "apply"> {
+): NodeRunner<ReviewTypes, "mark.apply"> {
   return {
     async execute({ allowedLabels, provenance }, { inputs, artifact, emit }) {
       const attempts = await apply(
-        inputs.of("proposals").flat(),
+        inputs.of("mark.proposals").flat(),
         allowedLabels,
         provenance,
       );
       emit({ type: "applied", attempts });
       const [placed, failed] = partition(attempts, (attempt) => attempt.marked);
       return [
-        artifact("placed", placed),
-        ...(failed.length > 0 ? [artifact("failed", failed)] : []),
+        artifact("mark.placed", placed),
+        ...(failed.length > 0 ? [artifact("mark.failed", failed)] : []),
       ];
     },
   };
