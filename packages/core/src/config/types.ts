@@ -70,7 +70,7 @@ export const ReviewPassSchema = z.object({
   /** The shared system prompt, rendered once for all units. */
   systemPromptKey: z.string(),
   modelPoolId: z.string(),
-  units: ReviewUnitSchema.array().min(1),
+  units: ReviewUnitSchema.array(),
   /** Static variable values for prompt rendering. */
   variables: z.record(z.string(), z.string()).optional(),
 });
