@@ -21,7 +21,7 @@ import type {
 export interface FlowRunnerOptions<T extends FlowTypes> {
   runners: NodeRunners<T>;
   /** Awaited per event; a throwing listener is logged and ignored. */
-  onEvent?: (event: FlowEvent) => Promise<void> | void;
+  onEvent?: (event: FlowEvent<T>) => Promise<void> | void;
   /** Max nodes executing at once. Default unbounded. */
   maxConcurrency?: number;
 }
@@ -42,7 +42,7 @@ interface WiredNode<T extends FlowTypes> {
  * commits artifacts. Nodes never re-execute. */
 export class FlowRunner<T extends FlowTypes> {
   #runners = new Map<string, NodeRunner<T>>();
-  #onEvent?: (event: FlowEvent) => Promise<void> | void;
+  #onEvent?: (event: FlowEvent<T>) => Promise<void> | void;
   #maxConcurrency: number;
 
   constructor(options: FlowRunnerOptions<T>) {
@@ -141,7 +141,7 @@ export class FlowRunner<T extends FlowTypes> {
     for (const dep of deps) {
       inputs.push(...(committed.get(dep) ?? []));
     }
-    const eventQueue: unknown[] = [];
+    const eventQueue: T["events"][] = [];
     // The payload boundary: the host's graph construction guarantees
     // configured kinds carry their payload.
     const payload = node.payload as T["nodes"][NodeKind<T>];
@@ -189,7 +189,7 @@ export class FlowRunner<T extends FlowTypes> {
     return run;
   }
 
-  async #emit(event: FlowEvent): Promise<void> {
+  async #emit(event: FlowEvent<T>): Promise<void> {
     try {
       await this.#onEvent?.(event);
     } catch (caught) {

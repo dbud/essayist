@@ -1,9 +1,12 @@
 /** A generic DAG runner over typed artifacts. */
 
-/** The host's typing vocabulary: node kinds and artifact types. */
+/** The host's typing vocabulary: node kinds, artifact types, and custom
+ * events. */
 export interface FlowTypes {
   nodes: Record<string, unknown>;
   artifacts: Record<string, unknown>;
+  /** Custom events hosts emit through the node context. */
+  events?: unknown;
 }
 
 /** Artifact type keys of a host vocabulary. */
@@ -57,7 +60,7 @@ export interface NodeContext<
   payload: T["nodes"][K];
   inputs: Artifacts<T>;
   /** Emit a host event; delivered before this node's terminal event. */
-  emit(event: unknown): void;
+  emit(event: T["events"]): void;
   /** Create an output artifact; provenance is stamped with this node. */
   artifact<A extends ArtifactType<T>>(
     type: A,
@@ -106,10 +109,10 @@ export type NodeRun = CompletedNodeRun | FailedNodeRun | SkippedNodeRun;
 
 /** Lifecycle events are engine-emitted; custom events carry host events
  * emitted through the node context. */
-export type FlowEvent =
+export type FlowEvent<T extends FlowTypes = FlowTypes> =
   | { type: "node_start"; nodeId: string }
   | { type: "node_end"; nodeId: string; run: NodeRun }
-  | { type: "custom"; nodeId: string; event: unknown };
+  | { type: "custom"; nodeId: string; event: T["events"] };
 
 /** The graph's node elements: a union of per-kind nodes, so a literal's
  * payload must agree with its kind. */

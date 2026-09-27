@@ -14,6 +14,7 @@ interface HelperTypes extends FlowTypes {
     text: string;
     token: string;
   };
+  events: unknown;
 }
 
 const source: NodeRunner<HelperTypes, "source"> = {

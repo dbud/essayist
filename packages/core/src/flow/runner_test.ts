@@ -18,6 +18,7 @@ interface TestTypes extends FlowTypes {
     content: string;
     token: string;
   };
+  events: { kind: "produced"; content: string };
 }
 
 const runners: NodeRunners<TestTypes> = {
@@ -47,7 +48,7 @@ const runners: NodeRunners<TestTypes> = {
 };
 
 Deno.test("FlowRunner -- commits artifacts along a chain", async () => {
-  const events: FlowEvent[] = [];
+  const events: FlowEvent<TestTypes>[] = [];
   const flow = new FlowRunner<TestTypes>({
     runners,
     onEvent: (event) => {
