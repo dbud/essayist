@@ -1,4 +1,5 @@
 import type { Agent } from "@/agent.ts";
+import type { ResolvedReviewUnit } from "@/config/types.ts";
 import type { PassWhenSpec } from "@/flow/helpers.ts";
 import { passWhen } from "@/flow/helpers.ts";
 import type { FlowTypes, NodeRunners } from "@/flow/types.ts";
@@ -17,14 +18,6 @@ import type { MarkAttempt, ReviewTraceUsage } from "@/reviews/types.ts";
 import type { PinnedVFS } from "@/vfs/pin.ts";
 import type { MarkProvenance } from "@/vfs/types.ts";
 
-/** Rendered prompts and models for a structured step call. */
-export interface Prompts {
-  system: string;
-  directive: string;
-  instructions: string;
-  models: string[];
-}
-
 export type ReviewNodeEvent =
   | { type: "prompt"; text: string }
   | { type: "reasoning"; text: string }
@@ -36,15 +29,15 @@ export interface ReviewTypes extends FlowTypes {
   events: ReviewNodeEvent;
   nodes: {
     source: undefined;
-    analyze: Prompts;
-    "mark.propose": Prompts;
-    "mark.propose.repair": Prompts;
+    analyze: ResolvedReviewUnit;
+    "mark.propose": ResolvedReviewUnit;
+    "mark.propose.repair": ResolvedReviewUnit;
     "mark.apply": {
       allowedLabels: readonly string[];
       provenance: MarkProvenance;
     };
     "mark.repair.gate": PassWhenSpec<ReviewTypes>;
-    synthesize: Prompts;
+    synthesize: ResolvedReviewUnit;
   };
   artifacts: {
     content: string;

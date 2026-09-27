@@ -1,5 +1,4 @@
 import { assertEquals } from "@std/assert";
-import type { ResolvedStep } from "@/config/types.ts";
 import type { MarkAttempt } from "@/reviews/types.ts";
 import { PinnedVFS } from "@/vfs/pin.ts";
 import { createFile } from "@/vfs/testing/helpers.ts";
@@ -8,24 +7,11 @@ import { applyMarks, type ProposedMarks } from "./mark.ts";
 
 const PROVENANCE = { runId: "run-1", unitId: "mechanics" };
 
-function resolved(): ResolvedStep {
-  return {
-    step: {
-      id: "mechanics",
-      name: "Mechanics",
-      kind: "mark",
-      systemPromptKey: "sys",
-      directivePromptKey: "dir",
-    },
-    modelRefs: ["m/a"],
-    apiKeyEnvKey: "KEY",
-    systemPrompt: "You are an editor.",
-    directive: "Scan for grammar faults.",
-    instructions: "Quote exact spans.",
-    categories: [],
-    allowedLabels: ["grammar"],
-  };
-}
+const PROMPTS = {
+  system: "You are an editor.",
+  directive: "Scan for grammar faults.",
+  instructions: "Quote exact spans.",
+};
 
 Deno.test("applyMarks -- places marks on the pinned version", async () => {
   const { vfs, versionId } = await createFile("essay.txt", "hello brave world");
@@ -103,7 +89,7 @@ Deno.test("composeRepairInput -- windows content around the hinted line", () => 
   ];
 
   const input = composeRepairInput(
-    { system: resolved().systemPrompt, instructions: resolved().instructions },
+    { system: PROMPTS.system, instructions: PROMPTS.instructions },
     essay,
     failed,
   );
@@ -130,7 +116,7 @@ Deno.test("composeRepairInput -- attempts without a hint get the full essay", ()
   ];
 
   const input = composeRepairInput(
-    { system: resolved().systemPrompt, instructions: resolved().instructions },
+    { system: PROMPTS.system, instructions: PROMPTS.instructions },
     "     1: only line",
     failed,
   );

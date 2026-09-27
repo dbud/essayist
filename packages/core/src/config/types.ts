@@ -41,38 +41,38 @@ export type Category = z.infer<typeof CategorySchema>;
 
 // -- review passes --
 
-/** What a step produces. */
-export const StepKindSchema = z.enum(["analyze", "mark", "synthesize"]);
-export type StepKind = z.infer<typeof StepKindSchema>;
-
-/**
- * One focused step in a review pass. Steps are single structured model calls;
- * the essay text is injected by the runner and steps never use tools.
- */
-export const StepSchema = z.object({
+export const ReviewUnitSchema = z.object({
   id: z.string().min(1),
-  name: z.string().min(1),
-  kind: StepKindSchema,
+  /** Per-unit task prompt. */
+  promptKey: z.string(),
+  /** Shared fine print; falls back to none. */
+  instructionsPromptKey: z.string().optional(),
   /** Falls back to the pass pool. */
   modelPoolId: z.string().optional(),
-  systemPromptKey: z.string(),
-  directivePromptKey: z.string(),
-  instructionsPromptKey: z.string().optional(),
-  /** Mark steps only, and required non-empty. */
-  allowedCategoryIds: z.string().array().optional(),
-  /** Step ids whose artifacts this step receives as context. */
-  artifactsFromStepIds: z.string().array().optional(),
-  /** Repair calls for unmatched spans; mark steps only. Default 1. */
-  repairRounds: z.number().int().nonnegative().optional(),
+  /** Unit ids whose artifacts this unit receives as context. */
+  inputs: z.string().array().optional(),
+  /** Adds the mark subgraph: propose, apply, and gated repair rounds. */
+  attempt: z
+    .object({
+      /** Required non-empty. */
+      allowedCategoryIds: z.string().array(),
+      /** Repair calls for unmatched spans. Default 1. */
+      repairRounds: z.number().int().nonnegative().optional(),
+    })
+    .optional(),
+  /** Marks the unit's artifact as the run summary. */
+  summary: z.boolean().optional(),
 });
-export type Step = z.infer<typeof StepSchema>;
+export type ReviewUnit = z.infer<typeof ReviewUnitSchema>;
 
-/** A review pass: an ordered pipeline of steps over a pinned file version. */
+/** A review pass: an ordered pipeline of units over a pinned file version. */
 export const ReviewPassSchema = z.object({
   id: z.string(),
   name: z.string(),
+  /** The shared system prompt, rendered once for all units. */
+  systemPromptKey: z.string(),
   modelPoolId: z.string(),
-  steps: StepSchema.array().min(1),
+  units: ReviewUnitSchema.array().min(1),
   /** Static variable values for prompt rendering. */
   variables: z.record(z.string(), z.string()).optional(),
 });
@@ -80,27 +80,29 @@ export type ReviewPass = z.infer<typeof ReviewPassSchema>;
 
 // -- resolved bundles (computed, not stored) --
 
-/** Resolved config for a step, produced by ConfigStore.resolveReviewPass. */
-export interface ResolvedStep {
-  step: Step;
-  /** Ordered model refs. */
-  modelRefs: string[];
-  /** Env var name holding the API key. */
-  apiKeyEnvKey: string;
-  /** Rendered system prompt. */
-  systemPrompt: string;
-  /** Rendered directive. */
+/** Rendered prompts for a unit: pass system prompt plus unit task. */
+export interface ResolvedPrompts {
+  system: string;
   directive: string;
-  /** Rendered instructions. */
   instructions: string;
-  /** Allowed categories; empty for non-mark steps. */
-  categories: Category[];
-  /** Category labels; empty for non-mark steps. */
-  allowedLabels: string[];
 }
 
-/** Resolved config for a full pass, in step order. */
+/** Resolved config for a unit, produced by resolveReviewPass. */
+export interface ResolvedReviewUnit {
+  id: string;
+  prompts: ResolvedPrompts;
+  /** The resolved model pool: ordered model refs plus the api key env. */
+  pool: ModelPool;
+  /** Unit ids whose artifacts this unit receives as context. */
+  inputs: string[];
+  /** Mark attempt config; present only on attempt units. */
+  attempt?: { labels: string[]; repairRounds: number };
+  /** The unit's artifact is the run summary. */
+  summary?: boolean;
+}
+
+/** Resolved config for a full pass, in unit order. */
 export interface ResolvedReviewPass {
   pass: ReviewPass;
-  steps: ResolvedStep[];
+  units: ResolvedReviewUnit[];
 }

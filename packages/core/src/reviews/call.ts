@@ -2,7 +2,7 @@ import type { z } from "zod";
 import type { Agent, StructuredCall } from "@/agent.ts";
 import type { ReviewTraceUsage } from "@/reviews/types.ts";
 
-/** Events of one structured call, delivered in order. */
+/** Events of a structured call, delivered in order. */
 export type CallEvent =
   | { type: "prompt"; text: string }
   | { type: "reasoning"; text: string }

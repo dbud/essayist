@@ -192,24 +192,24 @@ export async function warnBrokenRefs(ctx: SyncCtx): Promise<void> {
     const missing: string[] = [];
     for (const poolId of [
       pass.modelPoolId,
-      ...pass.steps.map((s) => s.modelPoolId).filter((id) => id !== undefined),
+      ...pass.units.map((u) => u.modelPoolId).filter((id) => id !== undefined),
     ]) {
       if (!poolIds.has(poolId)) missing.push(`model pool "${poolId}"`);
     }
-    for (const step of pass.steps) {
+    for (const unit of pass.units) {
       for (const key of [
-        step.systemPromptKey,
-        step.directivePromptKey,
-        ...(step.instructionsPromptKey ? [step.instructionsPromptKey] : []),
+        pass.systemPromptKey,
+        unit.promptKey,
+        ...(unit.instructionsPromptKey ? [unit.instructionsPromptKey] : []),
       ]) {
         if (!promptKeys.has(key)) missing.push(`prompt "${key}"`);
       }
-      for (const id of step.allowedCategoryIds ?? []) {
+      for (const id of unit.attempt?.allowedCategoryIds ?? []) {
         if (!categoryIds.has(id)) missing.push(`category "${id}"`);
       }
-      for (const ref of step.artifactsFromStepIds ?? []) {
-        if (!pass.steps.some((s) => s.id === ref)) {
-          missing.push(`step reference "${ref}"`);
+      for (const ref of unit.inputs ?? []) {
+        if (!pass.units.some((u) => u.id === ref)) {
+          missing.push(`unit reference "${ref}"`);
         }
       }
     }

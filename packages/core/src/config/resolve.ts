@@ -5,12 +5,10 @@ import type {
   Category,
   ModelPool,
   ResolvedReviewPass,
-  ResolvedStep,
+  ResolvedReviewUnit,
   ReviewPass,
-  Step,
+  ReviewUnit,
 } from "./types.ts";
-
-const DEFAULT_API_KEY_ENV = "OPENROUTER_API_KEY";
 
 /** Thrown by resolution on config entities the pass references but that are missing. */
 export class ConfigMissingError extends Error {
@@ -42,106 +40,134 @@ export async function resolveActiveReviewPass(
 }
 
 /**
- * Resolve a pass's steps in order: render prompts with the pass variables,
- * resolve each step's model pool (step override or pass default), and
- * resolve categories for mark steps. Steps resolve concurrently.
+ * Resolve a pass's units in order: render the shared system prompt and
+ * each unit's prompts with the pass variables, resolve each unit's model
+ * pool (unit override or pass default), and resolve categories for attempt
+ * units. Units resolve concurrently.
  */
 export async function resolveReviewPass(
   store: ConfigStore,
   pass: ReviewPass,
 ): Promise<ResolvedReviewPass> {
-  assertStepOrder(pass);
+  assertUnitOrder(pass);
   const vars = pass.variables ?? {};
-  const steps = await Promise.all(
-    pass.steps.map((step) => resolveStep(store, pass, step, vars)),
+  const system = await renderPromptKey(
+    store,
+    pass.systemPromptKey,
+    vars,
+    `pass "${pass.id}"`,
   );
-  return { pass, steps };
+  const units = await Promise.all(
+    pass.units.map((unit) => resolveUnit(store, pass, unit, system, vars)),
+  );
+  return { pass, units };
 }
 
-function assertStepOrder(pass: ReviewPass): void {
+function assertUnitOrder(pass: ReviewPass): void {
   const seen = new Set<string>();
-  for (const step of pass.steps) {
-    if (seen.has(step.id)) {
+  for (const unit of pass.units) {
+    if (unit.id.includes(".")) {
       throw new ConfigInvalidError(
-        `step id "${step.id}" is used more than once in pass "${pass.id}"`,
+        `unit id "${unit.id}" in pass "${pass.id}" must not contain ".", which is reserved for derived node ids`,
       );
     }
-    for (const ref of step.artifactsFromStepIds ?? []) {
+    if (seen.has(unit.id)) {
+      throw new ConfigInvalidError(
+        `unit id "${unit.id}" is used more than once in pass "${pass.id}"`,
+      );
+    }
+    for (const ref of unit.inputs ?? []) {
       if (!seen.has(ref)) {
         throw new ConfigInvalidError(
-          `step "${step.id}" in pass "${pass.id}" references unknown or later step "${ref}"`,
+          `unit "${unit.id}" in pass "${pass.id}" references unknown or later unit "${ref}"`,
         );
       }
     }
-    seen.add(step.id);
+    seen.add(unit.id);
   }
 }
 
-async function resolveStep(
+async function resolveUnit(
   store: ConfigStore,
   pass: ReviewPass,
-  step: Step,
+  unit: ReviewUnit,
+  system: string,
   vars: Record<string, string>,
-): Promise<ResolvedStep> {
-  const [systemPrompt, directive, instructions, pool, categories] =
-    await Promise.all([
-      renderStepPrompt(store, pass, step, step.systemPromptKey, vars),
-      renderStepPrompt(store, pass, step, step.directivePromptKey, vars),
-      resolveInstructions(store, pass, step, vars),
-      resolveStepPool(store, pass, step),
-      resolveStepCategories(store, pass, step),
-    ]);
+): Promise<ResolvedReviewUnit> {
+  if (unit.attempt && unit.summary) {
+    // TODO -- a unit could both place marks and summarize them; exclusive
+    // until a pass needs it.
+    throw new ConfigInvalidError(
+      `unit "${unit.id}" in pass "${pass.id}" sets both attempt and summary`,
+    );
+  }
+  const [directive, instructions, pool, attempt] = await Promise.all([
+    renderUnitPrompt(store, pass, unit, unit.promptKey, vars),
+    resolveUnitInstructions(store, pass, unit, vars),
+    resolveUnitPool(store, pass, unit),
+    resolveUnitAttempt(store, pass, unit),
+  ]);
 
   return {
-    step,
-    modelRefs: pool.models,
-    apiKeyEnvKey: pool.apiKeyEnvKey ?? DEFAULT_API_KEY_ENV,
-    systemPrompt,
-    directive,
-    instructions,
-    categories,
-    allowedLabels: categories.map((c) => c.label),
+    id: unit.id,
+    prompts: { system, directive, instructions },
+    pool,
+    inputs: unit.inputs ?? [],
+    ...(attempt && { attempt }),
+    ...(unit.summary && { summary: true }),
   };
 }
 
-async function resolveInstructions(
+async function renderUnitPrompt(
   store: ConfigStore,
   pass: ReviewPass,
-  step: Step,
-  vars: Record<string, string>,
-): Promise<string> {
-  if (!step.instructionsPromptKey) return "";
-  return await renderStepPrompt(
-    store,
-    pass,
-    step,
-    step.instructionsPromptKey,
-    vars,
-  );
-}
-
-async function renderStepPrompt(
-  store: ConfigStore,
-  pass: ReviewPass,
-  step: Step,
+  unit: ReviewUnit,
   key: string,
   vars: Record<string, string>,
 ): Promise<string> {
+  return await renderPromptKey(
+    store,
+    key,
+    vars,
+    `unit "${unit.id}" in pass "${pass.id}"`,
+  );
+}
+
+async function renderPromptKey(
+  store: ConfigStore,
+  key: string,
+  vars: Record<string, string>,
+  where: string,
+): Promise<string> {
   const prompt = await store.getPrompt(key);
   if (!prompt) {
-    throw new ConfigMissingError(
-      `prompt "${key}" for step "${step.id}" in pass "${pass.id}"`,
-    );
+    throw new ConfigMissingError(`prompt "${key}" for ${where}`);
   }
   return renderPrompt(prompt.body, vars);
 }
 
-async function resolveStepPool(
+async function resolveUnitInstructions(
   store: ConfigStore,
   pass: ReviewPass,
-  step: Step,
+  unit: ReviewUnit,
+  vars: Record<string, string>,
+): Promise<string> {
+  if (!unit.instructionsPromptKey) return "";
+  return await renderUnitPrompt(
+    store,
+    pass,
+    unit,
+    unit.instructionsPromptKey,
+    vars,
+  );
+}
+
+async function resolveUnitPool(
+  store: ConfigStore,
+  pass: ReviewPass,
+  unit: ReviewUnit,
 ): Promise<ModelPool> {
-  const poolId = step.modelPoolId ?? pass.modelPoolId;
+  const poolId = unit.modelPoolId ?? pass.modelPoolId;
   const pool = await store.getModelPool(poolId);
   if (!pool) throw new ConfigMissingError(`model pool "${poolId}"`);
   if (pool.models.length === 0) {
@@ -150,31 +176,37 @@ async function resolveStepPool(
   return pool;
 }
 
-async function resolveStepCategories(
+/** Category labels for attempt units; undefined for the rest. */
+async function resolveUnitAttempt(
   store: ConfigStore,
   pass: ReviewPass,
-  step: Step,
-): Promise<Category[]> {
-  if (step.kind !== "mark") {
-    if (step.allowedCategoryIds?.length) {
-      throw new ConfigInvalidError(
-        `step "${step.id}" in pass "${pass.id}" is ${step.kind} but sets allowedCategoryIds`,
-      );
-    }
-    if (step.repairRounds !== undefined) {
-      throw new ConfigInvalidError(
-        `step "${step.id}" in pass "${pass.id}" is ${step.kind} but sets repairRounds`,
-      );
-    }
-    return [];
-  }
-
-  const ids = step.allowedCategoryIds ?? [];
-  if (ids.length === 0) {
+  unit: ReviewUnit,
+): Promise<{ labels: string[]; repairRounds: number } | undefined> {
+  const attempt = unit.attempt;
+  if (!attempt) return undefined;
+  if (attempt.allowedCategoryIds.length === 0) {
     throw new ConfigInvalidError(
-      `mark step "${step.id}" in pass "${pass.id}" has no allowed categories`,
+      `attempt unit "${unit.id}" in pass "${pass.id}" has no allowed categories`,
     );
   }
+  const categories = await resolveCategories(
+    store,
+    pass,
+    unit,
+    attempt.allowedCategoryIds,
+  );
+  return {
+    labels: categories.map((category) => category.label),
+    repairRounds: attempt.repairRounds ?? 1,
+  };
+}
+
+async function resolveCategories(
+  store: ConfigStore,
+  pass: ReviewPass,
+  unit: ReviewUnit,
+  ids: string[],
+): Promise<Category[]> {
   const categories = await store.getCategories(ids);
   const [present, missing] = partition(
     zip(ids, categories),
@@ -182,7 +214,7 @@ async function resolveStepCategories(
   );
   if (missing.length > 0) {
     throw new ConfigMissingError(
-      `categories ${missing.map(([id]) => `"${id}"`).join(", ")} for step "${step.id}" in pass "${pass.id}"`,
+      `categories ${missing.map(([id]) => `"${id}"`).join(", ")} for unit "${unit.id}" in pass "${pass.id}"`,
     );
   }
   return mapNotNullish(present, ([, category]) => category);

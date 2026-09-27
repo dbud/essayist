@@ -1,5 +1,5 @@
 import { assertEquals } from "@std/assert";
-import type { ResolvedReviewPass, Step } from "@/config/types.ts";
+import type { ResolvedReviewPass, ReviewUnit } from "@/config/types.ts";
 import type { NodeRun } from "@/flow/types.ts";
 import { InMemoryAdapter } from "@/persistence/mod.ts";
 import { runReviewPass } from "@/reviews/runner.ts";
@@ -8,32 +8,37 @@ import { createSpyClient } from "@/reviews/testing/agent.ts";
 import { EventTraceStore, type TracedReviewEvent } from "@/reviews/trace.ts";
 import { createFile } from "@/vfs/testing/helpers.ts";
 
-function stepFixture(partial: Partial<Step> & Pick<Step, "id" | "kind">): Step {
-  return {
-    name: partial.id,
-    systemPromptKey: "sys",
-    directivePromptKey: "dir",
-    ...partial,
-  };
+function unitFixture(
+  partial: Partial<ReviewUnit> & Pick<ReviewUnit, "id">,
+): ReviewUnit {
+  return { promptKey: "dir", ...partial };
 }
 
-function passFixture(steps: Step[]): ResolvedReviewPass {
+function passFixture(units: ReviewUnit[]): ResolvedReviewPass {
   return {
     pass: {
       id: "essay-review",
       name: "Essay review",
+      systemPromptKey: "sys",
       modelPoolId: "pool",
-      steps,
+      units,
     },
-    steps: steps.map((step) => ({
-      step,
-      modelRefs: ["m/a"],
-      apiKeyEnvKey: "KEY",
-      systemPrompt: "You are an editor.",
-      directive: `Review the essay.`,
-      instructions: "",
-      categories: [],
-      allowedLabels: step.kind === "mark" ? ["grammar"] : [],
+    units: units.map((unit) => ({
+      id: unit.id,
+      prompts: {
+        system: "You are an editor.",
+        directive: "Review the essay.",
+        instructions: "",
+      },
+      pool: { id: "pool", name: "Pool", models: ["m/a"] },
+      inputs: unit.inputs ?? [],
+      ...(unit.attempt && {
+        attempt: {
+          labels: ["grammar"],
+          repairRounds: unit.attempt.repairRounds ?? 1,
+        },
+      }),
+      ...(unit.summary && { summary: true }),
     })),
   };
 }
@@ -95,18 +100,16 @@ Deno.test("runReviewPass -- completes a pass with marks, summary, and a per-node
     reviewStore,
     traceStore,
     pass: passFixture([
-      stepFixture({ id: "analyze", name: "Analyze", kind: "analyze" }),
-      stepFixture({
+      unitFixture({ id: "analyze" }),
+      unitFixture({
         id: "mechanics",
-        name: "Mechanics",
-        kind: "mark",
-        artifactsFromStepIds: ["analyze"],
+        attempt: { allowedCategoryIds: ["grammar"] },
+        inputs: ["analyze"],
       }),
-      stepFixture({
+      unitFixture({
         id: "synthesize",
-        name: "Synthesize",
-        kind: "synthesize",
-        artifactsFromStepIds: ["analyze", "mechanics.propose"],
+        summary: true,
+        inputs: ["analyze", "mechanics.propose"],
       }),
     ]),
     wsId: "ws",
@@ -173,7 +176,10 @@ Deno.test("runReviewPass -- a repair round re-quotes the failed spans", async ()
     reviewStore,
     traceStore,
     pass: passFixture([
-      stepFixture({ id: "mechanics", name: "Mechanics", kind: "mark" }),
+      unitFixture({
+        id: "mechanics",
+        attempt: { allowedCategoryIds: ["grammar"] },
+      }),
     ]),
     wsId: "ws",
     path: "essay.txt",
@@ -227,11 +233,9 @@ Deno.test("runReviewPass -- a zero budget keeps failed marks with no repair node
     reviewStore,
     traceStore,
     pass: passFixture([
-      stepFixture({
+      unitFixture({
         id: "mechanics",
-        name: "Mechanics",
-        kind: "mark",
-        repairRounds: 0,
+        attempt: { allowedCategoryIds: ["grammar"], repairRounds: 0 },
       }),
     ]),
     wsId: "ws",
@@ -262,18 +266,16 @@ Deno.test("runReviewPass -- a node error fails the run and skips dependents", as
     reviewStore,
     traceStore,
     pass: passFixture([
-      stepFixture({ id: "analyze", name: "Analyze", kind: "analyze" }),
-      stepFixture({
+      unitFixture({ id: "analyze" }),
+      unitFixture({
         id: "mechanics",
-        name: "Mechanics",
-        kind: "mark",
-        artifactsFromStepIds: ["analyze"],
+        attempt: { allowedCategoryIds: ["grammar"] },
+        inputs: ["analyze"],
       }),
-      stepFixture({
+      unitFixture({
         id: "synthesize",
-        name: "Synthesize",
-        kind: "synthesize",
-        artifactsFromStepIds: ["analyze"],
+        summary: true,
+        inputs: ["analyze"],
       }),
     ]),
     wsId: "ws",
@@ -318,9 +320,7 @@ Deno.test("runReviewPass -- fails fast when the file does not exist", async () =
     vfs,
     reviewStore,
     traceStore,
-    pass: passFixture([
-      stepFixture({ id: "analyze", name: "Analyze", kind: "analyze" }),
-    ]),
+    pass: passFixture([unitFixture({ id: "analyze" })]),
     wsId: "ws",
     path: "essay.txt",
   });

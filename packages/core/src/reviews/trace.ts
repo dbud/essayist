@@ -34,7 +34,7 @@ export interface ReviewTraceSink {
 /**
  * Storage strategy for review traces.
  *
- * TODO -- blob strategy: buffer appends, commit one chunked blob in end().
+ * TODO -- blob strategy: buffer appends, commit a chunked blob in end().
  */
 export interface TraceStore {
   /** Append an event; calls arrive in seq order. */

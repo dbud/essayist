@@ -1,9 +1,9 @@
-import type { Prompts } from "@/reviews/graph.ts";
+import type { ResolvedPrompts } from "@/config/types.ts";
 import type { MarkAttempt } from "@/reviews/types.ts";
 import { joinBlocks, joinLines, section } from "@/utils/text.ts";
 
 export function composeCallInput(
-  prompts: Prompts,
+  prompts: ResolvedPrompts,
   sections: string[],
   content: string,
 ): string {
@@ -20,7 +20,7 @@ export function composeCallInput(
 const REPAIR_CONTEXT_LINES = 5;
 
 export function composeRepairInput(
-  prompts: Pick<Prompts, "system" | "instructions">,
+  prompts: Pick<ResolvedPrompts, "system" | "instructions">,
   essay: string,
   failed: MarkAttempt[],
 ): string {

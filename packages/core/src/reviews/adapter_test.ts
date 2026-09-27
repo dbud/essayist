@@ -1,12 +1,11 @@
 import { assertEquals } from "@std/assert";
-import type { ResolvedReviewPass, Step } from "@/config/types.ts";
+import type { ResolvedReviewPass, ReviewUnit } from "@/config/types.ts";
 import { buildReviewGraph } from "@/reviews/adapter.ts";
 
 const PROMPTS = {
   system: "You are an editor.",
   directive: "Review the essay.",
   instructions: "",
-  models: ["m/a"],
 };
 
 const APPLY_PAYLOAD = {
@@ -14,55 +13,48 @@ const APPLY_PAYLOAD = {
   provenance: { runId: "r", unitId: "mechanics" },
 };
 
-function stepFixture(partial: Partial<Step> & Pick<Step, "id" | "kind">): Step {
-  return {
-    name: partial.id,
-    systemPromptKey: "sys",
-    directivePromptKey: "dir",
-    ...partial,
-  };
+function unitFixture(
+  partial: Partial<ReviewUnit> & Pick<ReviewUnit, "id">,
+): ReviewUnit {
+  return { promptKey: "dir", ...partial };
 }
 
-function passFixture(steps: Step[]): ResolvedReviewPass {
+function passFixture(units: ReviewUnit[]): ResolvedReviewPass {
   return {
     pass: {
       id: "essay-review",
       name: "Essay review",
+      systemPromptKey: "sys",
       modelPoolId: "pool",
-      steps,
+      units,
     },
-    steps: steps.map((step) => ({
-      step,
-      modelRefs: ["m/a"],
-      apiKeyEnvKey: "KEY",
-      systemPrompt: "You are an editor.",
-      directive: "Review the essay.",
-      instructions: "",
-      categories: [],
-      allowedLabels: step.kind === "mark" ? ["grammar"] : [],
+    units: units.map((unit) => ({
+      id: unit.id,
+      prompts: PROMPTS,
+      pool: { id: "pool", name: "Pool", models: ["m/a"] },
+      inputs: unit.inputs ?? [],
+      ...(unit.attempt && {
+        attempt: {
+          labels: ["grammar"],
+          repairRounds: unit.attempt.repairRounds ?? 1,
+        },
+      }),
+      ...(unit.summary && { summary: true }),
     })),
   };
 }
 
 Deno.test("buildReviewGraph -- decomposes a pass into nodes", () => {
-  const graph = buildReviewGraph(
-    passFixture([
-      stepFixture({ id: "analyze", name: "Analyze", kind: "analyze" }),
-      stepFixture({
-        id: "mechanics",
-        name: "Mechanics",
-        kind: "mark",
-        artifactsFromStepIds: ["analyze"],
-      }),
-      stepFixture({
-        id: "summary",
-        name: "Summary",
-        kind: "synthesize",
-        artifactsFromStepIds: ["analyze"],
-      }),
-    ]),
-    "r",
-  );
+  const pass = passFixture([
+    unitFixture({ id: "analyze" }),
+    unitFixture({
+      id: "mechanics",
+      attempt: { allowedCategoryIds: ["grammar"] },
+      inputs: ["analyze"],
+    }),
+    unitFixture({ id: "summary", summary: true, inputs: ["analyze"] }),
+  ]);
+  const graph = buildReviewGraph(pass, "r");
 
   assertEquals(
     graph.nodes.map((node) => [node.id, node.kind, node.dependsOn]),
@@ -83,18 +75,16 @@ Deno.test("buildReviewGraph -- decomposes a pass into nodes", () => {
   );
   const payloadOf = (id: string) =>
     graph.nodes.find((node) => node.id === id)?.payload;
-  assertEquals(payloadOf("analyze"), PROMPTS);
+  assertEquals(payloadOf("analyze"), pass.units[0]);
   assertEquals(payloadOf("mechanics.apply"), APPLY_PAYLOAD);
 });
 
 Deno.test("buildReviewGraph -- unrolls two repair rounds in a chain", () => {
   const graph = buildReviewGraph(
     passFixture([
-      stepFixture({
+      unitFixture({
         id: "mechanics",
-        name: "Mechanics",
-        kind: "mark",
-        repairRounds: 2,
+        attempt: { allowedCategoryIds: ["grammar"], repairRounds: 2 },
       }),
     ]),
     "r",
@@ -131,11 +121,9 @@ Deno.test("buildReviewGraph -- unrolls two repair rounds in a chain", () => {
 Deno.test("buildReviewGraph -- a zero budget has no repair nodes", () => {
   const graph = buildReviewGraph(
     passFixture([
-      stepFixture({
+      unitFixture({
         id: "mechanics",
-        name: "Mechanics",
-        kind: "mark",
-        repairRounds: 0,
+        attempt: { allowedCategoryIds: ["grammar"], repairRounds: 0 },
       }),
     ]),
     "r",
@@ -150,11 +138,10 @@ Deno.test("buildReviewGraph -- a zero budget has no repair nodes", () => {
 Deno.test("buildReviewGraph -- artifact references pass through as deps", () => {
   const graph = buildReviewGraph(
     passFixture([
-      stepFixture({
+      unitFixture({
         id: "mechanics",
-        name: "Mechanics",
-        kind: "mark",
-        artifactsFromStepIds: ["analyze", "ghost"],
+        attempt: { allowedCategoryIds: ["grammar"] },
+        inputs: ["analyze", "ghost"],
       }),
     ]),
     "r",

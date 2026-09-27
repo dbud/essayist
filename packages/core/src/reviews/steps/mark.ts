@@ -87,8 +87,8 @@ async function applyMark(
   };
 }
 
-/** A serialized mark applier: marks of a version are a single list under
- * one KV key, so vfs.mark is a read-modify-write and concurrent
+/** A serialized mark applier: marks of a version are a single list in
+ * KV, so vfs.mark is a read-modify-write and concurrent
  * applications would lose marks. */
 export function createMarkApplier(pinned: PinnedVFS) {
   const tasks = new SerialTasks();
@@ -104,7 +104,7 @@ export function createMarkProposeRunner(
   agent: Agent,
 ): NodeRunner<ReviewTypes, "mark.propose"> {
   return {
-    async execute(prompts, { inputs, artifact, emit }) {
+    async execute({ prompts, pool }, { inputs, artifact, emit }) {
       const result = await callStructured({
         agent,
         onEvent: emit,
@@ -113,7 +113,7 @@ export function createMarkProposeRunner(
           inputs.of("analysis").map(renderAnalysis),
           inputs.one("content"),
         ),
-        models: prompts.models,
+        models: pool.models,
         schema: ProposedMarksSchema,
       });
       return [artifact("mark.proposals", result.output.marks)];
@@ -127,7 +127,7 @@ export function createMarkRepairRunner(
   agent: Agent,
 ): NodeRunner<ReviewTypes, "mark.propose.repair"> {
   return {
-    async execute(prompts, { inputs, artifact, emit }) {
+    async execute({ prompts, pool }, { inputs, artifact, emit }) {
       const failed = inputs.of("mark.failed").flat();
       if (failed.length === 0) {
         // Activated by its gate with nothing to repair; stays idle.
@@ -137,7 +137,7 @@ export function createMarkRepairRunner(
         agent,
         onEvent: emit,
         input: composeRepairInput(prompts, inputs.one("content"), failed),
-        models: prompts.models,
+        models: pool.models,
         schema: ProposedMarksSchema,
       });
       return [artifact("mark.proposals", result.output.marks)];

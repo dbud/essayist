@@ -12,18 +12,16 @@ export type {
   ModelPool,
   Prompt,
   ResolvedReviewPass,
-  ResolvedStep,
+  ResolvedReviewUnit,
   ReviewPass,
-  Step,
-  StepKind,
+  ReviewUnit,
 } from "@/config/types.ts";
 export {
   CategorySchema,
   ModelPoolSchema,
   PromptSchema,
   ReviewPassSchema,
-  StepKindSchema,
-  StepSchema,
+  ReviewUnitSchema,
 } from "@/config/types.ts";
 export { pluralize } from "@/format.ts";
 export { logger } from "@/logger.ts";

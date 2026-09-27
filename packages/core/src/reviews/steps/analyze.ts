@@ -47,7 +47,7 @@ export function createAnalyzeRunner(
   agent: Agent,
 ): NodeRunner<ReviewTypes, "analyze"> {
   return {
-    async execute(prompts, { inputs, artifact, emit }) {
+    async execute({ prompts, pool }, { inputs, artifact, emit }) {
       const content = inputs.one("content");
       const result = await callStructured({
         agent,
@@ -57,7 +57,7 @@ export function createAnalyzeRunner(
           inputs.of("analysis").map(renderAnalysis),
           content,
         ),
-        models: prompts.models,
+        models: pool.models,
         schema: AnalysisSchema,
       });
       return [artifact("analysis", result.output)];

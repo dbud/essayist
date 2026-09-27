@@ -53,7 +53,7 @@ export async function runReviewPass(
   return await new ReviewPassRunner(options, versionId).run();
 }
 
-/** Executes a review pass as a flow over one pinned file version. */
+/** Executes a review pass as a flow over a pinned file version. */
 class ReviewPassRunner {
   #agent: Agent;
   #reviewStore: ReviewStore;

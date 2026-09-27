@@ -18,7 +18,7 @@ export function createSynthesizeRunner(
   agent: Agent,
 ): NodeRunner<ReviewTypes, "synthesize"> {
   return {
-    async execute(prompts, { inputs, artifact, emit }) {
+    async execute({ prompts, pool }, { inputs, artifact, emit }) {
       const content = inputs.one("content");
       const result = await callStructured({
         agent,
@@ -28,7 +28,7 @@ export function createSynthesizeRunner(
           inputs.of("analysis").map(renderAnalysis),
           content,
         ),
-        models: prompts.models,
+        models: pool.models,
         schema: StepSummarySchema,
       });
       return [artifact("summary", result.output.summary)];

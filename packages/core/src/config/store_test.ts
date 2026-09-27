@@ -26,16 +26,9 @@ Deno.test("ConfigStore -- CRUD round-trips", async () => {
   const pass = {
     id: "r",
     name: "R",
+    systemPromptKey: "sys",
     modelPoolId: "p",
-    steps: [
-      {
-        id: "analyze",
-        name: "Analyze",
-        kind: "analyze" as const,
-        systemPromptKey: "sys",
-        directivePromptKey: "sys",
-      },
-    ],
+    units: [{ id: "analyze", promptKey: "sys" }],
   };
   await store.saveReviewPass(pass);
   assertEquals((await store.getReviewPass("r"))?.name, "R");
@@ -62,16 +55,9 @@ Deno.test("ConfigStore -- active pin set and clear", async () => {
   await store.saveReviewPass({
     id: "essay-review",
     name: "Essay review",
+    systemPromptKey: "sys",
     modelPoolId: "pool",
-    steps: [
-      {
-        id: "analyze",
-        name: "Analyze",
-        kind: "analyze",
-        systemPromptKey: "sys",
-        directivePromptKey: "sys",
-      },
-    ],
+    units: [{ id: "analyze", promptKey: "sys" }],
   });
 
   await store.setActiveReviewPass("essay-review");
@@ -89,16 +75,9 @@ Deno.test("ConfigStore -- list helpers", async () => {
   await store.saveReviewPass({
     id: "r",
     name: "R",
+    systemPromptKey: "k",
     modelPoolId: "p",
-    steps: [
-      {
-        id: "analyze",
-        name: "Analyze",
-        kind: "analyze",
-        systemPromptKey: "k",
-        directivePromptKey: "k",
-      },
-    ],
+    units: [{ id: "analyze", promptKey: "k" }],
   });
 
   assertEquals((await store.listModelPools()).length, 1);

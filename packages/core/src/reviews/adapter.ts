@@ -1,12 +1,12 @@
-import type { ResolvedReviewPass, ResolvedStep } from "@/config/types.ts";
+import type { ResolvedReviewPass, ResolvedReviewUnit } from "@/config/types.ts";
 import type { PassWhenSpec } from "@/flow/helpers.ts";
 import type { FlowGraph, FlowNodeOf } from "@/flow/types.ts";
-import type { Prompts, ReviewTypes } from "@/reviews/graph.ts";
+import type { ReviewTypes } from "@/reviews/graph.ts";
 
 const CONTENT = "content";
 
-/** Decompose a resolved review pass into a flow graph: one node set per
- * step, with mark steps unrolling their repair rounds behind gates. */
+/** Decompose a resolved review pass into a flow graph: a model-call node
+ * per unit, with attempt units unrolling their mark subgraph behind gates. */
 export function buildReviewGraph(
   pass: ResolvedReviewPass,
   runId: string,
@@ -14,53 +14,49 @@ export function buildReviewGraph(
   const nodes: FlowNodeOf<ReviewTypes>[] = [
     { id: CONTENT, kind: "source", dependsOn: [] },
   ];
-  for (const resolved of pass.steps) {
-    const deps = [CONTENT, ...(resolved.step.artifactsFromStepIds ?? [])];
-    switch (resolved.step.kind) {
-      case "analyze":
-        nodes.push({
-          id: resolved.step.id,
-          kind: "analyze",
-          dependsOn: deps,
-          payload: promptsOf(resolved),
-        });
-        break;
-      case "mark":
-        nodes.push(...markNodes(resolved, runId));
-        break;
-      case "synthesize":
-        nodes.push({
-          id: resolved.step.id,
-          kind: "synthesize",
-          dependsOn: deps,
-          payload: promptsOf(resolved),
-        });
-        break;
-    }
+  for (const unit of pass.units) {
+    nodes.push(...unitNodes(unit, runId));
   }
   return { nodes };
 }
 
-function promptsOf(resolved: ResolvedStep): Prompts {
-  return {
-    system: resolved.systemPrompt,
-    directive: resolved.directive,
-    instructions: resolved.instructions,
-    models: resolved.modelRefs,
-  };
-}
-
-/** The nodes of a mark step: propose, apply, and one gated repair round
- * per configured budget. */
-function markNodes(
-  resolved: ResolvedStep,
+function unitNodes(
+  unit: ResolvedReviewUnit,
   runId: string,
 ): FlowNodeOf<ReviewTypes>[] {
-  const step = resolved.step;
-  const prompts = promptsOf(resolved);
+  if (unit.attempt) {
+    return markNodes(unit, unit.attempt, runId);
+  }
+  if (unit.summary) {
+    return [
+      {
+        id: unit.id,
+        kind: "synthesize",
+        dependsOn: [CONTENT, ...unit.inputs],
+        payload: unit,
+      },
+    ];
+  }
+  return [
+    {
+      id: unit.id,
+      kind: "analyze",
+      dependsOn: [CONTENT, ...unit.inputs],
+      payload: unit,
+    },
+  ];
+}
+
+/** The nodes of an attempt unit: propose, apply, and gated repair
+ * rounds per configured budget. */
+function markNodes(
+  unit: ResolvedReviewUnit,
+  attempt: { labels: string[]; repairRounds: number },
+  runId: string,
+): FlowNodeOf<ReviewTypes>[] {
   const applyPayload = {
-    allowedLabels: resolved.allowedLabels,
-    provenance: { runId, unitId: step.id },
+    allowedLabels: attempt.labels,
+    provenance: { runId, unitId: unit.id },
   };
   const gatePayload: PassWhenSpec<ReviewTypes> = {
     when: (inputs) => inputs.of("mark.failed").length > 0,
@@ -68,24 +64,24 @@ function markNodes(
   };
   const nodes: FlowNodeOf<ReviewTypes>[] = [
     {
-      id: `${step.id}.propose`,
+      id: `${unit.id}.propose`,
       kind: "mark.propose",
-      dependsOn: [CONTENT, ...(step.artifactsFromStepIds ?? [])],
-      payload: prompts,
+      dependsOn: [CONTENT, ...unit.inputs],
+      payload: unit,
     },
     {
-      id: `${step.id}.apply`,
+      id: `${unit.id}.apply`,
       kind: "mark.apply",
-      dependsOn: [`${step.id}.propose`],
+      dependsOn: [`${unit.id}.propose`],
       payload: applyPayload,
     },
   ];
-  const rounds = step.repairRounds ?? 1;
-  let previousApply = `${step.id}.apply`;
+  const rounds = attempt.repairRounds ?? 1;
+  let previousApply = `${unit.id}.apply`;
   for (let round = 1; round <= rounds; round++) {
-    const gate = `${step.id}.repair${round}.gate`;
-    const propose = `${step.id}.repair${round}.propose`;
-    const apply = `${step.id}.repair${round}.apply`;
+    const gate = `${unit.id}.repair${round}.gate`;
+    const propose = `${unit.id}.repair${round}.propose`;
+    const apply = `${unit.id}.repair${round}.apply`;
     nodes.push({
       id: gate,
       kind: "mark.repair.gate",
@@ -96,7 +92,7 @@ function markNodes(
       id: propose,
       kind: "mark.propose.repair",
       dependsOn: [CONTENT, gate],
-      payload: prompts,
+      payload: unit,
     });
     nodes.push({
       id: apply,

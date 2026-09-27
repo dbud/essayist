@@ -1,4 +1,5 @@
 import { assertEquals } from "@std/assert";
+import type { ResolvedReviewUnit } from "@/config/types.ts";
 import type { PassWhenSpec } from "@/flow/helpers.ts";
 import { FlowRunner } from "@/flow/runner.ts";
 import type {
@@ -20,12 +21,14 @@ import { createFile } from "@/vfs/testing/helpers.ts";
 const ANALYSIS_ROUND =
   '{"thesis":"Drafts are raw material.","claims":[],"outline":[],"strengths":[],"risks":[]}';
 
-const CALL = {
-  system: "You are an editor.",
-  directive: "Mark mechanics.",
-  instructions: "",
-  models: ["m/a"],
-};
+function unitPayload(id: string, directive: string): ResolvedReviewUnit {
+  return {
+    id,
+    prompts: { system: "You are an editor.", directive, instructions: "" },
+    pool: { id: "pool", name: "Pool", models: ["m/a"] },
+    inputs: [],
+  };
+}
 
 const GATE_PAYLOAD: PassWhenSpec<ReviewTypes> = {
   when: (inputs: Artifacts<ReviewTypes>) => inputs.of("mark.failed").length > 0,
@@ -79,18 +82,13 @@ Deno.test("review runners -- analyze, propose, apply, and synthesize in a flow",
         id: "structure",
         kind: "analyze",
         dependsOn: ["content"],
-        payload: {
-          system: "You are an editor.",
-          directive: "Analyze the draft.",
-          instructions: "",
-          models: ["m/a"],
-        },
+        payload: unitPayload("structure", "Analyze the draft."),
       },
       {
         id: "mechanics.propose",
         kind: "mark.propose",
         dependsOn: ["content", "structure"],
-        payload: CALL,
+        payload: unitPayload("mechanics", "Mark mechanics."),
       },
       {
         id: "mechanics.apply",
@@ -105,12 +103,7 @@ Deno.test("review runners -- analyze, propose, apply, and synthesize in a flow",
         id: "summary",
         kind: "synthesize",
         dependsOn: ["content", "mechanics.apply"],
-        payload: {
-          system: "You are an editor.",
-          directive: "Summarize.",
-          instructions: "",
-          models: ["m/a"],
-        },
+        payload: unitPayload("summary", "Summarize."),
       },
     ],
   };
@@ -170,7 +163,7 @@ Deno.test("review runners -- repair propose stays idle without failures", async 
         id: "m.propose",
         kind: "mark.propose",
         dependsOn: ["content"],
-        payload: CALL,
+        payload: unitPayload("m", "Mark mechanics."),
       },
       {
         id: "m.apply",
@@ -188,7 +181,7 @@ Deno.test("review runners -- repair propose stays idle without failures", async 
         id: "m.repair1.propose",
         kind: "mark.propose.repair",
         dependsOn: ["content", "m.repair1.gate"],
-        payload: CALL,
+        payload: unitPayload("m", "Mark mechanics."),
       },
       {
         id: "m.repair1.apply",
@@ -241,7 +234,7 @@ Deno.test("review runners -- a repair round re-quotes failed spans", async () =>
         id: "m.propose",
         kind: "mark.propose",
         dependsOn: ["content"],
-        payload: CALL,
+        payload: unitPayload("m", "Mark mechanics."),
       },
       {
         id: "m.apply",
@@ -259,7 +252,7 @@ Deno.test("review runners -- a repair round re-quotes failed spans", async () =>
         id: "m.repair1.propose",
         kind: "mark.propose.repair",
         dependsOn: ["content", "m.repair1.gate"],
-        payload: CALL,
+        payload: unitPayload("m", "Mark mechanics."),
       },
       {
         id: "m.repair1.apply",

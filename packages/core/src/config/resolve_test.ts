@@ -66,82 +66,76 @@ async function seedFullConfig(store: ConfigStore) {
   await store.saveReviewPass({
     id: "essay-review",
     name: "Essay review",
+    systemPromptKey: "system.reviewer",
     modelPoolId: "free-pool",
     variables: { role: "an editor" },
-    steps: [
+    units: [
       {
         id: "analyze",
-        name: "Analyze",
-        kind: "analyze",
-        systemPromptKey: "system.reviewer",
-        directivePromptKey: "directive.analyze",
+        promptKey: "directive.analyze",
       },
       {
         id: "mechanics",
-        name: "Mechanics",
-        kind: "mark",
-        systemPromptKey: "system.reviewer",
-        directivePromptKey: "directive.mechanics",
+        promptKey: "directive.mechanics",
         instructionsPromptKey: "instructions.marks",
-        allowedCategoryIds: ["grammar"],
+        attempt: { allowedCategoryIds: ["grammar"] },
       },
       {
         id: "argument",
-        name: "Argument",
-        kind: "mark",
+        promptKey: "directive.argument",
         modelPoolId: "strong-pool",
-        systemPromptKey: "system.reviewer",
-        directivePromptKey: "directive.argument",
-        allowedCategoryIds: ["thesis", "evidence"],
-        artifactsFromStepIds: ["analyze"],
+        attempt: { allowedCategoryIds: ["thesis", "evidence"] },
+        inputs: ["analyze"],
       },
       {
         id: "synthesize",
-        name: "Synthesize",
-        kind: "synthesize",
-        systemPromptKey: "system.reviewer",
-        directivePromptKey: "directive.synthesize",
+        promptKey: "directive.synthesize",
+        summary: true,
       },
     ],
   });
   await store.setActiveReviewPass("essay-review");
 }
 
-Deno.test("resolveActiveReviewPass -- resolves the active pass step by step", async () => {
+Deno.test("resolveActiveReviewPass -- resolves the active pass unit by unit", async () => {
   const store = seed();
   await seedFullConfig(store);
 
   const resolved = await resolveActiveReviewPass(store);
   if (!resolved) throw new Error("expected resolved review pass");
   assertEquals(resolved.pass.id, "essay-review");
-  assertEquals(resolved.steps.length, 4);
+  assertEquals(resolved.units.length, 4);
 
-  const [analyze, mechanics, argument, synthesize] = resolved.steps;
-  assertEquals(analyze.step.id, "analyze");
-  assertEquals(analyze.modelRefs, FREE_MODELS);
-  assertEquals(analyze.apiKeyEnvKey, "OPENROUTER_API_KEY");
-  assertEquals(analyze.systemPrompt, "You are an editor.");
+  const [analyze, mechanics, argument, synthesize] = resolved.units;
+  assertEquals(analyze.id, "analyze");
+  assertEquals(analyze.pool.models, FREE_MODELS);
+  assertEquals(analyze.prompts.system, "You are an editor.");
   assertEquals(
-    analyze.directive,
+    analyze.prompts.directive,
     "Describe the piece as an editor would read it.",
   );
-  assertEquals(analyze.instructions, "");
-  assertEquals(analyze.categories, []);
+  assertEquals(analyze.prompts.instructions, "");
+  assertEquals(analyze.attempt, undefined);
+  assertEquals(analyze.summary, undefined);
 
-  assertEquals(mechanics.allowedLabels, ["grammar"]);
+  assertEquals(mechanics.attempt, {
+    labels: ["grammar"],
+    repairRounds: 1,
+  });
   assertEquals(
-    mechanics.instructions,
+    mechanics.prompts.instructions,
     "Quote exact spans with {{file}} context.",
   );
 
-  assertEquals(argument.modelRefs, ["openai/gpt-5.2"]);
-  assertEquals(argument.allowedLabels, ["thesis", "evidence"]);
-  assertEquals(
-    argument.categories.map((c) => c.id),
-    ["thesis", "evidence"],
-  );
+  assertEquals(argument.pool.models, ["openai/gpt-5.2"]);
+  assertEquals(argument.attempt, {
+    labels: ["thesis", "evidence"],
+    repairRounds: 1,
+  });
+  assertEquals(argument.inputs, ["analyze"]);
 
-  assertEquals(synthesize.categories, []);
+  assertEquals(synthesize.summary, true);
+  assertEquals(synthesize.attempt, undefined);
 });
 
 Deno.test("resolveActiveReviewPass -- undefined when no pin", async () => {
@@ -162,21 +156,19 @@ Deno.test("resolveActiveReviewPass -- respects pool.apiKeyEnvKey when set", asyn
   await store.saveReviewPass({
     id: "r",
     name: "R",
+    systemPromptKey: "sys",
     modelPoolId: "p",
-    steps: [
+    units: [
       {
         id: "mark",
-        name: "Mark",
-        kind: "mark",
-        systemPromptKey: "sys",
-        directivePromptKey: "sys",
-        allowedCategoryIds: ["c"],
+        promptKey: "sys",
+        attempt: { allowedCategoryIds: ["c"] },
       },
     ],
   });
   await store.setActiveReviewPass("r");
   const resolved = await resolveActiveReviewPass(store);
-  assertEquals(resolved?.steps[0].apiKeyEnvKey, "CUSTOM_KEY");
+  assertEquals(resolved?.units[0].pool.apiKeyEnvKey, "CUSTOM_KEY");
 });
 
 Deno.test("resolveActiveReviewPass -- throws on missing review pass", async () => {
@@ -185,22 +177,20 @@ Deno.test("resolveActiveReviewPass -- throws on missing review pass", async () =
   await assertRejects(() => resolveActiveReviewPass(store), ConfigMissingError);
 });
 
-Deno.test("resolveActiveReviewPass -- throws on missing step pool", async () => {
+Deno.test("resolveActiveReviewPass -- throws on missing unit pool", async () => {
   const store = seed();
   await store.savePrompt({ key: "sys", body: "hi" });
   await store.saveCategory({ id: "c", label: "c", description: "d" });
   await store.saveReviewPass({
     id: "r",
     name: "R",
+    systemPromptKey: "sys",
     modelPoolId: "missing-pool",
-    steps: [
+    units: [
       {
         id: "mark",
-        name: "Mark",
-        kind: "mark",
-        systemPromptKey: "sys",
-        directivePromptKey: "sys",
-        allowedCategoryIds: ["c"],
+        promptKey: "sys",
+        attempt: { allowedCategoryIds: ["c"] },
       },
     ],
   });
@@ -212,7 +202,7 @@ Deno.test("resolveActiveReviewPass -- throws on missing step pool", async () => 
   );
 });
 
-Deno.test("resolveActiveReviewPass -- throws on empty step pool", async () => {
+Deno.test("resolveActiveReviewPass -- throws on empty unit pool", async () => {
   const store = seed();
   await store.saveModelPool({ id: "empty", name: "Empty", models: [] });
   await store.savePrompt({ key: "sys", body: "hi" });
@@ -220,15 +210,13 @@ Deno.test("resolveActiveReviewPass -- throws on empty step pool", async () => {
   await store.saveReviewPass({
     id: "r",
     name: "R",
+    systemPromptKey: "sys",
     modelPoolId: "empty",
-    steps: [
+    units: [
       {
         id: "mark",
-        name: "Mark",
-        kind: "mark",
-        systemPromptKey: "sys",
-        directivePromptKey: "sys",
-        allowedCategoryIds: ["c"],
+        promptKey: "sys",
+        attempt: { allowedCategoryIds: ["c"] },
       },
     ],
   });
@@ -240,22 +228,20 @@ Deno.test("resolveActiveReviewPass -- throws on empty step pool", async () => {
   );
 });
 
-Deno.test("resolveActiveReviewPass -- throws on missing step prompt", async () => {
+Deno.test("resolveActiveReviewPass -- throws on missing unit prompt", async () => {
   const store = seed();
   await store.saveModelPool({ id: "pool", name: "Pool", models: ["m/ref"] });
   await store.saveCategory({ id: "c", label: "c", description: "d" });
   await store.saveReviewPass({
     id: "r",
     name: "R",
+    systemPromptKey: "sys",
     modelPoolId: "pool",
-    steps: [
+    units: [
       {
         id: "mark",
-        name: "Mark",
-        kind: "mark",
-        systemPromptKey: "missing.prompt",
-        directivePromptKey: "missing.prompt",
-        allowedCategoryIds: ["c"],
+        promptKey: "missing.prompt",
+        attempt: { allowedCategoryIds: ["c"] },
       },
     ],
   });
@@ -263,25 +249,49 @@ Deno.test("resolveActiveReviewPass -- throws on missing step prompt", async () =
   await assertRejects(
     () => resolveActiveReviewPass(store),
     ConfigMissingError,
-    'prompt "missing.prompt" for step "mark"',
+    'prompt "missing.prompt" for unit "mark"',
   );
 });
 
-Deno.test("resolveActiveReviewPass -- throws on mark step without categories", async () => {
+Deno.test("resolveActiveReviewPass -- throws on missing pass system prompt", async () => {
+  const store = seed();
+  await store.saveModelPool({ id: "pool", name: "Pool", models: ["m/ref"] });
+  await store.saveCategory({ id: "c", label: "c", description: "d" });
+  await store.saveReviewPass({
+    id: "r",
+    name: "R",
+    systemPromptKey: "missing.system",
+    modelPoolId: "pool",
+    units: [
+      {
+        id: "mark",
+        promptKey: "sys",
+        attempt: { allowedCategoryIds: ["c"] },
+      },
+    ],
+  });
+  await store.setActiveReviewPass("r");
+  await assertRejects(
+    () => resolveActiveReviewPass(store),
+    ConfigMissingError,
+    'prompt "missing.system" for pass "r"',
+  );
+});
+
+Deno.test("resolveActiveReviewPass -- throws on attempt unit without categories", async () => {
   const store = seed();
   await store.saveModelPool({ id: "pool", name: "Pool", models: ["m/ref"] });
   await store.savePrompt({ key: "sys", body: "hi" });
   await store.saveReviewPass({
     id: "r",
     name: "R",
+    systemPromptKey: "sys",
     modelPoolId: "pool",
-    steps: [
+    units: [
       {
         id: "mark",
-        name: "Mark",
-        kind: "mark",
-        systemPromptKey: "sys",
-        directivePromptKey: "sys",
+        promptKey: "sys",
+        attempt: { allowedCategoryIds: [] },
       },
     ],
   });
@@ -289,7 +299,7 @@ Deno.test("resolveActiveReviewPass -- throws on mark step without categories", a
   await assertRejects(
     () => resolveActiveReviewPass(store),
     ConfigInvalidError,
-    'mark step "mark" in pass "r" has no allowed categories',
+    'attempt unit "mark" in pass "r" has no allowed categories',
   );
 });
 
@@ -300,15 +310,13 @@ Deno.test("resolveActiveReviewPass -- throws on missing referenced categories", 
   await store.saveReviewPass({
     id: "r",
     name: "R",
+    systemPromptKey: "sys",
     modelPoolId: "pool",
-    steps: [
+    units: [
       {
         id: "mark",
-        name: "Mark",
-        kind: "mark",
-        systemPromptKey: "sys",
-        directivePromptKey: "sys",
-        allowedCategoryIds: ["gone", "also-gone"],
+        promptKey: "sys",
+        attempt: { allowedCategoryIds: ["gone", "also-gone"] },
       },
     ],
   });
@@ -320,7 +328,7 @@ Deno.test("resolveActiveReviewPass -- throws on missing referenced categories", 
   );
 });
 
-Deno.test("resolveActiveReviewPass -- throws on duplicate step ids", async () => {
+Deno.test("resolveActiveReviewPass -- throws on duplicate unit ids", async () => {
   const store = seed();
   await store.saveModelPool({ id: "pool", name: "Pool", models: ["m/ref"] });
   await store.savePrompt({ key: "sys", body: "hi" });
@@ -328,23 +336,18 @@ Deno.test("resolveActiveReviewPass -- throws on duplicate step ids", async () =>
   await store.saveReviewPass({
     id: "r",
     name: "R",
+    systemPromptKey: "sys",
     modelPoolId: "pool",
-    steps: [
+    units: [
       {
         id: "mark",
-        name: "Mark one",
-        kind: "mark",
-        systemPromptKey: "sys",
-        directivePromptKey: "sys",
-        allowedCategoryIds: ["c"],
+        promptKey: "sys",
+        attempt: { allowedCategoryIds: ["c"] },
       },
       {
         id: "mark",
-        name: "Mark two",
-        kind: "mark",
-        systemPromptKey: "sys",
-        directivePromptKey: "sys",
-        allowedCategoryIds: ["c"],
+        promptKey: "sys",
+        attempt: { allowedCategoryIds: ["c"] },
       },
     ],
   });
@@ -352,87 +355,86 @@ Deno.test("resolveActiveReviewPass -- throws on duplicate step ids", async () =>
   await assertRejects(
     () => resolveActiveReviewPass(store),
     ConfigInvalidError,
-    'step id "mark" is used more than once',
+    'unit id "mark" is used more than once',
   );
 });
 
-Deno.test("resolveActiveReviewPass -- throws on forward artifactsFromStepIds", async () => {
+Deno.test("resolveActiveReviewPass -- throws on dotted unit ids", async () => {
   const store = seed();
   await store.saveModelPool({ id: "pool", name: "Pool", models: ["m/ref"] });
   await store.savePrompt({ key: "sys", body: "hi" });
   await store.saveReviewPass({
     id: "r",
     name: "R",
+    systemPromptKey: "sys",
     modelPoolId: "pool",
-    steps: [
-      {
-        id: "first",
-        name: "First",
-        kind: "analyze",
-        systemPromptKey: "sys",
-        directivePromptKey: "sys",
-        artifactsFromStepIds: ["second"],
-      },
-      {
-        id: "second",
-        name: "Second",
-        kind: "analyze",
-        systemPromptKey: "sys",
-        directivePromptKey: "sys",
-      },
-    ],
+    units: [{ id: "mechanics.propose", promptKey: "sys" }],
   });
   await store.setActiveReviewPass("r");
   await assertRejects(
     () => resolveActiveReviewPass(store),
     ConfigInvalidError,
-    'references unknown or later step "second"',
+    'must not contain "."',
   );
 });
 
-Deno.test("resolveActiveReviewPass -- throws on unknown artifactsFromStepIds", async () => {
+Deno.test("resolveActiveReviewPass -- throws on forward unit inputs", async () => {
   const store = seed();
   await store.saveModelPool({ id: "pool", name: "Pool", models: ["m/ref"] });
   await store.savePrompt({ key: "sys", body: "hi" });
   await store.saveReviewPass({
     id: "r",
     name: "R",
+    systemPromptKey: "sys",
     modelPoolId: "pool",
-    steps: [
-      {
-        id: "early",
-        name: "Early",
-        kind: "analyze",
-        systemPromptKey: "sys",
-        directivePromptKey: "sys",
-        artifactsFromStepIds: ["ghost"],
-      },
+    units: [
+      { id: "first", promptKey: "sys", inputs: ["second"] },
+      { id: "second", promptKey: "sys" },
     ],
   });
   await store.setActiveReviewPass("r");
   await assertRejects(
     () => resolveActiveReviewPass(store),
     ConfigInvalidError,
-    'references unknown or later step "ghost"',
+    'references unknown or later unit "second"',
   );
 });
 
-Deno.test("resolveActiveReviewPass -- throws on non-mark step with categories", async () => {
+Deno.test("resolveActiveReviewPass -- throws on unknown unit inputs", async () => {
   const store = seed();
   await store.saveModelPool({ id: "pool", name: "Pool", models: ["m/ref"] });
   await store.savePrompt({ key: "sys", body: "hi" });
   await store.saveReviewPass({
     id: "r",
     name: "R",
+    systemPromptKey: "sys",
     modelPoolId: "pool",
-    steps: [
+    units: [{ id: "early", promptKey: "sys", inputs: ["ghost"] }],
+  });
+  await store.setActiveReviewPass("r");
+  await assertRejects(
+    () => resolveActiveReviewPass(store),
+    ConfigInvalidError,
+    'references unknown or later unit "ghost"',
+  );
+});
+
+Deno.test("resolveActiveReviewPass -- throws on attempt and summary together", async () => {
+  const store = seed();
+  await store.saveModelPool({ id: "pool", name: "Pool", models: ["m/ref"] });
+  await store.savePrompt({ key: "sys", body: "hi" });
+  await store.saveCategory({ id: "c", label: "c", description: "d" });
+  await store.saveReviewPass({
+    id: "r",
+    name: "R",
+    systemPromptKey: "sys",
+    modelPoolId: "pool",
+    units: [
       {
-        id: "analyze",
-        name: "Analyze",
-        kind: "analyze",
-        systemPromptKey: "sys",
-        directivePromptKey: "sys",
-        allowedCategoryIds: ["c"],
+        id: "both",
+        promptKey: "sys",
+        summary: true,
+        attempt: { allowedCategoryIds: ["c"] },
       },
     ],
   });
@@ -440,6 +442,6 @@ Deno.test("resolveActiveReviewPass -- throws on non-mark step with categories", 
   await assertRejects(
     () => resolveActiveReviewPass(store),
     ConfigInvalidError,
-    "is analyze but sets allowedCategoryIds",
+    'unit "both" in pass "r" sets both attempt and summary',
   );
 });

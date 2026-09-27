@@ -17,7 +17,7 @@ export const seedConfig = new Command<KvctlGlobals>()
         ],
       });
 
-      // A shared reviewer persona; steps differentiate through directives.
+      // A shared system prompt; units differentiate through directives.
       const systemPromptKey = "system.reviewer";
       const prompts = [
         {
@@ -86,62 +86,49 @@ export const seedConfig = new Command<KvctlGlobals>()
       for (const c of categories) await config.saveCategory(c);
 
       const reviewPassId = "essay-review";
-      const steps = [
+      const units = [
         {
           id: "analyze",
-          name: "Analyze",
-          kind: "analyze" as const,
-          systemPromptKey,
-          directivePromptKey: "directive.analyze",
+          promptKey: "directive.analyze",
         },
         {
           id: "mechanics",
-          name: "Mechanics",
-          kind: "mark" as const,
-          systemPromptKey,
-          directivePromptKey: "directive.mechanics",
+          promptKey: "directive.mechanics",
           instructionsPromptKey: "instructions.marks",
-          allowedCategoryIds: ["grammar"],
+          attempt: { allowedCategoryIds: ["grammar"] },
         },
         {
           id: "structure",
-          name: "Structure",
-          kind: "mark" as const,
-          systemPromptKey,
-          directivePromptKey: "directive.structure",
+          promptKey: "directive.structure",
           instructionsPromptKey: "instructions.marks",
-          allowedCategoryIds: ["structure"],
-          artifactsFromStepIds: ["analyze"],
+          attempt: { allowedCategoryIds: ["structure"] },
+          inputs: ["analyze"],
         },
         {
           id: "argument",
-          name: "Argument",
-          kind: "mark" as const,
-          systemPromptKey,
-          directivePromptKey: "directive.argument",
+          promptKey: "directive.argument",
           instructionsPromptKey: "instructions.marks",
-          allowedCategoryIds: ["thesis", "evidence"],
-          artifactsFromStepIds: ["analyze"],
+          attempt: { allowedCategoryIds: ["thesis", "evidence"] },
+          inputs: ["analyze"],
         },
         {
           id: "synthesize",
-          name: "Synthesize",
-          kind: "synthesize" as const,
-          systemPromptKey,
-          directivePromptKey: "directive.synthesize",
+          promptKey: "directive.synthesize",
+          summary: true,
         },
       ];
       await config.saveReviewPass({
         id: reviewPassId,
         name: "Essay review",
+        systemPromptKey,
         modelPoolId: poolId,
         variables: {},
-        steps,
+        units,
       });
       await config.setActiveReviewPass(reviewPassId);
 
       console.log(
-        `seeded default config: model pool '${poolId}', ${prompts.length} prompts, ${categories.length} categories, review pass '${reviewPassId}' with ${steps.length} steps (active)`,
+        `seeded default config: model pool '${poolId}', ${prompts.length} prompts, ${categories.length} categories, review pass '${reviewPassId}' with ${units.length} units (active)`,
       );
     }),
   );
