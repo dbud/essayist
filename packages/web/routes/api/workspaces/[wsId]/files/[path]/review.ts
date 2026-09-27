@@ -1,15 +1,8 @@
-// Review runs are parked during the multipass rework; the handler returns
-// once the new pipeline runner is wired up.
-
-export const handler = {
-  POST: () =>
-    new Response("review is parked during the multipass rework", {
-      status: 404,
-    }),
-};
-
-/*
-import { runReviewPass } from "@essayist/core";
+import {
+  ConfigInvalidError,
+  ConfigMissingError,
+  runReviewPass,
+} from "@essayist/core";
 import { define } from "@/define.ts";
 import { reviewStore, traceStore } from "@/store.ts";
 import { ResolveAgentError, resolveAgent } from "@/utils/agent.ts";
@@ -48,11 +41,14 @@ export const handler = {
         }
       });
     } catch (e) {
-      if (e instanceof ResolveAgentError) {
+      if (
+        e instanceof ResolveAgentError ||
+        e instanceof ConfigMissingError ||
+        e instanceof ConfigInvalidError
+      ) {
         return Response.json({ error: e.message }, { status: 500 });
       }
       throw e;
     }
   }),
 };
-*/
