@@ -63,8 +63,6 @@ export type {
   ReviewRun,
   ReviewRunStatus,
   ReviewTraceUsage,
-  StepRun,
-  StepRunStatus,
 } from "@/reviews/types.ts";
 export { summarizeFile } from "@/summarize.ts";
 export {

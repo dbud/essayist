@@ -1,6 +1,6 @@
 import { sortBy } from "@std/collections";
 import type { Key, PersistenceAdapter } from "@/persistence/mod.ts";
-import type { ReviewRun, ReviewRunStatus, StepRun } from "./types.ts";
+import type { ReviewRun, ReviewRunStatus } from "./types.ts";
 
 // Key layout:
 //   ["reviews", wsId, runId] -> ReviewRun
@@ -36,29 +36,10 @@ export class ReviewStore {
       reviewPassId,
       status: "running",
       startedAt,
-      steps: [],
       ...(versionId && { versionId }),
     };
     await this.#adapter.set([REVIEWS, wsId, id], run);
     return run;
-  }
-
-  /** Replace the step records of a run; the runner persists them as steps change. */
-  async setRunSteps({
-    wsId,
-    id,
-    steps,
-  }: {
-    wsId: string;
-    id: string;
-    steps: StepRun[];
-  }): Promise<void> {
-    const key: Key = [REVIEWS, wsId, id];
-    const entry = await this.#adapter.get<ReviewRun>(key);
-    if (!entry) {
-      throw new Error(`Review run not found: ${id}`);
-    }
-    await this.#adapter.set(key, { ...entry.value, steps });
   }
 
   completeRun({
