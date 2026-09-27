@@ -1,10 +1,11 @@
 import { assertEquals } from "@std/assert";
 import type { ResolvedReviewPass, Step } from "@/config/types.ts";
+import type { NodeRun } from "@/flow/types.ts";
 import { InMemoryAdapter } from "@/persistence/mod.ts";
 import { runReviewPass } from "@/reviews/runner.ts";
 import { ReviewStore } from "@/reviews/store.ts";
 import { createSpyClient } from "@/reviews/testing/agent.ts";
-import { EventTraceStore } from "@/reviews/trace.ts";
+import { EventTraceStore, type TracedReviewEvent } from "@/reviews/trace.ts";
 import { createFile } from "@/vfs/testing/helpers.ts";
 
 function stepFixture(partial: Partial<Step> & Pick<Step, "id" | "kind">): Step {
@@ -47,7 +48,37 @@ function setup() {
 const ANALYSIS_ROUND =
   '{"thesis":"Drafts are raw material.","claims":[],"outline":[],"strengths":[],"risks":[]}';
 
-Deno.test("runReviewPass -- completes a pass and records steps, marks, and trace", async () => {
+/** Per-node event type sequences; cross-node order varies with the
+ * scheduler, per-node order is fixed. Custom events carry the host
+ * event's type. */
+function byNode(trace: TracedReviewEvent[]): Record<string, string[]> {
+  const grouped: Record<string, string[]> = {};
+  for (const event of trace) {
+    const type = event.type === "custom" ? event.event.type : event.type;
+    grouped[event.nodeId] = [...(grouped[event.nodeId] ?? []), type];
+  }
+  return grouped;
+}
+
+function nodeEnd(
+  trace: TracedReviewEvent[],
+  nodeId: string,
+): NodeRun | undefined {
+  const event = trace.find(
+    (candidate) => candidate.type === "node_end" && candidate.nodeId === nodeId,
+  );
+  return event?.type === "node_end" ? event.run : undefined;
+}
+
+function appliedEvents(trace: TracedReviewEvent[]) {
+  return trace.flatMap((event) =>
+    event.type === "custom" && event.event.type === "applied"
+      ? [event.event]
+      : [],
+  );
+}
+
+Deno.test("runReviewPass -- completes a pass with marks, summary, and a per-node trace", async () => {
   const { vfs, versionId } = await createFile("essay.txt", "hello brave world");
   const { reviewStore, traceStore } = setup();
   const { agent, inputs } = createSpyClient([
@@ -65,8 +96,18 @@ Deno.test("runReviewPass -- completes a pass and records steps, marks, and trace
     traceStore,
     pass: passFixture([
       stepFixture({ id: "analyze", name: "Analyze", kind: "analyze" }),
-      stepFixture({ id: "mechanics", name: "Mechanics", kind: "mark" }),
-      stepFixture({ id: "synthesize", name: "Synthesize", kind: "synthesize" }),
+      stepFixture({
+        id: "mechanics",
+        name: "Mechanics",
+        kind: "mark",
+        artifactsFromStepIds: ["analyze"],
+      }),
+      stepFixture({
+        id: "synthesize",
+        name: "Synthesize",
+        kind: "synthesize",
+        artifactsFromStepIds: ["analyze", "mechanics.propose"],
+      }),
     ]),
     wsId: "ws",
     path: "essay.txt",
@@ -74,18 +115,6 @@ Deno.test("runReviewPass -- completes a pass and records steps, marks, and trace
 
   assertEquals(run.status, "completed");
   assertEquals(run.summary, "Solid draft.");
-  assertEquals(
-    run.steps.map((step) => [step.stepId, step.status]),
-    [
-      ["analyze", "completed"],
-      ["mechanics", "completed"],
-      ["synthesize", "completed"],
-    ],
-  );
-  assertEquals(run.steps[1].marksProposed, 1);
-  assertEquals(run.steps[1].marksPlaced, 1);
-  assertEquals(run.steps[1].marksFailed, 0);
-  assertEquals(run.steps[1].repairRoundsUsed, 0);
 
   const marks = await vfs.getMarks("essay.txt", versionId);
   assertEquals(marks[0].selected_text, "brave");
@@ -95,35 +124,41 @@ Deno.test("runReviewPass -- completes a pass and records steps, marks, and trace
   });
 
   const trace = (await traceStore.get({ wsId: "ws", runId: run.id })) ?? [];
-  assertEquals(
-    trace.map((event) => event.type),
-    [
-      "step_start",
-      "step_input",
-      "step_reasoning",
-      "step_output",
+  assertEquals(byNode(trace), {
+    content: ["node_start", "node_end"],
+    analyze: [
+      "node_start",
+      "prompt",
+      "reasoning",
+      "output",
       "usage",
-      "step_end",
-      "step_start",
-      "step_input",
-      "step_output",
-      "usage",
-      "marks_applied",
-      "step_end",
-      "step_start",
-      "step_input",
-      "step_output",
-      "usage",
-      "step_end",
+      "node_end",
     ],
-  );
+    "mechanics.propose": [
+      "node_start",
+      "prompt",
+      "output",
+      "usage",
+      "node_end",
+    ],
+    "mechanics.apply": ["node_start", "applied", "node_end"],
+    "mechanics.repair1.gate": ["node_start", "node_end"],
+    "mechanics.repair1.propose": ["node_start", "node_end"],
+    "mechanics.repair1.apply": ["node_start", "applied", "node_end"],
+    synthesize: ["node_start", "prompt", "output", "usage", "node_end"],
+  });
+  const applied = appliedEvents(trace);
+  assertEquals(applied[0].attempts.length, 1);
+  assertEquals(applied[0].attempts[0].marked, true);
+  assertEquals(applied[1].attempts.length, 0);
   assertEquals(inputs.length, 3);
+  assertEquals(inputs[1].includes("Thesis: Drafts are raw material."), true);
 });
 
-Deno.test("runReviewPass -- repairs failed marks within budget", async () => {
+Deno.test("runReviewPass -- a repair round re-quotes the failed spans", async () => {
   const { vfs, versionId } = await createFile("essay.txt", "hello world");
   const { reviewStore, traceStore } = setup();
-  const { agent } = createSpyClient([
+  const { agent, inputs } = createSpyClient([
     {
       text: '{"marks":[{"selected_text":"ghost span","comment":"not there","label":"grammar"}]}',
     },
@@ -145,22 +180,39 @@ Deno.test("runReviewPass -- repairs failed marks within budget", async () => {
   });
 
   assertEquals(run.status, "completed");
-  assertEquals(run.steps[0].marksProposed, 2);
-  assertEquals(run.steps[0].marksPlaced, 1);
-  assertEquals(run.steps[0].marksFailed, 0);
-  assertEquals(run.steps[0].repairRoundsUsed, 1);
+  assertEquals(run.summary, "");
 
   const trace = (await traceStore.get({ wsId: "ws", runId: run.id })) ?? [];
-  assertEquals(
-    trace.filter((event) => event.type === "marks_applied").length,
-    2,
-  );
-  assertEquals(trace.filter((event) => event.type === "step_repair").length, 1);
+  assertEquals(byNode(trace), {
+    content: ["node_start", "node_end"],
+    "mechanics.propose": [
+      "node_start",
+      "prompt",
+      "output",
+      "usage",
+      "node_end",
+    ],
+    "mechanics.apply": ["node_start", "applied", "node_end"],
+    "mechanics.repair1.gate": ["node_start", "node_end"],
+    "mechanics.repair1.propose": [
+      "node_start",
+      "prompt",
+      "output",
+      "usage",
+      "node_end",
+    ],
+    "mechanics.repair1.apply": ["node_start", "applied", "node_end"],
+  });
+  const applied = appliedEvents(trace);
+  assertEquals(applied[0].attempts[0].marked, false);
+  assertEquals(applied[1].attempts[0].marked, true);
+  // The repair prompt quotes the failed span and its surroundings.
+  assertEquals(inputs[1].includes('Attempted span: "ghost span"'), true);
   const marks = await vfs.getMarks("essay.txt", versionId);
   assertEquals(marks[0].selected_text, "hello");
 });
 
-Deno.test("runReviewPass -- keeps failed marks when the budget is spent", async () => {
+Deno.test("runReviewPass -- a zero budget keeps failed marks with no repair nodes", async () => {
   const { vfs, versionId } = await createFile("essay.txt", "hello world");
   const { reviewStore, traceStore } = setup();
   const { agent } = createSpyClient([
@@ -187,21 +239,22 @@ Deno.test("runReviewPass -- keeps failed marks when the budget is spent", async 
   });
 
   assertEquals(run.status, "completed");
-  assertEquals(run.steps[0].marksProposed, 1);
-  assertEquals(run.steps[0].marksPlaced, 0);
-  assertEquals(run.steps[0].marksFailed, 1);
-  assertEquals(run.steps[0].repairRoundsUsed, 0);
+  const trace = (await traceStore.get({ wsId: "ws", runId: run.id })) ?? [];
+  assertEquals(Object.keys(byNode(trace)), [
+    "content",
+    "mechanics.propose",
+    "mechanics.apply",
+  ]);
+  const applied = appliedEvents(trace);
+  assertEquals(applied[0].attempts[0].marked, false);
   const marks = await vfs.getMarks("essay.txt", versionId);
   assertEquals(marks, []);
 });
 
-Deno.test("runReviewPass -- a step error fails the run", async () => {
+Deno.test("runReviewPass -- a node error fails the run and skips dependents", async () => {
   const { vfs } = await createFile("essay.txt", "hello world");
   const { reviewStore, traceStore } = setup();
-  const { agent } = createSpyClient([
-    { text: "not json" },
-    { text: "still bad" },
-  ]);
+  const { agent } = createSpyClient([{ text: "not json" }]);
 
   const run = await runReviewPass({
     agent,
@@ -216,6 +269,12 @@ Deno.test("runReviewPass -- a step error fails the run", async () => {
         kind: "mark",
         artifactsFromStepIds: ["analyze"],
       }),
+      stepFixture({
+        id: "synthesize",
+        name: "Synthesize",
+        kind: "synthesize",
+        artifactsFromStepIds: ["analyze"],
+      }),
     ]),
     wsId: "ws",
     path: "essay.txt",
@@ -223,16 +282,30 @@ Deno.test("runReviewPass -- a step error fails the run", async () => {
 
   assertEquals(run.status, "failed");
   assertEquals(run.error?.includes("not valid JSON"), true);
-  assertEquals(run.steps[0].status, "failed");
-  assertEquals(
-    run.steps.map((step) => step.stepId),
-    ["analyze"],
-  );
+
   const trace = (await traceStore.get({ wsId: "ws", runId: run.id })) ?? [];
-  assertEquals(
-    trace.some((event) => event.type === "step_error"),
-    true,
-  );
+  const grouped = byNode(trace);
+  // The prompt is recorded before the failing call.
+  assertEquals(grouped.analyze, ["node_start", "prompt", "node_end"]);
+  assertEquals(nodeEnd(trace, "analyze")?.status, "failed");
+  for (const nodeId of [
+    "mechanics.propose",
+    "mechanics.apply",
+    "mechanics.repair1.gate",
+    "mechanics.repair1.propose",
+    "mechanics.repair1.apply",
+    "synthesize",
+  ]) {
+    const skipped = nodeEnd(trace, nodeId);
+    assertEquals(skipped?.status, "skipped");
+    assertEquals(
+      skipped?.status === "skipped"
+        ? skipped.reason.includes('dependency "analyze" failed')
+        : false,
+      true,
+    );
+    assertEquals(grouped[nodeId], ["node_end"]);
+  }
 });
 
 Deno.test("runReviewPass -- fails fast when the file does not exist", async () => {
@@ -254,4 +327,5 @@ Deno.test("runReviewPass -- fails fast when the file does not exist", async () =
 
   assertEquals(run.status, "failed");
   assertEquals(run.error, "File not found: essay.txt");
+  assertEquals(await traceStore.get({ wsId: "ws", runId: run.id }), undefined);
 });

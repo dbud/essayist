@@ -28,11 +28,12 @@ export interface Prompts {
 export type ReviewNodeEvent =
   | { type: "prompt"; text: string }
   | { type: "reasoning"; text: string }
-  | { type: "output"; output: unknown }
+  | { type: "output"; output: unknown; truncated?: boolean }
   | { type: "usage"; usage: ReviewTraceUsage }
   | { type: "applied"; attempts: MarkAttempt[] };
 
 export interface ReviewTypes extends FlowTypes {
+  events: ReviewNodeEvent;
   nodes: {
     source: undefined;
     analyze: Prompts;

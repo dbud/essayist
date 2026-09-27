@@ -15,7 +15,7 @@ export interface ReviewRun {
   startedAt: number;
   completedAt?: number;
   error?: string;
-  /** Final summary text, from the synthesize step when present. */
+  /** Final summary text, from the summary artifact when present. */
   summary?: string;
   /** A record per pass step, in pass order. */
   steps: StepRun[];
@@ -57,44 +57,4 @@ export interface MarkAttempt {
   mark_id?: string;
   thread_id?: string;
   error?: string;
-}
-
-/**
- * One recorded event from a review run, ordered by `seq`. Events are
- * step-scoped: structured steps emit input, reasoning, and output; mark
- * steps additionally emit application and repair events.
- */
-export type ReviewTraceEvent =
-  | { type: "step_start"; stepId: string; stepName: string; kind: StepKind }
-  | { type: "step_input"; stepId: string; text: string }
-  | { type: "step_reasoning"; stepId: string; text: string }
-  | {
-      type: "step_output";
-      stepId: string;
-      output: unknown;
-      truncated?: boolean;
-    }
-  | {
-      type: "step_output";
-      stepId: string;
-      output: unknown;
-      truncated?: boolean;
-    }
-  | { type: "marks_applied"; stepId: string; attempts: MarkAttempt[] }
-  | { type: "step_repair"; stepId: string; round: number }
-  | { type: "step_end"; stepId: string }
-  | { type: "step_error"; stepId?: string; error: string }
-  | { type: "usage"; stepId: string; usage: ReviewTraceUsage };
-
-/** ReviewTraceEvent with its seq and wall-clock timestamp. */
-export type TracedReviewEvent = ReviewTraceEvent & {
-  seq: number;
-  at: number;
-};
-
-/** Receives trace events as they happen. */
-export interface ReviewTraceSink {
-  record(event: ReviewTraceEvent): void;
-  /** Await pending appends and close the sink. */
-  flush(): Promise<void>;
 }

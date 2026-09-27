@@ -1,13 +1,14 @@
 import { assertEquals } from "@std/assert";
+import type { FlowEvent } from "@/flow/types.ts";
 import { InMemoryAdapter } from "@/persistence/mod.ts";
-import { EventTraceStore } from "./trace.ts";
-import type { ReviewTraceEvent, TracedReviewEvent } from "./types.ts";
+import type { ReviewTypes } from "@/reviews/graph.ts";
+import { EventTraceStore, type TracedReviewEvent } from "./trace.ts";
 
 function store() {
   return new EventTraceStore(new InMemoryAdapter());
 }
 
-async function recorded(events: ReviewTraceEvent[]): Promise<{
+async function recorded(events: FlowEvent<ReviewTypes>[]): Promise<{
   trace: TracedReviewEvent[] | undefined;
   derived: TracedReviewEvent[];
 }> {
@@ -24,14 +25,22 @@ async function recorded(events: ReviewTraceEvent[]): Promise<{
 
 Deno.test("TraceRecorder -- persists events with ordered seq and timestamps", async () => {
   const { trace, derived } = await recorded([
+    { type: "node_start", nodeId: "analyze" },
     {
-      type: "step_start",
-      stepId: "analyze",
-      stepName: "Analyze",
-      kind: "analyze",
+      type: "custom",
+      nodeId: "analyze",
+      event: { type: "prompt", text: "read the essay" },
     },
-    { type: "step_input", stepId: "analyze", text: "read the essay" },
-    { type: "step_end", stepId: "analyze" },
+    {
+      type: "node_end",
+      nodeId: "analyze",
+      run: {
+        nodeId: "analyze",
+        status: "completed",
+        startedAt: 1,
+        completedAt: 2,
+      },
+    },
   ]);
 
   assertEquals(derived.length, 3);
@@ -45,7 +54,7 @@ Deno.test("TraceRecorder -- persists events with ordered seq and timestamps", as
   );
   assertEquals(
     trace?.map((e) => e.type),
-    ["step_start", "step_input", "step_end"],
+    ["node_start", "custom", "node_end"],
   );
   assertEquals(derived, trace);
 });
@@ -53,21 +62,37 @@ Deno.test("TraceRecorder -- persists events with ordered seq and timestamps", as
 Deno.test("TraceRecorder -- record after flush is ignored", async () => {
   const traceStore = store();
   const recorder = traceStore.recorder({ wsId: "ws", runId: "run" });
-  recorder.record({ type: "step_error", error: "boom" });
+  recorder.record({
+    type: "custom",
+    nodeId: "n",
+    event: { type: "prompt", text: "boom" },
+  });
   await recorder.flush();
-  recorder.record({ type: "step_error", error: "after flush" });
+  recorder.record({
+    type: "custom",
+    nodeId: "n",
+    event: { type: "prompt", text: "after flush" },
+  });
 
   const trace = await traceStore.get({ wsId: "ws", runId: "run" });
   assertEquals(trace?.length, 1);
   const first = trace?.[0];
-  assertEquals(first?.type, "step_error");
-  assertEquals(first?.type === "step_error" ? first.error : undefined, "boom");
+  assertEquals(
+    first?.type === "custom" && first.event.type === "prompt"
+      ? first.event.text
+      : undefined,
+    "boom",
+  );
 });
 
 Deno.test("TraceRecorder -- flush is idempotent", async () => {
   const traceStore = store();
   const recorder = traceStore.recorder({ wsId: "ws", runId: "run" });
-  recorder.record({ type: "step_error", error: "boom" });
+  recorder.record({
+    type: "custom",
+    nodeId: "n",
+    event: { type: "prompt", text: "boom" },
+  });
   await recorder.flush();
   await recorder.flush();
 
@@ -75,31 +100,31 @@ Deno.test("TraceRecorder -- flush is idempotent", async () => {
   assertEquals(trace?.length, 1);
 });
 
-Deno.test("TraceRecorder -- oversized step outputs are truncated", async () => {
+Deno.test("TraceRecorder -- oversized outputs are truncated", async () => {
   const { trace } = await recorded([
     {
-      type: "step_output",
-      stepId: "analyze",
-      output: { text: "x".repeat(15_000) },
+      type: "custom",
+      nodeId: "analyze",
+      event: { type: "output", output: { text: "x".repeat(15_000) } },
     },
     {
-      type: "step_output",
-      stepId: "analyze",
-      output: { text: "x".repeat(17_000) },
+      type: "custom",
+      nodeId: "analyze",
+      event: { type: "output", output: { text: "x".repeat(17_000) } },
     },
   ]);
 
   assertEquals(trace?.length, 2);
   const [small, oversized] = trace ?? [];
-  assertEquals(small?.type, "step_output");
   assertEquals(
-    small?.type === "step_output" ? small.truncated : undefined,
+    small?.type === "custom" && small.event.type === "output"
+      ? small.event.truncated
+      : undefined,
     undefined,
   );
-  assertEquals(oversized?.type, "step_output");
-  if (oversized?.type !== "step_output") return;
-  assertEquals(oversized.truncated, true);
-  const capped = oversized.output as string;
+  if (oversized?.type !== "custom" || oversized.event.type !== "output") return;
+  assertEquals(oversized.event.truncated, true);
+  const capped = oversized.event.output as string;
   assertEquals(capped.length, 16_000);
 });
 

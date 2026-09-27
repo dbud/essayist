@@ -1,5 +1,5 @@
-import type { StepKind } from "@/config/types.ts";
-import type { ReviewTraceEvent } from "./types.ts";
+import type { FlowEvent, NodeKind } from "@/flow/types.ts";
+import type { ReviewTypes } from "@/reviews/graph.ts";
 
 /** Coarse activity label for a running review. */
 export type ReviewPhase =
@@ -14,46 +14,50 @@ export type ReviewPhase =
  * inputs, outputs, and usage are dropped at derivation.
  */
 export interface ReviewProgress {
-  /** Current step, absent until the first step starts. */
-  stepId?: string;
-  stepName?: string;
   phase: ReviewPhase;
   notes: number;
 }
 
-const KIND_PHASE: Record<StepKind, ReviewPhase> = {
+const KIND_PHASE: Record<NodeKind<ReviewTypes>, ReviewPhase> = {
+  source: "working",
   analyze: "analyzing",
-  mark: "marking",
+  "mark.propose": "marking",
+  "mark.propose.repair": "repairing",
+  "mark.apply": "marking",
+  "mark.repair.gate": "repairing",
   synthesize: "summarizing",
 };
 
 /**
  * Maps trace events onto ReviewProgress snapshots, emitting on change.
+ * The kind of a node id comes from the run's graph; unknown ids fall back
+ * to the working phase.
  */
 export class ReviewProgressTracker {
-  #stepId: string | undefined;
-  #stepName: string | undefined;
+  #kindOf: Map<string, NodeKind<ReviewTypes>>;
   #phase: ReviewPhase = "working";
   #notes = 0;
   #onProgress: (progress: ReviewProgress) => void;
 
-  constructor(onProgress: (progress: ReviewProgress) => void) {
+  constructor(
+    onProgress: (progress: ReviewProgress) => void,
+    kindOf: Map<string, NodeKind<ReviewTypes>>,
+  ) {
     this.#onProgress = onProgress;
+    this.#kindOf = kindOf;
     this.#emit();
   }
 
-  handle(event: ReviewTraceEvent): void {
+  handle(event: FlowEvent<ReviewTypes>): void {
     switch (event.type) {
-      case "step_start":
-        this.#stepId = event.stepId;
-        this.#stepName = event.stepName;
-        this.#phase = KIND_PHASE[event.kind];
+      case "node_start":
+        this.#phase = KIND_PHASE[this.#kindOf.get(event.nodeId) ?? "source"];
         break;
-      case "marks_applied":
-        this.#notes += event.attempts.filter((a) => a.marked).length;
-        break;
-      case "step_repair":
-        this.#phase = "repairing";
+      case "custom":
+        if (event.event.type !== "applied") return;
+        this.#notes += event.event.attempts.filter(
+          (attempt) => attempt.marked,
+        ).length;
         break;
       default:
         return;
@@ -62,11 +66,6 @@ export class ReviewProgressTracker {
   }
 
   #emit(): void {
-    this.#onProgress({
-      stepId: this.#stepId,
-      stepName: this.#stepName,
-      phase: this.#phase,
-      notes: this.#notes,
-    });
+    this.#onProgress({ phase: this.#phase, notes: this.#notes });
   }
 }

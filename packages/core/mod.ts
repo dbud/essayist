@@ -52,18 +52,19 @@ export { ReviewProgressTracker } from "@/reviews/progress.ts";
 export type { RunReviewPassOptions } from "@/reviews/runner.ts";
 export { runReviewPass } from "@/reviews/runner.ts";
 export { ReviewStore } from "@/reviews/store.ts";
-export type { TraceStore } from "@/reviews/trace.ts";
+export type {
+  ReviewTraceSink,
+  TracedReviewEvent,
+  TraceStore,
+} from "@/reviews/trace.ts";
 export { EventTraceStore } from "@/reviews/trace.ts";
 export type {
   MarkAttempt,
   ReviewRun,
   ReviewRunStatus,
-  ReviewTraceEvent,
-  ReviewTraceSink,
   ReviewTraceUsage,
   StepRun,
   StepRunStatus,
-  TracedReviewEvent,
 } from "@/reviews/types.ts";
 export { summarizeFile } from "@/summarize.ts";
 export {

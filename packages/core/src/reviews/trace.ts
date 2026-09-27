@@ -1,17 +1,14 @@
+import type { FlowEvent } from "@/flow/types.ts";
 import { logger } from "@/logger.ts";
 import type { PersistenceAdapter } from "@/persistence/mod.ts";
+import type { ReviewNodeEvent, ReviewTypes } from "@/reviews/graph.ts";
 import { SerialTasks } from "@/utils/serial.ts";
-import type {
-  ReviewTraceEvent,
-  ReviewTraceSink,
-  TracedReviewEvent,
-} from "./types.ts";
 
 // Key layout:
 //   ["review_traces", wsId, runId, "000000"] -> TracedReviewEvent
 const TRACES = "review_traces";
 
-// Deno KV values cap at 64 KiB. Step outputs embed structured artifacts,
+// Deno KV values cap at 64 KiB. Outputs embed structured artifacts,
 // so oversized payloads are elided here.
 const MAX_PAYLOAD_CHARS = 16_000;
 
@@ -19,6 +16,19 @@ const MAX_PAYLOAD_CHARS = 16_000;
 export interface TraceScope {
   wsId: string;
   runId: string;
+}
+
+/** The engine's event stream stamped with its seq and wall-clock time. */
+export type TracedReviewEvent = FlowEvent<ReviewTypes> & {
+  seq: number;
+  at: number;
+};
+
+/** Receives trace events as they happen. */
+export interface ReviewTraceSink {
+  record(event: FlowEvent<ReviewTypes>): void;
+  /** Await pending appends and close the sink. */
+  flush(): Promise<void>;
 }
 
 /**
@@ -90,22 +100,42 @@ export class EventTraceStore implements TraceStore {
 }
 
 /** Mirrors agent_logger's pino event names for console parity. */
-function logTraceEvent(event: ReviewTraceEvent): void {
+function logTraceEvent(event: TracedReviewEvent): void {
   switch (event.type) {
-    case "step_input":
-      logger.debug({ step: event.stepId, input: event.text }, "step_input");
+    case "node_end":
+      if (event.run.status === "failed") {
+        logger.debug(
+          { node: event.nodeId, error: event.run.error },
+          "node_end",
+        );
+      } else if (event.run.status === "skipped") {
+        logger.debug(
+          { node: event.nodeId, reason: event.run.reason },
+          "node_end",
+        );
+      }
       break;
-    case "step_output":
-      logger.debug({ step: event.stepId, output: event.output }, "step_output");
+    case "custom":
+      logCustom(event.nodeId, event.event);
       break;
-    case "marks_applied":
+    default:
+      break;
+  }
+}
+
+function logCustom(nodeId: string, event: ReviewNodeEvent): void {
+  switch (event.type) {
+    case "prompt":
+      logger.debug({ node: nodeId, text: event.text }, "prompt");
+      break;
+    case "output":
+      logger.debug({ node: nodeId, output: event.output }, "output");
+      break;
+    case "applied":
       logger.debug(
-        { step: event.stepId, attempts: event.attempts.length },
-        "marks_applied",
+        { node: nodeId, attempts: event.attempts.length },
+        "applied",
       );
-      break;
-    case "step_error":
-      logger.debug({ step: event.stepId, error: event.error }, "step_error");
       break;
     default:
       break;
@@ -145,7 +175,7 @@ export class TraceRecorder implements ReviewTraceSink {
     this.#onEvent = onEvent;
   }
 
-  record(event: ReviewTraceEvent): void {
+  record(event: FlowEvent<ReviewTypes>): void {
     if (this.#flushed) return;
     const entry: TracedReviewEvent = {
       seq: this.#seq++,
@@ -154,6 +184,7 @@ export class TraceRecorder implements ReviewTraceSink {
     };
     logTraceEvent(entry);
     this.#onEvent?.(entry);
+    // TODO -- use SerialTasks?
     // Appends are async; the queue keeps store order equal to seq order.
     this.#writes
       .add(() =>
@@ -166,11 +197,16 @@ export class TraceRecorder implements ReviewTraceSink {
       .catch((err) => logger.error({ err }, "review trace append failed"));
   }
 
-  #capPayload(event: ReviewTraceEvent): ReviewTraceEvent {
-    if (event.type !== "step_output") return event;
-    const capped = capValue(event.output);
+  #capPayload(event: FlowEvent<ReviewTypes>): FlowEvent<ReviewTypes> {
+    if (event.type !== "custom" || event.event.type !== "output") {
+      return event;
+    }
+    const capped = capValue(event.event.output);
     if (!capped.truncated) return event;
-    return { ...event, output: capped.value, truncated: true };
+    return {
+      ...event,
+      event: { ...event.event, output: capped.value, truncated: true },
+    };
   }
 
   /** Await pending appends and end. Never throws. */
