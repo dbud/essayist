@@ -145,6 +145,7 @@ Deno.test("runReviewPass -- completes a pass with marks, summary, and a per-node
       "node_end",
     ],
     "mechanics.apply": ["node_start", "applied", "node_end"],
+    "mechanics.collect": ["node_start", "node_end"],
     "mechanics.repair1.gate": ["node_start", "node_end"],
     "mechanics.repair1.propose": ["node_start", "node_end"],
     "mechanics.repair1.apply": ["node_start", "applied", "node_end"],
@@ -199,6 +200,7 @@ Deno.test("runReviewPass -- a repair round re-quotes the failed spans", async ()
       "node_end",
     ],
     "mechanics.apply": ["node_start", "applied", "node_end"],
+    "mechanics.collect": ["node_start", "node_end"],
     "mechanics.repair1.gate": ["node_start", "node_end"],
     "mechanics.repair1.propose": [
       "node_start",
@@ -248,6 +250,7 @@ Deno.test("runReviewPass -- a zero budget keeps failed marks with no repair node
     "content",
     "mechanics.propose",
     "mechanics.apply",
+    "mechanics.collect",
   ]);
   const applied = appliedEvents(trace);
   assertEquals(applied[0].attempts[0].marked, false);
@@ -293,6 +296,7 @@ Deno.test("runReviewPass -- a node error fails the run and skips dependents", as
   for (const nodeId of [
     "mechanics.propose",
     "mechanics.apply",
+    "mechanics.collect",
     "mechanics.repair1.gate",
     "mechanics.repair1.propose",
     "mechanics.repair1.apply",
