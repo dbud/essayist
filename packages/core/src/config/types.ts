@@ -94,7 +94,7 @@ export interface ResolvedReviewUnit {
   /** Unit ids whose artifacts this unit receives as context. */
   inputs: string[];
   /** Mark attempt config; present only on attempt units. */
-  attempt?: { labels: string[]; repairRounds: number };
+  attempt?: { categories: Category[]; repairRounds: number };
   /** The unit's artifact is the run summary. */
   summary?: boolean;
 }

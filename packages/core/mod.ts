@@ -6,7 +6,7 @@ export {
   resolveReviewPass,
 } from "@/config/resolve.ts";
 export { ConfigStore } from "@/config/store.ts";
-export { extractVariables, renderPrompt } from "@/config/template.ts";
+export { extractVariables } from "@/config/template.ts";
 export type {
   Category,
   ModelPool,

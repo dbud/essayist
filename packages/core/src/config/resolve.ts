@@ -175,12 +175,12 @@ async function resolveUnitPool(
   return pool;
 }
 
-/** Category labels for attempt units; undefined for the rest. */
+/** Full categories for attempt units; undefined for the rest. */
 async function resolveUnitAttempt(
   store: ConfigStore,
   pass: ReviewPass,
   unit: ReviewUnit,
-): Promise<{ labels: string[]; repairRounds: number } | undefined> {
+): Promise<{ categories: Category[]; repairRounds: number } | undefined> {
   const attempt = unit.attempt;
   if (!attempt) return undefined;
   if (attempt.allowedCategoryIds.length === 0) {
@@ -195,7 +195,7 @@ async function resolveUnitAttempt(
     attempt.allowedCategoryIds,
   );
   return {
-    labels: categories.map((category) => category.label),
+    categories,
     repairRounds: attempt.repairRounds ?? 1,
   };
 }

@@ -31,7 +31,7 @@ function passFixture(units: ReviewUnit[]): ResolvedReviewPass {
       inputs: unit.inputs ?? [],
       ...(unit.attempt && {
         attempt: {
-          labels: ["grammar"],
+          categories: [{ id: "grammar", label: "grammar" }],
           repairRounds: unit.attempt.repairRounds ?? 1,
         },
       }),

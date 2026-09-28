@@ -1,4 +1,8 @@
-import type { ResolvedReviewPass, ResolvedReviewUnit } from "@/config/types.ts";
+import type {
+  Category,
+  ResolvedReviewPass,
+  ResolvedReviewUnit,
+} from "@/config/types.ts";
 import type { ForwardSpec, PassWhenSpec } from "@/flow/helpers.ts";
 import type { FlowGraph, FlowNodeOf } from "@/flow/types.ts";
 import type { ReviewTypes } from "@/reviews/graph.ts";
@@ -56,11 +60,11 @@ function unitNodes(
  * configured budget, and a collect node re-emitting all placed marks. */
 function markNodes(
   unit: ResolvedReviewUnit,
-  attempt: { labels: string[]; repairRounds: number },
+  attempt: { categories: Category[]; repairRounds: number },
   runId: string,
 ): { nodes: FlowNodeOf<ReviewTypes>[]; terminalId: string } {
   const applyPayload = {
-    allowedLabels: attempt.labels,
+    allowedLabels: attempt.categories.map((category) => category.label),
     provenance: { runId, unitId: unit.id },
   };
   const gatePayload: PassWhenSpec<ReviewTypes> = {

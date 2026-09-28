@@ -119,7 +119,9 @@ Deno.test("resolveActiveReviewPass -- resolves the active pass unit by unit", as
   assertEquals(analyze.summary, undefined);
 
   assertEquals(mechanics.attempt, {
-    labels: ["grammar"],
+    categories: [
+      { id: "grammar", label: "grammar", description: "Grammar and mechanics" },
+    ],
     repairRounds: 1,
   });
   assertEquals(
@@ -129,7 +131,10 @@ Deno.test("resolveActiveReviewPass -- resolves the active pass unit by unit", as
 
   assertEquals(argument.pool.models, ["openai/gpt-5.2"]);
   assertEquals(argument.attempt, {
-    labels: ["thesis", "evidence"],
+    categories: [
+      { id: "thesis", label: "thesis", description: "Thesis clarity" },
+      { id: "evidence", label: "evidence", description: "Evidence quality" },
+    ],
     repairRounds: 1,
   });
   assertEquals(argument.inputs, ["analyze"]);
