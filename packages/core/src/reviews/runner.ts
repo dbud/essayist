@@ -7,7 +7,7 @@ import { createReviewRunners, type ReviewTypes } from "@/reviews/graph.ts";
 import type { ReviewProgress } from "@/reviews/progress.ts";
 import { ReviewProgressTracker } from "@/reviews/progress.ts";
 import type { ReviewStore } from "@/reviews/store.ts";
-import type { ReviewTraceSink, TraceStore } from "@/reviews/trace.ts";
+import type { TraceRecorder, TraceStore } from "@/reviews/trace/types.ts";
 import type { ReviewRun } from "@/reviews/types.ts";
 import { PinnedVFS } from "@/vfs/pin.ts";
 import type { VFS } from "@/vfs/types.ts";
@@ -25,7 +25,7 @@ export interface RunReviewPassOptions {
   onProgress?: (progress: ReviewProgress) => void;
 }
 
-const NOOP_SINK: ReviewTraceSink = {
+const NOOP_RECORDER: TraceRecorder = {
   record: () => {},
   flush: () => Promise.resolve(),
 };
@@ -98,7 +98,7 @@ class ReviewPassRunner {
       this.#traceStore?.recorder(
         { wsId: this.#wsId, runId: run.id },
         tracker ? (event) => tracker.handle(event) : undefined,
-      ) ?? NOOP_SINK;
+      ) ?? NOOP_RECORDER;
     const flow = new FlowRunner<ReviewTypes>({
       runners: createReviewRunners({
         agent: this.#agent,
@@ -131,7 +131,7 @@ class ReviewPassRunner {
 
   async #finalize(
     run: ReviewRun,
-    recorder: ReviewTraceSink,
+    recorder: TraceRecorder,
     outcome: { summary?: string; error?: string },
   ): Promise<ReviewRun> {
     await recorder.flush();

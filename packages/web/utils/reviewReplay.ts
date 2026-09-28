@@ -1,4 +1,4 @@
-import type { TracedReviewEvent } from "@essayist/core";
+import type { TraceEvent } from "@essayist/core";
 
 export interface PlayTraceOptions {
   /** Time multiplier, read before each gap: >1 speeds up, <1 slows down. */
@@ -37,8 +37,8 @@ export function parseReplayParams(search: string): ReplayParams | null {
  * effect from the next gap on. Returns false when cancelled.
  */
 export async function playTrace(
-  trace: readonly TracedReviewEvent[],
-  onEvent: (event: TracedReviewEvent, at: number) => void,
+  trace: readonly TraceEvent[],
+  onEvent: (event: TraceEvent, at: number) => void,
   {
     speed = () => 1,
     isCancelled = () => false,

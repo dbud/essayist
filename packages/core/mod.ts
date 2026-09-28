@@ -53,11 +53,11 @@ export type { RunReviewPassOptions } from "@/reviews/runner.ts";
 export { runReviewPass } from "@/reviews/runner.ts";
 export { ReviewStore } from "@/reviews/store.ts";
 export type {
-  ReviewTraceSink,
-  TracedReviewEvent,
+  TraceEvent,
+  TraceRecorder,
   TraceStore,
-} from "@/reviews/trace.ts";
-export { EventTraceStore } from "@/reviews/trace.ts";
+} from "@/reviews/trace/mod.ts";
+export { TraceEventStore } from "@/reviews/trace/mod.ts";
 export type {
   MarkAttempt,
   ReviewRun,

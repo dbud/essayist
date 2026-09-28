@@ -5,7 +5,7 @@ import { InMemoryAdapter } from "@/persistence/mod.ts";
 import { runReviewPass } from "@/reviews/runner.ts";
 import { ReviewStore } from "@/reviews/store.ts";
 import { createSpyClient } from "@/reviews/testing/agent.ts";
-import { EventTraceStore, type TracedReviewEvent } from "@/reviews/trace.ts";
+import { type TraceEvent, TraceEventStore } from "@/reviews/trace/mod.ts";
 import { createFile } from "@/vfs/testing/helpers.ts";
 
 function unitFixture(
@@ -47,7 +47,7 @@ function passFixture(units: ReviewUnit[]): ResolvedReviewPass {
 function setup() {
   const adapter = new InMemoryAdapter();
   const reviewStore = new ReviewStore(adapter);
-  const traceStore = new EventTraceStore(adapter);
+  const traceStore = new TraceEventStore(adapter);
   return { reviewStore, traceStore };
 }
 
@@ -57,7 +57,7 @@ const ANALYSIS_ROUND =
 /** Per-node event type sequences; cross-node order varies with the
  * scheduler, per-node order is fixed. Custom events carry the host
  * event's type. */
-function byNode(trace: TracedReviewEvent[]): Record<string, string[]> {
+function byNode(trace: TraceEvent[]): Record<string, string[]> {
   const grouped: Record<string, string[]> = {};
   for (const event of trace) {
     const type = event.type === "custom" ? event.event.type : event.type;
@@ -66,17 +66,14 @@ function byNode(trace: TracedReviewEvent[]): Record<string, string[]> {
   return grouped;
 }
 
-function nodeEnd(
-  trace: TracedReviewEvent[],
-  nodeId: string,
-): NodeRun | undefined {
+function nodeEnd(trace: TraceEvent[], nodeId: string): NodeRun | undefined {
   const event = trace.find(
     (candidate) => candidate.type === "node_end" && candidate.nodeId === nodeId,
   );
   return event?.type === "node_end" ? event.run : undefined;
 }
 
-function appliedEvents(trace: TracedReviewEvent[]) {
+function appliedEvents(trace: TraceEvent[]) {
   return trace.flatMap((event) =>
     event.type === "custom" && event.event.type === "applied"
       ? [event.event]

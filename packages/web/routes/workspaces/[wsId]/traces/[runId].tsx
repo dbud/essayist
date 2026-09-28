@@ -1,8 +1,4 @@
-import type {
-  ReviewRun,
-  ReviewRunStatus,
-  TracedReviewEvent,
-} from "@essayist/core";
+import type { ReviewRun, ReviewRunStatus, TraceEvent } from "@essayist/core";
 import type { PageProps } from "fresh";
 import { page } from "fresh";
 import { MoveLeft } from "lucide-preact";
@@ -12,7 +8,7 @@ import { reviewStore, traceStore, workspaceStore } from "@/store.ts";
 
 interface TracePageData {
   run: ReviewRun;
-  trace: TracedReviewEvent[];
+  trace: TraceEvent[];
 }
 
 export const handler = define.handlers({

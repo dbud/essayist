@@ -2,18 +2,19 @@ import { assertEquals } from "@std/assert";
 import type { FlowEvent } from "@/flow/types.ts";
 import { InMemoryAdapter } from "@/persistence/mod.ts";
 import type { ReviewTypes } from "@/reviews/graph.ts";
-import { EventTraceStore, type TracedReviewEvent } from "./trace.ts";
+import { TraceEventStore } from "./store.ts";
+import type { TraceEvent } from "./types.ts";
 
 function store() {
-  return new EventTraceStore(new InMemoryAdapter());
+  return new TraceEventStore(new InMemoryAdapter());
 }
 
 async function recorded(events: FlowEvent<ReviewTypes>[]): Promise<{
-  trace: TracedReviewEvent[] | undefined;
-  derived: TracedReviewEvent[];
+  trace: TraceEvent[] | undefined;
+  derived: TraceEvent[];
 }> {
   const traceStore = store();
-  const derived: TracedReviewEvent[] = [];
+  const derived: TraceEvent[] = [];
   const recorder = traceStore.recorder({ wsId: "ws", runId: "run" }, (event) =>
     derived.push(event),
   );
@@ -128,7 +129,7 @@ Deno.test("TraceRecorder -- oversized outputs are truncated", async () => {
   assertEquals(capped.length, 16_000);
 });
 
-Deno.test("EventTraceStore -- get returns undefined for an unknown run", async () => {
+Deno.test("TraceEventStore -- get returns undefined for an unknown run", async () => {
   const traceStore = store();
   assertEquals(await traceStore.get({ wsId: "ws", runId: "ghost" }), undefined);
 });
