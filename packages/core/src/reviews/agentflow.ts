@@ -9,6 +9,7 @@ const SHAPES: Record<NodeKind<ReviewTypes>, string> = {
   "mark.propose.repair": "task",
   "mark.apply": "action",
   "mark.repair.gate": "decision",
+  "mark.collect": "input",
   synthesize: "task",
 };
 

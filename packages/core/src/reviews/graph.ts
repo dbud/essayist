@@ -1,7 +1,7 @@
 import type { Agent } from "@/agent.ts";
 import type { ResolvedReviewUnit } from "@/config/types.ts";
-import type { PassWhenSpec } from "@/flow/helpers.ts";
-import { passWhen } from "@/flow/helpers.ts";
+import type { ForwardSpec, PassWhenSpec } from "@/flow/helpers.ts";
+import { forward, passWhen } from "@/flow/helpers.ts";
 import type { FlowTypes, NodeRunners } from "@/flow/types.ts";
 import type { Analysis } from "@/reviews/steps/analyze.ts";
 import { createAnalyzeRunner } from "@/reviews/steps/analyze.ts";
@@ -37,6 +37,7 @@ export interface ReviewTypes extends FlowTypes {
       provenance: MarkProvenance;
     };
     "mark.repair.gate": PassWhenSpec<ReviewTypes>;
+    "mark.collect": ForwardSpec<ReviewTypes>;
     synthesize: ResolvedReviewUnit;
   };
   artifacts: {
@@ -60,6 +61,7 @@ export function createReviewRunners(options: {
     "mark.propose.repair": createMarkRepairRunner(options.agent),
     "mark.apply": createMarkApplyRunner(createMarkApplier(options.pinned)),
     "mark.repair.gate": passWhen<ReviewTypes, "mark.repair.gate">(),
+    "mark.collect": forward<ReviewTypes, "mark.collect">(),
     synthesize: createSynthesizeRunner(options.agent),
   };
 }

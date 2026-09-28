@@ -77,11 +77,14 @@ flow mechanics["mechanics"]
   mechanics_repair1_gate["mechanics.repair1.gate"]@{ shape: decision }
   mechanics_repair1_propose["mechanics.repair1.propose"]@{ shape: task }
   mechanics_repair1_apply["mechanics.repair1.apply"]@{ shape: action }
+  mechanics_collect["mechanics.collect"]@{ shape: input }
 
   mechanics_propose --> mechanics_apply
   mechanics_apply --> mechanics_repair1_gate
   mechanics_repair1_gate -- failed marks --> mechanics_repair1_propose
   mechanics_repair1_propose --> mechanics_repair1_apply
+  mechanics_apply --> mechanics_collect
+  mechanics_repair1_apply --> mechanics_collect
 end
 
 synthesize@{ shape: task }

@@ -25,6 +25,7 @@ const KIND_PHASE: Record<NodeKind<ReviewTypes>, ReviewPhase> = {
   "mark.propose.repair": "repairing",
   "mark.apply": "marking",
   "mark.repair.gate": "repairing",
+  "mark.collect": "marking",
   synthesize: "summarizing",
 };
 

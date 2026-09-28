@@ -1,6 +1,8 @@
 import { assertEquals } from "@std/assert";
 import type { ResolvedReviewPass, ReviewUnit } from "@/config/types.ts";
+import type { ForwardSpec } from "@/flow/helpers.ts";
 import { buildReviewGraph } from "@/reviews/adapter.ts";
+import type { ReviewTypes } from "@/reviews/graph.ts";
 
 const PROMPTS = {
   system: "You are an editor.",
@@ -12,6 +14,8 @@ const APPLY_PAYLOAD = {
   allowedLabels: ["grammar"],
   provenance: { runId: "r", unitId: "mechanics" },
 };
+
+const COLLECT_PAYLOAD: ForwardSpec<ReviewTypes> = { types: ["mark.placed"] };
 
 function unitFixture(
   partial: Partial<ReviewUnit> & Pick<ReviewUnit, "id">,
@@ -70,6 +74,11 @@ Deno.test("buildReviewGraph -- decomposes a pass into nodes", () => {
         ["mechanics.repair1.gate", "content"],
       ],
       ["mechanics.repair1.apply", "mark.apply", ["mechanics.repair1.propose"]],
+      [
+        "mechanics.collect",
+        "mark.collect",
+        ["mechanics.apply", "mechanics.repair1.apply"],
+      ],
       ["summary", "synthesize", ["analyze", "content"]],
     ],
   );
@@ -77,6 +86,7 @@ Deno.test("buildReviewGraph -- decomposes a pass into nodes", () => {
     graph.nodes.find((node) => node.id === id)?.payload;
   assertEquals(payloadOf("analyze"), pass.units[0]);
   assertEquals(payloadOf("mechanics.apply"), APPLY_PAYLOAD);
+  assertEquals(payloadOf("mechanics.collect"), COLLECT_PAYLOAD);
 });
 
 Deno.test("buildReviewGraph -- unrolls two repair rounds in a chain", () => {
@@ -114,6 +124,15 @@ Deno.test("buildReviewGraph -- unrolls two repair rounds in a chain", () => {
         ["mechanics.repair2.gate", "content"],
       ],
       ["mechanics.repair2.apply", "mark.apply", ["mechanics.repair2.propose"]],
+      [
+        "mechanics.collect",
+        "mark.collect",
+        [
+          "mechanics.apply",
+          "mechanics.repair1.apply",
+          "mechanics.repair2.apply",
+        ],
+      ],
     ],
   );
 });
@@ -131,8 +150,24 @@ Deno.test("buildReviewGraph -- a zero budget has no repair nodes", () => {
 
   assertEquals(
     graph.nodes.map((node) => node.id),
-    ["content", "mechanics.propose", "mechanics.apply"],
+    ["content", "mechanics.propose", "mechanics.apply", "mechanics.collect"],
   );
+});
+
+Deno.test("buildReviewGraph -- a unit input resolves to the unit's collect node", () => {
+  const graph = buildReviewGraph(
+    passFixture([
+      unitFixture({
+        id: "mechanics",
+        attempt: { allowedCategoryIds: ["grammar"], repairRounds: 2 },
+      }),
+      unitFixture({ id: "summary", summary: true, inputs: ["mechanics"] }),
+    ]),
+    "r",
+  );
+
+  const summary = graph.nodes.find((node) => node.id === "summary");
+  assertEquals(summary?.dependsOn, ["mechanics.collect", "content"]);
 });
 
 Deno.test("buildReviewGraph -- artifact references pass through as deps", () => {
@@ -156,6 +191,7 @@ Deno.test("buildReviewGraph -- artifact references pass through as deps", () => 
       ["mechanics.repair1.gate", ["mechanics.apply"]],
       ["mechanics.repair1.propose", ["mechanics.repair1.gate", "content"]],
       ["mechanics.repair1.apply", ["mechanics.repair1.propose"]],
+      ["mechanics.collect", ["mechanics.apply", "mechanics.repair1.apply"]],
     ],
   );
 });
