@@ -45,6 +45,7 @@ export {
   providerErrorDetail,
   providerErrorLabel,
 } from "@/provider_error.ts";
+export { agentflowDefinition } from "@/reviews/agentflow.ts";
 export type { ReviewPhase, ReviewProgress } from "@/reviews/progress.ts";
 export { ReviewProgressTracker } from "@/reviews/progress.ts";
 export type { RunReviewPassOptions } from "@/reviews/runner.ts";
