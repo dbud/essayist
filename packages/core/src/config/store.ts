@@ -75,12 +75,19 @@ export class ConfigStore {
     return entries.map((e) => e.value);
   }
 
-  /** Batch fetch; results align with `ids`, undefined where absent. */
-  async getCategories(ids: string[]): Promise<(Category | undefined)[]> {
+  /** The requested ids split into found categories and missing ids. */
+  async getCategories(ids: string[]): Promise<[Category[], string[]]> {
     const entries = await this.#adapter.getMany<Category>(
       ids.map((id) => [CFG, CATEGORIES, id]),
     );
-    return entries.map((e) => e?.value);
+    const present: Category[] = [];
+    const missing: string[] = [];
+    ids.forEach((id, index) => {
+      const value = entries[index]?.value;
+      if (value === undefined) missing.push(id);
+      else present.push(value);
+    });
+    return [present, missing];
   }
 
   // -- review passes --

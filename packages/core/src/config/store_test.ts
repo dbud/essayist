@@ -36,18 +36,18 @@ Deno.test("ConfigStore -- CRUD round-trips", async () => {
   assertEquals(await store.getReviewPass("r"), undefined);
 });
 
-Deno.test("ConfigStore -- getCategories returns entries aligned with ids", async () => {
+Deno.test("ConfigStore -- getCategories splits found and missing ids", async () => {
   const store = seed();
   await store.saveCategory({ id: "a", label: "A" });
   await store.saveCategory({ id: "b", label: "B" });
 
-  const found = await store.getCategories(["a", "ghost", "b"]);
+  const [found, missing] = await store.getCategories(["a", "ghost", "b"]);
 
   assertEquals(found, [
     { id: "a", label: "A" },
-    undefined,
     { id: "b", label: "B" },
   ]);
+  assertEquals(missing, ["ghost"]);
 });
 
 Deno.test("ConfigStore -- active pin set and clear", async () => {

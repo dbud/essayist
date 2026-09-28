@@ -1,4 +1,3 @@
-import { mapNotNullish, partition, zip } from "@std/collections";
 import type { ConfigStore } from "./store.ts";
 import { renderPrompt } from "./template.ts";
 import type {
@@ -207,15 +206,11 @@ async function resolveCategories(
   unit: ReviewUnit,
   ids: string[],
 ): Promise<Category[]> {
-  const categories = await store.getCategories(ids);
-  const [present, missing] = partition(
-    zip(ids, categories),
-    ([, category]) => category !== undefined,
-  );
+  const [categories, missing] = await store.getCategories(ids);
   if (missing.length > 0) {
     throw new ConfigMissingError(
-      `categories ${missing.map(([id]) => `"${id}"`).join(", ")} for unit "${unit.id}" in pass "${pass.id}"`,
+      `categories ${missing.map((id) => `"${id}"`).join(", ")} for unit "${unit.id}" in pass "${pass.id}"`,
     );
   }
-  return mapNotNullish(present, ([, category]) => category);
+  return categories;
 }
