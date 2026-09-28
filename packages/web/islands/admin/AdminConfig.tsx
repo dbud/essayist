@@ -135,6 +135,10 @@ export default function AdminConfig() {
                   onEdit={() => openEntity({ kind: "pass", entity: p })}
                   onDelete={() => removeReviewPass(p)}
                   onDeleteUnit={(unitId) => removeUnit(p, unitId)}
+                  onAddUnit={() => openEntity({ kind: "unit", pass: p })}
+                  onEditUnit={(unitId) =>
+                    openEntity({ kind: "unit", pass: p, unitId })
+                  }
                 />
               ))
             )}

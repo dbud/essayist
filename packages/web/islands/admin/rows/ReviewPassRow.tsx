@@ -1,5 +1,5 @@
 import type { Prompt, ReviewPass } from "@essayist/core";
-import { CircleCheck, Pencil, Trash2 } from "lucide-preact";
+import { CircleCheck, Pencil, Plus, Trash2 } from "lucide-preact";
 import { Fragment } from "preact";
 import { ActionBtn, EntityCard } from "@/components/ui/EntityCard.tsx";
 import { Field, List } from "@/components/ui/EntityRows.tsx";
@@ -26,6 +26,8 @@ export function ReviewPassRow({
   onEdit,
   onDelete,
   onDeleteUnit,
+  onAddUnit,
+  onEditUnit,
 }: {
   pass: ReviewPass;
   prompts: Prompt[];
@@ -36,6 +38,8 @@ export function ReviewPassRow({
   onEdit: () => void;
   onDelete: () => void;
   onDeleteUnit: (unitId: string) => void;
+  onAddUnit: () => void;
+  onEditUnit: (unitId: string) => void;
 }) {
   const byKey = (key: string) => prompts.find((p) => p.key === key);
   return (
@@ -66,6 +70,12 @@ export function ReviewPassRow({
             onClick={onEdit}
           />
           <ActionBtn
+            label="Add unit to pass"
+            icon={Plus}
+            disabled={busy}
+            onClick={onAddUnit}
+          />
+          <ActionBtn
             label="Delete review pass"
             icon={Trash2}
             disabled={busy}
@@ -78,16 +88,18 @@ export function ReviewPassRow({
       <PromptField label="system" prompt={byKey(pass.systemPromptKey)} />
       {pass.units.map((unit) => (
         <Fragment key={unit.id}>
-          <div class="col-span-2 cell--base cell--ink flex min-w-0">
-            <div class="flex min-w-0 flex-1 gap-2 pl-1 pt-1">
+          <div class="col-span-2 flex stack">
+            <div class="flex flex-1 cell--data cell--ink gap-2">
               <span>{unit.id}</span>
-              {unit.attempt && (
-                <span class="badge badge--success self-start">marks</span>
-              )}
-              {unit.summary && (
-                <span class="badge badge--success self-start">summary</span>
-              )}
+              {unit.attempt && <span class="badge self-start">marks</span>}
+              {unit.summary && <span class="badge self-start">summary</span>}
             </div>
+            <ActionBtn
+              label={`Edit unit ${unit.id}`}
+              icon={Pencil}
+              disabled={busy}
+              onClick={() => onEditUnit(unit.id)}
+            />
             <ActionBtn
               label={`Delete unit ${unit.id}`}
               icon={Trash2}
