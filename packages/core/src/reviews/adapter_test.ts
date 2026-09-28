@@ -8,6 +8,7 @@ const PROMPTS = {
   system: "You are an editor.",
   directive: "Review the essay.",
   instructions: "",
+  categories: "",
 };
 
 const APPLY_PAYLOAD = {

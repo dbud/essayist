@@ -1,5 +1,6 @@
+import { renderCategories } from "@/reviews/steps/input.ts";
 import type { ConfigStore } from "./store.ts";
-import { renderPrompt } from "./template.ts";
+import { renderTemplate } from "./template.ts";
 import type {
   Category,
   ModelPool,
@@ -109,7 +110,12 @@ async function resolveUnit(
 
   return {
     id: unit.id,
-    prompts: { system, directive, instructions },
+    prompts: {
+      system,
+      directive,
+      instructions,
+      categories: renderCategories(attempt?.categories ?? []) ?? "",
+    },
     pool,
     inputs: unit.inputs ?? [],
     ...(attempt && { attempt }),
@@ -142,7 +148,7 @@ async function renderPromptKey(
   if (!prompt) {
     throw new ConfigMissingError(`prompt "${key}" for ${where}`);
   }
-  return renderPrompt(prompt.body, vars);
+  return renderTemplate(prompt.body, vars);
 }
 
 async function resolveUnitInstructions(
@@ -175,7 +181,7 @@ async function resolveUnitPool(
   return pool;
 }
 
-/** Full categories for attempt units; undefined for the rest. */
+/** Categories for attempt units; undefined for the rest. */
 async function resolveUnitAttempt(
   store: ConfigStore,
   pass: ReviewPass,

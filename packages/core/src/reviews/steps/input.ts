@@ -1,10 +1,45 @@
-import type { ResolvedPrompts } from "@/config/types.ts";
+import { renderTemplate } from "@/config/template.ts";
+import type { Category, ResolvedPrompts } from "@/config/types.ts";
 import type { Artifact, Artifacts, ArtifactType } from "@/flow/types.ts";
 import type { ReviewTypes } from "@/reviews/graph.ts";
 import type { MarkAttempt } from "@/reviews/types.ts";
-import { joinBlocks, joinLines, listOf, section } from "@/utils/text.ts";
+import {
+  bulletList,
+  joinBlocks,
+  joinLines,
+  listOf,
+  section,
+} from "@/utils/text.ts";
 import type { Analysis } from "./analyze.ts";
 import type { MarkProposal } from "./mark.ts";
+
+/** Renders a prompt for a model call: delegates to renderTemplate. */
+export function renderPrompt(
+  body: string,
+  variables?: Record<string, string>,
+): string {
+  return renderTemplate(body, variables);
+}
+
+/**
+ * The unit's allowed mark labels, with descriptions, as a prompt section;
+ * undefined for units that place no marks.
+ */
+export function renderCategories(
+  categories: readonly Category[],
+): string | undefined {
+  if (categories.length === 0) return undefined;
+  return joinBlocks(
+    section("Allowed labels"),
+    bulletList(
+      categories.map((category) =>
+        category.description
+          ? `${category.label}: ${category.description}`
+          : category.label,
+      ),
+    ),
+  );
+}
 
 // One renderer per artifact type: how the artifact reads inside a model
 // call input. Exhaustive over the vocabulary, so a new artifact type
@@ -99,6 +134,7 @@ export function composeCallInput(
     prompts.system,
     prompts.instructions,
     prompts.directive,
+    prompts.categories,
     ...inputs.all.map(renderArtifact),
   );
 }
@@ -122,6 +158,7 @@ export function composeRepairInput(
   return joinBlocks(
     prompts.system,
     prompts.instructions,
+    prompts.categories,
     REPAIR_PREAMBLE,
     ...failed.map((attempt) =>
       joinBlocks(section("Failed mark"), failedAttemptBody(attempt, content)),

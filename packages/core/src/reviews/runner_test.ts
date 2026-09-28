@@ -29,6 +29,7 @@ function passFixture(units: ReviewUnit[]): ResolvedReviewPass {
         system: "You are an editor.",
         directive: "Review the essay.",
         instructions: "",
+        categories: "",
       },
       pool: { id: "pool", name: "Pool", models: ["m/a"] },
       inputs: unit.inputs ?? [],

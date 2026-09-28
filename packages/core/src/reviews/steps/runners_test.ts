@@ -24,7 +24,12 @@ const ANALYSIS_ROUND =
 function unitPayload(id: string, directive: string): ResolvedReviewUnit {
   return {
     id,
-    prompts: { system: "You are an editor.", directive, instructions: "" },
+    prompts: {
+      system: "You are an editor.",
+      directive,
+      instructions: "",
+      categories: "",
+    },
     pool: { id: "pool", name: "Pool", models: ["m/a"] },
     inputs: [],
   };

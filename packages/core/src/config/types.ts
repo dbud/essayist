@@ -83,6 +83,8 @@ export interface ResolvedPrompts {
   system: string;
   directive: string;
   instructions: string;
+  /** The rendered allowed-labels section; empty for non-attempt units. */
+  categories: string;
 }
 
 /** Resolved config for a unit, produced by resolveReviewPass. */

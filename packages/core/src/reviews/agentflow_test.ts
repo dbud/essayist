@@ -7,6 +7,7 @@ const PROMPTS = {
   system: "You are an editor.",
   directive: "Review the essay.",
   instructions: "",
+  categories: "",
 };
 
 function unitFixture(

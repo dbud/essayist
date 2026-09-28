@@ -8,6 +8,7 @@ const PROMPTS: ResolvedPrompts = {
   system: "You are an editor.",
   directive: "Review the essay.",
   instructions: "Quote exact spans.",
+  categories: "",
 };
 
 function inputsOf(
