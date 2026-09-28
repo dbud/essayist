@@ -115,6 +115,7 @@ export const seedConfig = new Command<KvctlGlobals>()
           id: "synthesize",
           promptKey: "directive.synthesize",
           summary: true,
+          inputs: ["mechanics", "structure", "argument"],
         },
       ];
       await config.saveReviewPass({
