@@ -40,7 +40,7 @@ function passFixture(units: ReviewUnit[]): ResolvedReviewPass {
   };
 }
 
-const EMPTY_PASS = `agentflow-beta LR
+const EMPTY_PASS = `agentflow-beta TB
 
 global
   content@{ shape: input }

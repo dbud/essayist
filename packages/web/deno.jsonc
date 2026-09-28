@@ -64,6 +64,7 @@
     "lexical": "npm:lexical@^0.51.0",
     "lucide-preact": "npm:lucide-preact@^1.47.0",
     "marked": "npm:marked@^18.0.13",
+    "mermaid": "npm:mermaid@^12.0.0",
     "node:url": "node:url",
     "pngjs": "npm:pngjs@^7.0.0",
     "preact": "npm:preact@^10.29.8",

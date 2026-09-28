@@ -44,7 +44,7 @@ function unitIdOf(id: string): string {
  * parseable while the boxes read exactly like the graph.
  */
 export function agentflowDefinition(graph: FlowGraph<ReviewTypes>): string {
-  const lines: string[] = ["agentflow-beta LR"];
+  const lines: string[] = ["agentflow-beta TB"];
   const nodeById = new Map(graph.nodes.map((node) => [node.id, node]));
   const containers = new Map<string, FlowNodeOf<ReviewTypes>[]>();
   const sources: FlowNodeOf<ReviewTypes>[] = [];

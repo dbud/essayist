@@ -8,6 +8,7 @@ import Tabs, { type TabItem } from "@/components/ui/Tabs.tsx";
 import WaveBars from "@/components/ui/WaveBars.tsx";
 import { CategoriesExport } from "@/islands/admin/CategoriesExport.tsx";
 import EntityDialog from "@/islands/admin/EntityDialog.tsx";
+import PassGraph, { PassGraphSide } from "@/islands/admin/PassGraph.tsx";
 import { CategoryRow } from "@/islands/admin/rows/CategoryRow.tsx";
 import { ModelPoolRow } from "@/islands/admin/rows/ModelPoolRow.tsx";
 import { PromptRow } from "@/islands/admin/rows/PromptRow.tsx";
@@ -17,10 +18,11 @@ import MarkSwatches from "@/islands/MarkSwatches.tsx";
 import { getAdminConfig } from "@/signals/admin.ts";
 import { persistentSignal } from "@/utils/persistentSignal.ts";
 
-type TabKey = "passes" | "pools" | "prompts" | "categories" | "tools";
+type TabKey = "passes" | "graph" | "pools" | "prompts" | "categories" | "tools";
 
 const TAB_ITEMS: TabItem<TabKey>[] = [
   { value: "passes", label: "Review passes" },
+  { value: "graph", label: "Graph" },
   { value: "pools", label: "Model pools" },
   { value: "prompts", label: "Prompts" },
   { value: "categories", label: "Categories" },
@@ -144,6 +146,10 @@ export default function AdminConfig() {
             )}
           </div>
         );
+        break;
+      case "graph":
+        body = <PassGraph />;
+        side = <PassGraphSide />;
         break;
       case "pools":
         body = (
