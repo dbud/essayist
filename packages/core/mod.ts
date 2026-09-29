@@ -1,3 +1,4 @@
+export type { SessionUsageTotals } from "@/agent.ts";
 export { Agent } from "@/agent.ts";
 export {
   ConfigInvalidError,
@@ -62,7 +63,6 @@ export type {
   MarkAttempt,
   ReviewRun,
   ReviewRunStatus,
-  ReviewTraceUsage,
 } from "@/reviews/types.ts";
 export { summarizeFile } from "@/summarize.ts";
 export {

@@ -9,7 +9,6 @@ import { OpenRouter, stepCountIs } from "@openrouter/agent";
 import type { z } from "zod";
 import { logAgentCall } from "@/agent_logger.ts";
 import { logger } from "@/logger.ts";
-import type { ReviewTraceUsage } from "@/reviews/types.ts";
 import { generateInstructions, stripMarkdownFences } from "@/schema.ts";
 import type { ToolPrompt } from "@/tools/index.ts";
 import { joinBlocks } from "@/utils/text.ts";
@@ -45,9 +44,11 @@ export class StructuredParseError extends Error {
 
 export interface StructuredCall<T> {
   output: T;
-  usage: ReviewTraceUsage;
+  usage: SessionUsageTotals;
   reasoning?: string;
 }
+
+export type { SessionUsageTotals };
 
 export interface ModelClient {
   callModel(
@@ -142,7 +143,7 @@ export class Agent {
     models: string[],
   ): Promise<{
     text: string;
-    usage: ReviewTraceUsage;
+    usage: SessionUsageTotals;
     reasoning?: string;
   }> {
     const result = this.#client.callModel({ models, input }, RETRY_OPTIONS);
@@ -150,8 +151,7 @@ export class Agent {
       result.getText(),
       collectReasoning(result),
     ]);
-    const usage = mapUsage(await result.getUsage());
-    return { text, usage, reasoning };
+    return { text, usage: await result.getUsage(), reasoning };
   }
 }
 
@@ -182,27 +182,20 @@ function joinReasoning(
   return `${a}\n${b}`;
 }
 
-function addUsage(a: ReviewTraceUsage, b: ReviewTraceUsage): ReviewTraceUsage {
+function addUsage(
+  a: SessionUsageTotals,
+  b: SessionUsageTotals,
+): SessionUsageTotals {
   return {
     inputTokens: a.inputTokens + b.inputTokens,
     outputTokens: a.outputTokens + b.outputTokens,
     totalTokens: a.totalTokens + b.totalTokens,
     cachedTokens: a.cachedTokens + b.cachedTokens,
     reasoningTokens: a.reasoningTokens + b.reasoningTokens,
+    modelCalls: a.modelCalls + b.modelCalls,
     ...(a.cost != null || b.cost != null
       ? { cost: (a.cost ?? 0) + (b.cost ?? 0) }
       : {}),
-  };
-}
-
-function mapUsage(usage: SessionUsageTotals): ReviewTraceUsage {
-  return {
-    inputTokens: usage.inputTokens,
-    outputTokens: usage.outputTokens,
-    totalTokens: usage.totalTokens,
-    cachedTokens: usage.cachedTokens,
-    reasoningTokens: usage.reasoningTokens,
-    ...(usage.cost != null ? { cost: usage.cost } : {}),
   };
 }
 

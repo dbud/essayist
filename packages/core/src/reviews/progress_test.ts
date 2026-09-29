@@ -48,6 +48,7 @@ Deno.test("ReviewProgressTracker -- derives node phases and note counts", () => 
           totalTokens: 2,
           cachedTokens: 0,
           reasoningTokens: 0,
+          modelCalls: 1,
         },
       },
     },

@@ -124,6 +124,7 @@ Deno.test("Agent.callModelStructured -- parses output and captures reasoning and
     totalTokens: 15,
     cachedTokens: 1,
     reasoningTokens: 4,
+    modelCalls: 1,
     cost: 0.01,
   });
   assertEquals(result.reasoning, "weighing the options");
@@ -174,6 +175,7 @@ Deno.test("Agent.callModelStructured -- re-asks once on invalid output and combi
     totalTokens: 6,
     cachedTokens: 0,
     reasoningTokens: 2,
+    modelCalls: 2,
     cost: 0.03,
   });
   assertEquals(

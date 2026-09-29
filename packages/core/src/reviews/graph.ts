@@ -1,4 +1,4 @@
-import type { Agent } from "@/agent.ts";
+import type { Agent, SessionUsageTotals } from "@/agent.ts";
 import type { ResolvedReviewUnit } from "@/config/types.ts";
 import type { ForwardSpec, PassWhenSpec } from "@/flow/helpers.ts";
 import { forward, passWhen } from "@/flow/helpers.ts";
@@ -14,7 +14,7 @@ import {
 } from "@/reviews/steps/mark.ts";
 import { createSourceRunner } from "@/reviews/steps/source.ts";
 import { createSynthesizeRunner } from "@/reviews/steps/synthesize.ts";
-import type { MarkAttempt, ReviewTraceUsage } from "@/reviews/types.ts";
+import type { MarkAttempt } from "@/reviews/types.ts";
 import type { PinnedVFS } from "@/vfs/pin.ts";
 import type { MarkProvenance } from "@/vfs/types.ts";
 
@@ -22,7 +22,7 @@ export type ReviewNodeEvent =
   | { type: "prompt"; text: string; truncated?: boolean }
   | { type: "reasoning"; text: string; truncated?: boolean }
   | { type: "output"; output: unknown; truncated?: boolean }
-  | { type: "usage"; usage: ReviewTraceUsage }
+  | { type: "usage"; usage: SessionUsageTotals }
   | { type: "applied"; attempts: MarkAttempt[] };
 
 export interface ReviewTypes extends FlowTypes {

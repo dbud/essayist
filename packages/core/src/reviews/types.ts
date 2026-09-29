@@ -15,16 +15,6 @@ export interface ReviewRun {
   summary?: string;
 }
 
-/** Normalized token usage for a model call. */
-export interface ReviewTraceUsage {
-  inputTokens: number;
-  outputTokens: number;
-  totalTokens: number;
-  cachedTokens: number;
-  reasoningTokens: number;
-  cost?: number;
-}
-
 /** A proposed mark and its application result. */
 export interface MarkAttempt {
   selected_text: string;

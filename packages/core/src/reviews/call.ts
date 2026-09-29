@@ -1,13 +1,12 @@
 import type { z } from "zod";
-import type { Agent, StructuredCall } from "@/agent.ts";
-import type { ReviewTraceUsage } from "@/reviews/types.ts";
+import type { Agent, SessionUsageTotals, StructuredCall } from "@/agent.ts";
 
 /** Events of a structured call, delivered in order. */
 export type CallEvent =
   | { type: "prompt"; text: string }
   | { type: "reasoning"; text: string }
   | { type: "output"; output: unknown }
-  | { type: "usage"; usage: ReviewTraceUsage };
+  | { type: "usage"; usage: SessionUsageTotals };
 
 /** Options for {@linkcode callStructured}. */
 export interface CallStructuredOptions<T extends z.ZodObject<z.ZodRawShape>> {
