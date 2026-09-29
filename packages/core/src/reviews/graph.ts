@@ -19,8 +19,8 @@ import type { PinnedVFS } from "@/vfs/pin.ts";
 import type { MarkProvenance } from "@/vfs/types.ts";
 
 export type ReviewNodeEvent =
-  | { type: "prompt"; text: string }
-  | { type: "reasoning"; text: string }
+  | { type: "prompt"; text: string; truncated?: boolean }
+  | { type: "reasoning"; text: string; truncated?: boolean }
   | { type: "output"; output: unknown; truncated?: boolean }
   | { type: "usage"; usage: ReviewTraceUsage }
   | { type: "applied"; attempts: MarkAttempt[] };
