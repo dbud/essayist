@@ -55,10 +55,13 @@ export { runReviewPass } from "@/reviews/runner.ts";
 export { ReviewStore } from "@/reviews/store.ts";
 export type {
   TraceEvent,
+  TraceNodeView,
   TraceRecorder,
   TraceStore,
+  TraceTotals,
+  TraceView,
 } from "@/reviews/trace/mod.ts";
-export { TraceEventStore } from "@/reviews/trace/mod.ts";
+export { groupTraceNodes, TraceEventStore } from "@/reviews/trace/mod.ts";
 export type {
   MarkAttempt,
   ReviewRun,
