@@ -168,7 +168,7 @@ Deno.test("Agent.callModelStructured -- parses output and captures reasoning and
     modelCalls: 1,
     cost: 0.01,
   });
-  assertEquals(result.reasoning, "weighing the options");
+  assertEquals(result.reasoning, ["weighing the options"]);
 });
 
 Deno.test("Agent.callModelStructured -- re-asks once on invalid output and combines usage", async () => {
@@ -209,6 +209,10 @@ Deno.test("Agent.callModelStructured -- re-asks once on invalid output and combi
   assertEquals(inputs.length, 2);
   assertEquals(inputs[1].includes("not json at all"), true);
   assertEquals(inputs[1].includes("Validation error"), true);
+  assertEquals(
+    result.calls.map((call) => call.turnType),
+    ["initial", "initial"],
+  );
   assertEquals(result.output, { ok: true });
   assertEquals(result.usage, {
     inputTokens: 3,
@@ -219,10 +223,26 @@ Deno.test("Agent.callModelStructured -- re-asks once on invalid output and combi
     modelCalls: 2,
     cost: 0.03,
   });
-  assertEquals(
-    result.reasoning,
-    "first attempt thinking\nsecond attempt thinking",
+  assertEquals(result.reasoning, [
+    "first attempt thinking",
+    "second attempt thinking",
+  ]);
+});
+
+Deno.test("Agent.callModelStructured -- omits a round that had no reasoning", async () => {
+  const { client } = createSpyClient([
+    { text: "not json at all" },
+    { text: '{"ok":true}', reasoning: "only the second attempt thought" },
+  ]);
+  const agent = new Agent("test-key", client);
+
+  const result = await agent.callModelStructured(
+    "ping",
+    z.object({ ok: z.boolean() }),
+    ["m/a"],
   );
+
+  assertEquals(result.reasoning, ["only the second attempt thought"]);
 });
 
 Deno.test("Agent.callModelStructured -- forwards RETRY_OPTIONS and appends schema instructions", async () => {
@@ -252,7 +272,7 @@ Deno.test("Agent.callModelStructured -- forwards RETRY_OPTIONS and appends schem
     inputs[0].includes("Return only one valid JSON object matching this shape"),
     true,
   );
-  assertEquals(result.reasoning, undefined);
+  assertEquals(result.reasoning, []);
 });
 
 Deno.test("Agent.callModelStructured -- throws StructuredParseError when the retry also fails", async () => {

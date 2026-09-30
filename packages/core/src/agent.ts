@@ -7,6 +7,7 @@ import type {
   Tool,
 } from "@openrouter/agent";
 import { HooksManager, OpenRouter, stepCountIs } from "@openrouter/agent";
+import { mapNotNullish } from "@std/collections";
 import type { z } from "zod";
 import { logAgentCall } from "@/agent_logger.ts";
 import { logger } from "@/logger.ts";
@@ -46,7 +47,8 @@ export class StructuredParseError extends Error {
 export interface StructuredCall<T> {
   output: T;
   usage: SessionUsageTotals;
-  reasoning?: string;
+  /** Each call's reasoning, in call order. Empty when none did. */
+  reasoning: string[];
   /** Every model call made, in order, including a re-ask. */
   calls: PostModelCallPayload[];
 }
@@ -92,7 +94,12 @@ export class Agent {
       options?.onModelCall?.(call);
     };
 
-    const first = await this.#structuredRound(fullInput, models, onModelCall);
+    const hooks = new HooksManager();
+    hooks.on("PostModelCall", {
+      handler: (payload: PostModelCallPayload) => onModelCall(payload),
+    });
+
+    const first = await this.#structuredRound(fullInput, models, hooks);
 
     let output: z.output<T>;
     try {
@@ -102,7 +109,7 @@ export class Agent {
       const retry = await this.#structuredRound(
         repairInput(fullInput, first.text, message),
         models,
-        onModelCall,
+        hooks,
       );
       try {
         output = parseStructured(retry.text, schema);
@@ -114,7 +121,7 @@ export class Agent {
       return {
         output,
         usage: addUsage(first.usage, retry.usage),
-        reasoning: joinReasoning(first.reasoning, retry.reasoning),
+        reasoning: mapNotNullish([first, retry], (round) => round.reasoning),
         calls,
       };
     }
@@ -122,7 +129,7 @@ export class Agent {
     return {
       output,
       usage: first.usage,
-      reasoning: first.reasoning,
+      reasoning: mapNotNullish([first], (round) => round.reasoning),
       calls,
     };
   }
@@ -155,16 +162,12 @@ export class Agent {
   async #structuredRound(
     input: string,
     models: string[],
-    onModelCall: (call: PostModelCallPayload) => void,
+    hooks: HooksManager,
   ): Promise<{
     text: string;
     usage: SessionUsageTotals;
     reasoning?: string;
   }> {
-    const hooks = new HooksManager();
-    hooks.on("PostModelCall", {
-      handler: (payload: PostModelCallPayload) => onModelCall(payload),
-    });
     const result = this.#client.callModel(
       { models, input, hooks },
       RETRY_OPTIONS,
@@ -193,15 +196,6 @@ function repairInput(fullInput: string, raw: string, error: string): string {
     `Validation error: ${error}`,
     "Return only one corrected JSON object matching the schema, with no extra text.",
   ]);
-}
-
-function joinReasoning(
-  a: string | undefined,
-  b: string | undefined,
-): string | undefined {
-  if (a === undefined) return b;
-  if (b === undefined) return a;
-  return `${a}\n${b}`;
 }
 
 function addUsage(
