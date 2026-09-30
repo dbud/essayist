@@ -15,11 +15,13 @@ export interface TraceNodeView {
   events: ReviewNodeEvent[];
 }
 
-/** Summed across every usage event, attached or orphaned. */
+/** Summed across every model call's usage, attached or orphaned. */
 export interface TraceTotals {
   inputTokens: number;
   outputTokens: number;
   cost: number;
+  /** Model calls seen; a call that reports no usage still counts. */
+  modelCalls: number;
 }
 
 /** A trace folded into per-node sections, for rendering. */
@@ -46,7 +48,12 @@ export function groupTraceNodes(
   const nodes: TraceNodeView[] = [];
   const orphans: TraceEvent[] = [];
   const byId = new Map<string, TraceNodeView>();
-  const totals: TraceTotals = { inputTokens: 0, outputTokens: 0, cost: 0 };
+  const totals: TraceTotals = {
+    inputTokens: 0,
+    outputTokens: 0,
+    cost: 0,
+    modelCalls: 0,
+  };
   let open: TraceNodeView | undefined;
 
   for (const event of trace) {
@@ -75,10 +82,14 @@ export function groupTraceNodes(
           break;
         }
         target.events.push(event.event);
-        if (event.event.type === "usage") {
-          totals.inputTokens += event.event.usage.inputTokens;
-          totals.outputTokens += event.event.usage.outputTokens;
-          totals.cost += event.event.usage.cost ?? 0;
+        if (event.event.type === "model_call") {
+          totals.modelCalls += 1;
+          const usage = event.event.call.usage;
+          if (usage) {
+            totals.inputTokens += usage.inputTokens;
+            totals.outputTokens += usage.outputTokens;
+            totals.cost += usage.cost ?? 0;
+          }
         }
         break;
       }

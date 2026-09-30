@@ -1,4 +1,7 @@
-export type { SessionUsageTotals } from "@/agent.ts";
+export type {
+  PostModelCallPayload,
+  SessionUsageTotals,
+} from "@/agent.ts";
 export { Agent } from "@/agent.ts";
 export {
   ConfigInvalidError,

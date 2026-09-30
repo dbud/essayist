@@ -1,12 +1,12 @@
 import type { z } from "zod";
-import type { Agent, SessionUsageTotals, StructuredCall } from "@/agent.ts";
+import type { Agent, PostModelCallPayload, StructuredCall } from "@/agent.ts";
 
 /** Events of a structured call, delivered in order. */
 export type CallEvent =
   | { type: "prompt"; text: string }
   | { type: "reasoning"; text: string }
   | { type: "output"; output: unknown }
-  | { type: "usage"; usage: SessionUsageTotals };
+  | { type: "model_call"; call: PostModelCallPayload };
 
 /** Options for {@linkcode callStructured}. */
 export interface CallStructuredOptions<T extends z.ZodObject<z.ZodRawShape>> {
@@ -19,7 +19,8 @@ export interface CallStructuredOptions<T extends z.ZodObject<z.ZodRawShape>> {
 }
 
 /** Call the model for a structured output, delivering the prompt before
- * the call and the reasoning, output, and usage after it. */
+ * the call, a model_call as each call happens, then the reasoning and
+ * output. */
 export async function callStructured<T extends z.ZodObject<z.ZodRawShape>>(
   options: CallStructuredOptions<T>,
 ): Promise<StructuredCall<z.output<T>>> {
@@ -28,11 +29,11 @@ export async function callStructured<T extends z.ZodObject<z.ZodRawShape>>(
     options.input,
     options.schema,
     options.models,
+    { onModelCall: (call) => options.onEvent({ type: "model_call", call }) },
   );
   if (result.reasoning !== undefined) {
     options.onEvent({ type: "reasoning", text: result.reasoning });
   }
   options.onEvent({ type: "output", output: result.output });
-  options.onEvent({ type: "usage", usage: result.usage });
   return result;
 }

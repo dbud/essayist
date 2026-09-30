@@ -111,26 +111,51 @@ Deno.test("groupTraceNodes -- records failure error and skip reason", () => {
   assertEquals(nodes[1].completedAt, undefined);
 });
 
-Deno.test("groupTraceNodes -- totals usage across every node", () => {
+/** A model_call event carrying the given per-call usage. */
+function modelCall(
+  usage?: {
+    inputTokens: number;
+    outputTokens: number;
+    totalTokens: number;
+    cachedTokens: number;
+    reasoningTokens: number;
+    cost?: number;
+  },
+  nodeId = "n",
+): FlowEvent<ReviewTypes> {
+  return {
+    type: "custom",
+    nodeId,
+    event: {
+      type: "model_call",
+      call: {
+        sessionId: "s",
+        responseId: "r",
+        model: "openai/gpt-5.2",
+        durationMs: 100,
+        turnType: "initial",
+        turnNumber: 1,
+        ...(usage ? { usage } : {}),
+      },
+    },
+  };
+}
+
+Deno.test("groupTraceNodes -- totals usage across every model call", () => {
   const { totals } = groupTraceNodes(
     trace([
       { type: "node_start", nodeId: "a" },
-      {
-        type: "custom",
-        nodeId: "a",
-        event: {
-          type: "usage",
-          usage: {
-            inputTokens: 10,
-            outputTokens: 5,
-            totalTokens: 15,
-            cachedTokens: 0,
-            reasoningTokens: 0,
-            modelCalls: 1,
-            cost: 0.25,
-          },
+      modelCall(
+        {
+          inputTokens: 10,
+          outputTokens: 5,
+          totalTokens: 15,
+          cachedTokens: 0,
+          reasoningTokens: 0,
+          cost: 0.25,
         },
-      },
+        "a",
+      ),
       {
         type: "node_end",
         nodeId: "a",
@@ -142,24 +167,36 @@ Deno.test("groupTraceNodes -- totals usage across every node", () => {
         },
       },
       { type: "node_start", nodeId: "b" },
-      {
-        type: "custom",
-        nodeId: "b",
-        event: {
-          type: "usage",
-          usage: {
-            inputTokens: 1,
-            outputTokens: 2,
-            totalTokens: 3,
-            cachedTokens: 0,
-            reasoningTokens: 0,
-            modelCalls: 1,
-          },
+      modelCall(
+        {
+          inputTokens: 1,
+          outputTokens: 2,
+          totalTokens: 3,
+          cachedTokens: 0,
+          reasoningTokens: 0,
         },
-      },
+        "b",
+      ),
     ]),
   );
-  assertEquals(totals, { inputTokens: 11, outputTokens: 7, cost: 0.25 });
+  assertEquals(totals, {
+    inputTokens: 11,
+    outputTokens: 7,
+    cost: 0.25,
+    modelCalls: 2,
+  });
+});
+
+Deno.test("groupTraceNodes -- a model call without usage still counts", () => {
+  const { totals } = groupTraceNodes(
+    trace([{ type: "node_start", nodeId: "a" }, modelCall(undefined, "a")]),
+  );
+  assertEquals(totals, {
+    inputTokens: 0,
+    outputTokens: 0,
+    cost: 0,
+    modelCalls: 1,
+  });
 });
 
 Deno.test("groupTraceNodes -- orphans a custom event with no node", () => {

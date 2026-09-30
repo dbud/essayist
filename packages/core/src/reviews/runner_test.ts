@@ -130,16 +130,16 @@ Deno.test("runReviewPass -- completes a pass with marks, summary, and a per-node
     analyze: [
       "node_start",
       "prompt",
+      "model_call",
       "reasoning",
       "output",
-      "usage",
       "node_end",
     ],
     "mechanics.propose": [
       "node_start",
       "prompt",
+      "model_call",
       "output",
-      "usage",
       "node_end",
     ],
     "mechanics.apply": ["node_start", "applied", "node_end"],
@@ -147,7 +147,7 @@ Deno.test("runReviewPass -- completes a pass with marks, summary, and a per-node
     "mechanics.repair1.gate": ["node_start", "node_end"],
     "mechanics.repair1.propose": ["node_start", "node_end"],
     "mechanics.repair1.apply": ["node_start", "applied", "node_end"],
-    synthesize: ["node_start", "prompt", "output", "usage", "node_end"],
+    synthesize: ["node_start", "prompt", "model_call", "output", "node_end"],
   });
   const applied = appliedEvents(trace);
   assertEquals(applied[0].attempts.length, 1);
@@ -193,8 +193,8 @@ Deno.test("runReviewPass -- a repair round re-quotes the failed spans", async ()
     "mechanics.propose": [
       "node_start",
       "prompt",
+      "model_call",
       "output",
-      "usage",
       "node_end",
     ],
     "mechanics.apply": ["node_start", "applied", "node_end"],
@@ -203,8 +203,8 @@ Deno.test("runReviewPass -- a repair round re-quotes the failed spans", async ()
     "mechanics.repair1.propose": [
       "node_start",
       "prompt",
+      "model_call",
       "output",
-      "usage",
       "node_end",
     ],
     "mechanics.repair1.apply": ["node_start", "applied", "node_end"],
@@ -288,8 +288,15 @@ Deno.test("runReviewPass -- a node error fails the run and skips dependents", as
 
   const trace = (await traceStore.get({ wsId: "ws", runId: run.id })) ?? [];
   const grouped = byNode(trace);
-  // The prompt is recorded before the failing call.
-  assertEquals(grouped.analyze, ["node_start", "prompt", "node_end"]);
+  // The prompt is recorded before the failing call, and the re-ask that
+  // also failed leaves two model_call events.
+  assertEquals(grouped.analyze, [
+    "node_start",
+    "prompt",
+    "model_call",
+    "model_call",
+    "node_end",
+  ]);
   assertEquals(nodeEnd(trace, "analyze")?.status, "failed");
   for (const nodeId of [
     "mechanics.propose",

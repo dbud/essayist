@@ -1,4 +1,4 @@
-import type { Agent, SessionUsageTotals } from "@/agent.ts";
+import type { Agent, PostModelCallPayload } from "@/agent.ts";
 import type { ResolvedReviewUnit } from "@/config/types.ts";
 import type { ForwardSpec, PassWhenSpec } from "@/flow/helpers.ts";
 import { forward, passWhen } from "@/flow/helpers.ts";
@@ -22,7 +22,7 @@ export type ReviewNodeEvent =
   | { type: "prompt"; text: string; truncated?: boolean }
   | { type: "reasoning"; text: string; truncated?: boolean }
   | { type: "output"; output: unknown; truncated?: boolean }
-  | { type: "usage"; usage: SessionUsageTotals }
+  | { type: "model_call"; call: PostModelCallPayload }
   | { type: "applied"; attempts: MarkAttempt[] };
 
 export interface ReviewTypes extends FlowTypes {

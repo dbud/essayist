@@ -132,16 +132,16 @@ Deno.test("review runners -- analyze, propose, apply, and synthesize in a flow",
   assertEquals(inputs[1].includes("Thesis: Drafts are raw material."), true);
   assertEquals(customs(events), [
     ["structure", "prompt"],
+    ["structure", "model_call"],
     ["structure", "reasoning"],
     ["structure", "output"],
-    ["structure", "usage"],
     ["mechanics.propose", "prompt"],
+    ["mechanics.propose", "model_call"],
     ["mechanics.propose", "output"],
-    ["mechanics.propose", "usage"],
     ["mechanics.apply", "applied"],
     ["summary", "prompt"],
+    ["summary", "model_call"],
     ["summary", "output"],
-    ["summary", "usage"],
   ]);
 
   const marks = await vfs.getMarks("essay.txt", versionId);

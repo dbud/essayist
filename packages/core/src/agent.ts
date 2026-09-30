@@ -1,11 +1,12 @@
 import type {
   CallModelInput,
   ModelResult,
+  PostModelCallPayload,
   RequestOptions,
   SessionUsageTotals,
   Tool,
 } from "@openrouter/agent";
-import { OpenRouter, stepCountIs } from "@openrouter/agent";
+import { HooksManager, OpenRouter, stepCountIs } from "@openrouter/agent";
 import type { z } from "zod";
 import { logAgentCall } from "@/agent_logger.ts";
 import { logger } from "@/logger.ts";
@@ -46,9 +47,11 @@ export interface StructuredCall<T> {
   output: T;
   usage: SessionUsageTotals;
   reasoning?: string;
+  /** Every model call made, in order, including a re-ask. */
+  calls: PostModelCallPayload[];
 }
 
-export type { SessionUsageTotals };
+export type { PostModelCallPayload, SessionUsageTotals };
 
 export interface ModelClient {
   callModel(
@@ -77,11 +80,19 @@ export class Agent {
     input: string,
     schema: T,
     models: string[],
-    options?: { includeExample?: boolean },
+    options?: {
+      includeExample?: boolean;
+      onModelCall?: (call: PostModelCallPayload) => void;
+    },
   ): Promise<StructuredCall<z.output<T>>> {
     const fullInput = `${input}\n\n${generateInstructions(schema, options)}`;
+    const calls: PostModelCallPayload[] = [];
+    const onModelCall = (call: PostModelCallPayload) => {
+      calls.push(call);
+      options?.onModelCall?.(call);
+    };
 
-    const first = await this.#structuredRound(fullInput, models);
+    const first = await this.#structuredRound(fullInput, models, onModelCall);
 
     let output: z.output<T>;
     try {
@@ -91,6 +102,7 @@ export class Agent {
       const retry = await this.#structuredRound(
         repairInput(fullInput, first.text, message),
         models,
+        onModelCall,
       );
       try {
         output = parseStructured(retry.text, schema);
@@ -103,6 +115,7 @@ export class Agent {
         output,
         usage: addUsage(first.usage, retry.usage),
         reasoning: joinReasoning(first.reasoning, retry.reasoning),
+        calls,
       };
     }
 
@@ -110,6 +123,7 @@ export class Agent {
       output,
       usage: first.usage,
       reasoning: first.reasoning,
+      calls,
     };
   }
 
@@ -141,12 +155,20 @@ export class Agent {
   async #structuredRound(
     input: string,
     models: string[],
+    onModelCall: (call: PostModelCallPayload) => void,
   ): Promise<{
     text: string;
     usage: SessionUsageTotals;
     reasoning?: string;
   }> {
-    const result = this.#client.callModel({ models, input }, RETRY_OPTIONS);
+    const hooks = new HooksManager();
+    hooks.on("PostModelCall", {
+      handler: (payload: PostModelCallPayload) => onModelCall(payload),
+    });
+    const result = this.#client.callModel(
+      { models, input, hooks },
+      RETRY_OPTIONS,
+    );
     const [text, reasoning] = await Promise.all([
       result.getText(),
       collectReasoning(result),

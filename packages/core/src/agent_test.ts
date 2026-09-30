@@ -1,9 +1,11 @@
 import type {
   CallModelInput,
   ModelResult,
+  PostModelCallPayload,
   RequestOptions,
   Tool,
 } from "@openrouter/agent";
+import { HooksManager } from "@openrouter/agent";
 import { assertEquals, assertExists, assertRejects } from "@std/assert";
 import { z } from "zod";
 import {
@@ -16,6 +18,8 @@ import {
 interface FakeRound {
   text: string;
   reasoning?: string;
+  model?: string;
+  durationMs?: number;
   usage?: {
     inputTokens: number;
     outputTokens: number;
@@ -72,7 +76,24 @@ function createSpyClient(rounds: FakeRound[]): {
     callModel: (request: CallModelInput, requestOptions?: RequestOptions) => {
       inputs.push(String(request.input));
       options.push(requestOptions);
-      return fakeResult(rounds[Math.min(inputs.length - 1, rounds.length - 1)]);
+      const round = rounds[Math.min(inputs.length - 1, rounds.length - 1)];
+      // Fire PostModelCall the way the SDK does, so the agent's model-call
+      // collection is exercised without a live provider.
+      const hooks = request.hooks;
+      if (hooks instanceof HooksManager) {
+        queueMicrotask(() => {
+          void hooks.emit("PostModelCall", {
+            sessionId: "s",
+            responseId: "r",
+            model: round.model ?? "test/model",
+            durationMs: round.durationMs ?? 1,
+            turnType: "initial",
+            turnNumber: 1,
+            ...(round.usage ? { usage: round.usage } : {}),
+          } as PostModelCallPayload);
+        });
+      }
+      return fakeResult(round);
     },
   };
   return { client, inputs, options };
@@ -99,6 +120,8 @@ Deno.test("Agent.callModelStructured -- parses output and captures reasoning and
     {
       text: '{"ok":true}',
       reasoning: "weighing the options",
+      model: "openai/gpt-5.2",
+      durationMs: 1200,
       usage: {
         inputTokens: 10,
         outputTokens: 5,
@@ -118,6 +141,24 @@ Deno.test("Agent.callModelStructured -- parses output and captures reasoning and
   );
 
   assertEquals(result.output, { ok: true });
+  assertEquals(result.calls, [
+    {
+      sessionId: "s",
+      responseId: "r",
+      model: "openai/gpt-5.2",
+      durationMs: 1200,
+      turnType: "initial",
+      turnNumber: 1,
+      usage: {
+        inputTokens: 10,
+        outputTokens: 5,
+        totalTokens: 15,
+        cachedTokens: 1,
+        reasoningTokens: 4,
+        cost: 0.01,
+      },
+    },
+  ]);
   assertEquals(result.usage, {
     inputTokens: 10,
     outputTokens: 5,

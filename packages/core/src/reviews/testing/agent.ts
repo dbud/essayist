@@ -1,4 +1,9 @@
-import type { ModelResult, Tool } from "@openrouter/agent";
+import type {
+  ModelResult,
+  PostModelCallPayload,
+  Tool,
+} from "@openrouter/agent";
+import { HooksManager } from "@openrouter/agent";
 import { Agent, type ModelClient } from "@/agent.ts";
 
 interface FakeRound {
@@ -43,8 +48,28 @@ export function createSpyClient(rounds: FakeRound[]): {
 } {
   const inputs: string[] = [];
   const client: ModelClient = {
-    callModel: (request: { input: string }) => {
+    callModel: (request: { input: string; hooks?: HooksManager }) => {
       inputs.push(request.input);
+      const hooks = request.hooks;
+      if (hooks instanceof HooksManager) {
+        queueMicrotask(() => {
+          void hooks.emit("PostModelCall", {
+            sessionId: "s",
+            responseId: "r",
+            model: "m/a",
+            durationMs: 1,
+            turnType: "initial",
+            turnNumber: 1,
+            usage: {
+              inputTokens: 1,
+              outputTokens: 1,
+              totalTokens: 2,
+              cachedTokens: 0,
+              reasoningTokens: 0,
+            },
+          } as PostModelCallPayload);
+        });
+      }
       return fakeResult(rounds[Math.min(inputs.length - 1, rounds.length - 1)]);
     },
   };
