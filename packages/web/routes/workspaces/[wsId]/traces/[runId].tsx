@@ -15,9 +15,9 @@ import {
   ArrowUp,
   Brain,
   Cpu,
+  Milestone,
   MoveLeft,
   RotateCcw,
-  Terminal,
   Type,
   Wrench,
 } from "lucide-preact";
@@ -128,10 +128,8 @@ function PromptRow({ text, truncated }: { text: string; truncated?: boolean }) {
         prompt
         {truncated && <Truncated />}
       </div>
-      <div class="cell--data col-span-2 min-w-0">
-        <div class="max-h-72 overflow-y-auto">
-          <MarkdownView content={text} />
-        </div>
+      <div class="cell--data col-span-2 min-w-0 max-h-72 overflow-y-auto break-words">
+        <MarkdownView content={text} class="code-wrap min-w-0" />
       </div>
     </>
   );
@@ -151,10 +149,8 @@ function ReasoningRow({
         thinking
         {truncated && <Truncated />}
       </div>
-      <div class="cell--data col-span-2 min-w-0">
-        <div class="max-h-72 overflow-y-auto">
-          <MarkdownView content={text} />
-        </div>
+      <div class="cell--data col-span-2 min-w-0 max-h-72 overflow-y-auto break-words">
+        <MarkdownView content={text} class="code-wrap min-w-0" />
       </div>
     </>
   );
@@ -174,8 +170,8 @@ function OutputRow({
         output
         {truncated && <Truncated />}
       </div>
-      <div class="cell--data col-span-2 min-w-0 break-words">
-        <pre class="max-h-72 overflow-y-auto whitespace-pre-wrap font-mono">
+      <div class="cell--data col-span-2 min-w-0 max-h-72 overflow-y-auto break-words">
+        <pre class="min-w-0 whitespace-pre-wrap font-mono">
           {pretty(output)}
         </pre>
       </div>
@@ -185,7 +181,7 @@ function OutputRow({
 
 function AttemptRow({ attempt }: { attempt: MarkAttempt }) {
   return (
-    <div class="cell--data col-span-2 min-w-0 flex flex-col gap-1">
+    <div class="cell--data col-span-2 min-w-0 max-h-72 overflow-y-auto break-words flex flex-col gap-1">
       <div class="flex gap-2 items-start">
         <span
           class={`badge ${attempt.marked ? "badge--success" : "badge--error"} self-start`}
@@ -195,7 +191,7 @@ function AttemptRow({ attempt }: { attempt: MarkAttempt }) {
         {attempt.label && <span class="self-start">{attempt.label}</span>}
       </div>
       <div class="whitespace-pre-wrap break-words">{attempt.selected_text}</div>
-      <MarkdownView content={attempt.comment} />
+      <MarkdownView content={attempt.comment} class="code-wrap min-w-0" />
       {attempt.error && (
         <div class="text-[0.75rem] text-error">{attempt.error}</div>
       )}
@@ -287,7 +283,7 @@ function NodeSection({ node }: { node: TraceNodeView }) {
       <SectionHeader
         title={
           <span class="flex gap-2">
-            <Terminal size={14} />
+            <Milestone size={14} />
             {node.nodeId}
           </span>
         }

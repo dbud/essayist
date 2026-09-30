@@ -156,6 +156,12 @@
   }
 }
 
+@utility code-wrap {
+  & pre {
+    white-space: pre-wrap;
+  }
+}
+
 @utility striped-* {
   --sqrt2: 1.4142135624;
   --stripe-line: calc(1 * var(--sqrt2) * 1px);
