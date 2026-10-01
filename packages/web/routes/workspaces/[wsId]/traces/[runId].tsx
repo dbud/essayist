@@ -177,7 +177,7 @@ function OutputRow({ output }: { output: unknown }) {
 
 function AttemptRow({ attempt }: { attempt: MarkAttempt }) {
   return (
-    <div class="cell--data col-span-2 min-w-0 max-h-72 overflow-y-auto break-words flex flex-col gap-1">
+    <div class="cell--data col-span-2 min-w-0 max-h-72 overflow-y-auto break-words flex flex-col gap-4">
       <div class="flex gap-2 items-start">
         <span
           class={`badge ${attempt.marked ? "badge--success" : "badge--error"} self-start`}
@@ -186,8 +186,10 @@ function AttemptRow({ attempt }: { attempt: MarkAttempt }) {
         </span>
         {attempt.label && <span class="self-start">{attempt.label}</span>}
       </div>
-      <div class="whitespace-pre-wrap break-words">{attempt.selected_text}</div>
-      <MarkdownView content={attempt.comment} class="code-wrap min-w-0" />
+      <div class="whitespace-pre-wrap break-words font-serif italic">
+        {attempt.selected_text}
+      </div>
+      <div class="whitespace-pre-wrap">{attempt.comment}</div>
       {attempt.error && (
         <div class="text-[0.75rem] text-error">{attempt.error}</div>
       )}
