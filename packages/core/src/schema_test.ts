@@ -273,6 +273,33 @@ Deno.test("generateInstructions recurses through nested arrays of objects", () =
   );
 });
 
+Deno.test("generateInstructions prefers a whole-value example over per-field ones", () => {
+  const schema = z
+    .object({
+      outline: z.array(z.object({ first_line: z.number().int() })),
+    })
+    .meta({
+      example: { outline: [{ first_line: 3 }] },
+    });
+
+  assertEquals(
+    generateInstructions(schema, { includeExample: true }),
+    `Return only one valid JSON object matching this shape. Do not use markdown fences, code blocks, comments, or any extra text:
+
+- outline: object array
+  - first_line: integer
+
+Example:
+{
+  "outline": [
+    {
+      "first_line": 3
+    }
+  ]
+}`,
+  );
+});
+
 Deno.test("generateInstructions lists the fields of a nullable object", () => {
   // A nullable object is the object unioned with null, so the union has to be
   // unwrapped before the fields are read.

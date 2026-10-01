@@ -17,6 +17,7 @@ export interface CallStructuredOptions<T extends z.ZodObject<z.ZodRawShape>> {
   input: string;
   models: string[];
   schema: T;
+  includeExample?: boolean;
 }
 
 /** Call the model for a structured output, delivering a prompt as each call
@@ -30,6 +31,7 @@ export async function callStructured<T extends z.ZodObject<z.ZodRawShape>>(
     options.schema,
     options.models,
     {
+      includeExample: options.includeExample,
       onPrompt: (text) => {
         options.onEvent({ type: "prompt", text });
       },

@@ -1,7 +1,7 @@
 import { assertEquals } from "@std/assert";
 import { PinnedVFS } from "@/vfs/pin.ts";
 import { createFile } from "@/vfs/testing/helpers.ts";
-import { applyMarks, type ProposedMarks } from "./mark.ts";
+import { applyMarks, type ProposedMarks, ProposedMarksSchema } from "./mark.ts";
 
 const PROVENANCE = { runId: "run-1", unitId: "mechanics" };
 
@@ -40,7 +40,9 @@ Deno.test("applyMarks -- failed spans keep an error", async () => {
   const { vfs, versionId } = await createFile("essay.txt", "hello world");
   const pinned = new PinnedVFS(vfs, { path: "essay.txt", versionId });
   const proposed: ProposedMarks = {
-    marks: [{ selected_text: "brave", comment: "ghost span" }],
+    marks: [
+      { selected_text: "brave", comment: "ghost span", label: "grammar" },
+    ],
   };
 
   const attempts = await applyMarks(pinned, proposed, [], PROVENANCE);
@@ -63,4 +65,14 @@ Deno.test("applyMarks -- rejects labels outside the allowed set", async () => {
     attempts[0].error,
     'label "tone" is not allowed; use one of: grammar',
   );
+});
+
+Deno.test("applyMarks -- every mark carries a label", () => {
+  // A mark with no label would apply without the aspect check and render
+  // without a badge, so the schema requires one.
+  const parsed = ProposedMarksSchema.safeParse({
+    marks: [{ selected_text: "hello", comment: "no label" }],
+  });
+
+  assertEquals(parsed.success, false);
 });

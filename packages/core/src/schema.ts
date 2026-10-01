@@ -234,7 +234,10 @@ function getExampleValue(prop: z.core.$ZodType): JsonValue | undefined {
 
 function buildExample(
   schema: z.ZodObject<z.ZodRawShape>,
-): Record<string, JsonValue> {
+): Record<string, JsonValue> | undefined {
+  // A root example covers the whole value, including nested shapes.
+  const root = getExampleValue(schema);
+  if (root !== undefined && isPlainObject(root)) return root;
   const example: Record<string, JsonValue> = {};
   const shape = schema.shape;
   for (const key of Object.keys(shape)) {
@@ -244,7 +247,11 @@ function buildExample(
       example[key] = val;
     }
   }
-  return example;
+  return Object.keys(example).length > 0 ? example : undefined;
+}
+
+function isPlainObject(value: JsonValue): value is Record<string, JsonValue> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 export function generateInstructions(
@@ -269,7 +276,7 @@ export function generateInstructions(
 
   if (options?.includeExample) {
     const example = buildExample(schema);
-    if (Object.keys(example).length > 0) {
+    if (example) {
       lines.push("", "Example:", JSON.stringify(example, null, 2));
     }
   }

@@ -15,11 +15,17 @@ export const MarkProposalSchema = z.object({
     .string()
     .describe(
       "The exact text span to mark, copied verbatim from the source text.",
-    ),
+    )
+    .meta({
+      example: "the second sentence of paragraph three, exactly as written",
+    }),
   comment: z
     .string()
-    .describe("Concise, actionable comment attached to the mark."),
-  label: z.string().optional().describe("One of the allowed labels."),
+    .describe("Concise, actionable comment attached to the mark.")
+    .meta({ example: "This restates the thesis instead of advancing it." }),
+  label: z
+    .string()
+    .describe("Which aspect this mark is about. Use the allowed labels."),
   line_hint: z
     .number()
     .int()
@@ -30,7 +36,15 @@ export const MarkProposalSchema = z.object({
 export type MarkProposal = z.infer<typeof MarkProposalSchema>;
 
 export const ProposedMarksSchema = z.object({
-  marks: MarkProposalSchema.array(),
+  marks: MarkProposalSchema.array().meta({
+    example: [
+      {
+        selected_text: "the exact span from the essay",
+        comment: "what is wrong with it, and what to do",
+        label: "grammar",
+      },
+    ],
+  }),
 });
 
 export type ProposedMarks = z.infer<typeof ProposedMarksSchema>;
@@ -63,11 +77,7 @@ async function applyMark(
   allowedLabels: readonly string[],
   provenance: MarkProvenance,
 ): Promise<MarkAttempt> {
-  if (
-    mark.label !== undefined &&
-    allowedLabels.length > 0 &&
-    !allowedLabels.includes(mark.label)
-  ) {
+  if (allowedLabels.length > 0 && !allowedLabels.includes(mark.label)) {
     return {
       ...mark,
       marked: false,
@@ -110,6 +120,7 @@ export function createMarkProposeRunner(
         input: composeCallInput(prompts, inputs),
         models: pool.models,
         schema: ProposedMarksSchema,
+        includeExample: true,
       });
       return [artifact("mark.proposals", result.output.marks)];
     },
@@ -134,6 +145,7 @@ export function createMarkRepairRunner(
         input: composeRepairInput(prompts, inputs),
         models: pool.models,
         schema: ProposedMarksSchema,
+        includeExample: true,
       });
       return [artifact("mark.proposals", result.output.marks)];
     },
