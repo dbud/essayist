@@ -1,7 +1,12 @@
 // KV helpers shared by kvctl commands.
 
 import { fileURLToPath } from "node:url";
-import { ConfigStore, KvAdapter, WorkspaceStore } from "@essayist/core";
+import {
+  ConfigStore,
+  KvAdapter,
+  TraceEventStore,
+  WorkspaceStore,
+} from "@essayist/core";
 import type { KvctlGlobals } from "@/globals.ts";
 
 // The local playground KV, also used by the web dev server. Resolved from
@@ -18,6 +23,7 @@ interface KvCtx {
   kv: Deno.Kv;
   workspaceStore: WorkspaceStore;
   config: ConfigStore;
+  traceStore: TraceEventStore;
 }
 
 export function resolveTarget(globals: KvctlGlobals): string {
@@ -39,6 +45,7 @@ export async function withKv<T>(
       kv,
       workspaceStore: new WorkspaceStore(adapter),
       config: new ConfigStore(adapter),
+      traceStore: new TraceEventStore(adapter),
     });
   } finally {
     kv.close();
