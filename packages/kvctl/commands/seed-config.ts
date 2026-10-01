@@ -10,11 +10,7 @@ export const seedConfig = new Command<KvctlGlobals>()
       await config.saveModelPool({
         id: poolId,
         name: "Free pool",
-        models: [
-          "qwen/qwen3.8-27b:free",
-          "poolside/laguna-s-2.1:free",
-          "nvidia/nemotron-3.5-lightning:free",
-        ],
+        models: ["stealth/space-bunny-alpha", "qwen/qwen3.8-27b:free"],
       });
 
       // A shared system prompt; units differentiate through directives.
