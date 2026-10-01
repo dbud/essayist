@@ -19,9 +19,9 @@ import type { PinnedVFS } from "@/vfs/pin.ts";
 import type { MarkProvenance } from "@/vfs/types.ts";
 
 export type ReviewNodeEvent =
-  | { type: "prompt"; text: string; truncated?: boolean }
-  | { type: "reasoning"; text: string; truncated?: boolean }
-  | { type: "output"; output: unknown; truncated?: boolean }
+  | { type: "prompt"; text: string }
+  | { type: "reasoning"; text: string }
+  | { type: "output"; output: unknown }
   | { type: "model_call"; call: PostModelCallPayload }
   | { type: "applied"; attempts: MarkAttempt[] };
 

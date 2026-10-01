@@ -70,11 +70,8 @@ function duration(ms: number): string {
   return `${(ms / 1000).toFixed(1)}s`;
 }
 
-/** Truncated payloads arrive as string prefixes; others as JSON. */
 function pretty(value: unknown): string {
-  return typeof value === "string"
-    ? value
-    : (JSON.stringify(value, null, 2) ?? "");
+  return JSON.stringify(value, null, 2) ?? "";
 }
 
 function TokenUsage({
@@ -116,17 +113,12 @@ function SectionHeader({
   );
 }
 
-function Truncated() {
-  return <span class="badge badge--warning ml-2 self-start">truncated</span>;
-}
-
-function PromptRow({ text, truncated }: { text: string; truncated?: boolean }) {
+function PromptRow({ text }: { text: string }) {
   return (
     <>
       <div class="cell--data">
         <Type size={14} />
         prompt
-        {truncated && <Truncated />}
       </div>
       <div class="cell--data col-span-2 min-w-0 max-h-72 overflow-y-auto break-words">
         <MarkdownView content={text} class="code-wrap min-w-0" />
@@ -135,19 +127,12 @@ function PromptRow({ text, truncated }: { text: string; truncated?: boolean }) {
   );
 }
 
-function ReasoningRow({
-  text,
-  truncated,
-}: {
-  text: string;
-  truncated?: boolean;
-}) {
+function ReasoningRow({ text }: { text: string }) {
   return (
     <>
       <div class="cell--data">
         <Brain size={14} />
         thinking
-        {truncated && <Truncated />}
       </div>
       <div class="cell--data col-span-2 min-w-0 max-h-72 overflow-y-auto break-words">
         <MarkdownView content={text} class="code-wrap min-w-0" />
@@ -156,19 +141,12 @@ function ReasoningRow({
   );
 }
 
-function OutputRow({
-  output,
-  truncated,
-}: {
-  output: unknown;
-  truncated?: boolean;
-}) {
+function OutputRow({ output }: { output: unknown }) {
   return (
     <>
       <div class="cell--data">
         <ArrowRight size={14} />
         output
-        {truncated && <Truncated />}
       </div>
       <div class="cell--data col-span-2 min-w-0 max-h-72 overflow-y-auto break-words">
         <pre class="min-w-0 whitespace-pre-wrap font-mono">
@@ -241,11 +219,11 @@ type NodeEvent = TraceNodeView["events"][number];
 function EventRow({ event }: { event: NodeEvent }) {
   switch (event.type) {
     case "prompt":
-      return <PromptRow text={event.text} truncated={event.truncated} />;
+      return <PromptRow text={event.text} />;
     case "reasoning":
-      return <ReasoningRow text={event.text} truncated={event.truncated} />;
+      return <ReasoningRow text={event.text} />;
     case "output":
-      return <OutputRow output={event.output} truncated={event.truncated} />;
+      return <OutputRow output={event.output} />;
     case "model_call":
       return <ModelCallRow call={event.call} />;
     case "applied":

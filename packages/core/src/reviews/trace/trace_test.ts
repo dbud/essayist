@@ -2,8 +2,6 @@ import { assertEquals } from "@std/assert";
 import type { FlowEvent } from "@/flow/types.ts";
 import { InMemoryAdapter } from "@/persistence/mod.ts";
 import type { ReviewTypes } from "@/reviews/graph.ts";
-import { byteLength } from "@/utils/truncate.ts";
-import { MAX_ENTRY_BYTES } from "./recorder.ts";
 import { TraceEventStore } from "./store.ts";
 import type { TraceEvent } from "./types.ts";
 
@@ -103,8 +101,8 @@ Deno.test("TraceRecorder -- flush is idempotent", async () => {
   assertEquals(trace?.length, 1);
 });
 
-Deno.test("TraceRecorder -- outputs that fit stay structured", async () => {
-  const output = { text: "x".repeat(55_000) };
+Deno.test("TraceRecorder -- an oversized output comes back whole", async () => {
+  const output = { text: "x".repeat(200_000) };
   const { trace } = await recorded([
     {
       type: "custom",
@@ -114,87 +112,50 @@ Deno.test("TraceRecorder -- outputs that fit stay structured", async () => {
   ]);
   const [entry] = trace ?? [];
   if (entry?.type !== "custom" || entry.event.type !== "output") return;
-  assertEquals(entry.event.truncated, undefined);
   assertEquals(entry.event.output, output);
 });
 
-Deno.test("TraceRecorder -- oversized outputs are truncated to a JSON prefix", async () => {
+Deno.test("TraceRecorder -- an oversized prompt comes back whole", async () => {
+  const text = `directive\n${"x".repeat(200_000)}`;
   const { trace } = await recorded([
-    {
-      type: "custom",
-      nodeId: "analyze",
-      event: { type: "output", output: { text: "x".repeat(70_000) } },
-    },
-  ]);
-  const [entry] = trace ?? [];
-  if (entry?.type !== "custom" || entry.event.type !== "output") return;
-  assertEquals(entry.event.truncated, true);
-  const capped = entry.event.output as string;
-  assertEquals(capped.startsWith('{"text":"'), true);
-  assertEquals(byteLength(JSON.stringify(entry)) <= MAX_ENTRY_BYTES, true);
-});
-
-Deno.test("TraceRecorder -- escape-heavy outputs stay under the cap", async () => {
-  const { trace } = await recorded([
-    {
-      type: "custom",
-      nodeId: "analyze",
-      // Newlines and quotes double under JSON escaping, so a raw
-      // budget of the full text would still overflow once serialized.
-      event: { type: "output", output: { text: '\n"'.repeat(35_000) } },
-    },
-  ]);
-  const [entry] = trace ?? [];
-  if (entry?.type !== "custom" || entry.event.type !== "output") return;
-  assertEquals(entry.event.truncated, true);
-  assertEquals(byteLength(JSON.stringify(entry)) <= MAX_ENTRY_BYTES, true);
-});
-
-Deno.test("TraceRecorder -- escape-heavy prompts stay under the cap", async () => {
-  const { trace } = await recorded([
-    {
-      type: "custom",
-      nodeId: "analyze",
-      event: { type: "prompt", text: '\n"'.repeat(35_000) },
-    },
+    { type: "custom", nodeId: "analyze", event: { type: "prompt", text } },
   ]);
   const [entry] = trace ?? [];
   if (entry?.type !== "custom" || entry.event.type !== "prompt") return;
-  assertEquals(entry.event.truncated, true);
-  assertEquals(byteLength(JSON.stringify(entry)) <= MAX_ENTRY_BYTES, true);
+  assertEquals(entry.event.text, text);
 });
 
-Deno.test("TraceRecorder -- oversized prompts keep their head", async () => {
+Deno.test("TraceRecorder -- oversized reasoning comes back whole", async () => {
+  const text = `${"x".repeat(200_000)}\nfinal judgement`;
   const { trace } = await recorded([
-    {
-      type: "custom",
-      nodeId: "analyze",
-      event: { type: "prompt", text: `directive\n${"x".repeat(70_000)}` },
-    },
-  ]);
-  const [entry] = trace ?? [];
-  if (entry?.type !== "custom" || entry.event.type !== "prompt") return;
-  assertEquals(entry.event.truncated, true);
-  assertEquals(entry.event.text.startsWith("directive\n"), true);
-  assertEquals(byteLength(JSON.stringify(entry)) <= MAX_ENTRY_BYTES, true);
-});
-
-Deno.test("TraceRecorder -- oversized reasoning keeps its tail", async () => {
-  const { trace } = await recorded([
-    {
-      type: "custom",
-      nodeId: "analyze",
-      event: {
-        type: "reasoning",
-        text: `${"x".repeat(70_000)}\nfinal judgement`,
-      },
-    },
+    { type: "custom", nodeId: "analyze", event: { type: "reasoning", text } },
   ]);
   const [entry] = trace ?? [];
   if (entry?.type !== "custom" || entry.event.type !== "reasoning") return;
-  assertEquals(entry.event.truncated, true);
-  assertEquals(entry.event.text.endsWith("\nfinal judgement"), true);
-  assertEquals(byteLength(JSON.stringify(entry)) <= MAX_ENTRY_BYTES, true);
+  assertEquals(entry.event.text, text);
+});
+
+Deno.test("TraceRecorder -- escape-heavy content comes back whole", async () => {
+  // Newlines and quotes expand when serialized, so a chunk budget taken on
+  // raw bytes would be too generous.
+  const text = '\n"'.repeat(70_000);
+  const { trace } = await recorded([
+    { type: "custom", nodeId: "analyze", event: { type: "prompt", text } },
+  ]);
+  const [entry] = trace ?? [];
+  if (entry?.type !== "custom" || entry.event.type !== "prompt") return;
+  assertEquals(entry.event.text, text);
+});
+
+Deno.test("TraceRecorder -- a value spanning many chunks reassembles", async () => {
+  const text = "y".repeat(2_000_000);
+  const { trace } = await recorded([
+    { type: "custom", nodeId: "analyze", event: { type: "reasoning", text } },
+  ]);
+  const [entry] = trace ?? [];
+  if (entry?.type !== "custom" || entry.event.type !== "reasoning") return;
+  assertEquals(entry.event.text.length, text.length);
+  assertEquals(entry.event.text === text, true);
 });
 
 Deno.test("TraceEventStore -- get returns undefined for an unknown run", async () => {

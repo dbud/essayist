@@ -1,4 +1,5 @@
 import type { PersistenceAdapter } from "@/persistence/mod.ts";
+import { ChunkedValueStore } from "@/persistence/value_store.ts";
 import { ScopedTraceRecorder } from "./recorder.ts";
 import type {
   TraceEvent,
@@ -11,12 +12,12 @@ import type {
 //   ["review_traces", wsId, runId, "000000"] -> TraceEvent
 const TRACES = "review_traces";
 
-/** Persist a KV entry per event. */
+/** Persist a KV entry per event, split when it does not fit. */
 export class TraceEventStore implements TraceStore {
-  #adapter: PersistenceAdapter;
+  #values: ChunkedValueStore<TraceEvent>;
 
   constructor(adapter: PersistenceAdapter) {
-    this.#adapter = adapter;
+    this.#values = new ChunkedValueStore<TraceEvent>(adapter);
   }
 
   async append({
@@ -24,7 +25,7 @@ export class TraceEventStore implements TraceStore {
     runId,
     event,
   }: TraceScope & { event: TraceEvent }): Promise<void> {
-    await this.#adapter.set(this.#eventKey(wsId, runId, event.seq), event);
+    await this.#values.put(this.#eventKey(wsId, runId, event.seq), event);
   }
 
   async end(_scope: TraceScope): Promise<void> {
@@ -32,13 +33,9 @@ export class TraceEventStore implements TraceStore {
   }
 
   async get({ wsId, runId }: TraceScope) {
-    const { entries } = await this.#adapter.list<TraceEvent>([
-      TRACES,
-      wsId,
-      runId,
-    ]);
-    if (entries.length === 0) return undefined;
-    return entries.map((e) => e.value);
+    const stored = await this.#values.list([TRACES, wsId, runId]);
+    if (stored.length === 0) return undefined;
+    return stored.map((entry) => entry.value);
   }
 
   recorder(
