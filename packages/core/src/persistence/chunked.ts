@@ -27,11 +27,11 @@ export interface ChunkHeader {
   payload: Uint8Array;
 }
 
-export interface ChunkPlan {
-  /** The head takes the base key, the tail takes "c1", "c2" and so on. */
-  keys: Key[];
-  values: Uint8Array[];
-  nChunks: number;
+/** One chunk of a value: the bytes to store, and the key part to store them
+ * under. The head takes the base key, the tail takes "c1", "c2" and so on. */
+export interface Chunk {
+  key: Key;
+  value: Uint8Array;
 }
 
 export function frameChunk(payload: Uint8Array, nChunks: number): Uint8Array {
@@ -57,16 +57,17 @@ export function unframeChunk(value: unknown): ChunkHeader | null {
 export function planChunks(
   payload: Uint8Array,
   maxPayload: number = CHUNK_PAYLOAD_BYTES,
-): ChunkPlan {
+): Chunk[] {
   const nChunks = Math.max(1, Math.ceil(payload.length / maxPayload));
-  const keys: Key[] = [];
-  const values: Uint8Array[] = [];
+  const chunks: Chunk[] = [];
   for (let i = 0; i < nChunks; i++) {
     const slice = payload.subarray(i * maxPayload, (i + 1) * maxPayload);
-    keys.push(i === 0 ? [] : [chunkKeyPart(i, nChunks)]);
-    values.push(frameChunk(slice, nChunks));
+    chunks.push({
+      key: i === 0 ? [] : [chunkKeyPart(i, nChunks)],
+      value: frameChunk(slice, nChunks),
+    });
   }
-  return { keys, values, nChunks };
+  return chunks;
 }
 
 /** The suffix for a chunk, padded so that chunks sort in order. The width

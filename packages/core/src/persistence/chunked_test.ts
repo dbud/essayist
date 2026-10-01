@@ -18,11 +18,11 @@ async function writePlan(
   base: Key,
   payload: Uint8Array,
 ): Promise<number> {
-  const { keys, values, nChunks } = planChunks(payload);
-  for (let i = 0; i < keys.length; i++) {
-    await adapter.set([...base, ...keys[i]], values[i]);
+  const chunks = planChunks(payload);
+  for (const chunk of chunks) {
+    await adapter.set([...base, ...chunk.key], chunk.value);
   }
-  return nChunks;
+  return chunks.length;
 }
 
 const bytes = (n: number, fill = 65): Uint8Array =>
@@ -63,29 +63,32 @@ Deno.test("unframeChunk -- a zero chunk count is not a header", () => {
 });
 
 Deno.test("planChunks -- a payload at the limit is a single chunk", () => {
-  const { keys, nChunks } = planChunks(bytes(CHUNK_PAYLOAD_BYTES));
-  assertEquals(nChunks, 1);
-  assertEquals(keys, [[]]);
+  const chunks = planChunks(bytes(CHUNK_PAYLOAD_BYTES));
+  assertEquals(chunks.length, 1);
+  assertEquals(chunks[0].key, []);
 });
 
 Deno.test("planChunks -- one byte over the limit splits in two", () => {
-  const { keys, values, nChunks } = planChunks(bytes(CHUNK_PAYLOAD_BYTES + 1));
-  assertEquals(nChunks, 2);
-  assertEquals(keys, [[], ["c1"]]);
-  assertEquals(values[1].length, 7);
-  assertEquals(unframeChunk(values[1])?.nChunks, 2);
+  const chunks = planChunks(bytes(CHUNK_PAYLOAD_BYTES + 1));
+  assertEquals(chunks.length, 2);
+  assertEquals(
+    chunks.map((c) => c.key),
+    [[], ["c1"]],
+  );
+  assertEquals(chunks[1].value.length, 7);
+  assertEquals(unframeChunk(chunks[1].value)?.nChunks, 2);
 });
 
 Deno.test("planChunks -- every chunk is a full KV value at most", () => {
-  const { values } = planChunks(bytes(CHUNK_PAYLOAD_BYTES * 3 + 17));
-  for (const value of values) assertLessOrEqual(value.length, MAX_VALUE_BYTES);
+  for (const chunk of planChunks(bytes(CHUNK_PAYLOAD_BYTES * 3 + 17))) {
+    assertLessOrEqual(chunk.value.length, MAX_VALUE_BYTES);
+  }
 });
 
 Deno.test("planChunks -- an empty payload still yields one chunk", () => {
-  const { keys, values, nChunks } = planChunks(new Uint8Array(0));
-  assertEquals(nChunks, 1);
-  assertEquals(keys.length, 1);
-  assertEquals(values[0].length, 6);
+  const chunks = planChunks(new Uint8Array(0));
+  assertEquals(chunks.length, 1);
+  assertEquals(chunks[0].value.length, 6);
 });
 
 // Past nine chunks the keys need a second digit, and readChunked has to work
@@ -95,7 +98,7 @@ Deno.test("readChunked -- keys widen past nine chunks", async () => {
   const payload = bytes(CHUNK_PAYLOAD_BYTES * 9 + 1, 0x47);
   const nChunks = await writePlan(a, ["v", "wide-keys"], payload);
   assertEquals(nChunks, 10);
-  assertEquals(planChunks(payload).keys[1], ["c01"]);
+  assertEquals(planChunks(payload)[1].key, ["c01"]);
   const read = await readChunked(a, ["v", "wide-keys"]);
   assertEquals(read?.nReceived, 10);
   assertEquals(text(read?.payload ?? new Uint8Array()), text(payload));
@@ -149,10 +152,10 @@ Deno.test("readChunked -- a value this layer did not write comes back as stored"
 
 Deno.test("readChunked -- a missing chunk is reported, never silently short", async () => {
   const a = new InMemoryAdapter();
-  const { keys, values } = planChunks(bytes(CHUNK_PAYLOAD_BYTES * 3, 0x64));
-  await a.set(["v", "gap"], values[0]);
+  const chunks = planChunks(bytes(CHUNK_PAYLOAD_BYTES * 3, 0x64));
+  await a.set(["v", "gap"], chunks[0].value);
   // The middle chunk is missing and the tail is present.
-  await a.set(["v", "gap", ...keys[2]], values[2]);
+  await a.set(["v", "gap", ...chunks[2].key], chunks[2].value);
   const read = await readChunked(a, ["v", "gap"]);
   assertEquals(read?.nChunks, 3);
   assertEquals(read?.nReceived, 2);
