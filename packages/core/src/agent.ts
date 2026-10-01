@@ -10,7 +10,6 @@ import type {
 import { HooksManager, OpenRouter, stepCountIs } from "@openrouter/agent";
 import { mapNotNullish } from "@std/collections";
 import type { z } from "zod";
-import { logAgentCall } from "@/agent_logger.ts";
 import { logger } from "@/logger.ts";
 import { generateInstructions, stripMarkdownFences } from "@/schema.ts";
 import type { ToolPrompt } from "@/tools/index.ts";
@@ -175,7 +174,6 @@ export class Agent {
       tools,
       stopWhen: stepCountIs(maxRounds),
     };
-    logAgentCall(request);
 
     return this.#client.callModel(request, RETRY_OPTIONS);
   }
