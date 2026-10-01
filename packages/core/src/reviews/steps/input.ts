@@ -92,7 +92,8 @@ function renderAnalysis(analysis: Analysis): string {
       listOf(
         "Outline:",
         analysis.outline.map(
-          (entry) => `line ${entry.first_line}: ${entry.gist}`,
+          (entry) =>
+            `lines ${entry.first_line}-${entry.last_line}: ${entry.gist}`,
         ),
       ),
       listOf("Strengths:", analysis.strengths),

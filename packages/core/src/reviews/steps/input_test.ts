@@ -38,10 +38,24 @@ function inputsOf(
 const ANALYSIS = {
   thesis: "Drafts are raw material.",
   claims: [],
-  outline: [],
+  outline: [
+    { first_line: 3, last_line: 11, gist: "Sets up drafts as raw material." },
+  ],
   strengths: [],
   risks: [],
 };
+
+Deno.test("composeCallInput -- renders an outline section as a line range", () => {
+  const input = composeCallInput(
+    PROMPTS,
+    inputsOf({ type: "analysis", data: ANALYSIS, producedBy: "analyze" }),
+  );
+
+  assertEquals(
+    input.includes("lines 3-11: Sets up drafts as raw material."),
+    true,
+  );
+});
 
 Deno.test("composeCallInput -- prompts first, artifacts in order, essay last", () => {
   const input = composeCallInput(
