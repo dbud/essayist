@@ -148,7 +148,9 @@ export class FlowRunner<T extends FlowTypes> {
     const context: NodeContext<T, NodeKind<T>> = {
       payload,
       inputs: view(inputs),
-      emit: (event) => eventQueue.push(event),
+      emit: (event) => {
+        eventQueue.push(event);
+      },
       artifact: (type, data) => ({
         type,
         data,

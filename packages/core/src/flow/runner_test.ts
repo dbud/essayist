@@ -47,6 +47,32 @@ const runners: NodeRunners<TestTypes> = {
   },
 };
 
+const emitted: unknown[] = [];
+const emitRunners: NodeRunners<TestTypes> = {
+  ...runners,
+  produce: {
+    // Captures emit's return value, so a leak shows up as a non-void value.
+    execute(_, { emit }) {
+      emitted.push(emit({ kind: "produced", content: "leaked" }));
+      return Promise.resolve([]);
+    },
+  },
+};
+
+Deno.test("FlowRunner -- emit returns undefined, so callers cannot leak a value", async () => {
+  const flow = new FlowRunner<TestTypes>({ runners: emitRunners });
+
+  await flow.run({
+    nodes: [
+      { id: "s", kind: "source", dependsOn: [], payload: { text: "x" } },
+      { id: "p", kind: "produce", dependsOn: ["s"], payload: { token: "t" } },
+    ],
+  });
+
+  // A hook that validates its handler's return value rejects a number here.
+  assertEquals(emitted, [undefined]);
+});
+
 Deno.test("FlowRunner -- commits artifacts along a chain", async () => {
   const events: FlowEvent<TestTypes>[] = [];
   const flow = new FlowRunner<TestTypes>({

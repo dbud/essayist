@@ -30,9 +30,15 @@ export async function callStructured<T extends z.ZodObject<z.ZodRawShape>>(
     options.schema,
     options.models,
     {
-      onPrompt: (text) => options.onEvent({ type: "prompt", text }),
-      onModelCall: (call) => options.onEvent({ type: "model_call", call }),
-      onRepair: (repair) => options.onEvent({ type: "repair", ...repair }),
+      onPrompt: (text) => {
+        options.onEvent({ type: "prompt", text });
+      },
+      onModelCall: (call) => {
+        options.onEvent({ type: "model_call", call });
+      },
+      onRepair: (repair) => {
+        options.onEvent({ type: "repair", ...repair });
+      },
     },
   );
   for (const text of result.reasoning) {
