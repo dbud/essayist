@@ -1,31 +1,32 @@
 import type { ReviewProgress } from "@essayist/core";
-import { ChevronDown, Highlighter, RotateCcw, X } from "lucide-preact";
+import { Highlighter } from "lucide-preact";
+// import { ChevronDown, Highlighter, RotateCcw, X } from "lucide-preact";
 import { useMemo } from "preact/hooks";
-import Dropdown, {
-  DropdownItem,
-  DropdownMenu,
-} from "@/components/ui/Dropdown.tsx";
+// import Dropdown, {
+//   DropdownItem,
+//   DropdownMenu,
+// } from "@/components/ui/Dropdown.tsx";
 import WaveBars from "@/components/ui/WaveBars.tsx";
 import type { FileKey } from "@/signals/file.ts";
 import { getMarks } from "@/signals/marks.ts";
-import { replayParams, setReplayParams } from "@/signals/replay.ts";
+// import { replayParams, setReplayParams } from "@/signals/replay.ts";
 import { getReview } from "@/signals/review.ts";
 import { showToast } from "@/signals/toast.ts";
 import { delayedRise } from "@/utils/delayedRise.ts";
 
-const SPEEDS = [0.25, 0.5, 1, 2, 4, 8];
+// Replay controls stay parked until the replay feature returns.
 
-type Speed = (typeof SPEEDS)[number];
-
-function speedLabel(speed: Speed): string {
-  return `${speed}x`;
-}
+// const SPEEDS = [0.25, 0.5, 1, 2, 4, 8];
+//
+// type Speed = (typeof SPEEDS)[number];
+//
+// function speedLabel(speed: Speed): string {
+//   return `${speed}x`;
+// }
 
 function phaseLabel(progress: ReviewProgress | null): string {
   switch (progress?.phase) {
-    case "reading":
-      return "Reading";
-    case "annotating":
+    case "marking":
       return progress.notes > 0 ? `Marks · ${progress.notes}` : "Marking";
     case "summarizing":
       return "Writing up";
@@ -38,7 +39,7 @@ export default function SidenoteControls({ wsId, path, versionId }: FileKey) {
   const review = getReview(wsId, path);
   const { loading, error, progress } = review;
   const { resolving } = getMarks(wsId, path, versionId);
-  const replay = replayParams.value;
+  // const replay = replayParams.value;
 
   // Bars only rise when marks resolution outlives the delay, so quick
   // re-resolutions after typing never flash the pane.
@@ -63,14 +64,14 @@ export default function SidenoteControls({ wsId, path, versionId }: FileKey) {
     return runAndToast(() => review.submit());
   }
 
-  function onReplay() {
-    if (!replay) return;
-    return runAndToast(() =>
-      review.replayRun(replay.runId, {
-        speed: () => replayParams.value?.speed ?? 1,
-      }),
-    );
-  }
+  // function onReplay() {
+  //   if (!replay) return;
+  //   return runAndToast(() =>
+  //     review.replayRun(replay.runId, {
+  //       speed: () => replayParams.value?.speed ?? 1,
+  //     }),
+  //   );
+  // }
 
   // Snapshot views have no review controls
   // TODO -- rework when sidenotes filters arrive
@@ -80,6 +81,13 @@ export default function SidenoteControls({ wsId, path, versionId }: FileKey) {
     <div class="relative flex min-w-72 flex-1 items-center stack stack--row">
       {loading.value ? (
         <div class="cell--data flex-1">{phaseLabel(progress.value)}</div>
+      ) : (
+        <button type="button" class="btn cell--accent" onClick={onReview}>
+          <Highlighter size={14} />
+          Review
+        </button>
+      )}
+      {/* Replay controls, parked until the replay feature returns:
       ) : replay ? (
         <button type="button" class="btn cell--accent" onClick={onReplay}>
           <RotateCcw size={14} />
@@ -129,6 +137,7 @@ export default function SidenoteControls({ wsId, path, versionId }: FileKey) {
           </button>
         </>
       )}
+      */}
       <div class="flex-1 self-stretch bg-surface" />
       <WaveBars
         fill

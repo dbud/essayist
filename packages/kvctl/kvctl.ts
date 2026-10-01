@@ -15,6 +15,7 @@ import { grantRole } from "@/commands/grant-role.ts";
 import { listUsers } from "@/commands/list-users.ts";
 import { seedConfig } from "@/commands/seed-config.ts";
 import { sync } from "@/commands/sync.ts";
+import { trace } from "@/commands/trace.ts";
 import { wipe } from "@/commands/wipe.ts";
 
 await new Command()
@@ -30,6 +31,7 @@ await new Command()
   })
   .command("wipe", wipe)
   .command("explore", explore)
+  .command("trace", trace)
   .command("grant-role", grantRole)
   .command("list-users", listUsers)
   .command("seed-config", seedConfig)

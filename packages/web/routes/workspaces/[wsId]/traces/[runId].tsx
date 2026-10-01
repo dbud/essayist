@@ -1,16 +1,25 @@
 import type {
+  MarkAttempt,
+  PostModelCallPayload,
   ReviewRun,
   ReviewRunStatus,
-  TracedReviewEvent,
+  TraceEvent,
+  TraceNodeView,
 } from "@essayist/core";
+import { groupTraceNodes } from "@essayist/core";
 import type { PageProps } from "fresh";
 import { page } from "fresh";
 import {
+  AlertTriangle,
   ArrowDown,
   ArrowRight,
   ArrowUp,
+  Brain,
+  Cpu,
+  Milestone,
   MoveLeft,
   RotateCcw,
+  Type,
   Wrench,
 } from "lucide-preact";
 import type { ComponentChildren } from "preact";
@@ -21,7 +30,7 @@ import { reviewStore, traceStore, workspaceStore } from "@/store.ts";
 
 interface TracePageData {
   run: ReviewRun;
-  trace: TracedReviewEvent[];
+  trace: TraceEvent[];
 }
 
 export const handler = define.handlers({
@@ -62,64 +71,8 @@ function duration(ms: number): string {
   return `${(ms / 1000).toFixed(1)}s`;
 }
 
-/** Offsets and short durations: ms below a second, seconds above. */
-function formatElapsed(ms: number): string {
-  return ms < 1000 ? `${ms}ms` : `${(ms / 1000).toFixed(1)}s`;
-}
-
-/** Truncated payloads arrive as string prefixes; others render as JSON. */
 function pretty(value: unknown): string {
-  return typeof value === "string"
-    ? value
-    : (JSON.stringify(value, null, 2) ?? "");
-}
-
-interface RoundGroup {
-  round: number;
-  start: number;
-  end?: number;
-  events: TracedReviewEvent[];
-}
-
-/**
- * Group the trace by round. Tool outputs arrive after their round's
- * round_end, so they are filed by the round recorded on the event.
- */
-function groupRounds(trace: TracedReviewEvent[]) {
-  const input = trace.find((e) => e.type === "input");
-  const rounds: RoundGroup[] = [];
-  const orphans: TracedReviewEvent[] = [];
-  let current: RoundGroup | undefined;
-  for (const event of trace) {
-    if (event.type === "round_start") {
-      current = { round: event.round, start: event.at, events: [] };
-      rounds.push(current);
-    } else if (event.type === "round_end") {
-      if (current) current.end = event.at;
-    } else if (event.type === "input") {
-      // Rendered separately above the rounds.
-    } else if ("round" in event && event.round !== undefined) {
-      const target = rounds.find((r) => r.round === event.round);
-      if (target) target.events.push(event);
-      else orphans.push(event);
-    } else {
-      orphans.push(event);
-    }
-  }
-  return { input, rounds, orphans };
-}
-
-function totals(trace: TracedReviewEvent[]) {
-  let inputTokens = 0;
-  let outputTokens = 0;
-  let cost = 0;
-  for (const event of trace) {
-    if (event.type !== "usage") continue;
-    inputTokens += event.usage.inputTokens;
-    outputTokens += event.usage.outputTokens;
-    cost += event.usage.cost ?? 0;
-  }
-  return { inputTokens, outputTokens, cost };
+  return JSON.stringify(value, null, 2) ?? "";
 }
 
 function TokenUsage({
@@ -139,210 +92,258 @@ function TokenUsage({
   );
 }
 
-/** Full-width ink section row inside the trace table. */
+/** Full-width row that opens a section; the tone picks the title style. */
 function SectionHeader({
   title,
   meta,
+  tone = "ink",
 }: {
   title: ComponentChildren;
   meta?: ComponentChildren;
+  /** unit for the red group headers, idle for nodes that made no call. */
+  tone?: "ink" | "unit" | "idle";
 }) {
+  const titleClass = `cell min-w-0 flex-1 ${
+    tone === "unit" ? "cell--accent" : tone === "idle" ? "striped" : "cell--ink"
+  }`;
   return (
     <div class="col-span-3 flex stack">
-      <div class="cell cell--ink min-w-0 flex-1">{title}</div>
+      <div class={titleClass}>{title}</div>
       {meta}
     </div>
   );
 }
 
-type ToolCallEvent = Extract<TracedReviewEvent, { type: "tool_call" }>;
-type ToolOutputEvent = Extract<TracedReviewEvent, { type: "tool_output" }>;
-
-function ReasoningRow({ timing, text }: { timing: number; text: string }) {
+function PromptRow({ text }: { text: string }) {
   return (
     <>
-      <div class="cell--data">{formatElapsed(timing)}</div>
-      <div class="cell--data">thinking</div>
-      <div class="cell--data min-w-0">
-        <div class="max-h-72 overflow-y-auto whitespace-pre-wrap">{text}</div>
+      <div class="cell--data">
+        <Type size={14} />
+        prompt
+      </div>
+      <div class="cell--data col-span-2 min-w-0 max-h-72 overflow-y-auto break-words">
+        <MarkdownView content={text} class="code-wrap min-w-0" />
       </div>
     </>
   );
 }
 
-function ToolCallRow({
-  timing,
-  event,
-}: {
-  timing: number;
-  event: ToolCallEvent;
-}) {
+function ReasoningRow({ text }: { text: string }) {
   return (
     <>
-      <div class="cell--data">{formatElapsed(timing)}</div>
       <div class="cell--data">
-        <Wrench size={14} />
-        {event.name}
-        {event.truncated && (
-          <span class="badge badge--warning ml-2 self-start">truncated</span>
-        )}
+        <Brain size={14} />
+        thinking
       </div>
-      <div class="cell--data min-w-0 break-words">
-        <pre class="whitespace-pre-wrap font-mono">{pretty(event.args)}</pre>
+      <div class="cell--data col-span-2 min-w-0 max-h-72 overflow-y-auto break-words">
+        <MarkdownView content={text} class="code-wrap min-w-0" />
       </div>
     </>
   );
 }
 
-function ToolOutputRow({
-  timing,
-  event,
-}: {
-  timing?: number;
-  event: ToolOutputEvent;
-}) {
+function RepairRow({ raw, error }: { raw: string; error: string }) {
   return (
     <>
       <div class="cell--data">
-        {timing !== undefined && formatElapsed(timing)}
+        <AlertTriangle size={14} />
+        re-asked
       </div>
+      <div class="cell--data col-span-2 min-w-0 max-h-72 overflow-y-auto break-words">
+        <div class="flex flex-col gap-2">
+          <div class="text-xs text-error">{error}</div>
+          <pre class="min-w-0 whitespace-pre-wrap font-mono">{raw}</pre>
+        </div>
+      </div>
+    </>
+  );
+}
+
+function OutputRow({ output }: { output: unknown }) {
+  return (
+    <>
       <div class="cell--data">
         <ArrowRight size={14} />
         output
-        {event.truncated && (
-          <span class="badge badge--warning ml-2 self-start">truncated</span>
-        )}
       </div>
-      <div class="cell--data min-w-0 break-words">
-        <pre class="max-h-72 overflow-y-auto whitespace-pre-wrap font-mono">
-          {pretty(event.output)}
+      <div class="cell--data col-span-2 min-w-0 max-h-72 overflow-y-auto break-words">
+        <pre class="min-w-0 whitespace-pre-wrap font-mono">
+          {pretty(output)}
         </pre>
       </div>
     </>
   );
 }
 
-function MessageRow({ timing, text }: { timing: number; text: string }) {
+function AttemptRow({ attempt }: { attempt: MarkAttempt }) {
+  return (
+    <div class="cell--data col-span-2 min-w-0 max-h-72 overflow-y-auto break-words flex flex-col gap-1">
+      <div class="flex gap-2 items-start">
+        <span
+          class={`badge ${attempt.marked ? "badge--success" : "badge--error"} self-start`}
+        >
+          {attempt.marked ? "placed" : "failed"}
+        </span>
+        {attempt.label && <span class="self-start">{attempt.label}</span>}
+      </div>
+      <div class="whitespace-pre-wrap break-words">{attempt.selected_text}</div>
+      <MarkdownView content={attempt.comment} class="code-wrap min-w-0" />
+      {attempt.error && (
+        <div class="text-[0.75rem] text-error">{attempt.error}</div>
+      )}
+    </div>
+  );
+}
+
+function AppliedRow({ attempts }: { attempts: MarkAttempt[] }) {
   return (
     <>
-      <div class="cell--data">{formatElapsed(timing)}</div>
-      <div class="cell--data">message</div>
-      <div class="cell--data min-w-0 break-words">
-        <MarkdownView content={text} />
+      <div class="cell--data">
+        <Wrench size={14} />
+        applied
+      </div>
+      <div class="col-span-2 min-w-0 flex flex-col stack">
+        {attempts.map((attempt) => (
+          <AttemptRow
+            key={attempt.mark_id ?? attempt.selected_text}
+            attempt={attempt}
+          />
+        ))}
       </div>
     </>
   );
 }
 
-function ErrorRow({ timing, error }: { timing?: number; error: string }) {
+function ModelCallRow({ call }: { call: PostModelCallPayload }) {
+  const cost = call.usage?.cost;
   return (
     <>
       <div class="cell--data">
-        <span class="badge badge--error self-start">error</span>
+        <Cpu size={14} />
+        model
       </div>
-      <div class="cell--data">
-        {timing !== undefined && formatElapsed(timing)}
+      <div class="cell--data col-span-2 min-w-0 break-words gap-2">
+        <span>{call.model}</span>
+        <span>{call.turnType}</span>
+        <span>{(call.durationMs / 1000).toFixed(1)}s</span>
+        <span>{cost !== undefined && cost > 0 && `$${cost.toFixed(4)}`}</span>
       </div>
-      <div class="cell--data min-w-0 break-words">{error}</div>
     </>
   );
 }
 
-function RoundRows({ group }: { group: RoundGroup }) {
-  const callAt = new Map<string, number>();
-  for (const event of group.events) {
-    if (event.type === "tool_call") callAt.set(event.callId, event.at);
+type NodeEvent = TraceNodeView["events"][number];
+
+function EventRow({ event }: { event: NodeEvent }) {
+  switch (event.type) {
+    case "prompt":
+      return <PromptRow text={event.text} />;
+    case "reasoning":
+      return <ReasoningRow text={event.text} />;
+    case "output":
+      return <OutputRow output={event.output} />;
+    case "repair":
+      return <RepairRow raw={event.raw} error={event.error} />;
+    case "model_call":
+      return <ModelCallRow call={event.call} />;
+    case "applied":
+      // A repair round with nothing to place reports an empty attempt
+      // list; there is nothing to show.
+      return event.attempts.length > 0 ? (
+        <AppliedRow attempts={event.attempts} />
+      ) : null;
   }
-  const rows: ComponentChildren[] = [];
-  // Model-side spans (reasoning, call args, message) chain from the
-  // previous item's completion (or round start) and sum to the round
-  // total; tool outputs carry their execution duration (output.at -
-  // call.at).
-  let prevAt = group.start;
-  for (const event of group.events) {
-    if (event.type === "usage") continue;
-    switch (event.type) {
-      case "reasoning":
-        rows.push(
-          <ReasoningRow
-            key={event.seq}
-            timing={event.at - prevAt}
-            text={event.text}
-          />,
-        );
-        prevAt = event.at;
-        break;
-      case "tool_call":
-        rows.push(
-          <ToolCallRow
-            key={event.seq}
-            timing={event.at - prevAt}
-            event={event}
-          />,
-        );
-        prevAt = event.at;
-        break;
-      case "tool_output": {
-        const callStart = callAt.get(event.callId);
-        rows.push(
-          <ToolOutputRow
-            key={event.seq}
-            timing={callStart === undefined ? undefined : event.at - callStart}
-            event={event}
-          />,
-        );
-        break;
-      }
-      case "message":
-        rows.push(
-          <MessageRow
-            key={event.seq}
-            timing={event.at - prevAt}
-            text={event.text}
-          />,
-        );
-        prevAt = event.at;
-        break;
-      case "error":
-        rows.push(
-          <ErrorRow
-            key={event.seq}
-            timing={event.at - prevAt}
-            error={event.error}
-          />,
-        );
-        prevAt = event.at;
-        break;
-    }
-  }
-  return rows;
 }
 
-function RoundSection({ group }: { group: RoundGroup }) {
-  const usage = totals(group.events);
+/** The unit a node belongs to: the id prefix before the first dot. */
+function unitOf(nodeId: string): string {
+  const dot = nodeId.indexOf(".");
+  return dot === -1 ? nodeId : nodeId.slice(0, dot);
+}
+
+function NodeSection({ node }: { node: TraceNodeView }) {
+  let inputTokens = 0;
+  let outputTokens = 0;
+  let cost = 0;
+  for (const event of node.events) {
+    if (event.type !== "model_call" || !event.call.usage) continue;
+    inputTokens += event.call.usage.inputTokens;
+    outputTokens += event.call.usage.outputTokens;
+    cost += event.call.usage.cost ?? 0;
+  }
+  const done = node.status === "completed" || node.status === "failed";
+  // A node that made no model call (source, gate, collect, an idle
+  // repair) has no work to show, so it reads as a muted stripe.
+  const idle = node.events.every((event) => event.type !== "model_call");
+  const metaCell = `cell shrink-0 ${idle ? "striped" : "cell--ink"}`;
   return (
     <>
       <SectionHeader
-        title={`Round ${group.round}`}
+        title={
+          <span class="flex gap-2">
+            <Milestone size={14} />
+            {node.nodeId}
+          </span>
+        }
+        tone={idle ? "idle" : "ink"}
         meta={
           <>
-            {group.end !== undefined && (
-              <div class="cell cell--ink shrink-0">
-                {duration(group.end - group.start)}
+            {node.status === "failed" && (
+              <div class={metaCell}>
+                <span class="badge badge--error self-start">failed</span>
               </div>
             )}
-            <div class="cell cell--ink shrink-0">
-              <TokenUsage
-                inputTokens={usage.inputTokens}
-                outputTokens={usage.outputTokens}
-              />
-            </div>
+            {node.status === "skipped" && (
+              <div class={metaCell}>
+                <span class="badge badge--warning self-start">skipped</span>
+              </div>
+            )}
+            {done &&
+              node.startedAt !== undefined &&
+              node.completedAt !== undefined && (
+                <div class={metaCell}>
+                  {duration(node.completedAt - node.startedAt)}
+                </div>
+              )}
+            {(inputTokens > 0 || outputTokens > 0) && (
+              <div class={metaCell}>
+                <TokenUsage
+                  inputTokens={inputTokens}
+                  outputTokens={outputTokens}
+                />
+                {cost > 0 && ` · $${cost.toFixed(4)}`}
+              </div>
+            )}
           </>
         }
       />
-      {RoundRows({ group })}
+      {node.status === "failed" && node.error && (
+        <div class="cell--data col-span-3 min-w-0 break-words">
+          {node.error}
+        </div>
+      )}
+      {node.status === "skipped" && node.reason && (
+        <div class="cell--data col-span-3 min-w-0 break-words">
+          {node.reason}
+        </div>
+      )}
+      {node.events.map((event, i) => (
+        <EventRow key={i} event={event} />
+      ))}
     </>
   );
+}
+
+/** Nodes sharing a unit, in first-start order. */
+function groupUnits(nodes: TraceNodeView[]) {
+  const byUnit = new Map<string, TraceNodeView[]>();
+  for (const node of nodes) {
+    const unit = unitOf(node.nodeId);
+    const group = byUnit.get(unit);
+    if (group) group.push(node);
+    else byUnit.set(unit, [node]);
+  }
+  return [...byUnit].map(([unit, group]) => ({ unit, nodes: group }));
 }
 
 export default function ReviewTracePage({
@@ -350,8 +351,8 @@ export default function ReviewTracePage({
   state,
 }: PageProps<TracePageData, State>) {
   const { run, trace } = data;
-  const { input, rounds, orphans } = groupRounds(trace);
-  const t = totals(trace);
+  const view = groupTraceNodes(trace);
+  const units = groupUnits(view.nodes);
   return (
     <div class="flex flex-1 min-h-0">
       <main class="flex flex-1 flex-col stack stack--col min-h-0 @container">
@@ -386,10 +387,10 @@ export default function ReviewTracePage({
                 </div>
                 <div class="cell shrink-0">
                   <TokenUsage
-                    inputTokens={t.inputTokens}
-                    outputTokens={t.outputTokens}
+                    inputTokens={view.totals.inputTokens}
+                    outputTokens={view.totals.outputTokens}
                   />
-                  {t.cost > 0 && ` · $${t.cost.toFixed(4)}`}
+                  {view.totals.cost > 0 && ` · $${view.totals.cost.toFixed(4)}`}
                 </div>
               </div>
             </div>
@@ -398,32 +399,29 @@ export default function ReviewTracePage({
         <div class="flex-1 min-h-0 overflow-y-auto bg-surface">
           <div class="content-layout">
             <div class="content-main min-w-0 py-10">
-              <div class="grid grid-cols-[auto_auto_1fr] stack stack--col stack--row">
-                {input && (
-                  <>
-                    <SectionHeader
-                      title="input"
-                      meta={
-                        <div class="cell cell--ink shrink-0">
-                          {input.text.length} chars
-                        </div>
-                      }
-                    />
-                    <div class="cell--data col-span-3 min-w-0">
-                      <div class="whitespace-pre-wrap">{input.text}</div>
+              {view.nodes.length === 0 && view.orphans.length === 0 ? (
+                <div class="cell--data">No trace events recorded.</div>
+              ) : (
+                <div class="grid grid-cols-3 stack stack--col stack--row">
+                  {units.flatMap(({ unit, nodes }) => [
+                    unit !== "content" && (
+                      <SectionHeader
+                        key={`unit-${unit}`}
+                        title={unit}
+                        tone="unit"
+                      />
+                    ),
+                    ...nodes.map((node) => (
+                      <NodeSection key={node.nodeId} node={node} />
+                    )),
+                  ])}
+                  {view.orphans.map((event) => (
+                    <div class="cell--data col-span-3 min-w-0" key={event.seq}>
+                      {pretty(event)}
                     </div>
-                  </>
-                )}
-                {rounds.map((group) => (
-                  <RoundSection key={group.round} group={group} />
-                ))}
-                {orphans.map((event) => (
-                  <ErrorRow
-                    key={event.seq}
-                    error={event.type === "error" ? event.error : pretty(event)}
-                  />
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>

@@ -1,6 +1,6 @@
 export interface MeasureContext {
-  // Viewport rect of the root's offsetParent; positions are reported in this
-  // space (same as offsetTop/offsetLeft).
+  // Viewport rect of the offsetParent of the root; positions are reported in
+  // this space (same as offsetTop/offsetLeft).
   containerRect: DOMRect;
   doc: Document;
 }
@@ -22,8 +22,9 @@ export function hasRect(rect: DOMRect | null): rect is DOMRect {
   return rect !== null && (rect.top !== 0 || rect.height !== 0);
 }
 
-// Last line rect of `el`'s content. getClientRects on the full range, since a
-// collapsed range's rect is zero-height. null if no laid-out content.
+// Last line rect of the content of `el`. getClientRects on the full range,
+// since the rect of a collapsed range is zero-height. null if no laid-out
+// content.
 export function contentEndRect(el: HTMLElement, doc: Document): DOMRect | null {
   const range = doc.createRange();
   range.selectNodeContents(el);

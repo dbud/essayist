@@ -28,9 +28,9 @@ export async function getValidAccessToken(
   const { accessToken, expiresAt } = session.tokens;
   if (expiresAt - Date.now() > REFRESH_BUFFER_MS) return accessToken;
 
-  // Prefer the session's refresh token; fall back to the user-level store
-  // for sessions created without one (Google only returns a refresh token on
-  // the first authorization, not on subsequent sign-ins).
+  // Prefer the refresh token of the session; fall back to the user-level
+  // store for sessions created without a refresh token (Google only returns
+  // a refresh token on the first authorization, not on subsequent sign-ins).
   const refreshToken =
     session.tokens.refreshToken ?? (await getUserRefreshToken(session.userId));
   if (!refreshToken) return accessToken; // can't refresh; let Google reject it

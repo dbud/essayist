@@ -13,8 +13,9 @@ export type SidenoteHeights = Map<string, number>;
 // thread_id -> 1-based ordinal in document order (by mark.offset).
 export type MarkNumbers = Map<string, number>;
 
-// One per MarkNode fragment: ordinal label rendered at the end of the
-// fragment's text, positioned over the editor (not in the contentEditable).
+// A badge per MarkNode fragment: an ordinal label rendered at the end of
+// the text of the fragment, positioned over the editor (not in the
+// contentEditable).
 export interface MarkBadge {
   key: NodeKey;
   left: number; // end-x of the fragment's text, relative to the editor column
@@ -22,7 +23,7 @@ export interface MarkBadge {
   numbers: number[]; // ordinals of the marks covering this fragment, ascending
 }
 
-// One band of a marked segment on a single visual line. A segment carrying N
+// A band of a marked segment on a single visual line. A segment carrying N
 // ids yields N bands stacked vertically within each of its line-rects.
 export interface MarkRect {
   id: string; // thread id this band belongs to
@@ -118,7 +119,7 @@ export const SidenotesModel = createModel((key: FileKey) => {
   });
 
   // Stacked tops so sidenotes never overlap: walk in mark order, pushing each
-  // down to clear the previous one's measured height. Unmeasured entries
+  // down to clear the measured height of the previous entry. Unmeasured entries
   // (height 0) stack at their mark top until measured.
   const layout = computed((): Map<string, number> => {
     const out = new Map<string, number>();
@@ -132,7 +133,7 @@ export const SidenotesModel = createModel((key: FileKey) => {
     return out;
   });
 
-  // Render slots: one per entry at its stacked top.
+  // Render slots: a slot per entry at its stacked top.
   const viewportLayout = computed((): SidenoteView[] =>
     entries.value.map((entry) => {
       const top = layout.value.get(entry.mark.thread_id) ?? entry.markTop;

@@ -1,81 +1,72 @@
-import type { ReviewTraceEvent } from "./types.ts";
+import type { FlowEvent, NodeKind } from "@/flow/types.ts";
+import type { ReviewTypes } from "@/reviews/graph.ts";
 
 /** Coarse activity label for a running review. */
-export type ReviewPhase = "working" | "reading" | "annotating" | "summarizing";
+export type ReviewPhase =
+  | "working"
+  | "analyzing"
+  | "marking"
+  | "repairing"
+  | "summarizing";
 
 /**
  * Text-free progress snapshot for product UI. Never carries model content:
- * reasoning, message text, tool arguments, and usage are dropped at
- * derivation.
+ * inputs, outputs, and usage are dropped at derivation.
  */
 export interface ReviewProgress {
   phase: ReviewPhase;
-  round: number;
   notes: number;
 }
 
+const KIND_PHASE: Record<NodeKind<ReviewTypes>, ReviewPhase> = {
+  source: "working",
+  analyze: "analyzing",
+  "mark.propose": "marking",
+  "mark.propose.repair": "repairing",
+  "mark.apply": "marking",
+  "mark.repair.gate": "repairing",
+  "mark.collect": "marking",
+  synthesize: "summarizing",
+};
+
 /**
  * Maps trace events onto ReviewProgress snapshots, emitting on change.
+ * The kind of a node id comes from the run's graph; unknown ids fall back
+ * to the working phase.
  */
 export class ReviewProgressTracker {
+  #kindOf: Map<string, NodeKind<ReviewTypes>>;
   #phase: ReviewPhase = "working";
-  #round = 0;
   #notes = 0;
   #onProgress: (progress: ReviewProgress) => void;
 
-  constructor(onProgress: (progress: ReviewProgress) => void) {
+  constructor(
+    onProgress: (progress: ReviewProgress) => void,
+    kindOf: Map<string, NodeKind<ReviewTypes>>,
+  ) {
     this.#onProgress = onProgress;
+    this.#kindOf = kindOf;
     this.#emit();
   }
 
-  handle(event: ReviewTraceEvent): void {
-    const prev = { phase: this.#phase, round: this.#round, notes: this.#notes };
+  handle(event: FlowEvent<ReviewTypes>): void {
     switch (event.type) {
-      case "round_start":
-        this.#round = event.round;
+      case "node_start":
+        this.#phase = KIND_PHASE[this.#kindOf.get(event.nodeId) ?? "source"];
         break;
-      case "tool_call":
-        this.#phase = toolPhase(event.name);
-        break;
-      case "tool_output":
-        this.#notes += countPlaced(event.output);
-        break;
-      case "message":
-        this.#phase = "summarizing";
+      case "custom":
+        if (event.event.type !== "applied") return;
+        this.#notes += event.event.attempts.filter(
+          (attempt) => attempt.marked,
+        ).length;
         break;
       default:
         return;
     }
-    if (
-      prev.phase !== this.#phase ||
-      prev.round !== this.#round ||
-      prev.notes !== this.#notes
-    ) {
-      this.#emit();
-    }
+    this.#emit();
   }
 
   #emit(): void {
-    this.#onProgress({
-      phase: this.#phase,
-      round: this.#round,
-      notes: this.#notes,
-    });
+    this.#onProgress({ phase: this.#phase, notes: this.#notes });
   }
-}
-
-function toolPhase(name: string): ReviewPhase {
-  if (name === "mark") return "annotating";
-  if (name === "read_file" || name === "list_files" || name === "grep") {
-    return "reading";
-  }
-  return "working";
-}
-
-/** Count successfully placed marks in a mark tool output, if parseable. */
-function countPlaced(output: unknown): number {
-  const results = (output as { results?: unknown } | null)?.results;
-  if (!Array.isArray(results)) return 0;
-  return results.filter((r) => (r as { marked?: boolean })?.marked === true)
-    .length;
 }

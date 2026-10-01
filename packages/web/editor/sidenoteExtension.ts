@@ -103,7 +103,7 @@ export const SidenoteExtension = defineExtension({
 
         const rects: MarkRect[] = [];
         for (const { el, ids } of fragments) {
-          // Banded highlights: one rect per visual line per covering id (in
+          // Banded highlights: a rect per visual line per covering id (in
           // segment order: outer/earliest mark on top). Each rect carries the
           // full line box plus `order`/`bandCount`; the renderer splits it.
           const byThread = new Map(

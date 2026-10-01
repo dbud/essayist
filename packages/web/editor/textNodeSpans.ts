@@ -112,8 +112,9 @@ export function findPosition(
   const markdown = span.markdown ?? span.text;
   const mdLocal = offset - span.offset;
 
-  // Past this span's markdown range and into a gap. Snap to the start of the
-  // next span if available, otherwise caret after this span's last char.
+  // Past the markdown range of this span and into a gap. Snap to the start
+  // of the next span if available, otherwise caret after the last char of
+  // this span.
   if (mdLocal > markdown.length) {
     if (candidate + 1 < spans.length) {
       return { key: spans[candidate + 1].key, offset: 0 };

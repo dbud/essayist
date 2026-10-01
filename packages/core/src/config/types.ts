@@ -10,8 +10,6 @@ export const ModelPoolSchema = z.object({
   name: z.string(),
   /** Model ids in order. */
   models: z.string().array(),
-  /** Env var name holding the API key. Defaults to OPENROUTER_API_KEY. */
-  apiKeyEnvKey: z.string().optional(),
 });
 export type ModelPool = z.infer<typeof ModelPoolSchema>;
 
@@ -41,54 +39,70 @@ export type Category = z.infer<typeof CategorySchema>;
 
 // -- review passes --
 
-/** Known tool names. */
-export const ToolNameSchema = z.enum([
-  "read_file",
-  "list_files",
-  "grep",
-  "mark",
-  "write_file",
-]);
-export type ToolName = z.infer<typeof ToolNameSchema>;
+export const ReviewUnitSchema = z.object({
+  id: z.string().min(1),
+  /** Per-unit task prompt. */
+  promptKey: z.string(),
+  /** Shared fine print; falls back to none. */
+  instructionsPromptKey: z.string().optional(),
+  /** Falls back to the pass pool. */
+  modelPoolId: z.string().optional(),
+  /** Unit ids whose artifacts this unit receives as context. */
+  inputs: z.string().array().optional(),
+  /** Adds the mark subgraph: propose, apply, and gated repair rounds. */
+  attempt: z
+    .object({
+      /** Required non-empty. */
+      allowedCategoryIds: z.string().array(),
+      /** Repair calls for unmatched spans. Default 1. */
+      repairRounds: z.number().int().nonnegative().optional(),
+    })
+    .optional(),
+  /** Marks the unit's artifact as the run summary. */
+  summary: z.boolean().optional(),
+});
+export type ReviewUnit = z.infer<typeof ReviewUnitSchema>;
 
-/** A review pass. */
+/** A review pass: an ordered pipeline of units over a pinned file version. */
 export const ReviewPassSchema = z.object({
   id: z.string(),
   name: z.string(),
-  modelPoolId: z.string(),
-  /** Prompt key for the system message. */
+  /** The shared system prompt, rendered once for all units. */
   systemPromptKey: z.string(),
-  /** Prompt key for the per-file review directive (supports {{file}}). */
-  directivePromptKey: z.string(),
-  /** Optional prompt key for additional instructions. */
-  instructionsPromptKey: z.string().optional(),
-  /** Inline instructions. */
-  instructions: z.string().optional(),
-  enabledTools: ToolNameSchema.array(),
-  allowedCategoryIds: z.string().array(),
-  maxRounds: z.number().int().positive().default(5),
+  modelPoolId: z.string(),
+  units: ReviewUnitSchema.array(),
   /** Static variable values for prompt rendering. */
   variables: z.record(z.string(), z.string()).optional(),
 });
 export type ReviewPass = z.infer<typeof ReviewPassSchema>;
 
-// -- resolved bundle (computed, not stored) --
+// -- resolved bundles (computed, not stored) --
 
-/** Resolved config for the agent runner, produced by ConfigStore.resolveActiveReviewPass. */
-export interface ResolvedReviewPass {
-  reviewPass: ReviewPass;
-  /** Ordered model refs. */
-  modelRefs: string[];
-  /** Env var name holding the API key. */
-  apiKeyEnvKey: string;
-  /** Rendered system prompt. */
-  systemPrompt: string;
-  /** Review directive template ({{file}} unresolved). */
+/** Rendered prompts for a unit: pass system prompt plus unit task. */
+export interface ResolvedPrompts {
+  system: string;
   directive: string;
-  /** Rendered instructions. */
   instructions: string;
-  /** Allowed categories. */
-  categories: Category[];
-  /** Category labels. */
-  allowedLabels: string[];
+  /** The rendered allowed-labels section; empty for non-attempt units. */
+  categories: string;
+}
+
+/** Resolved config for a unit, produced by resolveReviewPass. */
+export interface ResolvedReviewUnit {
+  id: string;
+  prompts: ResolvedPrompts;
+  /** The resolved model pool: ordered model refs plus the api key env. */
+  pool: ModelPool;
+  /** Unit ids whose artifacts this unit receives as context. */
+  inputs: string[];
+  /** Mark attempt config; present only on attempt units. */
+  attempt?: { categories: Category[]; repairRounds: number };
+  /** The unit's artifact is the run summary. */
+  summary?: boolean;
+}
+
+/** Resolved config for a full pass, in unit order. */
+export interface ResolvedReviewPass {
+  pass: ReviewPass;
+  units: ResolvedReviewUnit[];
 }

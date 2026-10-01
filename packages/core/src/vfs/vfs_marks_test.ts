@@ -156,6 +156,20 @@ Deno.test("VFS.mark -- stores label when provided", async () => {
   assertEquals(marks[0].label, "important");
 });
 
+Deno.test("VFS.mark -- stores provenance when provided", async () => {
+  const { vfs, versionId } = await createFile("f.txt", "hello world");
+  await vfs.mark("f.txt", "hello", "greeting", {
+    provenance: { runId: "run-1", unitId: "mechanics" },
+  });
+
+  const marks = await vfs.getMarks("f.txt", versionId);
+  assertEquals(marks[0].meta, { runId: "run-1", unitId: "mechanics" });
+
+  await vfs.mark("f.txt", "world", "no provenance");
+  const all = await vfs.getMarks("f.txt", versionId);
+  assertEquals(all[1].meta, undefined);
+});
+
 // -- mark with versionId --
 
 Deno.test("VFS.mark -- versionId marks the given version, not latest", async () => {

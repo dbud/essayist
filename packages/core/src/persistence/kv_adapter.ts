@@ -101,8 +101,8 @@ export class KvAdapter implements PersistenceAdapter {
     }
     const result = await atomic.commit();
     if (!result.ok) {
-      // A check failed (concurrent modification); pick the first check's key
-      // for the error, or an empty key if there were none.
+      // A check failed (concurrent modification); pick the key from the
+      // first check for the error, or an empty key if there were none.
       throw new ConcurrentModificationError(checks[0]?.key ?? []);
     }
   }

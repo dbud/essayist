@@ -8,6 +8,7 @@ import Tabs, { type TabItem } from "@/components/ui/Tabs.tsx";
 import WaveBars from "@/components/ui/WaveBars.tsx";
 import { CategoriesExport } from "@/islands/admin/CategoriesExport.tsx";
 import EntityDialog from "@/islands/admin/EntityDialog.tsx";
+import PassGraph, { PassGraphSide } from "@/islands/admin/PassGraph.tsx";
 import { CategoryRow } from "@/islands/admin/rows/CategoryRow.tsx";
 import { ModelPoolRow } from "@/islands/admin/rows/ModelPoolRow.tsx";
 import { PromptRow } from "@/islands/admin/rows/PromptRow.tsx";
@@ -17,17 +18,18 @@ import MarkSwatches from "@/islands/MarkSwatches.tsx";
 import { getAdminConfig } from "@/signals/admin.ts";
 import { persistentSignal } from "@/utils/persistentSignal.ts";
 
-type TabKey = "passes" | "pools" | "prompts" | "categories" | "tools";
+type TabKey = "passes" | "graph" | "pools" | "prompts" | "categories" | "tools";
 
 const TAB_ITEMS: TabItem<TabKey>[] = [
   { value: "passes", label: "Review passes" },
+  { value: "graph", label: "Graph" },
   { value: "pools", label: "Model pools" },
   { value: "prompts", label: "Prompts" },
   { value: "categories", label: "Categories" },
   { value: "tools", label: "Tools" },
 ];
 
-const tab = persistentSignal<TabKey>("adminTab", "passes");
+const tab = persistentSignal<TabKey>("adminTab", "pools");
 
 function Empty() {
   return <p class="text-sm text-ink/60">None configured.</p>;
@@ -48,6 +50,7 @@ export default function AdminConfig() {
     deleteCategory,
     deleteReviewPass,
     setActiveReviewPass,
+    updateReviewPass,
   } = getAdminConfig();
   const dialogOpen = useSignal(false);
   const dialogRequest = useSignal<DialogRequest | null>(null);
@@ -83,6 +86,25 @@ export default function AdminConfig() {
     void setActiveReviewPass(pass.id);
   }
 
+  function removeUnit(pass: ReviewPass, unitId: string) {
+    const referring = pass.units
+      .filter((u) => u.inputs?.includes(unitId))
+      .map((u) => u.id);
+    const warning =
+      referring.length > 0
+        ? ` It is referenced as input by: ${referring.join(", ")}.`
+        : "";
+    if (
+      !confirm(`Delete unit "${unitId}" from pass "${pass.name}"?${warning}`)
+    ) {
+      return;
+    }
+    void updateReviewPass(pass.id, {
+      ...pass,
+      units: pass.units.filter((u) => u.id !== unitId),
+    });
+  }
+
   const loadingEmpty = loading.value && modelPools.value.length === 0;
 
   let body: ComponentChildren;
@@ -114,11 +136,20 @@ export default function AdminConfig() {
                   onActivate={() => activateReviewPass(p)}
                   onEdit={() => openEntity({ kind: "pass", entity: p })}
                   onDelete={() => removeReviewPass(p)}
+                  onDeleteUnit={(unitId) => removeUnit(p, unitId)}
+                  onAddUnit={() => openEntity({ kind: "unit", pass: p })}
+                  onEditUnit={(unitId) =>
+                    openEntity({ kind: "unit", pass: p, unitId })
+                  }
                 />
               ))
             )}
           </div>
         );
+        break;
+      case "graph":
+        body = <PassGraph />;
+        side = <PassGraphSide />;
         break;
       case "pools":
         body = (

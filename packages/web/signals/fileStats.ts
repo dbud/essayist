@@ -7,7 +7,7 @@ import {
   editorStateWordCount,
 } from "@/utils/textStats.ts";
 
-// Per-file stats derived from the file's editor state.
+// Per-file stats derived from the editor state of the file.
 export const FileStatsModel = createModel((key: FileKey) => {
   const { wsId, path, versionId } = key;
   const file = getFile(wsId, path, versionId);

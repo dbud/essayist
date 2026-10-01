@@ -1,49 +1,16 @@
 import type { Agent } from "@/agent.ts";
-import { renderPrompt } from "@/config/template.ts";
-import type { ResolvedReviewPass, ToolName } from "@/config/types.ts";
+import type { ResolvedReviewPass } from "@/config/types.ts";
+import { FlowRunner } from "@/flow/runner.ts";
+import type { Artifact } from "@/flow/types.ts";
+import { buildReviewGraph } from "@/reviews/adapter.ts";
+import { createReviewRunners, type ReviewTypes } from "@/reviews/graph.ts";
 import type { ReviewProgress } from "@/reviews/progress.ts";
 import { ReviewProgressTracker } from "@/reviews/progress.ts";
 import type { ReviewStore } from "@/reviews/store.ts";
-import type { TraceStore } from "@/reviews/trace.ts";
+import type { TraceRecorder, TraceStore } from "@/reviews/trace/types.ts";
 import type { ReviewRun } from "@/reviews/types.ts";
-import type { ToolPrompt } from "@/tools/index.ts";
-import {
-  createGrepTool,
-  createListFilesTool,
-  createMarkTool,
-  createReadFileTool,
-  createWriteFileTool,
-} from "@/tools/index.ts";
 import { PinnedVFS } from "@/vfs/pin.ts";
 import type { VFS } from "@/vfs/types.ts";
-
-function buildTools(
-  enabledTools: readonly ToolName[],
-  vfs: VFS,
-  allowedLabels: readonly string[],
-): ToolPrompt[] {
-  const tools: ToolPrompt[] = [];
-  for (const name of enabledTools) {
-    switch (name) {
-      case "read_file":
-        tools.push(createReadFileTool(vfs));
-        break;
-      case "list_files":
-        tools.push(createListFilesTool(vfs));
-        break;
-      case "grep":
-        tools.push(createGrepTool(vfs));
-        break;
-      case "mark":
-        tools.push(createMarkTool(vfs, { allowedLabels: [...allowedLabels] }));
-        break;
-      case "write_file":
-        tools.push(createWriteFileTool(vfs));
-        break;
-    }
-  }
-  return tools;
-}
 
 /** Options for {@linkcode runReviewPass}. */
 export interface RunReviewPassOptions {
@@ -58,76 +25,131 @@ export interface RunReviewPassOptions {
   onProgress?: (progress: ReviewProgress) => void;
 }
 
-/** Run a review pass over `path` and record a ReviewRun. */
-export async function runReviewPass({
-  agent,
-  vfs,
-  reviewStore,
-  traceStore,
-  pass,
-  wsId,
-  path,
-  onProgress,
-}: RunReviewPassOptions): Promise<ReviewRun> {
+const NOOP_RECORDER: TraceRecorder = {
+  record: () => {},
+  flush: () => Promise.resolve(),
+};
+
+/** Run a review pass over a file version. */
+export async function runReviewPass(
+  options: RunReviewPassOptions,
+): Promise<ReviewRun> {
+  const { vfs, path } = options;
   const versionId = (await vfs.getHistory(path)).at(-1)?.version_id;
   if (!versionId) {
-    const missing = await reviewStore.createRun({
-      wsId,
-      path,
-      reviewPassId: pass.reviewPass.id,
+    const missing = await options.reviewStore.createRun({
+      wsId: options.wsId,
+      path: options.path,
+      reviewPassId: options.pass.pass.id,
     });
     return (
-      (await reviewStore.failRun({
-        wsId,
+      (await options.reviewStore.failRun({
+        wsId: options.wsId,
         id: missing.id,
-        error: `File not found: ${path}`,
+        error: `File not found: ${options.path}`,
       })) ?? missing
     );
   }
+  return await new ReviewPassRunner(options, versionId).run();
+}
 
-  const run = await reviewStore.createRun({
-    wsId,
-    path,
-    reviewPassId: pass.reviewPass.id,
-    versionId,
-  });
-  const progress = onProgress
-    ? new ReviewProgressTracker(onProgress)
-    : undefined;
-  const recorder = traceStore?.recorder(
-    { wsId, runId: run.id },
-    progress ? (event) => progress.handle(event) : undefined,
-  );
-  const pinned = new PinnedVFS(vfs, { path, versionId });
+/** Executes a review pass as a flow over a pinned file version. */
+class ReviewPassRunner {
+  #agent: Agent;
+  #reviewStore: ReviewStore;
+  #traceStore?: TraceStore;
+  #pass: ResolvedReviewPass;
+  #wsId: string;
+  #path: string;
+  #onProgress?: (progress: ReviewProgress) => void;
+  #pinned: PinnedVFS;
+  #versionId: string;
 
-  try {
-    const tools = buildTools(
-      pass.reviewPass.enabledTools,
-      pinned,
-      pass.allowedLabels,
+  constructor(options: RunReviewPassOptions, versionId: string) {
+    this.#agent = options.agent;
+    this.#reviewStore = options.reviewStore;
+    this.#traceStore = options.traceStore;
+    this.#pass = options.pass;
+    this.#wsId = options.wsId;
+    this.#path = options.path;
+    this.#onProgress = options.onProgress;
+    this.#pinned = new PinnedVFS(options.vfs, {
+      path: options.path,
+      versionId,
+    });
+    this.#versionId = versionId;
+  }
+
+  async run(): Promise<ReviewRun> {
+    const run = await this.#reviewStore.createRun({
+      wsId: this.#wsId,
+      path: this.#path,
+      reviewPassId: this.#pass.pass.id,
+      versionId: this.#versionId,
+    });
+    const graph = buildReviewGraph(this.#pass, run.id);
+    const kindOf = new Map(
+      graph.nodes.map((node) => [node.id, node.kind] as const),
     );
-    const directive = renderPrompt(pass.directive, { file: path });
-    const input = `${pass.systemPrompt}\n\n${pass.instructions}\n\n${directive}`;
-    const result = agent.callModelWithTools(
-      input,
-      tools,
-      pass.modelRefs,
-      pass.reviewPass.maxRounds,
-      recorder,
-    );
-    recorder?.follow(result);
-    const summary = await result.getText();
-    await recorder?.flush();
-    await pinned.migrateMarks(path, versionId);
-    return (
-      (await reviewStore.completeRun({ wsId, id: run.id, summary })) ?? run
-    );
-  } catch (e) {
-    const error = e instanceof Error ? e.message : String(e);
-    recorder?.record({ type: "error", error });
-    await recorder?.flush();
-    // Marks placed before the failure are still valid annotations.
-    await pinned.migrateMarks(path, versionId);
-    return (await reviewStore.failRun({ wsId, id: run.id, error })) ?? run;
+    const tracker = this.#onProgress
+      ? new ReviewProgressTracker(this.#onProgress, kindOf)
+      : undefined;
+    const recorder =
+      this.#traceStore?.recorder(
+        { wsId: this.#wsId, runId: run.id },
+        tracker ? (event) => tracker.handle(event) : undefined,
+      ) ?? NOOP_RECORDER;
+    const flow = new FlowRunner<ReviewTypes>({
+      runners: createReviewRunners({
+        agent: this.#agent,
+        pinned: this.#pinned,
+      }),
+      onEvent: (event) => recorder.record(event),
+    });
+
+    try {
+      const result = await flow.run(graph);
+      if (result.status === "failed") {
+        return await this.#finalize(run, recorder, {
+          error: result.errors.join("; "),
+        });
+      }
+      // TODO -- a graph node that aggregates summaries would drop this
+      // last-summary pick from the runner.
+      const summary = result.artifacts
+        .filter(
+          (artifact): artifact is Artifact<ReviewTypes, "summary"> =>
+            artifact.type === "summary",
+        )
+        .at(-1)?.data;
+      return await this.#finalize(run, recorder, { summary });
+    } catch (caught) {
+      const message = caught instanceof Error ? caught.message : String(caught);
+      return await this.#finalize(run, recorder, { error: message });
+    }
+  }
+
+  async #finalize(
+    run: ReviewRun,
+    recorder: TraceRecorder,
+    outcome: { summary?: string; error?: string },
+  ): Promise<ReviewRun> {
+    await recorder.flush();
+    await this.#pinned.migrateMarks(this.#path, this.#versionId);
+    if (outcome.error !== undefined) {
+      return (
+        (await this.#reviewStore.failRun({
+          wsId: this.#wsId,
+          id: run.id,
+          error: outcome.error,
+        })) ?? run
+      );
+    }
+    const completed = await this.#reviewStore.completeRun({
+      wsId: this.#wsId,
+      id: run.id,
+      summary: outcome.summary ?? "",
+    });
+    return completed ?? run;
   }
 }

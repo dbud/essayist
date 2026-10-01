@@ -19,7 +19,7 @@ const tokenize = createTokenizer(DIFF_TOKEN_REGEX);
 
 // Two interchangeable Myers implementations share the encode/decode boundary
 // (tokens -> integer ids -> flat op Int32Array -> DiffOp[]): the pure-JS
-// `jsMyers` (default) and a faster Rust one injected via `setMyers`.
+// `jsMyers` (default) and a faster Rust implementation injected via `setMyers`.
 // `diff.ts` never imports the Rust crate, so the browser bundle only pulls in
 // the wasm glue when it's explicitly enabled.
 export type MyersFn = (
@@ -87,7 +87,7 @@ interface DiffOp {
   newIdx?: number;
 }
 
-// Each distinct token text maps to one integer id shared across old/new so the
+// Each distinct token text maps to a single integer id shared across old/new so the
 // core compares ids with `==` (equivalent to `oldTokens[x].text ===
 // newTokens[y].text`). The core returns a flat Int32Array of
 // `[type, oldIdx, newIdx, ...]` triples where type is 0=equal, 1=insert,
@@ -181,7 +181,7 @@ function diffRec(
 
   const [x, y, u, v] = findMiddleSnake(a, b);
 
-  // The search only fails to split when the optimal path's middle is a
+  // The search only fails to split when the middle of the optimal path is a
   // zero-length snake at an endpoint, which happens exactly for a single edit
   // at the very start or end (D <= 1). Recover those directly so the recursion
   // always makes progress; everything else splits cleanly.
@@ -191,7 +191,7 @@ function diffRec(
     return;
   }
   // Single edit at the very end: matches are a common prefix, then the trailing
-  // edit (one side is empty after the prefix).
+  // edit (a side is empty after the prefix).
   if (x === n && y === m) {
     const p = commonPrefixLen(a, b);
     for (let k = 0; k < p; k++) ops.push(EQ, aOff + k, bOff + k);

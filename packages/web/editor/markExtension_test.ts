@@ -41,7 +41,7 @@ function createEditor(): LexicalEditor {
   });
 }
 
-/** One paragraph with the given text. */
+/** A paragraph with the given text. */
 function setParagraph(editor: LexicalEditor, text: string): void {
   editor.update(
     () => {

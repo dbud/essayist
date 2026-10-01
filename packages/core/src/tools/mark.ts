@@ -1,35 +1,12 @@
 import { z } from "zod";
+import { MarkProposalSchema } from "@/reviews/steps/mark.ts";
 import type { VFS } from "@/vfs/types.ts";
 import { defineTool, type ToolDefinition } from "./define.ts";
 import type { ToolPrompt } from "./index.ts";
 
 const inputSchema = z.object({
   path: z.string().describe("The path of the file to mark"),
-  marks: z
-    .array(
-      z.object({
-        selected_text: z
-          .string()
-          .describe(
-            "The exact text span to mark. Must match the file content exactly. " +
-              "If the text appears multiple times, use line_hint to disambiguate.",
-          ),
-        comment: z
-          .string()
-          .describe("The comment or note to attach to this mark."),
-        label: z
-          .string()
-          .optional()
-          .describe("Optional short label; must be one of the allowed labels."),
-        line_hint: z
-          .number()
-          .optional()
-          .describe(
-            "Optional 1-based line number to disambiguate when selected_text appears multiple times. " +
-              "Use the line number from a numbered read_file output.",
-          ),
-      }),
-    )
+  marks: MarkProposalSchema.array()
     .min(1)
     .describe("All marks to place in the file."),
 });

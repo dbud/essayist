@@ -130,8 +130,8 @@ export function streamModelResultSSE<TTools extends readonly Tool[]>(
       // surface a structured error event to the client instead of
       // letting the response stream terminate abruptly. The generic
       // SDK message ("Provider returned error") is not useful to
-      // users; extractProviderError pulls out the provider's raw
-      // explanation from err.error.metadata.raw.
+      // users; extractProviderError pulls out the raw explanation
+      // from the provider at err.error.metadata.raw.
       try {
         await Promise.all([textPromise, itemsPromise]);
       } catch (err) {

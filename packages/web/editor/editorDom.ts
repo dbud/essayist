@@ -29,8 +29,8 @@ export function createRafScheduler(fn: () => void): {
 }
 
 // Attach root-scoped observers (ResizeObserver, event listeners) that must
-// follow the editor's root across swaps. setup(root) returns a teardown run
-// before the next root is set up and on final cleanup. The initial root is
+// follow the root of the editor across swaps. setup(root) returns a teardown
+// run before the next root is set up and on final cleanup. The initial root is
 // set up synchronously.
 export function registerRootObserver(
   editor: LexicalEditor,

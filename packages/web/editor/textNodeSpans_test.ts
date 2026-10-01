@@ -133,7 +133,7 @@ Deno.test("findRange -- focus is exclusive (one past last char)", () => {
   const spans = buildTextNodeSpans(importMarkdown(md), md);
 
   // Select "CDE" -- offset 2, length 3.
-  // Anchor at 2 ("C"), focus at 5 (one past "E").
+  // Anchor at 2 ("C"), focus at 5 (a position past "E").
   const range = findRange(spans, { offset: 2, length: 3 });
   assert(range);
   assertEquals(range.anchor.offset, 2);
@@ -184,12 +184,12 @@ Deno.test("findPosition -- gap between spans snaps forward", () => {
 });
 
 // The export escapes `* _ ` ~ \` as `\X` inside non-code text nodes. A bare
-// `indexOf(textNodeText)` fails when the node contains one of those chars, so
+// `indexOf(textNodeText)` fails when the node contains any of those chars, so
 // the node would be dropped from the span list. These cover the pre-escape
 // path and the code-context (verbatim) path.
 
 Deno.test("buildTextNodeSpans -- literal escaped asterisk in prose is found", () => {
-  // md "a\*b" imports as one text node "a*b" (literal *); export re-escapes to
+  // md "a\*b" imports as a text node "a*b" (literal *); export re-escapes to
   // "a\*b". A bare indexOf("a*b") would fail and drop the node.
   const md = "a\\*b";
   const spans = buildTextNodeSpans(importMarkdown(md), md);
@@ -199,7 +199,7 @@ Deno.test("buildTextNodeSpans -- literal escaped asterisk in prose is found", ()
 });
 
 Deno.test("buildTextNodeSpans -- multi-char prose with * is not dropped", () => {
-  // md "before \* after" imports as one text node "before * after" (literal *);
+  // md "before \* after" imports as a text node "before * after" (literal *);
   // export re-escapes to "before \* after". A bare indexOf("before * after")
   // would fail and drop the node.
   const md = "before \\* after";
@@ -217,7 +217,8 @@ Deno.test("buildTextNodeSpans -- multi-char prose with * is not dropped", () => 
   assertEquals(range.focus.offset, 8);
 });
 
-// The export's `\X` escapes consume a content index with no editor char. Marks
+// The `\X` escapes of the export consume a content index with no editor char.
+// Marks
 // whose content range includes those escapes must map to editor offsets by
 // walking the escape, not by plain subtraction. These cover the reported bug
 // (content offset 4 in "a\*b" mapping to editor offset 4 instead of 3).

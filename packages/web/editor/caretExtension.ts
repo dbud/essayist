@@ -26,10 +26,11 @@ import type { SelectionExtensionConfig } from "./toolbarStateExtension.ts";
 // matching MarkBadges). Hides on blur or non-range selection; on a text
 // selection it stays at the focus so the caret doesn't vanish.
 //
-// At a soft wrap, "end of the previous line" and "start of the next" share one
-// offset and the collapsed range is always the end of the previous line. The
-// native caret's side is a hidden browser state, and an arrow at that offset
-// re-renders the SAME offset as the other side without firing selectionchange.
+// At a soft wrap, "end of the previous line" and "start of the next" share a
+// single offset and the collapsed range is always the end of the previous
+// line. The side of the native caret is hidden browser state, and an arrow at
+// that offset re-renders the SAME offset as the other side without firing
+// selectionchange.
 // So we track an `affinity` in state, driven by KEY_ARROW_*_COMMAND (the only
 // event on that toggle): a same-offset arrow flips it; an offset-changing
 // left/right move sets it by direction; a down/up move keeps it (vertical
@@ -87,7 +88,7 @@ export const CaretExtension = defineExtension({
           if (textOffset === lastOffset && pending !== null) {
             // A same-offset arrow at the boundary flips the side: right/down
             // toward the start of the next line, left/up toward the end of the
-            // previous one.
+            // toward the end of the previous line.
             affinity =
               pending === "right" || pending === "down" ? "start" : "end";
           } else if (

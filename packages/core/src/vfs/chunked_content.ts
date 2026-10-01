@@ -6,7 +6,7 @@
  * KV keys. Chunks never split a multi-byte UTF-8 sequence.
  */
 
-/** Chunk byte size; under KV's 64 KiB value limit with headroom for manifest metadata. */
+/** Chunk byte size; under the 64 KiB value limit of KV with headroom for manifest metadata. */
 export const CHUNK_SIZE = 60 * 1024;
 
 /** Reassembly manifest. `firstChunk` is chunk 0 inline; `chunkCount` is the total chunk count. */
@@ -20,7 +20,7 @@ export interface ContentManifest {
 /** Output of {@link chunkContent}: a manifest plus any extra chunk keys to write. */
 export interface ChunkedContent {
   manifest: ContentManifest;
-  /** Chunks 1..N-1. Empty when content fits in one chunk. */
+  /** Chunks 1..N-1. Empty when the content fits in a single chunk. */
   extraChunks: Uint8Array[];
 }
 

@@ -25,7 +25,7 @@ export interface SyncCtx {
   kv: Deno.Kv;
 }
 
-/** Validate one entity against a zod schema; returns an error message or
+/** Validate a single entity against a zod schema; returns an error message or
  *  null. Structural so kvctl does not need a zod dependency of its own. */
 function check<T>(
   schema: {
@@ -190,18 +190,28 @@ export async function warnBrokenRefs(ctx: SyncCtx): Promise<void> {
   const categoryIds = new Set(categories.map((c) => c.id));
   for (const pass of passes) {
     const missing: string[] = [];
-    if (!poolIds.has(pass.modelPoolId)) {
-      missing.push(`model pool "${pass.modelPoolId}"`);
-    }
-    for (const key of [
-      pass.systemPromptKey,
-      pass.directivePromptKey,
-      ...(pass.instructionsPromptKey ? [pass.instructionsPromptKey] : []),
+    for (const poolId of [
+      pass.modelPoolId,
+      ...pass.units.map((u) => u.modelPoolId).filter((id) => id !== undefined),
     ]) {
-      if (!promptKeys.has(key)) missing.push(`prompt "${key}"`);
+      if (!poolIds.has(poolId)) missing.push(`model pool "${poolId}"`);
     }
-    for (const id of pass.allowedCategoryIds) {
-      if (!categoryIds.has(id)) missing.push(`category "${id}"`);
+    for (const unit of pass.units) {
+      for (const key of [
+        pass.systemPromptKey,
+        unit.promptKey,
+        ...(unit.instructionsPromptKey ? [unit.instructionsPromptKey] : []),
+      ]) {
+        if (!promptKeys.has(key)) missing.push(`prompt "${key}"`);
+      }
+      for (const id of unit.attempt?.allowedCategoryIds ?? []) {
+        if (!categoryIds.has(id)) missing.push(`category "${id}"`);
+      }
+      for (const ref of unit.inputs ?? []) {
+        if (!pass.units.some((u) => u.id === ref)) {
+          missing.push(`unit reference "${ref}"`);
+        }
+      }
     }
     if (missing.length > 0) {
       console.error(

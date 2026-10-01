@@ -1,6 +1,6 @@
 import type { Mark } from "@essayist/core";
 
-/** A mark's span in markdown offset space, with its stable thread id. */
+/** The span of a mark in markdown offset space, with its stable thread id. */
 export type MarkSpan = Pick<Mark, "offset" | "length" | "thread_id">;
 
 /**

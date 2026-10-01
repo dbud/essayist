@@ -8,7 +8,7 @@ export function extractVariables(body: string): string[] {
 }
 
 /** {{var}} placeholder replacement for prompt templates. Unknown placeholders are left intact. */
-export function renderPrompt(
+export function renderTemplate(
   body: string,
   variables: Record<string, string> = {},
 ): string {

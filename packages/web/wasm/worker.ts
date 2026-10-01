@@ -16,7 +16,7 @@ interface MarksResponse {
 }
 
 // The worker owns the wasm Myers core for the marks path; the main thread
-// never loads wasm. `setMyers` mutates this worker's own module instance, so
+// never loads wasm. `setMyers` mutates the module instance of this worker, so
 // `resolveMarks` -> `computeDiff` runs the wasm core here, off the main thread.
 const ready = init().then(() => setMyers(myers));
 

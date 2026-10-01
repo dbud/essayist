@@ -9,7 +9,7 @@ import { myers } from "./diff_wasm_glue.ts";
 
 // `diff_test.ts` runs the shared cases through `computeDiff` (JS core, the
 // default); here we run them through `computeDiffWith(..., myers)` (WASM core).
-// The two cores are byte-identical, so the shared cases have one set of
+// The two cores are byte-identical, so the shared cases have a single set of
 // expectations, and together the two files cover both paths.
 runDiffCases("computeDiffWith", (oldText, newText) =>
   computeDiffWith(oldText, newText, myers),

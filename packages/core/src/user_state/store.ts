@@ -7,12 +7,12 @@ const USER_STATE = "user_state";
 const WORKSPACE = "workspace";
 const FILE = "file";
 
-/** Persisted record of the user's selected workspace. */
+/** Persisted record of the selected workspace. */
 interface SelectedWorkspace {
   wsId: string;
 }
 
-/** Persisted record of the user's selected file within one workspace. */
+/** Persisted record of the selected file within a workspace. */
 interface SelectedFile {
   path: string;
 }

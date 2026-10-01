@@ -1,296 +1,344 @@
-import type { ModelResult, Tool } from "@openrouter/agent";
-import { assertEquals, assertStringIncludes } from "@std/assert";
-import type { Agent } from "@/agent.ts";
-import type { ResolvedReviewPass } from "@/config/types.ts";
+import { assertEquals } from "@std/assert";
+import type { ResolvedReviewPass, ReviewUnit } from "@/config/types.ts";
+import type { NodeRun } from "@/flow/types.ts";
 import { InMemoryAdapter } from "@/persistence/mod.ts";
-import type { ReviewProgress } from "@/reviews/progress.ts";
 import { runReviewPass } from "@/reviews/runner.ts";
 import { ReviewStore } from "@/reviews/store.ts";
-import { EventTraceStore } from "@/reviews/trace.ts";
-import type { ReviewTraceSink, TracedReviewEvent } from "@/reviews/types.ts";
-import type { ToolPrompt } from "@/tools/index.ts";
-import { VirtualFileSystem } from "@/vfs/vfs.ts";
+import { createSpyClient } from "@/reviews/testing/agent.ts";
+import { type TraceEvent, TraceEventStore } from "@/reviews/trace/mod.ts";
+import { createFile } from "@/vfs/testing/helpers.ts";
 
-function fakeResult(
-  text: string,
-  onGetText?: () => Promise<void>,
-): ModelResult<readonly Tool[]> {
+function unitFixture(
+  partial: Partial<ReviewUnit> & Pick<ReviewUnit, "id">,
+): ReviewUnit {
+  return { promptKey: "dir", ...partial };
+}
+
+function passFixture(units: ReviewUnit[]): ResolvedReviewPass {
   return {
-    getText: () =>
-      onGetText ? onGetText().then(() => text) : Promise.resolve(text),
-    getTextStream: async function* () {
-      yield text;
+    pass: {
+      id: "essay-review",
+      name: "Essay review",
+      systemPromptKey: "sys",
+      modelPoolId: "pool",
+      units,
     },
-    getItemsStream: async function* () {},
-    getFullResponsesStream: async function* () {},
-    cancel: () => {},
-  } as unknown as ModelResult<readonly Tool[]>;
+    units: units.map((unit) => ({
+      id: unit.id,
+      prompts: {
+        system: "You are an editor.",
+        directive: "Review the essay.",
+        instructions: "",
+        categories: "",
+      },
+      pool: { id: "pool", name: "Pool", models: ["m/a"] },
+      inputs: unit.inputs ?? [],
+      ...(unit.attempt && {
+        attempt: {
+          categories: [{ id: "grammar", label: "grammar" }],
+          repairRounds: unit.attempt.repairRounds ?? 1,
+        },
+      }),
+      ...(unit.summary && { summary: true }),
+    })),
+  };
 }
-
-interface Captured {
-  input: string;
-  toolPrompts: readonly ToolPrompt[];
-  models: string[];
-  maxRounds: number;
-}
-
-function createMockAgent(
-  responseText: string,
-  onCall?: (c: Captured) => void,
-  onGetText?: () => Promise<void>,
-): Agent {
-  return {
-    callModelWithTools: (
-      input: string,
-      toolPrompts: readonly ToolPrompt[],
-      models: string[],
-      maxRounds: number,
-      trace?: ReviewTraceSink,
-    ) => {
-      onCall?.({ input, toolPrompts, models, maxRounds });
-      trace?.record({ type: "input", text: input });
-      return fakeResult(responseText, onGetText);
-    },
-  } as unknown as Agent;
-}
-
-function createMockThrowingAgent(
-  error: string,
-  onGetText?: () => Promise<void>,
-): Agent {
-  return {
-    callModelWithTools: () =>
-      ({
-        getText: () =>
-          onGetText
-            ? onGetText().then(() => Promise.reject(new Error(error)))
-            : Promise.reject(new Error(error)),
-        getTextStream: async function* () {},
-        getItemsStream: async function* () {},
-        getFullResponsesStream: async function* () {},
-        cancel: () => {},
-      }) as unknown as ModelResult<readonly Tool[]>,
-  } as unknown as Agent;
-}
-
-const pass: ResolvedReviewPass = {
-  reviewPass: {
-    id: "essay-review",
-    name: "Essay review",
-    modelPoolId: "free-pool",
-    systemPromptKey: "system.reviewer",
-    directivePromptKey: "directive.review",
-    instructionsPromptKey: "instructions.mark",
-    enabledTools: ["read_file", "list_files", "grep", "mark"],
-    allowedCategoryIds: ["thesis", "evidence"],
-    maxRounds: 5,
-  },
-  modelRefs: ["m/a", "m/b"],
-  apiKeyEnvKey: "OPENROUTER_API_KEY",
-  systemPrompt: "You are an editor.",
-  directive:
-    'Review the file "{{file}}". Read it, then mark issues using the allowed labels.',
-  instructions: "Mark issues.",
-  categories: [],
-  allowedLabels: ["thesis", "evidence"],
-};
 
 function setup() {
   const adapter = new InMemoryAdapter();
-  const vfs = new VirtualFileSystem(adapter, "ws");
   const reviewStore = new ReviewStore(adapter);
-  const traceStore = new EventTraceStore(adapter);
-  return { adapter, vfs, reviewStore, traceStore };
+  const traceStore = new TraceEventStore(adapter);
+  return { reviewStore, traceStore };
 }
 
-Deno.test("runReviewPass -- completes a run with the agent summary", async () => {
-  const { vfs, reviewStore, traceStore } = setup();
-  await vfs.write("essay.txt", "hello world");
-  const versionId = (await vfs.read("essay.txt")).version_id;
-  let captured: Captured | undefined;
-  const agent = createMockAgent("Strong thesis; evidence needs work.", (c) => {
-    captured = c;
-  });
+const ANALYSIS_ROUND =
+  '{"thesis":"Drafts are raw material.","claims":[],"outline":[],"strengths":[],"risks":[]}';
+
+/** Per-node event type sequences; cross-node order varies with the
+ * scheduler, per-node order is fixed. Custom events carry the host
+ * event's type. */
+function byNode(trace: TraceEvent[]): Record<string, string[]> {
+  const grouped: Record<string, string[]> = {};
+  for (const event of trace) {
+    const type = event.type === "custom" ? event.event.type : event.type;
+    grouped[event.nodeId] = [...(grouped[event.nodeId] ?? []), type];
+  }
+  return grouped;
+}
+
+function nodeEnd(trace: TraceEvent[], nodeId: string): NodeRun | undefined {
+  const event = trace.find(
+    (candidate) => candidate.type === "node_end" && candidate.nodeId === nodeId,
+  );
+  return event?.type === "node_end" ? event.run : undefined;
+}
+
+function appliedEvents(trace: TraceEvent[]) {
+  return trace.flatMap((event) =>
+    event.type === "custom" && event.event.type === "applied"
+      ? [event.event]
+      : [],
+  );
+}
+
+Deno.test("runReviewPass -- completes a pass with marks, summary, and a per-node trace", async () => {
+  const { vfs, versionId } = await createFile("essay.txt", "hello brave world");
+  const { reviewStore, traceStore } = setup();
+  const { agent, inputs } = createSpyClient([
+    { text: ANALYSIS_ROUND, reasoning: "reading closely" },
+    {
+      text: '{"marks":[{"selected_text":"brave","comment":"Good.","label":"grammar"}]}',
+    },
+    { text: '{"summary":"Solid draft."}' },
+  ]);
 
   const run = await runReviewPass({
     agent,
     vfs,
     reviewStore,
     traceStore,
-    pass,
+    pass: passFixture([
+      unitFixture({ id: "analyze" }),
+      unitFixture({
+        id: "mechanics",
+        attempt: { allowedCategoryIds: ["grammar"] },
+        inputs: ["analyze"],
+      }),
+      unitFixture({
+        id: "synthesize",
+        summary: true,
+        inputs: ["analyze", "mechanics.propose"],
+      }),
+    ]),
     wsId: "ws",
     path: "essay.txt",
   });
 
   assertEquals(run.status, "completed");
-  assertEquals(run.summary, "Strong thesis; evidence needs work.");
-  assertEquals(run.path, "essay.txt");
-  assertEquals(run.reviewPassId, "essay-review");
-  assertEquals(run.versionId, versionId);
+  assertEquals(run.summary, "Solid draft.");
 
-  const stored = await reviewStore.getRun({ wsId: "ws", id: run.id });
-  assertEquals(stored?.status, "completed");
+  const marks = await vfs.getMarks("essay.txt", versionId);
+  assertEquals(marks[0].selected_text, "brave");
+  assertEquals(marks[0].meta, {
+    runId: run.id,
+    unitId: "mechanics",
+  });
 
-  if (!captured) throw new Error("agent was not called");
-  assertStringIncludes(captured.input, "You are an editor.");
-  assertStringIncludes(captured.input, "Mark issues.");
-  assertStringIncludes(captured.input, 'Review the file "essay.txt"');
-
-  assertEquals(captured.models, ["m/a", "m/b"]);
-  assertEquals(captured.maxRounds, 5);
-
-  const names = captured.toolPrompts.map(
-    (tp) => (tp.tool as { function: { name: string } }).function.name,
-  );
-  assertEquals(names, ["read_file", "list_files", "grep", "mark"]);
-  const mark = captured.toolPrompts.find(
-    (tp) =>
-      (tp.tool as { function: { name: string } }).function.name === "mark",
-  );
-  if (!mark) throw new Error("mark tool not built");
-  assertStringIncludes(
-    (mark.tool as { function: { description: string } }).function.description,
-    "Allowed labels: thesis, evidence",
-  );
-
-  const trace = await traceStore.get({ wsId: "ws", runId: run.id });
-  assertEquals(
-    trace?.map((e) => e.type),
-    ["input"],
-  );
-  const inputEvent = trace?.[0] as TracedReviewEvent;
-  assertStringIncludes(
-    (inputEvent as { text: string }).text,
-    "You are an editor.",
-  );
+  const trace = (await traceStore.get({ wsId: "ws", runId: run.id })) ?? [];
+  assertEquals(byNode(trace), {
+    content: ["node_start", "node_end"],
+    analyze: [
+      "node_start",
+      "prompt",
+      "model_call",
+      "reasoning",
+      "output",
+      "node_end",
+    ],
+    "mechanics.propose": [
+      "node_start",
+      "prompt",
+      "model_call",
+      "output",
+      "node_end",
+    ],
+    "mechanics.apply": ["node_start", "applied", "node_end"],
+    "mechanics.collect": ["node_start", "node_end"],
+    "mechanics.repair1.gate": ["node_start", "node_end"],
+    "mechanics.repair1.propose": ["node_start", "node_end"],
+    "mechanics.repair1.apply": ["node_start", "applied", "node_end"],
+    synthesize: ["node_start", "prompt", "model_call", "output", "node_end"],
+  });
+  const applied = appliedEvents(trace);
+  assertEquals(applied[0].attempts.length, 1);
+  assertEquals(applied[0].attempts[0].marked, true);
+  assertEquals(applied[1].attempts.length, 0);
+  assertEquals(inputs.length, 3);
+  assertEquals(inputs[1].includes("Thesis: Drafts are raw material."), true);
 });
 
-Deno.test("runReviewPass -- records a failed run on agent error", async () => {
-  const { vfs, reviewStore, traceStore } = setup();
-  await vfs.write("essay.txt", "hello world");
-  const agent = createMockThrowingAgent("upstream down");
+Deno.test("runReviewPass -- a repair round re-quotes the failed spans", async () => {
+  const { vfs, versionId } = await createFile("essay.txt", "hello world");
+  const { reviewStore, traceStore } = setup();
+  const { agent, inputs } = createSpyClient([
+    {
+      text: '{"marks":[{"selected_text":"ghost span","comment":"not there","label":"grammar"}]}',
+    },
+    {
+      text: '{"marks":[{"selected_text":"hello","comment":"found it","label":"grammar"}]}',
+    },
+  ]);
 
   const run = await runReviewPass({
     agent,
     vfs,
     reviewStore,
     traceStore,
-    pass,
+    pass: passFixture([
+      unitFixture({
+        id: "mechanics",
+        attempt: { allowedCategoryIds: ["grammar"] },
+      }),
+    ]),
+    wsId: "ws",
+    path: "essay.txt",
+  });
+
+  assertEquals(run.status, "completed");
+  assertEquals(run.summary, "");
+
+  const trace = (await traceStore.get({ wsId: "ws", runId: run.id })) ?? [];
+  assertEquals(byNode(trace), {
+    content: ["node_start", "node_end"],
+    "mechanics.propose": [
+      "node_start",
+      "prompt",
+      "model_call",
+      "output",
+      "node_end",
+    ],
+    "mechanics.apply": ["node_start", "applied", "node_end"],
+    "mechanics.collect": ["node_start", "node_end"],
+    "mechanics.repair1.gate": ["node_start", "node_end"],
+    "mechanics.repair1.propose": [
+      "node_start",
+      "prompt",
+      "model_call",
+      "output",
+      "node_end",
+    ],
+    "mechanics.repair1.apply": ["node_start", "applied", "node_end"],
+  });
+  const applied = appliedEvents(trace);
+  assertEquals(applied[0].attempts[0].marked, false);
+  assertEquals(applied[1].attempts[0].marked, true);
+  // The repair prompt quotes the failed span and its surroundings.
+  assertEquals(inputs[1].includes('Attempted span: "ghost span"'), true);
+  const marks = await vfs.getMarks("essay.txt", versionId);
+  assertEquals(marks[0].selected_text, "hello");
+});
+
+Deno.test("runReviewPass -- a zero budget keeps failed marks with no repair nodes", async () => {
+  const { vfs, versionId } = await createFile("essay.txt", "hello world");
+  const { reviewStore, traceStore } = setup();
+  const { agent } = createSpyClient([
+    {
+      text: '{"marks":[{"selected_text":"ghost span","comment":"not there","label":"grammar"}]}',
+    },
+  ]);
+
+  const run = await runReviewPass({
+    agent,
+    vfs,
+    reviewStore,
+    traceStore,
+    pass: passFixture([
+      unitFixture({
+        id: "mechanics",
+        attempt: { allowedCategoryIds: ["grammar"], repairRounds: 0 },
+      }),
+    ]),
+    wsId: "ws",
+    path: "essay.txt",
+  });
+
+  assertEquals(run.status, "completed");
+  const trace = (await traceStore.get({ wsId: "ws", runId: run.id })) ?? [];
+  assertEquals(Object.keys(byNode(trace)), [
+    "content",
+    "mechanics.propose",
+    "mechanics.apply",
+    "mechanics.collect",
+  ]);
+  const applied = appliedEvents(trace);
+  assertEquals(applied[0].attempts[0].marked, false);
+  const marks = await vfs.getMarks("essay.txt", versionId);
+  assertEquals(marks, []);
+});
+
+Deno.test("runReviewPass -- a node error fails the run and skips dependents", async () => {
+  const { vfs } = await createFile("essay.txt", "hello world");
+  const { reviewStore, traceStore } = setup();
+  const { agent } = createSpyClient([{ text: "not json" }]);
+
+  const run = await runReviewPass({
+    agent,
+    vfs,
+    reviewStore,
+    traceStore,
+    pass: passFixture([
+      unitFixture({ id: "analyze" }),
+      unitFixture({
+        id: "mechanics",
+        attempt: { allowedCategoryIds: ["grammar"] },
+        inputs: ["analyze"],
+      }),
+      unitFixture({
+        id: "synthesize",
+        summary: true,
+        inputs: ["analyze"],
+      }),
+    ]),
     wsId: "ws",
     path: "essay.txt",
   });
 
   assertEquals(run.status, "failed");
-  assertEquals(run.error, "upstream down");
-  assertEquals(typeof run.versionId, "string");
-  assertEquals(
-    (await reviewStore.getRun({ wsId: "ws", id: run.id }))?.status,
-    "failed",
-  );
+  assertEquals(run.error?.includes("not valid JSON"), true);
 
-  const trace = await traceStore.get({ wsId: "ws", runId: run.id });
-  const error = trace?.[0] as Extract<TracedReviewEvent, { type: "error" }>;
-  assertEquals(error.type, "error");
-  assertEquals(error.error, "upstream down");
+  const trace = (await traceStore.get({ wsId: "ws", runId: run.id })) ?? [];
+  const grouped = byNode(trace);
+  // The prompt is recorded before each call, the repair says why the first
+  // reply was rejected, and the re-ask that also failed leaves two
+  // model_call events with a repair between them.
+  assertEquals(grouped.analyze, [
+    "node_start",
+    "prompt",
+    "model_call",
+    "repair",
+    "prompt",
+    "model_call",
+    "repair",
+    "node_end",
+  ]);
+  assertEquals(nodeEnd(trace, "analyze")?.status, "failed");
+  for (const nodeId of [
+    "mechanics.propose",
+    "mechanics.apply",
+    "mechanics.collect",
+    "mechanics.repair1.gate",
+    "mechanics.repair1.propose",
+    "mechanics.repair1.apply",
+    "synthesize",
+  ]) {
+    const skipped = nodeEnd(trace, nodeId);
+    assertEquals(skipped?.status, "skipped");
+    assertEquals(
+      skipped?.status === "skipped"
+        ? skipped.reason.includes('dependency "analyze" failed')
+        : false,
+      true,
+    );
+    assertEquals(grouped[nodeId], ["node_end"]);
+  }
 });
 
 Deno.test("runReviewPass -- fails fast when the file does not exist", async () => {
-  const { vfs, reviewStore } = setup();
-
-  const run = await runReviewPass({
-    agent: createMockAgent("unused"),
-    vfs,
-    reviewStore,
-    pass,
-    wsId: "ws",
-    path: "ghost.txt",
-  });
-
-  assertEquals(run.status, "failed");
-  assertEquals(run.error, "File not found: ghost.txt");
-  assertEquals(run.versionId, undefined);
-  assertEquals(
-    (await reviewStore.getRun({ wsId: "ws", id: run.id }))?.status,
-    "failed",
-  );
-});
-
-Deno.test("runReviewPass -- commits pinned marks onto latest moved mid-run", async () => {
-  const { vfs, reviewStore } = setup();
-  await vfs.write("essay.txt", "hello world");
-  await vfs.write("essay.txt", "hello beautiful world");
-  const pinnedVersionId = (await vfs.read("essay.txt")).version_id;
-
-  // While the agent works, the user saves and the agent marks the pinned version.
-  const agent = createMockAgent("summary", undefined, async () => {
-    await vfs.write("essay.txt", "hello amazing world");
-    await vfs.mark("essay.txt", "hello", "greeting", {
-      versionId: pinnedVersionId,
-    });
-  });
-
-  const run = await runReviewPass({
-    agent,
-    vfs,
-    reviewStore,
-    pass,
-    wsId: "ws",
-    path: "essay.txt",
-  });
-
-  assertEquals(run.status, "completed");
-  assertEquals(run.versionId, pinnedVersionId);
-
-  const latest = await vfs.read("essay.txt");
-  const marks = await vfs.getMarks("essay.txt", latest.version_id);
-  assertEquals(marks.length, 1);
-  assertEquals(marks[0].status, "resolved");
-  assertEquals(marks[0].comment, "greeting");
-});
-
-Deno.test("runReviewPass -- commits marks placed before a failure", async () => {
-  const { vfs, reviewStore } = setup();
-  await vfs.write("essay.txt", "hello world");
-  const versionId = (await vfs.read("essay.txt")).version_id;
-
-  const agent = createMockThrowingAgent("upstream down", async () => {
-    await vfs.mark("essay.txt", "hello", "greeting", { versionId });
-  });
-
-  const run = await runReviewPass({
-    agent,
-    vfs,
-    reviewStore,
-    pass,
-    wsId: "ws",
-    path: "essay.txt",
-  });
-
-  assertEquals(run.status, "failed");
-  assertEquals(run.error, "upstream down");
-  const marks = await vfs.getMarks("essay.txt", versionId);
-  assertEquals(marks.length, 1);
-});
-
-Deno.test("runReviewPass -- emits progress snapshots via the trace recorder", async () => {
-  const { vfs, reviewStore, traceStore } = setup();
-  await vfs.write("essay.txt", "hello world");
-  const agent = createMockAgent("summary");
-  const progress: ReviewProgress[] = [];
+  const vfs = (await createFile("other.txt", "x")).vfs;
+  const { reviewStore, traceStore } = setup();
+  const { agent } = createSpyClient([]);
 
   const run = await runReviewPass({
     agent,
     vfs,
     reviewStore,
     traceStore,
-    pass,
+    pass: passFixture([unitFixture({ id: "analyze" })]),
     wsId: "ws",
     path: "essay.txt",
-    onProgress: (p) => progress.push(p),
   });
 
-  assertEquals(run.status, "completed");
-  // The mock stream derives no tool or message events, so only the
-  // initial snapshot arrives.
-  assertEquals(progress, [{ phase: "working", round: 0, notes: 0 }]);
+  assertEquals(run.status, "failed");
+  assertEquals(run.error, "File not found: essay.txt");
+  assertEquals(await traceStore.get({ wsId: "ws", runId: run.id }), undefined);
 });

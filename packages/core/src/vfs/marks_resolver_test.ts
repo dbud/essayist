@@ -802,8 +802,8 @@ Deno.test("resolveMarks -- deletion and insertion inside full-content mark", () 
 // Bug 1: mapOffset double-counts the accumulated shift when several
 // separated hunks come before the mark. `offsetDelta += hunk.newEnd -
 // hunk.oldEnd` re-adds the prior hunks' shift that is already baked
-// into `hunk.newEnd`. The correct delta is the hunk's own net length
-// change: `(newEnd - newStart) - (oldEnd - oldStart)`.
+// into `hunk.newEnd`. The correct delta is the net length change of the
+// hunk itself: `(newEnd - newStart) - (oldEnd - oldStart)`.
 Deno.test({
   name: "resolveMarks -- multiple separated hunks before mark apply only their own net delta",
   fn() {
@@ -832,7 +832,7 @@ Deno.test({
   },
 });
 
-// Bug 2: a mark whose start coincides with a hunk's start (e.g. a
+// Bug 2: a mark whose start coincides with the start of a hunk (e.g. a
 // whole-document mark with an edit at offset 0) is NOT treated as
 // "strictly inside" -- `markStart < hunk.oldStart` is strict -- so it
 // falls through to fuzzy matching, which shrinks and shifts the mark.
@@ -934,7 +934,7 @@ Deno.test({
 
 // Bug 5: in fuzzyResolveMark, Phase 1's exact-match step used
 // `text.indexOf(pattern, start)`, which returns the LEFTMOST occurrence
-// in the search window -- not the one nearest `expectedNewOffset`. With
+// in the search window -- not the occurrence nearest `expectedNewOffset`. With
 // repeated text the mark could latch onto the wrong copy.
 Deno.test({
   name: "resolveMarks -- Phase 1 exact match picks nearest occurrence among duplicates",

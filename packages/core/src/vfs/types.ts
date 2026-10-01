@@ -43,6 +43,12 @@ export interface GrepResult {
   matches: GrepMatch[];
 }
 
+/** Which review run and unit placed a mark. */
+export interface MarkProvenance {
+  runId: string;
+  unitId: string;
+}
+
 export type MarkStatus = "resolved" | "stale";
 
 export interface MarkOptions {
@@ -51,6 +57,7 @@ export interface MarkOptions {
   threadId?: string;
   contextSpan?: number;
   versionId?: string;
+  provenance?: MarkProvenance;
 }
 
 /**
@@ -76,6 +83,7 @@ export interface Mark {
   offset: number;
   length: number;
   status: MarkStatus;
+  meta?: MarkProvenance;
 }
 
 /** Result of a mark operation. */

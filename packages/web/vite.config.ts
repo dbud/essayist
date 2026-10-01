@@ -75,6 +75,9 @@ export default defineConfig({
   },
   resolve: {
     alias: {
+      // The patched deno loader serves CJS deps raw (no interop), so
+      // mermaid resolves to its fully-bundled dist instead.
+      mermaid: "mermaid/dist/mermaid.esm.min.mjs",
       react: "preact/compat",
       "react-dom": "preact/compat",
       "react-dom/client": "preact/compat/client",

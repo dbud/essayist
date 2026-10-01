@@ -1,20 +1,31 @@
+export type {
+  PostModelCallPayload,
+  SessionUsageTotals,
+} from "@/agent.ts";
 export { Agent } from "@/agent.ts";
-export { ConfigMissingError, ConfigStore } from "@/config/store.ts";
-export { extractVariables, renderPrompt } from "@/config/template.ts";
+export {
+  ConfigInvalidError,
+  ConfigMissingError,
+  resolveActiveReviewPass,
+  resolveReviewPass,
+} from "@/config/resolve.ts";
+export { ConfigStore } from "@/config/store.ts";
+export { extractVariables } from "@/config/template.ts";
 export type {
   Category,
   ModelPool,
   Prompt,
   ResolvedReviewPass,
+  ResolvedReviewUnit,
   ReviewPass,
-  ToolName,
+  ReviewUnit,
 } from "@/config/types.ts";
 export {
   CategorySchema,
   ModelPoolSchema,
   PromptSchema,
   ReviewPassSchema,
-  ToolNameSchema,
+  ReviewUnitSchema,
 } from "@/config/types.ts";
 export { pluralize } from "@/format.ts";
 export { logger } from "@/logger.ts";
@@ -38,19 +49,26 @@ export {
   providerErrorDetail,
   providerErrorLabel,
 } from "@/provider_error.ts";
+export { buildReviewGraph } from "@/reviews/adapter.ts";
+export { agentflowDefinition } from "@/reviews/agentflow.ts";
 export type { ReviewPhase, ReviewProgress } from "@/reviews/progress.ts";
 export { ReviewProgressTracker } from "@/reviews/progress.ts";
+export type { RunReviewPassOptions } from "@/reviews/runner.ts";
 export { runReviewPass } from "@/reviews/runner.ts";
 export { ReviewStore } from "@/reviews/store.ts";
-export type { TraceStore } from "@/reviews/trace.ts";
-export { EventTraceStore } from "@/reviews/trace.ts";
 export type {
+  TraceEvent,
+  TraceNodeView,
+  TraceRecorder,
+  TraceStore,
+  TraceTotals,
+  TraceView,
+} from "@/reviews/trace/mod.ts";
+export { groupTraceNodes, TraceEventStore } from "@/reviews/trace/mod.ts";
+export type {
+  MarkAttempt,
   ReviewRun,
   ReviewRunStatus,
-  ReviewTraceEvent,
-  ReviewTraceSink,
-  ReviewTraceUsage,
-  TracedReviewEvent,
 } from "@/reviews/types.ts";
 export { summarizeFile } from "@/summarize.ts";
 export {
@@ -82,6 +100,7 @@ export type {
   GrepResult,
   Mark,
   MarkOptions,
+  MarkProvenance,
   MarkResult,
   MarkStatus,
   ReadOptions,

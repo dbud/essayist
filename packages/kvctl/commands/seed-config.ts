@@ -11,27 +11,42 @@ export const seedConfig = new Command<KvctlGlobals>()
         id: poolId,
         name: "Free pool",
         models: [
+          "qwen/qwen3.8-27b:free",
           "poolside/laguna-s-2.1:free",
           "nvidia/nemotron-3.5-lightning:free",
         ],
       });
 
-      // Default prompts are generic placeholders.
+      // A shared system prompt; units differentiate through directives.
       const systemPromptKey = "system.reviewer";
-      const instructionsPromptKey = "instructions.mark";
-      const directivePromptKey = "directive.review";
       const prompts = [
         {
           key: systemPromptKey,
-          body: "You are an experienced editor and writing teacher. You review the user's literary work and leave constructive, specific annotations. You never rewrite the work; you only read and mark it.",
+          body: "You are an experienced editor and writing teacher. You review the user's literary work and leave constructive, specific annotations. You never rewrite the work; you only read and judge it.",
         },
         {
-          key: instructionsPromptKey,
-          body: "Read the relevant files, then place all annotations for a file in a single mark call, passing every mark in the marks array. Each mark must use one of the allowed labels and a concise, actionable comment.",
+          key: "directive.analyze",
+          body: "Read the essay carefully. Describe the piece as its ideal reader would experience it: restate the thesis in your own words, name the intended audience, list the main claims in the order they are made, sketch a paragraph map keyed by line numbers, and note where the writing is strong and where a skeptical reader is likely to resist. Ground every observation in the text.",
         },
         {
-          key: directivePromptKey,
-          body: 'Review the file "{{file}}". Read it, then mark issues using the allowed labels.',
+          key: "directive.mechanics",
+          body: "Scan the essay line by line for mechanical faults: grammar, spelling, punctuation, usage, and agreement. Flag only defects a careful copy editor would mark. For each, quote the exact span and say briefly what is wrong and how to fix it. Do not comment on style, argument, or organization.",
+        },
+        {
+          key: "directive.structure",
+          body: "Assess how the essay is organized: paragraph order, transitions, sectioning, and pacing. Flag places where the reader loses the thread, where two paragraphs should merge or split, or where material sits in the wrong order. Quote the span that shows the problem and say what to do about it. Do not comment on grammar or word choice.",
+        },
+        {
+          key: "directive.argument",
+          body: "First restate the essay's argument in its strongest form. Then find where a skeptical reader would not yet be persuaded: unsupported claims, weak or missing evidence, overreaching generalizations, and places where the body drifts from the thesis. Quote the exact span and explain the objection a skeptical reader would raise.",
+        },
+        {
+          key: "directive.synthesize",
+          body: "Write a short review summary for the writer. Lead with the one or two changes that matter most, then group the remaining marks by severity. Stay grounded in the marks provided; do not invent issues that have no mark.",
+        },
+        {
+          key: "instructions.marks",
+          body: "Every mark must quote the exact text from the numbered essay content. Use the allowed labels only. Comments are one or two sentences, specific and actionable. Place every mark you can defend; do not pad, and do not repeat an issue listed under a different aspect.",
         },
       ];
       for (const p of prompts) await config.savePrompt(p);
@@ -71,21 +86,50 @@ export const seedConfig = new Command<KvctlGlobals>()
       for (const c of categories) await config.saveCategory(c);
 
       const reviewPassId = "essay-review";
+      const units = [
+        {
+          id: "analyze",
+          promptKey: "directive.analyze",
+        },
+        {
+          id: "mechanics",
+          promptKey: "directive.mechanics",
+          instructionsPromptKey: "instructions.marks",
+          attempt: { allowedCategoryIds: ["grammar"] },
+        },
+        {
+          id: "structure",
+          promptKey: "directive.structure",
+          instructionsPromptKey: "instructions.marks",
+          attempt: { allowedCategoryIds: ["structure"] },
+          inputs: ["analyze"],
+        },
+        {
+          id: "argument",
+          promptKey: "directive.argument",
+          instructionsPromptKey: "instructions.marks",
+          attempt: { allowedCategoryIds: ["thesis", "evidence"] },
+          inputs: ["analyze"],
+        },
+        {
+          id: "synthesize",
+          promptKey: "directive.synthesize",
+          summary: true,
+          inputs: ["mechanics", "structure", "argument"],
+        },
+      ];
       await config.saveReviewPass({
         id: reviewPassId,
         name: "Essay review",
-        modelPoolId: poolId,
         systemPromptKey,
-        directivePromptKey,
-        instructionsPromptKey,
-        enabledTools: ["read_file", "list_files", "grep", "mark"],
-        allowedCategoryIds: categories.map((c) => c.id),
-        maxRounds: 5,
+        modelPoolId: poolId,
+        variables: {},
+        units,
       });
       await config.setActiveReviewPass(reviewPassId);
 
       console.log(
-        `seeded default config: model pool '${poolId}', ${prompts.length} prompts, ${categories.length} categories, review pass '${reviewPassId}' (active)`,
+        `seeded default config: model pool '${poolId}', ${prompts.length} prompts, ${categories.length} categories, review pass '${reviewPassId}' with ${units.length} units (active)`,
       );
     }),
   );

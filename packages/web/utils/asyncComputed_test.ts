@@ -76,7 +76,7 @@ Deno.test("asyncComputed -- holds last value and sets stale while pending", asyn
 Deno.test("asyncComputed -- drops stale responses", async () => {
   const s = signal(0);
   // Slow compute whose latency grows with the value, so an older request can
-  // resolve after a newer one if not guarded.
+  // resolve after a newer call if not guarded.
   const c = asyncComputed(
     () => s.value,
     async (n) => {

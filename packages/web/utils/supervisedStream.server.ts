@@ -53,7 +53,7 @@ export interface StreamHooks<T, S> {
   /** Open a fresh iterator for this run, so it may read input state
    * that changed since the last run. */
   open: (state: S) => AsyncIterator<T>;
-  /** Process one item for this run. */
+  /** Process a single item for this run. */
   onItem: (item: T, state: S) => void;
 }
 

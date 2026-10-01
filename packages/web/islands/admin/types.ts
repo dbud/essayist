@@ -4,4 +4,5 @@ export type DialogRequest =
   | { kind: "pool"; entity?: ModelPool }
   | { kind: "prompt"; entity?: Prompt }
   | { kind: "category"; entity?: Category }
-  | { kind: "pass"; entity?: ReviewPass };
+  | { kind: "pass"; entity?: ReviewPass }
+  | { kind: "unit"; pass: ReviewPass; unitId?: string };

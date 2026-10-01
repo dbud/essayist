@@ -1,82 +1,117 @@
 import { assertEquals } from "@std/assert";
+import type { FlowEvent, NodeKind } from "@/flow/types.ts";
+import type { ReviewTypes } from "@/reviews/graph.ts";
 import type { ReviewProgress } from "./progress.ts";
 import { ReviewProgressTracker } from "./progress.ts";
-import type { ReviewTraceEvent } from "./types.ts";
+
+const KIND_OF = new Map<string, NodeKind<ReviewTypes>>([
+  ["content", "source"],
+  ["analyze", "analyze"],
+  ["mechanics.propose", "mark.propose"],
+  ["mechanics.apply", "mark.apply"],
+  ["mechanics.repair1.gate", "mark.repair.gate"],
+  ["mechanics.repair1.propose", "mark.propose.repair"],
+  ["synthesize", "synthesize"],
+]);
 
 Deno.test("ReviewProgressTracker -- emits initial state on construction", () => {
   const events: ReviewProgress[] = [];
-  new ReviewProgressTracker((p) => events.push(p));
+  new ReviewProgressTracker((p) => events.push(p), KIND_OF);
 
-  assertEquals(events, [{ phase: "working", round: 0, notes: 0 }]);
+  assertEquals(events, [{ phase: "working", notes: 0 }]);
 });
 
-Deno.test("ReviewProgressTracker -- derives phases and note counts", () => {
+Deno.test("ReviewProgressTracker -- derives node phases and note counts", () => {
   const events: ReviewProgress[] = [];
-  const tracker = new ReviewProgressTracker((p) => events.push(p));
+  const tracker = new ReviewProgressTracker((p) => events.push(p), KIND_OF);
 
-  const sequence: ReviewTraceEvent[] = [
-    { type: "round_start", round: 0 },
-    { type: "reasoning", round: 0, text: "secret thoughts" },
-    { type: "tool_call", round: 0, callId: "c1", name: "read_file", args: {} },
+  const sequence: FlowEvent<ReviewTypes>[] = [
+    { type: "node_start", nodeId: "analyze" },
     {
-      type: "tool_output",
-      round: 0,
-      callId: "c1",
-      output: { content: "the whole essay" },
+      type: "custom",
+      nodeId: "analyze",
+      event: { type: "prompt", text: "secret" },
     },
-    { type: "round_end", round: 0 },
-    { type: "round_start", round: 1 },
-    { type: "tool_call", round: 1, callId: "c2", name: "mark", args: {} },
     {
-      type: "tool_output",
-      round: 1,
-      callId: "c2",
-      output: { results: [{ marked: true }, { marked: false }] },
+      type: "custom",
+      nodeId: "analyze",
+      event: { type: "output", output: { thesis: "x" } },
     },
-    { type: "round_start", round: 2 },
-    { type: "message", round: 2, text: "final summary words" },
+    {
+      type: "custom",
+      nodeId: "analyze",
+      event: {
+        type: "model_call",
+        call: {
+          sessionId: "s",
+          responseId: "r",
+          model: "m/a",
+          durationMs: 1,
+          turnType: "initial",
+          turnNumber: 1,
+          usage: {
+            inputTokens: 1,
+            outputTokens: 1,
+            totalTokens: 2,
+            cachedTokens: 0,
+            reasoningTokens: 0,
+          },
+        },
+      },
+    },
+    {
+      type: "node_end",
+      nodeId: "analyze",
+      run: {
+        nodeId: "analyze",
+        status: "completed",
+        startedAt: 1,
+        completedAt: 2,
+      },
+    },
+    { type: "node_start", nodeId: "mechanics.propose" },
+    {
+      type: "custom",
+      nodeId: "mechanics.apply",
+      event: {
+        type: "applied",
+        attempts: [
+          { selected_text: "a", comment: "c", marked: true },
+          { selected_text: "b", comment: "c", marked: true },
+          {
+            selected_text: "ghost",
+            comment: "c",
+            marked: false,
+            error: "no match",
+          },
+        ],
+      },
+    },
+    { type: "node_start", nodeId: "mechanics.repair1.gate" },
+    { type: "node_start", nodeId: "mechanics.repair1.propose" },
+    {
+      type: "custom",
+      nodeId: "mechanics.repair1.apply",
+      event: {
+        type: "applied",
+        attempts: [{ selected_text: "d", comment: "c", marked: true }],
+      },
+    },
+    { type: "node_start", nodeId: "synthesize" },
+    { type: "node_start", nodeId: "ghost" },
   ];
   for (const event of sequence) tracker.handle(event);
 
   assertEquals(events, [
-    { phase: "working", round: 0, notes: 0 },
-    { phase: "reading", round: 0, notes: 0 },
-    { phase: "reading", round: 1, notes: 0 },
-    { phase: "annotating", round: 1, notes: 0 },
-    { phase: "annotating", round: 1, notes: 1 },
-    { phase: "annotating", round: 2, notes: 1 },
-    { phase: "summarizing", round: 2, notes: 1 },
+    { phase: "working", notes: 0 },
+    { phase: "analyzing", notes: 0 },
+    { phase: "marking", notes: 0 },
+    { phase: "marking", notes: 2 },
+    { phase: "repairing", notes: 2 },
+    { phase: "repairing", notes: 2 },
+    { phase: "repairing", notes: 3 },
+    { phase: "summarizing", notes: 3 },
+    // An unmapped node id falls back to the working phase.
+    { phase: "working", notes: 3 },
   ]);
-});
-
-Deno.test("ReviewProgressTracker -- truncated mark output adds no notes", () => {
-  const events: ReviewProgress[] = [];
-  const tracker = new ReviewProgressTracker((p) => events.push(p));
-
-  tracker.handle({
-    type: "tool_output",
-    round: 0,
-    callId: "c1",
-    output: '{"results": truncated',
-    truncated: true,
-  });
-
-  assertEquals(events.length, 1);
-  assertEquals(events[0].notes, 0);
-});
-
-Deno.test("ReviewProgressTracker -- unknown tools stay in working phase", () => {
-  const events: ReviewProgress[] = [];
-  const tracker = new ReviewProgressTracker((p) => events.push(p));
-
-  tracker.handle({
-    type: "tool_call",
-    round: 0,
-    callId: "c1",
-    name: "write_file",
-    args: {},
-  });
-
-  assertEquals(events.length, 1);
-  assertEquals(events[0].phase, "working");
 });

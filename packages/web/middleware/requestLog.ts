@@ -8,6 +8,8 @@ const requestLogMiddleware: Middleware<State> = define.middleware(
     const fields = () => ({
       method: ctx.req.method,
       route: ctx.route ?? ctx.url.pathname,
+      params: ctx.params,
+      query: Object.fromEntries(ctx.url.searchParams),
       duration_ms: Math.round(performance.now() - start),
     });
     try {

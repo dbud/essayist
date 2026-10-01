@@ -35,7 +35,7 @@ import {
 
 export const MARK_RANGE_TAG = "mark-range";
 
-/** Dispatch with a mark's thread id to place the caret at that mark. */
+/** Dispatch with the thread id of a mark to place the caret at that mark. */
 export const SELECT_MARK_COMMAND: LexicalCommand<string> = createCommand();
 
 export interface MarksExtensionConfig {
@@ -47,8 +47,9 @@ export interface MarksExtensionConfig {
 export const MarksExtension = defineExtension({
   name: "mark",
   nodes: () => [MarkNode],
-  // afterRegistration runs after $initialEditorState is committed; the effect's
-  // first run is synchronous, so register() would run it against an empty tree.
+  // afterRegistration runs after $initialEditorState is committed; the first
+  // run of the effect is synchronous, so register() would run it against an
+  // empty tree.
   afterRegistration: (
     editor: LexicalEditor,
     { path, resolved, markdown }: MarksExtensionConfig,
@@ -105,7 +106,7 @@ export const MarksExtension = defineExtension({
 
         editor.update(
           () => {
-            // One fresh span collection from the in-flight tree, shared with
+            // A fresh span collection from the in-flight tree, shared with
             // $applyMarks (unwrap preserves keys/text/order, so it stays valid
             // post-unwrap).
             const spans = $collectTextNodeSpans(content);
@@ -162,8 +163,9 @@ export function $applyMarks(
   for (const { seg, range } of resolved) {
     const selection = $createSelection(range);
     // $wrapSelectionInMarkNode always invokes createNode with [id] (the single
-    // id argument); ignore that and close over the segment's full id-set so a
-    // shared interval becomes one MarkNode carrying every covering mark's id.
+    // id argument); ignore that and close over the full id-set of the segment
+    // so a shared interval becomes a single MarkNode carrying the id of every
+    // covering mark.
     $wrapSelectionInMarkNode(selection, false, seg.ids[0], () =>
       $createMarkNode(seg.ids),
     );

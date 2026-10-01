@@ -25,7 +25,7 @@ export interface ListOptions extends ReadOptions {
   reverse?: boolean;
 }
 
-/** One page of a scan. `cursor` is present when more results remain. */
+/** A page of a scan. `cursor` is present when more results remain. */
 export interface ListResult<T = unknown> {
   entries: Entry<T>[];
   cursor?: string;
@@ -50,7 +50,7 @@ export interface BatchOptions {
   checks?: Array<{ key: Key; versionstamp: string | null }>;
 }
 
-/** Error thrown when a batch's `checks` fail optimistic-concurrency validation. */
+/** Error thrown when the `checks` of a batch fail optimistic-concurrency validation. */
 export class ConcurrentModificationError extends Error {
   constructor(public readonly key: Key) {
     super(`Concurrent modification detected for key ${JSON.stringify(key)}`);
@@ -65,7 +65,7 @@ export class ConcurrentModificationError extends Error {
  * are convenience wrappers over {@link PersistenceAdapter.batch}.
  */
 export interface PersistenceAdapter {
-  /** Read one entry, or `undefined` if absent. */
+  /** Read a single entry, or `undefined` if absent. */
   get<T = unknown>(
     key: Key,
     options?: ReadOptions,
@@ -77,7 +77,7 @@ export interface PersistenceAdapter {
     options?: ReadOptions,
   ): Promise<(Entry<T> | undefined)[]>;
 
-  /** Scan a tuple-prefix range, one page at a time. */
+  /** Scan a tuple-prefix range, a page at a time. */
   list<T = unknown>(prefix: Key, options?: ListOptions): Promise<ListResult<T>>;
 
   /**
