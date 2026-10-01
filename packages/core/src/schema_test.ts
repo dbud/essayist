@@ -190,11 +190,12 @@ Deno.test("generateInstructions handles nullable objects", () => {
     generateInstructions(schema),
     `Return only one valid JSON object matching this shape. Do not use markdown fences, code blocks, comments, or any extra text:
 
-- user: object, nullable`,
+- user: object, nullable
+  - name: string`,
   );
 });
 
-Deno.test("generateInstructions handles intersection types", () => {
+Deno.test("generateInstructions expands intersection fields", () => {
   const schema = z.object({
     value: z.intersection(
       z.object({ name: z.string() }),
@@ -206,7 +207,100 @@ Deno.test("generateInstructions handles intersection types", () => {
     generateInstructions(schema),
     `Return only one valid JSON object matching this shape. Do not use markdown fences, code blocks, comments, or any extra text:
 
-- value: object`,
+- value: object
+  - name: string
+  - age: number`,
+  );
+});
+
+Deno.test("generateInstructions lists the fields of a nested object", () => {
+  const schema = z.object({
+    user: z.object({
+      name: z.string(),
+      age: z.number().optional(),
+    }),
+  });
+
+  assertEquals(
+    generateInstructions(schema),
+    `Return only one valid JSON object matching this shape. Do not use markdown fences, code blocks, comments, or any extra text:
+
+- user: object
+  - name: string
+  - age: number, optional`,
+  );
+});
+
+Deno.test("generateInstructions lists the fields of an array of objects", () => {
+  const schema = z.object({
+    outline: z
+      .object({
+        first_line: z.number().int().describe("Where the section starts."),
+        gist: z.string().describe("What the section does."),
+      })
+      .array(),
+  });
+
+  assertEquals(
+    generateInstructions(schema),
+    `Return only one valid JSON object matching this shape. Do not use markdown fences, code blocks, comments, or any extra text:
+
+- outline: object array
+  - first_line: Where the section starts., integer
+  - gist: What the section does., string`,
+  );
+});
+
+Deno.test("generateInstructions recurses through nested arrays of objects", () => {
+  const schema = z.object({
+    groups: z.array(
+      z.object({
+        title: z.string(),
+        items: z.array(z.object({ id: z.string(), qty: z.number() })),
+      }),
+    ),
+  });
+
+  assertEquals(
+    generateInstructions(schema),
+    `Return only one valid JSON object matching this shape. Do not use markdown fences, code blocks, comments, or any extra text:
+
+- groups: object array
+  - title: string
+  - items: object array
+    - id: string
+    - qty: number`,
+  );
+});
+
+Deno.test("generateInstructions lists the fields of a nullable object", () => {
+  // A nullable object is the object unioned with null, so the union has to be
+  // unwrapped before the fields are read.
+  const schema = z.object({
+    user: z.object({ name: z.string() }).nullable(),
+    tags: z.array(z.string()).nullable(),
+  });
+
+  assertEquals(
+    generateInstructions(schema),
+    `Return only one valid JSON object matching this shape. Do not use markdown fences, code blocks, comments, or any extra text:
+
+- user: object, nullable
+  - name: string
+- tags: string array, nullable`,
+  );
+});
+
+Deno.test("generateInstructions describes a record by its value type, not its keys", () => {
+  const schema = z.object({
+    scores: z.array(z.record(z.string(), z.number())),
+  });
+
+  assertEquals(
+    generateInstructions(schema),
+    `Return only one valid JSON object matching this shape. Do not use markdown fences, code blocks, comments, or any extra text:
+
+- scores: number record array`,
   );
 });
 
