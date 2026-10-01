@@ -288,13 +288,16 @@ Deno.test("runReviewPass -- a node error fails the run and skips dependents", as
 
   const trace = (await traceStore.get({ wsId: "ws", runId: run.id })) ?? [];
   const grouped = byNode(trace);
-  // The prompt is recorded before the failing call, and the re-ask that
-  // also failed leaves two model_call events.
+  // The prompt is recorded before the failing call, the repair says why the
+  // first reply was rejected, and the re-ask that also failed leaves two
+  // model_call events with a repair between them.
   assertEquals(grouped.analyze, [
     "node_start",
     "prompt",
     "model_call",
+    "repair",
     "model_call",
+    "repair",
     "node_end",
   ]);
   assertEquals(nodeEnd(trace, "analyze")?.status, "failed");

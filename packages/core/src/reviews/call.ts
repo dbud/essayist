@@ -5,6 +5,7 @@ import type { Agent, PostModelCallPayload, StructuredCall } from "@/agent.ts";
 export type CallEvent =
   | { type: "prompt"; text: string }
   | { type: "reasoning"; text: string }
+  | { type: "repair"; raw: string; error: string }
   | { type: "output"; output: unknown }
   | { type: "model_call"; call: PostModelCallPayload };
 
@@ -29,7 +30,10 @@ export async function callStructured<T extends z.ZodObject<z.ZodRawShape>>(
     options.input,
     options.schema,
     options.models,
-    { onModelCall: (call) => options.onEvent({ type: "model_call", call }) },
+    {
+      onModelCall: (call) => options.onEvent({ type: "model_call", call }),
+      onRepair: (repair) => options.onEvent({ type: "repair", ...repair }),
+    },
   );
   for (const text of result.reasoning) {
     options.onEvent({ type: "reasoning", text });

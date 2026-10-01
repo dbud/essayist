@@ -44,6 +44,14 @@ export class StructuredParseError extends Error {
   }
 }
 
+/** A re-ask: what the model replied, and why it did not fit the schema. */
+export interface RepairAttempt {
+  /** The reply that was rejected. */
+  raw: string;
+  /** The validation error, as the model was told it. */
+  error: string;
+}
+
 export interface StructuredCall<T> {
   output: T;
   usage: SessionUsageTotals;
@@ -51,6 +59,8 @@ export interface StructuredCall<T> {
   reasoning: string[];
   /** Every model call made, in order, including a re-ask. */
   calls: PostModelCallPayload[];
+  /** Why each re-ask happened. Empty when the first reply parsed. */
+  repairs: RepairAttempt[];
 }
 
 export type { PostModelCallPayload, SessionUsageTotals };
@@ -85,6 +95,7 @@ export class Agent {
     options?: {
       includeExample?: boolean;
       onModelCall?: (call: PostModelCallPayload) => void;
+      onRepair?: (repair: RepairAttempt) => void;
     },
   ): Promise<StructuredCall<z.output<T>>> {
     const fullInput = `${input}\n\n${generateInstructions(schema, options)}`;
@@ -106,6 +117,8 @@ export class Agent {
       output = parseStructured(first.text, schema);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
+      const repair = { raw: first.text, error: message };
+      options?.onRepair?.(repair);
       const retry = await this.#structuredRound(
         repairInput(fullInput, first.text, message),
         models,
@@ -116,6 +129,7 @@ export class Agent {
       } catch (retryErr) {
         const retryMessage =
           retryErr instanceof Error ? retryErr.message : String(retryErr);
+        options?.onRepair?.({ raw: retry.text, error: retryMessage });
         throw new StructuredParseError(retry.text, retryMessage);
       }
       return {
@@ -123,6 +137,7 @@ export class Agent {
         usage: addUsage(first.usage, retry.usage),
         reasoning: mapNotNullish([first, retry], (round) => round.reasoning),
         calls,
+        repairs: [repair],
       };
     }
 
@@ -131,6 +146,7 @@ export class Agent {
       usage: first.usage,
       reasoning: mapNotNullish([first], (round) => round.reasoning),
       calls,
+      repairs: [],
     };
   }
 

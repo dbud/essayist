@@ -227,6 +227,68 @@ Deno.test("Agent.callModelStructured -- re-asks once on invalid output and combi
     "first attempt thinking",
     "second attempt thinking",
   ]);
+  assertEquals(result.repairs.length, 1);
+  assertEquals(result.repairs[0].raw, "not json at all");
+  // The reply was not JSON, so the error is about the parse, not the schema.
+  assertEquals(result.repairs[0].error.includes("JSON"), true);
+});
+
+Deno.test("Agent.callModelStructured -- a first reply that parses has no repairs", async () => {
+  const { client } = createSpyClient([{ text: '{"ok":true}' }]);
+  const agent = new Agent("test-key", client);
+
+  const result = await agent.callModelStructured(
+    "ping",
+    z.object({ ok: z.boolean() }),
+    ["m/a"],
+  );
+
+  assertEquals(result.repairs, []);
+});
+
+Deno.test("Agent.callModelStructured -- onRepair fires before the re-ask", async () => {
+  const order: string[] = [];
+  const { client } = createSpyClient([
+    { text: "not json at all" },
+    { text: '{"ok":true}' },
+  ]);
+  const agent = new Agent("test-key", client);
+
+  const result = await agent.callModelStructured(
+    "ping",
+    z.object({ ok: z.boolean() }),
+    ["m/a"],
+    {
+      onModelCall: (call) => order.push(`call:${call.responseId}`),
+      onRepair: () => order.push("repair"),
+    },
+  );
+
+  // The repair belongs between the two calls, so the trace reads in order.
+  assertEquals(order, ["call:r", "repair", "call:r"]);
+  assertEquals(result.repairs.length, 1);
+});
+
+Deno.test("Agent.callModelStructured -- a failed re-ask reports the second rejection", async () => {
+  const seen: string[] = [];
+  const { client } = createSpyClient([
+    { text: "first bad" },
+    { text: "second bad" },
+  ]);
+  const agent = new Agent("test-key", client);
+
+  await assertRejects(
+    () =>
+      agent.callModelStructured(
+        "ping",
+        z.object({ ok: z.boolean() }),
+        ["m/a"],
+        { onRepair: (repair) => seen.push(repair.raw) },
+      ),
+    StructuredParseError,
+  );
+
+  assertEquals(seen, ["first bad", "second bad"]);
 });
 
 Deno.test("Agent.callModelStructured -- omits a round that had no reasoning", async () => {

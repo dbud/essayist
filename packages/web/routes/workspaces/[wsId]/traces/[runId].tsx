@@ -10,6 +10,7 @@ import { groupTraceNodes } from "@essayist/core";
 import type { PageProps } from "fresh";
 import { page } from "fresh";
 import {
+  AlertTriangle,
   ArrowDown,
   ArrowRight,
   ArrowUp,
@@ -141,6 +142,23 @@ function ReasoningRow({ text }: { text: string }) {
   );
 }
 
+function RepairRow({ raw, error }: { raw: string; error: string }) {
+  return (
+    <>
+      <div class="cell--data">
+        <AlertTriangle size={14} />
+        re-asked
+      </div>
+      <div class="cell--data col-span-2 min-w-0 max-h-72 overflow-y-auto break-words">
+        <div class="flex flex-col gap-2">
+          <div class="text-xs text-error">{error}</div>
+          <pre class="min-w-0 whitespace-pre-wrap font-mono">{raw}</pre>
+        </div>
+      </div>
+    </>
+  );
+}
+
 function OutputRow({ output }: { output: unknown }) {
   return (
     <>
@@ -224,6 +242,8 @@ function EventRow({ event }: { event: NodeEvent }) {
       return <ReasoningRow text={event.text} />;
     case "output":
       return <OutputRow output={event.output} />;
+    case "repair":
+      return <RepairRow raw={event.raw} error={event.error} />;
     case "model_call":
       return <ModelCallRow call={event.call} />;
     case "applied":
