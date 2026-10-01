@@ -17,7 +17,7 @@
     "vite": "npm:vite@^8.3.0"
   },
   "license": "MIT",
-  "lock": false,
   "name": "@fresh/plugin-vite",
+  "publish": false,
   "version": "1.1.2"
 }

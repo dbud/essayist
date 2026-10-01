@@ -1,8 +1,14 @@
 # Vendored @fresh/plugin-vite 1.1.2
 
 Local copy of `jsr:@fresh/plugin-vite@1.1.2` patched for Vite 8 (rolldown).
-Wired up via the `patch` field in the root `deno.json`, which overrides the
-JSR dependency with this folder (name and version must match).
+A workspace member of the root `deno.json`, so the bare `@fresh/plugin-vite`
+specifier resolves here. The name and version match the JSR package, so
+`jsr:@fresh/plugin-vite@^1.1.2` still resolves to this folder.
+
+Not a `links` entry: Dependabot fetches only the root manifest, the workspace
+member manifests and `deno.lock`, so a link target is missing from its temp
+checkout and the job fails. Deno also rejects a directory that is both a
+workspace member and a link.
 
 Source: https://jsr.io/@fresh/plugin-vite/1.1.2
 
@@ -37,20 +43,28 @@ Local changes, taken from https://github.com/freshframework/fresh/pull/3760
 - Removed `src/plugins/shims.ts` and `src/plugins/shims/` (unused: the
   `shims()` plugin was never composed into the plugin list in `mod.ts`).
 
-Remove this folder and the `patch` entry once `@fresh/plugin-vite`
+Remove this folder and its `workspace` entry once `@fresh/plugin-vite`
 publishes Vite 8 support.
 
 ## Verifying changes in this folder
 
-The root deno/biome configs exclude this folder (vendored code would
-fail the app's style gates), so run its own checks after editing:
+Biome excludes this folder (`!patches`) and `deno lint` excludes it via
+`lint.exclude`, both because vendored code fails the app's style gates.
+`deno check` covers it as a workspace member, so `deno task fmt:check`
+type-checks it, as does the web package check:
 
 ```
-deno check --config patches/plugin-vite/deno.json patches/plugin-vite/src/mod.ts patches/plugin-vite/src/client.ts
-deno lint --config patches/plugin-vite/deno.json patches/plugin-vite/src/
+deno task fmt:check
 deno task -f web check
 ```
 
-The first two use this folder's own deno.json so `vite/client` types
-resolve; the web check covers the consumer side. A plain build does not
-type-check plugin code, so do not rely on it alone.
+Its `deno.json` relaxes two lint rules the app enables, so to lint this folder
+alone:
+
+```
+deno lint --config patches/plugin-vite/deno.json patches/plugin-vite/src/
+```
+
+Skip `deno check --config` here: it treats this folder as a standalone config
+and writes a second `deno.lock` beside it. A plain build does not type-check
+plugin code, so do not rely on it alone.
