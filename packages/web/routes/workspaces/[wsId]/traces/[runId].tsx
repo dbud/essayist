@@ -58,13 +58,17 @@ function statusBadge(status: ReviewRunStatus) {
   return <span class={classes}>{status}</span>;
 }
 
-/** Editor URL that opens this run's file in replay mode. */
-function replayHref(run: ReviewRun): string {
-  return (
-    `/?ws=${encodeURIComponent(run.wsId)}` +
-    `&file=${encodeURIComponent(run.path)}` +
-    `&replay=${run.id}`
-  );
+/** Editor URL that opens this run's file, in replay mode when asked. */
+function editorHref(
+  run: ReviewRun,
+  { replay = false }: { replay?: boolean } = {},
+): string {
+  const params = new URLSearchParams({
+    ws: run.wsId,
+    file: run.path,
+  });
+  if (replay) params.set("replay", run.id);
+  return `/?${params.toString()}`;
 }
 
 function duration(ms: number): string {
@@ -360,12 +364,12 @@ export default function ReviewTracePage({
       <main class="flex flex-1 flex-col stack stack--col min-h-0 @container">
         <Navigation user={state.user}>
           <div class="flex stack stack--row">
-            <a href="/" class="btn">
+            <a href={editorHref(run)} class="btn">
               <MoveLeft size={16} />
             </a>
             <div class="cell">Review trace</div>
             <a
-              href={replayHref(run)}
+              href={editorHref(run, { replay: true })}
               class="btn"
               title="Replay this run in the editor"
             >

@@ -15,9 +15,13 @@ import { parseReplayParams, type ReplayParams } from "@/utils/reviewReplay.ts";
  * version also belongs to one file and is dropped on file navigation.
  * These are the only query params the page manages; any other params in
  * the URL are dropped on the next update.
+ *
+ * Only the editor reads this query, so only the editor's URL is managed.
+ * Other routes read their context from the path and keep their own query.
  */
 
 const MARKER = "essayist";
+const EDITOR_PATH = "/";
 
 function selectionUrl({
   wsId,
@@ -42,6 +46,8 @@ function selectionUrl({
 
 if (IS_BROWSER) {
   effect(() => {
+    if (location.pathname !== EDITOR_PATH) return;
+
     const workspaces = getWorkspaces();
     const wsId = workspaces.selectedId.value;
     if (!wsId) return;
@@ -109,6 +115,7 @@ if (IS_BROWSER) {
   addEventListener("popstate", (e: PopStateEvent) => {
     // Fresh-managed entries fall back to a full reload there instead.
     if (e.state !== MARKER) return;
+    if (location.pathname !== EDITOR_PATH) return;
     const params = new URLSearchParams(location.search);
     const wsId = params.get("ws");
     if (!wsId) return; // our entries always carry a workspace
