@@ -72,7 +72,7 @@ export function planChunks(
 
 /** The suffix for a chunk, padded so that chunks sort in order. The width
  * comes from the chunk count, so a reader can work it out from the header. */
-function chunkKeyPart(index: number, nChunks: number): string {
+export function chunkKeyPart(index: number, nChunks: number): string {
   return `c${String(index).padStart(String(nChunks).length, "0")}`;
 }
 
@@ -85,7 +85,7 @@ export interface AssembledValue {
   raw?: unknown;
 }
 
-function splitChunkKey(key: Key): { base: Key; index: number } {
+export function splitChunkKey(key: Key): { base: Key; index: number } {
   const match = /^c(\d+)$/.exec(key.at(-1) ?? "");
   if (!match) return { base: key, index: 0 };
   return { base: key.slice(0, -1), index: Number(match[1]) };
