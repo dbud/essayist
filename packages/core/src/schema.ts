@@ -147,23 +147,26 @@ function describeField(
   }
 
   const parts: string[] = [];
-  if (prop.description) parts.push(prop.description);
   if (prop.enum) {
     parts.push(`one of ${prop.enum.map((v) => formatValue(v)).join(", ")}`);
   } else if (prop.const !== undefined) {
     parts.push(`literal ${formatValue(prop.const)}`);
   }
 
-  const type = getTypeName(prop);
-  parts.push(type);
+  parts.push(getTypeName(prop));
   if (!required.has(name)) parts.push("optional");
   if (isNullable(prop)) parts.push("nullable");
   if (prop.default !== undefined) {
     parts.push(`default: ${formatValue(prop.default)}`);
   }
 
+  // The description reads after the type, separated by a marker that cannot
+  // appear in prose, so a sentence never runs into a type.
+  const type = parts.join(", ");
+  const described = prop.description ? `${type} -- ${prop.description}` : type;
+
   return {
-    summary: `${name}: ${parts.join(", ")}`,
+    summary: `${name}: ${described}`,
     nested: nestedFieldsOf(prop, indent),
   };
 }

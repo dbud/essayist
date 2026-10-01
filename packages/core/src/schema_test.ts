@@ -13,9 +13,9 @@ Deno.test("generateInstructions produces correct output for modelResponseSchema"
     generateInstructions(schema),
     `Return only one valid JSON object matching this shape. Do not use markdown fences, code blocks, comments, or any extra text:
 
-- success: true if successful, false otherwise, boolean
-- result: the answer, string, nullable
-- diagnostic: explanation of the result, string`,
+- success: boolean -- true if successful, false otherwise
+- result: string, nullable -- the answer
+- diagnostic: string -- explanation of the result`,
   );
 });
 
@@ -30,9 +30,9 @@ Deno.test("generateInstructions includes example when includeExample is true", (
     generateInstructions(schema, { includeExample: true }),
     `Return only one valid JSON object matching this shape. Do not use markdown fences, code blocks, comments, or any extra text:
 
-- success: ok, boolean
-- result: answer, string, nullable
-- diagnostic: info, string
+- success: boolean -- ok
+- result: string, nullable -- answer
+- diagnostic: string -- info
 
 Example:
 {
@@ -246,8 +246,8 @@ Deno.test("generateInstructions lists the fields of an array of objects", () => 
     `Return only one valid JSON object matching this shape. Do not use markdown fences, code blocks, comments, or any extra text:
 
 - outline: object array
-  - first_line: Where the section starts., integer
-  - gist: What the section does., string`,
+  - first_line: integer -- Where the section starts.
+  - gist: string -- What the section does.`,
   );
 });
 
