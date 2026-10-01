@@ -77,10 +77,20 @@ function createSpyClient(rounds: FakeRound[]): {
       inputs.push(String(request.input));
       options.push(requestOptions);
       const round = rounds[Math.min(inputs.length - 1, rounds.length - 1)];
-      // Fire PostModelCall the way the SDK does, so the agent's model-call
-      // collection is exercised without a live provider.
       const hooks = request.hooks;
+      const result = fakeResult(round);
       if (hooks instanceof HooksManager) {
+        // The SDK emits UserPromptSubmit from the first stream read, not from
+        // callModel, so fire it from getText the way the engine does.
+        const submitPrompt = () =>
+          void hooks.emit("UserPromptSubmit", {
+            prompt: String(request.input),
+          });
+        const onGetText = result.getText;
+        result.getText = () => {
+          submitPrompt();
+          return onGetText();
+        };
         queueMicrotask(() => {
           void hooks.emit("PostModelCall", {
             sessionId: "s",
@@ -93,7 +103,7 @@ function createSpyClient(rounds: FakeRound[]): {
           } as PostModelCallPayload);
         });
       }
-      return fakeResult(round);
+      return result;
     },
   };
   return { client, inputs, options };
@@ -244,6 +254,50 @@ Deno.test("Agent.callModelStructured -- a first reply that parses has no repairs
   );
 
   assertEquals(result.repairs, []);
+});
+
+Deno.test("Agent.callModelStructured -- onPrompt reports the text actually sent", async () => {
+  const sent: string[] = [];
+  const { client, inputs } = createSpyClient([{ text: '{"ok":true}' }]);
+  const agent = new Agent("test-key", client);
+
+  await agent.callModelStructured(
+    "ping",
+    z.object({ ok: z.boolean() }),
+    ["m/a"],
+    { onPrompt: (text) => sent.push(text) },
+  );
+
+  // The schema instructions are appended by the agent, so a prompt recorded
+  // from the caller's input alone would be missing them.
+  assertEquals(sent.length, 1);
+  assertEquals(sent[0], inputs[0]);
+  assertEquals(
+    sent[0].includes("Return only one valid JSON object matching this shape"),
+    true,
+  );
+  assertEquals(sent[0].includes("- ok: boolean"), true);
+});
+
+Deno.test("Agent.callModelStructured -- onPrompt reports the repair prompt too", async () => {
+  const sent: string[] = [];
+  const { client } = createSpyClient([
+    { text: "not json at all" },
+    { text: '{"ok":true}' },
+  ]);
+  const agent = new Agent("test-key", client);
+
+  await agent.callModelStructured(
+    "ping",
+    z.object({ ok: z.boolean() }),
+    ["m/a"],
+    { onPrompt: (text) => sent.push(text) },
+  );
+
+  assertEquals(sent.length, 2);
+  assertEquals(sent[0].includes("not valid"), false);
+  assertEquals(sent[1].includes("Your previous reply was not valid"), true);
+  assertEquals(sent[1].includes("not json at all"), true);
 });
 
 Deno.test("Agent.callModelStructured -- onRepair fires before the re-ask", async () => {

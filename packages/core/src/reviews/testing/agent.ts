@@ -51,7 +51,16 @@ export function createSpyClient(rounds: FakeRound[]): {
     callModel: (request: { input: string; hooks?: HooksManager }) => {
       inputs.push(request.input);
       const hooks = request.hooks;
+      const round = rounds[Math.min(inputs.length - 1, rounds.length - 1)];
+      const result = fakeResult(round);
       if (hooks instanceof HooksManager) {
+        // The SDK emits UserPromptSubmit from the first stream read, so fire it
+        // from getText the way the engine does.
+        const getText = result.getText;
+        result.getText = () => {
+          void hooks.emit("UserPromptSubmit", { prompt: request.input });
+          return getText();
+        };
         queueMicrotask(() => {
           void hooks.emit("PostModelCall", {
             sessionId: "s",
@@ -70,7 +79,7 @@ export function createSpyClient(rounds: FakeRound[]): {
           } as PostModelCallPayload);
         });
       }
-      return fakeResult(rounds[Math.min(inputs.length - 1, rounds.length - 1)]);
+      return result;
     },
   };
   return { agent: new Agent("test-key", client), inputs };

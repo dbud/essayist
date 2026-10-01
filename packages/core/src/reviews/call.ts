@@ -19,18 +19,18 @@ export interface CallStructuredOptions<T extends z.ZodObject<z.ZodRawShape>> {
   schema: T;
 }
 
-/** Call the model for a structured output, delivering the prompt before
- * the call, a model_call as each call happens, then the reasoning and
- * output. */
+/** Call the model for a structured output, delivering a prompt as each call
+ * happens, a model_call per call, the repairs between them, then the
+ * reasoning and output. */
 export async function callStructured<T extends z.ZodObject<z.ZodRawShape>>(
   options: CallStructuredOptions<T>,
 ): Promise<StructuredCall<z.output<T>>> {
-  options.onEvent({ type: "prompt", text: options.input });
   const result = await options.agent.callModelStructured(
     options.input,
     options.schema,
     options.models,
     {
+      onPrompt: (text) => options.onEvent({ type: "prompt", text }),
       onModelCall: (call) => options.onEvent({ type: "model_call", call }),
       onRepair: (repair) => options.onEvent({ type: "repair", ...repair }),
     },

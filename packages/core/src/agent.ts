@@ -5,6 +5,7 @@ import type {
   RequestOptions,
   SessionUsageTotals,
   Tool,
+  UserPromptSubmitPayload,
 } from "@openrouter/agent";
 import { HooksManager, OpenRouter, stepCountIs } from "@openrouter/agent";
 import { mapNotNullish } from "@std/collections";
@@ -94,20 +95,24 @@ export class Agent {
     models: string[],
     options?: {
       includeExample?: boolean;
+      onPrompt?: (text: string) => void;
       onModelCall?: (call: PostModelCallPayload) => void;
       onRepair?: (repair: RepairAttempt) => void;
     },
   ): Promise<StructuredCall<z.output<T>>> {
     const fullInput = `${input}\n\n${generateInstructions(schema, options)}`;
     const calls: PostModelCallPayload[] = [];
-    const onModelCall = (call: PostModelCallPayload) => {
-      calls.push(call);
-      options?.onModelCall?.(call);
-    };
 
     const hooks = new HooksManager();
+    hooks.on("UserPromptSubmit", {
+      handler: (payload: UserPromptSubmitPayload) =>
+        options?.onPrompt?.(payload.prompt),
+    });
     hooks.on("PostModelCall", {
-      handler: (payload: PostModelCallPayload) => onModelCall(payload),
+      handler: (payload: PostModelCallPayload) => {
+        calls.push(payload);
+        options?.onModelCall?.(payload);
+      },
     });
 
     const first = await this.#structuredRound(fullInput, models, hooks);
