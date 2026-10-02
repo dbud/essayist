@@ -88,12 +88,4 @@ export default defineConfig({
       allow: ["../.."],
     },
   },
-  ssr: {
-    // The Fresh plugin sets resolve.noExternal, which bundles every dependency
-    // into the server build. pino is CommonJS, and rolldown's CJS-to-ESM rewrite
-    // emits an interop block that throws "exports is not defined", so logger is
-    // never initialised and every log line is silently dropped. Keeping pino
-    // external hands it to the runtime loader, as dev already does.
-    external: ["pino"],
-  },
 });

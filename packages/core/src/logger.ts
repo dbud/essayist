@@ -1,4 +1,35 @@
-import pino from "pino";
+/** Structured JSON logger. Writes one JSON object per call to stdout. */
+
+export type LogLevel = "debug" | "info" | "warn" | "error";
+
+export type LogFields = Record<string, unknown>;
+
+/** Receives a JSON line. Sync, so a reclaimed isolate cannot drop it. */
+export type LogSink = (line: string) => void;
+
+const LEVELS: Record<LogLevel, number> = {
+  debug: 20,
+  info: 30,
+  warn: 40,
+  error: 50,
+};
+
+/** Query params that carry a credential rather than data. */
+const SECRET_PARAMS = new Set([
+  "access_token",
+  "code",
+  "key",
+  "secret",
+  "token",
+]);
+
+function isLevel(value: string): value is LogLevel {
+  return value in LEVELS;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
 
 function getEnv(key: string): string | undefined {
   if (typeof Deno !== "undefined") {
@@ -7,34 +38,71 @@ function getEnv(key: string): string | undefined {
   return undefined;
 }
 
-const isDevelopment = getEnv("DENO_ENV") === "development";
-const level = getEnv("LOG_LEVEL") ?? (isDevelopment ? "debug" : "info");
+const encoder = new TextEncoder();
 
-export const logger = pino(
-  {
-    level,
-    redact: {
-      paths: ["query.code"],
-      censor: "[REDACTED]",
-    },
-  },
-  denoDestination(),
-);
+const stdoutSink: LogSink = (line) => {
+  try {
+    Deno.stdout.writeSync(encoder.encode(`${line}\n`));
+  } catch {
+    // A closed stdout must not take the caller down with it.
+  }
+};
 
-// pino's default destination buffers through SonicBoom and flushes on exit.
-// Deno Deploy reclaims an isolate without running those handlers, so the
-// buffer is lost and nothing reaches `deno deploy logs`. Writing synchronously
-// to Deno.stdout makes each line visible the moment it is logged.
-function denoDestination() {
-  const encoder = new TextEncoder();
+function redactParams(query: Record<string, unknown>): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(query)) {
+    out[key] = SECRET_PARAMS.has(key) ? "[REDACTED]" : value;
+  }
+  return out;
+}
+
+/** JSON.stringify renders an Error as `{}`, losing the message and stack. */
+function normalize(fields: LogFields): LogFields {
+  const out: LogFields = {};
+  for (const [key, value] of Object.entries(fields)) {
+    if (key === "query" && isRecord(value)) {
+      out[key] = redactParams(value);
+    } else if (value instanceof Error) {
+      out[key] = {
+        name: value.name,
+        message: value.message,
+        stack: value.stack,
+      };
+    } else {
+      out[key] = value;
+    }
+  }
+  return out;
+}
+
+export function createLogger(sink: LogSink, level: LogLevel = "info") {
+  const min = LEVELS[level];
+  const write = (at: LogLevel, fields: LogFields, msg?: string) => {
+    if (LEVELS[at] < min) return;
+    sink(
+      JSON.stringify({
+        level: LEVELS[at],
+        time: Date.now(),
+        ...normalize(fields),
+        ...(msg !== undefined && { msg }),
+      }),
+    );
+  };
   return {
-    write(chunk: string): boolean {
-      try {
-        Deno.stdout.writeSync(encoder.encode(chunk));
-      } catch {
-        // A closed or broken stdout must not take the caller down with it.
-      }
-      return true;
-    },
+    debug: (fields: LogFields, msg?: string) => write("debug", fields, msg),
+    info: (fields: LogFields, msg?: string) => write("info", fields, msg),
+    warn: (fields: LogFields, msg?: string) => write("warn", fields, msg),
+    error: (fields: LogFields, msg?: string) => write("error", fields, msg),
   };
 }
+
+export type Logger = ReturnType<typeof createLogger>;
+
+const configured =
+  getEnv("LOG_LEVEL") ??
+  (getEnv("DENO_ENV") === "development" ? "debug" : "info");
+
+export const logger: Logger = createLogger(
+  stdoutSink,
+  isLevel(configured) ? configured : "info",
+);
