@@ -1,4 +1,4 @@
-import { assertEquals, assertRejects } from "@std/assert";
+import { assert, assertEquals, assertRejects } from "@std/assert";
 import { FlowRunner } from "./runner.ts";
 import type {
   FlowEvent,
@@ -145,6 +145,101 @@ Deno.test("FlowRunner -- unions same-type artifacts in dependsOn order", async (
 
   assertEquals(result.status, "completed");
   assertEquals(seen, ["one", "two"]);
+});
+
+Deno.test("FlowRunner -- delivers a custom event while the node still runs", async () => {
+  // The node is still executing when the event arrives. Buffering to node end
+  // delays delivery until after execute resolves, so this fails there.
+  let deliveredDuringRun = false;
+  let running = true;
+  const slow: NodeRunners<TestTypes> = {
+    ...runners,
+    produce: {
+      execute(_, { emit }) {
+        emit({ kind: "produced", content: "early" });
+        return new Promise((resolve) =>
+          setTimeout(() => {
+            running = false;
+            resolve([]);
+          }, 20),
+        );
+      },
+    },
+  };
+  const flow = new FlowRunner<TestTypes>({
+    runners: slow,
+    onEvent: (event) => {
+      if (event.type === "custom") deliveredDuringRun = running;
+    },
+  });
+
+  await flow.run({
+    nodes: [
+      { id: "p", kind: "produce", dependsOn: [], payload: { token: "t" } },
+    ],
+  });
+
+  assert(deliveredDuringRun);
+});
+
+Deno.test("FlowRunner -- keeps custom events in emission order", async () => {
+  const seen: string[] = [];
+  const chatty: NodeRunners<TestTypes> = {
+    ...runners,
+    produce: {
+      async execute(_, { emit }) {
+        for (const content of ["one", "two", "three"]) {
+          emit({ kind: "produced", content });
+          await new Promise((resolve) => setTimeout(resolve, 1));
+        }
+        return [];
+      },
+    },
+  };
+  const flow = new FlowRunner<TestTypes>({
+    runners: chatty,
+    onEvent: (event) => {
+      if (event.type === "custom" && event.event.kind === "produced") {
+        seen.push(event.event.content);
+      }
+    },
+  });
+
+  await flow.run({
+    nodes: [
+      { id: "p", kind: "produce", dependsOn: [], payload: { token: "t" } },
+    ],
+  });
+
+  assertEquals(seen, ["one", "two", "three"]);
+});
+
+Deno.test("FlowRunner -- emits a failing node's events too", async () => {
+  let delivered = false;
+  let running = true;
+  const flow = new FlowRunner<TestTypes>({
+    runners: {
+      ...runners,
+      boom: {
+        execute(_, { emit }) {
+          emit({ kind: "produced", content: "before the throw" });
+          return Promise.reject(new Error("boom")).finally(() => {
+            running = false;
+          });
+        },
+      },
+    },
+    onEvent: (event) => {
+      if (event.type === "custom") delivered = running;
+    },
+  });
+
+  const result = await flow.run({
+    nodes: [{ id: "b", kind: "boom", dependsOn: [], payload: undefined }],
+  });
+
+  assertEquals(result.status, "failed");
+  assert(delivered);
 });
 
 Deno.test("FlowRunner -- rejects broken graphs before running", async () => {

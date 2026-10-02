@@ -217,6 +217,7 @@ export class Agent {
     // is re-issued here.
     for (let attempt = 1; ; attempt++) {
       try {
+        logger.info({ attempt, models }, "structured call dispatched");
         const result = this.#client.callModel(
           { models, input, hooks },
           RETRY_OPTIONS,
@@ -225,6 +226,7 @@ export class Agent {
           result.getText(),
           collectReasoning(result),
         ]);
+        logger.info({ attempt, models }, "structured call settled");
         return { text, usage: await result.getUsage(), reasoning };
       } catch (err) {
         if (attempt >= MAX_ROUND_ATTEMPTS || !isTransientError(err)) throw err;

@@ -17,6 +17,7 @@ import type {
   NodeRunners,
   SkippedNodeRun,
 } from "@/flow/types.ts";
+import { SerialTasks } from "@/utils/serial.ts";
 
 export interface FlowRunnerOptions<T extends FlowTypes> {
   runners: NodeRunners<T>;
@@ -141,7 +142,7 @@ export class FlowRunner<T extends FlowTypes> {
     for (const dep of deps) {
       inputs.push(...(committed.get(dep) ?? []));
     }
-    const eventQueue: T["events"][] = [];
+    const emitted = new SerialTasks();
     // The payload boundary: the host's graph construction guarantees
     // configured kinds carry their payload.
     const payload = node.payload as T["nodes"][NodeKind<T>];
@@ -149,7 +150,9 @@ export class FlowRunner<T extends FlowTypes> {
       payload,
       inputs: view(inputs),
       emit: (event) => {
-        eventQueue.push(event);
+        void emitted.add(() =>
+          this.#emit({ type: "custom", nodeId: node.id, event }),
+        );
       },
       artifact: (type, data) => ({
         type,
@@ -169,9 +172,7 @@ export class FlowRunner<T extends FlowTypes> {
     } catch (caught) {
       error = caught instanceof Error ? caught.message : String(caught);
     }
-    for (const event of eventQueue) {
-      await this.#emit({ type: "custom", nodeId: node.id, event });
-    }
+    await emitted.drain();
     const run: CompletedNodeRun | FailedNodeRun =
       error === undefined
         ? {
