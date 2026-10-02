@@ -6,7 +6,7 @@ import type {
   Tool,
 } from "@openrouter/agent";
 import { HooksManager } from "@openrouter/agent";
-import { assertEquals, assertExists, assertRejects } from "@std/assert";
+import { assert, assertEquals, assertExists, assertRejects } from "@std/assert";
 import { z } from "zod";
 import {
   Agent,
@@ -218,6 +218,7 @@ Deno.test("Agent.callModelStructured -- a re-ask that fails transiently is retri
 
 Deno.test("RETRY_OPTIONS -- opts 429 into retry and caps total wait at 2 min", () => {
   assertEquals(RETRY_OPTIONS.retryCodes, ["429", "5XX"]);
+  assert((RETRY_OPTIONS.timeoutMs ?? 0) > 0);
   const retries = RETRY_OPTIONS.retries;
   assertExists(retries);
   assertEquals(retries.strategy, "backoff");

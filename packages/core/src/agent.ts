@@ -24,6 +24,7 @@ import { joinBlocks } from "@/utils/text.ts";
 // the initial request and every tool-round follow-up (options are forwarded
 // to every betaResponsesSend call inside ModelResult).
 export const RETRY_OPTIONS: RequestOptions = {
+  timeoutMs: 5 * 60_000,
   retryCodes: ["429", "5XX"],
   retries: {
     strategy: "backoff",

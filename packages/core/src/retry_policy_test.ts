@@ -2,7 +2,7 @@ import {
   ApiErrorType,
   Code as ResponseErrorCode,
 } from "@openrouter/sdk/models";
-import { assertEquals } from "@std/assert";
+import { assert, assertEquals, assertRejects } from "@std/assert";
 import { isTransientError } from "./retry_policy.ts";
 
 /** The SDK flattens a failed response into this message; from a real run. */
@@ -14,6 +14,18 @@ const failed = (code: string) =>
 
 Deno.test("isTransientError -- a mid-stream abort is transient", () => {
   assertEquals(isTransientError(new Error(STREAM_ABORT)), true);
+});
+
+Deno.test("isTransientError -- a call timeout is transient", async () => {
+  const signal = AbortSignal.timeout(1);
+  await assertRejects(async () => {
+    await new Promise((_resolve, reject) => {
+      signal.addEventListener("abort", () => reject(signal.reason));
+    });
+  });
+  const reason = signal.reason as Error;
+  assertEquals(reason.name, "TimeoutError");
+  assert(isTransientError(reason));
 });
 
 Deno.test("isTransientError -- rate limits and server errors are transient", () => {
