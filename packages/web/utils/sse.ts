@@ -1,4 +1,3 @@
-import { extractProviderError } from "@essayist/core";
 import type { ModelResult, Tool } from "@openrouter/agent";
 
 export type SSESend = (event: string, data: unknown) => void;
@@ -128,14 +127,13 @@ export function streamModelResultSSE<TTools extends readonly Tool[]>(
 
       // If either stream rejects (e.g. the provider returns a 429),
       // surface a structured error event to the client instead of
-      // letting the response stream terminate abruptly. The generic
-      // SDK message ("Provider returned error") is not useful to
-      // users; extractProviderError pulls out the raw explanation
-      // from the provider at err.error.metadata.raw.
+      // letting the response stream terminate abruptly.
       try {
         await Promise.all([textPromise, itemsPromise]);
       } catch (err) {
-        send("error", extractProviderError(err));
+        send("error", {
+          message: err instanceof Error ? err.message : String(err),
+        });
       } finally {
         send("done", {});
       }

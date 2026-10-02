@@ -1,5 +1,3 @@
-import type { ProviderError } from "@essayist/core";
-import { providerErrorDetail, providerErrorLabel } from "@essayist/core";
 import type { StreamableOutputItem } from "@openrouter/agent";
 import { useComputed, useSignal } from "@preact/signals";
 import { useEffect, useRef } from "preact/hooks";
@@ -22,16 +20,10 @@ function pprint<T>(a: string | T) {
   return JSON.stringify(object, null, 2);
 }
 
-function ErrorMessage({ error }: { error: ProviderError }) {
-  const label = providerErrorLabel(error);
-  const detail = providerErrorDetail(error);
+function ErrorMessage({ error }: { error: string }) {
   return (
     <div class="alert alert--error text-xs py-2 px-3">
-      <div class="font-semibold">{label}</div>
-      <div class="whitespace-pre-wrap break-words">{detail}</div>
-      {error.providerName && (
-        <div class="opacity-70">provider: {error.providerName}</div>
-      )}
+      <div class="whitespace-pre-wrap break-words">{error}</div>
     </div>
   );
 }

@@ -1,4 +1,3 @@
-import type { ProviderError } from "@essayist/core";
 import type { StreamableOutputItem } from "@openrouter/agent";
 import type { Signal } from "@preact/signals";
 import { signal, useSignal } from "@preact/signals";
@@ -9,7 +8,7 @@ export interface ChatMessage {
   role: "user" | "assistant";
   text: string;
   items: Map<string, StreamableOutputItem>;
-  error?: ProviderError;
+  error?: string;
 }
 
 function itemKey(item: StreamableOutputItem): string {
@@ -64,9 +63,10 @@ export function useChat(getApiUrl: () => string, initial?: ChatMessage[]) {
             items: new Map(reply.value.items).set(itemKey(item), item),
           };
         } else if (event === "error") {
+          const detail = data as { message?: unknown };
           reply.value = {
             ...reply.value,
-            error: data as ProviderError,
+            error: String(detail?.message ?? data),
           };
         }
       }
@@ -77,10 +77,7 @@ export function useChat(getApiUrl: () => string, initial?: ChatMessage[]) {
         // something useful instead of appending to the message text.
         reply.value = {
           ...reply.value,
-          error: {
-            name: (err as Error).name,
-            message: (err as Error).message ?? String(err),
-          },
+          error: (err as Error).message ?? String(err),
         };
       }
     } finally {

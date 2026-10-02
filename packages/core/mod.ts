@@ -43,12 +43,7 @@ export {
   type ReadOptions as AdapterReadOptions,
   type WriteOp,
 } from "@/persistence/mod.ts";
-export type { ProviderError } from "@/provider_error.ts";
-export {
-  extractProviderError,
-  providerErrorDetail,
-  providerErrorLabel,
-} from "@/provider_error.ts";
+export { isTransientError } from "@/retry_policy.ts";
 export { buildReviewGraph } from "@/reviews/adapter.ts";
 export { agentflowDefinition } from "@/reviews/agentflow.ts";
 export type { ReviewPhase, ReviewProgress } from "@/reviews/progress.ts";
