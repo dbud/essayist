@@ -1,4 +1,4 @@
-/** Structured JSON logger. Writes one JSON object per call to stdout. */
+/** Structured JSON logger. Writes one JSON object per call to the console. */
 
 export type LogLevel = "debug" | "info" | "warn" | "error";
 
@@ -38,14 +38,9 @@ function getEnv(key: string): string | undefined {
   return undefined;
 }
 
-const encoder = new TextEncoder();
-
-const stdoutSink: LogSink = (line) => {
-  try {
-    Deno.stdout.writeSync(encoder.encode(`${line}\n`));
-  } catch {
-    // A closed stdout must not take the caller down with it.
-  }
+/** Deno Deploy collects console output, not writes to the stdout fd. */
+const consoleSink: LogSink = (line) => {
+  console.log(line);
 };
 
 function redactParams(query: Record<string, unknown>): Record<string, unknown> {
@@ -103,6 +98,6 @@ const configured =
   (getEnv("DENO_ENV") === "development" ? "debug" : "info");
 
 export const logger: Logger = createLogger(
-  stdoutSink,
+  consoleSink,
   isLevel(configured) ? configured : "info",
 );
