@@ -1,7 +1,6 @@
 import type { Agent } from "@/agent.ts";
 import type { ResolvedReviewPass } from "@/config/types.ts";
-import { FlowRunner } from "@/flow/runner.ts";
-import type { Artifact } from "@/flow/types.ts";
+import { FlowRunner, view } from "@/flow/runner.ts";
 import { buildReviewGraph } from "@/reviews/adapter.ts";
 import { createReviewRunners, type ReviewTypes } from "@/reviews/graph.ts";
 import type { ReviewProgress } from "@/reviews/progress.ts";
@@ -114,14 +113,11 @@ class ReviewPassRunner {
           error: result.errors.join("; "),
         });
       }
-      // TODO -- a graph node that aggregates summaries would drop this
-      // last-summary pick from the runner.
-      const summary = result.artifacts
-        .filter(
-          (artifact): artifact is Artifact<ReviewTypes, "summary"> =>
-            artifact.type === "summary",
-        )
-        .at(-1)?.data;
+      // A pass with no summary unit commits none, and `one` throws.
+      // TODO -- once a pass can carry several summary units, add a node
+      // taking those `summary` artifacts and producing one `writeup`
+      // artifact, so the run yields a single value here.
+      const summary = view<ReviewTypes>(result.artifacts).one("summary");
       return await this.#finalize(run, recorder, { summary });
     } catch (caught) {
       const message = caught instanceof Error ? caught.message : String(caught);

@@ -167,6 +167,7 @@ Deno.test("runReviewPass -- a repair round re-quotes the failed spans", async ()
     {
       text: '{"marks":[{"selected_text":"hello","comment":"found it","label":"grammar"}]}',
     },
+    { text: '{"summary":"Solid draft."}' },
   ]);
 
   const run = await runReviewPass({
@@ -179,13 +180,14 @@ Deno.test("runReviewPass -- a repair round re-quotes the failed spans", async ()
         id: "mechanics",
         attempt: { allowedCategoryIds: ["grammar"] },
       }),
+      unitFixture({ id: "summary", summary: true, inputs: ["mechanics"] }),
     ]),
     wsId: "ws",
     path: "essay.txt",
   });
 
   assertEquals(run.status, "completed");
-  assertEquals(run.summary, "");
+  assertEquals(run.summary, "Solid draft.");
 
   const trace = (await traceStore.get({ wsId: "ws", runId: run.id })) ?? [];
   assertEquals(byNode(trace), {
@@ -208,6 +210,7 @@ Deno.test("runReviewPass -- a repair round re-quotes the failed spans", async ()
       "node_end",
     ],
     "mechanics.repair1.apply": ["node_start", "applied", "node_end"],
+    summary: ["node_start", "prompt", "model_call", "output", "node_end"],
   });
   const applied = appliedEvents(trace);
   assertEquals(applied[0].attempts[0].marked, false);
@@ -225,6 +228,7 @@ Deno.test("runReviewPass -- a zero budget keeps failed marks with no repair node
     {
       text: '{"marks":[{"selected_text":"ghost span","comment":"not there","label":"grammar"}]}',
     },
+    { text: '{"summary":"Solid draft."}' },
   ]);
 
   const run = await runReviewPass({
@@ -237,6 +241,7 @@ Deno.test("runReviewPass -- a zero budget keeps failed marks with no repair node
         id: "mechanics",
         attempt: { allowedCategoryIds: ["grammar"], repairRounds: 0 },
       }),
+      unitFixture({ id: "summary", summary: true, inputs: ["mechanics"] }),
     ]),
     wsId: "ws",
     path: "essay.txt",
@@ -249,6 +254,7 @@ Deno.test("runReviewPass -- a zero budget keeps failed marks with no repair node
     "mechanics.propose",
     "mechanics.apply",
     "mechanics.collect",
+    "summary",
   ]);
   const applied = appliedEvents(trace);
   assertEquals(applied[0].attempts[0].marked, false);
@@ -321,6 +327,28 @@ Deno.test("runReviewPass -- a node error fails the run and skips dependents", as
     );
     assertEquals(grouped[nodeId], ["node_end"]);
   }
+});
+
+Deno.test("runReviewPass -- fails a pass that commits no summary", async () => {
+  const { vfs } = await createFile("essay.txt", "hello world");
+  const { reviewStore, traceStore } = setup();
+  const { agent } = createSpyClient([{ text: ANALYSIS_ROUND }]);
+
+  const run = await runReviewPass({
+    agent,
+    vfs,
+    reviewStore,
+    traceStore,
+    // No summary unit, so the graph commits no summary artifact. Reading it
+    // back is a structural surprise, not a pass with a blank summary.
+    pass: passFixture([unitFixture({ id: "analyze" })]),
+    wsId: "ws",
+    path: "essay.txt",
+  });
+
+  assertEquals(run.status, "failed");
+  assertEquals(run.error?.includes('exactly one "summary"'), true);
+  assertEquals(run.summary, undefined);
 });
 
 Deno.test("runReviewPass -- fails fast when the file does not exist", async () => {

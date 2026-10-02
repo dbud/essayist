@@ -292,7 +292,7 @@ function skipReason<T extends FlowTypes>(
 
 /** The input view handed to a node. Type-scoped reads trust artifact
  * data to match the vocabulary's declared data types. */
-function view<T extends FlowTypes>(
+export function view<T extends FlowTypes>(
   inputs: readonly Artifact<T>[],
 ): Artifacts<T> {
   const matching = <A extends ArtifactType<T>>(type: A): Artifact<T, A>[] =>
