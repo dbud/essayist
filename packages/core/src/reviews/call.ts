@@ -6,6 +6,7 @@ export type CallEvent =
   | { type: "prompt"; text: string }
   | { type: "reasoning"; text: string }
   | { type: "repair"; raw: string; error: string }
+  | { type: "retry"; attempt: number; error: string }
   | { type: "output"; output: unknown }
   | { type: "model_call"; call: PostModelCallPayload };
 
@@ -40,6 +41,9 @@ export async function callStructured<T extends z.ZodObject<z.ZodRawShape>>(
       },
       onRepair: (repair) => {
         options.onEvent({ type: "repair", ...repair });
+      },
+      onRetry: (failure) => {
+        options.onEvent({ type: "retry", ...failure });
       },
     },
   );

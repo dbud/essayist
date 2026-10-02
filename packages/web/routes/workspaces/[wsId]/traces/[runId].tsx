@@ -18,6 +18,7 @@ import {
   Cpu,
   Milestone,
   MoveLeft,
+  RefreshCw,
   RotateCcw,
   Type,
   Wrench,
@@ -163,6 +164,23 @@ function RepairRow({ raw, error }: { raw: string; error: string }) {
   );
 }
 
+function RetryRow({ attempt, error }: { attempt: number; error: string }) {
+  return (
+    <>
+      <div class="cell--data">
+        <RefreshCw size={14} />
+        retried
+      </div>
+      <div class="cell--data col-span-2 min-w-0 break-words">
+        <div class="flex flex-col gap-1">
+          <span class="text-xs text-ink">attempt {attempt} failed</span>
+          <div class="text-xs text-error">{error}</div>
+        </div>
+      </div>
+    </>
+  );
+}
+
 function OutputRow({ output }: { output: unknown }) {
   return (
     <>
@@ -250,6 +268,8 @@ function EventRow({ event }: { event: NodeEvent }) {
       return <OutputRow output={event.output} />;
     case "repair":
       return <RepairRow raw={event.raw} error={event.error} />;
+    case "retry":
+      return <RetryRow attempt={event.attempt} error={event.error} />;
     case "model_call":
       return <ModelCallRow call={event.call} />;
     case "applied":

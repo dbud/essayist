@@ -57,6 +57,12 @@ function logCustom(nodeId: string, event: ReviewNodeEvent): void {
       logger.info({ node: nodeId, error: event.error }, "repair");
       logger.debug({ node: nodeId, raw: event.raw }, "repair");
       break;
+    case "retry":
+      logger.info(
+        { node: nodeId, attempt: event.attempt, error: event.error },
+        "retry",
+      );
+      break;
     case "output":
       logger.debug({ node: nodeId, output: event.output }, "output");
       break;

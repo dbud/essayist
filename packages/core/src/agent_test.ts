@@ -12,6 +12,7 @@ import {
   Agent,
   type ModelClient,
   RETRY_OPTIONS,
+  type RetryFailure,
   StructuredParseError,
 } from "./agent.ts";
 
@@ -151,6 +152,33 @@ Deno.test("Agent.callModelStructured -- a transient failure gives up after three
     "fetch failed",
   );
   assertEquals(inputs.length, 3);
+});
+
+Deno.test("Agent.callModelStructured -- a transient failure reports the retry", async () => {
+  const abort = new Error(
+    'Response failed: {"code":"server_error","message":"The operation was aborted"}',
+  );
+  const { client } = createSpyClient([
+    { text: '{"ok":true}', failWith: abort },
+    { text: '{"ok":true}' },
+  ]);
+  const agent = new Agent("test-key", client);
+  const retries: RetryFailure[] = [];
+
+  await agent.callModelStructured(
+    "ping",
+    z.object({ ok: z.boolean() }),
+    ["m/a"],
+    { onRetry: (failure) => retries.push(failure) },
+  );
+
+  assertEquals(retries, [
+    {
+      attempt: 1,
+      error:
+        'Response failed: {"code":"server_error","message":"The operation was aborted"}',
+    },
+  ]);
 });
 
 Deno.test("Agent.callModelStructured -- a deterministic failure is not retried", async () => {

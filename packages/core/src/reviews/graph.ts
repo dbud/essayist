@@ -23,6 +23,7 @@ export type ReviewNodeEvent =
   | { type: "reasoning"; text: string }
   | { type: "output"; output: unknown }
   | { type: "repair"; raw: string; error: string }
+  | { type: "retry"; attempt: number; error: string }
   | { type: "model_call"; call: PostModelCallPayload }
   | { type: "applied"; attempts: MarkAttempt[] };
 

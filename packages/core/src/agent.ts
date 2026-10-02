@@ -54,6 +54,22 @@ export interface RepairAttempt {
   error: string;
 }
 
+/** A failed attempt at a round, and the attempt it was. */
+export interface RetryFailure {
+  /** Which attempt failed, counting the first. */
+  attempt: number;
+  error: string;
+}
+
+/** Callbacks for watching a structured call as it runs. */
+export interface StructuredCallOptions {
+  includeExample?: boolean;
+  onPrompt?: (text: string) => void;
+  onModelCall?: (call: PostModelCallPayload) => void;
+  onRepair?: (repair: RepairAttempt) => void;
+  onRetry?: (failure: RetryFailure) => void;
+}
+
 export interface StructuredCall<T> {
   output: T;
   usage: SessionUsageTotals;
@@ -98,12 +114,7 @@ export class Agent {
     input: string,
     schema: T,
     models: string[],
-    options?: {
-      includeExample?: boolean;
-      onPrompt?: (text: string) => void;
-      onModelCall?: (call: PostModelCallPayload) => void;
-      onRepair?: (repair: RepairAttempt) => void;
-    },
+    options?: StructuredCallOptions,
   ): Promise<StructuredCall<z.output<T>>> {
     const fullInput = `${input}\n\n${generateInstructions(schema, options)}`;
     const calls: PostModelCallPayload[] = [];
@@ -120,7 +131,12 @@ export class Agent {
       },
     });
 
-    const first = await this.#structuredRound(fullInput, models, hooks);
+    const first = await this.#structuredRound(
+      fullInput,
+      models,
+      hooks,
+      options?.onRetry,
+    );
 
     let output: z.output<T>;
     try {
@@ -133,6 +149,7 @@ export class Agent {
         repairInput(fullInput, first.text, message),
         models,
         hooks,
+        options?.onRetry,
       );
       try {
         output = parseStructured(retry.text, schema);
@@ -188,6 +205,7 @@ export class Agent {
     input: string,
     models: string[],
     hooks: HooksManager,
+    onRetry?: (failure: RetryFailure) => void,
   ): Promise<{
     text: string;
     usage: SessionUsageTotals;
@@ -209,6 +227,8 @@ export class Agent {
         return { text, usage: await result.getUsage(), reasoning };
       } catch (err) {
         if (attempt >= MAX_ROUND_ATTEMPTS || !isTransientError(err)) throw err;
+        const error = err instanceof Error ? err.message : String(err);
+        onRetry?.({ attempt, error });
         logger.warn(
           { err, attempt, models: models[0] },
           "structured call failed transiently, retrying",
