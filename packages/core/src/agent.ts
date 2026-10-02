@@ -11,8 +11,10 @@ import { HooksManager, OpenRouter, stepCountIs } from "@openrouter/agent";
 import { mapNotNullish } from "@std/collections";
 import type { z } from "zod";
 import { logger } from "@/logger.ts";
+import { isTransientError } from "@/retry_policy.ts";
 import { generateInstructions, stripMarkdownFences } from "@/schema.ts";
 import type { ToolPrompt } from "@/tools/index.ts";
+import { delay } from "@/utils/delay.ts";
 import { joinBlocks } from "@/utils/text.ts";
 
 // The OpenRouter SDK retries only 5XX by default (retryCodes: ["5XX"]). Free
@@ -71,6 +73,10 @@ export interface ModelClient {
     options?: RequestOptions,
   ): ModelResult<readonly Tool[]>;
 }
+
+/** Attempts at a structured round, counting the first. */
+const MAX_ROUND_ATTEMPTS = 3;
+const ROUND_RETRY_DELAY_MS = 1_000;
 
 export class Agent {
   #client: ModelClient;
@@ -187,15 +193,29 @@ export class Agent {
     usage: SessionUsageTotals;
     reasoning?: string;
   }> {
-    const result = this.#client.callModel(
-      { models, input, hooks },
-      RETRY_OPTIONS,
-    );
-    const [text, reasoning] = await Promise.all([
-      result.getText(),
-      collectReasoning(result),
-    ]);
-    return { text, usage: await result.getUsage(), reasoning };
+    // RETRY_OPTIONS covers a failure before the stream starts. A connection
+    // dropped mid-stream reaches us as an error from getText(), so the round
+    // is re-issued here.
+    for (let attempt = 1; ; attempt++) {
+      try {
+        const result = this.#client.callModel(
+          { models, input, hooks },
+          RETRY_OPTIONS,
+        );
+        const [text, reasoning] = await Promise.all([
+          result.getText(),
+          collectReasoning(result),
+        ]);
+        return { text, usage: await result.getUsage(), reasoning };
+      } catch (err) {
+        if (attempt >= MAX_ROUND_ATTEMPTS || !isTransientError(err)) throw err;
+        logger.warn(
+          { err, attempt, models: models[0] },
+          "structured call failed transiently, retrying",
+        );
+        await delay(attempt * ROUND_RETRY_DELAY_MS);
+      }
+    }
   }
 }
 

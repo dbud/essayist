@@ -20,6 +20,9 @@ interface FakeRound {
   reasoning?: string;
   model?: string;
   durationMs?: number;
+  /** Rejects getText with this, as a dropped connection would. */
+  failWith?: Error;
+  turnType?: PostModelCallPayload["turnType"];
   usage?: {
     inputTokens: number;
     outputTokens: number;
@@ -89,25 +92,101 @@ function createSpyClient(rounds: FakeRound[]): {
         const onGetText = result.getText;
         result.getText = () => {
           submitPrompt();
+          if (round.failWith) return Promise.reject(round.failWith);
           return onGetText();
         };
-        queueMicrotask(() => {
-          void hooks.emit("PostModelCall", {
-            sessionId: "s",
-            responseId: "r",
-            model: round.model ?? "test/model",
-            durationMs: round.durationMs ?? 1,
-            turnType: "initial",
-            turnNumber: 1,
-            ...(round.usage ? { usage: round.usage } : {}),
-          } as PostModelCallPayload);
-        });
+        if (!round.failWith) {
+          queueMicrotask(() => {
+            void hooks.emit("PostModelCall", {
+              sessionId: "s",
+              responseId: "r",
+              model: round.model ?? "test/model",
+              durationMs: round.durationMs ?? 1,
+              turnType: round.turnType ?? "initial",
+              turnNumber: 1,
+              ...(round.usage ? { usage: round.usage } : {}),
+            } as PostModelCallPayload);
+          });
+        }
       }
       return result;
     },
   };
   return { client, inputs, options };
 }
+
+Deno.test("Agent.callModelStructured -- a transient failure is re-issued", async () => {
+  const abort = new Error(
+    'Response failed: {"code":"server_error","message":"The operation was aborted"}',
+  );
+  const { client, inputs } = createSpyClient([
+    { text: '{"ok":true}', failWith: abort },
+    { text: '{"ok":true}' },
+  ]);
+  const agent = new Agent("test-key", client);
+
+  const result = await agent.callModelStructured(
+    "ping",
+    z.object({ ok: z.boolean() }),
+    ["m/a"],
+  );
+
+  assertEquals(inputs.length, 2);
+  assertEquals(result.output, { ok: true });
+  // The retry is the same prompt, not a repair.
+  assertEquals(result.repairs, []);
+});
+
+Deno.test("Agent.callModelStructured -- a transient failure gives up after three attempts", async () => {
+  const abort = new Error("fetch failed");
+  const { client, inputs } = createSpyClient([
+    { text: '{"ok":true}', failWith: abort },
+  ]);
+  const agent = new Agent("test-key", client);
+
+  await assertRejects(
+    () =>
+      agent.callModelStructured("ping", z.object({ ok: z.boolean() }), ["m/a"]),
+    Error,
+    "fetch failed",
+  );
+  assertEquals(inputs.length, 3);
+});
+
+Deno.test("Agent.callModelStructured -- a deterministic failure is not retried", async () => {
+  const { client, inputs } = createSpyClient([
+    { text: '{"ok":true}', failWith: new SyntaxError("Unexpected token") },
+  ]);
+  const agent = new Agent("test-key", client);
+
+  await assertRejects(() =>
+    agent.callModelStructured("ping", z.object({ ok: z.boolean() }), ["m/a"]),
+  );
+
+  assertEquals(inputs.length, 1);
+});
+
+Deno.test("Agent.callModelStructured -- a re-ask that fails transiently is retried", async () => {
+  const { client, inputs } = createSpyClient([
+    { text: "not json at all" },
+    { text: '{"ok":true}', failWith: new Error("socket hang up") },
+    { text: '{"ok":true}' },
+  ]);
+  const agent = new Agent("test-key", client);
+
+  const result = await agent.callModelStructured(
+    "ping",
+    z.object({ ok: z.boolean() }),
+    ["m/a"],
+  );
+
+  // One repair prompt, then two attempts at the same re-ask.
+  assertEquals(inputs.length, 3);
+  assertEquals(inputs[1], inputs[2]);
+  assertEquals(inputs[1].includes("not json at all"), true);
+  assertEquals(result.output, { ok: true });
+  assertEquals(result.repairs.length, 1);
+});
 
 Deno.test("RETRY_OPTIONS -- opts 429 into retry and caps total wait at 2 min", () => {
   assertEquals(RETRY_OPTIONS.retryCodes, ["429", "5XX"]);
