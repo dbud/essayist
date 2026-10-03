@@ -95,14 +95,21 @@ export interface ModelClient {
 const MAX_ROUND_ATTEMPTS = 3;
 const ROUND_RETRY_DELAY_MS = 1_000;
 
+export interface AgentOptions {
+  sleep?: (ms: number) => Promise<void>;
+}
+
 export class Agent {
   #client: ModelClient;
+  #sleep: (ms: number) => Promise<void>;
 
   constructor(
     apiKey: string,
     client: ModelClient = new OpenRouter({ apiKey }),
+    options: AgentOptions = {},
   ) {
     this.#client = client;
+    this.#sleep = options.sleep ?? delay;
   }
 
   /**
@@ -236,7 +243,7 @@ export class Agent {
           { err, attempt, models: models[0] },
           "structured call failed transiently, retrying",
         );
-        await delay(attempt * ROUND_RETRY_DELAY_MS);
+        await this.#sleep(attempt * ROUND_RETRY_DELAY_MS);
       }
     }
   }
