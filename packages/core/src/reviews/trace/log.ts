@@ -28,6 +28,7 @@ export function logTraceEvent(event: TraceEvent): void {
           {
             node: event.nodeId,
             durationMs: event.run.completedAt - event.run.startedAt,
+            artifacts: event.run.artifacts.length,
           },
           "node_end",
         );

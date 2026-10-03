@@ -441,3 +441,71 @@ Deno.test("FlowRunner -- completes an empty graph", async () => {
   assertEquals(result.nodeRuns, []);
   assertEquals(result.artifacts, []);
 });
+
+Deno.test("FlowRunner -- records what a completed node committed on node_end", async () => {
+  const events: FlowEvent<TestTypes>[] = [];
+  const flow = new FlowRunner<TestTypes>({
+    runners,
+    onEvent: (event) => {
+      events.push(event);
+    },
+  });
+
+  await flow.run({
+    nodes: [
+      { id: "a", kind: "source", dependsOn: [], payload: { text: "alpha" } },
+    ],
+  });
+
+  const end = events.find((event) => event.type === "node_end");
+  assertEquals(end?.run.status, "completed");
+  assertEquals(
+    end?.run.status === "completed" ? end.run.artifacts : undefined,
+    [{ type: "content", data: "alpha", producedBy: "a" }],
+  );
+});
+
+Deno.test("FlowRunner -- a node that produces nothing records an empty artifact list", async () => {
+  const events: FlowEvent<TestTypes>[] = [];
+  const flow = new FlowRunner<TestTypes>({
+    runners: {
+      ...runners,
+      sink: {
+        execute() {
+          return Promise.resolve([]);
+        },
+      },
+    },
+    onEvent: (event) => {
+      events.push(event);
+    },
+  });
+
+  await flow.run({
+    nodes: [{ id: "s", kind: "sink", dependsOn: [], payload: undefined }],
+  });
+
+  const end = events.find((event) => event.type === "node_end");
+  assertEquals(
+    end?.run.status === "completed" ? end.run.artifacts : undefined,
+    [],
+  );
+});
+
+Deno.test("FlowRunner -- a failed node records no artifacts", async () => {
+  const events: FlowEvent<TestTypes>[] = [];
+  const flow = new FlowRunner<TestTypes>({
+    runners,
+    onEvent: (event) => {
+      events.push(event);
+    },
+  });
+
+  await flow.run({
+    nodes: [{ id: "b", kind: "boom", dependsOn: [], payload: undefined }],
+  });
+
+  const end = events.find((event) => event.type === "node_end");
+  assertEquals(end?.run.status, "failed");
+  assertEquals("artifacts" in (end?.run ?? {}), false);
+});

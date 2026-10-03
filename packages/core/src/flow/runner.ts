@@ -63,7 +63,7 @@ export class FlowRunner<T extends FlowTypes> {
     const wired = wire(graph, this.#runners);
     const committed = new Map<string, Artifact<T>[]>();
     const artifacts: Artifact<T>[] = [];
-    const nodeRuns: NodeRun[] = [];
+    const nodeRuns: NodeRun<T>[] = [];
     const running = new Set<Promise<void>>();
     const errors = new Map<string, string>();
 
@@ -72,14 +72,14 @@ export class FlowRunner<T extends FlowTypes> {
       const { promise, resolve } = Promise.withResolvers<void>();
       running.add(promise);
       try {
-        const run = await this.#execute(
-          entry.node,
-          entry.consumes,
-          committed,
-          artifacts,
+        const inputs = entry.consumes.flatMap(
+          (dep) => committed.get(dep) ?? [],
         );
+        const run = await this.#execute(entry.node, inputs);
         nodeRuns.push(run);
         if (run.status === "completed") {
+          artifacts.push(...run.artifacts);
+          committed.set(run.nodeId, run.artifacts);
           for (const id of entry.consumedBy) {
             const consumer = wired.get(id);
             if (consumer !== undefined) {
@@ -131,17 +131,11 @@ export class FlowRunner<T extends FlowTypes> {
 
   async #execute(
     node: FlowNode<T, NodeKind<T>>,
-    deps: readonly string[],
-    committed: Map<string, Artifact<T>[]>,
-    artifacts: Artifact<T>[],
-  ): Promise<CompletedNodeRun | FailedNodeRun> {
+    inputs: readonly Artifact<T>[],
+  ): Promise<CompletedNodeRun<T> | FailedNodeRun> {
     const startedAt = Date.now();
     await this.#emit({ type: "node_start", nodeId: node.id });
 
-    const inputs: Artifact<T>[] = [];
-    for (const dep of deps) {
-      inputs.push(...(committed.get(dep) ?? []));
-    }
     const emitted = new SerialTasks();
     // The payload boundary: the host's graph construction guarantees
     // configured kinds carry their payload.
@@ -161,25 +155,25 @@ export class FlowRunner<T extends FlowTypes> {
       }),
     };
     let error: string | undefined;
+    let artifacts: Artifact<T>[] = [];
     try {
       const runner = this.#runners.get(node.kind);
       if (runner === undefined) {
         throw new Error(`no runner for node kind "${node.kind}"`);
       }
-      const produced = await runner.execute(payload, context);
-      committed.set(node.id, produced);
-      artifacts.push(...produced);
+      artifacts = await runner.execute(payload, context);
     } catch (caught) {
       error = caught instanceof Error ? caught.message : String(caught);
     }
     await emitted.drain();
-    const run: CompletedNodeRun | FailedNodeRun =
+    const run: CompletedNodeRun<T> | FailedNodeRun =
       error === undefined
         ? {
             nodeId: node.id,
             status: "completed",
             startedAt,
             completedAt: Date.now(),
+            artifacts,
           }
         : {
             nodeId: node.id,

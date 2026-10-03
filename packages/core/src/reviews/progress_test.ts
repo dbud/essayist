@@ -67,6 +67,7 @@ Deno.test("ReviewProgressTracker -- derives node phases and note counts", () => 
         status: "completed",
         startedAt: 1,
         completedAt: 2,
+        artifacts: [],
       },
     },
     { type: "node_start", nodeId: "mechanics.propose" },

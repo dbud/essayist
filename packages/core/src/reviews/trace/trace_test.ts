@@ -40,6 +40,7 @@ Deno.test("TraceRecorder -- persists events with ordered seq and timestamps", as
         status: "completed",
         startedAt: 1,
         completedAt: 2,
+        artifacts: [],
       },
     },
   ]);

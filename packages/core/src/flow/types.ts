@@ -83,11 +83,12 @@ export type NodeRunners<T extends FlowTypes> = {
   [K in NodeKind<T>]: NodeRunner<T, K>;
 };
 
-export interface CompletedNodeRun {
+export interface CompletedNodeRun<T extends FlowTypes = FlowTypes> {
   nodeId: string;
   status: "completed";
   startedAt: number;
   completedAt: number;
+  artifacts: Artifact<T>[];
 }
 
 export interface FailedNodeRun {
@@ -105,13 +106,16 @@ export interface SkippedNodeRun {
 }
 
 /** The record of a node's execution. */
-export type NodeRun = CompletedNodeRun | FailedNodeRun | SkippedNodeRun;
+export type NodeRun<T extends FlowTypes = FlowTypes> =
+  | CompletedNodeRun<T>
+  | FailedNodeRun
+  | SkippedNodeRun;
 
 /** Lifecycle events are engine-emitted; custom events carry host events
  * emitted through the node context. */
 export type FlowEvent<T extends FlowTypes = FlowTypes> =
   | { type: "node_start"; nodeId: string }
-  | { type: "node_end"; nodeId: string; run: NodeRun }
+  | { type: "node_end"; nodeId: string; run: NodeRun<T> }
   | { type: "custom"; nodeId: string; event: T["events"] };
 
 /** The graph's node elements: a union of per-kind nodes, so a literal's
@@ -129,7 +133,7 @@ export interface FlowRunResult<T extends FlowTypes = FlowTypes> {
   /** Failure messages, in the order nodes failed. */
   errors: string[];
   /** One run per node, in declaration order. */
-  nodeRuns: NodeRun[];
+  nodeRuns: NodeRun<T>[];
   /** All committed artifacts, in commit order. */
   artifacts: Artifact<T>[];
 }
