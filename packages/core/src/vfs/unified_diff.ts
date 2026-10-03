@@ -1,4 +1,4 @@
-import { myersDiff } from "@/vfs/diff.ts";
+import { type DiffOp, myersDiff } from "@/vfs/diff.ts";
 
 const CONTEXT_LINES = 3;
 
@@ -13,7 +13,7 @@ export function unifiedDiff(
   const oldLines = oldText.split("\n");
   const newLines = newText.split("\n");
 
-  const ops = lineOps(oldLines, newLines);
+  const ops = myersDiff(oldLines, newLines);
 
   const hunks = buildUnifiedHunks(ops, oldLines, newLines);
 
@@ -33,12 +33,6 @@ export function unifiedDiff(
   return `${lines.join("\n")}\n`;
 }
 
-interface DiffOp {
-  type: "equal" | "insert" | "delete";
-  oldLine?: string;
-  newLine?: string;
-}
-
 interface UnifiedHunk {
   oldStart: number;
   newStart: number;
@@ -47,24 +41,10 @@ interface UnifiedHunk {
   lines: string[];
 }
 
-function lineOps(oldLines: string[], newLines: string[]): DiffOp[] {
-  return myersDiff(oldLines, newLines).map((op): DiffOp => {
-    if (op.type === "equal") {
-      return {
-        type: "equal",
-        oldLine: oldLines[op.oldIdx ?? 0],
-        newLine: newLines[op.newIdx ?? 0],
-      };
-    }
-    if (op.type === "insert") {
-      return { type: "insert", newLine: newLines[op.newIdx ?? 0] };
-    }
-    return { type: "delete", oldLine: oldLines[op.oldIdx ?? 0] };
-  });
-}
-
 function buildUnifiedHunk(
   ops: DiffOp[],
+  oldLines: string[],
+  newLines: string[],
   startIdx: number,
 ): { hunk: UnifiedHunk; nextIdx: number } | null {
   const hunkLines: string[] = [];
@@ -113,19 +93,19 @@ function buildUnifiedHunk(
     const op = ops[i];
     switch (op.type) {
       case "equal":
-        hunkLines.push(` ${op.oldLine}`);
+        hunkLines.push(` ${oldLines[op.oldIdx ?? 0]}`);
         oldCount++;
         newCount++;
         oldLine++;
         newLine++;
         break;
       case "delete":
-        hunkLines.push(`-${op.oldLine}`);
+        hunkLines.push(`-${oldLines[op.oldIdx ?? 0]}`);
         oldCount++;
         oldLine++;
         break;
       case "insert":
-        hunkLines.push(`+${op.newLine}`);
+        hunkLines.push(`+${newLines[op.newIdx ?? 0]}`);
         newCount++;
         newLine++;
         break;
@@ -146,14 +126,14 @@ function buildUnifiedHunk(
 
 function buildUnifiedHunks(
   ops: DiffOp[],
-  _oldLines: string[],
-  _newLines: string[],
+  oldLines: string[],
+  newLines: string[],
 ): UnifiedHunk[] {
   const hunks: UnifiedHunk[] = [];
   let idx = 0;
 
   while (idx < ops.length) {
-    const result = buildUnifiedHunk(ops, idx);
+    const result = buildUnifiedHunk(ops, oldLines, newLines, idx);
     if (result === null) break;
     const { hunk, nextIdx } = result;
     hunks.push(hunk);
