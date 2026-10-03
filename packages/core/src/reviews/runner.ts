@@ -1,6 +1,7 @@
 import type { Agent } from "@/agent.ts";
 import type { ResolvedReviewPass } from "@/config/types.ts";
-import { FlowRunner, view } from "@/flow/runner.ts";
+import { FlowRunner } from "@/flow/runner.ts";
+import { view } from "@/flow/view.ts";
 import { buildReviewGraph } from "@/reviews/adapter.ts";
 import { createReviewRunners, type ReviewTypes } from "@/reviews/graph.ts";
 import type { ReviewProgress } from "@/reviews/progress.ts";
