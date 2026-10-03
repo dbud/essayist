@@ -15,7 +15,7 @@ export type TraceEvent = FlowEvent<ReviewTypes> & {
 
 /** Receives trace events as they happen. */
 export interface TraceRecorder {
-  record(event: FlowEvent<ReviewTypes>): void;
+  record(event: FlowEvent<ReviewTypes>): Promise<void>;
   /** Await pending appends and close the sink. */
   flush(): Promise<void>;
 }

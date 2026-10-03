@@ -29,8 +29,8 @@ export class ScopedTraceRecorder implements TraceRecorder {
     this.#onEvent = onEvent;
   }
 
-  record(event: FlowEvent<ReviewTypes>): void {
-    if (this.#flushed) return;
+  record(event: FlowEvent<ReviewTypes>): Promise<void> {
+    if (this.#flushed) return Promise.resolve();
     const entry: TraceEvent = {
       seq: this.#seq++,
       at: Date.now(),
@@ -39,7 +39,7 @@ export class ScopedTraceRecorder implements TraceRecorder {
     logTraceEvent(entry);
     this.#onEvent?.(entry);
     // Appends are async; the queue keeps store order equal to seq order.
-    this.#writes
+    return this.#writes
       .add(() => this.#store.append({ ...this.#scope, event: entry }))
       .catch((err) => logger.error({ err }, "review trace append failed"));
   }

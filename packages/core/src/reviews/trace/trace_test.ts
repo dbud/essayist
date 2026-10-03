@@ -61,6 +61,29 @@ Deno.test("TraceRecorder -- persists events with ordered seq and timestamps", as
   assertEquals(derived, trace);
 });
 
+Deno.test("TraceRecorder -- record settles only once the append is durable", async () => {
+  const traceStore = store();
+  const recorder = traceStore.recorder({ wsId: "ws", runId: "run" });
+
+  await recorder.record({
+    type: "node_end",
+    nodeId: "analyze",
+    run: {
+      nodeId: "analyze",
+      status: "completed",
+      startedAt: 0,
+      completedAt: 1,
+      artifacts: [],
+    },
+  });
+
+  const trace = await traceStore.get({ wsId: "ws", runId: "run" });
+  assertEquals(
+    trace?.map((event) => event.type),
+    ["node_end"],
+  );
+});
+
 Deno.test("TraceRecorder -- record after flush is ignored", async () => {
   const traceStore = store();
   const recorder = traceStore.recorder({ wsId: "ws", runId: "run" });

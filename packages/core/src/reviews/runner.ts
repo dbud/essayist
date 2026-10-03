@@ -26,7 +26,7 @@ export interface RunReviewPassOptions {
 }
 
 const NOOP_RECORDER: TraceRecorder = {
-  record: () => {},
+  record: () => Promise.resolve(),
   flush: () => Promise.resolve(),
 };
 
