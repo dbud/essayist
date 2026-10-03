@@ -16,7 +16,7 @@
       "@types/google.accounts"
     ]
   },
-  "exclude": ["**/_fresh/*"],
+  "exclude": ["**/_fresh/*", "**/.vite/*"],
   "exports": "./main.ts",
   "imports": {
     "@/": "./",
