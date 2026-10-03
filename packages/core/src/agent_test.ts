@@ -116,6 +116,9 @@ function createSpyClient(rounds: FakeRound[]): {
   return { client, inputs, options };
 }
 
+/** Retry tests assert attempt counts and payloads, not elapsed time. */
+const noSleep = () => Promise.resolve();
+
 Deno.test("Agent.callModelStructured -- a transient failure is re-issued", async () => {
   const abort = new Error(
     'Response failed: {"code":"server_error","message":"The operation was aborted"}',
@@ -124,7 +127,7 @@ Deno.test("Agent.callModelStructured -- a transient failure is re-issued", async
     { text: '{"ok":true}', failWith: abort },
     { text: '{"ok":true}' },
   ]);
-  const agent = new Agent("test-key", client);
+  const agent = new Agent("test-key", client, { sleep: noSleep });
 
   const result = await agent.callModelStructured(
     "ping",
@@ -162,7 +165,7 @@ Deno.test("Agent.callModelStructured -- a transient failure reports the retry", 
     { text: '{"ok":true}', failWith: abort },
     { text: '{"ok":true}' },
   ]);
-  const agent = new Agent("test-key", client);
+  const agent = new Agent("test-key", client, { sleep: noSleep });
   const retries: RetryFailure[] = [];
 
   await agent.callModelStructured(
@@ -200,7 +203,7 @@ Deno.test("Agent.callModelStructured -- a re-ask that fails transiently is retri
     { text: '{"ok":true}', failWith: new Error("socket hang up") },
     { text: '{"ok":true}' },
   ]);
-  const agent = new Agent("test-key", client);
+  const agent = new Agent("test-key", client, { sleep: noSleep });
 
   const result = await agent.callModelStructured(
     "ping",
