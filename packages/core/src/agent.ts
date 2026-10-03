@@ -129,8 +129,9 @@ export class Agent {
 
     const hooks = new HooksManager();
     hooks.on("UserPromptSubmit", {
-      handler: (payload: UserPromptSubmitPayload) =>
-        options?.onPrompt?.(payload.prompt),
+      handler: (payload: UserPromptSubmitPayload) => {
+        options?.onPrompt?.(payload.prompt);
+      },
     });
     hooks.on("PostModelCall", {
       handler: (payload: PostModelCallPayload) => {
