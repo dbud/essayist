@@ -1,3 +1,5 @@
+import { myersDiff } from "@/vfs/diff.ts";
+
 const CONTEXT_LINES = 3;
 
 export function unifiedDiff(
@@ -11,7 +13,7 @@ export function unifiedDiff(
   const oldLines = oldText.split("\n");
   const newLines = newText.split("\n");
 
-  const ops = myersDiff(oldLines, newLines);
+  const ops = lineOps(oldLines, newLines);
 
   const hunks = buildUnifiedHunks(ops, oldLines, newLines);
 
@@ -45,48 +47,20 @@ interface UnifiedHunk {
   lines: string[];
 }
 
-function myersDiff(oldLines: string[], newLines: string[]): DiffOp[] {
-  const N = oldLines.length;
-  const M = newLines.length;
-
-  const dp: number[][] = Array.from({ length: N + 1 }, () =>
-    new Array(M + 1).fill(0),
-  );
-
-  for (let i = 1; i <= N; i++) {
-    for (let j = 1; j <= M; j++) {
-      if (oldLines[i - 1] === newLines[j - 1]) {
-        dp[i][j] = dp[i - 1][j - 1] + 1;
-      } else {
-        dp[i][j] = Math.max(dp[i - 1][j], dp[i][j - 1]);
-      }
-    }
-  }
-
-  const ops: DiffOp[] = [];
-  let i = N,
-    j = M;
-
-  while (i > 0 || j > 0) {
-    if (i > 0 && j > 0 && oldLines[i - 1] === newLines[j - 1]) {
-      ops.push({
+function lineOps(oldLines: string[], newLines: string[]): DiffOp[] {
+  return myersDiff(oldLines, newLines).map((op): DiffOp => {
+    if (op.type === "equal") {
+      return {
         type: "equal",
-        oldLine: oldLines[i - 1],
-        newLine: newLines[j - 1],
-      });
-      i--;
-      j--;
-    } else if (j > 0 && (i === 0 || dp[i][j - 1] >= dp[i - 1][j])) {
-      ops.push({ type: "insert", newLine: newLines[j - 1] });
-      j--;
-    } else {
-      ops.push({ type: "delete", oldLine: oldLines[i - 1] });
-      i--;
+        oldLine: oldLines[op.oldIdx ?? 0],
+        newLine: newLines[op.newIdx ?? 0],
+      };
     }
-  }
-
-  ops.reverse();
-  return ops;
+    if (op.type === "insert") {
+      return { type: "insert", newLine: newLines[op.newIdx ?? 0] };
+    }
+    return { type: "delete", oldLine: oldLines[op.oldIdx ?? 0] };
+  });
 }
 
 function buildUnifiedHunk(

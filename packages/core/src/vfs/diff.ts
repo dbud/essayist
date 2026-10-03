@@ -77,11 +77,15 @@ export function computeDiffWith(
   const oldTokens = tokenize(oldText);
   const newTokens = tokenize(newText);
 
-  const ops = myersDiff(fn, oldTokens, newTokens);
+  const ops = myersDiff(
+    oldTokens.map((token) => token.text),
+    newTokens.map((token) => token.text),
+    fn,
+  );
   return buildHunks(ops, oldTokens, newTokens, oldText, newText);
 }
 
-interface DiffOp {
+export interface DiffOp {
   type: "equal" | "insert" | "delete";
   oldIdx?: number;
   newIdx?: number;
@@ -97,22 +101,22 @@ const EQ = 0;
 const INS = 1;
 const DEL = 2;
 
-/** Assign integer ids to tokens, deduping identical text to the same id. */
-function assignTokenIds(
-  oldTokens: Token[],
-  newTokens: Token[],
+/** Assign integer ids to texts, deduping identical text to the same id. */
+function assignTextIds(
+  oldTexts: readonly string[],
+  newTexts: readonly string[],
 ): { oldIds: Int32Array; newIds: Int32Array } {
   const map = new Map<string, number>();
   let nextId = 0;
-  const oldIds = new Int32Array(oldTokens.length);
-  const newIds = new Int32Array(newTokens.length);
+  const oldIds = new Int32Array(oldTexts.length);
+  const newIds = new Int32Array(newTexts.length);
 
-  for (const [tokens, ids] of [
-    [oldTokens, oldIds],
-    [newTokens, newIds],
-  ] as [Token[], Int32Array][]) {
-    for (let i = 0; i < tokens.length; i++) {
-      const text = tokens[i].text;
+  for (const [texts, ids] of [
+    [oldTexts, oldIds],
+    [newTexts, newIds],
+  ] as [readonly string[], Int32Array][]) {
+    for (let i = 0; i < texts.length; i++) {
+      const text = texts[i];
       let id = map.get(text);
       if (id === undefined) {
         id = nextId++;
@@ -144,15 +148,18 @@ function decodeOps(flat: Int32Array): DiffOp[] {
   return ops;
 }
 
-/** Encode tokens to ids, run the core, decode the ops. */
-function myersDiff(
-  fn: MyersFn,
-  oldTokens: Token[],
-  newTokens: Token[],
+/**
+ * Ops for two sequences compared by text identity, at a granularity of the
+ * caller's choosing: tokens here, whole lines in a unified diff. Indices
+ * refer to the given arrays.
+ */
+export function myersDiff(
+  oldTexts: readonly string[],
+  newTexts: readonly string[],
+  fn: MyersFn = myersFn,
 ): DiffOp[] {
-  const { oldIds, newIds } = assignTokenIds(oldTokens, newTokens);
-  const flat = fn(oldIds, newIds);
-  return decodeOps(flat);
+  const { oldIds, newIds } = assignTextIds(oldTexts, newTexts);
+  return decodeOps(fn(oldIds, newIds));
 }
 
 export function jsMyers(a: Int32Array, b: Int32Array): Int32Array {
