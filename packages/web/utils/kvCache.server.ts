@@ -21,6 +21,7 @@ export interface CachePolicy {
    * drops the cache ahead of the TTL. Writers that change the key should
    * bump it; ones that do not are covered by the TTL. */
   watch?: { kv: Deno.Kv; key: Deno.KvKey };
+  now?: () => number;
 }
 
 export interface CacheRef<S> {
@@ -52,6 +53,7 @@ export function cached<S>(
   let gen = 0;
   let inflight: Inflight<S> | undefined;
   const watch = policy.watch;
+  const now = policy.now ?? (() => Date.now());
 
   function drop(reason: string): void {
     gen++;
@@ -70,7 +72,7 @@ export function cached<S>(
       .then((fresh) => {
         if (g === gen) {
           value = fresh;
-          filledAt = Date.now();
+          filledAt = now();
           logger.debug({ cache: name, reason }, "kvCache revalidated");
         }
         return fresh;
@@ -88,7 +90,7 @@ export function cached<S>(
 
   return {
     get(): Promise<S> {
-      if (value !== undefined && Date.now() - filledAt < policy.ttlMs) {
+      if (value !== undefined && now() - filledAt < policy.ttlMs) {
         return Promise.resolve(value);
       }
       const reason = value === undefined ? "miss" : "ttl";

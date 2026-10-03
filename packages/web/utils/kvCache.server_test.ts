@@ -1,5 +1,4 @@
 import { assertEquals } from "@std/assert";
-import { delay } from "@/utils/delay.ts";
 import { cached } from "@/utils/kvCache.server.ts";
 
 /** Loads resolve to distinct "v1", "v2", ... values so value assertions
@@ -33,9 +32,17 @@ Deno.test("kvCache -- concurrent misses share a single load", async () => {
 
 Deno.test("kvCache -- expired value is refreshed before being served", async () => {
   const loader = versionedLoader();
-  const cache = cached("test", loader.load, { ttlMs: 40 });
+  let clock = 0;
+  const cache = cached("test", loader.load, {
+    ttlMs: 40,
+    now: () => clock,
+  });
   assertEquals(await cache.get(), "v1");
-  await delay(80);
+
+  clock = 39;
+  assertEquals(await cache.get(), "v1"); // still inside the TTL
+
+  clock = 40;
   // Expired: no stale value is served; concurrent callers share the load.
   const [a, b] = await Promise.all([cache.get(), cache.get()]);
   assertEquals(a, "v2");

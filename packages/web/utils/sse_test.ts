@@ -27,11 +27,16 @@ Deno.test("sseResponse -- sends events and closes after run settles", async () =
 
 Deno.test("sseResponse -- a disconnect does not break the running task", async () => {
   let ticks = 0;
+  const { promise: finished, resolve: finish } = Promise.withResolvers<void>();
   const res = sseResponse(async (send) => {
-    for (let i = 0; i < 3; i++) {
-      send("tick", { i });
-      ticks++;
-      await delay(5);
+    try {
+      for (let i = 0; i < 3; i++) {
+        send("tick", { i });
+        ticks++;
+        await delay(1);
+      }
+    } finally {
+      finish();
     }
   });
 
@@ -42,6 +47,6 @@ Deno.test("sseResponse -- a disconnect does not break the running task", async (
   await reader.cancel();
 
   // The task must finish without throwing on dropped sends.
-  await delay(80);
+  await finished;
   assertEquals(ticks, 3);
 });

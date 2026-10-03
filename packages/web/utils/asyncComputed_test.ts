@@ -2,7 +2,37 @@ import { computed, signal } from "@preact/signals";
 import { assertEquals } from "@std/assert";
 import { asyncComputed } from "./asyncComputed.ts";
 
-const tick = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
+const tick = () => new Promise<void>((r) => queueMicrotask(r));
+
+function manualTimers() {
+  const scheduled = new Map<number, { fn: () => void; ms: number }>();
+  let next = 1;
+
+  const schedule = (fn: () => void, ms: number): (() => void) => {
+    const id = next++;
+    scheduled.set(id, { fn, ms });
+    return () => {
+      scheduled.delete(id);
+    };
+  };
+
+  const pending = () => [...scheduled.values()];
+
+  const fire = (): void => {
+    const entries = [...scheduled.values()];
+    scheduled.clear();
+    for (const entry of entries) entry.fn();
+  };
+
+  const drain = async (): Promise<void> => {
+    for (let guard = 0; guard < 50 && scheduled.size > 0; guard++) {
+      fire();
+      await tick();
+    }
+  };
+
+  return { schedule, pending, fire, drain };
+}
 
 Deno.test("asyncComputed -- initial value is available synchronously", () => {
   const s = signal(1);
@@ -19,104 +49,137 @@ Deno.test("asyncComputed -- initial value is available synchronously", () => {
 
 Deno.test("asyncComputed -- first compute populates value", async () => {
   const s = signal(1);
+  const timers = manualTimers();
   const c = asyncComputed(
     () => s.value,
     (n) => Promise.resolve(n * 10),
     {
       initial: -1,
       debounce: 5,
+      schedule: timers.schedule,
     },
   );
-  await tick(20);
+  assertEquals(timers.pending().length, 0);
+  await tick();
   assertEquals(c.value.value, 10);
 });
 
 Deno.test("asyncComputed -- compute is debounced, not per change", async () => {
   const s = signal(0);
   let runs = 0;
+  const timers = manualTimers();
   const c = asyncComputed(
     () => s.value,
     (n) => {
       runs++;
       return Promise.resolve(n);
     },
-    { initial: -1, debounce: 20 },
+    {
+      initial: -1,
+      debounce: 5,
+      schedule: timers.schedule,
+    },
   );
   const firstRuns = runs; // first run fires immediately
+
   s.value = 1;
   s.value = 2;
   s.value = 3;
-  await tick(40);
+  await tick();
+
+  assertEquals(timers.pending().length, 1);
+  assertEquals(timers.pending()[0].ms, 5);
+
+  timers.fire();
+  await tick();
   assertEquals(runs, firstRuns + 1); // one debounced run with the latest deps
   assertEquals(c.value.value, 3);
 });
 
 Deno.test("asyncComputed -- holds last value and sets stale while pending", async () => {
   const s = signal("a");
+  const timers = manualTimers();
   const c = asyncComputed(
     () => s.value,
     (v) => Promise.resolve(v),
     {
       initial: "",
-      debounce: 20,
+      debounce: 5,
+      schedule: timers.schedule,
     },
   );
-  await tick(5); // first compute resolves
+  await tick(); // first compute resolves
   assertEquals(c.value.value, "a");
   assertEquals(c.stale.value, false);
+
   s.value = "b";
-  await tick(0); // let the effect run: set stale, schedule the debounced compute
+  await tick(); // let the effect run: set stale, schedule the debounced compute
   assertEquals(c.value.value, "a"); // debounced: still the old value
   assertEquals(c.stale.value, true); // pending
-  await tick(40);
+
+  timers.fire();
+  await tick();
   assertEquals(c.value.value, "b");
   assertEquals(c.stale.value, false);
 });
 
 Deno.test("asyncComputed -- drops stale responses", async () => {
   const s = signal(0);
-  // Slow compute whose latency grows with the value, so an older request can
-  // resolve after a newer call if not guarded.
+  const timers = manualTimers();
   const c = asyncComputed(
     () => s.value,
-    async (n) => {
-      await tick(n === 1 ? 40 : 5);
-      return n;
+    (n) =>
+      new Promise<number>((resolve) => {
+        timers.schedule(() => resolve(n), 5);
+      }),
+    {
+      initial: -1,
+      debounce: 0,
+      schedule: timers.schedule,
     },
-    { initial: -1, debounce: 0 },
   );
-  await tick(5);
+  await tick(); // let compute(0) start
+
   s.value = 1; // slow request
   s.value = 2; // fast request, supersedes
-  await tick(60);
-  assertEquals(c.value.value, 2); // not the stale "1"
+  await tick();
+  await timers.drain();
+
+  assertEquals(c.value.value, 2); // not the stale "0"
 });
 
 Deno.test("asyncComputed -- aborts in-flight compute when superseded", async () => {
   const s = signal(0);
   const aborted: number[] = [];
+  const timers = manualTimers();
 
   const c = asyncComputed(
     () => s.value,
     (n, signal) =>
       new Promise<number>((resolve, reject) => {
-        const t = setTimeout(() => resolve(n), 50);
+        const cancel = timers.schedule(() => resolve(n), 15);
         signal.addEventListener(
           "abort",
           () => {
-            clearTimeout(t);
+            cancel();
             aborted.push(n);
             reject(new DOMException("aborted", "AbortError"));
           },
           { once: true },
         );
       }),
-    { initial: -1, debounce: 0 },
+    {
+      initial: -1,
+      debounce: 0,
+      schedule: timers.schedule,
+    },
   );
 
-  await tick(5); // let compute(0) start
+  await tick(); // let compute(0) start
   s.value = 1; // supersede while compute(0) is in-flight
-  await tick(60);
+  await tick();
+  await timers.drain();
+
   assertEquals(c.value.value, 1);
   assertEquals(aborted, [0]);
   assertEquals(c.stale.value, false);
@@ -124,15 +187,17 @@ Deno.test("asyncComputed -- aborts in-flight compute when superseded", async () 
 
 Deno.test("asyncComputed -- downstream deep-equality suppression", async () => {
   const s = signal([1, 2]);
+  const timers = manualTimers();
   const c = asyncComputed(
     () => s.value,
     (arr) => Promise.resolve([...arr]),
     {
       initial: [] as number[],
-      debounce: 20,
+      debounce: 5,
+      schedule: timers.schedule,
     },
   );
-  await tick(5); // let the first compute resolve so priming captures the real value
+  await tick(); // let the first compute resolve so priming captures the real value
 
   let downstreamRuns = 0;
   const downstream = computed(() => {
@@ -143,12 +208,12 @@ Deno.test("asyncComputed -- downstream deep-equality suppression", async () => {
   assertEquals(downstreamRuns, 1);
 
   s.value = [1, 2]; // deeply equal -> no refire
-  await tick(40);
+  await timers.drain();
   assertEquals(downstream.value, [1, 2]);
   assertEquals(downstreamRuns, 1);
 
   s.value = [1, 3]; // structural change -> refire
-  await tick(40);
+  await timers.drain();
   assertEquals(downstream.value, [1, 3]);
   assertEquals(downstreamRuns, 2);
 });

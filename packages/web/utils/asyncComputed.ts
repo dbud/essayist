@@ -31,11 +31,21 @@ export interface AsyncComputed<T> {
 export function asyncComputed<D, T>(
   deps: () => D,
   compute: (deps: D, signal: AbortSignal) => Promise<T>,
-  opts: { debounce?: number; initial: T },
+  opts: {
+    debounce?: number;
+    initial: T;
+    schedule?: (fn: () => void, ms: number) => () => void;
+  },
 ): AsyncComputed<T> {
   const out = signal<T>(opts.initial);
   const stale = signal(false);
-  let timer: ReturnType<typeof setTimeout> | undefined;
+  const schedule =
+    opts.schedule ??
+    ((fn: () => void, ms: number) => {
+      const handle = setTimeout(fn, ms);
+      return () => clearTimeout(handle);
+    });
+  let cancelDebounce: (() => void) | undefined;
   let first = true;
   let seq = 0;
   let current: AbortController | null = null;
@@ -77,8 +87,8 @@ export function asyncComputed<D, T>(
     }
     // Abort in-flight right away so we don't finish a result whose inputs are stale.
     current?.abort();
-    clearTimeout(timer);
-    timer = setTimeout(() => run(d), opts.debounce ?? 0);
+    cancelDebounce?.();
+    cancelDebounce = schedule(() => run(d), opts.debounce ?? 0);
     stale.value = true;
   });
 
