@@ -1,3 +1,4 @@
+import { sortBy } from "@std/collections";
 import type { PersistenceAdapter } from "@/persistence/mod.ts";
 import { ChunkedValueStore } from "@/persistence/value_store.ts";
 import { ScopedTraceRecorder } from "./recorder.ts";
@@ -35,7 +36,9 @@ export class TraceEventStore implements TraceStore {
   async get({ wsId, runId }: TraceScope) {
     const stored = await this.#values.list([TRACES, wsId, runId]);
     if (stored.length === 0) return undefined;
-    return stored.map((entry) => entry.value);
+    return sortBy(stored, (entry) => entry.value.seq).map(
+      (entry) => entry.value,
+    );
   }
 
   recorder(

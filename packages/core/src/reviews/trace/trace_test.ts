@@ -163,3 +163,21 @@ Deno.test("TraceEventStore -- get returns undefined for an unknown run", async (
   const traceStore = store();
   assertEquals(await traceStore.get({ wsId: "ws", runId: "ghost" }), undefined);
 });
+
+Deno.test("TraceEventStore -- get orders by seq, not by key", async () => {
+  const traceStore = store();
+  for (const seq of [999999, 1000000, 8]) {
+    await traceStore.append({
+      wsId: "ws",
+      runId: "run",
+      event: { seq, at: seq, type: "node_start", nodeId: `n${seq}` },
+    });
+  }
+
+  const trace = await traceStore.get({ wsId: "ws", runId: "run" });
+
+  assertEquals(
+    trace?.map((event) => event.seq),
+    [8, 999999, 1000000],
+  );
+});

@@ -36,7 +36,8 @@ export interface TraceStore {
   /** Mark the trace complete. */
   end({ wsId, runId }: TraceScope): Promise<void>;
 
-  /** Read the trace of a run in order; undefined when nothing was written. */
+  /** Read the trace of a run in seq order, oldest first; undefined when
+   * nothing was written. */
   get({ wsId, runId }: TraceScope): Promise<TraceEvent[] | undefined>;
 
   /** Recorder bound to a run. onEvent receives each derived event. */
