@@ -433,6 +433,141 @@ Deno.test("FlowRunner -- respects maxConcurrency", async () => {
   assertEquals(peak, 1);
 });
 
+Deno.test("FlowRunner -- a resumed node does not re-run and seeds its artifacts", async () => {
+  let ran = false;
+  const counting: NodeRunners<TestTypes> = {
+    ...runners,
+    source: {
+      execute(_, { artifact }) {
+        ran = true;
+        return Promise.resolve([artifact("content", "fresh")]);
+      },
+    },
+  };
+  const events: FlowEvent<TestTypes>[] = [];
+  const flow = new FlowRunner<TestTypes>({
+    runners: counting,
+    onEvent: (event) => {
+      events.push(event);
+    },
+  });
+
+  const result = await flow.run(
+    {
+      nodes: [
+        { id: "a", kind: "source", dependsOn: [], payload: { text: "x" } },
+      ],
+    },
+    {
+      completed: new Map([
+        ["a", [{ type: "content", data: "earlier", producedBy: "a" }]],
+      ]),
+    },
+  );
+
+  assertEquals(ran, false);
+  assertEquals(result.status, "completed");
+  assertEquals(result.artifacts, [
+    { type: "content", data: "earlier", producedBy: "a" },
+  ]);
+  assertEquals(events, []);
+  assertEquals(result.nodeRuns, []);
+});
+
+Deno.test("FlowRunner -- a resumed node feeds its dependents", async () => {
+  let seen: string[] = [];
+  const flow = new FlowRunner<TestTypes>({
+    runners: {
+      ...runners,
+      sink: {
+        execute(_, { inputs, artifact }) {
+          seen = inputs.of("token");
+          return Promise.resolve([artifact("content", "done")]);
+        },
+      },
+    },
+  });
+
+  const result = await flow.run(
+    {
+      nodes: [
+        { id: "a", kind: "source", dependsOn: [], payload: { text: "x" } },
+        { id: "p", kind: "produce", dependsOn: ["a"], payload: { token: "t" } },
+        { id: "s", kind: "sink", dependsOn: ["p"] },
+      ],
+    },
+    {
+      completed: new Map([
+        ["a", [{ type: "content", data: "earlier", producedBy: "a" }]],
+      ]),
+    },
+  );
+
+  assertEquals(result.status, "completed");
+  assertEquals(seen, ["t"]);
+  assertEquals(
+    result.nodeRuns.map((run) => [run.nodeId, run.status]),
+    [
+      ["p", "completed"],
+      ["s", "completed"],
+    ],
+  );
+});
+
+Deno.test("FlowRunner -- a resumed node is not reported as skipped", async () => {
+  const flow = new FlowRunner<TestTypes>({ runners });
+
+  const result = await flow.run(
+    {
+      nodes: [
+        { id: "a", kind: "source", dependsOn: [], payload: { text: "x" } },
+        { id: "p", kind: "produce", dependsOn: ["a"], payload: { token: "t" } },
+      ],
+    },
+    {
+      completed: new Map([
+        ["a", [{ type: "content", data: "earlier", producedBy: "a" }]],
+      ]),
+    },
+  );
+
+  assertEquals(
+    result.nodeRuns.some((run) => run.nodeId === "a"),
+    false,
+  );
+  assertEquals(result.errors, []);
+});
+
+Deno.test("FlowRunner -- ignores a completed entry the graph no longer has", async () => {
+  const flow = new FlowRunner<TestTypes>({ runners });
+
+  const result = await flow.run(
+    {
+      nodes: [
+        { id: "a", kind: "source", dependsOn: [], payload: { text: "x" } },
+      ],
+    },
+    {
+      completed: new Map([
+        [
+          "retired",
+          [{ type: "content", data: "stale", producedBy: "retired" }],
+        ],
+      ]),
+    },
+  );
+
+  assertEquals(result.status, "completed");
+  assertEquals(
+    result.nodeRuns.map((run) => run.nodeId),
+    ["a"],
+  );
+  // The retired node's artifact must not reach the result either.
+  assertEquals(result.artifacts, [
+    { type: "content", data: "x", producedBy: "a" },
+  ]);
+});
+
 Deno.test("FlowRunner -- completes an empty graph", async () => {
   const flow = new FlowRunner<TestTypes>({ runners });
   const result = await flow.run({ nodes: [] });
