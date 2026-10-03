@@ -1,3 +1,4 @@
+export { foldCompleted } from "./fold.ts";
 export { TraceEventStore } from "./store.ts";
 export type {
   TraceEvent,
