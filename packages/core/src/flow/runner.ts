@@ -26,6 +26,12 @@ export interface FlowRunnerOptions<T extends FlowTypes> {
   maxConcurrency?: number;
 }
 
+export interface FlowRunOptions<T extends FlowTypes> {
+  /** Nodes an earlier attempt completed, with what they committed. Skipped
+   * and seeded; their events stay in the trace rather than replaying here. */
+  completed?: ReadonlyMap<string, Artifact<T>[]>;
+}
+
 /** Scheduling state for a node. */
 interface WiredNode<T extends FlowTypes> {
   node: FlowNode<T, NodeKind<T>>;
@@ -58,13 +64,33 @@ export class FlowRunner<T extends FlowTypes> {
     this.#maxConcurrency = options.maxConcurrency ?? Number.POSITIVE_INFINITY;
   }
 
-  async run(graph: FlowGraph<T>): Promise<FlowRunResult<T>> {
+  async run(
+    graph: FlowGraph<T>,
+    options: FlowRunOptions<T> = {},
+  ): Promise<FlowRunResult<T>> {
     const wired = wire(graph, this.#runners);
+    const completed = options.completed ?? new Map<string, Artifact<T>[]>();
     const committed = new Map<string, Artifact<T>[]>();
     const artifacts: Artifact<T>[] = [];
     const nodeRuns: NodeRun<T>[] = [];
     const running = new Set<Promise<void>>();
     const errors = new Map<string, string>();
+
+    const commit = (entry: WiredNode<T>, produced: Artifact<T>[]): void => {
+      committed.set(entry.node.id, produced);
+      artifacts.push(...produced);
+      for (const id of entry.consumedBy) {
+        const consumer = wired.get(id);
+        if (consumer !== undefined) consumer.remaining -= 1;
+      }
+    };
+
+    for (const entry of wired.values()) {
+      const carried = completed.get(entry.node.id);
+      if (carried === undefined) continue;
+      commit(entry, carried);
+      entry.launched = true;
+    }
 
     const launch = async (entry: WiredNode<T>): Promise<void> => {
       entry.launched = true;
@@ -77,14 +103,7 @@ export class FlowRunner<T extends FlowTypes> {
         const run = await this.#execute(entry.node, inputs);
         nodeRuns.push(run);
         if (run.status === "completed") {
-          artifacts.push(...run.artifacts);
-          committed.set(run.nodeId, run.artifacts);
-          for (const id of entry.consumedBy) {
-            const consumer = wired.get(id);
-            if (consumer !== undefined) {
-              consumer.remaining -= 1;
-            }
-          }
+          commit(entry, run.artifacts);
         } else {
           errors.set(entry.node.id, run.error);
         }
