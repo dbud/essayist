@@ -93,7 +93,7 @@ export interface ModelClient {
 
 /** Attempts at a structured round, counting the first. */
 const MAX_ROUND_ATTEMPTS = 3;
-const ROUND_RETRY_DELAY_MS = 1_000;
+export const ROUND_RETRY_DELAY_MS = 1_000;
 
 export interface AgentOptions {
   sleep?: (ms: number) => Promise<void>;

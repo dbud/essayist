@@ -13,6 +13,7 @@ import {
   type ModelClient,
   RETRY_OPTIONS,
   type RetryFailure,
+  ROUND_RETRY_DELAY_MS,
   StructuredParseError,
 } from "./agent.ts";
 
@@ -146,7 +147,12 @@ Deno.test("Agent.callModelStructured -- a transient failure gives up after three
   const { client, inputs } = createSpyClient([
     { text: '{"ok":true}', failWith: abort },
   ]);
-  const agent = new Agent("test-key", client);
+  const slept: number[] = [];
+  const recordSleep = (ms: number) => {
+    slept.push(ms);
+    return Promise.resolve();
+  };
+  const agent = new Agent("test-key", client, { sleep: recordSleep });
 
   await assertRejects(
     () =>
@@ -155,6 +161,8 @@ Deno.test("Agent.callModelStructured -- a transient failure gives up after three
     "fetch failed",
   );
   assertEquals(inputs.length, 3);
+  // Linear in the attempt number.
+  assertEquals(slept, [ROUND_RETRY_DELAY_MS, 2 * ROUND_RETRY_DELAY_MS]);
 });
 
 Deno.test("Agent.callModelStructured -- a transient failure reports the retry", async () => {
