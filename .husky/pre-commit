@@ -11,4 +11,4 @@ if [ -n "$staged_rs" ]; then
   git add -u crates/wasm/pkg/
 fi
 
-deno task fmt:check
+deno task check

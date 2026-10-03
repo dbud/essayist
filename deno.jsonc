@@ -27,8 +27,8 @@
   },
   "nodeModulesDir": "auto",
   "tasks": {
+    "check": "deno lint && deno check && deno run -A npm:@biomejs/biome check --error-on-warnings",
     "fmt": "deno run -A npm:@biomejs/biome check --write --error-on-warnings",
-    "fmt:check": "deno lint && deno check && deno run -A npm:@biomejs/biome check --error-on-warnings",
     "kvctl": "deno run -A --env-file=.env packages/kvctl/kvctl.ts",
     "rust:check": "cargo check",
     "rust:clippy": "cargo clippy --all-targets -- -D warnings",

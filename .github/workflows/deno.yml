@@ -55,11 +55,8 @@ jobs:
       - name: Build wasm package
         run: deno task wasm:build
 
-      - name: Verify formatting
-        run: deno task fmt:check
-
-      - name: Run linter
-        run: deno lint
+      - name: Run checks
+        run: deno task check
 
       - name: Run tests
         run: deno test -A --unstable-kv

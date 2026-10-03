@@ -50,11 +50,11 @@ publishes Vite 8 support.
 
 Biome excludes this folder (`!patches`) and `deno lint` excludes it via
 `lint.exclude`, both because vendored code fails the app's style gates.
-`deno check` covers it as a workspace member, so `deno task fmt:check`
+`deno check` covers it as a workspace member, so `deno task check`
 type-checks it, as does the web package check:
 
 ```
-deno task fmt:check
+deno task check
 deno task -f web check
 ```
 

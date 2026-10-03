@@ -12,7 +12,7 @@ Biome is the primary formatter for JS/TS/JSON/CSS files:
 
 ```
 deno task fmt          # Format all files (Biome write)
-deno task fmt:check    # Check formatting (Biome check)
+deno task check        # Lint, type check, and check formatting (Biome check)
 ```
 
 ### Linting
@@ -102,12 +102,10 @@ deno task -f web check
 
 ## Pre-commit Checklist
 
-1. `deno task fmt:check`
-2. `deno lint`
-3. `deno check`
-4. `deno test -A`
+1. `deno task check`
+2. `deno test -A`
 
 The `.husky/pre-commit` hook runs `cargo fmt --check` and
 `cargo clippy --all-targets -- -D warnings` (plus `deno task wasm:build` and
 re-staging `crates/wasm/pkg/`) when Rust files are staged, then
-`deno task fmt:check` before every commit.
+`deno task check` before every commit.
