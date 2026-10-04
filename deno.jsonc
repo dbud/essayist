@@ -13,6 +13,7 @@
     "app": "essayist",
     "org": "dbud"
   },
+  "exclude": [".worktrees"],
   "imports": {
     "@biomejs/biome": "npm:@biomejs/biome@^2.5.14",
     "@openrouter/agent": "npm:@openrouter/agent@^0.11.0",
