@@ -29,10 +29,6 @@ export class TraceEventStore implements TraceStore {
     await this.#values.put(this.#eventKey(wsId, runId, event.seq), event);
   }
 
-  async end(_scope: TraceScope): Promise<void> {
-    // Events are already persisted.
-  }
-
   async get({ wsId, runId }: TraceScope) {
     const stored = await this.#values.list([TRACES, wsId, runId]);
     if (stored.length === 0) return undefined;
@@ -44,8 +40,9 @@ export class TraceEventStore implements TraceStore {
   recorder(
     scope: TraceScope,
     onEvent?: (event: TraceEvent) => void,
+    seq = 0,
   ): TraceRecorder {
-    return new ScopedTraceRecorder(this, scope, onEvent);
+    return new ScopedTraceRecorder(this, scope, onEvent, seq);
   }
 
   #eventKey(wsId: string, runId: string, seq: number): string[] {

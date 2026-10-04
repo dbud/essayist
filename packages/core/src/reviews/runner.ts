@@ -27,7 +27,6 @@ export interface RunReviewPassOptions {
 
 const NOOP_RECORDER: TraceRecorder = {
   record: () => Promise.resolve(),
-  flush: () => Promise.resolve(),
 };
 
 /** Run a review pass over a file version. */
@@ -110,7 +109,7 @@ class ReviewPassRunner {
     try {
       const result = await flow.run(graph);
       if (result.status === "failed") {
-        return await this.#finalize(run, recorder, {
+        return await this.#finalize(run, {
           error: result.errors.join("; "),
         });
       }
@@ -119,19 +118,17 @@ class ReviewPassRunner {
       // taking those `summary` artifacts and producing one `writeup`
       // artifact, so the run yields a single value here.
       const summary = view<ReviewTypes>(result.artifacts).one("summary");
-      return await this.#finalize(run, recorder, { summary });
+      return await this.#finalize(run, { summary });
     } catch (caught) {
       const message = caught instanceof Error ? caught.message : String(caught);
-      return await this.#finalize(run, recorder, { error: message });
+      return await this.#finalize(run, { error: message });
     }
   }
 
   async #finalize(
     run: ReviewRun,
-    recorder: TraceRecorder,
     outcome: { summary?: string; error?: string },
   ): Promise<ReviewRun> {
-    await recorder.flush();
     await this.#pinned.migrateMarks(this.#path, this.#versionId);
     if (outcome.error !== undefined) {
       return (

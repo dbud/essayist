@@ -2,8 +2,9 @@ import { assertEquals } from "@std/assert";
 import type { FlowEvent } from "@/flow/types.ts";
 import { InMemoryAdapter } from "@/persistence/mod.ts";
 import type { ReviewTypes } from "@/reviews/graph.ts";
+import { ScopedTraceRecorder } from "./recorder.ts";
 import { TraceEventStore } from "./store.ts";
-import type { TraceEvent } from "./types.ts";
+import type { TraceEvent, TraceStore } from "./types.ts";
 
 function store() {
   return new TraceEventStore(new InMemoryAdapter());
@@ -18,11 +19,30 @@ async function recorded(events: FlowEvent<ReviewTypes>[]): Promise<{
   const recorder = traceStore.recorder({ wsId: "ws", runId: "run" }, (event) =>
     derived.push(event),
   );
-  for (const event of events) recorder.record(event);
-  await recorder.flush();
+  for (const event of events) await recorder.record(event);
 
   return { trace: await traceStore.get({ wsId: "ws", runId: "run" }), derived };
 }
+
+Deno.test("TraceRecorder -- record survives a failed append", async () => {
+  const failing: TraceStore = {
+    append: () => Promise.reject(new Error("kv down")),
+    get: () => Promise.resolve(undefined),
+    recorder: () => {
+      throw new Error("unused");
+    },
+  };
+  const recorder = new ScopedTraceRecorder(failing, {
+    wsId: "ws",
+    runId: "run",
+  });
+
+  // A lost trace write is logged, not thrown: a review that has done its
+  // work is not failed by a failed append. The node re-runs on a later
+  // resume.
+  await recorder.record({ type: "node_start", nodeId: "analyze" });
+  await recorder.record({ type: "node_start", nodeId: "other" });
+});
 
 Deno.test("TraceRecorder -- persists events with ordered seq and timestamps", async () => {
   const { trace, derived } = await recorded([
@@ -82,47 +102,6 @@ Deno.test("TraceRecorder -- record settles only once the append is durable", asy
     trace?.map((event) => event.type),
     ["node_end"],
   );
-});
-
-Deno.test("TraceRecorder -- record after flush is ignored", async () => {
-  const traceStore = store();
-  const recorder = traceStore.recorder({ wsId: "ws", runId: "run" });
-  recorder.record({
-    type: "custom",
-    nodeId: "n",
-    event: { type: "prompt", text: "boom" },
-  });
-  await recorder.flush();
-  recorder.record({
-    type: "custom",
-    nodeId: "n",
-    event: { type: "prompt", text: "after flush" },
-  });
-
-  const trace = await traceStore.get({ wsId: "ws", runId: "run" });
-  assertEquals(trace?.length, 1);
-  const first = trace?.[0];
-  assertEquals(
-    first?.type === "custom" && first.event.type === "prompt"
-      ? first.event.text
-      : undefined,
-    "boom",
-  );
-});
-
-Deno.test("TraceRecorder -- flush is idempotent", async () => {
-  const traceStore = store();
-  const recorder = traceStore.recorder({ wsId: "ws", runId: "run" });
-  recorder.record({
-    type: "custom",
-    nodeId: "n",
-    event: { type: "prompt", text: "boom" },
-  });
-  await recorder.flush();
-  await recorder.flush();
-
-  const trace = await traceStore.get({ wsId: "ws", runId: "run" });
-  assertEquals(trace?.length, 1);
 });
 
 Deno.test("TraceRecorder -- an oversized output comes back whole", async () => {
