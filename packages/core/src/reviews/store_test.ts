@@ -90,6 +90,53 @@ Deno.test("ReviewStore -- completeRun/failRun unknown id return undefined", asyn
   );
 });
 
+Deno.test("ReviewStore -- claimRun leases the run under its own key", async () => {
+  const store = createStore();
+  const run = await store.createRun({
+    wsId: "ws",
+    path: "essay.txt",
+    reviewPassId: "pass",
+  });
+
+  const claimed = await store.claimRun(
+    { wsId: "ws", id: run.id },
+    {
+      owner: "driver-a",
+      heartbeatAtLeast: 0,
+    },
+  );
+
+  assertEquals(claimed?.leaseOwner, "driver-a");
+  assertEquals(
+    (await store.getRun({ wsId: "ws", id: run.id }))?.leaseOwner,
+    "driver-a",
+  );
+  assertEquals(
+    await store.claimRun(
+      { wsId: "other", id: run.id },
+      {
+        owner: "driver-b",
+        heartbeatAtLeast: 0,
+      },
+    ),
+    undefined,
+  );
+});
+
+Deno.test("ReviewStore -- claimRun returns undefined for an unknown run", async () => {
+  const store = createStore();
+  assertEquals(
+    await store.claimRun(
+      { wsId: "ws", id: "nope" },
+      {
+        owner: "driver-a",
+        heartbeatAtLeast: 0,
+      },
+    ),
+    undefined,
+  );
+});
+
 Deno.test("ReviewStore -- listRuns newest first", async () => {
   const store = createStore();
   const a = await store.createRun({

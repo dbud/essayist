@@ -1,5 +1,10 @@
 import { sortBy } from "@std/collections";
-import type { Key, PersistenceAdapter } from "@/persistence/mod.ts";
+import {
+  type ClaimOptions,
+  claim,
+  type Key,
+  type PersistenceAdapter,
+} from "@/persistence/mod.ts";
 import type { ReviewRun, ReviewRunStatus } from "./types.ts";
 
 // Key layout:
@@ -92,6 +97,13 @@ export class ReviewStore {
       (run) => run.startedAt,
       { order: "desc" },
     );
+  }
+
+  claimRun(
+    { wsId, id }: { wsId: string; id: string },
+    options: ClaimOptions,
+  ): Promise<ReviewRun | undefined> {
+    return claim<ReviewRun>(this.#adapter, [REVIEWS, wsId, id], options);
   }
 
   async #end(
