@@ -69,7 +69,6 @@ export class FlowRunner<T extends FlowTypes> {
     options: FlowRunOptions<T> = {},
   ): Promise<FlowRunResult<T>> {
     const wired = wire(graph, this.#runners);
-    const completed = options.completed ?? new Map<string, Artifact<T>[]>();
     const committed = new Map<string, Artifact<T>[]>();
     const artifacts: Artifact<T>[] = [];
     const nodeRuns: NodeRun<T>[] = [];
@@ -86,9 +85,9 @@ export class FlowRunner<T extends FlowTypes> {
     };
 
     for (const entry of wired.values()) {
-      const carried = completed.get(entry.node.id);
-      if (carried === undefined) continue;
-      commit(entry, carried);
+      const completed = options.completed?.get(entry.node.id);
+      if (completed === undefined) continue;
+      commit(entry, completed);
       entry.launched = true;
     }
 
