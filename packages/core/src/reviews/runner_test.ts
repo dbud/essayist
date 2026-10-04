@@ -1,8 +1,8 @@
-import { assertEquals } from "@std/assert";
+import { assertEquals, assertRejects } from "@std/assert";
 import type { ResolvedReviewPass, ReviewUnit } from "@/config/types.ts";
 import type { NodeRun } from "@/flow/types.ts";
 import { InMemoryAdapter } from "@/persistence/mod.ts";
-import { runReviewPass } from "@/reviews/runner.ts";
+import { resumeReviewPass, runReviewPass } from "@/reviews/runner.ts";
 import { ReviewStore } from "@/reviews/store.ts";
 import { createSpyClient } from "@/reviews/testing/agent.ts";
 import { type TraceEvent, TraceEventStore } from "@/reviews/trace/mod.ts";
@@ -262,6 +262,106 @@ Deno.test("runReviewPass -- a zero budget keeps failed marks with no repair node
   assertEquals(marks, []);
 });
 
+Deno.test("runReviewPass -- resuming a run that does not exist is an error", async () => {
+  const { vfs } = await createFile("essay.txt", "hello world");
+  const { reviewStore, traceStore } = setup();
+  const { agent } = createSpyClient([{ text: ANALYSIS_ROUND }]);
+
+  await assertRejects(
+    () =>
+      resumeReviewPass(
+        {
+          agent,
+          vfs,
+          reviewStore,
+          traceStore,
+          pass: passFixture([unitFixture({ id: "analyze" })]),
+          wsId: "ws",
+          path: "essay.txt",
+        },
+        "no-such-run",
+      ),
+    Error,
+    "Cannot resume: no run no-such-run",
+  );
+});
+
+Deno.test("runReviewPass -- a resumed pass skips completed nodes and shows each once", async () => {
+  const { vfs, versionId } = await createFile("essay.txt", "hello brave world");
+  const { reviewStore, traceStore } = setup();
+  // First attempt: analyze succeeds, then the unit below it fails on bad JSON.
+  const first = createSpyClient([
+    { text: ANALYSIS_ROUND },
+    { text: "not json" },
+  ]);
+
+  const run = await runReviewPass({
+    agent: first.agent,
+    vfs,
+    reviewStore,
+    traceStore,
+    pass: passFixture([
+      unitFixture({ id: "analyze" }),
+      unitFixture({
+        id: "mechanics",
+        attempt: { allowedCategoryIds: ["grammar"] },
+        inputs: ["analyze"],
+      }),
+      unitFixture({ id: "summary", summary: true, inputs: ["mechanics"] }),
+    ]),
+    wsId: "ws",
+    path: "essay.txt",
+  });
+
+  assertEquals(run.status, "failed");
+  const interrupted =
+    (await traceStore.get({ wsId: "ws", runId: run.id })) ?? [];
+  // analyze completed, so its artifacts are recoverable from the trace.
+  assertEquals(nodeEnd(interrupted, "analyze")?.status, "completed");
+
+  // Second attempt over the same run: the fold supplies analyze's artifacts,
+  // so only the failed unit is scheduled.
+  const second = createSpyClient([
+    {
+      text: '{"marks":[{"selected_text":"brave","comment":"Good.","label":"grammar"}]}',
+    },
+    { text: '{"summary":"Solid draft."}' },
+  ]);
+  const resumed = await resumeReviewPass(
+    {
+      agent: second.agent,
+      vfs,
+      reviewStore,
+      traceStore,
+      pass: passFixture([
+        unitFixture({ id: "analyze" }),
+        unitFixture({
+          id: "mechanics",
+          attempt: { allowedCategoryIds: ["grammar"] },
+          inputs: ["analyze"],
+        }),
+        unitFixture({ id: "summary", summary: true, inputs: ["mechanics"] }),
+      ]),
+      wsId: "ws",
+      path: "essay.txt",
+    },
+    run.id,
+  );
+
+  assertEquals(resumed.status, "completed");
+  // The resumed attempt did not re-run analyze.
+  assertEquals(second.inputs.length, 2);
+  assertEquals(second.inputs[0].includes("Good."), false);
+
+  const trace = (await traceStore.get({ wsId: "ws", runId: run.id })) ?? [];
+  const analyzeEvents = byNode(trace).analyze;
+  assertEquals(analyzeEvents.filter((type) => type === "node_start").length, 1);
+  assertEquals(analyzeEvents.filter((type) => type === "node_end").length, 1);
+  // The first attempt's mark never reached the VFS, so the retry's does.
+  const marks = await vfs.getMarks("essay.txt", versionId);
+  assertEquals(marks[0]?.selected_text, "brave");
+});
+
 Deno.test("runReviewPass -- a node error fails the run and skips dependents", async () => {
   const { vfs } = await createFile("essay.txt", "hello world");
   const { reviewStore, traceStore } = setup();
@@ -351,22 +451,26 @@ Deno.test("runReviewPass -- fails a pass that commits no summary", async () => {
   assertEquals(run.summary, undefined);
 });
 
-Deno.test("runReviewPass -- fails fast when the file does not exist", async () => {
+Deno.test("runReviewPass -- throws when the file does not exist", async () => {
   const vfs = (await createFile("other.txt", "x")).vfs;
   const { reviewStore, traceStore } = setup();
   const { agent } = createSpyClient([]);
 
-  const run = await runReviewPass({
-    agent,
-    vfs,
-    reviewStore,
-    traceStore,
-    pass: passFixture([unitFixture({ id: "analyze" })]),
-    wsId: "ws",
-    path: "essay.txt",
-  });
+  await assertRejects(
+    () =>
+      runReviewPass({
+        agent,
+        vfs,
+        reviewStore,
+        traceStore,
+        pass: passFixture([unitFixture({ id: "analyze" })]),
+        wsId: "ws",
+        path: "essay.txt",
+      }),
+    Error,
+    "File not found: essay.txt",
+  );
 
-  assertEquals(run.status, "failed");
-  assertEquals(run.error, "File not found: essay.txt");
-  assertEquals(await traceStore.get({ wsId: "ws", runId: run.id }), undefined);
+  // No run row: nothing was reviewed, so there is nothing to report on.
+  assertEquals(await reviewStore.listRuns({ wsId: "ws" }), []);
 });
