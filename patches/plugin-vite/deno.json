@@ -14,7 +14,7 @@
     "./client": "./src/client.ts"
   },
   "imports": {
-    "vite": "npm:vite@^8.3.1"
+    "vite": "npm:vite@^8.3.2"
   },
   "license": "MIT",
   "name": "@fresh/plugin-vite",
