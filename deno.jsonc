@@ -17,7 +17,7 @@
   "imports": {
     "@biomejs/biome": "npm:@biomejs/biome@^2.5.14",
     "@openrouter/agent": "npm:@openrouter/agent@^0.11.0",
-    "@openrouter/sdk": "npm:@openrouter/sdk@^0.13.67",
+    "@openrouter/sdk": "npm:@openrouter/sdk@^1.4.21",
     "@std/assert": "jsr:@std/assert@^1.0.19",
     "@std/collections": "jsr:@std/collections@^1.4.0",
     "husky": "npm:husky@^9.1.7",
