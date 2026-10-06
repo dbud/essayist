@@ -67,9 +67,9 @@
     "mermaid": "npm:mermaid@^12.0.0",
     "node:url": "node:url",
     "pngjs": "npm:pngjs@^7.0.0",
-    "preact": "npm:preact@^10.29.8",
-    "react": "npm:preact@^10.29.8/compat",
-    "react-dom": "npm:preact@^10.29.8/compat",
+    "preact": "npm:preact@^11.0.0",
+    "react": "npm:preact@^11.0.0/compat",
+    "react-dom": "npm:preact@^11.0.0/compat",
     "tailwindcss": "npm:tailwindcss@^4.3.3",
     "vite": "npm:vite@^8.3.1"
   },
