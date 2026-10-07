@@ -1,10 +1,10 @@
 import { assert, assertEquals, assertInstanceOf } from "@std/assert";
-import { Effect, Layer, Result } from "effect";
-import {
-  type ConcurrentModificationError,
-  Persistence,
-  type PersistenceError,
+import { Effect, Result } from "effect";
+import type {
+  ConcurrentModificationError,
+  PersistenceError,
 } from "@/persistence/mod.ts";
+import { testLayer } from "@/persistence/testing/kv.ts";
 import {
   ConfigInvalidError,
   ConfigMissingError,
@@ -13,11 +13,38 @@ import {
 import { ReviewConfig } from "./service.ts";
 import type { ResolvedReviewPass } from "./types.ts";
 
-function makeLayer(): Layer.Layer<ReviewConfig, PersistenceError> {
-  return Layer.provide(
-    ReviewConfig.layerNoDeps,
-    Persistence.layerKv(":memory:"),
-  );
+/** Run a resolution against a seeded or empty ephemeral store; returns the
+ * program's exit for failure assertions. */
+function run(
+  seed: (
+    config: ReviewConfig["Service"],
+  ) => Effect.Effect<
+    void,
+    PersistenceError | ConcurrentModificationError
+  > = () => Effect.void,
+) {
+  return Effect.gen(function* () {
+    const config = yield* ReviewConfig;
+    yield* seed(config);
+    return yield* Effect.result(resolveActiveReviewPass);
+  });
+}
+
+function assertFailsWith(
+  outcome: Result.Result<ResolvedReviewPass | undefined, unknown>,
+  errorClass: abstract new (...args: never) => { message: string },
+  substring?: string,
+): void {
+  if (Result.isSuccess(outcome)) {
+    throw new Error(`expected a ${errorClass.name}, got a success`);
+  }
+  assertInstanceOf(outcome.failure, errorClass);
+  if (substring !== undefined) {
+    assert(
+      outcome.failure.message.includes(substring),
+      `message did not include ${substring}: ${outcome.failure.message}`,
+    );
+  }
 }
 
 const FREE_MODELS = [
@@ -111,116 +138,91 @@ function seedFullConfig(config: ReviewConfig["Service"]) {
   });
 }
 
-/** Run a resolution against a seeded or empty ephemeral store; returns the
- * program's exit for failure assertions. */
-function run(
-  seed: (
-    config: ReviewConfig["Service"],
-  ) => Effect.Effect<
-    void,
-    PersistenceError | ConcurrentModificationError
-  > = () => Effect.void,
-) {
-  return Effect.gen(function* () {
-    const config = yield* ReviewConfig;
-    yield* seed(config);
-    return yield* Effect.result(resolveActiveReviewPass);
-  });
-}
-
-function assertFailsWith(
-  outcome: Result.Result<ResolvedReviewPass | undefined, unknown>,
-  errorClass: abstract new (...args: never) => { message: string },
-  substring?: string,
-): void {
-  if (Result.isSuccess(outcome)) {
-    throw new Error(`expected a ${errorClass.name}, got a success`);
-  }
-  assertInstanceOf(outcome.failure, errorClass);
-  if (substring !== undefined) {
-    assert(
-      outcome.failure.message.includes(substring),
-      `message did not include ${substring}: ${outcome.failure.message}`,
-    );
-  }
-}
-
 // happy paths
+
 Deno.test("resolveActiveReviewPass -- resolves the active pass unit by unit", async () => {
   const program = Effect.gen(function* () {
     const outcome = yield* run(seedFullConfig);
-    if (Result.isSuccess(outcome)) {
-      const resolved = outcome.success;
-      if (!resolved) throw new Error("expected resolved review pass");
-      assertEquals(resolved.pass.id, "essay-review");
-      assertEquals(resolved.units.length, 4);
-
-      const [analyze, mechanics, argument, synthesize] = resolved.units;
-      assertEquals(analyze.id, "analyze");
-      assertEquals(analyze.pool.models, FREE_MODELS);
-      assertEquals(analyze.prompts.system, "You are an editor.");
-      assertEquals(
-        analyze.prompts.directive,
-        "Describe the piece as an editor would read it.",
-      );
-      assertEquals(analyze.prompts.instructions, "");
-      assertEquals(analyze.attempt, undefined);
-      assertEquals(analyze.summary, undefined);
-
-      assertEquals(mechanics.attempt, {
-        categories: [
-          {
-            id: "grammar",
-            label: "grammar",
-            description: "Grammar and mechanics",
-          },
-        ],
-        repairRounds: 1,
-      });
-      assertEquals(
-        mechanics.prompts.instructions,
-        "Quote exact spans with {{file}} context.",
-      );
-
-      assertEquals(argument.pool.models, ["openai/gpt-5.2"]);
-      assertEquals(argument.attempt, {
-        categories: [
-          { id: "thesis", label: "thesis", description: "Thesis clarity" },
-          {
-            id: "evidence",
-            label: "evidence",
-            description: "Evidence quality",
-          },
-        ],
-        repairRounds: 1,
-      });
-      assertEquals(argument.inputs, ["analyze"]);
-
-      assertEquals(synthesize.summary, true);
-      assertEquals(synthesize.attempt, undefined);
-    } else {
+    if (Result.isFailure(outcome)) {
       throw new Error(`resolution failed: ${outcome.failure.message}`);
     }
+    const resolved = outcome.success;
+    if (!resolved) throw new Error("expected resolved review pass");
+    assertEquals(resolved.pass.id, "essay-review");
+    assertEquals(resolved.units.length, 4);
+
+    const [analyze, mechanics, argument, synthesize] = resolved.units;
+    assertEquals(analyze.id, "analyze");
+    assertEquals(analyze.pool.models, FREE_MODELS);
+    assertEquals(analyze.prompts.system, "You are an editor.");
+    assertEquals(
+      analyze.prompts.directive,
+      "Describe the piece as an editor would read it.",
+    );
+    assertEquals(analyze.prompts.instructions, "");
+    assertEquals(analyze.attempt, undefined);
+    assertEquals(analyze.summary, undefined);
+
+    assertEquals(mechanics.attempt, {
+      categories: [
+        {
+          id: "grammar",
+          label: "grammar",
+          description: "Grammar and mechanics",
+        },
+      ],
+      repairRounds: 1,
+    });
+    assertEquals(
+      mechanics.prompts.instructions,
+      "Quote exact spans with {{file}} context.",
+    );
+
+    assertEquals(argument.pool.models, ["openai/gpt-5.2"]);
+    assertEquals(argument.attempt, {
+      categories: [
+        { id: "thesis", label: "thesis", description: "Thesis clarity" },
+        {
+          id: "evidence",
+          label: "evidence",
+          description: "Evidence quality",
+        },
+      ],
+      repairRounds: 1,
+    });
+    assertEquals(argument.inputs, ["analyze"]);
+
+    assertEquals(synthesize.summary, true);
+    assertEquals(synthesize.attempt, undefined);
   });
-  await Effect.runPromise(Effect.provide(program, makeLayer()));
+  await Effect.runPromise(
+    Effect.provide(program, testLayer(ReviewConfig.layerNoDeps)),
+  );
 });
 
 Deno.test("resolveActiveReviewPass -- undefined when no pin", async () => {
   const program = Effect.gen(function* () {
     const outcome = yield* run();
-    if (!Result.isSuccess(outcome)) throw new Error("resolution failed");
+    if (Result.isFailure(outcome)) {
+      throw new Error(`resolution failed: ${outcome.failure.message}`);
+    }
     assertEquals(outcome.success, undefined);
   });
-  await Effect.runPromise(Effect.provide(program, makeLayer()));
+  await Effect.runPromise(
+    Effect.provide(program, testLayer(ReviewConfig.layerNoDeps)),
+  );
 });
 
 // missing entities
+
 Deno.test("resolveActiveReviewPass -- fails on a missing review pass", async () => {
   const program = Effect.gen(function* () {
     const outcome = yield* run((config) => config.setActiveReviewPass("nope"));
     assertFailsWith(outcome, ConfigMissingError, 'review pass "nope"');
   });
-  await Effect.runPromise(Effect.provide(program, makeLayer()));
+  await Effect.runPromise(
+    Effect.provide(program, testLayer(ReviewConfig.layerNoDeps)),
+  );
 });
 
 Deno.test("resolveActiveReviewPass -- fails on a missing unit pool", async () => {
@@ -228,11 +230,7 @@ Deno.test("resolveActiveReviewPass -- fails on a missing unit pool", async () =>
     const outcome = yield* run((config) =>
       Effect.gen(function* () {
         yield* config.savePrompt({ key: "sys", body: "hi" });
-        yield* config.saveCategory({
-          id: "c",
-          label: "c",
-          description: "d",
-        });
+        yield* config.saveCategory({ id: "c", label: "c", description: "d" });
         yield* config.saveReviewPass({
           id: "r",
           name: "R",
@@ -251,7 +249,9 @@ Deno.test("resolveActiveReviewPass -- fails on a missing unit pool", async () =>
     );
     assertFailsWith(outcome, ConfigMissingError, 'model pool "missing-pool"');
   });
-  await Effect.runPromise(Effect.provide(program, makeLayer()));
+  await Effect.runPromise(
+    Effect.provide(program, testLayer(ReviewConfig.layerNoDeps)),
+  );
 });
 
 Deno.test("resolveActiveReviewPass -- fails on an empty unit pool", async () => {
@@ -260,11 +260,7 @@ Deno.test("resolveActiveReviewPass -- fails on an empty unit pool", async () => 
       Effect.gen(function* () {
         yield* config.saveModelPool({ id: "empty", name: "Empty", models: [] });
         yield* config.savePrompt({ key: "sys", body: "hi" });
-        yield* config.saveCategory({
-          id: "c",
-          label: "c",
-          description: "d",
-        });
+        yield* config.saveCategory({ id: "c", label: "c", description: "d" });
         yield* config.saveReviewPass({
           id: "r",
           name: "R",
@@ -287,7 +283,9 @@ Deno.test("resolveActiveReviewPass -- fails on an empty unit pool", async () => 
       'model pool "empty" has no models',
     );
   });
-  await Effect.runPromise(Effect.provide(program, makeLayer()));
+  await Effect.runPromise(
+    Effect.provide(program, testLayer(ReviewConfig.layerNoDeps)),
+  );
 });
 
 Deno.test("resolveActiveReviewPass -- fails on a missing unit prompt", async () => {
@@ -300,11 +298,7 @@ Deno.test("resolveActiveReviewPass -- fails on a missing unit prompt", async () 
           models: ["m/ref"],
         });
         yield* config.savePrompt({ key: "sys", body: "hi" });
-        yield* config.saveCategory({
-          id: "c",
-          label: "c",
-          description: "d",
-        });
+        yield* config.saveCategory({ id: "c", label: "c", description: "d" });
         yield* config.saveReviewPass({
           id: "r",
           name: "R",
@@ -327,7 +321,9 @@ Deno.test("resolveActiveReviewPass -- fails on a missing unit prompt", async () 
       'prompt "missing.prompt" for unit "mark"',
     );
   });
-  await Effect.runPromise(Effect.provide(program, makeLayer()));
+  await Effect.runPromise(
+    Effect.provide(program, testLayer(ReviewConfig.layerNoDeps)),
+  );
 });
 
 Deno.test("resolveActiveReviewPass -- fails on a missing pass system prompt", async () => {
@@ -339,11 +335,7 @@ Deno.test("resolveActiveReviewPass -- fails on a missing pass system prompt", as
           name: "Pool",
           models: ["m/ref"],
         });
-        yield* config.saveCategory({
-          id: "c",
-          label: "c",
-          description: "d",
-        });
+        yield* config.saveCategory({ id: "c", label: "c", description: "d" });
         yield* config.saveReviewPass({
           id: "r",
           name: "R",
@@ -366,7 +358,9 @@ Deno.test("resolveActiveReviewPass -- fails on a missing pass system prompt", as
       'prompt "missing.system" for pass "r"',
     );
   });
-  await Effect.runPromise(Effect.provide(program, makeLayer()));
+  await Effect.runPromise(
+    Effect.provide(program, testLayer(ReviewConfig.layerNoDeps)),
+  );
 });
 
 Deno.test("resolveActiveReviewPass -- fails on missing referenced categories", async () => {
@@ -399,10 +393,13 @@ Deno.test("resolveActiveReviewPass -- fails on missing referenced categories", a
     );
     assertFailsWith(outcome, ConfigMissingError, '"gone", "also-gone"');
   });
-  await Effect.runPromise(Effect.provide(program, makeLayer()));
+  await Effect.runPromise(
+    Effect.provide(program, testLayer(ReviewConfig.layerNoDeps)),
+  );
 });
 
 // invalid passes
+
 Deno.test("resolveActiveReviewPass -- fails on attempt units without categories", async () => {
   const program = Effect.gen(function* () {
     const outcome = yield* run((config) =>
@@ -435,7 +432,9 @@ Deno.test("resolveActiveReviewPass -- fails on attempt units without categories"
       'attempt unit "mark" in pass "r" has no allowed categories',
     );
   });
-  await Effect.runPromise(Effect.provide(program, makeLayer()));
+  await Effect.runPromise(
+    Effect.provide(program, testLayer(ReviewConfig.layerNoDeps)),
+  );
 });
 
 Deno.test("resolveActiveReviewPass -- fails on duplicate unit ids", async () => {
@@ -448,11 +447,7 @@ Deno.test("resolveActiveReviewPass -- fails on duplicate unit ids", async () => 
           models: ["m/ref"],
         });
         yield* config.savePrompt({ key: "sys", body: "hi" });
-        yield* config.saveCategory({
-          id: "c",
-          label: "c",
-          description: "d",
-        });
+        yield* config.saveCategory({ id: "c", label: "c", description: "d" });
         yield* config.saveReviewPass({
           id: "r",
           name: "R",
@@ -480,7 +475,9 @@ Deno.test("resolveActiveReviewPass -- fails on duplicate unit ids", async () => 
       'unit id "mark" is used more than once',
     );
   });
-  await Effect.runPromise(Effect.provide(program, makeLayer()));
+  await Effect.runPromise(
+    Effect.provide(program, testLayer(ReviewConfig.layerNoDeps)),
+  );
 });
 
 Deno.test("resolveActiveReviewPass -- fails on dotted unit ids", async () => {
@@ -505,7 +502,9 @@ Deno.test("resolveActiveReviewPass -- fails on dotted unit ids", async () => {
     );
     assertFailsWith(outcome, ConfigInvalidError, 'must not contain "."');
   });
-  await Effect.runPromise(Effect.provide(program, makeLayer()));
+  await Effect.runPromise(
+    Effect.provide(program, testLayer(ReviewConfig.layerNoDeps)),
+  );
 });
 
 Deno.test("resolveActiveReviewPass -- fails on forward unit inputs", async () => {
@@ -537,7 +536,9 @@ Deno.test("resolveActiveReviewPass -- fails on forward unit inputs", async () =>
       'references unknown or later unit "second"',
     );
   });
-  await Effect.runPromise(Effect.provide(program, makeLayer()));
+  await Effect.runPromise(
+    Effect.provide(program, testLayer(ReviewConfig.layerNoDeps)),
+  );
 });
 
 Deno.test("resolveActiveReviewPass -- fails on unknown unit inputs", async () => {
@@ -566,7 +567,9 @@ Deno.test("resolveActiveReviewPass -- fails on unknown unit inputs", async () =>
       'references unknown or later unit "ghost"',
     );
   });
-  await Effect.runPromise(Effect.provide(program, makeLayer()));
+  await Effect.runPromise(
+    Effect.provide(program, testLayer(ReviewConfig.layerNoDeps)),
+  );
 });
 
 Deno.test("resolveActiveReviewPass -- fails on attempt and summary together", async () => {
@@ -579,11 +582,7 @@ Deno.test("resolveActiveReviewPass -- fails on attempt and summary together", as
           models: ["m/ref"],
         });
         yield* config.savePrompt({ key: "sys", body: "hi" });
-        yield* config.saveCategory({
-          id: "c",
-          label: "c",
-          description: "d",
-        });
+        yield* config.saveCategory({ id: "c", label: "c", description: "d" });
         yield* config.saveReviewPass({
           id: "r",
           name: "R",
@@ -607,5 +606,7 @@ Deno.test("resolveActiveReviewPass -- fails on attempt and summary together", as
       'unit "both" in pass "r" sets both attempt and summary',
     );
   });
-  await Effect.runPromise(Effect.provide(program, makeLayer()));
+  await Effect.runPromise(
+    Effect.provide(program, testLayer(ReviewConfig.layerNoDeps)),
+  );
 });

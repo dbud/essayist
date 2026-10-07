@@ -1,14 +1,7 @@
 import { assertEquals } from "@std/assert";
-import { Effect, Layer } from "effect";
-import { Persistence, type PersistenceError } from "@/persistence/mod.ts";
+import { Effect } from "effect";
+import { testLayer } from "@/persistence/testing/kv.ts";
 import { ReviewConfig } from "./service.ts";
-
-function makeLayer(): Layer.Layer<ReviewConfig, PersistenceError> {
-  return Layer.provide(
-    ReviewConfig.layerNoDeps,
-    Persistence.layerKv(":memory:"),
-  );
-}
 
 Deno.test("ReviewConfig -- CRUD round-trips", async () => {
   const program = Effect.gen(function* () {
@@ -40,7 +33,9 @@ Deno.test("ReviewConfig -- CRUD round-trips", async () => {
     yield* store.deleteReviewPass("r");
     assertEquals(yield* store.getReviewPass("r"), undefined);
   });
-  await Effect.runPromise(Effect.provide(program, makeLayer()));
+  await Effect.runPromise(
+    Effect.provide(program, testLayer(ReviewConfig.layerNoDeps)),
+  );
 });
 
 Deno.test("ReviewConfig -- getCategories splits found and missing ids", async () => {
@@ -57,7 +52,9 @@ Deno.test("ReviewConfig -- getCategories splits found and missing ids", async ()
     ]);
     assertEquals(missing, ["ghost"]);
   });
-  await Effect.runPromise(Effect.provide(program, makeLayer()));
+  await Effect.runPromise(
+    Effect.provide(program, testLayer(ReviewConfig.layerNoDeps)),
+  );
 });
 
 Deno.test("ReviewConfig -- active pin set and clear", async () => {
@@ -77,7 +74,9 @@ Deno.test("ReviewConfig -- active pin set and clear", async () => {
     yield* store.clearActiveReviewPass();
     assertEquals(yield* store.getActiveReviewPassId(), undefined);
   });
-  await Effect.runPromise(Effect.provide(program, makeLayer()));
+  await Effect.runPromise(
+    Effect.provide(program, testLayer(ReviewConfig.layerNoDeps)),
+  );
 });
 
 Deno.test("ReviewConfig -- list helpers", async () => {
@@ -99,5 +98,7 @@ Deno.test("ReviewConfig -- list helpers", async () => {
     assertEquals((yield* store.listCategories()).length, 1);
     assertEquals((yield* store.listReviewPasses()).length, 1);
   });
-  await Effect.runPromise(Effect.provide(program, makeLayer()));
+  await Effect.runPromise(
+    Effect.provide(program, testLayer(ReviewConfig.layerNoDeps)),
+  );
 });

@@ -1,11 +1,7 @@
 import { assertEquals } from "@std/assert";
-import { Effect, Layer } from "effect";
-import { Persistence, type PersistenceError } from "@/persistence/mod.ts";
+import { Effect } from "effect";
+import { testLayer } from "@/persistence/testing/kv.ts";
 import { UserState } from "./service.ts";
-
-function makeLayer(): Layer.Layer<UserState, PersistenceError> {
-  return Layer.provide(UserState.layerNoDeps, Persistence.layerKv(":memory:"));
-}
 
 Deno.test("UserState -- selected workspace round-trips", async () => {
   const program = Effect.gen(function* () {
@@ -16,7 +12,9 @@ Deno.test("UserState -- selected workspace round-trips", async () => {
     yield* store.setSelectedWorkspace("u1", "ws2");
     assertEquals(yield* store.getSelectedWorkspace("u1"), "ws2");
   });
-  await Effect.runPromise(Effect.provide(program, makeLayer()));
+  await Effect.runPromise(
+    Effect.provide(program, testLayer(UserState.layerNoDeps)),
+  );
 });
 
 Deno.test("UserState -- selected file round-trips, scoped per workspace", async () => {
@@ -30,7 +28,9 @@ Deno.test("UserState -- selected file round-trips, scoped per workspace", async 
     yield* store.setSelectedFile("u1", "ws1", "essays/c.md");
     assertEquals(yield* store.getSelectedFile("u1", "ws1"), "essays/c.md");
   });
-  await Effect.runPromise(Effect.provide(program, makeLayer()));
+  await Effect.runPromise(
+    Effect.provide(program, testLayer(UserState.layerNoDeps)),
+  );
 });
 
 Deno.test("UserState -- users are isolated", async () => {
@@ -41,5 +41,7 @@ Deno.test("UserState -- users are isolated", async () => {
     assertEquals(yield* store.getSelectedWorkspace("u2"), undefined);
     assertEquals(yield* store.getSelectedFile("u2", "ws1"), undefined);
   });
-  await Effect.runPromise(Effect.provide(program, makeLayer()));
+  await Effect.runPromise(
+    Effect.provide(program, testLayer(UserState.layerNoDeps)),
+  );
 });
