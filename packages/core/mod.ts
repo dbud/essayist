@@ -28,6 +28,7 @@ export {
   ReviewUnitSchema,
 } from "@/config/types.ts";
 export { setMyers } from "@/diff/diff.ts";
+export { Files } from "@/files/service.ts";
 export { pluralize } from "@/format.ts";
 export { logger } from "@/logger.ts";
 export type { ResolveInput, ResolveOptions } from "@/marks/resolver.ts";
