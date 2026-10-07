@@ -1,6 +1,7 @@
 import { assert, assertEquals } from "@std/assert";
+import { KvAdapter } from "./kv_adapter.ts";
 import { claim, heartbeat, stripLease } from "./lease.ts";
-import { InMemoryAdapter, type Leased } from "./mod.ts";
+import type { Leased } from "./mod.ts";
 
 interface Note extends Leased<{ id: string; body: string }> {
   id: string;
@@ -9,20 +10,17 @@ interface Note extends Leased<{ id: string; body: string }> {
 
 const KEY = ["notes", "n1"];
 
-function adapter() {
-  return new InMemoryAdapter();
+async function adapter() {
+  return new KvAdapter(await Deno.openKv(":memory:"));
 }
 
-async function seed(a: ReturnType<typeof adapter>, note: Note) {
+async function seed(a: KvAdapter, note: Note) {
   await a.set(KEY, note);
   return note;
 }
 
 /** Heartbeat a claim stamped, so a cutoff can be placed relative to it. */
-async function claimedHeartbeat(
-  a: ReturnType<typeof adapter>,
-  owner: string,
-): Promise<number> {
+async function claimedHeartbeat(a: KvAdapter, owner: string): Promise<number> {
   const taken = await claim<Note>(a, KEY, { owner, heartbeatAtLeast: 0 });
   if (taken?.heartbeatAt === undefined) {
     throw new Error("claim did not stamp a heartbeat");
@@ -31,7 +29,7 @@ async function claimedHeartbeat(
 }
 
 Deno.test("claim -- takes an unleased record", async () => {
-  const a = adapter();
+  const a = await adapter();
   await seed(a, { id: "n1", body: "hello" });
 
   const taken = await claim<Note>(a, KEY, {
@@ -46,7 +44,7 @@ Deno.test("claim -- takes an unleased record", async () => {
 });
 
 Deno.test("claim -- refuses while another lease is live", async () => {
-  const a = adapter();
+  const a = await adapter();
   await seed(a, { id: "n1", body: "hello" });
   const heartbeatAtLeast = await claimedHeartbeat(a, "driver-a");
 
@@ -60,7 +58,7 @@ Deno.test("claim -- refuses while another lease is live", async () => {
 });
 
 Deno.test("claim -- takes a lease that has gone stale", async () => {
-  const a = adapter();
+  const a = await adapter();
   await seed(a, { id: "n1", body: "hello" });
   // Past driver-a's heartbeat, so it no longer meets the bar.
   const heartbeatAtLeast = (await claimedHeartbeat(a, "driver-a")) + 1;
@@ -74,7 +72,7 @@ Deno.test("claim -- takes a lease that has gone stale", async () => {
 });
 
 Deno.test("claim -- renews our own lease", async () => {
-  const a = adapter();
+  const a = await adapter();
   await seed(a, { id: "n1", body: "hello" });
   const first = await claimedHeartbeat(a, "driver-a");
 
@@ -87,7 +85,7 @@ Deno.test("claim -- renews our own lease", async () => {
 });
 
 Deno.test("claim -- returns undefined for an absent record", async () => {
-  const a = adapter();
+  const a = await adapter();
   assertEquals(
     await claim<Note>(a, KEY, { owner: "driver-a", heartbeatAtLeast: 0 }),
     undefined,
@@ -95,7 +93,7 @@ Deno.test("claim -- returns undefined for an absent record", async () => {
 });
 
 Deno.test("claim -- two owners racing, only one wins", async () => {
-  const a = adapter();
+  const a = await adapter();
   await seed(a, { id: "n1", body: "hello" });
   const heartbeatAtLeast = Date.now() + 60_000;
 
@@ -113,7 +111,7 @@ Deno.test("claim -- two owners racing, only one wins", async () => {
 });
 
 Deno.test("heartbeat -- renews our own lease, however old it is", async () => {
-  const a = adapter();
+  const a = await adapter();
   await seed(a, {
     id: "n1",
     body: "hello",
@@ -131,7 +129,7 @@ Deno.test("heartbeat -- renews our own lease, however old it is", async () => {
 });
 
 Deno.test("heartbeat -- refuses a lease held by another owner", async () => {
-  const a = adapter();
+  const a = await adapter();
   await seed(a, {
     id: "n1",
     body: "hello",
@@ -147,7 +145,7 @@ Deno.test("heartbeat -- refuses a lease held by another owner", async () => {
 });
 
 Deno.test("heartbeat -- refuses an unleased record", async () => {
-  const a = adapter();
+  const a = await adapter();
   await seed(a, { id: "n1", body: "hello" });
 
   assertEquals(await heartbeat<Note>(a, KEY, "driver-a"), false);
@@ -155,7 +153,7 @@ Deno.test("heartbeat -- refuses an unleased record", async () => {
 });
 
 Deno.test("heartbeat -- returns false for an absent record", async () => {
-  const a = adapter();
+  const a = await adapter();
   assertEquals(await heartbeat<Note>(a, KEY, "driver-a"), false);
 });
 

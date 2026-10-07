@@ -1,13 +1,13 @@
 import { assertEquals } from "@std/assert";
-import { InMemoryAdapter } from "@/persistence/mod.ts";
+import { KvAdapter } from "@/persistence/kv_adapter.ts";
 import { ReviewStore } from "./store.ts";
 
-function createStore() {
-  return new ReviewStore(new InMemoryAdapter());
+async function createStore() {
+  return new ReviewStore(new KvAdapter(await Deno.openKv(":memory:")));
 }
 
 Deno.test("ReviewStore -- createRun + getRun", async () => {
-  const store = createStore();
+  const store = await createStore();
   const run = await store.createRun({
     wsId: "ws",
     path: "essay.txt",
@@ -22,7 +22,7 @@ Deno.test("ReviewStore -- createRun + getRun", async () => {
 });
 
 Deno.test("ReviewStore -- createRun stores versionId when given", async () => {
-  const store = createStore();
+  const store = await createStore();
   const run = await store.createRun({
     wsId: "ws",
     path: "essay.txt",
@@ -40,7 +40,7 @@ Deno.test("ReviewStore -- createRun stores versionId when given", async () => {
 });
 
 Deno.test("ReviewStore -- completeRun sets status, summary, completedAt", async () => {
-  const store = createStore();
+  const store = await createStore();
   const run = await store.createRun({
     wsId: "ws",
     path: "essay.txt",
@@ -62,7 +62,7 @@ Deno.test("ReviewStore -- completeRun sets status, summary, completedAt", async 
 });
 
 Deno.test("ReviewStore -- failRun sets status and error", async () => {
-  const store = createStore();
+  const store = await createStore();
   const run = await store.createRun({
     wsId: "ws",
     path: "essay.txt",
@@ -79,7 +79,7 @@ Deno.test("ReviewStore -- failRun sets status and error", async () => {
 });
 
 Deno.test("ReviewStore -- completeRun/failRun unknown id return undefined", async () => {
-  const store = createStore();
+  const store = await createStore();
   assertEquals(
     await store.completeRun({ wsId: "ws", id: "nope", summary: "x" }),
     undefined,
@@ -91,7 +91,7 @@ Deno.test("ReviewStore -- completeRun/failRun unknown id return undefined", asyn
 });
 
 Deno.test("ReviewStore -- claimRun leases the run under its own key", async () => {
-  const store = createStore();
+  const store = await createStore();
   const run = await store.createRun({
     wsId: "ws",
     path: "essay.txt",
@@ -124,7 +124,7 @@ Deno.test("ReviewStore -- claimRun leases the run under its own key", async () =
 });
 
 Deno.test("ReviewStore -- claimRun returns undefined for an unknown run", async () => {
-  const store = createStore();
+  const store = await createStore();
   assertEquals(
     await store.claimRun(
       { wsId: "ws", id: "nope" },
@@ -138,7 +138,7 @@ Deno.test("ReviewStore -- claimRun returns undefined for an unknown run", async 
 });
 
 Deno.test("ReviewStore -- heartbeatRun renews only our own lease", async () => {
-  const store = createStore();
+  const store = await createStore();
   const run = await store.createRun({
     wsId: "ws",
     path: "essay.txt",
@@ -170,7 +170,7 @@ Deno.test("ReviewStore -- heartbeatRun renews only our own lease", async () => {
 });
 
 Deno.test("ReviewStore -- heartbeatRun returns false for an unknown run", async () => {
-  const store = createStore();
+  const store = await createStore();
   assertEquals(
     await store.heartbeatRun({ wsId: "ws", id: "nope" }, "driver-a"),
     false,
@@ -178,7 +178,7 @@ Deno.test("ReviewStore -- heartbeatRun returns false for an unknown run", async 
 });
 
 Deno.test("ReviewStore -- completing and failing a run releases its lease", async () => {
-  const store = createStore();
+  const store = await createStore();
   const a = await store.createRun({
     wsId: "ws",
     path: "a.txt",
@@ -210,7 +210,7 @@ Deno.test("ReviewStore -- completing and failing a run releases its lease", asyn
 });
 
 Deno.test("ReviewStore -- listRuns newest first", async () => {
-  const store = createStore();
+  const store = await createStore();
   const a = await store.createRun({
     wsId: "ws",
     path: "a.txt",
@@ -231,7 +231,7 @@ Deno.test("ReviewStore -- listRuns newest first", async () => {
 });
 
 Deno.test("ReviewStore -- listRuns filters by path", async () => {
-  const store = createStore();
+  const store = await createStore();
   const a = await store.createRun({
     wsId: "ws",
     path: "a.txt",
@@ -261,7 +261,7 @@ Deno.test("ReviewStore -- listRuns filters by path", async () => {
 });
 
 Deno.test("ReviewStore -- listRuns is workspace-scoped", async () => {
-  const store = createStore();
+  const store = await createStore();
   await store.createRun({
     wsId: "ws1",
     path: "a.txt",

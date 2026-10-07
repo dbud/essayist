@@ -1,5 +1,5 @@
 import { assertEquals } from "@std/assert";
-import { InMemoryAdapter } from "../persistence/mod.ts";
+import { KvAdapter } from "../persistence/kv_adapter.ts";
 import { CHUNK_SIZE } from "./chunked_content.ts";
 import { createVFS } from "./testing/helpers.ts";
 import { VirtualFileSystem } from "./vfs.ts";
@@ -470,7 +470,7 @@ Deno.test("VFS.diff -- identical content produces empty diff", async () => {
 // Workspace scoping
 
 Deno.test("VFS -- workspaces share an adapter but keep files isolated", async () => {
-  const adapter = new InMemoryAdapter();
+  const adapter = new KvAdapter(await Deno.openKv(":memory:"));
   const a = new VirtualFileSystem(adapter, "ws-a");
   const b = new VirtualFileSystem(adapter, "ws-b");
   await a.write("notes.md", "from workspace A");
@@ -491,7 +491,7 @@ Deno.test("VFS -- workspaces share an adapter but keep files isolated", async ()
 });
 
 Deno.test("VFS -- marks are scoped per workspace", async () => {
-  const adapter = new InMemoryAdapter();
+  const adapter = new KvAdapter(await Deno.openKv(":memory:"));
   const a = new VirtualFileSystem(adapter, "ws-a");
   const b = new VirtualFileSystem(adapter, "ws-b");
   await a.write("f.txt", "the quick brown fox");
@@ -516,7 +516,7 @@ Deno.test("VFS -- marks are scoped per workspace", async () => {
 // with no separate chunk keys.
 
 Deno.test("VFS -- small file inlines content in manifest (no chunk keys)", async () => {
-  const adapter = new InMemoryAdapter();
+  const adapter = new KvAdapter(await Deno.openKv(":memory:"));
   const vfs = new VirtualFileSystem(adapter, "ws");
   await vfs.write("small.txt", "hello world");
 

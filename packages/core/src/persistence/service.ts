@@ -63,8 +63,8 @@ export class Persistence extends Context.Service<Persistence, Interface>()(
   "@essayist/core/persistence/Persistence",
 ) {
   /** A layer that opens its own connection, closing it when the runtime
-   * disposes. Omit `path` for the platform KV; pass one for a local
-   * file-backed store. */
+   * disposes. Omit `path` for the platform KV; pass a file path for a
+   * local store, or `:memory:` for an ephemeral one (tests). */
   static layerKv(path?: string): Layer.Layer<Persistence, PersistenceError> {
     return Layer.unwrap(
       Effect.map(

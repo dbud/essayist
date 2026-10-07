@@ -1,7 +1,7 @@
 import { assert, assertEquals, assertRejects } from "@std/assert";
 import type { ResolvedReviewPass, ReviewUnit } from "@/config/types.ts";
 import type { NodeRun } from "@/flow/types.ts";
-import { InMemoryAdapter } from "@/persistence/mod.ts";
+import { KvAdapter } from "@/persistence/kv_adapter.ts";
 import { resumeReviewPass, runReviewPass } from "@/reviews/runner.ts";
 import { ReviewStore } from "@/reviews/store.ts";
 import { createSpyClient } from "@/reviews/testing/agent.ts";
@@ -44,8 +44,8 @@ function passFixture(units: ReviewUnit[]): ResolvedReviewPass {
   };
 }
 
-function setup() {
-  const adapter = new InMemoryAdapter();
+async function setup() {
+  const adapter = new KvAdapter(await Deno.openKv(":memory:"));
   const reviewStore = new ReviewStore(adapter);
   const traceStore = new TraceEventStore(adapter);
   return { adapter, reviewStore, traceStore };
@@ -101,7 +101,7 @@ function appliedEvents(trace: TraceEvent[]) {
 
 Deno.test("runReviewPass -- completes a pass with marks, summary, and a per-node trace", async () => {
   const { vfs, versionId } = await createFile("essay.txt", "hello brave world");
-  const { reviewStore, traceStore } = setup();
+  const { reviewStore, traceStore } = await setup();
   const { agent, inputs } = createSpyClient([
     { text: ANALYSIS_ROUND, reasoning: "reading closely" },
     {
@@ -177,7 +177,7 @@ Deno.test("runReviewPass -- completes a pass with marks, summary, and a per-node
 
 Deno.test("runReviewPass -- a repair round re-quotes the failed spans", async () => {
   const { vfs, versionId } = await createFile("essay.txt", "hello world");
-  const { reviewStore, traceStore } = setup();
+  const { reviewStore, traceStore } = await setup();
   const { agent, inputs } = createSpyClient([
     {
       text: '{"marks":[{"selected_text":"ghost span","comment":"not there","label":"grammar"}]}',
@@ -241,7 +241,7 @@ Deno.test("runReviewPass -- a repair round re-quotes the failed spans", async ()
 
 Deno.test("runReviewPass -- a zero budget keeps failed marks with no repair nodes", async () => {
   const { vfs, versionId } = await createFile("essay.txt", "hello world");
-  const { reviewStore, traceStore } = setup();
+  const { reviewStore, traceStore } = await setup();
   const { agent } = createSpyClient([
     {
       text: '{"marks":[{"selected_text":"ghost span","comment":"not there","label":"grammar"}]}',
@@ -282,7 +282,7 @@ Deno.test("runReviewPass -- a zero budget keeps failed marks with no repair node
 
 Deno.test("runReviewPass -- resuming a run that does not exist is an error", async () => {
   const { vfs } = await createFile("essay.txt", "hello world");
-  const { reviewStore, traceStore } = setup();
+  const { reviewStore, traceStore } = await setup();
   const { agent } = createSpyClient([{ text: ANALYSIS_ROUND }]);
 
   await assertRejects(
@@ -306,7 +306,7 @@ Deno.test("runReviewPass -- resuming a run that does not exist is an error", asy
 
 Deno.test("runReviewPass -- a resumed pass skips completed nodes and shows each once", async () => {
   const { vfs, versionId } = await createFile("essay.txt", "hello brave world");
-  const { reviewStore, traceStore } = setup();
+  const { reviewStore, traceStore } = await setup();
   // First attempt: analyze succeeds, then the unit below it fails on bad JSON.
   const first = createSpyClient([
     { text: ANALYSIS_ROUND },
@@ -382,7 +382,7 @@ Deno.test("runReviewPass -- a resumed pass skips completed nodes and shows each 
 
 Deno.test("runReviewPass -- a node error fails the run and skips dependents", async () => {
   const { vfs } = await createFile("essay.txt", "hello world");
-  const { reviewStore, traceStore } = setup();
+  const { reviewStore, traceStore } = await setup();
   const { agent } = createSpyClient([{ text: "not json" }]);
 
   const run = await runReviewPass({
@@ -449,7 +449,7 @@ Deno.test("runReviewPass -- a node error fails the run and skips dependents", as
 
 Deno.test("runReviewPass -- fails a pass that commits no summary", async () => {
   const { vfs } = await createFile("essay.txt", "hello world");
-  const { reviewStore, traceStore } = setup();
+  const { reviewStore, traceStore } = await setup();
   const { agent } = createSpyClient([{ text: ANALYSIS_ROUND }]);
 
   const run = await runReviewPass({
@@ -471,7 +471,7 @@ Deno.test("runReviewPass -- fails a pass that commits no summary", async () => {
 
 Deno.test("runReviewPass -- throws when the file does not exist", async () => {
   const vfs = (await createFile("other.txt", "x")).vfs;
-  const { reviewStore, traceStore } = setup();
+  const { reviewStore, traceStore } = await setup();
   const { agent } = createSpyClient([]);
 
   await assertRejects(
@@ -495,8 +495,12 @@ Deno.test("runReviewPass -- throws when the file does not exist", async () => {
 
 Deno.test("runReviewPass -- heartbeats the lease while running, then releases it", async () => {
   const { vfs } = await createFile("essay.txt", "hello brave world");
-  const store = new CountingReviewStore(new InMemoryAdapter());
-  const traceStore = new TraceEventStore(new InMemoryAdapter());
+  const store = new CountingReviewStore(
+    new KvAdapter(await Deno.openKv(":memory:")),
+  );
+  const traceStore = new TraceEventStore(
+    new KvAdapter(await Deno.openKv(":memory:")),
+  );
   const { agent } = createSpyClient([
     { text: ANALYSIS_ROUND },
     { text: '{"summary":"Solid draft."}' },
@@ -526,7 +530,7 @@ Deno.test("runReviewPass -- heartbeats the lease while running, then releases it
 
 Deno.test("runReviewPass -- refuses to resume a run another driver holds", async () => {
   const { vfs } = await createFile("essay.txt", "hello world");
-  const { reviewStore, traceStore } = setup();
+  const { reviewStore, traceStore } = await setup();
   const { agent } = createSpyClient([]);
   const run = await reviewStore.createRun({
     wsId: "ws",
@@ -560,7 +564,7 @@ Deno.test("runReviewPass -- refuses to resume a run another driver holds", async
 
 Deno.test("runReviewPass -- resumes a run whose lease went stale", async () => {
   const { vfs, versionId } = await createFile("essay.txt", "hello brave world");
-  const { adapter, reviewStore, traceStore } = setup();
+  const { adapter, reviewStore, traceStore } = await setup();
   const run = await reviewStore.createRun({
     wsId: "ws",
     path: "essay.txt",

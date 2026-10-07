@@ -9,12 +9,12 @@ import {
   readChunked,
   unframeChunk,
 } from "./chunked.ts";
-import { InMemoryAdapter } from "./in_memory_adapter.ts";
+import { KvAdapter } from "./kv_adapter.ts";
 import type { Entry, Key } from "./mod.ts";
 
 /** Write a planned set of chunks under a base key; returns the chunk count. */
 async function writePlan(
-  adapter: InMemoryAdapter,
+  adapter: KvAdapter,
   base: Key,
   payload: Uint8Array,
 ): Promise<number> {
@@ -94,7 +94,7 @@ Deno.test("planChunks -- an empty payload still yields one chunk", () => {
 // Past nine chunks the keys need a second digit, and readChunked has to work
 // the same width out from the header or it fetches nothing.
 Deno.test("readChunked -- keys widen past nine chunks", async () => {
-  const a = new InMemoryAdapter();
+  const a = new KvAdapter(await Deno.openKv(":memory:"));
   const payload = bytes(CHUNK_PAYLOAD_BYTES * 9 + 1, 0x47);
   const nChunks = await writePlan(a, ["v", "wide-keys"], payload);
   assertEquals(nChunks, 10);
@@ -105,7 +105,7 @@ Deno.test("readChunked -- keys widen past nine chunks", async () => {
 });
 
 Deno.test("readChunked -- a small value round-trips from one write", async () => {
-  const a = new InMemoryAdapter();
+  const a = new KvAdapter(await Deno.openKv(":memory:"));
   const payload = bytes(1_000, 0x61);
   await writePlan(a, ["v", "small"], payload);
   const read = await readChunked(a, ["v", "small"]);
@@ -115,7 +115,7 @@ Deno.test("readChunked -- a small value round-trips from one write", async () =>
 });
 
 Deno.test("readChunked -- a value past the chunk limit reassembles exactly", async () => {
-  const a = new InMemoryAdapter();
+  const a = new KvAdapter(await Deno.openKv(":memory:"));
   const payload = bytes(CHUNK_PAYLOAD_BYTES * 2 + 5_000, 0x62);
   const nChunks = await writePlan(a, ["v", "big"], payload);
   assertEquals(nChunks, 3);
@@ -125,7 +125,7 @@ Deno.test("readChunked -- a value past the chunk limit reassembles exactly", asy
 });
 
 Deno.test("readChunked -- more chunks than getMany allows, in batches", async () => {
-  const a = new InMemoryAdapter();
+  const a = new KvAdapter(await Deno.openKv(":memory:"));
   // One byte past ten full chunks needs an eleventh, so a second batch.
   const payload = bytes(CHUNK_PAYLOAD_BYTES * GET_MANY_MAX + 1, 0x63);
   const nChunks = await writePlan(a, ["v", "wide"], payload);
@@ -136,12 +136,12 @@ Deno.test("readChunked -- more chunks than getMany allows, in batches", async ()
 });
 
 Deno.test("readChunked -- undefined for an absent key", async () => {
-  const a = new InMemoryAdapter();
+  const a = new KvAdapter(await Deno.openKv(":memory:"));
   assertEquals(await readChunked(a, ["v", "missing"]), undefined);
 });
 
 Deno.test("readChunked -- a value this layer did not write comes back as stored", async () => {
-  const a = new InMemoryAdapter();
+  const a = new KvAdapter(await Deno.openKv(":memory:"));
   await a.set(["v", "plain"], { version_id: "abc" });
   const read = await readChunked(a, ["v", "plain"]);
   assertEquals(read?.nChunks, 1);
@@ -151,7 +151,7 @@ Deno.test("readChunked -- a value this layer did not write comes back as stored"
 });
 
 Deno.test("readChunked -- a missing chunk is reported, never silently short", async () => {
-  const a = new InMemoryAdapter();
+  const a = new KvAdapter(await Deno.openKv(":memory:"));
   const chunks = planChunks(bytes(CHUNK_PAYLOAD_BYTES * 3, 0x64));
   await a.set(["v", "gap"], chunks[0].value);
   // The middle chunk is missing and the tail is present.
@@ -163,7 +163,7 @@ Deno.test("readChunked -- a missing chunk is reported, never silently short", as
 });
 
 Deno.test("assembleList -- a scan reassembles interleaved heads and chunks", async () => {
-  const a = new InMemoryAdapter();
+  const a = new KvAdapter(await Deno.openKv(":memory:"));
   // Neighbours share the scan, so order cannot come from reading alone.
   await writePlan(a, ["t", "000001"], bytes(4_000, 0x41));
   await writePlan(a, ["t", "000002"], bytes(CHUNK_PAYLOAD_BYTES * 2 + 9, 0x42));
@@ -183,7 +183,7 @@ Deno.test("assembleList -- a scan reassembles interleaved heads and chunks", asy
 });
 
 Deno.test("assembleList -- a value this layer did not write keeps its own bytes", async () => {
-  const a = new InMemoryAdapter();
+  const a = new KvAdapter(await Deno.openKv(":memory:"));
   await a.set(["t", "000001"], { version_id: "abc" });
   await writePlan(a, ["t", "000002"], bytes(3_000, 0x46));
 

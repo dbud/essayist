@@ -1,20 +1,20 @@
 import { assertEquals } from "@std/assert";
 import type { FlowEvent } from "@/flow/types.ts";
-import { InMemoryAdapter } from "@/persistence/mod.ts";
+import { KvAdapter } from "@/persistence/kv_adapter.ts";
 import type { ReviewTypes } from "@/reviews/graph.ts";
 import { ScopedTraceRecorder } from "./recorder.ts";
 import { TraceEventStore } from "./store.ts";
 import type { TraceEvent, TraceStore } from "./types.ts";
 
-function store() {
-  return new TraceEventStore(new InMemoryAdapter());
+async function store() {
+  return new TraceEventStore(new KvAdapter(await Deno.openKv(":memory:")));
 }
 
 async function recorded(events: FlowEvent<ReviewTypes>[]): Promise<{
   trace: TraceEvent[] | undefined;
   derived: TraceEvent[];
 }> {
-  const traceStore = store();
+  const traceStore = await store();
   const derived: TraceEvent[] = [];
   const recorder = traceStore.recorder({ wsId: "ws", runId: "run" }, (event) =>
     derived.push(event),
@@ -82,7 +82,7 @@ Deno.test("TraceRecorder -- persists events with ordered seq and timestamps", as
 });
 
 Deno.test("TraceRecorder -- record settles only once the append is durable", async () => {
-  const traceStore = store();
+  const traceStore = await store();
   const recorder = traceStore.recorder({ wsId: "ws", runId: "run" });
 
   await recorder.record({
@@ -162,12 +162,12 @@ Deno.test("TraceRecorder -- a value spanning many chunks reassembles", async () 
 });
 
 Deno.test("TraceEventStore -- get returns undefined for an unknown run", async () => {
-  const traceStore = store();
+  const traceStore = await store();
   assertEquals(await traceStore.get({ wsId: "ws", runId: "ghost" }), undefined);
 });
 
 Deno.test("TraceEventStore -- get orders by seq, not by key", async () => {
-  const traceStore = store();
+  const traceStore = await store();
   for (const seq of [999999, 1000000, 8]) {
     await traceStore.append({
       wsId: "ws",

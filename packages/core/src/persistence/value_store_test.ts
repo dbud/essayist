@@ -5,7 +5,7 @@ import {
   splitChunkKey,
   unframeChunk,
 } from "./chunked.ts";
-import { InMemoryAdapter } from "./in_memory_adapter.ts";
+import { KvAdapter } from "./kv_adapter.ts";
 import { ChunkedValueStore } from "./value_store.ts";
 
 interface Note {
@@ -20,7 +20,9 @@ const chunksFor = (body: string): number =>
   planChunks(new TextEncoder().encode(JSON.stringify(note(body)))).length;
 
 Deno.test("ChunkedValueStore -- a value that fits round-trips", async () => {
-  const store = new ChunkedValueStore<Note>(new InMemoryAdapter());
+  const store = new ChunkedValueStore<Note>(
+    new KvAdapter(await Deno.openKv(":memory:")),
+  );
   await store.put(["n", "one"], note("hello"));
   const found = await store.list(["n"]);
   assertEquals(found.length, 1);
@@ -29,7 +31,7 @@ Deno.test("ChunkedValueStore -- a value that fits round-trips", async () => {
 });
 
 Deno.test("ChunkedValueStore -- a value too big for one entry round-trips", async () => {
-  const adapter = new InMemoryAdapter();
+  const adapter = new KvAdapter(await Deno.openKv(":memory:"));
   const store = new ChunkedValueStore<Note>(adapter);
   const body = "x".repeat(200_000);
   await store.put(["n", "big"], note(body));
@@ -44,7 +46,7 @@ Deno.test("ChunkedValueStore -- a value too big for one entry round-trips", asyn
 });
 
 Deno.test("ChunkedValueStore -- a value needing several getMany batches round-trips", async () => {
-  const adapter = new InMemoryAdapter();
+  const adapter = new KvAdapter(await Deno.openKv(":memory:"));
   const store = new ChunkedValueStore<Note>(adapter);
   const body = "y".repeat(2_000_000);
   await store.put(["n", "wide"], note(body));
@@ -55,7 +57,9 @@ Deno.test("ChunkedValueStore -- a value needing several getMany batches round-tr
 });
 
 Deno.test("ChunkedValueStore -- list returns values in key order", async () => {
-  const store = new ChunkedValueStore<Note>(new InMemoryAdapter());
+  const store = new ChunkedValueStore<Note>(
+    new KvAdapter(await Deno.openKv(":memory:")),
+  );
   await store.put(["n", "000003"], note("third"));
   await store.put(["n", "000001"], note("first"));
   await store.put(["n", "000002"], note("second"));
@@ -67,7 +71,9 @@ Deno.test("ChunkedValueStore -- list returns values in key order", async () => {
 });
 
 Deno.test("ChunkedValueStore -- a scan does not reach into another prefix", async () => {
-  const store = new ChunkedValueStore<Note>(new InMemoryAdapter());
+  const store = new ChunkedValueStore<Note>(
+    new KvAdapter(await Deno.openKv(":memory:")),
+  );
   await store.put(["n", "one"], note("a"));
   await store.put(["other", "one"], note("b"));
   const found = await store.list(["n"]);
@@ -76,12 +82,14 @@ Deno.test("ChunkedValueStore -- a scan does not reach into another prefix", asyn
 });
 
 Deno.test("ChunkedValueStore -- an empty prefix returns nothing", async () => {
-  const store = new ChunkedValueStore<Note>(new InMemoryAdapter());
+  const store = new ChunkedValueStore<Note>(
+    new KvAdapter(await Deno.openKv(":memory:")),
+  );
   assertEquals(await store.list(["nothing"]), []);
 });
 
 Deno.test("ChunkedValueStore -- writing over a value leaves no stale chunks", async () => {
-  const adapter = new InMemoryAdapter();
+  const adapter = new KvAdapter(await Deno.openKv(":memory:"));
   const store = new ChunkedValueStore<Note>(adapter);
   await store.put(["n", "k"], note("z".repeat(200_000)));
   await store.put(["n", "k"], note("short"));
@@ -93,7 +101,7 @@ Deno.test("ChunkedValueStore -- writing over a value leaves no stale chunks", as
 });
 
 Deno.test("ChunkedValueStore -- a value with a chunk missing is reported", async () => {
-  const adapter = new InMemoryAdapter();
+  const adapter = new KvAdapter(await Deno.openKv(":memory:"));
   const store = new ChunkedValueStore<Note>(adapter);
   await store.put(["n", "gap"], note("x".repeat(200_000)));
   // Drop a tail chunk, leaving the head claiming chunks that are not there.

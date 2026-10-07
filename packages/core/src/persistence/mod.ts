@@ -93,7 +93,6 @@ export interface PersistenceAdapter {
   delete(key: Key): Promise<void>;
 }
 
-export { InMemoryAdapter } from "./in_memory_adapter.ts";
 export type { ClaimOptions, Lease, Leased } from "./lease.ts";
 export { claim, heartbeat, stripLease } from "./lease.ts";
 export { Persistence, PersistenceError } from "./service.ts";

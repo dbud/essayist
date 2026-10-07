@@ -1,11 +1,11 @@
-import { InMemoryAdapter } from "../../persistence/mod.ts";
+import { KvAdapter } from "../../persistence/kv_adapter.ts";
 import { VirtualFileSystem } from "../vfs.ts";
 
 export async function createVFS(
   files?: Map<string, string>,
   wsId = "default",
 ): Promise<VirtualFileSystem> {
-  const adapter = new InMemoryAdapter();
+  const adapter = new KvAdapter(await Deno.openKv(":memory:"));
   const vfs = new VirtualFileSystem(adapter, wsId);
   if (files) {
     for (const [path, content] of files) {

@@ -1,14 +1,10 @@
-import {
-  InMemoryAdapter,
-  summarizeFile,
-  VirtualFileSystem,
-} from "@essayist/core";
+import { KvAdapter, summarizeFile, VirtualFileSystem } from "@essayist/core";
 import { assertMatch } from "@std/assert";
 import { createAgent, require, TEST_MODELS } from "./utils.ts";
 
 const agent = createAgent();
 
-const adapter = new InMemoryAdapter();
+const adapter = new KvAdapter(await Deno.openKv(":memory:"));
 const vfs = new VirtualFileSystem(adapter, "default");
 
 await vfs.write(

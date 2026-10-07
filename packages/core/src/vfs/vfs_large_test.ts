@@ -1,5 +1,5 @@
 import { assert, assertEquals } from "@std/assert";
-import { InMemoryAdapter } from "../persistence/mod.ts";
+import { KvAdapter } from "../persistence/kv_adapter.ts";
 import { CHUNK_SIZE } from "./chunked_content.ts";
 import { createVFS } from "./testing/helpers.ts";
 import { VirtualFileSystem } from "./vfs.ts";
@@ -97,7 +97,7 @@ Deno.test("VFS -- large document diff between versions", async () => {
 
 Deno.test("VFS -- large write inlines first chunk, rest as chunk keys", async () => {
   const content = largeContent();
-  const adapter = new InMemoryAdapter();
+  const adapter = new KvAdapter(await Deno.openKv(":memory:"));
   const vfs = new VirtualFileSystem(adapter, "ws");
   await vfs.write("big.md", content);
 

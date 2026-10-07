@@ -35,7 +35,6 @@ export {
   type BatchOptions,
   ConcurrentModificationError,
   type Entry,
-  InMemoryAdapter,
   type Key,
   type ListOptions,
   type ListResult,

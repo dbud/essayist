@@ -1,13 +1,13 @@
 import { assertEquals } from "@std/assert";
-import { InMemoryAdapter } from "@/persistence/mod.ts";
+import { KvAdapter } from "@/persistence/kv_adapter.ts";
 import { ConfigStore } from "./store.ts";
 
-function seed() {
-  return new ConfigStore(new InMemoryAdapter());
+async function seed() {
+  return new ConfigStore(new KvAdapter(await Deno.openKv(":memory:")));
 }
 
 Deno.test("ConfigStore -- CRUD round-trips", async () => {
-  const store = seed();
+  const store = await seed();
   await store.saveModelPool({ id: "p", name: "P", models: ["m/a"] });
   assertEquals((await store.getModelPool("p"))?.name, "P");
   await store.deleteModelPool("p");
@@ -37,7 +37,7 @@ Deno.test("ConfigStore -- CRUD round-trips", async () => {
 });
 
 Deno.test("ConfigStore -- getCategories splits found and missing ids", async () => {
-  const store = seed();
+  const store = await seed();
   await store.saveCategory({ id: "a", label: "A" });
   await store.saveCategory({ id: "b", label: "B" });
 
@@ -51,7 +51,7 @@ Deno.test("ConfigStore -- getCategories splits found and missing ids", async () 
 });
 
 Deno.test("ConfigStore -- active pin set and clear", async () => {
-  const store = seed();
+  const store = await seed();
   await store.saveReviewPass({
     id: "essay-review",
     name: "Essay review",
@@ -68,7 +68,7 @@ Deno.test("ConfigStore -- active pin set and clear", async () => {
 });
 
 Deno.test("ConfigStore -- list helpers", async () => {
-  const store = seed();
+  const store = await seed();
   await store.saveModelPool({ id: "p", name: "P", models: ["m/a"] });
   await store.savePrompt({ key: "k", body: "b" });
   await store.saveCategory({ id: "c", label: "C" });

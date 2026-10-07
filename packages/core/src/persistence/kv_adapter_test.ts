@@ -5,21 +5,19 @@ import { ConcurrentModificationError, type Entry, type Key } from "./mod.ts";
 const kvAvailable = typeof Deno.openKv === "function";
 
 /**
- * Run a test against a fresh, isolated local Deno KV instance (temp dir),
- * cleaned up afterwards. Tests are skipped when `--unstable-kv` is not enabled.
+ * Run a test against a fresh, isolated ephemeral KV with the handle closed
+ * afterwards. Tests skip when KV is unavailable.
  */
 function kvTest(name: string, fn: (adapter: KvAdapter) => Promise<void>): void {
   Deno.test({
     name,
     ignore: !kvAvailable,
     fn: async () => {
-      const dir = await Deno.makeTempDir({ prefix: "kvtest_" });
-      const kv = await Deno.openKv(`${dir}/kv.sqlite`);
+      const kv = await Deno.openKv(":memory:");
       try {
         await fn(new KvAdapter(kv));
       } finally {
         kv.close();
-        await Deno.remove(dir, { recursive: true });
       }
     },
   });
@@ -73,6 +71,45 @@ kvTest("KvAdapter -- list reverse", async (a) => {
     entries.map((e) => String(e.key[1])),
     ["c", "b", "a"],
   );
+});
+
+kvTest("KvAdapter -- an empty prefix returns everything", async (a) => {
+  await a.set(["a"], 1);
+  await a.set(["b"], 2);
+  const { entries } = await a.list([]);
+  assertEquals(entries.map((e) => e.value).sort(), [1, 2]);
+});
+
+kvTest("KvAdapter -- list paginates by limit via cursor", async (a) => {
+  for (const name of ["a", "b", "c", "d", "e"]) {
+    await a.set(["file:latest", name], name);
+  }
+
+  const page1 = await a.list<string>(["file:latest"], { limit: 2 });
+  assertEquals(
+    page1.entries.map((e) => e.value),
+    ["a", "b"],
+  );
+  assertEquals(page1.cursor !== undefined, true);
+
+  const page2 = await a.list<string>(["file:latest"], {
+    limit: 2,
+    cursor: page1.cursor,
+  });
+  assertEquals(
+    page2.entries.map((e) => e.value),
+    ["c", "d"],
+  );
+
+  const page3 = await a.list<string>(["file:latest"], {
+    limit: 2,
+    cursor: page2.cursor,
+  });
+  assertEquals(
+    page3.entries.map((e) => e.value),
+    ["e"],
+  );
+  assertEquals(page3.cursor, undefined);
 });
 
 kvTest("KvAdapter -- batch applies multiple writes atomically", async (a) => {

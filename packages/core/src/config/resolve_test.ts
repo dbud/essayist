@@ -1,5 +1,5 @@
 import { assertEquals, assertRejects } from "@std/assert";
-import { InMemoryAdapter } from "@/persistence/mod.ts";
+import { KvAdapter } from "@/persistence/kv_adapter.ts";
 import {
   ConfigInvalidError,
   ConfigMissingError,
@@ -7,8 +7,8 @@ import {
 } from "./resolve.ts";
 import { ConfigStore } from "./store.ts";
 
-function seed() {
-  return new ConfigStore(new InMemoryAdapter());
+async function seed() {
+  return new ConfigStore(new KvAdapter(await Deno.openKv(":memory:")));
 }
 
 const FREE_MODELS = [
@@ -98,7 +98,7 @@ async function seedFullConfig(store: ConfigStore) {
 }
 
 Deno.test("resolveActiveReviewPass -- resolves the active pass unit by unit", async () => {
-  const store = seed();
+  const store = await seed();
   await seedFullConfig(store);
 
   const resolved = await resolveActiveReviewPass(store);
@@ -144,18 +144,18 @@ Deno.test("resolveActiveReviewPass -- resolves the active pass unit by unit", as
 });
 
 Deno.test("resolveActiveReviewPass -- undefined when no pin", async () => {
-  const store = seed();
+  const store = await seed();
   assertEquals(await resolveActiveReviewPass(store), undefined);
 });
 
 Deno.test("resolveActiveReviewPass -- throws on missing review pass", async () => {
-  const store = seed();
+  const store = await seed();
   await store.setActiveReviewPass("nope");
   await assertRejects(() => resolveActiveReviewPass(store), ConfigMissingError);
 });
 
 Deno.test("resolveActiveReviewPass -- throws on missing unit pool", async () => {
-  const store = seed();
+  const store = await seed();
   await store.savePrompt({ key: "sys", body: "hi" });
   await store.saveCategory({ id: "c", label: "c", description: "d" });
   await store.saveReviewPass({
@@ -180,7 +180,7 @@ Deno.test("resolveActiveReviewPass -- throws on missing unit pool", async () => 
 });
 
 Deno.test("resolveActiveReviewPass -- throws on empty unit pool", async () => {
-  const store = seed();
+  const store = await seed();
   await store.saveModelPool({ id: "empty", name: "Empty", models: [] });
   await store.savePrompt({ key: "sys", body: "hi" });
   await store.saveCategory({ id: "c", label: "c", description: "d" });
@@ -206,7 +206,7 @@ Deno.test("resolveActiveReviewPass -- throws on empty unit pool", async () => {
 });
 
 Deno.test("resolveActiveReviewPass -- throws on missing unit prompt", async () => {
-  const store = seed();
+  const store = await seed();
   await store.saveModelPool({ id: "pool", name: "Pool", models: ["m/ref"] });
   await store.savePrompt({ key: "sys", body: "hi" });
   await store.saveCategory({ id: "c", label: "c", description: "d" });
@@ -232,7 +232,7 @@ Deno.test("resolveActiveReviewPass -- throws on missing unit prompt", async () =
 });
 
 Deno.test("resolveActiveReviewPass -- throws on missing pass system prompt", async () => {
-  const store = seed();
+  const store = await seed();
   await store.saveModelPool({ id: "pool", name: "Pool", models: ["m/ref"] });
   await store.saveCategory({ id: "c", label: "c", description: "d" });
   await store.saveReviewPass({
@@ -257,7 +257,7 @@ Deno.test("resolveActiveReviewPass -- throws on missing pass system prompt", asy
 });
 
 Deno.test("resolveActiveReviewPass -- throws on attempt unit without categories", async () => {
-  const store = seed();
+  const store = await seed();
   await store.saveModelPool({ id: "pool", name: "Pool", models: ["m/ref"] });
   await store.savePrompt({ key: "sys", body: "hi" });
   await store.saveReviewPass({
@@ -282,7 +282,7 @@ Deno.test("resolveActiveReviewPass -- throws on attempt unit without categories"
 });
 
 Deno.test("resolveActiveReviewPass -- throws on missing referenced categories", async () => {
-  const store = seed();
+  const store = await seed();
   await store.saveModelPool({ id: "pool", name: "Pool", models: ["m/ref"] });
   await store.savePrompt({ key: "sys", body: "hi" });
   await store.saveReviewPass({
@@ -307,7 +307,7 @@ Deno.test("resolveActiveReviewPass -- throws on missing referenced categories", 
 });
 
 Deno.test("resolveActiveReviewPass -- throws on duplicate unit ids", async () => {
-  const store = seed();
+  const store = await seed();
   await store.saveModelPool({ id: "pool", name: "Pool", models: ["m/ref"] });
   await store.savePrompt({ key: "sys", body: "hi" });
   await store.saveCategory({ id: "c", label: "c", description: "d" });
@@ -338,7 +338,7 @@ Deno.test("resolveActiveReviewPass -- throws on duplicate unit ids", async () =>
 });
 
 Deno.test("resolveActiveReviewPass -- throws on dotted unit ids", async () => {
-  const store = seed();
+  const store = await seed();
   await store.saveModelPool({ id: "pool", name: "Pool", models: ["m/ref"] });
   await store.savePrompt({ key: "sys", body: "hi" });
   await store.saveReviewPass({
@@ -357,7 +357,7 @@ Deno.test("resolveActiveReviewPass -- throws on dotted unit ids", async () => {
 });
 
 Deno.test("resolveActiveReviewPass -- throws on forward unit inputs", async () => {
-  const store = seed();
+  const store = await seed();
   await store.saveModelPool({ id: "pool", name: "Pool", models: ["m/ref"] });
   await store.savePrompt({ key: "sys", body: "hi" });
   await store.saveReviewPass({
@@ -379,7 +379,7 @@ Deno.test("resolveActiveReviewPass -- throws on forward unit inputs", async () =
 });
 
 Deno.test("resolveActiveReviewPass -- throws on unknown unit inputs", async () => {
-  const store = seed();
+  const store = await seed();
   await store.saveModelPool({ id: "pool", name: "Pool", models: ["m/ref"] });
   await store.savePrompt({ key: "sys", body: "hi" });
   await store.saveReviewPass({
@@ -398,7 +398,7 @@ Deno.test("resolveActiveReviewPass -- throws on unknown unit inputs", async () =
 });
 
 Deno.test("resolveActiveReviewPass -- throws on attempt and summary together", async () => {
-  const store = seed();
+  const store = await seed();
   await store.saveModelPool({ id: "pool", name: "Pool", models: ["m/ref"] });
   await store.savePrompt({ key: "sys", body: "hi" });
   await store.saveCategory({ id: "c", label: "c", description: "d" });
