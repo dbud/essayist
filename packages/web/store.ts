@@ -36,13 +36,18 @@ export const reviewStore = new ReviewStore(adapter);
 export const traceStore = new TraceEventStore(adapter);
 
 /**
- * The Effect runtime for migrated stores. Runs for the isolate's lifetime;
- * there is no shutdown hook on Deno Deploy or the dev server, so disposal
- * happens with process exit. Failure typing reaches call sites as rejected
- * promises, so handler behavior is unchanged.
+ * The Effect runtime for migrated stores. Its layers open their own KV
+ * connections (the same file in dev as the legacy adapter below; multiple
+ * connections to one store are safe) and close them when the runtime
+ * disposes, which happens with process exit; there is no shutdown hook on
+ * Deno Deploy or the dev server. Failure typing reaches call sites as
+ * rejected promises, so handler behavior is unchanged.
  */
 export const runtime = ManagedRuntime.make(
-  Layer.provide(UserState.layerNoDeps, Persistence.layerKv(kv)),
+  Layer.provide(
+    UserState.layerNoDeps,
+    Persistence.layerKv(isDev ? "./local-kv.sqlite3" : undefined),
+  ),
 );
 
 /**

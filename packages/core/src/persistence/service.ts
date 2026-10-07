@@ -118,8 +118,21 @@ export class Persistence extends Context.Service<
     return memoryLayer(initial);
   }
 
-  /** A layer backed by an already-open `Deno.Kv`. */
-  static layerKv(kv: Deno.Kv): Layer.Layer<Persistence> {
-    return kvLayer(kv);
+  /** A layer that opens its own connection, closing it when the runtime
+   * disposes. Omit `path` for the platform KV; pass one for a local
+   * file-backed store. */
+  static layerKv(path?: string): Layer.Layer<Persistence, PersistenceError> {
+    return Layer.unwrap(
+      Effect.map(
+        Effect.acquireRelease(
+          Effect.tryPromise({
+            try: () => Deno.openKv(path),
+            catch: (cause) => new PersistenceError({ cause }),
+          }),
+          (kv) => Effect.sync(() => kv.close()),
+        ),
+        kvLayer,
+      ),
+    );
   }
 }

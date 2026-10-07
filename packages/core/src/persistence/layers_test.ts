@@ -269,15 +269,12 @@ battery("Persistence.layerMemory", () => ({
 }));
 
 battery("Persistence.layerKv", async () => {
-  // A fresh, isolated local Deno KV (temp dir), released after the test.
+  // A fresh, isolated temp-dir KV; the layer owns the connection and
+  // closes it at scope end.
   const dir = await Deno.makeTempDir({ prefix: "kvtest_" });
-  const kv = await Deno.openKv(`${dir}/kv.sqlite`);
   return {
-    layer: Persistence.layerKv(kv),
-    done: async () => {
-      kv.close();
-      await Deno.remove(dir, { recursive: true });
-    },
+    layer: Persistence.layerKv(`${dir}/kv.sqlite`),
+    done: () => Deno.remove(dir, { recursive: true }),
   };
 });
 
