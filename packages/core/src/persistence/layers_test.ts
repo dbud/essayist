@@ -1,13 +1,13 @@
 /**
- * One scenario battery for the two native Persistence layers, kv and
- * memory. Cursors are held opaquely (taken from a previous page), so a
- * scenario written once holds for both cursors' formats.
+ * A scenario battery for the Persistence service, run against the native KV
+ * layer on an ephemeral store. Cursors are held opaquely (taken from a
+ * previous page), so the scenarios describe production behavior.
  */
 
 import { assertEquals, assertInstanceOf } from "@std/assert";
-import { Effect, type Layer, Result } from "effect";
+import { Effect, Result } from "effect";
 import { ConcurrentModificationError } from "./mod.ts";
-import { Persistence, type PersistenceError } from "./service.ts";
+import { Persistence } from "./service.ts";
 
 type Scenario = () => Effect.Effect<void, unknown, Persistence>;
 
@@ -225,7 +225,7 @@ const checkAbsent = scenario("a null check requires absence", () =>
   }),
 );
 
-const SHARED: [string, Scenario][] = [
+const SCENARIOS: [string, Scenario][] = [
   roundTrip,
   getMissing,
   deleteRemoves,
@@ -241,52 +241,12 @@ const SHARED: [string, Scenario][] = [
   checkAbsent,
 ];
 
-type LayerPlan =
-  | {
-      layer: Layer.Layer<Persistence, PersistenceError>;
-      done?: () => Promise<void>;
-    }
-  | Promise<{
-      layer: Layer.Layer<Persistence, PersistenceError>;
-      done?: () => Promise<void>;
-    }>;
-
-function battery(subject: string, makeLayer: () => LayerPlan): void {
-  for (const [title, run] of SHARED) {
-    Deno.test(`${subject} -- ${title}`, async () => {
-      const { layer, done } = await makeLayer();
-      try {
-        await Effect.runPromise(Effect.provide(run(), layer));
-      } finally {
-        await done?.();
-      }
-    });
-  }
-}
-
-battery("Persistence.layerMemory", () => ({
-  layer: Persistence.layerMemory(),
-}));
-
-battery("Persistence.layerKv", async () => {
-  // A fresh, isolated temp-dir KV; the layer owns the connection and
-  // closes it at scope end.
-  const dir = await Deno.makeTempDir({ prefix: "kvtest_" });
-  return {
-    layer: Persistence.layerKv(`${dir}/kv.sqlite`),
-    done: () => Deno.remove(dir, { recursive: true }),
-  };
-});
-
-// Memory-only behavior of the layer constructor.
-
-Deno.test("Persistence.layerMemory -- initial entries seed the store", async () => {
-  const program = Effect.gen(function* () {
-    const store = yield* Persistence;
-    const entry = yield* store.get(["x"]);
-    assertEquals(entry?.value, "1");
+for (const [title, run] of SCENARIOS) {
+  Deno.test(`Persistence.layerKv -- ${title}`, async () => {
+    // A fresh ephemeral KV per test; the layer owns the connection and
+    // closes it at scope end.
+    await Effect.runPromise(
+      Effect.provide(run(), Persistence.layerKv(":memory:")),
+    );
   });
-  await Effect.runPromise(
-    Effect.provide(program, Persistence.layerMemory([[["x"], "1"]])),
-  );
-});
+}

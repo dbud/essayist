@@ -1,13 +1,10 @@
 /**
- * The persistence service: a key/value adapter with tuple keys, batch
- * writes, and versionstamp-based optimistic concurrency, as Effects.
- * Wraps a {@linkcode PersistenceAdapter} (Deno KV or in-memory); the
- * adapters underneath keep their promise API.
+ * The persistence service: tuple keys, atomic batch writes, and
+ * versionstamp-based optimistic concurrency, as Effects.
  */
 
 import { Context, Effect, Layer, Schema } from "effect";
 import { kvLayer } from "./kv_layer.ts";
-import { memoryLayer } from "./memory_layer.ts";
 import type {
   BatchOptions,
   ConcurrentModificationError,
@@ -65,13 +62,6 @@ export interface Interface {
 export class Persistence extends Context.Service<Persistence, Interface>()(
   "@essayist/core/persistence/Persistence",
 ) {
-  /** Fresh in-memory state per call; `initial` seeds entries, for tests. */
-  static layerMemory(
-    initial?: Iterable<readonly [Key, unknown]>,
-  ): Layer.Layer<Persistence> {
-    return memoryLayer(initial);
-  }
-
   /** A layer that opens its own connection, closing it when the runtime
    * disposes. Omit `path` for the platform KV; pass one for a local
    * file-backed store. */

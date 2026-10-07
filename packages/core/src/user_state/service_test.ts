@@ -1,10 +1,10 @@
 import { assertEquals } from "@std/assert";
 import { Effect, Layer } from "effect";
-import { Persistence } from "@/persistence/mod.ts";
+import { Persistence, type PersistenceError } from "@/persistence/mod.ts";
 import { UserState } from "./service.ts";
 
-function makeLayer(): Layer.Layer<UserState> {
-  return Layer.provide(UserState.layerNoDeps, Persistence.layerMemory());
+function makeLayer(): Layer.Layer<UserState, PersistenceError> {
+  return Layer.provide(UserState.layerNoDeps, Persistence.layerKv(":memory:"));
 }
 
 Deno.test("UserState -- selected workspace round-trips", async () => {

@@ -53,8 +53,8 @@ export interface Interface {
 export class UserState extends Context.Service<UserState, Interface>()(
   "@essayist/core/user_state/UserState",
 ) {
-  /** Requires the {@linkcode Persistence} service; compose with layerKv or
-   * layerMemory at the composition root. */
+  /** Requires the {@linkcode Persistence} service; compose with
+   * Persistence.layerKv at the composition root. */
   static readonly layerNoDeps: Layer.Layer<UserState, never, Persistence> =
     Layer.effect(
       UserState,
