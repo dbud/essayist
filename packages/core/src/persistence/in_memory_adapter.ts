@@ -1,3 +1,4 @@
+import { compareKeys, keyStartsWith, keyToString } from "./keys.ts";
 import {
   type BatchOptions,
   ConcurrentModificationError,
@@ -9,29 +10,6 @@ import {
   type ReadOptions,
   type WriteOp,
 } from "./mod.ts";
-
-/** Serialize a key to a stable string (for map indexing). */
-function keyToString(key: Key): string {
-  return JSON.stringify(key);
-}
-
-/** Compare two tuple keys lexicographically, part by part (string comparison). */
-function compareKeys(a: Key, b: Key): number {
-  const n = Math.min(a.length, b.length);
-  for (let i = 0; i < n; i++) {
-    if (a[i] !== b[i]) return a[i] < b[i] ? -1 : 1;
-  }
-  return a.length - b.length;
-}
-
-/** True if `key` starts with the tuple `prefix` (every part matches). */
-function keyStartsWith(key: Key, prefix: Key): boolean {
-  if (key.length < prefix.length) return false;
-  for (let i = 0; i < prefix.length; i++) {
-    if (key[i] !== prefix[i]) return false;
-  }
-  return true;
-}
 
 /** In-memory {@link PersistenceAdapter} backed by a `Map`. Intended for tests. */
 export class InMemoryAdapter implements PersistenceAdapter {
