@@ -1,8 +1,8 @@
-import { VirtualFileSystem } from "@essayist/core";
+import { UserState, VirtualFileSystem } from "@essayist/core";
 import { define } from "@/define.ts";
 import { seedDemoFiles } from "@/seed.ts";
 import { workspacesLoader } from "@/signals/workspace.server.ts";
-import { adapter, userStateStore, workspaceStore } from "@/store.ts";
+import { adapter, runtime, workspaceStore } from "@/store.ts";
 
 export const handler = {
   GET: define.handlers(async ({ state, url }) => {
@@ -20,7 +20,11 @@ export const handler = {
     if (!(await workspaceStore.hasAccess(selectedId, ctx.state.user.id))) {
       return Response.json({ error: "Forbidden" }, { status: 403 });
     }
-    await userStateStore.setSelectedWorkspace(ctx.state.user.id, selectedId);
+    await runtime.runPromise(
+      UserState.use((store) =>
+        store.setSelectedWorkspace(ctx.state.user.id, selectedId),
+      ),
+    );
     return new Response(null, { status: 204 });
   }),
 

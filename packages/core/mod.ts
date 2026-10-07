@@ -39,10 +39,13 @@ export {
   type Key,
   type ListOptions,
   type ListResult,
+  Persistence,
   type PersistenceAdapter,
+  PersistenceError,
   type ReadOptions as AdapterReadOptions,
   type WriteOp,
 } from "@/persistence/mod.ts";
+
 export { isTransientError } from "@/retry_policy.ts";
 export { buildReviewGraph } from "@/reviews/adapter.ts";
 export { agentflowDefinition } from "@/reviews/agentflow.ts";
@@ -79,7 +82,7 @@ export type {
   ToolParameters,
 } from "@/tools/registry.ts";
 export { getToolInfos } from "@/tools/registry.ts";
-export { UserStateStore } from "@/user_state/store.ts";
+export { UserState } from "@/user_state/service.ts";
 export { setMyers } from "@/vfs/diff.ts";
 export type { ResolveInput, ResolveOptions } from "@/vfs/marks_resolver.ts";
 export { resolveMarks } from "@/vfs/marks_resolver.ts";
