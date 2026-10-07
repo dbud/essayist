@@ -9,7 +9,7 @@ import {
   joinLines,
   listOf,
   section,
-} from "@/utils/text.ts";
+} from "@/text/markdown.ts";
 import type { Analysis } from "./analyze.ts";
 import type { MarkProposal } from "./mark.ts";
 

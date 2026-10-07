@@ -1,5 +1,5 @@
 import { assertEquals } from "@std/assert";
-import { bulletList, joinBlocks, joinLines, listOf } from "./text.ts";
+import { bulletList, joinBlocks, joinLines, listOf } from "./markdown.ts";
 
 Deno.test("joinBlocks -- drops empty blocks and flattens one level", () => {
   assertEquals(

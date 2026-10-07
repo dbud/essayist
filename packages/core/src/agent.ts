@@ -13,9 +13,9 @@ import type { z } from "zod";
 import { logger } from "@/logger.ts";
 import { isTransientError } from "@/retry_policy.ts";
 import { generateInstructions, stripMarkdownFences } from "@/schema.ts";
+import { joinBlocks } from "@/text/markdown.ts";
 import type { ToolPrompt } from "@/tools/index.ts";
 import { delay } from "@/utils/delay.ts";
-import { joinBlocks } from "@/utils/text.ts";
 
 // The OpenRouter SDK retries only 5XX by default (retryCodes: ["5XX"]). Free
 // upstream providers commonly 429, so opt 429 into the same backoff loop.
