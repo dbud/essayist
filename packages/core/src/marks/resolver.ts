@@ -1,7 +1,7 @@
 import { computeDiff, type DiffHunk } from "@/diff/diff.ts";
-import type { Mark } from "@/vfs/types.ts";
 import { trimContextSeparators, wordEdges } from "./context.ts";
 import { TokenizedText, wordTokens } from "./tokenized.ts";
+import type { Mark } from "./types.ts";
 
 let resolverMarkCounter = 0;
 

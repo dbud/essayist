@@ -6,6 +6,7 @@
 import { type Context, Effect } from "effect";
 import { type ContentManifest, reassemble } from "@/files/chunked_content.ts";
 import { resolveMarks } from "@/marks/resolver.ts";
+import type { Mark } from "@/marks/types.ts";
 import {
   ConcurrentModificationError,
   type Entry,
@@ -14,7 +15,6 @@ import {
   type PersistenceError,
   type WriteOp,
 } from "@/persistence/mod.ts";
-import type { Mark } from "@/vfs/types.ts";
 import {
   contentChunkKey,
   contentManifestKey,
