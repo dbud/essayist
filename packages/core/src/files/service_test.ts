@@ -237,6 +237,114 @@ Deno.test("Files.getHistory -- includes line count per version", async () => {
   );
 });
 
+// drafts and revert
+
+Deno.test("Files.writeDraft -- stores and reads the draft without creating a version", async () => {
+  await run(
+    Effect.gen(function* () {
+      const files = yield* Files;
+      yield* files.write("f.txt", "checkpoint");
+      yield* files.writeDraft("f.txt", "draft text");
+
+      const draft = yield* files.readDraft("f.txt");
+      assertEquals(draft?.content, "draft text");
+      assertEquals(typeof draft?.timestamp, "number");
+      assertEquals((yield* files.getHistory("f.txt")).length, 1);
+      assertEquals((yield* files.read("f.txt")).content, "checkpoint");
+    }),
+  );
+});
+
+Deno.test("Files.promoteDraft -- creates a version from the draft and clears it", async () => {
+  await run(
+    Effect.gen(function* () {
+      const files = yield* Files;
+      yield* files.write("f.txt", "checkpoint");
+      yield* files.writeDraft("f.txt", "draft text");
+
+      const result = yield* files.promoteDraft("f.txt");
+      assertEquals(result?.created, false);
+      assertEquals((yield* files.read("f.txt")).content, "draft text");
+      assertEquals(yield* files.readDraft("f.txt"), null);
+      assertEquals((yield* files.getHistory("f.txt")).length, 2);
+    }),
+  );
+});
+
+Deno.test("Files.promoteDraft -- null when no draft exists", async () => {
+  await run(
+    Effect.gen(function* () {
+      const files = yield* Files;
+      yield* files.write("f.txt", "checkpoint");
+      assertEquals(yield* files.promoteDraft("f.txt"), null);
+    }),
+  );
+});
+
+Deno.test("Files.write -- clears a pending draft", async () => {
+  await run(
+    Effect.gen(function* () {
+      const files = yield* Files;
+      yield* files.write("f.txt", "checkpoint");
+      yield* files.writeDraft("f.txt", "draft text");
+      yield* files.write("f.txt", "direct write");
+
+      assertEquals(yield* files.readDraft("f.txt"), null);
+      assertEquals((yield* files.read("f.txt")).content, "direct write");
+    }),
+  );
+});
+
+Deno.test("Files.writeDraft -- shrinks cleanly across chunk boundaries", async () => {
+  await run(
+    Effect.gen(function* () {
+      const files = yield* Files;
+      yield* files.writeDraft("f.txt", "x".repeat(60 * 1024 * 2 + 10));
+      yield* files.writeDraft("f.txt", "short");
+
+      const draft = yield* files.readDraft("f.txt");
+      assertEquals(draft?.content, "short");
+    }),
+  );
+});
+
+Deno.test("Files.revert -- restores previous version as new version", async () => {
+  await run(
+    Effect.gen(function* () {
+      const files = yield* Files;
+      yield* files.write("f.txt", "original");
+      yield* files.write("f.txt", "modified");
+      const history = yield* files.getHistory("f.txt");
+      const originalVersionId = history[0].version_id;
+      assertEquals(yield* files.revert("f.txt", originalVersionId), true);
+      assertEquals((yield* files.read("f.txt")).content, "original");
+    }),
+  );
+});
+
+Deno.test("Files.revert -- creates a new version when reverting", async () => {
+  await run(
+    Effect.gen(function* () {
+      const files = yield* Files;
+      yield* files.write("f.txt", "v1");
+      yield* files.write("f.txt", "v2");
+      const history = yield* files.getHistory("f.txt");
+      yield* files.revert("f.txt", history[0].version_id);
+      assertEquals((yield* files.getHistory("f.txt")).length, 3);
+    }),
+  );
+});
+
+Deno.test("Files.revert -- returns false for invalid version", async () => {
+  await run(
+    Effect.gen(function* () {
+      const files = yield* Files;
+      yield* files.write("f.txt", "content");
+      assertEquals(yield* files.revert("f.txt", "nonexistent"), false);
+    }),
+  );
+});
+
 // diff
 
 Deno.test("Files.diff -- between versions", async () => {

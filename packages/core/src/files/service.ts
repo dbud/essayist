@@ -29,6 +29,7 @@ import {
 } from "./keys.ts";
 import type {
   DiffResult,
+  DraftSnapshot,
   FileEntry,
   FileReadResult,
   FileSnapshot,
@@ -68,6 +69,36 @@ export interface Interface {
   getHistory(
     path: string,
   ): Effect.Effect<FileVersion[], PersistenceError, WorkspaceId>;
+  /** Write the mutable draft head. No version, no marks migration. */
+  writeDraft(
+    path: string,
+    content: string,
+  ): Effect.Effect<
+    DraftSnapshot,
+    PersistenceError | ConcurrentModificationError,
+    WorkspaceId
+  >;
+  /** Read the draft head, or null when no draft exists. */
+  readDraft(
+    path: string,
+  ): Effect.Effect<DraftSnapshot | null, PersistenceError, WorkspaceId>;
+  /** Promote the draft to a version and clear it. */
+  promoteDraft(
+    path: string,
+  ): Effect.Effect<
+    WriteResult | null,
+    PersistenceError | ConcurrentModificationError,
+    WorkspaceId
+  >;
+  /** Revert a file to a previous version as a new version. */
+  revert(
+    path: string,
+    versionId: string,
+  ): Effect.Effect<
+    boolean,
+    PersistenceError | ConcurrentModificationError,
+    WorkspaceId
+  >;
   /** Unified diff between two versions of a file. */
   diff(
     path: string,
@@ -265,6 +296,114 @@ export class Files extends Context.Service<Files, Interface>()(
             return sortBy(entry?.value ?? [], (version) => version.timestamp);
           });
 
+        const writeDraft = (
+          path: string,
+          content: string,
+        ): Effect.Effect<
+          DraftSnapshot,
+          PersistenceError | ConcurrentModificationError,
+          WorkspaceId
+        > =>
+          Effect.gen(function* () {
+            const { wsId } = yield* WorkspaceId;
+            const timestamp = Date.now();
+            const { manifest, extraChunks } = chunkContent(content);
+
+            // Drop chunk keys left over from a larger previous draft.
+            const previous = yield* persistence.get<ContentManifest>(
+              contentManifestKey(wsId, path, DRAFT_VERSION_ID),
+            );
+            const ops: WriteOp[] = [];
+            if (previous) {
+              for (
+                let i = extraChunks.length + 1;
+                i < previous.value.chunkCount;
+                i++
+              ) {
+                ops.push({
+                  type: "delete",
+                  key: contentChunkKey(wsId, path, DRAFT_VERSION_ID, i + 1),
+                });
+              }
+            }
+            ops.push({
+              type: "set",
+              key: contentManifestKey(wsId, path, DRAFT_VERSION_ID),
+              value: manifest,
+            });
+            ops.push({
+              type: "set",
+              key: draftKey(wsId, path),
+              value: { timestamp },
+            });
+            yield* persistence.batch(ops);
+            return { content, timestamp };
+          });
+
+        const readDraft = (
+          path: string,
+        ): Effect.Effect<DraftSnapshot | null, PersistenceError, WorkspaceId> =>
+          Effect.gen(function* () {
+            const { wsId } = yield* WorkspaceId;
+            const meta = yield* persistence.get<{ timestamp: number }>(
+              draftKey(wsId, path),
+            );
+            if (!meta) return null;
+            const manifestEntry = yield* persistence.get<ContentManifest>(
+              contentManifestKey(wsId, path, DRAFT_VERSION_ID),
+            );
+            if (!manifestEntry) return null;
+            const content = yield* internals.reassembleContent(
+              wsId,
+              path,
+              DRAFT_VERSION_ID,
+              manifestEntry.value,
+            );
+            return { content, timestamp: meta.value.timestamp };
+          });
+
+        const promoteDraft = (
+          path: string,
+        ): Effect.Effect<
+          WriteResult | null,
+          PersistenceError | ConcurrentModificationError,
+          WorkspaceId
+        > =>
+          Effect.gen(function* () {
+            const { wsId } = yield* WorkspaceId;
+            const manifestEntry = yield* persistence.get<ContentManifest>(
+              contentManifestKey(wsId, path, DRAFT_VERSION_ID),
+            );
+            if (!manifestEntry) return null;
+            const content = yield* internals.reassembleContent(
+              wsId,
+              path,
+              DRAFT_VERSION_ID,
+              manifestEntry.value,
+            );
+            return yield* write(path, content);
+          });
+
+        const revert = (
+          path: string,
+          versionId: string,
+        ): Effect.Effect<
+          boolean,
+          PersistenceError | ConcurrentModificationError,
+          WorkspaceId
+        > =>
+          Effect.gen(function* () {
+            const { wsId } = yield* WorkspaceId;
+            const content = yield* internals.getVersionContent(
+              wsId,
+              path,
+              versionId,
+            );
+            if (content === "") return false;
+            yield* write(path, content);
+            return true;
+          });
+
         const diff = (
           path: string,
           versionA: string,
@@ -286,6 +425,10 @@ export class Files extends Context.Service<Files, Interface>()(
           write,
           list,
           getHistory,
+          writeDraft,
+          readDraft,
+          promoteDraft,
+          revert,
           diff,
         });
       }),
