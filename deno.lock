@@ -102,6 +102,7 @@
     "npm:culori@^4.0.2": "4.0.2",
     "npm:date-fns@^4.4.0": "4.4.0",
     "npm:dompurify@^3.4.16": "3.4.16",
+    "npm:effect@^4.0.1": "4.0.1",
     "npm:esbuild-wasm@~0.25.11": "0.25.12",
     "npm:esbuild@0.25.7": "0.25.7",
     "npm:esbuild@~0.25.5": "0.25.12",
@@ -2135,6 +2136,9 @@
         "@types/trusted-types"
       ]
     },
+    "effect@4.0.1": {
+      "integrity": "sha512-b1VlQG9g8fwxE5QnIZuPoOP/0MsqHJSRKxUijjoM80E5q95FXrX5yWtY5XI8G+GJsBQAVSDbLS458z9a++uVvw=="
+    },
     "electron-to-chromium@1.5.443": {
       "integrity": "sha512-TDJG36L9A3CWWwZ97HKaE+Iz1sW80pNp6sAU0owzCIV3Zc9eVyRqZK8Vz6NKuMIU8WjP0pIkoqCa0VRf/yFD0Q=="
     },
@@ -2851,6 +2855,7 @@
       },
       "packages/core": {
         "dependencies": [
+          "npm:effect@^4.0.1",
           "npm:zod@^4.6.5"
         ]
       },

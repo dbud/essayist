@@ -2,6 +2,7 @@
   "exports": "./mod.ts",
   "imports": {
     "@/": "./src/",
+    "effect": "npm:effect@^4.0.1",
     "zod": "npm:zod@^4.6.5"
   },
   "lint": {
