@@ -1,6 +1,11 @@
 import type { FileSnapshot } from "@essayist/core";
 import { sortBy } from "@std/collections";
 import { unifiedDiff } from "@/diff/unified_diff.ts";
+import {
+  type ContentManifest,
+  chunkContent,
+  reassemble,
+} from "@/files/chunked_content.ts";
 import { resolveMarks } from "@/marks/resolver.ts";
 import { TokenizedText } from "@/marks/tokenized.ts";
 import {
@@ -10,11 +15,6 @@ import {
   type PersistenceAdapter,
   type WriteOp,
 } from "@/persistence/mod.ts";
-import {
-  type ContentManifest,
-  chunkContent,
-  reassemble,
-} from "@/vfs/chunked_content.ts";
 import type {
   DiffResult,
   DraftSnapshot,

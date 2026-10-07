@@ -1,6 +1,6 @@
 import { assertEquals } from "@std/assert";
+import { CHUNK_SIZE } from "@/files/chunked_content.ts";
 import { KvAdapter } from "../persistence/kv_adapter.ts";
-import { CHUNK_SIZE } from "./chunked_content.ts";
 import { createVFS } from "./testing/helpers.ts";
 import { VirtualFileSystem } from "./vfs.ts";
 
