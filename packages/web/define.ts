@@ -1,8 +1,7 @@
-import type { ConfigStore, User, VirtualFileSystem } from "@essayist/core";
+import type { User, VirtualFileSystem } from "@essayist/core";
 import { createDefine } from "fresh";
 
 export interface State {
-  config: ConfigStore;
   user: User;
   vfs: VirtualFileSystem;
   wsId: string;

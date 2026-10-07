@@ -2,13 +2,20 @@
 
 import {
   CategorySchema,
-  type ConfigStore,
   type ModelPool,
   ModelPoolSchema,
+  type PersistenceError,
   PromptSchema,
+  ReviewConfig,
   ReviewPassSchema,
 } from "@essayist/core";
 import { mapNotNullish } from "@std/collections";
+import type { ManagedRuntime } from "effect";
+
+type ConfigRuntime = ManagedRuntime.ManagedRuntime<
+  ReviewConfig,
+  PersistenceError
+>;
 
 export type FamilyKey = "pools" | "prompts" | "categories" | "passes";
 export const FAMILY_ORDER: FamilyKey[] = [
@@ -19,10 +26,8 @@ export const FAMILY_ORDER: FamilyKey[] = [
 ];
 
 export interface SyncCtx {
-  source: ConfigStore;
-  target: ConfigStore;
-  /** Target KV handle, for cache epoch bumps. */
-  kv: Deno.Kv;
+  source: ConfigRuntime;
+  target: ConfigRuntime;
 }
 
 /** Validate a single entity against a zod schema; returns an error message or
@@ -127,50 +132,76 @@ export const FAMILIES: Record<
   async pools(ctx, prune) {
     return copyEntries({
       name: "model pools",
-      source: await ctx.source.listModelPools(),
-      target: await ctx.target.listModelPools(),
+      source: await ctx.source.runPromise(
+        ReviewConfig.use((c) => c.listModelPools()),
+      ),
+      target: await ctx.target.runPromise(
+        ReviewConfig.use((c) => c.listModelPools()),
+      ),
       keyOf: (e) => e.id,
       check: check(ModelPoolSchema, "model pool"),
-      save: (e: ModelPool) => ctx.target.saveModelPool(e),
-      remove: (id) => ctx.target.deleteModelPool(id),
+      save: (e: ModelPool) =>
+        ctx.target.runPromise(ReviewConfig.use((c) => c.saveModelPool(e))),
+      remove: (id) =>
+        ctx.target.runPromise(ReviewConfig.use((c) => c.deleteModelPool(id))),
       prune,
     });
   },
   async prompts(ctx, prune) {
     return copyEntries({
       name: "prompts",
-      source: await ctx.source.listPrompts(),
-      target: await ctx.target.listPrompts(),
+      source: await ctx.source.runPromise(
+        ReviewConfig.use((c) => c.listPrompts()),
+      ),
+      target: await ctx.target.runPromise(
+        ReviewConfig.use((c) => c.listPrompts()),
+      ),
       keyOf: (e) => e.key,
       check: check(PromptSchema, "prompt"),
-      save: (e) => ctx.target.savePrompt(e),
-      remove: (id) => ctx.target.deletePrompt(id),
+      save: (e) =>
+        ctx.target.runPromise(ReviewConfig.use((c) => c.savePrompt(e))),
+      remove: (id) =>
+        ctx.target.runPromise(ReviewConfig.use((c) => c.deletePrompt(id))),
       prune,
     });
   },
   async categories(ctx, prune) {
     return copyEntries({
       name: "categories",
-      source: await ctx.source.listCategories(),
-      target: await ctx.target.listCategories(),
+      source: await ctx.source.runPromise(
+        ReviewConfig.use((c) => c.listCategories()),
+      ),
+      target: await ctx.target.runPromise(
+        ReviewConfig.use((c) => c.listCategories()),
+      ),
       keyOf: (e) => e.id,
       check: check(CategorySchema, "category"),
-      save: (e) => ctx.target.saveCategory(e),
-      remove: (id) => ctx.target.deleteCategory(id),
+      save: (e) =>
+        ctx.target.runPromise(ReviewConfig.use((c) => c.saveCategory(e))),
+      remove: (id) =>
+        ctx.target.runPromise(ReviewConfig.use((c) => c.deleteCategory(id))),
       prune,
     });
   },
   async passes(ctx, prune) {
     // Keep the pass currently active on the target even when pruning.
-    const activeId = await ctx.target.getActiveReviewPassId();
+    const activeId = await ctx.target.runPromise(
+      ReviewConfig.use((c) => c.getActiveReviewPassId()),
+    );
     return copyEntries({
       name: "review passes",
-      source: await ctx.source.listReviewPasses(),
-      target: await ctx.target.listReviewPasses(),
+      source: await ctx.source.runPromise(
+        ReviewConfig.use((c) => c.listReviewPasses()),
+      ),
+      target: await ctx.target.runPromise(
+        ReviewConfig.use((c) => c.listReviewPasses()),
+      ),
       keyOf: (e) => e.id,
       check: check(ReviewPassSchema, "review pass"),
-      save: (e) => ctx.target.saveReviewPass(e),
-      remove: (id) => ctx.target.deleteReviewPass(id),
+      save: (e) =>
+        ctx.target.runPromise(ReviewConfig.use((c) => c.saveReviewPass(e))),
+      remove: (id) =>
+        ctx.target.runPromise(ReviewConfig.use((c) => c.deleteReviewPass(id))),
       prune,
       keep: (id) => (id === activeId ? "active on target" : null),
     });
@@ -180,10 +211,10 @@ export const FAMILIES: Record<
 /** Warn about target review passes referencing entities the target lacks. */
 export async function warnBrokenRefs(ctx: SyncCtx): Promise<void> {
   const [pools, prompts, categories, passes] = await Promise.all([
-    ctx.target.listModelPools(),
-    ctx.target.listPrompts(),
-    ctx.target.listCategories(),
-    ctx.target.listReviewPasses(),
+    ctx.target.runPromise(ReviewConfig.use((c) => c.listModelPools())),
+    ctx.target.runPromise(ReviewConfig.use((c) => c.listPrompts())),
+    ctx.target.runPromise(ReviewConfig.use((c) => c.listCategories())),
+    ctx.target.runPromise(ReviewConfig.use((c) => c.listReviewPasses())),
   ]);
   const poolIds = new Set(pools.map((p) => p.id));
   const promptKeys = new Set(prompts.map((p) => p.key));

@@ -51,8 +51,7 @@ function resolve(
   );
 }
 
-// -- Arithmetic mapping (unchanged region) --
-
+// Arithmetic mapping (unchanged region)
 Deno.test("resolveMarks -- pure insertion inside mark region (no division by zero)", () => {
   /*
     old: "It has been used as a typing test since the late 1800s."
@@ -179,8 +178,7 @@ Deno.test("resolveMarks -- identical content, offset unchanged", () => {
   assertObjectMatch(result[0], { status: "resolved", offset: 4 });
 });
 
-// -- Phase 1: selected text found (exact or fuzzy) --
-
+// Phase 1: selected text found (exact or fuzzy)
 Deno.test("resolveMarks -- minor typo fix inside marked text (fuzzy)", () => {
   /*
     "The quick brown fox"
@@ -212,8 +210,7 @@ Deno.test("resolveMarks -- minor typo fix inside marked text (fuzzy)", () => {
   });
 });
 
-// -- Phase 2: context-driven resolution --
-
+// Phase 2: context-driven resolution
 Deno.test("resolveMarks -- single word substituted (Phase 1 fails, Phase 2 resolves)", () => {
   /*
     "The quick brown fox"
@@ -580,8 +577,7 @@ Deno.test("resolveMarks -- both contexts empty (selected_text is entire content)
   });
 });
 
-// -- Phase 3: full-content exact match (moved text) --
-
+// Phase 3: full-content exact match (moved text)
 Deno.test("resolveMarks -- selected text cut and pasted elsewhere", () => {
   /*
     old: "First part. Middle part. Last part."
@@ -661,8 +657,7 @@ Deno.test("resolveMarks -- Phase 3 finds moved text when contexts become adjacen
   });
 });
 
-// -- Stale --
-
+// Stale
 Deno.test("resolveMarks -- marked region and all context deleted entirely", () => {
   /*
     old: "Unique preamble. Marked text. Unique postamble."
@@ -690,8 +685,7 @@ Deno.test("resolveMarks -- marked region and all context deleted entirely", () =
   assertObjectMatch(result[0], { status: "stale", length: 0 });
 });
 
-// -- Options/parameters --
-
+// Options/parameters
 Deno.test("resolveMarks -- selected text with 1-char edit resolves via context", () => {
   /*
     old: "The quick brown fox jumps over the lazy dog."
@@ -794,8 +788,7 @@ Deno.test("resolveMarks -- deletion and insertion inside full-content mark", () 
   });
 });
 
-// -- Corner cases (previously mishandled) --
-//
+// Corner cases (previously mishandled)//
 // These cover edge cases the resolver used to get wrong. Each fix is
 // described inline.
 
@@ -997,8 +990,7 @@ Deno.test({
   },
 });
 
-// -- Token-based context matching (Phase 2 robustness) --
-
+// Token-based context matching (Phase 2 robustness)
 Deno.test("resolveMarks -- clause reorder within after_context stays resolved", () => {
   /*
     before_context is intact, the marked word is rewritten, and the

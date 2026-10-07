@@ -1,5 +1,11 @@
+/**
+ * Resolve the active review pass (and any given pass) into a
+ * ResolvedReviewPass bundle. Requires the ReviewConfig service.
+ */
+
+import { Effect } from "effect";
 import { renderCategories } from "@/reviews/steps/input.ts";
-import type { ConfigStore } from "./store.ts";
+import { ReviewConfig } from "./service.ts";
 import { renderTemplate } from "./template.ts";
 import type {
   Category,
@@ -10,34 +16,43 @@ import type {
   ReviewUnit,
 } from "./types.ts";
 
-/** Thrown by resolution on config entities the pass references but that are missing. */
+/** Resolution fails on config entities the pass references but that are missing. */
 export class ConfigMissingError extends Error {
   constructor(what: string) {
     super(`Config missing: ${what}`);
   }
 }
 
-/** Thrown by resolution on a structurally invalid pass. */
+/** Resolution fails on a structurally invalid pass. */
 export class ConfigInvalidError extends Error {
   constructor(what: string) {
     super(`Config invalid: ${what}`);
   }
 }
 
+type ResolveError = ConfigMissingError | ConfigInvalidError;
+
 /**
  * Resolve the active review pass into a ResolvedReviewPass bundle.
- * Returns undefined if none is pinned.
+ * Runs as an effect: `undefined` if none is pinned.
  */
-export async function resolveActiveReviewPass(
-  store: ConfigStore,
-): Promise<ResolvedReviewPass | undefined> {
-  const activeId = await store.getActiveReviewPassId();
+export const resolveActiveReviewPass: Effect.Effect<
+  ResolvedReviewPass | undefined,
+  ResolveError,
+  ReviewConfig
+> = Effect.gen(function* () {
+  const config = yield* ReviewConfig;
+  const activeId = yield* config.getActiveReviewPassId();
   if (!activeId) return undefined;
 
-  const pass = await store.getReviewPass(activeId);
-  if (!pass) throw new ConfigMissingError(`review pass "${activeId}"`);
-  return resolveReviewPass(store, pass);
-}
+  const pass = yield* config.getReviewPass(activeId);
+  if (!pass) {
+    return yield* Effect.fail(
+      new ConfigMissingError(`review pass "${activeId}"`),
+    );
+  }
+  return yield* resolveReviewPass(pass);
+});
 
 /**
  * Resolve a pass's units in order: render the shared system prompt and
@@ -45,178 +60,180 @@ export async function resolveActiveReviewPass(
  * pool (unit override or pass default), and resolve categories for attempt
  * units. Units resolve concurrently.
  */
-export async function resolveReviewPass(
-  store: ConfigStore,
+export const resolveReviewPass = (
   pass: ReviewPass,
-): Promise<ResolvedReviewPass> {
-  assertUnitOrder(pass);
-  const vars = pass.variables ?? {};
-  const system = await renderPromptKey(
-    store,
-    pass.systemPromptKey,
-    vars,
-    `pass "${pass.id}"`,
-  );
-  const units = await Promise.all(
-    pass.units.map((unit) => resolveUnit(store, pass, unit, system, vars)),
-  );
-  return { pass, units };
-}
+): Effect.Effect<ResolvedReviewPass, ResolveError, ReviewConfig> =>
+  Effect.gen(function* () {
+    yield* assertUnitOrder(pass);
+    const vars = pass.variables ?? {};
+    const system = yield* renderPrompt(
+      `pass "${pass.id}"`,
+      pass.systemPromptKey,
+      vars,
+    );
+    const units = yield* Effect.all(
+      pass.units.map((unit) =>
+        resolveUnit(pass.id, pass.modelPoolId, unit, system, vars),
+      ),
+    );
+    return { pass, units };
+  });
 
-function assertUnitOrder(pass: ReviewPass): void {
-  const seen = new Set<string>();
-  for (const unit of pass.units) {
-    if (unit.id.includes(".")) {
-      throw new ConfigInvalidError(
-        `unit id "${unit.id}" in pass "${pass.id}" must not contain ".", which is reserved for derived node ids`,
-      );
-    }
-    if (seen.has(unit.id)) {
-      throw new ConfigInvalidError(
-        `unit id "${unit.id}" is used more than once in pass "${pass.id}"`,
-      );
-    }
-    for (const ref of unit.inputs ?? []) {
-      if (!seen.has(ref)) {
-        throw new ConfigInvalidError(
-          `unit "${unit.id}" in pass "${pass.id}" references unknown or later unit "${ref}"`,
+const assertUnitOrder = (
+  pass: ReviewPass,
+): Effect.Effect<void, ConfigInvalidError> =>
+  Effect.gen(function* () {
+    const seen = new Set<string>();
+    for (const unit of pass.units) {
+      if (unit.id.includes(".")) {
+        return yield* Effect.fail(
+          new ConfigInvalidError(
+            `unit id "${unit.id}" in pass "${pass.id}" must not contain ".", which is reserved for derived node ids`,
+          ),
         );
       }
+      if (seen.has(unit.id)) {
+        return yield* Effect.fail(
+          new ConfigInvalidError(
+            `unit id "${unit.id}" is used more than once in pass "${pass.id}"`,
+          ),
+        );
+      }
+      for (const ref of unit.inputs ?? []) {
+        if (!seen.has(ref)) {
+          return yield* Effect.fail(
+            new ConfigInvalidError(
+              `unit "${unit.id}" in pass "${pass.id}" references unknown or later unit "${ref}"`,
+            ),
+          );
+        }
+      }
+      seen.add(unit.id);
     }
-    seen.add(unit.id);
-  }
-}
+  });
 
-async function resolveUnit(
-  store: ConfigStore,
-  pass: ReviewPass,
+const resolveUnit = (
+  passId: string,
+  passPoolId: string,
   unit: ReviewUnit,
   system: string,
   vars: Record<string, string>,
-): Promise<ResolvedReviewUnit> {
-  if (unit.attempt && unit.summary) {
-    // TODO -- a unit could both place marks and summarize them; exclusive
-    // until a pass needs it.
-    throw new ConfigInvalidError(
-      `unit "${unit.id}" in pass "${pass.id}" sets both attempt and summary`,
-    );
-  }
-  const [directive, instructions, pool, attempt] = await Promise.all([
-    renderUnitPrompt(store, pass, unit, unit.promptKey, vars),
-    resolveUnitInstructions(store, pass, unit, vars),
-    resolveUnitPool(store, pass, unit),
-    resolveUnitAttempt(store, pass, unit),
-  ]);
+): Effect.Effect<ResolvedReviewUnit, ResolveError, ReviewConfig> =>
+  Effect.gen(function* () {
+    if (unit.attempt && unit.summary) {
+      // A unit could both place marks and summarize them; exclusive until a
+      // pass needs it.
+      return yield* Effect.fail(
+        new ConfigInvalidError(
+          `unit "${unit.id}" in pass "${passId}" sets both attempt and summary`,
+        ),
+      );
+    }
+    const [directive, instructions, pool, attempt] = yield* Effect.all([
+      renderPrompt(
+        `unit "${unit.id}" in pass "${passId}"`,
+        unit.promptKey,
+        vars,
+      ),
+      resolveUnitInstructions(passId, unit, vars),
+      resolveUnitPool(passPoolId, unit),
+      resolveUnitAttempt(passId, unit),
+    ]);
 
-  return {
-    id: unit.id,
-    prompts: {
-      system,
-      directive,
-      instructions,
-      categories: renderCategories(attempt?.categories ?? []) ?? "",
-    },
-    pool,
-    inputs: unit.inputs ?? [],
-    ...(attempt && { attempt }),
-    ...(unit.summary && { summary: true }),
-  };
-}
+    return {
+      id: unit.id,
+      prompts: {
+        system,
+        directive,
+        instructions,
+        categories: renderCategories(attempt?.categories ?? []) ?? "",
+      },
+      pool,
+      inputs: unit.inputs ?? [],
+      ...(attempt && { attempt }),
+      ...(unit.summary && { summary: true }),
+    };
+  });
 
-async function renderUnitPrompt(
-  store: ConfigStore,
-  pass: ReviewPass,
+const resolveUnitInstructions = (
+  passId: string,
   unit: ReviewUnit,
-  key: string,
   vars: Record<string, string>,
-): Promise<string> {
-  return await renderPromptKey(
-    store,
-    key,
-    vars,
-    `unit "${unit.id}" in pass "${pass.id}"`,
-  );
-}
+): Effect.Effect<string, ResolveError, ReviewConfig> =>
+  unit.instructionsPromptKey === undefined
+    ? Effect.succeed("")
+    : renderPrompt(
+        `unit "${unit.id}" in pass "${passId}"`,
+        unit.instructionsPromptKey,
+        vars,
+      );
 
-async function renderPromptKey(
-  store: ConfigStore,
-  key: string,
-  vars: Record<string, string>,
+const renderPrompt = (
   where: string,
-): Promise<string> {
-  const prompt = await store.getPrompt(key);
-  if (!prompt) {
-    throw new ConfigMissingError(`prompt "${key}" for ${where}`);
-  }
-  return renderTemplate(prompt.body, vars);
-}
-
-async function resolveUnitInstructions(
-  store: ConfigStore,
-  pass: ReviewPass,
-  unit: ReviewUnit,
+  key: string,
   vars: Record<string, string>,
-): Promise<string> {
-  if (!unit.instructionsPromptKey) return "";
-  return await renderUnitPrompt(
-    store,
-    pass,
-    unit,
-    unit.instructionsPromptKey,
-    vars,
-  );
-}
+): Effect.Effect<string, ResolveError, ReviewConfig> =>
+  Effect.gen(function* () {
+    const config = yield* ReviewConfig;
+    const prompt = yield* config.getPrompt(key);
+    if (!prompt) {
+      return yield* Effect.fail(
+        new ConfigMissingError(`prompt "${key}" for ${where}`),
+      );
+    }
+    return renderTemplate(prompt.body, vars);
+  });
 
-async function resolveUnitPool(
-  store: ConfigStore,
-  pass: ReviewPass,
+const resolveUnitPool = (
+  passPoolId: string,
   unit: ReviewUnit,
-): Promise<ModelPool> {
-  const poolId = unit.modelPoolId ?? pass.modelPoolId;
-  const pool = await store.getModelPool(poolId);
-  if (!pool) throw new ConfigMissingError(`model pool "${poolId}"`);
-  if (pool.models.length === 0) {
-    throw new ConfigMissingError(`model pool "${pool.id}" has no models`);
-  }
-  return pool;
-}
+): Effect.Effect<ModelPool, ResolveError, ReviewConfig> =>
+  Effect.gen(function* () {
+    const config = yield* ReviewConfig;
+    const poolId = unit.modelPoolId ?? passPoolId;
+    const pool = yield* config.getModelPool(poolId);
+    if (!pool) {
+      return yield* Effect.fail(
+        new ConfigMissingError(`model pool "${poolId}"`),
+      );
+    }
+    if (pool.models.length === 0) {
+      return yield* Effect.fail(
+        new ConfigMissingError(`model pool "${pool.id}" has no models`),
+      );
+    }
+    return pool;
+  });
 
-/** Categories for attempt units; undefined for the rest. */
-async function resolveUnitAttempt(
-  store: ConfigStore,
-  pass: ReviewPass,
+/** Categories for attempt units; `undefined` for the rest. */
+const resolveUnitAttempt = (
+  passId: string,
   unit: ReviewUnit,
-): Promise<{ categories: Category[]; repairRounds: number } | undefined> {
-  const attempt = unit.attempt;
-  if (!attempt) return undefined;
-  if (attempt.allowedCategoryIds.length === 0) {
-    throw new ConfigInvalidError(
-      `attempt unit "${unit.id}" in pass "${pass.id}" has no allowed categories`,
+): Effect.Effect<
+  { categories: Category[]; repairRounds: number } | undefined,
+  ResolveError,
+  ReviewConfig
+> =>
+  Effect.gen(function* () {
+    const attempt = unit.attempt;
+    if (!attempt) return undefined;
+    if (attempt.allowedCategoryIds.length === 0) {
+      return yield* Effect.fail(
+        new ConfigInvalidError(
+          `attempt unit "${unit.id}" in pass "${passId}" has no allowed categories`,
+        ),
+      );
+    }
+    const config = yield* ReviewConfig;
+    const [categories, missing] = yield* config.getCategories(
+      attempt.allowedCategoryIds,
     );
-  }
-  const categories = await resolveCategories(
-    store,
-    pass,
-    unit,
-    attempt.allowedCategoryIds,
-  );
-  return {
-    categories,
-    repairRounds: attempt.repairRounds ?? 1,
-  };
-}
-
-async function resolveCategories(
-  store: ConfigStore,
-  pass: ReviewPass,
-  unit: ReviewUnit,
-  ids: string[],
-): Promise<Category[]> {
-  const [categories, missing] = await store.getCategories(ids);
-  if (missing.length > 0) {
-    throw new ConfigMissingError(
-      `categories ${missing.map((id) => `"${id}"`).join(", ")} for unit "${unit.id}" in pass "${pass.id}"`,
-    );
-  }
-  return categories;
-}
+    if (missing.length > 0) {
+      return yield* Effect.fail(
+        new ConfigMissingError(
+          `categories ${missing.map((id) => `"${id}"`).join(", ")} for unit "${unit.id}" in pass "${passId}"`,
+        ),
+      );
+    }
+    return { categories, repairRounds: attempt.repairRounds ?? 1 };
+  });

@@ -1,6 +1,6 @@
-import { ReviewPassSchema } from "@essayist/core";
+import { ReviewConfig, ReviewPassSchema } from "@essayist/core";
 import { define } from "@/define.ts";
-import { configStore } from "@/store.ts";
+import { runtime } from "@/store.ts";
 
 export const handler = {
   POST: define.handlers(async (ctx) => {
@@ -15,7 +15,9 @@ export const handler = {
         { status: 400 },
       );
     }
-    await configStore.saveReviewPass(parsed.data);
+    await runtime.runPromise(
+      ReviewConfig.use((store) => store.saveReviewPass(parsed.data)),
+    );
     return Response.json(parsed.data, { status: 201 });
   }),
 };

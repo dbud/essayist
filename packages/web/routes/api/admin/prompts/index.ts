@@ -1,6 +1,6 @@
-import { PromptSchema } from "@essayist/core";
+import { PromptSchema, ReviewConfig } from "@essayist/core";
 import { define } from "@/define.ts";
-import { configStore } from "@/store.ts";
+import { runtime } from "@/store.ts";
 
 export const handler = {
   POST: define.handlers(async (ctx) => {
@@ -12,7 +12,9 @@ export const handler = {
         { status: 400 },
       );
     }
-    await configStore.savePrompt(parsed.data);
+    await runtime.runPromise(
+      ReviewConfig.use((store) => store.savePrompt(parsed.data)),
+    );
     return Response.json(parsed.data, { status: 201 });
   }),
 };

@@ -1,6 +1,6 @@
-import { PromptSchema } from "@essayist/core";
+import { PromptSchema, ReviewConfig } from "@essayist/core";
 import { define } from "@/define.ts";
-import { configStore } from "@/store.ts";
+import { runtime } from "@/store.ts";
 
 export const handler = {
   PUT: define.handlers(async (ctx) => {
@@ -13,13 +13,17 @@ export const handler = {
         { status: 400 },
       );
     }
-    await configStore.savePrompt(parsed.data);
+    await runtime.runPromise(
+      ReviewConfig.use((store) => store.savePrompt(parsed.data)),
+    );
     return Response.json(parsed.data);
   }),
 
   DELETE: define.handlers(async (ctx) => {
     const { key } = ctx.params;
-    await configStore.deletePrompt(key);
+    await runtime.runPromise(
+      ReviewConfig.use((store) => store.deletePrompt(key)),
+    );
     return Response.json({ ok: true });
   }),
 };

@@ -1,7 +1,7 @@
 import { Workspaces } from "@essayist/core";
 import type { Middleware } from "fresh";
 import { define, type State } from "@/define.ts";
-import { configStore, demoUser, runtime } from "@/store.ts";
+import { demoUser, runtime } from "@/store.ts";
 import { getOAuthHelpers } from "@/utils/oauth.ts";
 import { getUserIdForSession } from "@/utils/sessions.ts";
 
@@ -23,7 +23,6 @@ const demoUserDisabled = Deno.env.get("DISABLE_DEMO_USER") === "1";
  * callback and the login page itself can run before a user is resolved.
  */
 const authMiddleware: Middleware<State> = define.middleware(async (ctx) => {
-  ctx.state.config = configStore;
   const path = ctx.url.pathname;
   if (path.startsWith("/oauth/") || path === "/login") {
     return ctx.next();

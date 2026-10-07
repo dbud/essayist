@@ -1,6 +1,6 @@
-import { ModelPoolSchema } from "@essayist/core";
+import { ModelPoolSchema, ReviewConfig } from "@essayist/core";
 import { define } from "@/define.ts";
-import { configStore } from "@/store.ts";
+import { runtime } from "@/store.ts";
 
 export const handler = {
   PUT: define.handlers(async (ctx) => {
@@ -13,13 +13,17 @@ export const handler = {
         { status: 400 },
       );
     }
-    await configStore.saveModelPool(parsed.data);
+    await runtime.runPromise(
+      ReviewConfig.use((store) => store.saveModelPool(parsed.data)),
+    );
     return Response.json(parsed.data);
   }),
 
   DELETE: define.handlers(async (ctx) => {
     const { id } = ctx.params;
-    await configStore.deleteModelPool(id);
+    await runtime.runPromise(
+      ReviewConfig.use((store) => store.deleteModelPool(id)),
+    );
     return Response.json({ ok: true });
   }),
 };

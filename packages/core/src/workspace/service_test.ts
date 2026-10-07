@@ -12,8 +12,7 @@ function makeLayer(): Layer.Layer<Workspaces, PersistenceError> {
   return Layer.provide(Workspaces.layerNoDeps, Persistence.layerKv(":memory:"));
 }
 
-// -- users --
-
+// users
 Deno.test("Workspaces -- create + get user", async () => {
   const program = Effect.gen(function* () {
     const store = yield* Workspaces;
@@ -103,8 +102,7 @@ Deno.test("Workspaces -- a duplicate email is rejected", async () => {
   await Effect.runPromise(Effect.provide(program, makeLayer()));
 });
 
-// -- workspaces --
-
+// workspaces
 Deno.test("Workspaces -- createWorkspace adds the owner membership", async () => {
   const program = Effect.gen(function* () {
     const store = yield* Workspaces;
@@ -145,8 +143,7 @@ Deno.test("Workspaces -- a missing workspace reads as undefined", async () => {
   await Effect.runPromise(Effect.provide(program, makeLayer()));
 });
 
-// -- members --
-
+// members
 Deno.test("Workspaces -- addMember + getMembers", async () => {
   const program = Effect.gen(function* () {
     const store = yield* Workspaces;
@@ -194,8 +191,7 @@ Deno.test("Workspaces -- removeMember", async () => {
   await Effect.runPromise(Effect.provide(program, makeLayer()));
 });
 
-// -- access checks --
-
+// access checks
 Deno.test("Workspaces -- hasAccess", async () => {
   const program = Effect.gen(function* () {
     const store = yield* Workspaces;
@@ -222,8 +218,7 @@ Deno.test("Workspaces -- hasAccess", async () => {
   await Effect.runPromise(Effect.provide(program, makeLayer()));
 });
 
-// -- last-owner guard --
-
+// last-owner guard
 Deno.test("Workspaces -- the last owner cannot be removed", async () => {
   const program = Effect.gen(function* () {
     const store = yield* Workspaces;

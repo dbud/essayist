@@ -1,9 +1,9 @@
 import {
   Agent,
-  type ConfigStore,
   type ResolvedReviewPass,
   resolveActiveReviewPass,
 } from "@essayist/core";
+import type { Runtime } from "@/store.ts";
 
 export class ResolveAgentError extends Error {}
 
@@ -11,9 +11,9 @@ export class ResolveAgentError extends Error {}
 // ResolveAgentError on no active pass or missing API key; config
 // resolution errors propagate as ConfigMissingError / ConfigInvalidError.
 export async function resolveAgent(
-  config: ConfigStore,
+  runtime: Runtime,
 ): Promise<{ agent: Agent; pass: ResolvedReviewPass }> {
-  const pass = await resolveActiveReviewPass(config);
+  const pass = await runtime.runPromise(resolveActiveReviewPass);
   if (!pass) {
     throw new ResolveAgentError("No active review pass configured.");
   }

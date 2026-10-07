@@ -2,8 +2,7 @@ import { assertEquals } from "@std/assert";
 import { assertObjectMatch } from "@std/assert/object-match";
 import { createFile, createVFS } from "./testing/helpers.ts";
 
-// -- mark --
-
+// mark
 Deno.test("VFS.mark -- places a mark on selected text", async () => {
   const { vfs } = await createFile(
     "essay.txt",
@@ -170,8 +169,7 @@ Deno.test("VFS.mark -- stores provenance when provided", async () => {
   assertEquals(all[1].meta, undefined);
 });
 
-// -- mark with versionId --
-
+// mark with versionId
 Deno.test("VFS.mark -- versionId marks the given version, not latest", async () => {
   const { vfs, versionId: v1 } = await createFile("f.txt", "hello world");
   await vfs.write("f.txt", "goodbye world");
@@ -252,8 +250,7 @@ Deno.test("VFS.mark -- returns marked false for unknown versionId", async () => 
   assertEquals(result.mark_id, "");
 });
 
-// -- getMarks --
-
+// getMarks
 Deno.test("VFS.getMarks -- returns empty array when no marks", async () => {
   const { vfs, versionId } = await createFile("f.txt", "hello world");
   const marks = await vfs.getMarks("f.txt", versionId);
@@ -275,8 +272,7 @@ Deno.test("VFS.getMarks -- returns all marks for a version", async () => {
   assertEquals(marks[1].selected_text, "fox");
 });
 
-// -- deleteMark --
-
+// deleteMark
 Deno.test("VFS.deleteMark -- removes a mark", async () => {
   const { vfs, versionId } = await createFile("f.txt", "hello world");
   const result = await vfs.mark("f.txt", "hello", "greeting");
@@ -295,8 +291,7 @@ Deno.test("VFS.deleteMark -- returns false for nonexistent mark", async () => {
   assertEquals(deleted, false);
 });
 
-// -- mark migration on write --
-
+// mark migration on write
 Deno.test("VFS.write -- migrates marks to new version when text unchanged", async () => {
   const { vfs } = await createFile("f.txt", "hello world");
 
@@ -369,8 +364,7 @@ Deno.test("VFS.write -- no marks to migrate on first write", async () => {
   assertEquals(file.lines, 1);
 });
 
-// -- mark migration on revert --
-
+// mark migration on revert
 Deno.test("VFS.revert -- migrates marks through write", async () => {
   const { vfs, versionId: v1 } = await createFile("f.txt", "hello world");
 
@@ -387,8 +381,7 @@ Deno.test("VFS.revert -- migrates marks through write", async () => {
   });
 });
 
-// -- migrateMarks --
-
+// migrateMarks
 Deno.test("VFS.migrateMarks -- re-anchors marks added to an old version", async () => {
   const { vfs, versionId: v1 } = await createFile("f.txt", "hello world");
   await vfs.mark("f.txt", "hello", "greeting");

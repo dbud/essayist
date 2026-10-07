@@ -2,8 +2,7 @@ import { z } from "zod";
 
 // Config entities stored in KV under the ["cfg", ...] prefix.
 
-// -- model pools --
-
+// model pools
 /** An ordered pool of model ids. */
 export const ModelPoolSchema = z.object({
   id: z.string(),
@@ -13,8 +12,7 @@ export const ModelPoolSchema = z.object({
 });
 export type ModelPool = z.infer<typeof ModelPoolSchema>;
 
-// -- prompts --
-
+// prompts
 /** A named prompt template with {{var}} placeholders. */
 export const PromptSchema = z.object({
   /** Stable name. */
@@ -23,8 +21,7 @@ export const PromptSchema = z.object({
 });
 export type Prompt = z.infer<typeof PromptSchema>;
 
-// -- categories (mark labels) --
-
+// categories (mark labels)
 /** An allowed mark label. */
 export const CategorySchema = z.object({
   id: z.string(),
@@ -37,8 +34,7 @@ export const CategorySchema = z.object({
 });
 export type Category = z.infer<typeof CategorySchema>;
 
-// -- review passes --
-
+// review passes
 export const ReviewUnitSchema = z.object({
   id: z.string().min(1),
   /** Per-unit task prompt. */
@@ -76,8 +72,7 @@ export const ReviewPassSchema = z.object({
 });
 export type ReviewPass = z.infer<typeof ReviewPassSchema>;
 
-// -- resolved bundles (computed, not stored) --
-
+// resolved bundles (computed, not stored)
 /** Rendered prompts for a unit: pass system prompt plus unit task. */
 export interface ResolvedPrompts {
   system: string;

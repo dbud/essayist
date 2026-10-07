@@ -9,7 +9,7 @@ export {
   resolveActiveReviewPass,
   resolveReviewPass,
 } from "@/config/resolve.ts";
-export { ConfigStore } from "@/config/store.ts";
+export { ReviewConfig } from "@/config/service.ts";
 export { extractVariables } from "@/config/template.ts";
 export type {
   Category,

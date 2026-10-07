@@ -1,6 +1,6 @@
-import { ReviewPassSchema } from "@essayist/core";
+import { ReviewConfig, ReviewPassSchema } from "@essayist/core";
 import { define } from "@/define.ts";
-import { configStore } from "@/store.ts";
+import { runtime } from "@/store.ts";
 
 export const handler = {
   PUT: define.handlers(async (ctx) => {
@@ -13,13 +13,17 @@ export const handler = {
         { status: 400 },
       );
     }
-    await configStore.saveReviewPass(parsed.data);
+    await runtime.runPromise(
+      ReviewConfig.use((store) => store.saveReviewPass(parsed.data)),
+    );
     return Response.json(parsed.data);
   }),
 
   DELETE: define.handlers(async (ctx) => {
     const { id } = ctx.params;
-    await configStore.deleteReviewPass(id);
+    await runtime.runPromise(
+      ReviewConfig.use((store) => store.deleteReviewPass(id)),
+    );
     return Response.json({ ok: true });
   }),
 };

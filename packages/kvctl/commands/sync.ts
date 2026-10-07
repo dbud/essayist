@@ -1,5 +1,6 @@
 import { Command, EnumType } from "@cliffy/command";
-import { ConfigStore, KvAdapter } from "@essayist/core";
+import { Persistence, ReviewConfig } from "@essayist/core";
+import { Layer, ManagedRuntime } from "effect";
 import {
   FAMILIES,
   FAMILY_ORDER,
@@ -37,13 +38,20 @@ export const sync = new Command<KvctlGlobals>()
     }
     const keys: FamilyKey[] =
       family === "all" ? FAMILY_ORDER : [family as FamilyKey];
-    const sourceKv = await Deno.openKv(sourcePath);
+    // One config runtime per store; each opens its own handle to its path
+    // and disposes it. A raw target handle covers the categories cache
+    // epoch bump, a plain key write outside the config service.
     const targetKv = await Deno.openKv(targetPath);
+    const sourceRuntime = ManagedRuntime.make(
+      Layer.provide(ReviewConfig.layerNoDeps, Persistence.layerKv(sourcePath)),
+    );
+    const targetRuntime = ManagedRuntime.make(
+      Layer.provide(ReviewConfig.layerNoDeps, Persistence.layerKv(targetPath)),
+    );
     try {
       const ctx: SyncCtx = {
-        source: new ConfigStore(new KvAdapter(sourceKv)),
-        target: new ConfigStore(new KvAdapter(targetKv)),
-        kv: targetKv,
+        source: sourceRuntime,
+        target: targetRuntime,
       };
       for (const key of keys) {
         const { line, changed } = await FAMILIES[key](ctx, prune);
@@ -51,12 +59,13 @@ export const sync = new Command<KvctlGlobals>()
         if (key === "categories" && changed) {
           // A running instance watches this key; bump it so the new
           // categories are picked up immediately.
-          await ctx.kv.set(CATEGORIES_EPOCH, Date.now());
+          await targetKv.set(CATEGORIES_EPOCH, Date.now());
         }
       }
       if (keys.includes("passes") || prune) await warnBrokenRefs(ctx);
     } finally {
-      sourceKv.close();
+      await sourceRuntime.dispose();
+      await targetRuntime.dispose();
       targetKv.close();
     }
   });

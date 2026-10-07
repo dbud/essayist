@@ -1,8 +1,8 @@
 import {
-  ConfigStore,
   KvAdapter,
   Persistence,
   type PersistenceError,
+  ReviewConfig,
   ReviewStore,
   TraceEventStore,
   type User,
@@ -17,8 +17,9 @@ import { seedDemo } from "@/seed.ts";
  * Backing stores for the web app.
  *
  * Stores mid-migration to Effect live on a shared `KvAdapter`; migrated
- * ones are services behind one `ManagedRuntime`. UserState and Workspaces
- * run on the runtime; Config, Review, and traces still use the adapter.
+ * ones are services behind one `ManagedRuntime`. UserState, Workspaces,
+ * and ReviewConfig run on the runtime; Review and traces still use the
+ * adapter.
  *
  * On Deno Deploy, `Deno.openKv()` connects to the platform KV. In local dev
  * (`DENO_ENV=development`) it opens a project-relative SQLite file
@@ -31,13 +32,12 @@ export const kv = isDev
   : await Deno.openKv();
 
 export const adapter = new KvAdapter(kv);
-export const configStore = new ConfigStore(adapter);
 export const reviewStore = new ReviewStore(adapter);
 export const traceStore = new TraceEventStore(adapter);
 
 /** The runtime's service environment, for call sites that pass it on. */
 export type Runtime = ManagedRuntime.ManagedRuntime<
-  UserState | Workspaces,
+  UserState | Workspaces | ReviewConfig,
   PersistenceError
 >;
 
@@ -51,7 +51,11 @@ export type Runtime = ManagedRuntime.ManagedRuntime<
  */
 export const runtime: Runtime = ManagedRuntime.make(
   Layer.provide(
-    Layer.merge(UserState.layerNoDeps, Workspaces.layerNoDeps),
+    Layer.mergeAll(
+      UserState.layerNoDeps,
+      Workspaces.layerNoDeps,
+      ReviewConfig.layerNoDeps,
+    ),
     Persistence.layerKv(isDev ? "./local-kv.sqlite3" : undefined),
   ),
 );

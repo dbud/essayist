@@ -4,7 +4,7 @@ import {
   runReviewPass,
 } from "@essayist/core";
 import { define } from "@/define.ts";
-import { reviewStore, traceStore } from "@/store.ts";
+import { reviewStore, runtime, traceStore } from "@/store.ts";
 import { ResolveAgentError, resolveAgent } from "@/utils/agent.ts";
 import { sseResponse } from "@/utils/sse.ts";
 
@@ -15,12 +15,12 @@ export const handler = {
       return Response.json({ error: "Missing 'path'" }, { status: 400 });
     }
 
-    const { config, vfs, wsId } = ctx.state;
+    const { vfs, wsId } = ctx.state;
     // Promote the pending draft first: the review reads the latest
     // checkpoint, so it covers the current content.
     await vfs.promoteDraft(path);
     try {
-      const { agent, pass } = await resolveAgent(config);
+      const { agent, pass } = await resolveAgent(runtime);
       return sseResponse(async (send) => {
         try {
           const run = await runReviewPass({

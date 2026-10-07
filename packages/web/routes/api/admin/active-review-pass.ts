@@ -1,5 +1,6 @@
+import { ReviewConfig } from "@essayist/core";
 import { define } from "@/define.ts";
-import { configStore } from "@/store.ts";
+import { runtime } from "@/store.ts";
 
 export const handler = {
   PUT: define.handlers(async (ctx) => {
@@ -13,14 +14,18 @@ export const handler = {
         { status: 400 },
       );
     }
-    const pass = await configStore.getReviewPass(reviewPassId);
+    const pass = await runtime.runPromise(
+      ReviewConfig.use((store) => store.getReviewPass(reviewPassId)),
+    );
     if (!pass) {
       return Response.json(
         { error: `Review pass "${reviewPassId}" not found` },
         { status: 404 },
       );
     }
-    await configStore.setActiveReviewPass(reviewPassId);
+    await runtime.runPromise(
+      ReviewConfig.use((store) => store.setActiveReviewPass(reviewPassId)),
+    );
     return Response.json({ activeReviewPassId: reviewPassId });
   }),
 };

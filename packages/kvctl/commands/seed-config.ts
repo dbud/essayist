@@ -1,17 +1,22 @@
 import { Command } from "@cliffy/command";
+import { ReviewConfig } from "@essayist/core";
 import type { KvctlGlobals } from "@/globals.ts";
 import { withKv } from "@/kv.ts";
 
 export const seedConfig = new Command<KvctlGlobals>()
   .description("Seed default review config.")
   .action(({ target, local }) =>
-    withKv({ target, local }, async ({ config }) => {
+    withKv({ target, local }, async ({ runtime }) => {
       const poolId = "free-pool";
-      await config.saveModelPool({
-        id: poolId,
-        name: "Free pool",
-        models: ["stealth/space-bunny-alpha", "qwen/qwen3.8-27b:free"],
-      });
+      await runtime.runPromise(
+        ReviewConfig.use((store) =>
+          store.saveModelPool({
+            id: poolId,
+            name: "Free pool",
+            models: ["stealth/space-bunny-alpha", "qwen/qwen3.8-27b:free"],
+          }),
+        ),
+      );
 
       // A shared system prompt; units differentiate through directives.
       const systemPromptKey = "system.reviewer";
@@ -45,7 +50,11 @@ export const seedConfig = new Command<KvctlGlobals>()
           body: "Every mark must quote the exact text from the numbered essay content. Use the allowed labels only. Comments are one or two sentences, specific and actionable. Place every mark you can defend; do not pad, and do not repeat an issue listed under a different aspect.",
         },
       ];
-      for (const p of prompts) await config.savePrompt(p);
+      for (const p of prompts) {
+        await runtime.runPromise(
+          ReviewConfig.use((store) => store.savePrompt(p)),
+        );
+      }
 
       const categories = [
         {
@@ -79,7 +88,11 @@ export const seedConfig = new Command<KvctlGlobals>()
           color: "oklch(65% 0.4 300)",
         },
       ] as const;
-      for (const c of categories) await config.saveCategory(c);
+      for (const c of categories) {
+        await runtime.runPromise(
+          ReviewConfig.use((store) => store.saveCategory(c)),
+        );
+      }
 
       const reviewPassId = "essay-review";
       const units = [
@@ -114,15 +127,21 @@ export const seedConfig = new Command<KvctlGlobals>()
           inputs: ["mechanics", "structure", "argument"],
         },
       ];
-      await config.saveReviewPass({
-        id: reviewPassId,
-        name: "Essay review",
-        systemPromptKey,
-        modelPoolId: poolId,
-        variables: {},
-        units,
-      });
-      await config.setActiveReviewPass(reviewPassId);
+      await runtime.runPromise(
+        ReviewConfig.use((store) =>
+          store.saveReviewPass({
+            id: reviewPassId,
+            name: "Essay review",
+            systemPromptKey,
+            modelPoolId: poolId,
+            variables: {},
+            units,
+          }),
+        ),
+      );
+      await runtime.runPromise(
+        ReviewConfig.use((store) => store.setActiveReviewPass(reviewPassId)),
+      );
 
       console.log(
         `seeded default config: model pool '${poolId}', ${prompts.length} prompts, ${categories.length} categories, review pass '${reviewPassId}' with ${units.length} units (active)`,

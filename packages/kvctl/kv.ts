@@ -2,10 +2,10 @@
 
 import { fileURLToPath } from "node:url";
 import {
-  ConfigStore,
   KvAdapter,
   Persistence,
   type PersistenceError,
+  ReviewConfig,
   TraceEventStore,
   Workspaces,
 } from "@essayist/core";
@@ -22,10 +22,15 @@ export const LOCAL_KV = fileURLToPath(
 // every isolate drop its cache instead of waiting out the TTL.
 export const CATEGORIES_EPOCH: Deno.KvKey = ["cache_epoch", "categories"];
 
+/** The services kvctl commands reach through the runtime. */
+export type KvRuntime = ManagedRuntime.ManagedRuntime<
+  Workspaces | ReviewConfig,
+  PersistenceError
+>;
+
 interface KvCtx {
   kv: Deno.Kv;
-  runtime: ManagedRuntime.ManagedRuntime<Workspaces, PersistenceError>;
-  config: ConfigStore;
+  runtime: KvRuntime;
   traceStore: TraceEventStore;
 }
 
@@ -45,18 +50,16 @@ export async function withKv<T>(
   const adapter = new KvAdapter(kv);
   // The runtime opens its own handle to the same store, and closes it on
   // dispose, so the fn's promise does not outlive the CLI invocation.
-  const runtime: ManagedRuntime.ManagedRuntime<Workspaces, PersistenceError> =
-    ManagedRuntime.make(
-      Layer.provide(
-        Workspaces.layerNoDeps,
-        Persistence.layerKv(resolveTarget(globals)),
-      ),
-    );
+  const runtime: KvRuntime = ManagedRuntime.make(
+    Layer.provide(
+      Layer.mergeAll(Workspaces.layerNoDeps, ReviewConfig.layerNoDeps),
+      Persistence.layerKv(resolveTarget(globals)),
+    ),
+  );
   try {
     return await fn({
       kv,
       runtime,
-      config: new ConfigStore(adapter),
       traceStore: new TraceEventStore(adapter),
     });
   } finally {
