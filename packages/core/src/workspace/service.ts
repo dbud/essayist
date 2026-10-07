@@ -194,18 +194,18 @@ export class Workspaces extends Context.Service<Workspaces, Interface>()(
 
         const isAdmin = (user: User): boolean => user.role === "admin";
 
-        const createWorkspace = (name: string, ownerId: string) =>
-          Effect.gen(function* () {
-            const id = crypto.randomUUID();
-            const createdAt = Date.now();
-            const workspace: Workspace = { id, name, ownerId, createdAt };
-            const ownerMember: WorkspaceMember = {
-              wsId: id,
-              userId: ownerId,
-              role: "owner",
-              createdAt,
-            };
-            yield* persistence.batch([
+        const createWorkspace = (name: string, ownerId: string) => {
+          const id = crypto.randomUUID();
+          const createdAt = Date.now();
+          const workspace: Workspace = { id, name, ownerId, createdAt };
+          const ownerMember: WorkspaceMember = {
+            wsId: id,
+            userId: ownerId,
+            role: "owner",
+            createdAt,
+          };
+          return persistence
+            .batch([
               { type: "set", key: [WORKSPACES, id], value: workspace },
               {
                 type: "set",
@@ -222,9 +222,9 @@ export class Workspaces extends Context.Service<Workspaces, Interface>()(
                 key: [MEMBERS_BY_USER, ownerId, id],
                 value: true,
               },
-            ]);
-            return workspace;
-          });
+            ])
+            .pipe(Effect.as(workspace));
+        };
 
         const getWorkspace = (id: string) =>
           persistence
