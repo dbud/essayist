@@ -27,31 +27,32 @@ interface SelectedFile {
   path: string;
 }
 
-export class UserState extends Context.Service<
-  UserState,
-  {
-    /** The user's most recent workspace selection. */
-    getSelectedWorkspace(
-      userId: string,
-    ): Effect.Effect<string | undefined, PersistenceError>;
-    /** Pin the user's most recent workspace selection. */
-    setSelectedWorkspace(
-      userId: string,
-      wsId: string,
-    ): Effect.Effect<void, PersistenceError | ConcurrentModificationError>;
-    /** The user's most recent file selection within a workspace. */
-    getSelectedFile(
-      userId: string,
-      wsId: string,
-    ): Effect.Effect<string | undefined, PersistenceError>;
-    /** Pin the user's most recent file selection within a workspace. */
-    setSelectedFile(
-      userId: string,
-      wsId: string,
-      path: string,
-    ): Effect.Effect<void, PersistenceError | ConcurrentModificationError>;
-  }
->()("@essayist/core/user_state/UserState") {
+export interface Interface {
+  /** The user's most recent workspace selection. */
+  getSelectedWorkspace(
+    userId: string,
+  ): Effect.Effect<string | undefined, PersistenceError>;
+  /** Pin the user's most recent workspace selection. */
+  setSelectedWorkspace(
+    userId: string,
+    wsId: string,
+  ): Effect.Effect<void, PersistenceError | ConcurrentModificationError>;
+  /** The user's most recent file selection within a workspace. */
+  getSelectedFile(
+    userId: string,
+    wsId: string,
+  ): Effect.Effect<string | undefined, PersistenceError>;
+  /** Pin the user's most recent file selection within a workspace. */
+  setSelectedFile(
+    userId: string,
+    wsId: string,
+    path: string,
+  ): Effect.Effect<void, PersistenceError | ConcurrentModificationError>;
+}
+
+export class UserState extends Context.Service<UserState, Interface>()(
+  "@essayist/core/user_state/UserState",
+) {
   /** Requires the {@linkcode Persistence} service; compose with layerKv or
    * layerMemory at the composition root. */
   static readonly layerNoDeps: Layer.Layer<UserState, never, Persistence> =
