@@ -116,3 +116,4 @@ export {
   type Workspace,
   type WorkspaceMember,
 } from "@/workspace/types.ts";
+export { WorkspaceId } from "@/workspace/WorkspaceId.ts";
