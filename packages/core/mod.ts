@@ -27,6 +27,7 @@ export {
   ReviewPassSchema,
   ReviewUnitSchema,
 } from "@/config/types.ts";
+export { setMyers } from "@/diff/diff.ts";
 export { pluralize } from "@/format.ts";
 export { logger } from "@/logger.ts";
 export { measure, measureAsync } from "@/measure.ts";
@@ -44,7 +45,6 @@ export {
   type ReadOptions as AdapterReadOptions,
   type WriteOp,
 } from "@/persistence/mod.ts";
-
 export { isTransientError } from "@/retry_policy.ts";
 export { buildReviewGraph } from "@/reviews/adapter.ts";
 export { agentflowDefinition } from "@/reviews/agentflow.ts";
@@ -82,7 +82,6 @@ export type {
 } from "@/tools/registry.ts";
 export { getToolInfos } from "@/tools/registry.ts";
 export { UserState } from "@/user_state/service.ts";
-export { setMyers } from "@/vfs/diff.ts";
 export type { ResolveInput, ResolveOptions } from "@/vfs/marks_resolver.ts";
 export { resolveMarks } from "@/vfs/marks_resolver.ts";
 export type { VersionPin } from "@/vfs/pin.ts";

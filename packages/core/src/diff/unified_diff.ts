@@ -1,4 +1,4 @@
-import { type DiffOp, myersDiff } from "@/vfs/diff.ts";
+import { type DiffOp, myersDiff } from "./diff.ts";
 
 const CONTEXT_LINES = 3;
 
