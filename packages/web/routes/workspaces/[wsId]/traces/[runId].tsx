@@ -6,7 +6,7 @@ import type {
   TraceEvent,
   TraceNodeView,
 } from "@essayist/core";
-import { groupTraceNodes } from "@essayist/core";
+import { groupTraceNodes, Workspaces } from "@essayist/core";
 import type { PageProps } from "fresh";
 import { page } from "fresh";
 import {
@@ -27,7 +27,7 @@ import type { ComponentChildren } from "preact";
 import MarkdownView from "@/components/MarkdownView.tsx";
 import { define, type State } from "@/define.ts";
 import Navigation from "@/islands/Navigation.tsx";
-import { reviewStore, traceStore, workspaceStore } from "@/store.ts";
+import { reviewStore, runtime, traceStore } from "@/store.ts";
 
 interface TracePageData {
   run: ReviewRun;
@@ -37,7 +37,10 @@ interface TracePageData {
 export const handler = define.handlers({
   async GET(ctx) {
     const { wsId, runId } = ctx.params;
-    if (!(await workspaceStore.hasAccess(wsId, ctx.state.user.id))) {
+    const allowed = await runtime.runPromise(
+      Workspaces.use((store) => store.hasAccess(wsId, ctx.state.user.id)),
+    );
+    if (!allowed) {
       return ctx.redirect("/");
     }
     const run = await reviewStore.getRun({ wsId, id: runId });

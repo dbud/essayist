@@ -1,8 +1,8 @@
-import { UserState, VirtualFileSystem } from "@essayist/core";
+import { UserState, VirtualFileSystem, Workspaces } from "@essayist/core";
 import { define } from "@/define.ts";
 import { seedDemoFiles } from "@/seed.ts";
 import { workspacesLoader } from "@/signals/workspace.server.ts";
-import { adapter, runtime, workspaceStore } from "@/store.ts";
+import { adapter, runtime } from "@/store.ts";
 
 export const handler = {
   GET: define.handlers(async ({ state, url }) => {
@@ -17,7 +17,10 @@ export const handler = {
     if (!selectedId) {
       return Response.json({ error: "Missing 'selectedId'" }, { status: 400 });
     }
-    if (!(await workspaceStore.hasAccess(selectedId, ctx.state.user.id))) {
+    const allowed = await runtime.runPromise(
+      Workspaces.use((store) => store.hasAccess(selectedId, ctx.state.user.id)),
+    );
+    if (!allowed) {
       return Response.json({ error: "Forbidden" }, { status: 403 });
     }
     await runtime.runPromise(
@@ -36,9 +39,8 @@ export const handler = {
     if (!name) {
       return Response.json({ error: "Missing 'name'" }, { status: 400 });
     }
-    const workspace = await workspaceStore.createWorkspace(
-      name,
-      ctx.state.user.id,
+    const workspace = await runtime.runPromise(
+      Workspaces.use((store) => store.createWorkspace(name, ctx.state.user.id)),
     );
     // Seed the new workspace with the same sample essay + marks used by the
     // demo workspace, so it isn't empty on first open.

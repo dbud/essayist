@@ -1,23 +1,25 @@
-import { LastOwnerError } from "@essayist/core";
+import { LastOwnerError, Workspaces } from "@essayist/core";
 import { define } from "@/define.ts";
-import { workspaceStore } from "@/store.ts";
+import { runtime } from "@/store.ts";
 
 export const handler = {
   // Only owners can remove members.
   DELETE: define.handlers(async (ctx) => {
     const { userId } = ctx.params;
 
-    const isOwner = await workspaceStore.hasAccess(
-      ctx.state.wsId,
-      ctx.state.user.id,
-      "owner",
+    const isOwner = await runtime.runPromise(
+      Workspaces.use((store) =>
+        store.hasAccess(ctx.state.wsId, ctx.state.user.id, "owner"),
+      ),
     );
     if (!isOwner) {
       return Response.json({ error: "Forbidden" }, { status: 403 });
     }
 
     try {
-      const removed = await workspaceStore.removeMember(ctx.state.wsId, userId);
+      const removed = await runtime.runPromise(
+        Workspaces.use((store) => store.removeMember(ctx.state.wsId, userId)),
+      );
       if (!removed) {
         return Response.json({ error: "Not a member" }, { status: 404 });
       }

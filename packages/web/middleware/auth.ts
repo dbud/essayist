@@ -1,6 +1,7 @@
+import { Workspaces } from "@essayist/core";
 import type { Middleware } from "fresh";
 import { define, type State } from "@/define.ts";
-import { configStore, demoUser, workspaceStore } from "@/store.ts";
+import { configStore, demoUser, runtime } from "@/store.ts";
 import { getOAuthHelpers } from "@/utils/oauth.ts";
 import { getUserIdForSession } from "@/utils/sessions.ts";
 
@@ -33,7 +34,9 @@ const authMiddleware: Middleware<State> = define.middleware(async (ctx) => {
   if (isDev) {
     const headerId = ctx.req.headers.get("X-User-Id");
     if (headerId) {
-      const user = await workspaceStore.getUser(headerId);
+      const user = await runtime.runPromise(
+        Workspaces.use((store) => store.getUser(headerId)),
+      );
       if (!user) {
         return Response.json({ error: "Unknown user" }, { status: 401 });
       }
@@ -48,7 +51,9 @@ const authMiddleware: Middleware<State> = define.middleware(async (ctx) => {
     if (sessionId) {
       const userId = await getUserIdForSession(sessionId);
       if (userId) {
-        const user = await workspaceStore.getUser(userId);
+        const user = await runtime.runPromise(
+          Workspaces.use((store) => store.getUser(userId)),
+        );
         if (user) {
           ctx.state.user = user;
           ctx.state.sessionId = sessionId;

@@ -1,9 +1,12 @@
+import { Workspaces } from "@essayist/core";
 import { define } from "@/define.ts";
-import { workspaceStore } from "@/store.ts";
+import { runtime } from "@/store.ts";
 
 export const handler = {
   GET: define.handlers(async (ctx) => {
-    const workspace = await workspaceStore.getWorkspace(ctx.state.wsId);
+    const workspace = await runtime.runPromise(
+      Workspaces.use((store) => store.getWorkspace(ctx.state.wsId)),
+    );
     if (!workspace) {
       return Response.json({ error: "Not found" }, { status: 404 });
     }

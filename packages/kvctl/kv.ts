@@ -4,9 +4,12 @@ import { fileURLToPath } from "node:url";
 import {
   ConfigStore,
   KvAdapter,
+  Persistence,
+  type PersistenceError,
   TraceEventStore,
-  WorkspaceStore,
+  Workspaces,
 } from "@essayist/core";
+import { Layer, ManagedRuntime } from "effect";
 import type { KvctlGlobals } from "@/globals.ts";
 
 // The local playground KV, also used by the web dev server. Resolved from
@@ -21,7 +24,7 @@ export const CATEGORIES_EPOCH: Deno.KvKey = ["cache_epoch", "categories"];
 
 interface KvCtx {
   kv: Deno.Kv;
-  workspaceStore: WorkspaceStore;
+  runtime: ManagedRuntime.ManagedRuntime<Workspaces, PersistenceError>;
   config: ConfigStore;
   traceStore: TraceEventStore;
 }
@@ -40,14 +43,24 @@ export async function withKv<T>(
 ): Promise<T> {
   const kv = await Deno.openKv(resolveTarget(globals));
   const adapter = new KvAdapter(kv);
+  // The runtime opens its own handle to the same store, and closes it on
+  // dispose, so the fn's promise does not outlive the CLI invocation.
+  const runtime: ManagedRuntime.ManagedRuntime<Workspaces, PersistenceError> =
+    ManagedRuntime.make(
+      Layer.provide(
+        Workspaces.layerNoDeps,
+        Persistence.layerKv(resolveTarget(globals)),
+      ),
+    );
   try {
     return await fn({
       kv,
-      workspaceStore: new WorkspaceStore(adapter),
+      runtime,
       config: new ConfigStore(adapter),
       traceStore: new TraceEventStore(adapter),
     });
   } finally {
+    await runtime.dispose();
     kv.close();
   }
 }

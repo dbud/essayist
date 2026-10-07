@@ -1,6 +1,6 @@
-import { VirtualFileSystem } from "@essayist/core";
+import { VirtualFileSystem, Workspaces } from "@essayist/core";
 import { define } from "@/define.ts";
-import { adapter, workspaceStore } from "@/store.ts";
+import { adapter, runtime } from "@/store.ts";
 
 /**
  * Resolve the workspace from the route's `:wsId` param, enforce access, and
@@ -11,7 +11,9 @@ import { adapter, workspaceStore } from "@/store.ts";
  */
 export default define.middleware(async (ctx) => {
   const wsId = ctx.params.wsId;
-  const hasAccess = await workspaceStore.hasAccess(wsId, ctx.state.user.id);
+  const hasAccess = await runtime.runPromise(
+    Workspaces.use((store) => store.hasAccess(wsId, ctx.state.user.id)),
+  );
   if (!hasAccess) {
     return Response.json({ error: "Forbidden" }, { status: 403 });
   }

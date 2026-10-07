@@ -1,10 +1,6 @@
-import type {
-  PersistenceAdapter,
-  User,
-  Workspace,
-  WorkspaceStore,
-} from "@essayist/core";
-import { VirtualFileSystem } from "@essayist/core";
+import type { PersistenceAdapter, User, Workspace } from "@essayist/core";
+import { VirtualFileSystem, Workspaces } from "@essayist/core";
+import type { Runtime } from "@/store.ts";
 
 // Original demo essay. Paragraphs are single lines so mark selections can
 // match exact substrings without whitespace ambiguity.
@@ -111,25 +107,27 @@ export interface DemoData {
  * file; the next boot re-seeds from scratch.
  */
 export async function seedDemo(
-  workspaceStore: WorkspaceStore,
+  runtime: Runtime,
   adapter: PersistenceAdapter,
 ): Promise<DemoData> {
   const seeded = (await adapter.get<boolean>(SEED_SENTINEL))?.value;
   if (seeded) {
-    return loadDemo(workspaceStore);
+    return loadDemo(runtime);
   }
 
   // Dev demo data; the only caller gates on DENO_ENV=development. Granting
   // admin here keeps /admin reachable after a wipe without kvctl.
-  const created = await workspaceStore.createUser({
-    email: "demo@example.com",
-    name: "Demo User",
-  });
+  const created = await runtime.runPromise(
+    Workspaces.use((store) =>
+      store.createUser({ email: "demo@example.com", name: "Demo User" }),
+    ),
+  );
   const demoUser =
-    (await workspaceStore.setUserRole(created.id, "admin")) ?? created;
-  const demoWorkspace = await workspaceStore.createWorkspace(
-    "Demo",
-    demoUser.id,
+    (await runtime.runPromise(
+      Workspaces.use((store) => store.setUserRole(created.id, "admin")),
+    )) ?? created;
+  const demoWorkspace = await runtime.runPromise(
+    Workspaces.use((store) => store.createWorkspace("Demo", demoUser.id)),
   );
 
   await seedDemoFiles(new VirtualFileSystem(adapter, demoWorkspace.id));
@@ -139,14 +137,18 @@ export async function seedDemo(
 }
 
 /** Load the previously-seeded demo entities (sentinel already set). */
-async function loadDemo(workspaceStore: WorkspaceStore): Promise<DemoData> {
-  const demoUser = await workspaceStore.getUserByEmail("demo@example.com");
+async function loadDemo(runtime: Runtime): Promise<DemoData> {
+  const demoUser = await runtime.runPromise(
+    Workspaces.use((store) => store.getUserByEmail("demo@example.com")),
+  );
   if (!demoUser) {
     throw new Error(
       "Seed sentinel is set but demo users are missing; run `deno task kvctl wipe` and restart.",
     );
   }
-  const workspaces = await workspaceStore.listWorkspacesForUser(demoUser.id);
+  const workspaces = await runtime.runPromise(
+    Workspaces.use((store) => store.listWorkspacesForUser(demoUser.id)),
+  );
   const demoWorkspace = workspaces.find((w) => w.name === "Demo");
   if (!demoWorkspace) {
     throw new Error(

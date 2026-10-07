@@ -2,12 +2,13 @@ import {
   ConfigStore,
   KvAdapter,
   Persistence,
+  type PersistenceError,
   ReviewStore,
   TraceEventStore,
   type User,
   UserState,
   type Workspace,
-  WorkspaceStore,
+  Workspaces,
 } from "@essayist/core";
 import { Layer, ManagedRuntime } from "effect";
 import { seedDemo } from "@/seed.ts";
@@ -16,8 +17,8 @@ import { seedDemo } from "@/seed.ts";
  * Backing stores for the web app.
  *
  * Stores mid-migration to Effect live on a shared `KvAdapter`; migrated
- * ones are services behind one `ManagedRuntime`. UserState is on the
- * runtime; Workspace, Config, Review, and traces still use the adapter.
+ * ones are services behind one `ManagedRuntime`. UserState and Workspaces
+ * run on the runtime; Config, Review, and traces still use the adapter.
  *
  * On Deno Deploy, `Deno.openKv()` connects to the platform KV. In local dev
  * (`DENO_ENV=development`) it opens a project-relative SQLite file
@@ -30,10 +31,15 @@ export const kv = isDev
   : await Deno.openKv();
 
 export const adapter = new KvAdapter(kv);
-export const workspaceStore = new WorkspaceStore(adapter);
 export const configStore = new ConfigStore(adapter);
 export const reviewStore = new ReviewStore(adapter);
 export const traceStore = new TraceEventStore(adapter);
+
+/** The runtime's service environment, for call sites that pass it on. */
+export type Runtime = ManagedRuntime.ManagedRuntime<
+  UserState | Workspaces,
+  PersistenceError
+>;
 
 /**
  * The Effect runtime for migrated stores. Its layers open their own KV
@@ -43,9 +49,9 @@ export const traceStore = new TraceEventStore(adapter);
  * Deno Deploy or the dev server. Failure typing reaches call sites as
  * rejected promises, so handler behavior is unchanged.
  */
-export const runtime = ManagedRuntime.make(
+export const runtime: Runtime = ManagedRuntime.make(
   Layer.provide(
-    UserState.layerNoDeps,
+    Layer.merge(UserState.layerNoDeps, Workspaces.layerNoDeps),
     Persistence.layerKv(isDev ? "./local-kv.sqlite3" : undefined),
   ),
 );
@@ -55,6 +61,6 @@ export const runtime = ManagedRuntime.make(
  * boot via {@link seedDemo}. `undefined` outside dev; real auth/identity
  * replaces this later. IDs are stable across restarts once seeded.
  */
-const demo = isDev ? await seedDemo(workspaceStore, adapter) : undefined;
+const demo = isDev ? await seedDemo(runtime, adapter) : undefined;
 export const demoUser: User | undefined = demo?.demoUser;
 export const demoWorkspace: Workspace | undefined = demo?.demoWorkspace;

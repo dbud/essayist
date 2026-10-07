@@ -1,10 +1,12 @@
-import { UserState } from "@essayist/core";
+import { UserState, Workspaces } from "@essayist/core";
 import { type Context, registerLoader } from "@/signals/models.server.ts";
 import { type WorkspacesData, workspacesNs } from "@/signals/workspace.ts";
-import { runtime, workspaceStore } from "@/store.ts";
+import { runtime } from "@/store.ts";
 
 export async function workspacesLoader(ctx: Context): Promise<WorkspacesData> {
-  const workspaces = await workspaceStore.listWorkspacesForUser(ctx.user.id);
+  const workspaces = await runtime.runPromise(
+    Workspaces.use((store) => store.listWorkspacesForUser(ctx.user.id)),
+  );
   const persisted = await runtime.runPromise(
     UserState.use((store) => store.getSelectedWorkspace(ctx.user.id)),
   );

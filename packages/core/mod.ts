@@ -104,7 +104,7 @@ export type {
   WriteResult,
 } from "@/vfs/types.ts";
 export { VirtualFileSystem } from "@/vfs/vfs.ts";
-export { WorkspaceStore } from "@/workspace/store.ts";
+export { Workspaces } from "@/workspace/service.ts";
 export {
   LastOwnerError,
   type Role,

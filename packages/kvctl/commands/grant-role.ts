@@ -1,5 +1,5 @@
 import { Command, EnumType } from "@cliffy/command";
-import { USER_ROLES } from "@essayist/core";
+import { USER_ROLES, Workspaces } from "@essayist/core";
 import type { KvctlGlobals } from "@/globals.ts";
 import { withKv } from "@/kv.ts";
 
@@ -10,15 +10,24 @@ export const grantRole = new Command<KvctlGlobals>()
   .type("role", ROLE)
   .arguments("<emailOrId:string> <role:role>")
   .action(({ target, local }, emailOrId: string, role: "admin" | "writer") =>
-    withKv({ target, local }, async ({ workspaceStore }) => {
-      let user = await workspaceStore.getUserByEmail(emailOrId);
-      if (!user && /^[0-9a-f-]{36}$/i.test(emailOrId))
-        user = await workspaceStore.getUser(emailOrId);
+    withKv({ target, local }, async ({ runtime }) => {
+      let user = await runtime.runPromise(
+        Workspaces.use((store) => store.getUserByEmail(emailOrId)),
+      );
+      if (!user && /^[0-9a-f-]{36}$/i.test(emailOrId)) {
+        user = await runtime.runPromise(
+          Workspaces.use((store) => store.getUser(emailOrId)),
+        );
+      }
       if (!user) {
         console.error(`no user matching "${emailOrId}"`);
         Deno.exit(1);
       }
-      const updated = await workspaceStore.setUserRole(user.id, role);
+      // A const alias keeps the narrowing inside the use() callback.
+      const current = user;
+      const updated = await runtime.runPromise(
+        Workspaces.use((store) => store.setUserRole(current.id, role)),
+      );
       console.log(`granted ${role} to ${updated?.email} (${updated?.id})`);
     }),
   );
