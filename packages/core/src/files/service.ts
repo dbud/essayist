@@ -1,37 +1,32 @@
 /**
- * Versioned text files as an Effect service: latest reads, version history,
- * listing, and unified diffs. Writes, drafts, and the mark-list storage land
- * alongside in later commits. The workspace scope comes from the
- * WorkspaceId tag.
- *
- * Key layout (workspace-scoped):
- *   ["ws", wsId, "file:latest", path]                              -> StoredSnapshot
- *   ["ws", wsId, "file:versions", path]                            -> FileVersion[]
- *   ["ws", wsId, "file:content", path, version, "file:manifest"]   -> ContentManifest
- *   ["ws", wsId, "file:content", path, version, "file:chunk", i]   -> Uint8Array
- *   ["ws", wsId, "file:draft", path]                               -> { timestamp }
- *   ["ws", wsId, "marks", path, version]                           -> Mark[]
+ * Versioned text files as an Effect service: latest reads, versioned writes
+ * with in-batch mark migration, listing, history, and unified diffs. The
+ * workspace scope comes from the WorkspaceId tag. The key layout lives in
+ * keys.ts and the shared internals in internals.ts.
  */
 
 import { sortBy } from "@std/collections";
 import { Context, Effect, Layer } from "effect";
 import { unifiedDiff } from "@/diff/unified_diff.ts";
+import { type ContentManifest, chunkContent } from "@/files/chunked_content.ts";
 import {
-  type ContentManifest,
-  chunkContent,
-  reassemble,
-} from "@/files/chunked_content.ts";
-import { resolveMarks } from "@/marks/resolver.ts";
-import {
-  ConcurrentModificationError,
-  type Entry,
-  type Key,
+  type ConcurrentModificationError,
   Persistence,
   type PersistenceError,
   type WriteOp,
 } from "@/persistence/mod.ts";
-import type { Mark } from "@/vfs/types.ts";
 import { WorkspaceId } from "@/workspace/WorkspaceId.ts";
+import { makeInternals, retryConcurrency } from "./internals.ts";
+import {
+  contentChunkKey,
+  contentManifestKey,
+  DRAFT_VERSION_ID,
+  draftKey,
+  fileVersionsKey,
+  latestKey,
+  latestPrefixKey,
+  type StoredSnapshot,
+} from "./keys.ts";
 import type {
   DiffResult,
   FileEntry,
@@ -41,88 +36,6 @@ import type {
   ReadOptions,
   WriteResult,
 } from "./types.ts";
-
-type StoredSnapshot = FileVersion & ContentManifest;
-
-const WORKSPACES = "ws";
-const FILE_LATEST = "file:latest";
-const FILE_VERSIONS = "file:versions";
-const FILE_CONTENT = "file:content";
-const FILE_MANIFEST = "file:manifest";
-const FILE_CHUNK = "file:chunk";
-const FILE_DRAFT = "file:draft";
-const MARKS = "marks";
-
-/** Reserved version id for the mutable draft head. Not in the versions list. */
-const DRAFT_VERSION_ID = "draft";
-
-/** Max keys per getMany round trip; KV caps a single getMany at 10. */
-const MAX_GET_MANY = 10;
-/** Total attempts for an optimistic-concurrency retry (plus the first). */
-const MAX_ATTEMPTS = 10;
-
-const latestKey = (wsId: string, path: string): Key => [
-  WORKSPACES,
-  wsId,
-  FILE_LATEST,
-  path,
-];
-
-const fileVersionsKey = (wsId: string, path: string): Key => [
-  WORKSPACES,
-  wsId,
-  FILE_VERSIONS,
-  path,
-];
-
-const contentManifestKey = (
-  wsId: string,
-  path: string,
-  versionId: string,
-): Key => [WORKSPACES, wsId, FILE_CONTENT, path, versionId, FILE_MANIFEST];
-
-const contentChunkKey = (
-  wsId: string,
-  path: string,
-  versionId: string,
-  index: number,
-): Key => [
-  WORKSPACES,
-  wsId,
-  FILE_CONTENT,
-  path,
-  versionId,
-  FILE_CHUNK,
-  String(index),
-];
-
-const marksKey = (wsId: string, path: string, versionId: string): Key => [
-  WORKSPACES,
-  wsId,
-  MARKS,
-  path,
-  versionId,
-];
-
-const draftKey = (wsId: string, path: string): Key => [
-  WORKSPACES,
-  wsId,
-  FILE_DRAFT,
-  path,
-];
-
-/**
- * Retry an optimistic-concurrency attempt on a checked batch rejection: the
- * attempt re-runs until the guard matches. Mirrors the legacy class's
- * 10-attempt retry with no delay between attempts.
- */
-const retryConcurrency = <A, E, R>(
-  effect: Effect.Effect<A, E, R>,
-): Effect.Effect<A, E, R> =>
-  Effect.retry(effect, {
-    times: MAX_ATTEMPTS - 1,
-    while: (error) => error instanceof ConcurrentModificationError,
-  });
 
 export interface Interface {
   /**
@@ -174,120 +87,8 @@ export class Files extends Context.Service<Files, Interface>()(
       Files,
       Effect.gen(function* () {
         const persistence = yield* Persistence;
+        const internals = makeInternals(persistence);
         let versionSeq = 0;
-
-        /** Fetch many keys, batching around the getMany round-trip limit. */
-        const getManyBatched = <T>(
-          keys: Key[],
-        ): Effect.Effect<(Entry<T> | undefined)[], PersistenceError> =>
-          Effect.gen(function* () {
-            const results: (Entry<T> | undefined)[] = [];
-            for (let i = 0; i < keys.length; i += MAX_GET_MANY) {
-              const batch = keys.slice(i, i + MAX_GET_MANY);
-              const entries = yield* persistence.getMany<T>(batch);
-              results.push(...entries);
-            }
-            return results;
-          });
-
-        /** Reassemble content from a manifest, fetching extra chunks. */
-        const reassembleContent = (
-          wsId: string,
-          path: string,
-          versionId: string,
-          manifest: ContentManifest,
-        ): Effect.Effect<string, PersistenceError> =>
-          Effect.gen(function* () {
-            if (manifest.chunkCount === 1) {
-              return reassemble(manifest, []);
-            }
-            const keys = Array.from(
-              { length: manifest.chunkCount - 1 },
-              (_, i) => contentChunkKey(wsId, path, versionId, i + 1),
-            );
-            const entries = yield* getManyBatched<Uint8Array>(keys);
-            const extraChunks: Uint8Array[] = [];
-            for (const e of entries) {
-              if (e) extraChunks.push(e.value);
-            }
-            return reassemble(manifest, extraChunks);
-          });
-
-        /** The latest version's snapshot, or undefined when the file is absent. */
-        const getFile = (
-          wsId: string,
-          path: string,
-        ): Effect.Effect<FileSnapshot | undefined, PersistenceError> =>
-          Effect.gen(function* () {
-            const entry = yield* persistence.get<StoredSnapshot>(
-              latestKey(wsId, path),
-            );
-            if (!entry) return undefined;
-            const { version_id, chunkCount, firstChunk, ...rest } = entry.value;
-            const content = yield* reassembleContent(wsId, path, version_id, {
-              chunkCount,
-              firstChunk,
-            });
-            return { version_id, content, ...rest };
-          });
-
-        const getVersion = (
-          wsId: string,
-          path: string,
-          versionId: string,
-        ): Effect.Effect<FileVersion | undefined, PersistenceError> =>
-          Effect.gen(function* () {
-            const entry = yield* persistence.get<FileVersion[]>(
-              fileVersionsKey(wsId, path),
-            );
-            return entry?.value.find((v) => v.version_id === versionId);
-          });
-
-        const getVersionContent = (
-          wsId: string,
-          path: string,
-          versionId: string,
-        ): Effect.Effect<string, PersistenceError> =>
-          Effect.gen(function* () {
-            const manifestEntry = yield* persistence.get<ContentManifest>(
-              contentManifestKey(wsId, path, versionId),
-            );
-            if (!manifestEntry) return "";
-            return yield* reassembleContent(
-              wsId,
-              path,
-              versionId,
-              manifestEntry.value,
-            );
-          });
-
-        const getMarksList = (
-          wsId: string,
-          path: string,
-          versionId: string,
-        ): Effect.Effect<Mark[], PersistenceError> =>
-          Effect.gen(function* () {
-            const entry = yield* persistence.get<Mark[]>(
-              marksKey(wsId, path, versionId),
-            );
-            return entry?.value ?? [];
-          });
-
-        /** Snapshot of the given version, or the latest when none is given. */
-        const getSnapshot = (
-          wsId: string,
-          path: string,
-          versionId?: string,
-        ): Effect.Effect<FileSnapshot | undefined, PersistenceError> =>
-          Effect.gen(function* () {
-            if (!versionId) return yield* getFile(wsId, path);
-            const [version, content] = yield* Effect.all([
-              getVersion(wsId, path, versionId),
-              getVersionContent(wsId, path, versionId),
-            ]);
-            if (!version) return undefined;
-            return { ...version, content };
-          });
 
         const read = (
           path: string,
@@ -301,7 +102,7 @@ export class Files extends Context.Service<Files, Interface>()(
               version_id: "",
               timestamp: 0,
               lines: 0,
-              ...(yield* getSnapshot(wsId, path, versionId)),
+              ...(yield* internals.getSnapshot(wsId, path, versionId)),
             };
             const start = Math.max(1, startLine ?? 1);
             const end = Math.min(snapshot.lines, endLine ?? snapshot.lines);
@@ -388,7 +189,7 @@ export class Files extends Context.Service<Files, Interface>()(
 
               // Migrate marks from the previous version into the new version.
               if (previousVersionId) {
-                const migration = yield* migrationOp(
+                const migration = yield* internals.migrationOp(
                   wsId,
                   path,
                   previousVersionId,
@@ -434,58 +235,14 @@ export class Files extends Context.Service<Files, Interface>()(
             }),
           );
 
-        /**
-         * Set-op giving targetVersionId's marks plus fromVersionId's marks
-         * re-anchored onto newContent; undefined when nothing is pending.
-         * fromVersionId marks whose thread_id is already on the target are
-         * skipped.
-         */
-        const migrationOp = (
-          wsId: string,
-          path: string,
-          fromVersionId: string,
-          targetVersionId: string,
-          targetMarks: Mark[],
-          newContent: string,
-        ): Effect.Effect<
-          { op: WriteOp; marks: Mark[] } | undefined,
-          PersistenceError
-        > =>
-          Effect.gen(function* () {
-            const fromMarks = yield* getMarksList(wsId, path, fromVersionId);
-            const existing = new Set(targetMarks.map((m) => m.thread_id));
-            const pending = fromMarks.filter((m) => !existing.has(m.thread_id));
-            if (pending.length === 0) return undefined;
-            const oldContent = yield* getVersionContent(
-              wsId,
-              path,
-              fromVersionId,
-            );
-            const marks = resolveMarks({
-              marks: pending,
-              oldContent,
-              newContent,
-            });
-            return {
-              op: {
-                type: "set",
-                key: marksKey(wsId, path, targetVersionId),
-                value: [...targetMarks, ...marks],
-              },
-              marks,
-            };
-          });
-
         const list = (
           prefix?: string,
         ): Effect.Effect<FileEntry[], PersistenceError, WorkspaceId> =>
           Effect.gen(function* () {
             const { wsId } = yield* WorkspaceId;
-            const { entries } = yield* persistence.list<StoredSnapshot>([
-              WORKSPACES,
-              wsId,
-              FILE_LATEST,
-            ]);
+            const { entries } = yield* persistence.list<StoredSnapshot>(
+              latestPrefixKey(wsId),
+            );
             const result: FileEntry[] = [];
             for (const entry of entries) {
               const path = String(entry.key[entry.key.length - 1]);
@@ -516,8 +273,8 @@ export class Files extends Context.Service<Files, Interface>()(
           Effect.gen(function* () {
             const { wsId } = yield* WorkspaceId;
             const [contentA, contentB] = yield* Effect.all([
-              getVersionContent(wsId, path, versionA),
-              getVersionContent(wsId, path, versionB),
+              internals.getVersionContent(wsId, path, versionA),
+              internals.getVersionContent(wsId, path, versionB),
             ]);
             return {
               diff: unifiedDiff(contentA, contentB, versionA, versionB),
