@@ -30,6 +30,8 @@ export {
 export { setMyers } from "@/diff/diff.ts";
 export { pluralize } from "@/format.ts";
 export { logger } from "@/logger.ts";
+export type { ResolveInput, ResolveOptions } from "@/marks/resolver.ts";
+export { resolveMarks } from "@/marks/resolver.ts";
 export { measure, measureAsync } from "@/measure.ts";
 export { KvAdapter } from "@/persistence/kv_adapter.ts";
 export {
@@ -82,8 +84,6 @@ export type {
 } from "@/tools/registry.ts";
 export { getToolInfos } from "@/tools/registry.ts";
 export { UserState } from "@/user_state/service.ts";
-export type { ResolveInput, ResolveOptions } from "@/vfs/marks_resolver.ts";
-export { resolveMarks } from "@/vfs/marks_resolver.ts";
 export type { VersionPin } from "@/vfs/pin.ts";
 export { PinnedVFS } from "@/vfs/pin.ts";
 export type {

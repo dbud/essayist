@@ -1,11 +1,7 @@
 import { assertEquals } from "@std/assert/equals";
 import { assertExists } from "@std/assert/exists";
 import { assertObjectMatch } from "@std/assert/object-match";
-import {
-  TokenizedText,
-  tokenDiceSimilarity,
-  wordTokens,
-} from "@/vfs/text_search.ts";
+import { TokenizedText, tokenDiceSimilarity, wordTokens } from "./tokenized.ts";
 
 // TokenizedText.findExactNear -- exact match nearest to a point
 

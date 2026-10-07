@@ -1,7 +1,7 @@
 import { assertEquals } from "@std/assert";
 import { assertObjectMatch } from "@std/assert/object-match";
-import { type ResolveOptions, resolveMarks } from "./marks_resolver.ts";
-import type { Mark } from "./types.ts";
+import type { Mark } from "@/vfs/types.ts";
+import { type ResolveOptions, resolveMarks } from "./resolver.ts";
 
 function createMark(
   overrides: Partial<Mark> & { selected_text: string },

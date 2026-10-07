@@ -1,4 +1,4 @@
-import { createTokenizer, type Token } from "@/vfs/text_utils.ts";
+import { createTokenizer, type Token } from "@/text/tokenizer.ts";
 
 export interface DiffHunk {
   type: "insert" | "delete" | "replace";

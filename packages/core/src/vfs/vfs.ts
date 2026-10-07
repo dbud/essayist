@@ -1,6 +1,8 @@
 import type { FileSnapshot } from "@essayist/core";
 import { sortBy } from "@std/collections";
 import { unifiedDiff } from "@/diff/unified_diff.ts";
+import { resolveMarks } from "@/marks/resolver.ts";
+import { TokenizedText } from "@/marks/tokenized.ts";
 import {
   ConcurrentModificationError,
   type Entry,
@@ -13,8 +15,6 @@ import {
   chunkContent,
   reassemble,
 } from "@/vfs/chunked_content.ts";
-import { resolveMarks } from "@/vfs/marks_resolver.ts";
-import { TokenizedText } from "@/vfs/text_search.ts";
 import type {
   DiffResult,
   DraftSnapshot,

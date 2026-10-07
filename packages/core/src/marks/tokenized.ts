@@ -1,4 +1,4 @@
-import { createTokenizer, type Token } from "@/vfs/text_utils.ts";
+import { createTokenizer, type Token } from "@/text/tokenizer.ts";
 
 const WORD_REGEX = /[\p{L}\p{N}]+/gu;
 
