@@ -2,8 +2,10 @@ import { sortBy } from "@std/collections";
 import {
   type ClaimOptions,
   claim,
+  heartbeat,
   type Key,
   type PersistenceAdapter,
+  stripLease,
 } from "@/persistence/mod.ts";
 import type { ReviewRun, ReviewRunStatus } from "./types.ts";
 
@@ -106,6 +108,13 @@ export class ReviewStore {
     return claim<ReviewRun>(this.#adapter, [REVIEWS, wsId, id], options);
   }
 
+  heartbeatRun(
+    { wsId, id }: { wsId: string; id: string },
+    owner: string,
+  ): Promise<boolean> {
+    return heartbeat<ReviewRun>(this.#adapter, [REVIEWS, wsId, id], owner);
+  }
+
   async #end(
     wsId: string,
     id: string,
@@ -116,7 +125,7 @@ export class ReviewStore {
     const entry = await this.#adapter.get<ReviewRun>(key);
     if (!entry) return undefined;
     const run: ReviewRun = {
-      ...entry.value,
+      ...stripLease(entry.value),
       status,
       completedAt: Date.now(),
       ...extra,

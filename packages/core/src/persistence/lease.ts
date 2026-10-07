@@ -52,3 +52,40 @@ export async function claim<T>(
   }
   return claimed;
 }
+
+/**
+ * Renew the lease on a record, only while it is leased to the given
+ * owner. Unlike claim, this never takes a lease.
+ *
+ * Returns false when the record is gone, another owner holds the lease,
+ * or a concurrent write won the race.
+ */
+export async function heartbeat<T>(
+  adapter: PersistenceAdapter,
+  key: Key,
+  owner: string,
+): Promise<boolean> {
+  const entry = await adapter.get<Leased<T>>(key);
+  if (!entry || entry.value.leaseOwner !== owner) return false;
+  const renewed: Leased<T> = {
+    ...entry.value,
+    heartbeatAt: Date.now(),
+  };
+  try {
+    await adapter.batch([{ type: "set", key, value: renewed }], {
+      checks: [{ key, versionstamp: entry.versionstamp }],
+    });
+  } catch (error) {
+    if (error instanceof ConcurrentModificationError) return false;
+    throw error;
+  }
+  return true;
+}
+
+/** Strip the lease fields off a record. */
+export function stripLease<T extends Lease>(
+  value: T,
+): Omit<T, "leaseOwner" | "heartbeatAt"> {
+  const { leaseOwner: _leaseOwner, heartbeatAt: _heartbeatAt, ...body } = value;
+  return body;
+}

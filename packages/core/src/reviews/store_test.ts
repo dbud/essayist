@@ -137,6 +137,78 @@ Deno.test("ReviewStore -- claimRun returns undefined for an unknown run", async 
   );
 });
 
+Deno.test("ReviewStore -- heartbeatRun renews only our own lease", async () => {
+  const store = createStore();
+  const run = await store.createRun({
+    wsId: "ws",
+    path: "essay.txt",
+    reviewPassId: "pass",
+  });
+
+  assertEquals(
+    await store.heartbeatRun({ wsId: "ws", id: run.id }, "driver-a"),
+    false,
+  );
+
+  await store.claimRun(
+    { wsId: "ws", id: run.id },
+    { owner: "driver-a", heartbeatAtLeast: 0 },
+  );
+
+  assertEquals(
+    await store.heartbeatRun({ wsId: "ws", id: run.id }, "driver-a"),
+    true,
+  );
+  assertEquals(
+    await store.heartbeatRun({ wsId: "ws", id: run.id }, "driver-b"),
+    false,
+  );
+  assertEquals(
+    (await store.getRun({ wsId: "ws", id: run.id }))?.leaseOwner,
+    "driver-a",
+  );
+});
+
+Deno.test("ReviewStore -- heartbeatRun returns false for an unknown run", async () => {
+  const store = createStore();
+  assertEquals(
+    await store.heartbeatRun({ wsId: "ws", id: "nope" }, "driver-a"),
+    false,
+  );
+});
+
+Deno.test("ReviewStore -- completing and failing a run releases its lease", async () => {
+  const store = createStore();
+  const a = await store.createRun({
+    wsId: "ws",
+    path: "a.txt",
+    reviewPassId: "pass",
+  });
+  const b = await store.createRun({
+    wsId: "ws",
+    path: "b.txt",
+    reviewPassId: "pass",
+  });
+  await store.claimRun(
+    { wsId: "ws", id: a.id },
+    { owner: "driver-a", heartbeatAtLeast: 0 },
+  );
+  await store.claimRun(
+    { wsId: "ws", id: b.id },
+    { owner: "driver-a", heartbeatAtLeast: 0 },
+  );
+
+  await store.completeRun({ wsId: "ws", id: a.id, summary: "ok" });
+  await store.failRun({ wsId: "ws", id: b.id, error: "boom" });
+
+  const completed = await store.getRun({ wsId: "ws", id: a.id });
+  assertEquals(completed?.leaseOwner, undefined);
+  assertEquals(completed?.heartbeatAt, undefined);
+  const failed = await store.getRun({ wsId: "ws", id: b.id });
+  assertEquals(failed?.leaseOwner, undefined);
+  assertEquals(failed?.heartbeatAt, undefined);
+});
+
 Deno.test("ReviewStore -- listRuns newest first", async () => {
   const store = createStore();
   const a = await store.createRun({

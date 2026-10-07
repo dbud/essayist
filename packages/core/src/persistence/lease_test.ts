@@ -1,5 +1,5 @@
-import { assertEquals } from "@std/assert";
-import { claim } from "./lease.ts";
+import { assert, assertEquals } from "@std/assert";
+import { claim, heartbeat, stripLease } from "./lease.ts";
 import { InMemoryAdapter, type Leased } from "./mod.ts";
 
 interface Note extends Leased<{ id: string; body: string }> {
@@ -110,4 +110,64 @@ Deno.test("claim -- two owners racing, only one wins", async () => {
     (await a.get<Note>(KEY))?.value.leaseOwner,
     winners[0].leaseOwner,
   );
+});
+
+Deno.test("heartbeat -- renews our own lease, however old it is", async () => {
+  const a = adapter();
+  await seed(a, {
+    id: "n1",
+    body: "hello",
+    leaseOwner: "driver-a",
+    heartbeatAt: 1000,
+  });
+
+  const held = await heartbeat<Note>(a, KEY, "driver-a");
+
+  assertEquals(held, true);
+  const renewed = (await a.get<Note>(KEY))?.value;
+  assertEquals(renewed?.leaseOwner, "driver-a");
+  assert((renewed?.heartbeatAt ?? 0) > 1000);
+  assertEquals(renewed?.body, "hello");
+});
+
+Deno.test("heartbeat -- refuses a lease held by another owner", async () => {
+  const a = adapter();
+  await seed(a, {
+    id: "n1",
+    body: "hello",
+    leaseOwner: "driver-b",
+    heartbeatAt: 1000,
+  });
+
+  assertEquals(await heartbeat<Note>(a, KEY, "driver-a"), false);
+
+  const untouched = (await a.get<Note>(KEY))?.value;
+  assertEquals(untouched?.leaseOwner, "driver-b");
+  assertEquals(untouched?.heartbeatAt, 1000);
+});
+
+Deno.test("heartbeat -- refuses an unleased record", async () => {
+  const a = adapter();
+  await seed(a, { id: "n1", body: "hello" });
+
+  assertEquals(await heartbeat<Note>(a, KEY, "driver-a"), false);
+  assertEquals((await a.get<Note>(KEY))?.value.leaseOwner, undefined);
+});
+
+Deno.test("heartbeat -- returns false for an absent record", async () => {
+  const a = adapter();
+  assertEquals(await heartbeat<Note>(a, KEY, "driver-a"), false);
+});
+
+Deno.test("stripLease -- drops the lease fields", () => {
+  const record: Note = {
+    id: "n1",
+    body: "hello",
+    leaseOwner: "driver-a",
+    heartbeatAt: 3,
+  };
+
+  const bare = stripLease(record);
+
+  assertEquals(bare, { id: "n1", body: "hello" });
 });

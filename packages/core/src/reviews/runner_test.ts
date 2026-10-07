@@ -1,4 +1,4 @@
-import { assertEquals, assertRejects } from "@std/assert";
+import { assert, assertEquals, assertRejects } from "@std/assert";
 import type { ResolvedReviewPass, ReviewUnit } from "@/config/types.ts";
 import type { NodeRun } from "@/flow/types.ts";
 import { InMemoryAdapter } from "@/persistence/mod.ts";
@@ -48,7 +48,25 @@ function setup() {
   const adapter = new InMemoryAdapter();
   const reviewStore = new ReviewStore(adapter);
   const traceStore = new TraceEventStore(adapter);
-  return { reviewStore, traceStore };
+  return { adapter, reviewStore, traceStore };
+}
+
+class CountingReviewStore extends ReviewStore {
+  renewed = 0;
+  refused = 0;
+
+  override async heartbeatRun(
+    keys: { wsId: string; id: string },
+    owner: string,
+  ): Promise<boolean> {
+    const held = await super.heartbeatRun(keys, owner);
+    if (held) {
+      this.renewed += 1;
+    } else {
+      this.refused += 1;
+    }
+    return held;
+  }
 }
 
 const ANALYSIS_ROUND =
@@ -473,4 +491,108 @@ Deno.test("runReviewPass -- throws when the file does not exist", async () => {
 
   // No run row: nothing was reviewed, so there is nothing to report on.
   assertEquals(await reviewStore.listRuns({ wsId: "ws" }), []);
+});
+
+Deno.test("runReviewPass -- heartbeats the lease while running, then releases it", async () => {
+  const { vfs } = await createFile("essay.txt", "hello brave world");
+  const store = new CountingReviewStore(new InMemoryAdapter());
+  const traceStore = new TraceEventStore(new InMemoryAdapter());
+  const { agent } = createSpyClient([
+    { text: ANALYSIS_ROUND },
+    { text: '{"summary":"Solid draft."}' },
+  ]);
+
+  const run = await runReviewPass({
+    agent,
+    vfs,
+    reviewStore: store,
+    traceStore,
+    pass: passFixture([
+      unitFixture({ id: "analyze" }),
+      unitFixture({ id: "summary", summary: true, inputs: ["analyze"] }),
+    ]),
+    wsId: "ws",
+    path: "essay.txt",
+  });
+
+  assertEquals(run.status, "completed");
+  assert(store.renewed >= 1);
+  // A refused beat would mean the finish raced the release.
+  assertEquals(store.refused, 0);
+  const row = await store.getRun({ wsId: "ws", id: run.id });
+  assertEquals(row?.leaseOwner, undefined);
+  assertEquals(row?.heartbeatAt, undefined);
+});
+
+Deno.test("runReviewPass -- refuses to resume a run another driver holds", async () => {
+  const { vfs } = await createFile("essay.txt", "hello world");
+  const { reviewStore, traceStore } = setup();
+  const { agent } = createSpyClient([]);
+  const run = await reviewStore.createRun({
+    wsId: "ws",
+    path: "essay.txt",
+    reviewPassId: "essay-review",
+    versionId: "v1",
+  });
+  await reviewStore.claimRun(
+    { wsId: "ws", id: run.id },
+    { owner: "driver-x", heartbeatAtLeast: 0 },
+  );
+
+  await assertRejects(
+    () =>
+      resumeReviewPass(
+        {
+          agent,
+          vfs,
+          reviewStore,
+          traceStore,
+          pass: passFixture([unitFixture({ id: "analyze" })]),
+          wsId: "ws",
+          path: "essay.txt",
+        },
+        run.id,
+      ),
+    Error,
+    `Run ${run.id} is claimed by another driver`,
+  );
+});
+
+Deno.test("runReviewPass -- resumes a run whose lease went stale", async () => {
+  const { vfs, versionId } = await createFile("essay.txt", "hello brave world");
+  const { adapter, reviewStore, traceStore } = setup();
+  const run = await reviewStore.createRun({
+    wsId: "ws",
+    path: "essay.txt",
+    reviewPassId: "essay-review",
+    versionId,
+  });
+  // A dead owner, its heartbeat far in the past.
+  await adapter.set(["reviews", "ws", run.id], {
+    ...run,
+    leaseOwner: "driver-dead",
+    heartbeatAt: 1,
+  });
+  const { agent } = createSpyClient([
+    { text: ANALYSIS_ROUND },
+    { text: '{"summary":"Solid draft."}' },
+  ]);
+
+  const resumed = await resumeReviewPass(
+    {
+      agent,
+      vfs,
+      reviewStore,
+      traceStore,
+      pass: passFixture([
+        unitFixture({ id: "analyze" }),
+        unitFixture({ id: "summary", summary: true, inputs: ["analyze"] }),
+      ]),
+      wsId: "ws",
+      path: "essay.txt",
+    },
+    run.id,
+  );
+
+  assertEquals(resumed.status, "completed");
 });

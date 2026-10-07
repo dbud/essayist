@@ -2,6 +2,7 @@ import type { Agent } from "@/agent.ts";
 import type { ResolvedReviewPass } from "@/config/types.ts";
 import { FlowRunner } from "@/flow/runner.ts";
 import { view } from "@/flow/view.ts";
+import { logger } from "@/logger.ts";
 import { buildReviewGraph } from "@/reviews/adapter.ts";
 import { createReviewRunners, type ReviewTypes } from "@/reviews/graph.ts";
 import type { ReviewProgress } from "@/reviews/progress.ts";
@@ -10,6 +11,7 @@ import type { ReviewStore } from "@/reviews/store.ts";
 import { foldCompleted } from "@/reviews/trace/mod.ts";
 import type { TraceEvent, TraceStore } from "@/reviews/trace/types.ts";
 import type { ReviewRun } from "@/reviews/types.ts";
+import { SerialTasks } from "@/utils/serial.ts";
 import { PinnedVFS } from "@/vfs/pin.ts";
 import type { VFS } from "@/vfs/types.ts";
 
@@ -25,6 +27,12 @@ export interface RunReviewPassOptions {
   /** Receives text-free progress snapshots as the run advances. */
   onProgress?: (progress: ReviewProgress) => void;
 }
+
+// Heartbeats go out on flow events, and a timer covers the quiet stretch
+// of a model call. The interval must stay far under the staleness window,
+// or a live run can be stolen.
+const HEARTBEAT_MS = 60_000;
+const HEARTBEAT_STALE_MS = 15 * 60_000;
 
 /** Run a review pass over a file version. */
 export async function runReviewPass(
@@ -79,6 +87,23 @@ async function resume(
   return await execute(options, run, versionId, seq, priorTrace);
 }
 
+/** Claim the lease on the run for a new owner. Throws when another
+ * driver holds a live lease. */
+async function claimRun(
+  options: RunReviewPassOptions,
+  runId: string,
+): Promise<string> {
+  const owner = crypto.randomUUID();
+  const claimed = await options.reviewStore.claimRun(
+    { wsId: options.wsId, id: runId },
+    { owner, heartbeatAtLeast: Date.now() - HEARTBEAT_STALE_MS },
+  );
+  if (!claimed) {
+    throw new Error(`Run ${runId} is claimed by another driver`);
+  }
+  return owner;
+}
+
 async function execute(
   options: RunReviewPassOptions,
   run: ReviewRun,
@@ -86,7 +111,9 @@ async function execute(
   seq: number,
   priorTrace: TraceEvent[] | undefined,
 ): Promise<ReviewRun> {
-  const { agent, onProgress, pass, path, vfs, wsId, traceStore } = options;
+  const owner = await claimRun(options, run.id);
+  const { agent, onProgress, pass, path, reviewStore, vfs, wsId, traceStore } =
+    options;
   const completed = priorTrace ? foldCompleted(priorTrace) : undefined;
   const pinned = new PinnedVFS(vfs, {
     path,
@@ -104,16 +131,46 @@ async function execute(
     tracker ? (event) => tracker.handle(event) : undefined,
     seq,
   );
+
+  let warnedLeaseLost = false;
+  const beats = new SerialTasks();
+  const beat = (): Promise<void> =>
+    beats.add(async () => {
+      try {
+        const held = await reviewStore.heartbeatRun(
+          { wsId, id: run.id },
+          owner,
+        );
+        if (!held && !warnedLeaseLost) {
+          warnedLeaseLost = true;
+          logger.warn({ runId: run.id }, "review run lease lost");
+        }
+      } catch (error) {
+        logger.error({ err: error }, "review run heartbeat failed");
+      }
+    });
+
   const flow = new FlowRunner<ReviewTypes>({
     runners: createReviewRunners({
       agent,
       pinned,
     }),
-    onEvent: (event) => recorder.record(event),
+    onEvent: async (event) => {
+      await recorder.record(event);
+      await beat();
+    },
   });
+
+  const timer = setInterval(() => void beat(), HEARTBEAT_MS);
+  // Stopping waits for beats in flight, so the finish cannot race one.
+  const stopBeats = async (): Promise<void> => {
+    clearInterval(timer);
+    await beats.drain();
+  };
 
   try {
     const result = await flow.run(graph, { completed });
+    await stopBeats();
     if (result.status === "failed") {
       return await fail(options, run, result.errors.join("; "));
     }
@@ -130,6 +187,7 @@ async function execute(
     });
     return done ?? run;
   } catch (caught) {
+    await stopBeats();
     const message = caught instanceof Error ? caught.message : String(caught);
     return await fail(options, run, message);
   }
