@@ -1,8 +1,15 @@
 import { assertEquals } from "@std/assert";
+import { Effect } from "effect";
 import type { ForwardSpec, PassWhenSpec } from "./helpers.ts";
 import { forward, passWhen } from "./helpers.ts";
 import { FlowRunner } from "./runner.ts";
-import type { FlowGraph, FlowTypes, NodeRunner, NodeRunners } from "./types.ts";
+import type {
+  FlowGraph,
+  FlowRunResult,
+  FlowTypes,
+  NodeRunner,
+  NodeRunners,
+} from "./types.ts";
 
 interface HelperTypes extends FlowTypes {
   nodes: {
@@ -19,7 +26,7 @@ interface HelperTypes extends FlowTypes {
 
 const source: NodeRunner<HelperTypes, "source"> = {
   execute({ text }, { artifact }) {
-    return Promise.resolve([
+    return Effect.succeed([
       artifact("text", text),
       artifact("token", text.toUpperCase()),
     ]);
@@ -31,6 +38,11 @@ const runners: NodeRunners<HelperTypes> = {
   relay: forward<HelperTypes, "relay">(),
   gate: passWhen<HelperTypes, "gate">(),
 };
+
+const run = (
+  flow: FlowRunner<HelperTypes>,
+  graph: FlowGraph<HelperTypes>,
+): Promise<FlowRunResult<HelperTypes>> => Effect.runPromise(flow.run(graph));
 
 Deno.test("forward -- re-emits selected types, keeping the producer", async () => {
   const flow = new FlowRunner<HelperTypes>({ runners });
@@ -47,7 +59,7 @@ Deno.test("forward -- re-emits selected types, keeping the producer", async () =
     ],
   };
 
-  const result = await flow.run(graph);
+  const result = await run(flow, graph);
 
   assertEquals(result.status, "completed");
   assertEquals(result.artifacts, [
@@ -75,7 +87,7 @@ Deno.test("passWhen -- forwards while the predicate holds", async () => {
     ],
   };
 
-  const result = await flow.run(graph);
+  const result = await run(flow, graph);
 
   assertEquals(result.status, "completed");
   assertEquals(result.artifacts, [
@@ -103,7 +115,7 @@ Deno.test("passWhen -- completes empty when the predicate fails", async () => {
     ],
   };
 
-  const result = await flow.run(graph);
+  const result = await run(flow, graph);
 
   assertEquals(result.status, "completed");
   // Only the source commit: the gate node completed with nothing.

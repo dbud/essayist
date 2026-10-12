@@ -1,8 +1,8 @@
 /**
  * The review pass driver as an Effect program: the run lifecycle (claim,
- * heartbeat, complete, fail) goes through the ReviewRuns service, and the
- * flow itself stays a promise engine until its own rewrite, bridged at the
- * boundary.
+ * heartbeat, complete, fail) goes through the ReviewRuns service, the flow
+ * engine runs as an Effect, and promise steps bridge through it one step at
+ * a time.
  *
  * Heartbeats run interval-only: one loop fiber sleeps the interval between
  * beats, so beats never overlap and the staleness window (15 minutes vs a
@@ -294,12 +294,7 @@ function execute(
       },
     });
 
-    const flowOutcome = yield* Effect.result(
-      Effect.tryPromise({
-        try: () => flow.run(graph, { completed }),
-        catch: (caught) => caught,
-      }),
-    );
+    const flowOutcome = yield* Effect.result(flow.run(graph, { completed }));
     // The loops stop before the terminal write; an in-flight write is
     // uninterruptible, so it settles first, and the flush below catches
     // anything still buffered.

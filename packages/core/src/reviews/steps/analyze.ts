@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { Agent } from "@/agent.ts";
+import { fromStep } from "@/flow/bridge.ts";
 import type { NodeRunner } from "@/flow/types.ts";
 import { callStructured } from "@/reviews/call.ts";
 import type { ReviewTypes } from "@/reviews/graph.ts";
@@ -62,16 +63,17 @@ export function createAnalyzeRunner(
   agent: Agent,
 ): NodeRunner<ReviewTypes, "analyze"> {
   return {
-    async execute({ prompts, pool }, { inputs, artifact, emit }) {
-      const result = await callStructured({
-        agent,
-        onEvent: emit,
-        input: composeCallInput(prompts, inputs),
-        models: pool.models,
-        schema: AnalysisSchema,
-        includeExample: true,
-      });
-      return [artifact("analysis", result.output)];
-    },
+    execute: ({ prompts, pool }, { inputs, artifact, emit }) =>
+      fromStep(async () => {
+        const result = await callStructured({
+          agent,
+          onEvent: emit,
+          input: composeCallInput(prompts, inputs),
+          models: pool.models,
+          schema: AnalysisSchema,
+          includeExample: true,
+        });
+        return [artifact("analysis", result.output)];
+      }),
   };
 }

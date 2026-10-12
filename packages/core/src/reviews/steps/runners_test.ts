@@ -1,4 +1,5 @@
 import { assertEquals } from "@std/assert";
+import { Effect } from "effect";
 import type { ResolvedReviewUnit } from "@/config/types.ts";
 import type { PassWhenSpec } from "@/flow/helpers.ts";
 import { FlowRunner } from "@/flow/runner.ts";
@@ -61,6 +62,11 @@ function artifactsOf<A extends keyof ReviewTypes["artifacts"]>(
     .map((artifact) => artifact.data);
 }
 
+const run = (
+  flow: FlowRunner<ReviewTypes>,
+  graph: FlowGraph<ReviewTypes>,
+): Promise<FlowRunResult<ReviewTypes>> => Effect.runPromise(flow.run(graph));
+
 Deno.test("review runners -- analyze, propose, apply, and synthesize in a flow", async () => {
   const { vfs, versionId } = await createFile("essay.txt", "hello brave world");
   const pinned = new PinnedVFS(vfs, { path: "essay.txt", versionId });
@@ -113,7 +119,7 @@ Deno.test("review runners -- analyze, propose, apply, and synthesize in a flow",
     ],
   };
 
-  const result = await flow.run(graph);
+  const result = await run(flow, graph);
 
   assertEquals(result.errors, []);
   assertEquals(result.status, "completed");
@@ -161,7 +167,7 @@ Deno.test("review runners -- repair propose stays idle without failures", async 
   const provenance = { runId: "r", unitId: "m" };
   const flow = new FlowRunner<ReviewTypes>({ runners });
 
-  const result = await flow.run({
+  const result = await run(flow, {
     nodes: [
       { id: "content", kind: "source", dependsOn: [] },
       {
@@ -232,7 +238,7 @@ Deno.test("review runners -- a repair round re-quotes failed spans", async () =>
   const provenance = { runId: "r", unitId: "m" };
   const flow = new FlowRunner<ReviewTypes>({ runners });
 
-  const result = await flow.run({
+  const result = await run(flow, {
     nodes: [
       { id: "content", kind: "source", dependsOn: [] },
       {
