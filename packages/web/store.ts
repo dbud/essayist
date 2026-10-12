@@ -3,6 +3,7 @@ import {
   Persistence,
   type PersistenceError,
   ReviewConfig,
+  ReviewRuns,
   ReviewStore,
   TraceEventStore,
   type User,
@@ -37,7 +38,7 @@ export const traceStore = new TraceEventStore(adapter);
 
 /** The runtime's service environment, for call sites that pass it on. */
 export type Runtime = ManagedRuntime.ManagedRuntime<
-  UserState | Workspaces | ReviewConfig,
+  UserState | Workspaces | ReviewConfig | ReviewRuns,
   PersistenceError
 >;
 
@@ -55,6 +56,7 @@ export const runtime: Runtime = ManagedRuntime.make(
       UserState.layerNoDeps,
       Workspaces.layerNoDeps,
       ReviewConfig.layerNoDeps,
+      ReviewRuns.layerNoDeps,
     ),
     Persistence.layerKv(isDev ? "./local-kv.sqlite3" : undefined),
   ),
