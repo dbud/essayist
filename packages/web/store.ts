@@ -1,10 +1,12 @@
 import {
+  ChunkedValues,
   KvAdapter,
   Persistence,
   type PersistenceError,
   ReviewConfig,
   ReviewRuns,
   TraceEventStore,
+  TraceEvents,
   type User,
   UserState,
   type Workspace,
@@ -36,7 +38,7 @@ export const traceStore = new TraceEventStore(adapter);
 
 /** The runtime's service environment, for call sites that pass it on. */
 export type Runtime = ManagedRuntime.ManagedRuntime<
-  UserState | Workspaces | ReviewConfig | ReviewRuns,
+  UserState | Workspaces | ReviewConfig | ReviewRuns | TraceEvents,
   PersistenceError
 >;
 
@@ -55,6 +57,8 @@ export const runtime: Runtime = ManagedRuntime.make(
       Workspaces.layerNoDeps,
       ReviewConfig.layerNoDeps,
       ReviewRuns.layerNoDeps,
+      Layer.provide(TraceEvents.layerNoDeps, ChunkedValues.layerNoDeps),
+      ChunkedValues.layerNoDeps,
     ),
     Persistence.layerKv(isDev ? "./local-kv.sqlite3" : undefined),
   ),

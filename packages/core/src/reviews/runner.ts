@@ -15,6 +15,7 @@ import type { ResolvedReviewPass } from "@/config/types.ts";
 import { FlowRunner } from "@/flow/runner.ts";
 import { view } from "@/flow/view.ts";
 import { logger } from "@/logger.ts";
+import type { MissingChunksError } from "@/persistence/chunked_values.ts";
 import {
   type ConcurrentModificationError,
   PersistenceError,
@@ -25,6 +26,7 @@ import type { ReviewProgress } from "@/reviews/progress.ts";
 import { ReviewProgressTracker } from "@/reviews/progress.ts";
 import { ReviewRuns } from "@/reviews/service.ts";
 import { foldCompleted } from "@/reviews/trace/mod.ts";
+import { TraceEvents } from "@/reviews/trace/service.ts";
 import type { TraceEvent, TraceStore } from "@/reviews/trace/types.ts";
 import type { ReviewRun } from "@/reviews/types.ts";
 import { PinnedVFS } from "@/vfs/pin.ts";
@@ -83,12 +85,17 @@ export type RunnerError =
   | ReviewLeaseTakenError
   | ReviewRunMissingError
   | PersistenceError
-  | ConcurrentModificationError;
+  | ConcurrentModificationError
+  | MissingChunksError;
 
 /** Run a review pass over a file version. */
 export function runReviewPass(
   options: RunReviewPassOptions,
-): Effect.Effect<ReviewRun, RunnerError, ReviewRuns | WorkspaceId> {
+): Effect.Effect<
+  ReviewRun,
+  RunnerError,
+  ReviewRuns | TraceEvents | WorkspaceId
+> {
   const { vfs, path } = options;
   return Effect.gen(function* () {
     const history = yield* Effect.tryPromise({
@@ -107,7 +114,11 @@ export function runReviewPass(
 export function resumeReviewPass(
   options: RunReviewPassOptions,
   runId: string,
-): Effect.Effect<ReviewRun, RunnerError, ReviewRuns | WorkspaceId> {
+): Effect.Effect<
+  ReviewRun,
+  RunnerError,
+  ReviewRuns | TraceEvents | WorkspaceId
+> {
   return Effect.gen(function* () {
     const runs = yield* ReviewRuns;
     const run = yield* runs.getRun(runId);
@@ -123,16 +134,14 @@ function resume(
   options: RunReviewPassOptions,
   run: ReviewRun,
   versionId: string,
-): Effect.Effect<ReviewRun, RunnerError, ReviewRuns | WorkspaceId> {
+): Effect.Effect<
+  ReviewRun,
+  RunnerError,
+  ReviewRuns | TraceEvents | WorkspaceId
+> {
   return Effect.gen(function* () {
-    const priorTrace = yield* Effect.tryPromise({
-      try: () =>
-        options.traceStore.get({
-          wsId: options.wsId,
-          runId: run.id,
-        }),
-      catch: (cause) => new PersistenceError({ cause }),
-    });
+    const traces = yield* TraceEvents;
+    const priorTrace = yield* traces.get(run.id);
     const priorLastSeq = priorTrace?.at(-1)?.seq;
     const seq = priorLastSeq === undefined ? 0 : priorLastSeq + 1;
     return yield* execute(options, run, versionId, seq, priorTrace);
@@ -142,7 +151,11 @@ function resume(
 function start(
   options: RunReviewPassOptions,
   versionId: string,
-): Effect.Effect<ReviewRun, RunnerError, ReviewRuns | WorkspaceId> {
+): Effect.Effect<
+  ReviewRun,
+  RunnerError,
+  ReviewRuns | TraceEvents | WorkspaceId
+> {
   const { pass, path } = options;
   return Effect.gen(function* () {
     const runs = yield* ReviewRuns;
@@ -213,7 +226,11 @@ function execute(
   versionId: string,
   seq: number,
   priorTrace: TraceEvent[] | undefined,
-): Effect.Effect<ReviewRun, RunnerError, ReviewRuns | WorkspaceId> {
+): Effect.Effect<
+  ReviewRun,
+  RunnerError,
+  ReviewRuns | TraceEvents | WorkspaceId
+> {
   return Effect.gen(function* () {
     const runs = yield* ReviewRuns;
     const owner = yield* claim(runs, run.id);

@@ -36,6 +36,10 @@ export { resolveMarks } from "@/marks/resolver.ts";
 export { Marks } from "@/marks/service.ts";
 export { measure, measureAsync } from "@/measure.ts";
 export { ModelClient } from "@/model/service.ts";
+export {
+  ChunkedValues,
+  MissingChunksError,
+} from "@/persistence/chunked_values.ts";
 export { KvAdapter } from "@/persistence/kv_adapter.ts";
 export {
   type BatchOptions,

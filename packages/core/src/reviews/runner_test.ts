@@ -2,6 +2,7 @@ import { assert, assertEquals, assertRejects } from "@std/assert";
 import { type Context, Effect, Layer } from "effect";
 import type { ResolvedReviewPass, ReviewUnit } from "@/config/types.ts";
 import type { NodeRun } from "@/flow/types.ts";
+import { ChunkedValues } from "@/persistence/chunked_values.ts";
 import { KvAdapter } from "@/persistence/kv_adapter.ts";
 import { kvLayer } from "@/persistence/kv_layer.ts";
 import {
@@ -15,6 +16,7 @@ import {
 import { ReviewRuns } from "@/reviews/service.ts";
 import { createSpyClient } from "@/reviews/testing/agent.ts";
 import { type TraceEvent, TraceEventStore } from "@/reviews/trace/mod.ts";
+import { TraceEvents } from "@/reviews/trace/service.ts";
 import type { ReviewRun } from "@/reviews/types.ts";
 import { createFile } from "@/vfs/testing/helpers.ts";
 import { WorkspaceId } from "@/workspace/WorkspaceId.ts";
@@ -55,19 +57,26 @@ function passFixture(units: ReviewUnit[]): ResolvedReviewPass {
   };
 }
 
-// The trace-store fixture and the runner's ReviewRuns service share one
+// The trace-store fixture and the runner's services share one
 // KV store, so runs written on either side are read back on both.
 async function setup() {
   const kv = await Deno.openKv(":memory:");
   const adapter = new KvAdapter(kv);
   const traceStore = new TraceEventStore(adapter);
-  const env = Layer.provide(ReviewRuns.layerNoDeps, kvLayer(kv));
+  const env = Layer.provide(
+    Layer.mergeAll(
+      ReviewRuns.layerNoDeps,
+      Layer.provide(TraceEvents.layerNoDeps, ChunkedValues.layerNoDeps),
+      ChunkedValues.layerNoDeps,
+    ),
+    kvLayer(kv),
+  );
   return { adapter, traceStore, env };
 }
 
 /** Run a small ReviewRuns program against the test's shared KV store. */
 function viaRuns<A>(
-  env: Layer.Layer<ReviewRuns>,
+  env: Layer.Layer<ReviewRuns | TraceEvents>,
   body: (
     runs: Context.Service.Shape<typeof ReviewRuns>,
   ) => Effect.Effect<A, unknown, WorkspaceId>,
@@ -88,7 +97,7 @@ function viaRuns<A>(
 }
 
 async function runPass(
-  env: Layer.Layer<ReviewRuns>,
+  env: Layer.Layer<ReviewRuns | TraceEvents>,
   options: RunReviewPassOptions,
 ): Promise<ReviewRun> {
   return await Effect.runPromise(
@@ -102,7 +111,7 @@ async function runPass(
 }
 
 async function resumePass(
-  env: Layer.Layer<ReviewRuns>,
+  env: Layer.Layer<ReviewRuns | TraceEvents>,
   options: RunReviewPassOptions,
   runId: string,
 ): Promise<ReviewRun> {
@@ -539,10 +548,7 @@ Deno.test("runReviewPass -- heartbeats the lease while running, then releases it
   const adapter = new KvAdapter(kv);
   const traceStore = new TraceEventStore(adapter);
   const count = { renewed: 0, refused: 0 };
-  const env = Layer.provide(
-    countingReviews(kv, count),
-    Layer.provide(ReviewRuns.layerNoDeps, kvLayer(kv)),
-  );
+  const env = countingReviews(kv, count);
   const { agent } = createSpyClient([
     { text: ANALYSIS_ROUND },
     { text: '{"summary":"Solid draft."}' },
@@ -648,8 +654,8 @@ Deno.test("runReviewPass -- resumes a run whose lease went stale", async () => {
 function countingReviews(
   kv: Deno.Kv,
   count: { renewed: number; refused: number },
-): Layer.Layer<ReviewRuns> {
-  return Layer.effect(
+): Layer.Layer<ReviewRuns | TraceEvents> {
+  const heartbeats = Layer.effect(
     ReviewRuns,
     Effect.gen(function* () {
       const base = yield* ReviewRuns;
@@ -664,5 +670,12 @@ function countingReviews(
           }),
       });
     }),
-  ).pipe(Layer.provide(Layer.provide(ReviewRuns.layerNoDeps, kvLayer(kv))));
+  );
+  return Layer.merge(
+    heartbeats,
+    Layer.provide(TraceEvents.layerNoDeps, ChunkedValues.layerNoDeps),
+  ).pipe(
+    Layer.provide(Layer.provide(ReviewRuns.layerNoDeps, kvLayer(kv))),
+    Layer.provide(kvLayer(kv)),
+  );
 }
