@@ -1,6 +1,7 @@
 import {
   ConfigInvalidError,
   ConfigMissingError,
+  Files,
   ModelClient,
   runReviewPass,
   WorkspaceId,
@@ -18,10 +19,10 @@ export const handler = {
       return Response.json({ error: "Missing 'path'" }, { status: 400 });
     }
 
-    const { vfs, wsId } = ctx.state;
+    const { wsId } = ctx.state;
     // Promote the pending draft first: the review reads the latest
     // checkpoint, so it covers the current content.
-    await vfs.promoteDraft(path);
+    await ctx.state.run(Files.use((files) => files.promoteDraft(path)));
     try {
       const { apiKey, pass } = await resolveReviewSetup(runtime);
       return sseResponse(async (send) => {

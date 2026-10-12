@@ -41,7 +41,6 @@
     "./crates/wasm",
     "./packages/web",
     "./packages/core",
-    "./packages/core/integration",
     "./packages/kvctl",
     "./patches/plugin-vite"
   ]

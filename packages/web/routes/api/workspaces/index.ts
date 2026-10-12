@@ -1,9 +1,9 @@
 import { UserState, Workspaces } from "@essayist/core";
 import { define } from "@/define.ts";
+import { runScoped } from "@/run.ts";
 import { seedDemoFiles } from "@/seed.ts";
 import { workspacesLoader } from "@/signals/workspace.server.ts";
 import { runtime } from "@/store.ts";
-import { vfsFor } from "@/vfs.ts";
 
 export const handler = {
   GET: define.handlers(async ({ state, url }) => {
@@ -45,7 +45,7 @@ export const handler = {
     );
     // Seed the new workspace with the same sample essay + marks used by the
     // demo workspace, so it isn't empty on first open.
-    await seedDemoFiles(vfsFor(runtime, workspace.id));
+    await seedDemoFiles(runScoped(runtime, workspace.id));
     return Response.json(workspace, { status: 201 });
   }),
 };

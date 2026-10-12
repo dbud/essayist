@@ -24,11 +24,28 @@ export {
 } from "@/config/types.ts";
 export { setMyers } from "@/diff/diff.ts";
 export { Files } from "@/files/service.ts";
+export type {
+  DiffResult,
+  DraftSnapshot,
+  FileEntry,
+  FileSnapshot,
+  FileVersion,
+  ReadOptions,
+  WriteResult,
+} from "@/files/types.ts";
 export { pluralize } from "@/format.ts";
 export { logger } from "@/logger.ts";
 export type { ResolveInput, ResolveOptions } from "@/marks/resolver.ts";
 export { resolveMarks } from "@/marks/resolver.ts";
 export { Marks } from "@/marks/service.ts";
+export type {
+  Mark,
+  MarkOptions,
+  MarkProvenance,
+  MarkResult,
+  MarkStatus,
+  MigrateMarksResult,
+} from "@/marks/types.ts";
 export { measure, measureAsync } from "@/measure.ts";
 export { ModelClient } from "@/model/service.ts";
 export type {
@@ -72,24 +89,8 @@ export type {
   ReviewRunStatus,
 } from "@/reviews/types.ts";
 export { Search } from "@/search/service.ts";
+export type { GrepMatch, GrepOptions, GrepResult } from "@/search/types.ts";
 export { UserState } from "@/user_state/service.ts";
-export type {
-  DiffResult,
-  DraftSnapshot,
-  FileEntry,
-  FileSnapshot,
-  FileVersion,
-  GrepOptions,
-  GrepResult,
-  Mark,
-  MarkOptions,
-  MarkProvenance,
-  MarkResult,
-  MarkStatus,
-  ReadOptions,
-  VFS,
-  WriteResult,
-} from "@/vfs/types.ts";
 export { Workspaces } from "@/workspace/service.ts";
 export {
   LastOwnerError,

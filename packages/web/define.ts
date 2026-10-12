@@ -1,9 +1,10 @@
-import type { User, VFS } from "@essayist/core";
+import type { User } from "@essayist/core";
 import { createDefine } from "fresh";
+import type { RunScoped } from "@/run.ts";
 
 export interface State {
   user: User;
-  vfs: VFS;
+  run: RunScoped;
   wsId: string;
   sessionId?: string;
 }

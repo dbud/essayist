@@ -3,6 +3,7 @@ import { Effect } from "effect";
 import { z } from "zod";
 import type { NodeRunner } from "@/flow/types.ts";
 import { Marks } from "@/marks/service.ts";
+import type { MarkProvenance } from "@/marks/types.ts";
 import type { ModelClient } from "@/model/service.ts";
 import type {
   ConcurrentModificationError,
@@ -11,7 +12,6 @@ import type {
 import { callStructured } from "@/reviews/call.ts";
 import type { ReviewTypes } from "@/reviews/graph.ts";
 import type { MarkAttempt } from "@/reviews/types.ts";
-import type { MarkProvenance } from "@/vfs/types.ts";
 import type { WorkspaceId } from "@/workspace/WorkspaceId.ts";
 import { composeCallInput, composeRepairInput } from "./input.ts";
 

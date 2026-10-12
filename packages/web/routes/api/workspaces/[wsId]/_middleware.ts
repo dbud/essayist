@@ -1,7 +1,7 @@
 import { Workspaces } from "@essayist/core";
 import { define } from "@/define.ts";
+import { runScoped } from "@/run.ts";
 import { runtime } from "@/store.ts";
-import { vfsFor } from "@/vfs.ts";
 
 /**
  * Resolve the workspace from the route's `:wsId` param, enforce access, and
@@ -19,6 +19,6 @@ export default define.middleware(async (ctx) => {
     return Response.json({ error: "Forbidden" }, { status: 403 });
   }
   ctx.state.wsId = wsId;
-  ctx.state.vfs = vfsFor(runtime, wsId);
+  ctx.state.run = runScoped(runtime, wsId);
   return ctx.next();
 });

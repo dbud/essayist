@@ -1,3 +1,4 @@
+import { Files } from "@essayist/core";
 import { define } from "@/define.ts";
 
 export const handler = {
@@ -9,7 +10,12 @@ export const handler = {
     if (!body || typeof body.content !== "string") {
       return Response.json({ error: "Missing 'content'" }, { status: 400 });
     }
+    const content = body.content;
 
-    return Response.json(await ctx.state.vfs.writeDraft(path, body.content));
+    return Response.json(
+      await ctx.state.run(
+        Files.use((files) => files.writeDraft(path, content)),
+      ),
+    );
   }),
 };

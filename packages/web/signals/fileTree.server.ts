@@ -1,14 +1,17 @@
-import { UserState } from "@essayist/core";
+import { Files, UserState } from "@essayist/core";
+import { runScoped } from "@/run.ts";
 import { type TreeData, treeNs } from "@/signals/fileTree.ts";
 import { type Context, registerLoader } from "@/signals/models.server.ts";
 import { runtime } from "@/store.ts";
-import { vfsFor } from "@/vfs.ts";
 
 export async function fileTreeLoader(
   wsId: string,
   ctx: Context,
 ): Promise<TreeData> {
-  const files = await vfsFor(runtime, wsId).list();
+  const files = await runScoped(
+    runtime,
+    wsId,
+  )(Files.use((files) => files.list()));
   const persisted = await runtime.runPromise(
     UserState.use((store) => store.getSelectedFile(ctx.user.id, wsId)),
   );
