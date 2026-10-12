@@ -1,6 +1,5 @@
 import { assert, assertEquals, assertRejects } from "@std/assert";
 import { Effect } from "effect";
-import { fromStep } from "./bridge.ts";
 import type { FlowRunOptions } from "./runner.ts";
 import { FlowRunner } from "./runner.ts";
 import type {
@@ -177,15 +176,11 @@ Deno.test("FlowRunner -- delivers a custom event while the node still runs", asy
     produce: {
       execute(_, { emit }) {
         emit({ kind: "produced", content: "early" });
-        return fromStep(
-          () =>
-            new Promise((resolve) =>
-              setTimeout(() => {
-                running = false;
-                resolve([]);
-              }, 20),
-            ),
-        );
+        return Effect.gen(function* () {
+          yield* Effect.sleep(20);
+          running = false;
+          return [];
+        });
       },
     },
   };
@@ -211,10 +206,10 @@ Deno.test("FlowRunner -- keeps custom events in emission order", async () => {
     ...runners,
     produce: {
       execute(_, { emit }) {
-        return fromStep(async () => {
+        return Effect.gen(function* () {
           for (const content of ["one", "two", "three"]) {
             emit({ kind: "produced", content });
-            await new Promise((resolve) => setTimeout(resolve, 1));
+            yield* Effect.sleep(1);
           }
           return [];
         });
@@ -248,11 +243,13 @@ Deno.test("FlowRunner -- emits a failing node's events too", async () => {
       boom: {
         execute(_, { emit }) {
           emit({ kind: "produced", content: "before the throw" });
-          return fromStep(() =>
-            Promise.reject(new Error("boom")).finally(() => {
-              running = false;
-            }),
-          );
+          return Effect.gen(function* () {
+            // Yield a macrotask so the queued emissions deliver first, as
+            // they did under the rejected promise's settle order.
+            yield* Effect.sleep(0);
+            running = false;
+            return yield* Effect.fail(new Error("boom"));
+          });
         },
       },
     },
@@ -376,14 +373,10 @@ Deno.test("FlowRunner -- keeps independent branches running after a failure", as
     ...runners,
     produce: {
       execute({ token }, { artifact }) {
-        return fromStep(
-          () =>
-            new Promise((resolve) => {
-              setTimeout(() => {
-                resolve([artifact("token", token)]);
-              }, 5);
-            }),
-        );
+        return Effect.gen(function* () {
+          yield* Effect.sleep(5);
+          return [artifact("token", token)];
+        });
       },
     },
   };
@@ -436,15 +429,11 @@ Deno.test("FlowRunner -- respects maxConcurrency", async () => {
       execute({ token }, { artifact }) {
         active += 1;
         peak = Math.max(peak, active);
-        return fromStep(
-          () =>
-            new Promise((resolve) => {
-              setTimeout(() => {
-                active -= 1;
-                resolve([artifact("token", token)]);
-              }, 5);
-            }),
-        );
+        return Effect.gen(function* () {
+          yield* Effect.sleep(5);
+          active -= 1;
+          return [artifact("token", token)];
+        });
       },
     },
   };
