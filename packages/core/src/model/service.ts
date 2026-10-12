@@ -19,9 +19,9 @@ import { mapNotNullish } from "@std/collections";
 import { Context, Effect, Layer, Result, Schema } from "effect";
 import type { z } from "zod";
 import { logger } from "@/logger.ts";
-import { isTransientError } from "@/retry_policy.ts";
 import { generateInstructions, stripMarkdownFences } from "@/schema.ts";
 import { joinBlocks } from "@/text/markdown.ts";
+import { isTransientError } from "./retry_policy.ts";
 import {
   RETRY_OPTIONS,
   type RepairAttempt,
