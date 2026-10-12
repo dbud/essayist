@@ -24,6 +24,12 @@ export interface FlowRunnerOptions<T extends FlowTypes, R = never> {
   /** Called per event, in emission order; a throwing listener is logged
    * and ignored. */
   onEvent?: (event: FlowEvent<T>) => void;
+  // TODO -- the event chain starts at the OpenRouter SDK's sync hooks, so
+  // emission stays sync until the transport delivers events as an Effect
+  // stream. Once it does, make onEvent and NodeContext.emit effectful: a
+  // throwing listener then logs inline (dropping #listenerFailures), and the
+  // trace logging in reviews/runner.ts moves from flush time back to emit
+  // time.
   /** Max nodes executing at once. Default unbounded. */
   maxConcurrency?: number;
 }
@@ -53,6 +59,8 @@ export class FlowRunner<T extends FlowTypes, R = never> {
   #runners = new Map<string, NodeRunner<T, NodeKind<T>, R>>();
   #onEvent?: (event: FlowEvent<T>) => Promise<void> | void;
   #maxConcurrency: number;
+  /** Listener throws, logged through the logger service when the run exits. */
+  #listenerFailures: unknown[] = [];
 
   constructor(options: FlowRunnerOptions<T, R>) {
     // The registry key is the node kind, so the cast is sound.
@@ -155,13 +163,27 @@ export class FlowRunner<T extends FlowTypes, R = never> {
       const position = new Map(
         wired.keys().map((nodeId, index) => [nodeId, index] as const),
       );
+      const status: FlowRunResult<T>["status"] =
+        errors.size === 0 ? "completed" : "failed";
       return {
-        status: errors.size === 0 ? "completed" : "failed",
+        status,
         errors: [...errors.values()],
         nodeRuns: sortBy(nodeRuns, (run) => position.get(run.nodeId) ?? 0),
         artifacts,
       };
-    });
+    }).pipe(
+      // The sync emission boundary cannot log through the logger service, so
+      // listener failures surface when the run exits.
+      Effect.ensuring(
+        Effect.gen({ self: this }, function* () {
+          for (const caught of this.#listenerFailures.splice(0)) {
+            yield* Effect.logError("flow event listener failed", {
+              error: asMessage(caught),
+            });
+          }
+        }),
+      ),
+    );
   }
 
   #execute(
@@ -218,7 +240,7 @@ export class FlowRunner<T extends FlowTypes, R = never> {
     try {
       this.#onEvent?.(event);
     } catch (caught) {
-      console.error("flow event listener failed", caught);
+      this.#listenerFailures.push(caught);
     }
   }
 }

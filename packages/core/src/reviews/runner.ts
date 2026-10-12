@@ -15,7 +15,6 @@ import { Files } from "@/files/service.ts";
 import { FlowRunner } from "@/flow/runner.ts";
 import type { FlowEvent } from "@/flow/types.ts";
 import { view } from "@/flow/view.ts";
-import { logger } from "@/logger.ts";
 import type { Marks } from "@/marks/service.ts";
 import type { ModelClient } from "@/model/service.ts";
 import type { MissingChunksError } from "@/persistence/chunked_values.ts";
@@ -128,7 +127,9 @@ export function resumeReviewPass(
     if (!run?.versionId) {
       return yield* Effect.fail(new ReviewRunMissingError({ runId }));
     }
-    return yield* resume(options, run, run.versionId);
+    return yield* Effect.annotateLogs(resume(options, run, run.versionId), {
+      runId: run.id,
+    });
   });
 }
 
@@ -159,7 +160,10 @@ function start(
       reviewPassId: pass.pass.id,
       versionId,
     });
-    return yield* execute(options, run, versionId, 0, undefined);
+    return yield* Effect.annotateLogs(
+      execute(options, run, versionId, 0, undefined),
+      { runId: run.id },
+    );
   });
 }
 
@@ -205,10 +209,12 @@ function heartbeatLoop(
         ),
       );
       if (Result.isFailure(held)) {
-        logger.error({ err: held.failure }, "review run heartbeat failed");
+        yield* Effect.logError("review run heartbeat failed", {
+          error: asMessage(held.failure),
+        });
       } else if (!held.success && !warnedLeaseLost) {
         warnedLeaseLost = true;
-        logger.warn({ runId }, "review run lease lost");
+        yield* Effect.logWarning("review run lease lost", { runId });
       }
       yield* Effect.sleep(HEARTBEAT_MS);
     }
@@ -246,12 +252,12 @@ function execute(
         at: Date.now(),
         ...event,
       };
-      logTraceEvent(entry);
       tracker?.handle(entry);
       pending.push(entry);
     };
     const flushPending = Effect.gen(function* () {
       for (const entry of pending.splice(0)) {
+        yield* logTraceEvent(entry);
         yield* Effect.uninterruptible(traces.append(run.id, entry));
       }
     });

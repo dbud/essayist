@@ -1,4 +1,4 @@
-import { logger } from "@/logger.ts";
+import { Effect } from "effect";
 import type { ReviewNodeEvent } from "@/reviews/graph.ts";
 import type { TraceEvent } from "./types.ts";
 
@@ -7,71 +7,83 @@ import type { TraceEvent } from "./types.ts";
  * prod run without a trace is the only record of them. Event content is
  * logged in full at debug.
  */
-export function logTraceEvent(event: TraceEvent): void {
+export function logTraceEvent(event: TraceEvent): Effect.Effect<void> {
   switch (event.type) {
     case "node_start":
-      logger.info({ node: event.nodeId }, "node_start");
-      break;
+      return Effect.logInfo("node_start", { node: event.nodeId });
     case "node_end":
       if (event.run.status === "failed") {
-        logger.error(
-          { node: event.nodeId, error: event.run.error },
-          "node_end",
-        );
+        return Effect.logError("node_end", {
+          node: event.nodeId,
+          error: event.run.error,
+        });
       } else if (event.run.status === "skipped") {
-        logger.info(
-          { node: event.nodeId, reason: event.run.reason },
-          "node_end",
-        );
+        return Effect.logInfo("node_end", {
+          node: event.nodeId,
+          reason: event.run.reason,
+        });
       } else {
-        logger.info(
-          {
-            node: event.nodeId,
-            durationMs: event.run.completedAt - event.run.startedAt,
-            artifacts: event.run.artifacts.length,
-          },
-          "node_end",
-        );
+        return Effect.logInfo("node_end", {
+          node: event.nodeId,
+          durationMs: event.run.completedAt - event.run.startedAt,
+          artifacts: event.run.artifacts.length,
+        });
       }
-      break;
     case "custom":
-      logCustom(event.nodeId, event.event);
-      break;
+      return logCustom(event.nodeId, event.event);
   }
 }
 
-function logCustom(nodeId: string, event: ReviewNodeEvent): void {
+function logCustom(
+  nodeId: string,
+  event: ReviewNodeEvent,
+): Effect.Effect<void> {
   switch (event.type) {
     case "model_call": {
       const { model, turnType, durationMs } = event.call;
-      logger.info({ node: nodeId, model, turnType, durationMs }, "model_call");
-      logger.debug({ node: nodeId, call: event.call }, "model_call");
-      break;
+      return Effect.gen(function* () {
+        yield* Effect.logInfo("model_call", {
+          node: nodeId,
+          model,
+          turnType,
+          durationMs,
+        });
+        yield* Effect.logDebug("model_call", {
+          node: nodeId,
+          call: event.call,
+        });
+      });
     }
     case "prompt":
-      logger.debug({ node: nodeId, text: event.text }, "prompt");
-      break;
+      return Effect.logDebug("prompt", {
+        node: nodeId,
+        text: event.text,
+      });
     case "reasoning":
-      logger.debug({ node: nodeId, text: event.text }, "reasoning");
-      break;
+      return Effect.logDebug("reasoning", {
+        node: nodeId,
+        text: event.text,
+      });
     case "repair":
-      logger.info({ node: nodeId, error: event.error }, "repair");
-      logger.debug({ node: nodeId, raw: event.raw }, "repair");
-      break;
+      return Effect.gen(function* () {
+        yield* Effect.logInfo("repair", { node: nodeId, error: event.error });
+        yield* Effect.logDebug("repair", { node: nodeId, raw: event.raw });
+      });
     case "retry":
-      logger.info(
-        { node: nodeId, attempt: event.attempt, error: event.error },
-        "retry",
-      );
-      break;
+      return Effect.logInfo("retry", {
+        node: nodeId,
+        attempt: event.attempt,
+        error: event.error,
+      });
     case "output":
-      logger.debug({ node: nodeId, output: event.output }, "output");
-      break;
+      return Effect.logDebug("output", {
+        node: nodeId,
+        output: event.output,
+      });
     case "applied":
-      logger.debug(
-        { node: nodeId, attempts: event.attempts.length },
-        "applied",
-      );
-      break;
+      return Effect.logDebug("applied", {
+        node: nodeId,
+        attempts: event.attempts.length,
+      });
   }
 }
