@@ -141,3 +141,50 @@ Deno.test("ReviewRuns.listRuns is workspace-scoped", async () => {
     }),
   );
 });
+
+// end-state ops (claim and heartbeat land in the next commit; the
+// lease-release test rides there too)
+
+Deno.test("ReviewRuns.completeRun sets status, summary, completedAt", async () => {
+  await run(
+    Effect.gen(function* () {
+      const runs = yield* ReviewRuns;
+      const created = yield* runs.createRun({
+        path: "essay.txt",
+        reviewPassId: "pass",
+      });
+
+      const completed = yield* runs.completeRun(created.id, "Looks good.");
+      assertEquals(completed?.status, "completed");
+      assertEquals(completed?.summary, "Looks good.");
+      assertEquals(typeof completed?.completedAt, "number");
+      assertEquals((yield* runs.getRun(created.id))?.status, "completed");
+    }),
+  );
+});
+
+Deno.test("ReviewRuns.failRun sets status and error", async () => {
+  await run(
+    Effect.gen(function* () {
+      const runs = yield* ReviewRuns;
+      const created = yield* runs.createRun({
+        path: "essay.txt",
+        reviewPassId: "pass",
+      });
+
+      const failed = yield* runs.failRun(created.id, "boom");
+      assertEquals(failed?.status, "failed");
+      assertEquals(failed?.error, "boom");
+    }),
+  );
+});
+
+Deno.test("ReviewRuns.completeRun/failRun unknown id return undefined", async () => {
+  await run(
+    Effect.gen(function* () {
+      const runs = yield* ReviewRuns;
+      assertEquals(yield* runs.completeRun("nope", "x"), undefined);
+      assertEquals(yield* runs.failRun("nope", "x"), undefined);
+    }),
+  );
+});

@@ -8,13 +8,15 @@
 
 import { sortBy } from "@std/collections";
 import { Context, Effect, Layer } from "effect";
+import { stripLease } from "@/persistence/lease.ts";
 import {
   type ConcurrentModificationError,
+  type Key,
   Persistence,
   type PersistenceError,
 } from "@/persistence/mod.ts";
 import { WorkspaceId } from "@/workspace/WorkspaceId.ts";
-import type { ReviewRun } from "./types.ts";
+import type { ReviewRun, ReviewRunStatus } from "./types.ts";
 
 const REVIEWS = "reviews";
 
@@ -38,6 +40,24 @@ export interface Interface {
   listRuns(
     path?: string,
   ): Effect.Effect<ReviewRun[], PersistenceError, WorkspaceId>;
+  /** Complete a run with its final summary. Undefined when absent. */
+  completeRun(
+    id: string,
+    summary: string,
+  ): Effect.Effect<
+    ReviewRun | undefined,
+    PersistenceError | ConcurrentModificationError,
+    WorkspaceId
+  >;
+  /** Fail a run with its error. Undefined when absent. */
+  failRun(
+    id: string,
+    error: string,
+  ): Effect.Effect<
+    ReviewRun | undefined,
+    PersistenceError | ConcurrentModificationError,
+    WorkspaceId
+  >;
 }
 
 export class ReviewRuns extends Context.Service<ReviewRuns, Interface>()(
@@ -113,10 +133,45 @@ export class ReviewRuns extends Context.Service<ReviewRuns, Interface>()(
             );
           });
 
+        /** End a run; the lease fields never survive the final state. */
+        const endRun = (
+          id: string,
+          status: ReviewRunStatus,
+          extra: { summary?: string; error?: string },
+        ): Effect.Effect<
+          ReviewRun | undefined,
+          PersistenceError | ConcurrentModificationError,
+          WorkspaceId
+        > =>
+          Effect.gen(function* () {
+            const { wsId } = yield* WorkspaceId;
+            const key: Key = [REVIEWS, wsId, id];
+            const entry = yield* persistence.get<ReviewRun>(key);
+            if (!entry) return undefined;
+            const ended: ReviewRun = {
+              ...stripLease(entry.value),
+              status,
+              completedAt: Date.now(),
+              ...extra,
+            };
+            yield* persistence.batch([{ type: "set", key, value: ended }], {
+              checks: [{ key, versionstamp: entry.versionstamp }],
+            });
+            return ended;
+          });
+
+        const completeRun = (id: string, summary: string) =>
+          endRun(id, "completed", { summary });
+
+        const failRun = (id: string, error: string) =>
+          endRun(id, "failed", { error });
+
         return ReviewRuns.of({
           createRun,
           getRun,
           listRuns,
+          completeRun,
+          failRun,
         });
       }),
     );
