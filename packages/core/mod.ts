@@ -33,6 +33,7 @@ export { pluralize } from "@/format.ts";
 export { logger } from "@/logger.ts";
 export type { ResolveInput, ResolveOptions } from "@/marks/resolver.ts";
 export { resolveMarks } from "@/marks/resolver.ts";
+export { Marks } from "@/marks/service.ts";
 export { measure, measureAsync } from "@/measure.ts";
 export { KvAdapter } from "@/persistence/kv_adapter.ts";
 export {

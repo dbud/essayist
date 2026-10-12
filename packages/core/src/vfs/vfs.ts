@@ -7,6 +7,7 @@ import {
   reassemble,
 } from "@/files/chunked_content.ts";
 import { resolveMarks } from "@/marks/resolver.ts";
+import { lineToOffset } from "@/marks/service.ts";
 import { TokenizedText } from "@/marks/tokenized.ts";
 import {
   ConcurrentModificationError,
@@ -674,17 +675,4 @@ export class VirtualFileSystem implements VFS {
         ?.value ?? []
     );
   }
-}
-
-/** Convert a 1-based line number to a character offset into the content. */
-function lineToOffset(content: string, line: number): number {
-  let offset = 0;
-  let currentLine = 1;
-  while (currentLine < line && offset < content.length) {
-    const nl = content.indexOf("\n", offset);
-    if (nl === -1) break;
-    offset = nl + 1;
-    currentLine++;
-  }
-  return offset;
 }
