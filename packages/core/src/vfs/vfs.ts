@@ -15,6 +15,12 @@ import {
   type PersistenceAdapter,
   type WriteOp,
 } from "@/persistence/mod.ts";
+import {
+  compilePattern,
+  DEFAULT_CONTEXT_LINES,
+  escapeRegex,
+  matchLines,
+} from "@/search/match.ts";
 import type {
   DiffResult,
   DraftSnapshot,
@@ -34,7 +40,7 @@ import type {
 
 const DEFAULT_CONTEXT_SPAN = 60;
 
-/** Stored at file:latest — version metadata plus chunked content (chunk 0 inline). */
+/** Stored at file:latest -- version metadata plus chunked content (chunk 0 inline). */
 type StoredSnapshot = FileVersion & ContentManifest;
 
 const FILE_LATEST = "file:latest";
@@ -45,11 +51,6 @@ const FILE_CHUNK = "file:chunk";
 const FILE_DRAFT = "file:draft";
 const MARKS = "marks";
 const WORKSPACES = "ws";
-const GREP_CONTEXT_LINES = 2;
-
-function escapeRegex(text: string): string {
-  return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
 
 let markCounter = 0;
 let versionCounter = 0;
@@ -223,13 +224,7 @@ export class VirtualFileSystem implements VFS {
 
   async grep(pattern: string, options?: GrepOptions): Promise<GrepResult> {
     const { path, caseSensitive = false, maxResults = 50 } = options ?? {};
-    const flags = caseSensitive ? "g" : "gi";
-    let regex: RegExp;
-    try {
-      regex = new RegExp(pattern, flags);
-    } catch {
-      regex = new RegExp(escapeRegex(pattern), flags);
-    }
+    const regex = compilePattern(pattern, caseSensitive);
 
     const results: GrepResult = { matches: [] };
     const files = await this.list(path);
@@ -242,24 +237,9 @@ export class VirtualFileSystem implements VFS {
       const content = latest.content;
       if (content === "") continue;
 
-      const lines = content.split("\n");
-
-      for (let i = 0; i < lines.length; i++) {
+      for (const match of matchLines(content, regex, DEFAULT_CONTEXT_LINES)) {
         if (results.matches.length >= maxResults) break;
-
-        regex.lastIndex = 0;
-        if (regex.test(lines[i])) {
-          results.matches.push({
-            path: file.path,
-            line_number: i + 1,
-            line: lines[i],
-            before: lines.slice(Math.max(0, i - GREP_CONTEXT_LINES), i),
-            after: lines.slice(
-              i + 1,
-              Math.min(lines.length, i + 1 + GREP_CONTEXT_LINES),
-            ),
-          });
-        }
+        results.matches.push({ path: file.path, ...match });
       }
     }
 
