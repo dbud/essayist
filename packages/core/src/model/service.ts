@@ -16,7 +16,7 @@ import type {
 } from "@openrouter/agent";
 import { HooksManager, OpenRouter, stepCountIs } from "@openrouter/agent";
 import { mapNotNullish } from "@std/collections";
-import { Context, Effect, Layer, Schema } from "effect";
+import { Context, Effect, Layer, Result, Schema } from "effect";
 import type { z } from "zod";
 import {
   RETRY_OPTIONS,
@@ -33,7 +33,6 @@ import { isTransientError } from "@/retry_policy.ts";
 import { generateInstructions, stripMarkdownFences } from "@/schema.ts";
 import { joinBlocks } from "@/text/markdown.ts";
 import type { ToolPrompt } from "@/tools/index.ts";
-import { delay } from "@/utils/delay.ts";
 
 /** A call's round retries ran out, or the transport faulted. */
 export class ModelCallError extends Schema.TaggedError<ModelCallError>()(
@@ -74,14 +73,8 @@ export class ModelClient extends Context.Service<ModelClient, Interface>()(
 ) {
   /** Build the service over an explicit transport: tests pass a spy, and
    * the promise bridge composes `layerOpenRouter`. */
-  static layerOf(
-    transport: Transport,
-    sleep: (ms: number) => Promise<void> = delay,
-  ): Layer.Layer<ModelClient> {
-    return Layer.effect(
-      ModelClient,
-      Effect.succeed(buildImpl(transport, sleep)),
-    );
+  static layerOf(transport: Transport): Layer.Layer<ModelClient> {
+    return Layer.effect(ModelClient, Effect.succeed(buildImpl(transport)));
   }
 
   /** The OpenRouter transport, configured by the composition root. */
@@ -93,7 +86,7 @@ export class ModelClient extends Context.Service<ModelClient, Interface>()(
 /** Attempts at a structured round, counting the first. */
 const MAX_ROUND_ATTEMPTS = 3;
 
-function buildImpl(transport: Transport, sleep: (ms: number) => Promise<void>) {
+function buildImpl(transport: Transport) {
   const callModelStructured = <T extends z.ZodObject<z.ZodRawShape>>(
     input: string,
     schema: T,
@@ -103,83 +96,80 @@ function buildImpl(transport: Transport, sleep: (ms: number) => Promise<void>) {
     StructuredCall<z.output<T>>,
     StructuredParseError | ModelCallError
   > =>
-    Effect.tryPromise({
-      try: async () => {
-        const fullInput = `${input}\n\n${generateInstructions(
-          schema,
-          options,
-        )}`;
-        const calls: PostModelCallPayload[] = [];
+    Effect.gen(function* () {
+      const fullInput = `${input}\n\n${generateInstructions(schema, options)}`;
+      const calls: PostModelCallPayload[] = [];
 
-        const hooks = new HooksManager();
-        hooks.on("UserPromptSubmit", {
-          handler: (payload: UserPromptSubmitPayload) => {
-            options?.onPrompt?.(payload.prompt);
-          },
-        });
-        hooks.on("PostModelCall", {
-          handler: (payload: PostModelCallPayload) => {
-            calls.push(payload);
-            options?.onModelCall?.(payload);
-          },
-        });
+      const hooks = new HooksManager();
+      hooks.on("UserPromptSubmit", {
+        handler: (payload: UserPromptSubmitPayload) => {
+          options?.onPrompt?.(payload.prompt);
+        },
+      });
+      hooks.on("PostModelCall", {
+        handler: (payload: PostModelCallPayload) => {
+          calls.push(payload);
+          options?.onModelCall?.(payload);
+        },
+      });
 
-        const first = await structuredRound(
-          transport,
-          sleep,
-          fullInput,
-          models,
-          hooks,
-          options?.onRetry,
-        );
+      const first = yield* retriedRound(
+        transport,
+        fullInput,
+        models,
+        hooks,
+        options?.onRetry,
+      );
 
-        let output: z.output<T>;
-        try {
-          output = parseStructured(first.text, schema);
-        } catch (err) {
-          const message = err instanceof Error ? err.message : String(err);
-          const repair: RepairAttempt = { raw: first.text, error: message };
-          options?.onRepair?.(repair);
-          const retry = await structuredRound(
-            transport,
-            sleep,
-            repairInput(fullInput, first.text, message),
-            models,
-            hooks,
-            options?.onRetry,
-          );
-          try {
-            output = parseStructured(retry.text, schema);
-          } catch (retryErr) {
-            const retryMessage =
-              retryErr instanceof Error ? retryErr.message : String(retryErr);
-            options?.onRepair?.({ raw: retry.text, error: retryMessage });
-            throw new StructuredParseError(retry.text, retryMessage);
-          }
-          return {
-            output,
-            usage: addUsage(first.usage, retry.usage),
-            reasoning: mapNotNullish(
-              [first, retry],
-              (round) => round.reasoning,
-            ),
-            calls,
-            repairs: [repair],
-          };
-        }
-
+      const firstParse = yield* Effect.result(
+        Effect.try(() => parseStructured(first.text, schema)),
+      );
+      if (Result.isSuccess(firstParse)) {
         return {
-          output,
+          output: firstParse.success,
           usage: first.usage,
-          reasoning: mapNotNullish([first], (round) => round.reasoning),
+          reasoning: mapNotNullish([first], (attempt) => attempt.reasoning),
           calls,
           repairs: [],
         };
-      },
-      catch: (err) =>
-        err instanceof StructuredParseError
-          ? err
-          : new ModelCallError({ cause: err }),
+      }
+
+      const message =
+        firstParse.failure instanceof Error
+          ? firstParse.failure.message
+          : String(firstParse.failure);
+      const repair: RepairAttempt = { raw: first.text, error: message };
+      options?.onRepair?.(repair);
+      const retry = yield* retriedRound(
+        transport,
+        repairInput(fullInput, first.text, message),
+        models,
+        hooks,
+        options?.onRetry,
+      );
+      const retryParse = yield* Effect.result(
+        Effect.try(() => parseStructured(retry.text, schema)),
+      );
+      if (Result.isFailure(retryParse)) {
+        const retryMessage =
+          retryParse.failure instanceof Error
+            ? retryParse.failure.message
+            : String(retryParse.failure);
+        options?.onRepair?.({ raw: retry.text, error: retryMessage });
+        return yield* Effect.fail(
+          new StructuredParseError(retry.text, retryMessage),
+        );
+      }
+      return {
+        output: retryParse.success,
+        usage: addUsage(first.usage, retry.usage),
+        reasoning: mapNotNullish(
+          [first, retry],
+          (attempt) => attempt.reasoning,
+        ),
+        calls,
+        repairs: [repair],
+      };
     });
 
   const callModelWithTools = (
@@ -209,44 +199,87 @@ function buildImpl(transport: Transport, sleep: (ms: number) => Promise<void>) {
 
 // The structured round: RETRY_OPTIONS covers a failure before the stream
 // starts; a connection dropped mid-stream reaches us as an error from
-// getText(), so the round is re-issued here.
+// getText(), so the round is re-issued through the retry policy. Attempts
+// rise to three, spaced linearly in the attempt number.
 
-async function structuredRound(
+function roundEffect(
   transport: Transport,
-  sleep: (ms: number) => Promise<void>,
+  input: string,
+  models: string[],
+  hooks: HooksManager,
+): Effect.Effect<
+  { text: string; usage: SessionUsageTotals; reasoning?: string },
+  unknown
+> {
+  return Effect.gen(function* () {
+    const result = transport.callModel({ models, input, hooks }, RETRY_OPTIONS);
+    const [text, reasoning] = yield* Effect.tryPromise({
+      try: () => Promise.all([result.getText(), collectReasoning(result)]),
+      catch: (cause) => cause,
+    });
+    logger.info({ models }, "structured call settled");
+    return {
+      text,
+      usage: yield* Effect.tryPromise({
+        try: () => result.getUsage(),
+        catch: (cause) => cause,
+      }),
+      reasoning,
+    };
+  });
+}
+
+function retriedRound(
+  transport: Transport,
   input: string,
   models: string[],
   hooks: HooksManager,
   onRetry?: (failure: RetryFailure) => void,
-): Promise<{
-  text: string;
-  usage: SessionUsageTotals;
-  reasoning?: string;
-}> {
-  for (let attempt = 1; ; attempt++) {
-    try {
+): Effect.Effect<
+  { text: string; usage: SessionUsageTotals; reasoning?: string },
+  ModelCallError
+> {
+  let attempt = 0;
+  return Effect.retry(
+    Effect.suspend(() => {
+      attempt++;
       logger.info({ attempt, models }, "structured call dispatched");
-      const result = transport.callModel(
-        { models, input, hooks },
-        RETRY_OPTIONS,
+      return roundEffect(transport, input, models, hooks).pipe(
+        // The round's unknown failure becomes a typed fault before the
+        // retry policy sees it, so an exhausted retry propagates
+        // ModelCallError rather than a defect.
+        Effect.mapError((cause) => new ModelCallError({ cause })),
+        Effect.tapError((err) =>
+          Effect.gen(function* () {
+            // The report and the delay cover only the failures that lead to
+            // another attempt, like the promise loop did.
+            if (isTransientCause(err) && attempt < MAX_ROUND_ATTEMPTS) {
+              const underlying = err.cause;
+              const error =
+                underlying instanceof Error
+                  ? underlying.message
+                  : String(underlying);
+              onRetry?.({ attempt, error });
+              logger.warn(
+                { err: underlying, attempt, models: models[0] },
+                "structured call failed transiently, retrying",
+              );
+              yield* Effect.sleep(attempt * ROUND_RETRY_DELAY_MS);
+            }
+          }),
+        ),
       );
-      const [text, reasoning] = await Promise.all([
-        result.getText(),
-        collectReasoning(result),
-      ]);
-      logger.info({ attempt, models }, "structured call settled");
-      return { text, usage: await result.getUsage(), reasoning };
-    } catch (err) {
-      if (attempt >= MAX_ROUND_ATTEMPTS || !isTransientError(err)) throw err;
-      const error = err instanceof Error ? err.message : String(err);
-      onRetry?.({ attempt, error });
-      logger.warn(
-        { err, attempt, models: models[0] },
-        "structured call failed transiently, retrying",
-      );
-      await sleep(attempt * ROUND_RETRY_DELAY_MS);
-    }
-  }
+    }),
+    {
+      times: MAX_ROUND_ATTEMPTS - 1,
+      while: isTransientCause,
+    },
+  );
+}
+
+/** Transiency of the fault the round wrapped, read from its cause. */
+function isTransientCause(err: ModelCallError): boolean {
+  return isTransientError(err.cause);
 }
 
 function parseStructured<T extends z.ZodObject<z.ZodRawShape>>(

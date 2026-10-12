@@ -7,7 +7,8 @@ import type {
 } from "@openrouter/agent";
 import { HooksManager } from "@openrouter/agent";
 import { assert, assertEquals } from "@std/assert";
-import { Effect, Result } from "effect";
+import { Duration, Effect, Fiber, Result } from "effect";
+import { TestClock } from "effect/testing";
 import { z } from "zod";
 import {
   RETRY_OPTIONS,
@@ -119,16 +120,11 @@ function createSpyClient(rounds: FakeRound[]): {
   return { client, inputs, options };
 }
 
-/** Retry tests assert attempt counts and payloads, not elapsed time. */
-const noSleep = () => Promise.resolve();
-
 /** Provide a program with the service over the spy transport. */
 const provideWith = <A, E>(
   program: Effect.Effect<A, E, ModelClient>,
   client: Transport,
-  sleep: (ms: number) => Promise<void> = noSleep,
-): Effect.Effect<A, E> =>
-  Effect.provide(program, ModelClient.layerOf(client, sleep));
+): Effect.Effect<A, E> => Effect.provide(program, ModelClient.layerOf(client));
 
 function structured<T extends z.ZodObject<z.ZodRawShape>>(
   schema: T,
@@ -139,6 +135,24 @@ function structured<T extends z.ZodObject<z.ZodRawShape>>(
     return yield* model.callModelStructured("ping", schema, ["m/a"], options);
   });
 }
+
+/**
+ * Run a retrying program on the test clock: fork it, advance time through
+ * the sleeps, and join.
+ */
+const runClock = <A, E>(
+  program: Effect.Effect<A, E, ModelClient>,
+  client: Transport,
+  advance: Duration.Input[],
+) =>
+  Effect.gen(function* () {
+    const fiber = yield* Effect.forkChild(provideWith(program, client));
+    for (const step of advance) {
+      yield* TestClock.adjust(step);
+      yield* Effect.yieldNow;
+    }
+    return yield* Fiber.join(fiber);
+  }).pipe(Effect.provide(TestClock.layer()));
 
 Deno.test("ModelClient.callModelStructured -- parses the first reply", async () => {
   const { client } = createSpyClient([
@@ -194,7 +208,7 @@ Deno.test("ModelClient.callModelStructured -- a second parse failure fails typed
   }
 });
 
-Deno.test("ModelClient.callModelStructured -- a transient failure is re-issued", async () => {
+Deno.test("ModelClient.callModelStructured -- a transient failure is re-issued one second later", async () => {
   const abort = new Error(
     'Response failed: {"code":"server_error","message":"The operation was aborted"}',
   );
@@ -204,7 +218,9 @@ Deno.test("ModelClient.callModelStructured -- a transient failure is re-issued",
   ]);
 
   const result = await Effect.runPromise(
-    provideWith(structured(z.object({ ok: z.boolean() })), client),
+    runClock(structured(z.object({ ok: z.boolean() })), client, [
+      ROUND_RETRY_DELAY_MS,
+    ]),
   );
 
   assertEquals(inputs.length, 2);
@@ -224,11 +240,12 @@ Deno.test("ModelClient.callModelStructured -- a transient failure reports the re
   const retries: RetryFailure[] = [];
 
   await Effect.runPromise(
-    provideWith(
+    runClock(
       structured(z.object({ ok: z.boolean() }), {
         onRetry: (failure) => retries.push(failure),
       }),
       client,
+      [ROUND_RETRY_DELAY_MS],
     ),
   );
 
@@ -241,32 +258,47 @@ Deno.test("ModelClient.callModelStructured -- a transient failure reports the re
   ]);
 });
 
-Deno.test("ModelClient.callModelStructured -- a transient failure gives up after three attempts", async () => {
+Deno.test("ModelClient.callModelStructured -- a transient failure gives up after three attempts, spaced linearly", async () => {
   const abort = new Error("fetch failed");
   const { client, inputs } = createSpyClient([
     { text: '{"ok":true}', failWith: abort },
   ]);
-  const slept: number[] = [];
-  const recordSleep = (ms: number) => {
-    slept.push(ms);
-    return Promise.resolve();
-  };
 
   const outcome = await Effect.runPromise(
-    provideWith(
-      Effect.result(structured(z.object({ ok: z.boolean() }))),
-      client,
-      recordSleep,
-    ),
+    Effect.gen(function* () {
+      const fiber = yield* Effect.forkChild(
+        provideWith(
+          Effect.result(structured(z.object({ ok: z.boolean() }))),
+          client,
+        ),
+      );
+      yield* Effect.yieldNow;
+      // The first attempt has dispatched and failed; the retry sleeps one
+      // full second.
+      assertEquals(inputs.length, 1);
+      yield* TestClock.adjust(Duration.millis(ROUND_RETRY_DELAY_MS - 1));
+      yield* Effect.yieldNow;
+      assertEquals(inputs.length, 1);
+      // One more millisecond fires the second attempt, which sleeps two
+      // seconds.
+      yield* TestClock.adjust(Duration.millis(1));
+      yield* Effect.yieldNow;
+      assertEquals(inputs.length, 2);
+      yield* TestClock.adjust(Duration.millis(2 * ROUND_RETRY_DELAY_MS - 1));
+      yield* Effect.yieldNow;
+      assertEquals(inputs.length, 2);
+      yield* TestClock.adjust(Duration.millis(1));
+      yield* Effect.yieldNow;
+      // The third attempt fails and the retries are exhausted.
+      assertEquals(inputs.length, 3);
+      return yield* Fiber.join(fiber);
+    }).pipe(Effect.provide(TestClock.layer())),
   );
 
   assert(Result.isFailure(outcome), "exhausted retries must fail");
   if (Result.isFailure(outcome)) {
     assert(outcome.failure instanceof ModelCallError, "the model error type");
   }
-  assertEquals(inputs.length, 3);
-  // Linear in the attempt number.
-  assertEquals(slept, [ROUND_RETRY_DELAY_MS, 2 * ROUND_RETRY_DELAY_MS]);
 });
 
 Deno.test("ModelClient.callModelStructured -- a deterministic failure is not retried", async () => {
@@ -292,7 +324,9 @@ Deno.test("ModelClient.callModelStructured -- a re-ask that fails transiently is
   ]);
 
   const result = await Effect.runPromise(
-    provideWith(structured(z.object({ ok: z.boolean() })), client),
+    runClock(structured(z.object({ ok: z.boolean() })), client, [
+      ROUND_RETRY_DELAY_MS,
+    ]),
   );
 
   // One repair prompt, then two attempts at the same re-ask.
