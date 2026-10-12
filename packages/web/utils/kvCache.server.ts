@@ -1,4 +1,5 @@
-import { logger } from "@essayist/core";
+import { Effect } from "effect";
+import { runtime } from "@/store.ts";
 import { bumpKey, watchKey } from "@/utils/kvWatch.server.ts";
 
 /**
@@ -59,7 +60,9 @@ export function cached<S>(
     gen++;
     value = undefined;
     filledAt = 0;
-    logger.debug({ cache: name, reason }, "kvCache invalidated");
+    runtime.runFork(
+      Effect.logDebug("kvCache invalidated", { cache: name, reason }),
+    );
   }
 
   function fill(reason: string): Promise<S> {
@@ -73,12 +76,20 @@ export function cached<S>(
         if (g === gen) {
           value = fresh;
           filledAt = now();
-          logger.debug({ cache: name, reason }, "kvCache revalidated");
+          runtime.runFork(
+            Effect.logDebug("kvCache revalidated", { cache: name, reason }),
+          );
         }
         return fresh;
       })
       .catch((err) => {
-        logger.error({ err, cache: name, reason }, "kvCache refresh failed");
+        runtime.runFork(
+          Effect.logError("kvCache refresh failed", {
+            cache: name,
+            reason,
+            error: err instanceof Error ? err.message : String(err),
+          }),
+        );
         throw err;
       })
       .finally(() => {
