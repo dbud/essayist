@@ -8,7 +8,6 @@
 
 import { sortBy } from "@std/collections";
 import { Context, Effect, Layer, Result } from "effect";
-import { stripLease } from "@/persistence/lease.ts";
 import {
   type ClaimOptions,
   ConcurrentModificationError,
@@ -20,6 +19,12 @@ import { WorkspaceId } from "@/workspace/WorkspaceId.ts";
 import type { ReviewRun, ReviewRunStatus } from "./types.ts";
 
 const REVIEWS = "reviews";
+
+/** Strip the lease fields off a run. */
+function stripLease(value: ReviewRun): ReviewRun {
+  const { leaseOwner: _owner, heartbeatAt: _at, ...body } = value;
+  return body;
+}
 
 export interface Interface {
   /** Create a run in the "running" state. */

@@ -93,6 +93,22 @@ export interface PersistenceAdapter {
   delete(key: Key): Promise<void>;
 }
 
-export type { ClaimOptions, Lease, Leased } from "./lease.ts";
-export { claim, heartbeat, stripLease } from "./lease.ts";
+/** Fields a record carries to be leasable by one owner at a time. */
+export interface Lease {
+  /** Id of the driver currently advancing this record. */
+  leaseOwner?: string;
+  /** When the owner last proved it was alive. */
+  heartbeatAt?: number;
+}
+
+/** A record with {@link Lease} fields on it. */
+export type Leased<T> = T & Lease;
+
+export interface ClaimOptions {
+  owner: string;
+  heartbeatAtLeast: number;
+}
+
+/** Leases the service layer puts on records: claims and heartbeats read and
+ * write the {@link Lease} fields with checked batches. */
 export { Persistence, PersistenceError } from "./service.ts";

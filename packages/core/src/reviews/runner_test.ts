@@ -1,5 +1,5 @@
 import { assert, assertEquals, assertRejects } from "@std/assert";
-import { Effect, Layer } from "effect";
+import { type Context, Effect, Layer } from "effect";
 import type { ResolvedReviewPass, ReviewUnit } from "@/config/types.ts";
 import type { NodeRun } from "@/flow/types.ts";
 import { KvAdapter } from "@/persistence/kv_adapter.ts";
@@ -13,7 +13,6 @@ import {
   runReviewPass,
 } from "@/reviews/runner.ts";
 import { ReviewRuns } from "@/reviews/service.ts";
-import { ReviewStore } from "@/reviews/store.ts";
 import { createSpyClient } from "@/reviews/testing/agent.ts";
 import { type TraceEvent, TraceEventStore } from "@/reviews/trace/mod.ts";
 import type { ReviewRun } from "@/reviews/types.ts";
@@ -56,15 +55,36 @@ function passFixture(units: ReviewUnit[]): ResolvedReviewPass {
   };
 }
 
-// The promise-store fixtures and the runner's ReviewRuns service share one
+// The trace-store fixture and the runner's ReviewRuns service share one
 // KV store, so runs written on either side are read back on both.
 async function setup() {
   const kv = await Deno.openKv(":memory:");
   const adapter = new KvAdapter(kv);
-  const reviewStore = new ReviewStore(adapter);
   const traceStore = new TraceEventStore(adapter);
   const env = Layer.provide(ReviewRuns.layerNoDeps, kvLayer(kv));
-  return { adapter, reviewStore, traceStore, env };
+  return { adapter, traceStore, env };
+}
+
+/** Run a small ReviewRuns program against the test's shared KV store. */
+function viaRuns<A>(
+  env: Layer.Layer<ReviewRuns>,
+  body: (
+    runs: Context.Service.Shape<typeof ReviewRuns>,
+  ) => Effect.Effect<A, unknown, WorkspaceId>,
+): Promise<A> {
+  return Effect.runPromise(
+    Effect.provide(
+      Effect.provideService(
+        Effect.gen(function* () {
+          const runs = yield* ReviewRuns;
+          return yield* body(runs);
+        }),
+        WorkspaceId,
+        { wsId: "ws" },
+      ),
+      env,
+    ),
+  );
 }
 
 async function runPass(
@@ -492,7 +512,7 @@ Deno.test("runReviewPass -- fails a pass that commits no summary", async () => {
 
 Deno.test("runReviewPass -- fails with a typed error when the file does not exist", async () => {
   const vfs = (await createFile("other.txt", "x")).vfs;
-  const { reviewStore, traceStore, env } = await setup();
+  const { traceStore, env } = await setup();
   const { agent } = createSpyClient([]);
 
   await assertRejects(
@@ -510,14 +530,13 @@ Deno.test("runReviewPass -- fails with a typed error when the file does not exis
   );
 
   // No run row: nothing was reviewed, so there is nothing to report on.
-  assertEquals(await reviewStore.listRuns({ wsId: "ws" }), []);
+  assertEquals(await viaRuns(env, (runs) => runs.listRuns()), []);
 });
 
 Deno.test("runReviewPass -- heartbeats the lease while running, then releases it", async () => {
   const { vfs } = await createFile("essay.txt", "hello brave world");
   const kv = await Deno.openKv(":memory:");
   const adapter = new KvAdapter(kv);
-  const reviewStore = new ReviewStore(adapter);
   const traceStore = new TraceEventStore(adapter);
   const count = { renewed: 0, refused: 0 };
   const env = Layer.provide(
@@ -545,24 +564,24 @@ Deno.test("runReviewPass -- heartbeats the lease while running, then releases it
   assert(count.renewed >= 1);
   // A refused beat would mean the finish raced the release.
   assertEquals(count.refused, 0);
-  const row = await reviewStore.getRun({ wsId: "ws", id: run.id });
+  const row = await viaRuns(env, (runs) => runs.getRun(run.id));
   assertEquals(row?.leaseOwner, undefined);
   assertEquals(row?.heartbeatAt, undefined);
 });
 
 Deno.test("runReviewPass -- refuses to resume a run another driver holds", async () => {
   const { vfs } = await createFile("essay.txt", "hello world");
-  const { reviewStore, traceStore, env } = await setup();
+  const { traceStore, env } = await setup();
   const { agent } = createSpyClient([]);
-  const run = await reviewStore.createRun({
-    wsId: "ws",
-    path: "essay.txt",
-    reviewPassId: "essay-review",
-    versionId: "v1",
-  });
-  await reviewStore.claimRun(
-    { wsId: "ws", id: run.id },
-    { owner: "driver-x", heartbeatAtLeast: 0 },
+  const run = await viaRuns(env, (runs) =>
+    runs.createRun({
+      path: "essay.txt",
+      reviewPassId: "essay-review",
+      versionId: "v1",
+    }),
+  );
+  await viaRuns(env, (runs) =>
+    runs.claimRun(run.id, { owner: "driver-x", heartbeatAtLeast: 0 }),
   );
 
   await assertRejects(
@@ -586,13 +605,14 @@ Deno.test("runReviewPass -- refuses to resume a run another driver holds", async
 
 Deno.test("runReviewPass -- resumes a run whose lease went stale", async () => {
   const { vfs, versionId } = await createFile("essay.txt", "hello brave world");
-  const { adapter, reviewStore, traceStore, env } = await setup();
-  const run = await reviewStore.createRun({
-    wsId: "ws",
-    path: "essay.txt",
-    reviewPassId: "essay-review",
-    versionId,
-  });
+  const { adapter, traceStore, env } = await setup();
+  const run = await viaRuns(env, (runs) =>
+    runs.createRun({
+      path: "essay.txt",
+      reviewPassId: "essay-review",
+      versionId,
+    }),
+  );
   // A dead owner, its heartbeat far in the past.
   await adapter.set(["reviews", "ws", run.id], {
     ...run,
