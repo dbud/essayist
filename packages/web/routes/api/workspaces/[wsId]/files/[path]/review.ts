@@ -31,7 +31,6 @@ export const handler = {
               Effect.provideService(
                 runReviewPass({
                   pass,
-                  wsId,
                   path,
                   onProgress: (progress) => send("progress", progress),
                 }),

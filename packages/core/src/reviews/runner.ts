@@ -42,7 +42,6 @@ import { WorkspaceId } from "@/workspace/WorkspaceId.ts";
 /** Options for {@linkcode runReviewPass}. */
 export interface RunReviewPassOptions {
   pass: ResolvedReviewPass;
-  wsId: string;
   path: string;
   /** Receives text-free progress snapshots as the run advances. */
   onProgress?: (progress: ReviewProgress) => void;
@@ -226,6 +225,7 @@ function execute(
   return Effect.gen(function* () {
     const runs = yield* ReviewRuns;
     const traces = yield* TraceEvents;
+    const { wsId } = yield* WorkspaceId;
     const owner = yield* claim(runs, run.id);
     const { onProgress, pass, path } = options;
     const completed = priorTrace ? foldCompleted(priorTrace) : undefined;
@@ -264,7 +264,7 @@ function execute(
 
     // Prove life right away, then stay proven on the interval.
     const fiber = yield* Effect.forkChild(
-      heartbeatLoop(runs, options.wsId, run.id, owner),
+      heartbeatLoop(runs, wsId, run.id, owner),
     );
     const writerFiber = yield* Effect.forkChild(writer);
 
@@ -279,7 +279,7 @@ function execute(
 
     const flowRun = flow
       .run(graph, { completed })
-      .pipe(Effect.provideService(WorkspaceId, { wsId: options.wsId }));
+      .pipe(Effect.provideService(WorkspaceId, { wsId }));
     const flowOutcome = yield* Effect.result(flowRun);
     // The loops stop before the terminal write; an in-flight write is
     // uninterruptible, so it settles first, and the flush below catches

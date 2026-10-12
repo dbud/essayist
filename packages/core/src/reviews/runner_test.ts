@@ -131,7 +131,7 @@ async function runPass(
   return await Effect.runPromise(
     Effect.provide(
       Effect.provideService(runReviewPass(options), WorkspaceId, {
-        wsId: options.wsId,
+        wsId: "ws",
       }),
       env,
     ),
@@ -146,7 +146,7 @@ async function resumePass(
   return await Effect.runPromise(
     Effect.provide(
       Effect.provideService(resumeReviewPass(options, runId), WorkspaceId, {
-        wsId: options.wsId,
+        wsId: "ws",
       }),
       env,
     ),
@@ -215,7 +215,6 @@ Deno.test("runReviewPass -- completes a pass with marks, summary, and a per-node
         inputs: ["analyze", "mechanics.propose"],
       }),
     ]),
-    wsId: "ws",
     path: "essay.txt",
   });
 
@@ -290,7 +289,6 @@ Deno.test("runReviewPass -- a repair round re-quotes the failed spans", async ()
       }),
       unitFixture({ id: "summary", summary: true, inputs: ["mechanics"] }),
     ]),
-    wsId: "ws",
     path: "essay.txt",
   });
 
@@ -354,7 +352,6 @@ Deno.test("runReviewPass -- a zero budget keeps failed marks with no repair node
       }),
       unitFixture({ id: "summary", summary: true, inputs: ["mechanics"] }),
     ]),
-    wsId: "ws",
     path: "essay.txt",
   });
 
@@ -387,7 +384,6 @@ Deno.test("runReviewPass -- resuming a run that does not exist is an error", asy
         env,
         {
           pass: passFixture([unitFixture({ id: "analyze" })]),
-          wsId: "ws",
           path: "essay.txt",
         },
         "no-such-run",
@@ -423,7 +419,6 @@ Deno.test("runReviewPass -- a resumed pass skips completed nodes and shows each 
       }),
       unitFixture({ id: "summary", summary: true, inputs: ["mechanics"] }),
     ]),
-    wsId: "ws",
     path: "essay.txt",
   });
 
@@ -454,7 +449,6 @@ Deno.test("runReviewPass -- a resumed pass skips completed nodes and shows each 
         }),
         unitFixture({ id: "summary", summary: true, inputs: ["mechanics"] }),
       ]),
-      wsId: "ws",
       path: "essay.txt",
     },
     run.id,
@@ -496,7 +490,6 @@ Deno.test("runReviewPass -- a node error fails the run and skips dependents", as
         inputs: ["analyze"],
       }),
     ]),
-    wsId: "ws",
     path: "essay.txt",
   });
 
@@ -552,7 +545,6 @@ Deno.test("runReviewPass -- fails a pass that commits no summary", async () => {
     // No summary unit, so the graph commits no summary artifact. Reading it
     // back is a structural surprise, not a pass with a blank summary.
     pass: passFixture([unitFixture({ id: "analyze" })]),
-    wsId: "ws",
     path: "essay.txt",
   });
 
@@ -573,7 +565,6 @@ Deno.test("runReviewPass -- fails with a typed error when the file does not exis
     () =>
       runPass(env, {
         pass: passFixture([unitFixture({ id: "analyze" })]),
-        wsId: "ws",
         path: "essay.txt",
       }),
     ReviewFileMissingError,
@@ -604,7 +595,6 @@ Deno.test("runReviewPass -- heartbeats the lease while running, then releases it
       unitFixture({ id: "analyze" }),
       unitFixture({ id: "summary", summary: true, inputs: ["analyze"] }),
     ]),
-    wsId: "ws",
     path: "essay.txt",
   });
 
@@ -641,7 +631,6 @@ Deno.test("runReviewPass -- refuses to resume a run another driver holds", async
         env,
         {
           pass: passFixture([unitFixture({ id: "analyze" })]),
-          wsId: "ws",
           path: "essay.txt",
         },
         run.id,
@@ -686,7 +675,6 @@ Deno.test("runReviewPass -- resumes a run whose lease went stale", async () => {
         unitFixture({ id: "analyze" }),
         unitFixture({ id: "summary", summary: true, inputs: ["analyze"] }),
       ]),
-      wsId: "ws",
       path: "essay.txt",
     },
     run.id,
