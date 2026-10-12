@@ -7,10 +7,11 @@
  */
 
 import { sortBy } from "@std/collections";
-import { Context, Effect, Layer } from "effect";
+import { Context, Effect, Layer, Result } from "effect";
 import { stripLease } from "@/persistence/lease.ts";
 import {
-  type ConcurrentModificationError,
+  type ClaimOptions,
+  ConcurrentModificationError,
   type Key,
   Persistence,
   type PersistenceError,
@@ -58,6 +59,24 @@ export interface Interface {
     PersistenceError | ConcurrentModificationError,
     WorkspaceId
   >;
+  /**
+   * Take the lease on a run, so only one owner works on it at a time.
+   * Undefined when the run is gone, another owner holds a live lease, or a
+   * concurrent claim won the race. Claiming as the current owner renews.
+   */
+  claimRun(
+    id: string,
+    options: ClaimOptions,
+  ): Effect.Effect<ReviewRun | undefined, PersistenceError, WorkspaceId>;
+  /**
+   * Renew the lease on a run, only while it is leased to the given owner.
+   * Unlike claim, this never takes a lease. False when the run is gone,
+   * another owner holds the lease, or a concurrent write won the race.
+   */
+  heartbeatRun(
+    id: string,
+    owner: string,
+  ): Effect.Effect<boolean, PersistenceError, WorkspaceId>;
 }
 
 export class ReviewRuns extends Context.Service<ReviewRuns, Interface>()(
@@ -166,12 +185,81 @@ export class ReviewRuns extends Context.Service<ReviewRuns, Interface>()(
         const failRun = (id: string, error: string) =>
           endRun(id, "failed", { error });
 
+        const claimRun = (
+          id: string,
+          { owner, heartbeatAtLeast }: ClaimOptions,
+        ): Effect.Effect<
+          ReviewRun | undefined,
+          PersistenceError,
+          WorkspaceId
+        > =>
+          Effect.gen(function* () {
+            const { wsId } = yield* WorkspaceId;
+            const key: Key = [REVIEWS, wsId, id];
+            const entry = yield* persistence.get<ReviewRun>(key);
+            if (!entry) return undefined;
+            const { leaseOwner, heartbeatAt } = entry.value;
+            const heldByOther =
+              leaseOwner !== undefined && leaseOwner !== owner;
+            if (heldByOther && (heartbeatAt ?? 0) >= heartbeatAtLeast) {
+              return undefined;
+            }
+            const claimed: ReviewRun = {
+              ...entry.value,
+              leaseOwner: owner,
+              heartbeatAt: Date.now(),
+            };
+            // A lost race (concurrent claim) reads as "not claimable", not
+            // as a backend fault.
+            const outcome = yield* Effect.result(
+              persistence.batch([{ type: "set", key, value: claimed }], {
+                checks: [{ key, versionstamp: entry.versionstamp }],
+              }),
+            );
+            if (Result.isFailure(outcome)) {
+              if (outcome.failure instanceof ConcurrentModificationError) {
+                return undefined;
+              }
+              return yield* Effect.fail(outcome.failure);
+            }
+            return claimed;
+          });
+
+        const heartbeatRun = (
+          id: string,
+          owner: string,
+        ): Effect.Effect<boolean, PersistenceError, WorkspaceId> =>
+          Effect.gen(function* () {
+            const { wsId } = yield* WorkspaceId;
+            const key: Key = [REVIEWS, wsId, id];
+            const entry = yield* persistence.get<ReviewRun>(key);
+            if (!entry || entry.value.leaseOwner !== owner) return false;
+            const renewed: ReviewRun = {
+              ...entry.value,
+              heartbeatAt: Date.now(),
+            };
+            const outcome = yield* Effect.result(
+              persistence.batch([{ type: "set", key, value: renewed }], {
+                checks: [{ key, versionstamp: entry.versionstamp }],
+              }),
+            );
+            if (Result.isFailure(outcome)) {
+              if (outcome.failure instanceof ConcurrentModificationError) {
+                return false;
+              }
+              return yield* Effect.fail(outcome.failure);
+            }
+            return true;
+          });
+
         return ReviewRuns.of({
           createRun,
           getRun,
           listRuns,
           completeRun,
           failRun,
+          claimRun,
+          heartbeatRun,
         });
       }),
     );

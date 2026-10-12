@@ -188,3 +188,134 @@ Deno.test("ReviewRuns.completeRun/failRun unknown id return undefined", async ()
     }),
   );
 });
+
+// claim and heartbeat
+
+Deno.test("ReviewRuns.claimRun leases the run", async () => {
+  await run(
+    Effect.gen(function* () {
+      const runs = yield* ReviewRuns;
+      const created = yield* runs.createRun({
+        path: "essay.txt",
+        reviewPassId: "pass",
+      });
+
+      const claimed = yield* runs.claimRun(created.id, {
+        owner: "driver-a",
+        heartbeatAtLeast: 0,
+      });
+
+      assertEquals(claimed?.leaseOwner, "driver-a");
+      assertEquals((yield* runs.getRun(created.id))?.leaseOwner, "driver-a");
+      // Another workspace scope cannot claim it at all.
+      yield* Effect.provideService(
+        Effect.gen(function* () {
+          const runsOther = yield* ReviewRuns;
+          assertEquals(
+            yield* runsOther.claimRun(created.id, {
+              owner: "driver-b",
+              heartbeatAtLeast: 0,
+            }),
+            undefined,
+          );
+        }),
+        WorkspaceId,
+        { wsId: "other" },
+      );
+    }),
+  );
+});
+
+Deno.test("ReviewRuns.claimRun -- undefined for an unknown run", async () => {
+  await run(
+    Effect.gen(function* () {
+      const runs = yield* ReviewRuns;
+      assertEquals(
+        yield* runs.claimRun("nope", {
+          owner: "driver-a",
+          heartbeatAtLeast: 0,
+        }),
+        undefined,
+      );
+    }),
+  );
+});
+
+Deno.test("ReviewRuns.claimRun -- takes over a stale lease", async () => {
+  await run(
+    Effect.gen(function* () {
+      const runs = yield* ReviewRuns;
+      const created = yield* runs.createRun({
+        path: "essay.txt",
+        reviewPassId: "pass",
+      });
+      yield* runs.claimRun(created.id, {
+        owner: "driver-a",
+        heartbeatAtLeast: 0,
+      });
+
+      // driver-b demands fresher proof of life than the current heartbeat,
+      // so the lease counts as stale and the takeover succeeds.
+      const takeover = yield* runs.claimRun(created.id, {
+        owner: "driver-b",
+        heartbeatAtLeast: Date.now() + 1_000,
+      });
+
+      assertEquals(takeover?.leaseOwner, "driver-b");
+    }),
+  );
+});
+
+Deno.test("ReviewRuns.heartbeatRun renews only our own lease", async () => {
+  await run(
+    Effect.gen(function* () {
+      const runs = yield* ReviewRuns;
+      const created = yield* runs.createRun({
+        path: "essay.txt",
+        reviewPassId: "pass",
+      });
+
+      assertEquals(yield* runs.heartbeatRun(created.id, "driver-a"), false);
+
+      yield* runs.claimRun(created.id, {
+        owner: "driver-a",
+        heartbeatAtLeast: 0,
+      });
+
+      assertEquals(yield* runs.heartbeatRun(created.id, "driver-a"), true);
+      assertEquals(yield* runs.heartbeatRun(created.id, "driver-b"), false);
+      assertEquals((yield* runs.getRun(created.id))?.leaseOwner, "driver-a");
+    }),
+  );
+});
+
+Deno.test("ReviewRuns.heartbeatRun -- false for an unknown run", async () => {
+  await run(
+    Effect.gen(function* () {
+      const runs = yield* ReviewRuns;
+      assertEquals(yield* runs.heartbeatRun("nope", "driver-a"), false);
+    }),
+  );
+});
+
+Deno.test("ReviewRuns -- completing and failing a run releases its lease", async () => {
+  await run(
+    Effect.gen(function* () {
+      const runs = yield* ReviewRuns;
+      const a = yield* runs.createRun({ path: "a.txt", reviewPassId: "pass" });
+      const b = yield* runs.createRun({ path: "b.txt", reviewPassId: "pass" });
+      yield* runs.claimRun(a.id, { owner: "driver-a", heartbeatAtLeast: 0 });
+      yield* runs.claimRun(b.id, { owner: "driver-a", heartbeatAtLeast: 0 });
+
+      yield* runs.completeRun(a.id, "ok");
+      yield* runs.failRun(b.id, "boom");
+
+      const completed = yield* runs.getRun(a.id);
+      assertEquals(completed?.leaseOwner, undefined);
+      assertEquals(completed?.heartbeatAt, undefined);
+      const failed = yield* runs.getRun(b.id);
+      assertEquals(failed?.leaseOwner, undefined);
+      assertEquals(failed?.heartbeatAt, undefined);
+    }),
+  );
+});
