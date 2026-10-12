@@ -4,7 +4,6 @@ import {
   type PersistenceError,
   ReviewConfig,
   ReviewRuns,
-  ReviewStore,
   TraceEventStore,
   type User,
   UserState,
@@ -33,7 +32,6 @@ export const kv = isDev
   : await Deno.openKv();
 
 export const adapter = new KvAdapter(kv);
-export const reviewStore = new ReviewStore(adapter);
 export const traceStore = new TraceEventStore(adapter);
 
 /** The runtime's service environment, for call sites that pass it on. */

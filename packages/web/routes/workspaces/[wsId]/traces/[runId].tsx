@@ -6,7 +6,13 @@ import type {
   TraceEvent,
   TraceNodeView,
 } from "@essayist/core";
-import { groupTraceNodes, Workspaces } from "@essayist/core";
+import {
+  groupTraceNodes,
+  ReviewRuns,
+  WorkspaceId,
+  Workspaces,
+} from "@essayist/core";
+import { Effect } from "effect";
 import type { PageProps } from "fresh";
 import { page } from "fresh";
 import {
@@ -27,7 +33,7 @@ import type { ComponentChildren } from "preact";
 import MarkdownView from "@/components/MarkdownView.tsx";
 import { define, type State } from "@/define.ts";
 import Navigation from "@/islands/Navigation.tsx";
-import { reviewStore, runtime, traceStore } from "@/store.ts";
+import { runtime, traceStore } from "@/store.ts";
 
 interface TracePageData {
   run: ReviewRun;
@@ -43,7 +49,16 @@ export const handler = define.handlers({
     if (!allowed) {
       return ctx.redirect("/");
     }
-    const run = await reviewStore.getRun({ wsId, id: runId });
+    const run = await runtime.runPromise(
+      Effect.provideService(
+        Effect.gen(function* () {
+          const runs = yield* ReviewRuns;
+          return yield* runs.getRun(runId);
+        }),
+        WorkspaceId,
+        { wsId },
+      ),
+    );
     if (!run) {
       return new Response("Review run not found", { status: 404 });
     }
