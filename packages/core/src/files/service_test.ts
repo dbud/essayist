@@ -1,5 +1,7 @@
 import { assert, assertEquals } from "@std/assert";
+import { assertObjectMatch } from "@std/assert/object-match";
 import { Effect, Layer } from "effect";
+import type { Mark } from "@/marks/types.ts";
 import { kvLayer } from "@/persistence/kv_layer.ts";
 import {
   type ConcurrentModificationError,
@@ -396,6 +398,380 @@ Deno.test("Files -- large document roundtrips", async () => {
       const result = yield* files.read("big.md");
       assertEquals(result.content, content);
       assertEquals(result.lines, content.split("\n").length);
+    }),
+  );
+});
+
+// marks storage (marks synthesized with saveMark; placement lands with the
+// Marks service)
+
+function createMark(
+  overrides: Partial<Mark> & { selected_text: string },
+): Mark {
+  const {
+    id = `mark_${Math.random().toString(36).slice(2)}`,
+    thread_id = `thread_${Math.random().toString(36).slice(2)}`,
+    path = "f.txt",
+    version_id = "v1",
+    selected_text,
+    before_context = "",
+    after_context = "",
+    comment = "test comment",
+    label,
+    created_at = 1000,
+    offset = 0,
+    length = selected_text.length,
+    status = "resolved",
+    meta,
+  } = overrides;
+  return {
+    id,
+    thread_id,
+    path,
+    version_id,
+    selected_text,
+    before_context,
+    after_context,
+    comment,
+    label,
+    created_at,
+    offset,
+    length,
+    status,
+    meta,
+  };
+}
+
+Deno.test("Files.getMarks -- returns empty when no marks", async () => {
+  await run(
+    Effect.gen(function* () {
+      const files = yield* Files;
+      const v1 = (yield* files.write("f.txt", "hello world")).version_id;
+      assertEquals(yield* files.getMarks("f.txt", v1), []);
+    }),
+  );
+});
+
+Deno.test("Files.getMarks -- returns all marks for a version in save order", async () => {
+  await run(
+    Effect.gen(function* () {
+      const files = yield* Files;
+      const v1 = (yield* files.write("f.txt", "hello world")).version_id;
+      yield* files.saveMark(
+        createMark({ version_id: v1, selected_text: "hello" }),
+      );
+      yield* files.saveMark(
+        createMark({ version_id: v1, selected_text: "world", offset: 6 }),
+      );
+
+      const marks = yield* files.getMarks("f.txt", v1);
+      assertEquals(marks.length, 2);
+      assertEquals(marks[0].selected_text, "hello");
+      assertEquals(marks[1].selected_text, "world");
+    }),
+  );
+});
+
+Deno.test("Files.deleteMark -- removes a mark", async () => {
+  await run(
+    Effect.gen(function* () {
+      const files = yield* Files;
+      const v1 = (yield* files.write("f.txt", "hello world")).version_id;
+      const mark = createMark({ version_id: v1, selected_text: "hello" });
+      yield* files.saveMark(mark);
+
+      assertEquals(yield* files.deleteMark("f.txt", v1, mark.id), true);
+      assertEquals(yield* files.getMarks("f.txt", v1), []);
+    }),
+  );
+});
+
+Deno.test("Files.deleteMark -- returns false for nonexistent mark", async () => {
+  await run(
+    Effect.gen(function* () {
+      const files = yield* Files;
+      const v1 = (yield* files.write("f.txt", "hello world")).version_id;
+      assertEquals(yield* files.deleteMark("f.txt", v1, "no-such-mark"), false);
+    }),
+  );
+});
+
+Deno.test("Files -- marks are isolated per workspace scope", async () => {
+  await run(
+    Effect.gen(function* () {
+      const files = yield* Files;
+      const inA = Effect.provideService(
+        Effect.gen(function* () {
+          const v = (yield* files.write("f.txt", "the quick brown fox"))
+            .version_id;
+          yield* files.saveMark(
+            createMark({
+              version_id: v,
+              selected_text: "quick brown",
+              offset: 4,
+              length: 11,
+            }),
+          );
+          return v;
+        }),
+        WorkspaceId,
+        { wsId: "ws-a" },
+      );
+      yield* inA;
+      yield* Effect.provideService(
+        files.write("f.txt", "the quick brown fox"),
+        WorkspaceId,
+        { wsId: "ws-b" },
+      );
+
+      const a = yield* Effect.provideService(
+        Effect.gen(function* () {
+          const versions = yield* files.getHistory("f.txt");
+          return yield* files.getMarks(
+            "f.txt",
+            versions[versions.length - 1].version_id,
+          );
+        }),
+        WorkspaceId,
+        { wsId: "ws-a" },
+      );
+      const b = yield* Effect.provideService(
+        Effect.gen(function* () {
+          const versions = yield* files.getHistory("f.txt");
+          return yield* files.getMarks(
+            "f.txt",
+            versions[versions.length - 1].version_id,
+          );
+        }),
+        WorkspaceId,
+        { wsId: "ws-b" },
+      );
+      assertEquals(a.length, 1);
+      assertEquals(b.length, 0);
+    }),
+  );
+});
+
+Deno.test("Files.write -- migrates marks to the new version when text unchanged", async () => {
+  await run(
+    Effect.gen(function* () {
+      const files = yield* Files;
+      const v1 = (yield* files.write("f.txt", "hello world")).version_id;
+      yield* files.saveMark(
+        createMark({ version_id: v1, selected_text: "hello", offset: 0 }),
+      );
+      const v2 = (yield* files.write("f.txt", "hello beautiful world"))
+        .version_id;
+
+      const marks = yield* files.getMarks("f.txt", v2);
+      assertEquals(marks.length, 1);
+      assertObjectMatch(marks[0], {
+        selected_text: "hello",
+        status: "resolved",
+        offset: 0,
+      });
+    }),
+  );
+});
+
+Deno.test("Files.write -- migrates marks with shifted offset", async () => {
+  await run(
+    Effect.gen(function* () {
+      const files = yield* Files;
+      const v1 = (yield* files.write("f.txt", "hello world")).version_id;
+      yield* files.saveMark(
+        createMark({ version_id: v1, selected_text: "world", offset: 6 }),
+      );
+      const v2 = (yield* files.write("f.txt", "hello beautiful world"))
+        .version_id;
+
+      const marks = yield* files.getMarks("f.txt", v2);
+      assertEquals(marks.length, 1);
+      assertObjectMatch(marks[0], { offset: 16 });
+    }),
+  );
+});
+
+Deno.test("Files.write -- marks become stale when text is deleted", async () => {
+  await run(
+    Effect.gen(function* () {
+      const files = yield* Files;
+      const v1 = (yield* files.write("f.txt", "hello world")).version_id;
+      yield* files.saveMark(
+        createMark({ version_id: v1, selected_text: "world", offset: 6 }),
+      );
+      const v2 = (yield* files.write("f.txt", "hello")).version_id;
+
+      const marks = yield* files.getMarks("f.txt", v2);
+      assertEquals(marks.length, 1);
+      assertEquals(marks[0].status, "stale");
+    }),
+  );
+});
+
+Deno.test("Files.write -- stale marks survive subsequent writes", async () => {
+  await run(
+    Effect.gen(function* () {
+      const files = yield* Files;
+      const v1 = (yield* files.write("f.txt", "hello world")).version_id;
+      yield* files.saveMark(
+        createMark({ version_id: v1, selected_text: "world", offset: 6 }),
+      );
+      const v2 = (yield* files.write("f.txt", "hello")).version_id;
+      assertEquals((yield* files.getMarks("f.txt", v2))[0].status, "stale");
+
+      const v3 = (yield* files.write("f.txt", "hello again")).version_id;
+      const marks3 = yield* files.getMarks("f.txt", v3);
+      assertEquals(marks3.length, 1);
+      assertEquals(marks3[0].status, "stale");
+    }),
+  );
+});
+
+Deno.test("Files.revert -- migrates marks through write", async () => {
+  await run(
+    Effect.gen(function* () {
+      const files = yield* Files;
+      const v1 = (yield* files.write("f.txt", "hello world")).version_id;
+      // Contexts like the mark tool captures them; the resolver re-anchors
+      // through matched contexts when the selected text moved or returned.
+      yield* files.saveMark(
+        createMark({
+          version_id: v1,
+          selected_text: "hello",
+          offset: 0,
+          after_context: " world",
+        }),
+      );
+      yield* files.write("f.txt", "goodbye world");
+      yield* files.revert("f.txt", v1);
+
+      const file = yield* files.read("f.txt");
+      const marks = yield* files.getMarks("f.txt", file.version_id);
+      assertEquals(marks.length, 1);
+      assertObjectMatch(marks[0], {
+        selected_text: "hello",
+        status: "resolved",
+      });
+    }),
+  );
+});
+
+Deno.test("Files.migrateMarks -- re-anchors marks added to an old version", async () => {
+  await run(
+    Effect.gen(function* () {
+      const files = yield* Files;
+      const v1 = (yield* files.write("f.txt", "hello world")).version_id;
+      yield* files.saveMark(
+        createMark({ version_id: v1, selected_text: "hello", offset: 0 }),
+      );
+      yield* files.write("f.txt", "hello beautiful world");
+
+      // Added to v1 after the write, so the write migration missed it.
+      yield* files.saveMark(
+        createMark({ version_id: v1, selected_text: "world", offset: 6 }),
+      );
+
+      const result = yield* files.migrateMarks("f.txt", v1);
+      const latest = yield* files.read("f.txt");
+      const marks = yield* files.getMarks("f.txt", latest.version_id);
+      assertEquals(result, { migrated: 1, stale: 0 });
+      assertEquals(marks.length, 2);
+      assertObjectMatch(marks[1], {
+        selected_text: "world",
+        offset: 16,
+        status: "resolved",
+      });
+    }),
+  );
+});
+
+Deno.test("Files.migrateMarks -- skips marks already on the latest", async () => {
+  await run(
+    Effect.gen(function* () {
+      const files = yield* Files;
+      const v1 = (yield* files.write("f.txt", "hello world")).version_id;
+      yield* files.saveMark(
+        createMark({ version_id: v1, selected_text: "hello", offset: 0 }),
+      );
+      yield* files.write("f.txt", "hello there");
+
+      const result = yield* files.migrateMarks("f.txt", v1);
+      const latest = yield* files.read("f.txt");
+      const marks = yield* files.getMarks("f.txt", latest.version_id);
+      assertEquals(result, { migrated: 0, stale: 0 });
+      assertEquals(marks.length, 1);
+    }),
+  );
+});
+
+Deno.test("Files.migrateMarks -- no-op when source version is latest", async () => {
+  await run(
+    Effect.gen(function* () {
+      const files = yield* Files;
+      const v1 = (yield* files.write("f.txt", "hello world")).version_id;
+      yield* files.saveMark(
+        createMark({ version_id: v1, selected_text: "hello", offset: 0 }),
+      );
+
+      const result = yield* files.migrateMarks("f.txt", v1);
+      assertEquals(result, { migrated: 0, stale: 0 });
+      assertEquals((yield* files.getMarks("f.txt", v1)).length, 1);
+    }),
+  );
+});
+
+Deno.test("Files.migrateMarks -- resolves shifted text", async () => {
+  await run(
+    Effect.gen(function* () {
+      const files = yield* Files;
+      const v1 = (yield* files.write("f.txt", "alpha beta")).version_id;
+      yield* files.write("f.txt", "alpha gamma beta");
+      yield* files.saveMark(
+        createMark({ version_id: v1, selected_text: "beta", offset: 6 }),
+      );
+
+      const result = yield* files.migrateMarks("f.txt", v1);
+      const latest = yield* files.read("f.txt");
+      const marks = yield* files.getMarks("f.txt", latest.version_id);
+      assertEquals(result, { migrated: 1, stale: 0 });
+      assertEquals(marks.length, 1);
+      assertObjectMatch(marks[0], {
+        selected_text: "beta",
+        offset: 12,
+        status: "resolved",
+      });
+    }),
+  );
+});
+
+Deno.test("Files.migrateMarks -- marks go stale when text is gone", async () => {
+  await run(
+    Effect.gen(function* () {
+      const files = yield* Files;
+      const v1 = (yield* files.write("f.txt", "hello world")).version_id;
+      yield* files.write("f.txt", "completely different");
+      yield* files.saveMark(
+        createMark({ version_id: v1, selected_text: "world", offset: 6 }),
+      );
+
+      const result = yield* files.migrateMarks("f.txt", v1);
+      const latest = yield* files.read("f.txt");
+      const marks = yield* files.getMarks("f.txt", latest.version_id);
+      assertEquals(result, { migrated: 1, stale: 1 });
+      assertEquals(marks[0].status, "stale");
+    }),
+  );
+});
+
+Deno.test("Files.migrateMarks -- returns zeros for unknown version", async () => {
+  await run(
+    Effect.gen(function* () {
+      const files = yield* Files;
+      yield* files.write("f.txt", "hello world");
+
+      const result = yield* files.migrateMarks("f.txt", "no-such-version");
+      assertEquals(result, { migrated: 0, stale: 0 });
     }),
   );
 });

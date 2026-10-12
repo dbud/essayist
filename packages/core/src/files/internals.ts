@@ -203,3 +203,6 @@ export function makeInternals(
     migrationOp,
   };
 }
+
+/** The bound internals object {@linkcode makeInternals} returns. */
+export type Internals = ReturnType<typeof makeInternals>;

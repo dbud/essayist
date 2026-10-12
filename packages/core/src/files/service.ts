@@ -9,6 +9,7 @@ import { sortBy } from "@std/collections";
 import { Context, Effect, Layer } from "effect";
 import { unifiedDiff } from "@/diff/unified_diff.ts";
 import { type ContentManifest, chunkContent } from "@/files/chunked_content.ts";
+import type { Mark, MigrateMarksResult } from "@/marks/types.ts";
 import {
   type ConcurrentModificationError,
   Persistence,
@@ -27,6 +28,7 @@ import {
   latestPrefixKey,
   type StoredSnapshot,
 } from "./keys.ts";
+import { makeMarkLists } from "./marks_list.ts";
 import type {
   DiffResult,
   DraftSnapshot,
@@ -105,6 +107,42 @@ export interface Interface {
     versionA: string,
     versionB: string,
   ): Effect.Effect<DiffResult, PersistenceError, WorkspaceId>;
+  /** Marks placed on a specific version of a file. */
+  getMarks(
+    path: string,
+    versionId: string,
+  ): Effect.Effect<Mark[], PersistenceError, WorkspaceId>;
+  /** Append one mark to its version's list, checked against the list. */
+  saveMark(
+    mark: Mark,
+  ): Effect.Effect<
+    void,
+    PersistenceError | ConcurrentModificationError,
+    WorkspaceId
+  >;
+  /** Delete a mark by id from a version's list. False when absent. */
+  deleteMark(
+    path: string,
+    versionId: string,
+    markId: string,
+  ): Effect.Effect<
+    boolean,
+    PersistenceError | ConcurrentModificationError,
+    WorkspaceId
+  >;
+  /**
+   * Re-anchor a version's marks onto the latest version. Marks whose
+   * thread_id is already on the latest are skipped; text that no longer
+   * resolves becomes stale. No-op when the given version is latest.
+   */
+  migrateMarks(
+    path: string,
+    fromVersionId: string,
+  ): Effect.Effect<
+    MigrateMarksResult,
+    PersistenceError | ConcurrentModificationError,
+    WorkspaceId
+  >;
 }
 
 export class Files extends Context.Service<Files, Interface>()(
@@ -119,6 +157,7 @@ export class Files extends Context.Service<Files, Interface>()(
       Effect.gen(function* () {
         const persistence = yield* Persistence;
         const internals = makeInternals(persistence);
+        const markLists = makeMarkLists(persistence, internals);
         let versionSeq = 0;
 
         const read = (
@@ -430,6 +469,7 @@ export class Files extends Context.Service<Files, Interface>()(
           promoteDraft,
           revert,
           diff,
+          ...markLists,
         });
       }),
     );
