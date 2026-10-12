@@ -30,7 +30,6 @@ export const handler = {
             Effect.provide(
               Effect.provideService(
                 runReviewPass({
-                  vfs,
                   pass,
                   wsId,
                   path,

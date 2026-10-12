@@ -4,19 +4,18 @@ import type { Files } from "@/files/service.ts";
 import type { ForwardSpec, PassWhenSpec } from "@/flow/helpers.ts";
 import { forward, passWhen } from "@/flow/helpers.ts";
 import type { FlowTypes, NodeRunners } from "@/flow/types.ts";
+import type { Marks } from "@/marks/service.ts";
 import type { ModelClient } from "@/model/service.ts";
 import { type Analysis, analyzeRunner } from "@/reviews/steps/analyze.ts";
 import {
-  createMarkApplier,
-  createMarkApplyRunner,
   type MarkProposal,
+  markApplyRunner,
   markProposeRunner,
   markRepairRunner,
 } from "@/reviews/steps/mark.ts";
 import { sourceRunner } from "@/reviews/steps/source.ts";
 import { synthesizeRunner } from "@/reviews/steps/synthesize.ts";
 import type { MarkAttempt } from "@/reviews/types.ts";
-import type { PinnedVFS } from "@/vfs/pin.ts";
 import type { MarkProvenance } from "@/vfs/types.ts";
 import type { WorkspaceId } from "@/workspace/WorkspaceId.ts";
 
@@ -37,6 +36,8 @@ export interface ReviewTypes extends FlowTypes {
     "mark.propose": ResolvedReviewUnit;
     "mark.propose.repair": ResolvedReviewUnit;
     "mark.apply": {
+      path: string;
+      versionId: string;
       allowedLabels: readonly string[];
       provenance: MarkProvenance;
     };
@@ -55,19 +56,15 @@ export interface ReviewTypes extends FlowTypes {
 }
 
 /** The services the review graph's native steps consume. */
-export type ReviewServices = Files | WorkspaceId | ModelClient;
+export type ReviewServices = Files | WorkspaceId | Marks | ModelClient;
 
-export function createReviewRunners(options: {
-  pinned: PinnedVFS;
-}): NodeRunners<ReviewTypes, ReviewServices> {
-  return {
-    source: sourceRunner,
-    analyze: analyzeRunner,
-    "mark.propose": markProposeRunner,
-    "mark.propose.repair": markRepairRunner,
-    "mark.apply": createMarkApplyRunner(createMarkApplier(options.pinned)),
-    "mark.repair.gate": passWhen<ReviewTypes, "mark.repair.gate">(),
-    "mark.collect": forward<ReviewTypes, "mark.collect">(),
-    synthesize: synthesizeRunner,
-  };
-}
+export const reviewRunners: NodeRunners<ReviewTypes, ReviewServices> = {
+  source: sourceRunner,
+  analyze: analyzeRunner,
+  "mark.propose": markProposeRunner,
+  "mark.propose.repair": markRepairRunner,
+  "mark.apply": markApplyRunner,
+  "mark.repair.gate": passWhen<ReviewTypes, "mark.repair.gate">(),
+  "mark.collect": forward<ReviewTypes, "mark.collect">(),
+  synthesize: synthesizeRunner,
+};

@@ -16,6 +16,7 @@ import { FlowRunner } from "@/flow/runner.ts";
 import type { FlowEvent } from "@/flow/types.ts";
 import { view } from "@/flow/view.ts";
 import { logger } from "@/logger.ts";
+import type { Marks } from "@/marks/service.ts";
 import type { ModelClient } from "@/model/service.ts";
 import type { MissingChunksError } from "@/persistence/chunked_values.ts";
 import type {
@@ -24,9 +25,9 @@ import type {
 } from "@/persistence/mod.ts";
 import { buildReviewGraph } from "@/reviews/adapter.ts";
 import {
-  createReviewRunners,
   type ReviewServices,
   type ReviewTypes,
+  reviewRunners,
 } from "@/reviews/graph.ts";
 import type { ReviewProgress } from "@/reviews/progress.ts";
 import { ReviewProgressTracker } from "@/reviews/progress.ts";
@@ -36,13 +37,10 @@ import { foldCompleted } from "@/reviews/trace/mod.ts";
 import { TraceEvents } from "@/reviews/trace/service.ts";
 import type { TraceEvent } from "@/reviews/trace/types.ts";
 import type { ReviewRun } from "@/reviews/types.ts";
-import { PinnedVFS } from "@/vfs/pin.ts";
-import type { VFS } from "@/vfs/types.ts";
 import { WorkspaceId } from "@/workspace/WorkspaceId.ts";
 
 /** Options for {@linkcode runReviewPass}. */
 export interface RunReviewPassOptions {
-  vfs: VFS;
   pass: ResolvedReviewPass;
   wsId: string;
   path: string;
@@ -56,6 +54,7 @@ type RunnerServices =
   | TraceEvents
   | WorkspaceId
   | Files
+  | Marks
   | ModelClient;
 
 // Heartbeats go out every interval. The interval must stay far under the
@@ -228,12 +227,8 @@ function execute(
     const runs = yield* ReviewRuns;
     const traces = yield* TraceEvents;
     const owner = yield* claim(runs, run.id);
-    const { onProgress, pass, path, vfs } = options;
+    const { onProgress, pass, path } = options;
     const completed = priorTrace ? foldCompleted(priorTrace) : undefined;
-    const pinned = new PinnedVFS(vfs, {
-      path,
-      versionId,
-    });
     const graph = buildReviewGraph(pass, run.id, { path, versionId });
     const kindOf = new Map(
       graph.nodes.map((node) => [node.id, node.kind] as const),
@@ -273,12 +268,9 @@ function execute(
     );
     const writerFiber = yield* Effect.forkChild(writer);
 
-    // The native steps read their services from context; the pinned VFS
-    // serves the promise steps until they go native.
+    // The native steps read their services from context.
     const flow = new FlowRunner<ReviewTypes, ReviewServices>({
-      runners: createReviewRunners({
-        pinned,
-      }),
+      runners: reviewRunners,
       onEvent: (event) => {
         record(event);
         return Promise.resolve();
@@ -317,10 +309,10 @@ function execute(
           try: () => view<ReviewTypes>(result.artifacts).one("summary"),
           catch: asMessage,
         });
-        yield* Effect.tryPromise({
-          try: () => pinned.migrateMarks(path, versionId),
-          catch: asMessage,
-        });
+        const files = yield* Files;
+        yield* files
+          .migrateMarks(path, versionId)
+          .pipe(Effect.mapError(asMessage));
         const done = yield* runs
           .completeRun(run.id, summary)
           .pipe(Effect.mapError(asMessage));

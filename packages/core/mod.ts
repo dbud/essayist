@@ -91,8 +91,6 @@ export type {
 } from "@/tools/registry.ts";
 export { getToolInfos } from "@/tools/registry.ts";
 export { UserState } from "@/user_state/service.ts";
-export type { VersionPin } from "@/vfs/pin.ts";
-export { PinnedVFS } from "@/vfs/pin.ts";
 export type {
   DiffResult,
   DraftSnapshot,

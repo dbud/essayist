@@ -1,15 +1,18 @@
 import { partition } from "@std/collections";
 import { Effect } from "effect";
 import { z } from "zod";
-import { fromStep } from "@/flow/bridge.ts";
 import type { NodeRunner } from "@/flow/types.ts";
+import { Marks } from "@/marks/service.ts";
 import type { ModelClient } from "@/model/service.ts";
+import type {
+  ConcurrentModificationError,
+  PersistenceError,
+} from "@/persistence/mod.ts";
 import { callStructured } from "@/reviews/call.ts";
 import type { ReviewTypes } from "@/reviews/graph.ts";
 import type { MarkAttempt } from "@/reviews/types.ts";
-import { SerialTasks } from "@/utils/serial.ts";
-import type { PinnedVFS } from "@/vfs/pin.ts";
 import type { MarkProvenance } from "@/vfs/types.ts";
+import type { WorkspaceId } from "@/workspace/WorkspaceId.ts";
 import { composeCallInput, composeRepairInput } from "./input.ts";
 
 export const MarkProposalSchema = z.object({
@@ -42,74 +45,89 @@ export const ProposedMarksSchema = z.object({
     example: [
       {
         selected_text: "the exact span from the essay",
-        comment: "what is wrong with it, and what to do",
+        comment: "what is wrong with it",
         label: "grammar",
       },
     ],
   }),
 });
 
-export type ProposedMarks = z.infer<typeof ProposedMarksSchema>;
-
-export type ProposedMark = MarkProposal;
-
-/**
- * Apply proposed marks through the pinned VFS. Every attempt is reported,
- * including failures with their reason.
- */
-export async function applyMarks(
-  vfs: PinnedVFS,
-  proposed: ProposedMarks,
-  allowedLabels: readonly string[],
-  provenance: MarkProvenance,
-): Promise<MarkAttempt[]> {
-  // Sequential on purpose: the marks of a version are a single list under a
-  // single KV key, so vfs.mark is a read-modify-write and concurrent
-  // applications would lose marks.
-  const attempts: MarkAttempt[] = [];
-  for (const mark of proposed.marks) {
-    attempts.push(await applyMark(vfs, mark, allowedLabels, provenance));
-  }
-  return attempts;
+export interface MarkPin {
+  path: string;
+  versionId: string;
 }
 
-async function applyMark(
-  vfs: PinnedVFS,
-  mark: ProposedMark,
+/** Apply proposals as marks on one pinned version, one proposal per
+ * attempt: every attempt is reported, including failures with their
+ * reason. Each mark appends to the version's single mark list through a
+ * checked write, retried on concurrent modification. */
+export function applyProposedMarks(
+  proposals: readonly MarkProposal[],
   allowedLabels: readonly string[],
+  pin: MarkPin,
   provenance: MarkProvenance,
-): Promise<MarkAttempt> {
-  if (allowedLabels.length > 0 && !allowedLabels.includes(mark.label)) {
-    return {
-      ...mark,
-      marked: false,
-      error: `label "${mark.label}" is not allowed; use one of: ${allowedLabels.join(", ")}`,
-    };
-  }
-  const result = await vfs.mark(vfs.path, mark.selected_text, mark.comment, {
-    label: mark.label,
-    lineHint: mark.line_hint,
-    provenance,
+): Effect.Effect<
+  MarkAttempt[],
+  PersistenceError | ConcurrentModificationError,
+  Marks | WorkspaceId
+> {
+  return Effect.gen(function* () {
+    const marks = yield* Marks;
+    const attempts: MarkAttempt[] = [];
+    for (const proposal of proposals) {
+      if (allowedLabels.length > 0 && !allowedLabels.includes(proposal.label)) {
+        attempts.push({
+          ...proposal,
+          marked: false,
+          error: `label "${proposal.label}" is not allowed; use one of: ${allowedLabels.join(", ")}`,
+        });
+        continue;
+      }
+      const result = yield* marks.mark(
+        pin.path,
+        proposal.selected_text,
+        proposal.comment,
+        {
+          label: proposal.label,
+          lineHint: proposal.line_hint,
+          provenance,
+          versionId: pin.versionId,
+        },
+      );
+      attempts.push({
+        ...proposal,
+        ...result,
+        error: result.marked ? undefined : "selected text not found",
+      });
+    }
+    return attempts;
   });
-  return {
-    ...mark,
-    ...result,
-    error: result.marked ? undefined : "selected text not found",
-  };
 }
 
-/** A serialized mark applier: marks of a version are a single list in
- * KV, so vfs.mark is a read-modify-write and concurrent
- * applications would lose marks. */
-export function createMarkApplier(pinned: PinnedVFS) {
-  const tasks = new SerialTasks();
-  return (
-    marks: MarkProposal[],
-    allowedLabels: readonly string[],
-    provenance: MarkProvenance,
-  ): Promise<MarkAttempt[]> =>
-    tasks.add(() => applyMarks(pinned, { marks }, allowedLabels, provenance));
-}
+export const markApplyRunner: NodeRunner<
+  ReviewTypes,
+  "mark.apply",
+  Marks | WorkspaceId
+> = {
+  execute: (
+    { path, versionId, allowedLabels, provenance },
+    { inputs, artifact, emit },
+  ) =>
+    Effect.gen(function* () {
+      const attempts = yield* applyProposedMarks(
+        inputs.of("mark.proposals").flat(),
+        allowedLabels,
+        { path, versionId },
+        provenance,
+      );
+      emit({ type: "applied", attempts });
+      const [placed, failed] = partition(attempts, (attempt) => attempt.marked);
+      return [
+        artifact("mark.placed", placed),
+        ...(failed.length > 0 ? [artifact("mark.failed", failed)] : []),
+      ];
+    }),
+};
 
 export const markProposeRunner: NodeRunner<
   ReviewTypes,
@@ -153,31 +171,3 @@ export const markRepairRunner: NodeRunner<
       return [artifact("mark.proposals", result.output.marks)];
     }),
 };
-
-export function createMarkApplyRunner(
-  apply: (
-    marks: MarkProposal[],
-    allowedLabels: readonly string[],
-    provenance: MarkProvenance,
-  ) => Promise<MarkAttempt[]>,
-): NodeRunner<ReviewTypes, "mark.apply"> {
-  return {
-    execute: ({ allowedLabels, provenance }, { inputs, artifact, emit }) =>
-      fromStep(async () => {
-        const attempts = await apply(
-          inputs.of("mark.proposals").flat(),
-          allowedLabels,
-          provenance,
-        );
-        emit({ type: "applied", attempts });
-        const [placed, failed] = partition(
-          attempts,
-          (attempt) => attempt.marked,
-        );
-        return [
-          artifact("mark.placed", placed),
-          ...(failed.length > 0 ? [artifact("mark.failed", failed)] : []),
-        ];
-      }),
-  };
-}

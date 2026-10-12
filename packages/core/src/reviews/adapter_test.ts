@@ -12,6 +12,8 @@ const PROMPTS = {
 };
 
 const APPLY_PAYLOAD = {
+  path: "essay.txt",
+  versionId: "v1",
   allowedLabels: ["grammar"],
   provenance: { runId: "r", unitId: "mechanics" },
 };

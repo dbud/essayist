@@ -13,8 +13,8 @@ const CONTENT = "content";
  * per unit, with attempt units unrolling their mark subgraph behind gates.
  * Unit inputs stay symbolic (unit ids) until every unit is built; a final
  * pass resolves each unit to the node standing for the finished unit.
- * The source node pins the review to one file version; a preview graph
- * (pin omitted) carries an inert pin. */
+ * The source node and every apply node pin the review to one file
+ * version; a preview graph (pin omitted) carries an inert pin. */
 export function buildReviewGraph(
   pass: ResolvedReviewPass,
   runId: string,
@@ -33,7 +33,7 @@ export function buildReviewGraph(
   ];
   const terminals = new Map<string, string>();
   for (const unit of pass.units) {
-    const built = unitNodes(unit, runId);
+    const built = unitNodes(unit, runId, pin);
     nodes.push(...built.nodes);
     terminals.set(unit.id, built.terminalId);
   }
@@ -49,9 +49,10 @@ export function buildReviewGraph(
 function unitNodes(
   unit: ResolvedReviewUnit,
   runId: string,
+  pin?: { path: string; versionId: string },
 ): { nodes: FlowNodeOf<ReviewTypes>[]; terminalId: string } {
   if (unit.attempt) {
-    return markNodes(unit, unit.attempt, runId);
+    return markNodes(unit, unit.attempt, runId, pin);
   }
   const kind = unit.summary ? "synthesize" : "analyze";
   return {
@@ -73,8 +74,11 @@ function markNodes(
   unit: ResolvedReviewUnit,
   attempt: { categories: Category[]; repairRounds: number },
   runId: string,
+  pin?: { path: string; versionId: string },
 ): { nodes: FlowNodeOf<ReviewTypes>[]; terminalId: string } {
   const applyPayload = {
+    path: pin?.path ?? "",
+    versionId: pin?.versionId ?? "",
     allowedLabels: attempt.categories.map((category) => category.label),
     provenance: { runId, unitId: unit.id },
   };

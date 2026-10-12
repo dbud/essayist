@@ -11,17 +11,17 @@ import type {
   FlowGraph,
   FlowRunResult,
 } from "@/flow/types.ts";
+import { Marks } from "@/marks/service.ts";
 import { ModelClient } from "@/model/service.ts";
 import { KvAdapter } from "@/persistence/kv_adapter.ts";
 import { kvLayer } from "@/persistence/kv_layer.ts";
 import {
-  createReviewRunners,
   type ReviewNodeEvent,
   type ReviewServices,
   type ReviewTypes,
+  reviewRunners,
 } from "@/reviews/graph.ts";
 import { createSpyTransport } from "@/reviews/testing/agent.ts";
-import { PinnedVFS } from "@/vfs/pin.ts";
 import { VirtualFileSystem } from "@/vfs/vfs.ts";
 import { WorkspaceId } from "@/workspace/WorkspaceId.ts";
 
@@ -68,18 +68,24 @@ function artifactsOf<A extends keyof ReviewTypes["artifacts"]>(
     .map((artifact) => artifact.data);
 }
 
-/** One shared KV per test: the promise-side VFS for the pinned steps reads
- * and writes the same file rows the Files service does. */
+/** One shared KV per test: the promise-side VFS for read-back assertions
+ * reads the same file rows the Files and Marks services write. */
 async function setup(content: string) {
   const kv = await Deno.openKv(":memory:");
   const vfs = new VirtualFileSystem(new KvAdapter(kv), "ws");
   const { version_id: versionId } = await vfs.write("essay.txt", content);
-  const env = Layer.provide(Files.layerNoDeps, kvLayer(kv));
+  const env = Layer.provide(
+    Layer.mergeAll(
+      Files.layerNoDeps,
+      Layer.provide(Marks.layerNoDeps, Files.layerNoDeps),
+    ),
+    kvLayer(kv),
+  );
   return { env, vfs, versionId };
 }
 
 const run = (
-  env: Layer.Layer<ModelClient | Files>,
+  env: Layer.Layer<ModelClient | Files | Marks>,
   flow: FlowRunner<ReviewTypes, ReviewServices>,
   graph: FlowGraph<ReviewTypes>,
 ): Promise<FlowRunResult<ReviewTypes>> =>
@@ -92,7 +98,6 @@ const run = (
 
 Deno.test("review runners -- analyze, propose, apply, and synthesize in a flow", async () => {
   const { env: baseEnv, vfs, versionId } = await setup("hello brave world");
-  const pinned = new PinnedVFS(vfs, { path: "essay.txt", versionId });
   const { client, inputs } = createSpyTransport([
     { text: ANALYSIS_ROUND, reasoning: "reading closely" },
     {
@@ -101,7 +106,7 @@ Deno.test("review runners -- analyze, propose, apply, and synthesize in a flow",
     { text: '{"summary":"Solid draft."}' },
   ]);
   const env = Layer.merge(baseEnv, ModelClient.layerOf(client));
-  const runners = createReviewRunners({ pinned });
+  const runners = reviewRunners;
   const events: FlowEvent[] = [];
   const flow = new FlowRunner<ReviewTypes, ReviewServices>({
     runners,
@@ -135,6 +140,8 @@ Deno.test("review runners -- analyze, propose, apply, and synthesize in a flow",
         kind: "mark.apply",
         dependsOn: ["mechanics.propose"],
         payload: {
+          path: "essay.txt",
+          versionId,
           allowedLabels: ["grammar"],
           provenance: { runId: "r", unitId: "mechanics" },
         },
@@ -186,14 +193,13 @@ Deno.test("review runners -- analyze, propose, apply, and synthesize in a flow",
 
 Deno.test("review runners -- repair propose stays idle without failures", async () => {
   const { env: baseEnv, vfs, versionId } = await setup("hello world");
-  const pinned = new PinnedVFS(vfs, { path: "essay.txt", versionId });
   const { client, inputs } = createSpyTransport([
     {
       text: '{"marks":[{"selected_text":"hello","comment":"found it","label":"grammar"}]}',
     },
   ]);
   const env = Layer.merge(baseEnv, ModelClient.layerOf(client));
-  const runners = createReviewRunners({ pinned });
+  const runners = reviewRunners;
   const provenance = { runId: "r", unitId: "m" };
   const flow = new FlowRunner<ReviewTypes, ReviewServices>({ runners });
 
@@ -215,7 +221,12 @@ Deno.test("review runners -- repair propose stays idle without failures", async 
         id: "m.apply",
         kind: "mark.apply",
         dependsOn: ["m.propose"],
-        payload: { allowedLabels: ["grammar"], provenance },
+        payload: {
+          path: "essay.txt",
+          versionId,
+          allowedLabels: ["grammar"],
+          provenance,
+        },
       },
       {
         id: "m.repair1.gate",
@@ -233,7 +244,12 @@ Deno.test("review runners -- repair propose stays idle without failures", async 
         id: "m.repair1.apply",
         kind: "mark.apply",
         dependsOn: ["m.repair1.propose"],
-        payload: { allowedLabels: ["grammar"], provenance },
+        payload: {
+          path: "essay.txt",
+          versionId,
+          allowedLabels: ["grammar"],
+          provenance,
+        },
       },
     ],
   } as FlowGraph<ReviewTypes>);
@@ -260,7 +276,6 @@ Deno.test("review runners -- repair propose stays idle without failures", async 
 
 Deno.test("review runners -- a repair round re-quotes failed spans", async () => {
   const { env: baseEnv, vfs, versionId } = await setup("hello world");
-  const pinned = new PinnedVFS(vfs, { path: "essay.txt", versionId });
   const { client, inputs } = createSpyTransport([
     {
       text: '{"marks":[{"selected_text":"ghost span","comment":"not there","label":"grammar"}]}',
@@ -270,7 +285,7 @@ Deno.test("review runners -- a repair round re-quotes failed spans", async () =>
     },
   ]);
   const env = Layer.merge(baseEnv, ModelClient.layerOf(client));
-  const runners = createReviewRunners({ pinned });
+  const runners = reviewRunners;
   const provenance = { runId: "r", unitId: "m" };
   const flow = new FlowRunner<ReviewTypes, ReviewServices>({ runners });
 
@@ -292,7 +307,12 @@ Deno.test("review runners -- a repair round re-quotes failed spans", async () =>
         id: "m.apply",
         kind: "mark.apply",
         dependsOn: ["m.propose"],
-        payload: { allowedLabels: ["grammar"], provenance },
+        payload: {
+          path: "essay.txt",
+          versionId,
+          allowedLabels: ["grammar"],
+          provenance,
+        },
       },
       {
         id: "m.repair1.gate",
@@ -310,7 +330,12 @@ Deno.test("review runners -- a repair round re-quotes failed spans", async () =>
         id: "m.repair1.apply",
         kind: "mark.apply",
         dependsOn: ["m.repair1.propose"],
-        payload: { allowedLabels: ["grammar"], provenance },
+        payload: {
+          path: "essay.txt",
+          versionId,
+          allowedLabels: ["grammar"],
+          provenance,
+        },
       },
     ],
   } as FlowGraph<ReviewTypes>);

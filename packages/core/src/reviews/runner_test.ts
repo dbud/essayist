@@ -3,6 +3,7 @@ import { type Context, Effect, Layer } from "effect";
 import type { ResolvedReviewPass, ReviewUnit } from "@/config/types.ts";
 import { Files } from "@/files/service.ts";
 import type { NodeRun } from "@/flow/types.ts";
+import { Marks } from "@/marks/service.ts";
 import { ModelClient } from "@/model/service.ts";
 import { ChunkedValues } from "@/persistence/chunked_values.ts";
 import { KvAdapter } from "@/persistence/kv_adapter.ts";
@@ -65,7 +66,7 @@ function passFixture(units: ReviewUnit[]): ResolvedReviewPass {
 interface Setup {
   kv: Deno.Kv;
   adapter: KvAdapter;
-  env: Layer.Layer<ReviewRuns | TraceEvents | Files>;
+  env: Layer.Layer<Marks | ReviewRuns | TraceEvents | Files>;
   vfs: VirtualFileSystem;
   versionId?: string;
 }
@@ -91,6 +92,7 @@ async function setup(file?: {
       Layer.provide(TraceEvents.layerNoDeps, ChunkedValues.layerNoDeps),
       ChunkedValues.layerNoDeps,
       Files.layerNoDeps,
+      Layer.provide(Marks.layerNoDeps, Files.layerNoDeps),
     ),
     kvLayer(kv),
   );
@@ -100,7 +102,7 @@ async function setup(file?: {
 /** Run a small program against the test's shared KV store: the body gets
  * both services, as they come out of the shared env. */
 function viaRuns<A>(
-  env: Layer.Layer<ModelClient | ReviewRuns | TraceEvents | Files>,
+  env: Layer.Layer<Marks | ModelClient | ReviewRuns | TraceEvents | Files>,
   body: (deps: {
     runs: Context.Service.Shape<typeof ReviewRuns>;
     traces: Context.Service.Shape<typeof TraceEvents>;
@@ -123,7 +125,7 @@ function viaRuns<A>(
 }
 
 async function runPass(
-  env: Layer.Layer<ModelClient | ReviewRuns | TraceEvents | Files>,
+  env: Layer.Layer<Marks | ModelClient | ReviewRuns | TraceEvents | Files>,
   options: RunReviewPassOptions,
 ): Promise<ReviewRun> {
   return await Effect.runPromise(
@@ -137,7 +139,7 @@ async function runPass(
 }
 
 async function resumePass(
-  env: Layer.Layer<ModelClient | ReviewRuns | TraceEvents | Files>,
+  env: Layer.Layer<Marks | ModelClient | ReviewRuns | TraceEvents | Files>,
   options: RunReviewPassOptions,
   runId: string,
 ): Promise<ReviewRun> {
@@ -200,7 +202,6 @@ Deno.test("runReviewPass -- completes a pass with marks, summary, and a per-node
   const env = Layer.merge(baseEnv, ModelClient.layerOf(client));
 
   const run = await runPass(env, {
-    vfs,
     pass: passFixture([
       unitFixture({ id: "analyze" }),
       unitFixture({
@@ -282,7 +283,6 @@ Deno.test("runReviewPass -- a repair round re-quotes the failed spans", async ()
   const env = Layer.merge(baseEnv, ModelClient.layerOf(client));
 
   const run = await runPass(env, {
-    vfs,
     pass: passFixture([
       unitFixture({
         id: "mechanics",
@@ -347,7 +347,6 @@ Deno.test("runReviewPass -- a zero budget keeps failed marks with no repair node
   const env = Layer.merge(baseEnv, ModelClient.layerOf(client));
 
   const run = await runPass(env, {
-    vfs,
     pass: passFixture([
       unitFixture({
         id: "mechanics",
@@ -375,7 +374,7 @@ Deno.test("runReviewPass -- a zero budget keeps failed marks with no repair node
 });
 
 Deno.test("runReviewPass -- resuming a run that does not exist is an error", async () => {
-  const { env: baseEnv, vfs } = await setup({
+  const { env: baseEnv } = await setup({
     path: "essay.txt",
     content: "hello world",
   });
@@ -387,7 +386,6 @@ Deno.test("runReviewPass -- resuming a run that does not exist is an error", asy
       resumePass(
         env,
         {
-          vfs,
           pass: passFixture([unitFixture({ id: "analyze" })]),
           wsId: "ws",
           path: "essay.txt",
@@ -416,7 +414,6 @@ Deno.test("runReviewPass -- a resumed pass skips completed nodes and shows each 
   const env = Layer.merge(baseEnv, ModelClient.layerOf(first.client));
 
   const run = await runPass(env, {
-    vfs,
     pass: passFixture([
       unitFixture({ id: "analyze" }),
       unitFixture({
@@ -448,7 +445,6 @@ Deno.test("runReviewPass -- a resumed pass skips completed nodes and shows each 
   const resumed = await resumePass(
     resumeEnv,
     {
-      vfs,
       pass: passFixture([
         unitFixture({ id: "analyze" }),
         unitFixture({
@@ -479,7 +475,7 @@ Deno.test("runReviewPass -- a resumed pass skips completed nodes and shows each 
 });
 
 Deno.test("runReviewPass -- a node error fails the run and skips dependents", async () => {
-  const { env: baseEnv, vfs } = await setup({
+  const { env: baseEnv } = await setup({
     path: "essay.txt",
     content: "hello world",
   });
@@ -487,7 +483,6 @@ Deno.test("runReviewPass -- a node error fails the run and skips dependents", as
   const env = Layer.merge(baseEnv, ModelClient.layerOf(client));
 
   const run = await runPass(env, {
-    vfs,
     pass: passFixture([
       unitFixture({ id: "analyze" }),
       unitFixture({
@@ -546,7 +541,7 @@ Deno.test("runReviewPass -- a node error fails the run and skips dependents", as
 });
 
 Deno.test("runReviewPass -- fails a pass that commits no summary", async () => {
-  const { env: baseEnv, vfs } = await setup({
+  const { env: baseEnv } = await setup({
     path: "essay.txt",
     content: "hello world",
   });
@@ -554,7 +549,6 @@ Deno.test("runReviewPass -- fails a pass that commits no summary", async () => {
   const env = Layer.merge(baseEnv, ModelClient.layerOf(client));
 
   const run = await runPass(env, {
-    vfs,
     // No summary unit, so the graph commits no summary artifact. Reading it
     // back is a structural surprise, not a pass with a blank summary.
     pass: passFixture([unitFixture({ id: "analyze" })]),
@@ -568,7 +562,7 @@ Deno.test("runReviewPass -- fails a pass that commits no summary", async () => {
 });
 
 Deno.test("runReviewPass -- fails with a typed error when the file does not exist", async () => {
-  const { env: baseEnv, vfs } = await setup({
+  const { env: baseEnv } = await setup({
     path: "other.txt",
     content: "x",
   });
@@ -578,7 +572,6 @@ Deno.test("runReviewPass -- fails with a typed error when the file does not exis
   await assertRejects(
     () =>
       runPass(env, {
-        vfs,
         pass: passFixture([unitFixture({ id: "analyze" })]),
         wsId: "ws",
         path: "essay.txt",
@@ -592,7 +585,7 @@ Deno.test("runReviewPass -- fails with a typed error when the file does not exis
 });
 
 Deno.test("runReviewPass -- heartbeats the lease while running, then releases it", async () => {
-  const { kv, vfs } = await setup({
+  const { kv } = await setup({
     path: "essay.txt",
     content: "hello brave world",
   });
@@ -607,7 +600,6 @@ Deno.test("runReviewPass -- heartbeats the lease while running, then releases it
   );
 
   const run = await runPass(env, {
-    vfs,
     pass: passFixture([
       unitFixture({ id: "analyze" }),
       unitFixture({ id: "summary", summary: true, inputs: ["analyze"] }),
@@ -626,7 +618,7 @@ Deno.test("runReviewPass -- heartbeats the lease while running, then releases it
 });
 
 Deno.test("runReviewPass -- refuses to resume a run another driver holds", async () => {
-  const { env: baseEnv, vfs } = await setup({
+  const { env: baseEnv } = await setup({
     path: "essay.txt",
     content: "hello world",
   });
@@ -648,7 +640,6 @@ Deno.test("runReviewPass -- refuses to resume a run another driver holds", async
       resumePass(
         env,
         {
-          vfs,
           pass: passFixture([unitFixture({ id: "analyze" })]),
           wsId: "ws",
           path: "essay.txt",
@@ -664,7 +655,6 @@ Deno.test("runReviewPass -- resumes a run whose lease went stale", async () => {
   const {
     adapter,
     env: baseEnv,
-    vfs,
     versionId,
   } = await setup({
     path: "essay.txt",
@@ -692,7 +682,6 @@ Deno.test("runReviewPass -- resumes a run whose lease went stale", async () => {
   const resumed = await resumePass(
     env,
     {
-      vfs,
       pass: passFixture([
         unitFixture({ id: "analyze" }),
         unitFixture({ id: "summary", summary: true, inputs: ["analyze"] }),
@@ -711,7 +700,7 @@ Deno.test("runReviewPass -- resumes a run whose lease went stale", async () => {
 function countingReviews(
   kv: Deno.Kv,
   count: { renewed: number; refused: number },
-): Layer.Layer<ReviewRuns | TraceEvents | Files> {
+): Layer.Layer<Marks | ReviewRuns | TraceEvents | Files> {
   const heartbeats = Layer.effect(
     ReviewRuns,
     Effect.gen(function* () {
@@ -731,8 +720,11 @@ function countingReviews(
   return Layer.merge(
     heartbeats,
     Layer.merge(
-      Layer.provide(TraceEvents.layerNoDeps, ChunkedValues.layerNoDeps),
-      Files.layerNoDeps,
+      Layer.merge(
+        Layer.provide(TraceEvents.layerNoDeps, ChunkedValues.layerNoDeps),
+        Files.layerNoDeps,
+      ),
+      Layer.provide(Marks.layerNoDeps, Files.layerNoDeps),
     ),
   ).pipe(
     Layer.provide(Layer.provide(ReviewRuns.layerNoDeps, kvLayer(kv))),
