@@ -1,8 +1,3 @@
-export type {
-  PostModelCallPayload,
-  SessionUsageTotals,
-} from "@/agent.ts";
-export { Agent } from "@/agent.ts";
 export {
   ConfigInvalidError,
   ConfigMissingError,
@@ -36,6 +31,10 @@ export { resolveMarks } from "@/marks/resolver.ts";
 export { Marks } from "@/marks/service.ts";
 export { measure, measureAsync } from "@/measure.ts";
 export { ModelClient } from "@/model/service.ts";
+export type {
+  PostModelCallPayload,
+  SessionUsageTotals,
+} from "@/model/transport.ts";
 export {
   ChunkedValues,
   MissingChunksError,
@@ -54,7 +53,6 @@ export {
   type ReadOptions as AdapterReadOptions,
   type WriteOp,
 } from "@/persistence/mod.ts";
-export { isTransientError } from "@/retry_policy.ts";
 export { buildReviewGraph } from "@/reviews/adapter.ts";
 export { agentflowDefinition } from "@/reviews/agentflow.ts";
 export type { ReviewPhase, ReviewProgress } from "@/reviews/progress.ts";
@@ -76,20 +74,6 @@ export type {
   ReviewRunStatus,
 } from "@/reviews/types.ts";
 export { Search } from "@/search/service.ts";
-export { summarizeFile } from "@/summarize.ts";
-export {
-  createGrepTool,
-  createListFilesTool,
-  createMarkTool,
-  createReadFileTool,
-  createWriteFileTool,
-} from "@/tools/index.ts";
-export type { MarkToolOptions } from "@/tools/mark.ts";
-export type {
-  ToolInfo,
-  ToolParameters,
-} from "@/tools/registry.ts";
-export { getToolInfos } from "@/tools/registry.ts";
 export { UserState } from "@/user_state/service.ts";
 export type {
   DiffResult,

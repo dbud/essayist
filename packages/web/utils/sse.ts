@@ -1,5 +1,3 @@
-import type { ModelResult, Tool } from "@openrouter/agent";
-
 export type SSESend = (event: string, data: unknown) => void;
 
 /**
@@ -101,43 +99,4 @@ export async function* parseSSE(
       };
     }
   }
-}
-
-/**
- * Stream a ModelResult as SSE: text deltas, item updates (tool calls,
- * results, reasoning), and a final done event. Cancels the model result
- * when the client disconnects.
- */
-export function streamModelResultSSE<TTools extends readonly Tool[]>(
-  result: ModelResult<TTools>,
-): Response {
-  return sseResponse(
-    async (send) => {
-      const textPromise = (async () => {
-        for await (const delta of result.getTextStream()) {
-          send("delta", { delta });
-        }
-      })();
-
-      const itemsPromise = (async () => {
-        for await (const item of result.getItemsStream()) {
-          send("item", item);
-        }
-      })();
-
-      // If either stream rejects (e.g. the provider returns a 429),
-      // surface a structured error event to the client instead of
-      // letting the response stream terminate abruptly.
-      try {
-        await Promise.all([textPromise, itemsPromise]);
-      } catch (err) {
-        send("error", {
-          message: err instanceof Error ? err.message : String(err),
-        });
-      } finally {
-        send("done", {});
-      }
-    },
-    () => result.cancel(),
-  );
 }

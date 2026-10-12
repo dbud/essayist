@@ -1,4 +1,3 @@
-import type { PostModelCallPayload } from "@/agent.ts";
 import type { ResolvedReviewUnit } from "@/config/types.ts";
 import type { Files } from "@/files/service.ts";
 import type { ForwardSpec, PassWhenSpec } from "@/flow/helpers.ts";
@@ -6,6 +5,7 @@ import { forward, passWhen } from "@/flow/helpers.ts";
 import type { FlowTypes, NodeRunners } from "@/flow/types.ts";
 import type { Marks } from "@/marks/service.ts";
 import type { ModelClient } from "@/model/service.ts";
+import type { PostModelCallPayload } from "@/model/transport.ts";
 import { type Analysis, analyzeRunner } from "@/reviews/steps/analyze.ts";
 import {
   type MarkProposal,

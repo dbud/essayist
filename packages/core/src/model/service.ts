@@ -14,10 +14,14 @@ import type {
   Tool,
   UserPromptSubmitPayload,
 } from "@openrouter/agent";
-import { HooksManager, OpenRouter, stepCountIs } from "@openrouter/agent";
+import { HooksManager, OpenRouter } from "@openrouter/agent";
 import { mapNotNullish } from "@std/collections";
 import { Context, Effect, Layer, Result, Schema } from "effect";
 import type { z } from "zod";
+import { logger } from "@/logger.ts";
+import { isTransientError } from "@/retry_policy.ts";
+import { generateInstructions, stripMarkdownFences } from "@/schema.ts";
+import { joinBlocks } from "@/text/markdown.ts";
 import {
   RETRY_OPTIONS,
   type RepairAttempt,
@@ -27,12 +31,7 @@ import {
   type StructuredCallOptions,
   StructuredParseError,
   type ModelClient as Transport,
-} from "@/agent.ts";
-import { logger } from "@/logger.ts";
-import { isTransientError } from "@/retry_policy.ts";
-import { generateInstructions, stripMarkdownFences } from "@/schema.ts";
-import { joinBlocks } from "@/text/markdown.ts";
-import type { ToolPrompt } from "@/tools/index.ts";
+} from "./transport.ts";
 
 /** A call's round retries ran out, or the transport faulted. */
 export class ModelCallError extends Schema.TaggedError<ModelCallError>()(
@@ -59,13 +58,6 @@ export interface Interface {
     StructuredCall<z.output<T>>,
     StructuredParseError | ModelCallError
   >;
-  /** Call the model with tools. Returns the streaming result handle. */
-  callModelWithTools(
-    input: string,
-    toolPrompts: readonly ToolPrompt[],
-    models: string[],
-    maxRounds?: number,
-  ): Effect.Effect<ModelResult<readonly Tool[]>, never>;
 }
 
 export class ModelClient extends Context.Service<ModelClient, Interface>()(
@@ -180,29 +172,7 @@ function buildImpl(transport: Transport) {
       };
     });
 
-  const callModelWithTools = (
-    input: string,
-    toolPrompts: readonly ToolPrompt[],
-    models: string[],
-    maxRounds = 5,
-  ): Effect.Effect<ModelResult<readonly Tool[]>, never> =>
-    Effect.sync(() => {
-      const tools = toolPrompts.map((tp) => tp.tool);
-      const instructions = toolPrompts.map((tp) => tp.instruction).join("\n");
-      const fullInput = `${instructions}\n\n${input}`;
-
-      return transport.callModel(
-        {
-          models,
-          input: fullInput,
-          tools,
-          stopWhen: stepCountIs(maxRounds),
-        },
-        RETRY_OPTIONS,
-      );
-    });
-
-  return ModelClient.of({ callModelStructured, callModelWithTools });
+  return ModelClient.of({ callModelStructured });
 }
 
 // The structured round: RETRY_OPTIONS covers a failure before the stream

@@ -4,7 +4,7 @@ import type {
   Tool,
 } from "@openrouter/agent";
 import { HooksManager } from "@openrouter/agent";
-import type { ModelClient as Transport } from "@/agent.ts";
+import type { ModelClient as Transport } from "@/model/transport.ts";
 
 interface FakeRound {
   text: string;

@@ -10,15 +10,14 @@ import { assert, assertEquals } from "@std/assert";
 import { Duration, Effect, Fiber, Result } from "effect";
 import { TestClock } from "effect/testing";
 import { z } from "zod";
+import { ModelCallError, ModelClient } from "./service.ts";
 import {
-  RETRY_OPTIONS,
   type RetryFailure,
   ROUND_RETRY_DELAY_MS,
   type StructuredCallOptions,
   StructuredParseError,
   type ModelClient as Transport,
-} from "@/agent.ts";
-import { ModelCallError, ModelClient } from "./service.ts";
+} from "./transport.ts";
 
 interface FakeRound {
   text: string;
@@ -335,22 +334,4 @@ Deno.test("ModelClient.callModelStructured -- a re-ask that fails transiently is
   assertEquals(inputs[1].includes("not json at all"), true);
   assertEquals(result.output, { ok: true });
   assertEquals(result.repairs.length, 1);
-});
-
-Deno.test("ModelClient.callModelWithTools -- forwards the request options", async () => {
-  const { client, options } = createSpyClient([{ text: "hi" }]);
-
-  const result = await Effect.runPromise(
-    provideWith(
-      Effect.gen(function* () {
-        const model = yield* ModelClient;
-        return yield* model.callModelWithTools("input", [], ["m/a"], 2);
-      }),
-      client,
-    ),
-  );
-  const text = await result.getText();
-
-  assertEquals(text, "hi");
-  assertEquals(options[0], RETRY_OPTIONS);
 });

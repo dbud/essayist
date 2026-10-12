@@ -1,11 +1,11 @@
 import { Effect } from "effect";
 import type { z } from "zod";
+import { type ModelCallError, ModelClient } from "@/model/service.ts";
 import type {
   PostModelCallPayload,
   StructuredCall,
   StructuredParseError,
-} from "@/agent.ts";
-import { type ModelCallError, ModelClient } from "@/model/service.ts";
+} from "@/model/transport.ts";
 
 /** Events of a structured call, delivered in order. */
 export type CallEvent =

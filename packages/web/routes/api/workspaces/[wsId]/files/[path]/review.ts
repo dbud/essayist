@@ -8,7 +8,7 @@ import {
 import { Effect } from "effect";
 import { define } from "@/define.ts";
 import { runtime } from "@/store.ts";
-import { ResolveAgentError, resolveReviewSetup } from "@/utils/agent.ts";
+import { ResolveReviewError, resolveReviewSetup } from "@/utils/review.ts";
 import { sseResponse } from "@/utils/sse.ts";
 
 export const handler = {
@@ -49,7 +49,7 @@ export const handler = {
       });
     } catch (e) {
       if (
-        e instanceof ResolveAgentError ||
+        e instanceof ResolveReviewError ||
         e instanceof ConfigMissingError ||
         e instanceof ConfigInvalidError
       ) {
