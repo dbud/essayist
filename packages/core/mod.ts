@@ -39,7 +39,6 @@ export {
   ChunkedValues,
   MissingChunksError,
 } from "@/persistence/chunked_values.ts";
-export { KvAdapter } from "@/persistence/kv_adapter.ts";
 export {
   type BatchOptions,
   ConcurrentModificationError,
@@ -48,7 +47,6 @@ export {
   type ListOptions,
   type ListResult,
   Persistence,
-  type PersistenceAdapter,
   PersistenceError,
   type ReadOptions as AdapterReadOptions,
   type WriteOp,
@@ -92,7 +90,6 @@ export type {
   VFS,
   WriteResult,
 } from "@/vfs/types.ts";
-export { VirtualFileSystem } from "@/vfs/vfs.ts";
 export { Workspaces } from "@/workspace/service.ts";
 export {
   LastOwnerError,

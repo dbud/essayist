@@ -12,8 +12,8 @@ import type {
   FlowRunResult,
 } from "@/flow/types.ts";
 import { Marks } from "@/marks/service.ts";
+import type { Mark } from "@/marks/types.ts";
 import { ModelClient } from "@/model/service.ts";
-import { KvAdapter } from "@/persistence/kv_adapter.ts";
 import { kvLayer } from "@/persistence/kv_layer.ts";
 import {
   type ReviewNodeEvent,
@@ -22,7 +22,6 @@ import {
   reviewRunners,
 } from "@/reviews/graph.ts";
 import { createSpyTransport } from "@/reviews/testing/agent.ts";
-import { VirtualFileSystem } from "@/vfs/vfs.ts";
 import { WorkspaceId } from "@/workspace/WorkspaceId.ts";
 
 const ANALYSIS_ROUND =
@@ -68,12 +67,9 @@ function artifactsOf<A extends keyof ReviewTypes["artifacts"]>(
     .map((artifact) => artifact.data);
 }
 
-/** One shared KV per test: the promise-side VFS for read-back assertions
- * reads the same file rows the Files and Marks services write. */
+/** One shared KV per test, seeded through the Files service. */
 async function setup(content: string) {
   const kv = await Deno.openKv(":memory:");
-  const vfs = new VirtualFileSystem(new KvAdapter(kv), "ws");
-  const { version_id: versionId } = await vfs.write("essay.txt", content);
   const env = Layer.provide(
     Layer.mergeAll(
       Files.layerNoDeps,
@@ -81,8 +77,37 @@ async function setup(content: string) {
     ),
     kvLayer(kv),
   );
-  return { env, vfs, versionId };
+  const versionId = await Effect.runPromise(
+    Effect.provide(
+      Effect.provideService(
+        Effect.gen(function* () {
+          const files = yield* Files;
+          const write = yield* files.write("essay.txt", content);
+          return write.version_id;
+        }),
+        WorkspaceId,
+        { wsId: "ws" },
+      ),
+      env,
+    ),
+  );
+  return { env, versionId };
 }
+
+const readMarks = (
+  env: Layer.Layer<ModelClient | Files | Marks>,
+  versionId: string,
+): Promise<Mark[]> =>
+  Effect.runPromise(
+    Effect.provide(
+      Effect.provideService(
+        Files.use((files) => files.getMarks("essay.txt", versionId)),
+        WorkspaceId,
+        { wsId: "ws" },
+      ),
+      env,
+    ),
+  );
 
 const run = (
   env: Layer.Layer<ModelClient | Files | Marks>,
@@ -97,7 +122,7 @@ const run = (
   );
 
 Deno.test("review runners -- analyze, propose, apply, and synthesize in a flow", async () => {
-  const { env: baseEnv, vfs, versionId } = await setup("hello brave world");
+  const { env: baseEnv, versionId } = await setup("hello brave world");
   const { client, inputs } = createSpyTransport([
     { text: ANALYSIS_ROUND, reasoning: "reading closely" },
     {
@@ -186,13 +211,13 @@ Deno.test("review runners -- analyze, propose, apply, and synthesize in a flow",
     ["summary", "output"],
   ]);
 
-  const marks = await vfs.getMarks("essay.txt", versionId);
+  const marks = await readMarks(env, versionId);
   assertEquals(marks.length, 1);
   assertEquals(marks[0].meta, { runId: "r", unitId: "mechanics" });
 });
 
 Deno.test("review runners -- repair propose stays idle without failures", async () => {
-  const { env: baseEnv, vfs, versionId } = await setup("hello world");
+  const { env: baseEnv, versionId } = await setup("hello world");
   const { client, inputs } = createSpyTransport([
     {
       text: '{"marks":[{"selected_text":"hello","comment":"found it","label":"grammar"}]}',
@@ -267,7 +292,7 @@ Deno.test("review runners -- repair propose stays idle without failures", async 
   );
   assertEquals(proposals.length, 1);
   assertEquals(proposals[0].producedBy, "m.propose");
-  const marks = await vfs.getMarks("essay.txt", versionId);
+  const marks = await readMarks(env, versionId);
   assertEquals(
     marks.map((mark) => mark.selected_text),
     ["hello"],
@@ -275,7 +300,7 @@ Deno.test("review runners -- repair propose stays idle without failures", async 
 });
 
 Deno.test("review runners -- a repair round re-quotes failed spans", async () => {
-  const { env: baseEnv, vfs, versionId } = await setup("hello world");
+  const { env: baseEnv, versionId } = await setup("hello world");
   const { client, inputs } = createSpyTransport([
     {
       text: '{"marks":[{"selected_text":"ghost span","comment":"not there","label":"grammar"}]}',
@@ -361,7 +386,7 @@ Deno.test("review runners -- a repair round re-quotes failed spans", async () =>
   assertEquals(placed[1][0].marked, true);
   assertEquals(inputs[1].includes('Attempted span: "ghost span"'), true);
 
-  const marks = await vfs.getMarks("essay.txt", versionId);
+  const marks = await readMarks(env, versionId);
   assertEquals(
     marks.map((mark) => mark.selected_text),
     ["hello"],

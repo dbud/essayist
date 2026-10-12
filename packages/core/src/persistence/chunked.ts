@@ -8,7 +8,7 @@
  */
 
 import { sortBy } from "@std/collections";
-import type { Entry, Key, PersistenceAdapter } from "./mod.ts";
+import type { Entry, Key } from "./mod.ts";
 
 /** Deno KV's cap on one value. Nothing is added on top of a Uint8Array's
  * length, so a chunk can fill this exactly. */
@@ -18,9 +18,6 @@ const MAGIC = 0xc1;
 const HEADER_BYTES = 6;
 
 export const CHUNK_PAYLOAD_BYTES = MAX_VALUE_BYTES - HEADER_BYTES;
-
-/** How many keys getMany reads at once. */
-export const GET_MANY_MAX = 10;
 
 export interface ChunkHeader {
   nChunks: number;
@@ -157,36 +154,4 @@ export function assembleList(entries: readonly Entry[]): AssembledValue[] {
       parts.get(String(value.key)),
     );
   });
-}
-
-/** Read one value, fetching the rest of its chunks in batches. */
-export async function readChunked(
-  adapter: PersistenceAdapter,
-  key: Key,
-  options?: { consistency?: "strong" | "eventual" },
-): Promise<AssembledValue | undefined> {
-  const head = await adapter.get(key, options);
-  if (!head) return undefined;
-  const header = unframeChunk(head.value);
-  if (!header) return { key, nChunks: 1, nReceived: 1, raw: head.value };
-  if (header.nChunks === 1) {
-    return { key, nChunks: 1, nReceived: 1, payload: header.payload };
-  }
-
-  const rest: Key[] = [];
-  for (let i = 1; i < header.nChunks; i++) {
-    rest.push([...key, chunkKeyPart(i, header.nChunks)]);
-  }
-
-  const chunks = new Map<number, Uint8Array>([[0, header.payload]]);
-  for (let i = 0; i < rest.length; i += GET_MANY_MAX) {
-    const batch = rest.slice(i, i + GET_MANY_MAX);
-    const found = await adapter.getMany<unknown>(batch, options);
-    for (const entry of found) {
-      const part = entry && unframeChunk(entry.value);
-      if (!part) continue;
-      chunks.set(splitChunkKey(entry.key).index, part.payload);
-    }
-  }
-  return assembleOne(key, header.nChunks, chunks);
 }

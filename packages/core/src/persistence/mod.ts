@@ -31,7 +31,7 @@ export interface ListResult<T = unknown> {
   cursor?: string;
 }
 
-/** A write applied atomically within a {@link PersistenceAdapter.batch} call. */
+/** A write applied atomically within one batch call. */
 export type WriteOp =
   | { type: "set"; key: Key; value: unknown }
   | { type: "delete"; key: Key };
@@ -55,42 +55,6 @@ export class ConcurrentModificationError extends Error {
   constructor(public readonly key: Key) {
     super(`Concurrent modification detected for key ${JSON.stringify(key)}`);
   }
-}
-
-/**
- * Key/value persistence with tuple keys, batch/atomic writes, and
- * versionstamp-based optimistic concurrency.
- *
- * Single-key {@link PersistenceAdapter.set} / {@link PersistenceAdapter.delete}
- * are convenience wrappers over {@link PersistenceAdapter.batch}.
- */
-export interface PersistenceAdapter {
-  /** Read a single entry, or `undefined` if absent. */
-  get<T = unknown>(
-    key: Key,
-    options?: ReadOptions,
-  ): Promise<Entry<T> | undefined>;
-
-  /** Read many keys in a single round trip. */
-  getMany<T = unknown>(
-    keys: Key[],
-    options?: ReadOptions,
-  ): Promise<(Entry<T> | undefined)[]>;
-
-  /** Scan a tuple-prefix range, a page at a time. */
-  list<T = unknown>(prefix: Key, options?: ListOptions): Promise<ListResult<T>>;
-
-  /**
-   * Apply a set of writes atomically. Without `checks` this is a batch write;
-   * with `checks` it is a conditional update that rejects on conflict.
-   */
-  batch(ops: WriteOp[], options?: BatchOptions): Promise<void>;
-
-  /** Convenience: single-key set (delegates to {@link batch}). */
-  set(key: Key, value: unknown): Promise<void>;
-
-  /** Convenience: single-key delete (delegates to {@link batch}). */
-  delete(key: Key): Promise<void>;
 }
 
 /** Fields a record carries to be leasable by one owner at a time. */
