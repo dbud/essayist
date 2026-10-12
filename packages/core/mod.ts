@@ -34,6 +34,7 @@ export type {
   WriteResult,
 } from "@/files/types.ts";
 export { pluralize } from "@/format.ts";
+export { jsonLogger, jsonLogLayer } from "@/log.ts";
 export { logger } from "@/logger.ts";
 export type { ResolveInput, ResolveOptions } from "@/marks/resolver.ts";
 export { resolveMarks } from "@/marks/resolver.ts";

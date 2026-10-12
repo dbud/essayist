@@ -1,6 +1,7 @@
 import {
   ChunkedValues,
   Files,
+  jsonLogLayer,
   Marks,
   Persistence,
   type PersistenceError,
@@ -64,6 +65,7 @@ export const runtime: Runtime = ManagedRuntime.make(
       Files.layerNoDeps,
       Layer.provide(Marks.layerNoDeps, Files.layerNoDeps),
       Layer.provide(Search.layerNoDeps, Files.layerNoDeps),
+      jsonLogLayer,
     ),
     Persistence.layerKv(isDev ? "./local-kv.sqlite3" : undefined),
   ),
