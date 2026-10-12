@@ -1,6 +1,7 @@
 import { assert, assertEquals, assertRejects } from "@std/assert";
 import { type Context, Effect, Layer } from "effect";
 import type { ResolvedReviewPass, ReviewUnit } from "@/config/types.ts";
+import { Files } from "@/files/service.ts";
 import type { NodeRun } from "@/flow/types.ts";
 import { ChunkedValues } from "@/persistence/chunked_values.ts";
 import { KvAdapter } from "@/persistence/kv_adapter.ts";
@@ -18,7 +19,7 @@ import { createSpyClient } from "@/reviews/testing/agent.ts";
 import { TraceEvents } from "@/reviews/trace/service.ts";
 import type { TraceEvent } from "@/reviews/trace/types.ts";
 import type { ReviewRun } from "@/reviews/types.ts";
-import { createFile } from "@/vfs/testing/helpers.ts";
+import { VirtualFileSystem } from "@/vfs/vfs.ts";
 import { WorkspaceId } from "@/workspace/WorkspaceId.ts";
 
 function unitFixture(
@@ -57,26 +58,48 @@ function passFixture(units: ReviewUnit[]): ResolvedReviewPass {
   };
 }
 
-// The trace-store fixture and the runner's services share one
-// KV store, so runs written on either side are read back on both.
-async function setup() {
+// The file content, the promise-side VFS the pinned steps still use, and
+// the runner's services all share one KV store: the promise VFS and the
+// Files service lay out the same keys for the same workspace.
+interface Setup {
+  kv: Deno.Kv;
+  adapter: KvAdapter;
+  env: Layer.Layer<ReviewRuns | TraceEvents | Files>;
+  vfs: VirtualFileSystem;
+  versionId?: string;
+}
+
+function setup(): Promise<Setup>;
+function setup(file: {
+  path: string;
+  content: string;
+}): Promise<Setup & { versionId: string }>;
+async function setup(file?: {
+  path: string;
+  content: string;
+}): Promise<Setup & { versionId?: string }> {
   const kv = await Deno.openKv(":memory:");
   const adapter = new KvAdapter(kv);
+  const vfs = new VirtualFileSystem(adapter, "ws");
+  const versionId = file
+    ? (await vfs.write(file.path, file.content)).version_id
+    : undefined;
   const env = Layer.provide(
     Layer.mergeAll(
       ReviewRuns.layerNoDeps,
       Layer.provide(TraceEvents.layerNoDeps, ChunkedValues.layerNoDeps),
       ChunkedValues.layerNoDeps,
+      Files.layerNoDeps,
     ),
     kvLayer(kv),
   );
-  return { adapter, env };
+  return { kv, adapter, env, vfs, versionId };
 }
 
 /** Run a small program against the test's shared KV store: the body gets
  * both services, as they come out of the shared env. */
 function viaRuns<A>(
-  env: Layer.Layer<ReviewRuns | TraceEvents>,
+  env: Layer.Layer<ReviewRuns | TraceEvents | Files>,
   body: (deps: {
     runs: Context.Service.Shape<typeof ReviewRuns>;
     traces: Context.Service.Shape<typeof TraceEvents>;
@@ -99,7 +122,7 @@ function viaRuns<A>(
 }
 
 async function runPass(
-  env: Layer.Layer<ReviewRuns | TraceEvents>,
+  env: Layer.Layer<ReviewRuns | TraceEvents | Files>,
   options: RunReviewPassOptions,
 ): Promise<ReviewRun> {
   return await Effect.runPromise(
@@ -113,7 +136,7 @@ async function runPass(
 }
 
 async function resumePass(
-  env: Layer.Layer<ReviewRuns | TraceEvents>,
+  env: Layer.Layer<ReviewRuns | TraceEvents | Files>,
   options: RunReviewPassOptions,
   runId: string,
 ): Promise<ReviewRun> {
@@ -158,8 +181,10 @@ function appliedEvents(trace: TraceEvent[]) {
 }
 
 Deno.test("runReviewPass -- completes a pass with marks, summary, and a per-node trace", async () => {
-  const { vfs, versionId } = await createFile("essay.txt", "hello brave world");
-  const { env } = await setup();
+  const { env, vfs, versionId } = await setup({
+    path: "essay.txt",
+    content: "hello brave world",
+  });
   const { agent, inputs } = createSpyClient([
     { text: ANALYSIS_ROUND, reasoning: "reading closely" },
     {
@@ -232,8 +257,10 @@ Deno.test("runReviewPass -- completes a pass with marks, summary, and a per-node
 });
 
 Deno.test("runReviewPass -- a repair round re-quotes the failed spans", async () => {
-  const { vfs, versionId } = await createFile("essay.txt", "hello world");
-  const { env } = await setup();
+  const { env, vfs, versionId } = await setup({
+    path: "essay.txt",
+    content: "hello world",
+  });
   const { agent, inputs } = createSpyClient([
     {
       text: '{"marks":[{"selected_text":"ghost span","comment":"not there","label":"grammar"}]}',
@@ -294,8 +321,10 @@ Deno.test("runReviewPass -- a repair round re-quotes the failed spans", async ()
 });
 
 Deno.test("runReviewPass -- a zero budget keeps failed marks with no repair nodes", async () => {
-  const { vfs, versionId } = await createFile("essay.txt", "hello world");
-  const { env } = await setup();
+  const { env, vfs, versionId } = await setup({
+    path: "essay.txt",
+    content: "hello world",
+  });
   const { agent } = createSpyClient([
     {
       text: '{"marks":[{"selected_text":"ghost span","comment":"not there","label":"grammar"}]}',
@@ -333,8 +362,10 @@ Deno.test("runReviewPass -- a zero budget keeps failed marks with no repair node
 });
 
 Deno.test("runReviewPass -- resuming a run that does not exist is an error", async () => {
-  const { vfs } = await createFile("essay.txt", "hello world");
-  const { env } = await setup();
+  const { env, vfs } = await setup({
+    path: "essay.txt",
+    content: "hello world",
+  });
   const { agent } = createSpyClient([{ text: ANALYSIS_ROUND }]);
 
   await assertRejects(
@@ -356,8 +387,10 @@ Deno.test("runReviewPass -- resuming a run that does not exist is an error", asy
 });
 
 Deno.test("runReviewPass -- a resumed pass skips completed nodes and shows each once", async () => {
-  const { vfs, versionId } = await createFile("essay.txt", "hello brave world");
-  const { env } = await setup();
+  const { env, vfs, versionId } = await setup({
+    path: "essay.txt",
+    content: "hello brave world",
+  });
   // First attempt: analyze succeeds, then the unit below it fails on bad JSON.
   const first = createSpyClient([
     { text: ANALYSIS_ROUND },
@@ -429,8 +462,10 @@ Deno.test("runReviewPass -- a resumed pass skips completed nodes and shows each 
 });
 
 Deno.test("runReviewPass -- a node error fails the run and skips dependents", async () => {
-  const { vfs } = await createFile("essay.txt", "hello world");
-  const { env } = await setup();
+  const { env, vfs } = await setup({
+    path: "essay.txt",
+    content: "hello world",
+  });
   const { agent } = createSpyClient([{ text: "not json" }]);
 
   const run = await runPass(env, {
@@ -494,8 +529,10 @@ Deno.test("runReviewPass -- a node error fails the run and skips dependents", as
 });
 
 Deno.test("runReviewPass -- fails a pass that commits no summary", async () => {
-  const vfs = await createFile("essay.txt", "hello world").then((f) => f.vfs);
-  const { env } = await setup();
+  const { env, vfs } = await setup({
+    path: "essay.txt",
+    content: "hello world",
+  });
   const { agent } = createSpyClient([{ text: ANALYSIS_ROUND }]);
 
   const run = await runPass(env, {
@@ -514,8 +551,7 @@ Deno.test("runReviewPass -- fails a pass that commits no summary", async () => {
 });
 
 Deno.test("runReviewPass -- fails with a typed error when the file does not exist", async () => {
-  const vfs = (await createFile("other.txt", "x")).vfs;
-  const { env } = await setup();
+  const { env, vfs } = await setup({ path: "other.txt", content: "x" });
   const { agent } = createSpyClient([]);
 
   await assertRejects(
@@ -536,8 +572,10 @@ Deno.test("runReviewPass -- fails with a typed error when the file does not exis
 });
 
 Deno.test("runReviewPass -- heartbeats the lease while running, then releases it", async () => {
-  const { vfs } = await createFile("essay.txt", "hello brave world");
-  const kv = await Deno.openKv(":memory:");
+  const { kv, vfs } = await setup({
+    path: "essay.txt",
+    content: "hello brave world",
+  });
   const count = { renewed: 0, refused: 0 };
   const env = countingReviews(kv, count);
   const { agent } = createSpyClient([
@@ -566,8 +604,10 @@ Deno.test("runReviewPass -- heartbeats the lease while running, then releases it
 });
 
 Deno.test("runReviewPass -- refuses to resume a run another driver holds", async () => {
-  const { vfs } = await createFile("essay.txt", "hello world");
-  const { env } = await setup();
+  const { env, vfs } = await setup({
+    path: "essay.txt",
+    content: "hello world",
+  });
   const { agent } = createSpyClient([]);
   const run = await viaRuns(env, (deps) =>
     deps.runs.createRun({
@@ -599,8 +639,10 @@ Deno.test("runReviewPass -- refuses to resume a run another driver holds", async
 });
 
 Deno.test("runReviewPass -- resumes a run whose lease went stale", async () => {
-  const { vfs, versionId } = await createFile("essay.txt", "hello brave world");
-  const { adapter, env } = await setup();
+  const { adapter, env, vfs, versionId } = await setup({
+    path: "essay.txt",
+    content: "hello brave world",
+  });
   const run = await viaRuns(env, (deps) =>
     deps.runs.createRun({
       path: "essay.txt",
@@ -642,7 +684,7 @@ Deno.test("runReviewPass -- resumes a run whose lease went stale", async () => {
 function countingReviews(
   kv: Deno.Kv,
   count: { renewed: number; refused: number },
-): Layer.Layer<ReviewRuns | TraceEvents> {
+): Layer.Layer<ReviewRuns | TraceEvents | Files> {
   const heartbeats = Layer.effect(
     ReviewRuns,
     Effect.gen(function* () {
@@ -661,7 +703,10 @@ function countingReviews(
   );
   return Layer.merge(
     heartbeats,
-    Layer.provide(TraceEvents.layerNoDeps, ChunkedValues.layerNoDeps),
+    Layer.merge(
+      Layer.provide(TraceEvents.layerNoDeps, ChunkedValues.layerNoDeps),
+      Files.layerNoDeps,
+    ),
   ).pipe(
     Layer.provide(Layer.provide(ReviewRuns.layerNoDeps, kvLayer(kv))),
     Layer.provide(kvLayer(kv)),

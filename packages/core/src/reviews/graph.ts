@@ -1,5 +1,6 @@
 import type { Agent, PostModelCallPayload } from "@/agent.ts";
 import type { ResolvedReviewUnit } from "@/config/types.ts";
+import type { Files } from "@/files/service.ts";
 import type { ForwardSpec, PassWhenSpec } from "@/flow/helpers.ts";
 import { forward, passWhen } from "@/flow/helpers.ts";
 import type { FlowTypes, NodeRunners } from "@/flow/types.ts";
@@ -12,11 +13,12 @@ import {
   createMarkProposeRunner,
   createMarkRepairRunner,
 } from "@/reviews/steps/mark.ts";
-import { createSourceRunner } from "@/reviews/steps/source.ts";
+import { sourceRunner } from "@/reviews/steps/source.ts";
 import { createSynthesizeRunner } from "@/reviews/steps/synthesize.ts";
 import type { MarkAttempt } from "@/reviews/types.ts";
 import type { PinnedVFS } from "@/vfs/pin.ts";
 import type { MarkProvenance } from "@/vfs/types.ts";
+import type { WorkspaceId } from "@/workspace/WorkspaceId.ts";
 
 export type ReviewNodeEvent =
   | { type: "prompt"; text: string }
@@ -30,7 +32,7 @@ export type ReviewNodeEvent =
 export interface ReviewTypes extends FlowTypes {
   events: ReviewNodeEvent;
   nodes: {
-    source: undefined;
+    source: { path: string; versionId: string };
     analyze: ResolvedReviewUnit;
     "mark.propose": ResolvedReviewUnit;
     "mark.propose.repair": ResolvedReviewUnit;
@@ -55,9 +57,9 @@ export interface ReviewTypes extends FlowTypes {
 export function createReviewRunners(options: {
   agent: Agent;
   pinned: PinnedVFS;
-}): NodeRunners<ReviewTypes> {
+}): NodeRunners<ReviewTypes, Files | WorkspaceId> {
   return {
-    source: createSourceRunner(options.pinned),
+    source: sourceRunner,
     analyze: createAnalyzeRunner(options.agent),
     "mark.propose": createMarkProposeRunner(options.agent),
     "mark.propose.repair": createMarkRepairRunner(options.agent),

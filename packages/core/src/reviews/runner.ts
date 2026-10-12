@@ -12,13 +12,14 @@
 import { type Context, Effect, Fiber, Result, Schema } from "effect";
 import type { Agent } from "@/agent.ts";
 import type { ResolvedReviewPass } from "@/config/types.ts";
+import { Files } from "@/files/service.ts";
 import { FlowRunner } from "@/flow/runner.ts";
 import type { FlowEvent } from "@/flow/types.ts";
 import { view } from "@/flow/view.ts";
 import { logger } from "@/logger.ts";
 import type { MissingChunksError } from "@/persistence/chunked_values.ts";
-import {
-  type ConcurrentModificationError,
+import type {
+  ConcurrentModificationError,
   PersistenceError,
 } from "@/persistence/mod.ts";
 import { buildReviewGraph } from "@/reviews/adapter.ts";
@@ -97,14 +98,12 @@ export function runReviewPass(
 ): Effect.Effect<
   ReviewRun,
   RunnerError,
-  ReviewRuns | TraceEvents | WorkspaceId
+  ReviewRuns | TraceEvents | WorkspaceId | Files
 > {
-  const { vfs, path } = options;
+  const { path } = options;
   return Effect.gen(function* () {
-    const history = yield* Effect.tryPromise({
-      try: () => vfs.getHistory(path),
-      catch: (cause) => new PersistenceError({ cause }),
-    });
+    const files = yield* Files;
+    const history = yield* files.getHistory(path);
     const versionId = history.at(-1)?.version_id;
     if (!versionId) {
       return yield* Effect.fail(new ReviewFileMissingError({ path }));
@@ -120,7 +119,7 @@ export function resumeReviewPass(
 ): Effect.Effect<
   ReviewRun,
   RunnerError,
-  ReviewRuns | TraceEvents | WorkspaceId
+  ReviewRuns | TraceEvents | WorkspaceId | Files
 > {
   return Effect.gen(function* () {
     const runs = yield* ReviewRuns;
@@ -140,7 +139,7 @@ function resume(
 ): Effect.Effect<
   ReviewRun,
   RunnerError,
-  ReviewRuns | TraceEvents | WorkspaceId
+  ReviewRuns | TraceEvents | WorkspaceId | Files
 > {
   return Effect.gen(function* () {
     const traces = yield* TraceEvents;
@@ -157,7 +156,7 @@ function start(
 ): Effect.Effect<
   ReviewRun,
   RunnerError,
-  ReviewRuns | TraceEvents | WorkspaceId
+  ReviewRuns | TraceEvents | WorkspaceId | Files
 > {
   const { pass, path } = options;
   return Effect.gen(function* () {
@@ -232,7 +231,7 @@ function execute(
 ): Effect.Effect<
   ReviewRun,
   RunnerError,
-  ReviewRuns | TraceEvents | WorkspaceId
+  ReviewRuns | TraceEvents | WorkspaceId | Files
 > {
   return Effect.gen(function* () {
     const runs = yield* ReviewRuns;
@@ -244,7 +243,7 @@ function execute(
       path,
       versionId,
     });
-    const graph = buildReviewGraph(pass, run.id);
+    const graph = buildReviewGraph(pass, run.id, { path, versionId });
     const kindOf = new Map(
       graph.nodes.map((node) => [node.id, node.kind] as const),
     );
@@ -283,7 +282,9 @@ function execute(
     );
     const writerFiber = yield* Effect.forkChild(writer);
 
-    const flow = new FlowRunner<ReviewTypes>({
+    // The source step reads through the Files service; the pinned VFS
+    // serves the promise steps until they go native.
+    const flow = new FlowRunner<ReviewTypes, Files | WorkspaceId>({
       runners: createReviewRunners({
         agent,
         pinned,
@@ -294,7 +295,10 @@ function execute(
       },
     });
 
-    const flowOutcome = yield* Effect.result(flow.run(graph, { completed }));
+    const flowRun = flow
+      .run(graph, { completed })
+      .pipe(Effect.provideService(WorkspaceId, { wsId: options.wsId }));
+    const flowOutcome = yield* Effect.result(flowRun);
     // The loops stop before the terminal write; an in-flight write is
     // uninterruptible, so it settles first, and the flush below catches
     // anything still buffered.
