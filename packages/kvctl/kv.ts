@@ -2,11 +2,11 @@
 
 import { fileURLToPath } from "node:url";
 import {
-  KvAdapter,
+  ChunkedValues,
   Persistence,
   type PersistenceError,
   ReviewConfig,
-  TraceEventStore,
+  TraceEvents,
   Workspaces,
 } from "@essayist/core";
 import { Layer, ManagedRuntime } from "effect";
@@ -24,14 +24,13 @@ export const CATEGORIES_EPOCH: Deno.KvKey = ["cache_epoch", "categories"];
 
 /** The services kvctl commands reach through the runtime. */
 export type KvRuntime = ManagedRuntime.ManagedRuntime<
-  Workspaces | ReviewConfig,
+  Workspaces | ReviewConfig | TraceEvents | ChunkedValues,
   PersistenceError
 >;
 
 interface KvCtx {
   kv: Deno.Kv;
   runtime: KvRuntime;
-  traceStore: TraceEventStore;
 }
 
 export function resolveTarget(globals: KvctlGlobals): string {
@@ -47,21 +46,21 @@ export async function withKv<T>(
   fn: (ctx: KvCtx) => Promise<T>,
 ): Promise<T> {
   const kv = await Deno.openKv(resolveTarget(globals));
-  const adapter = new KvAdapter(kv);
   // The runtime opens its own handle to the same store, and closes it on
   // dispose, so the fn's promise does not outlive the CLI invocation.
   const runtime: KvRuntime = ManagedRuntime.make(
     Layer.provide(
-      Layer.mergeAll(Workspaces.layerNoDeps, ReviewConfig.layerNoDeps),
+      Layer.mergeAll(
+        Workspaces.layerNoDeps,
+        ReviewConfig.layerNoDeps,
+        Layer.provide(TraceEvents.layerNoDeps, ChunkedValues.layerNoDeps),
+        ChunkedValues.layerNoDeps,
+      ),
       Persistence.layerKv(resolveTarget(globals)),
     ),
   );
   try {
-    return await fn({
-      kv,
-      runtime,
-      traceStore: new TraceEventStore(adapter),
-    });
+    return await fn({ kv, runtime });
   } finally {
     await runtime.dispose();
     kv.close();

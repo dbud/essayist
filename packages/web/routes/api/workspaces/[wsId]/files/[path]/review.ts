@@ -6,7 +6,7 @@ import {
 } from "@essayist/core";
 import { Effect } from "effect";
 import { define } from "@/define.ts";
-import { runtime, traceStore } from "@/store.ts";
+import { runtime } from "@/store.ts";
 import { ResolveAgentError, resolveAgent } from "@/utils/agent.ts";
 import { sseResponse } from "@/utils/sse.ts";
 
@@ -30,7 +30,6 @@ export const handler = {
               runReviewPass({
                 agent,
                 vfs,
-                traceStore,
                 pass,
                 wsId,
                 path,

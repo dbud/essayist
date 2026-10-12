@@ -13,6 +13,7 @@ import { type Context, Effect, Fiber, Result, Schema } from "effect";
 import type { Agent } from "@/agent.ts";
 import type { ResolvedReviewPass } from "@/config/types.ts";
 import { FlowRunner } from "@/flow/runner.ts";
+import type { FlowEvent } from "@/flow/types.ts";
 import { view } from "@/flow/view.ts";
 import { logger } from "@/logger.ts";
 import type { MissingChunksError } from "@/persistence/chunked_values.ts";
@@ -25,9 +26,10 @@ import { createReviewRunners, type ReviewTypes } from "@/reviews/graph.ts";
 import type { ReviewProgress } from "@/reviews/progress.ts";
 import { ReviewProgressTracker } from "@/reviews/progress.ts";
 import { ReviewRuns } from "@/reviews/service.ts";
+import { logTraceEvent } from "@/reviews/trace/log.ts";
 import { foldCompleted } from "@/reviews/trace/mod.ts";
 import { TraceEvents } from "@/reviews/trace/service.ts";
-import type { TraceEvent, TraceStore } from "@/reviews/trace/types.ts";
+import type { TraceEvent } from "@/reviews/trace/types.ts";
 import type { ReviewRun } from "@/reviews/types.ts";
 import { PinnedVFS } from "@/vfs/pin.ts";
 import type { VFS } from "@/vfs/types.ts";
@@ -37,7 +39,6 @@ import { WorkspaceId } from "@/workspace/WorkspaceId.ts";
 export interface RunReviewPassOptions {
   agent: Agent;
   vfs: VFS;
-  traceStore: TraceStore;
   pass: ResolvedReviewPass;
   wsId: string;
   path: string;
@@ -49,6 +50,8 @@ export interface RunReviewPassOptions {
 // staleness window, or a live run can be stolen.
 const HEARTBEAT_MS = 60_000;
 const HEARTBEAT_STALE_MS = 15 * 60_000;
+/** How often the trace writer checks for buffered events. */
+const TRACE_POLL_MS = 25;
 
 /** The file the pass targets has no versions. */
 export class ReviewFileMissingError extends Schema.TaggedError<ReviewFileMissingError>()(
@@ -233,6 +236,7 @@ function execute(
 > {
   return Effect.gen(function* () {
     const runs = yield* ReviewRuns;
+    const traces = yield* TraceEvents;
     const owner = yield* claim(runs, run.id);
     const { agent, onProgress, pass, path, vfs } = options;
     const completed = priorTrace ? foldCompleted(priorTrace) : undefined;
@@ -247,24 +251,46 @@ function execute(
     const tracker = onProgress
       ? new ReviewProgressTracker(onProgress, kindOf)
       : undefined;
-    const recorder = options.traceStore.recorder(
-      { wsId: options.wsId, runId: run.id },
-      tracker ? (event) => tracker.handle(event) : undefined,
-      seq,
-    );
+
+    // Trace events are stamped here and appended by a loop fiber shortly
+    // after; the buffer is flushed before the run reaches a terminal state.
+    const pending: TraceEvent[] = [];
+    const record = (event: FlowEvent<ReviewTypes>): void => {
+      const entry: TraceEvent = {
+        seq: seq++,
+        at: Date.now(),
+        ...event,
+      };
+      logTraceEvent(entry);
+      tracker?.handle(entry);
+      pending.push(entry);
+    };
+    const flushPending = Effect.gen(function* () {
+      for (const entry of pending.splice(0)) {
+        yield* Effect.uninterruptible(traces.append(run.id, entry));
+      }
+    });
+    const writer = Effect.gen(function* () {
+      while (true) {
+        yield* flushPending;
+        yield* Effect.sleep(TRACE_POLL_MS);
+      }
+    });
 
     // Prove life right away, then stay proven on the interval.
     const fiber = yield* Effect.forkChild(
       heartbeatLoop(runs, options.wsId, run.id, owner),
     );
+    const writerFiber = yield* Effect.forkChild(writer);
 
     const flow = new FlowRunner<ReviewTypes>({
       runners: createReviewRunners({
         agent,
         pinned,
       }),
-      onEvent: async (event) => {
-        await recorder.record(event);
+      onEvent: (event) => {
+        record(event);
+        return Promise.resolve();
       },
     });
 
@@ -274,9 +300,12 @@ function execute(
         catch: (caught) => caught,
       }),
     );
-    // Stopping the loop cannot race an in-flight beat (uninterruptible) and
-    // cannot clobber the terminal state that follows.
+    // The loops stop before the terminal write; an in-flight write is
+    // uninterruptible, so it settles first, and the flush below catches
+    // anything still buffered.
     yield* Fiber.interrupt(fiber);
+    yield* Fiber.interrupt(writerFiber);
+    yield* flushPending;
 
     if (Result.isFailure(flowOutcome)) {
       const caught = flowOutcome.failure;

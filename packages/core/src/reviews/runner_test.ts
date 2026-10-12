@@ -15,8 +15,8 @@ import {
 } from "@/reviews/runner.ts";
 import { ReviewRuns } from "@/reviews/service.ts";
 import { createSpyClient } from "@/reviews/testing/agent.ts";
-import { type TraceEvent, TraceEventStore } from "@/reviews/trace/mod.ts";
 import { TraceEvents } from "@/reviews/trace/service.ts";
+import type { TraceEvent } from "@/reviews/trace/types.ts";
 import type { ReviewRun } from "@/reviews/types.ts";
 import { createFile } from "@/vfs/testing/helpers.ts";
 import { WorkspaceId } from "@/workspace/WorkspaceId.ts";
@@ -62,7 +62,6 @@ function passFixture(units: ReviewUnit[]): ResolvedReviewPass {
 async function setup() {
   const kv = await Deno.openKv(":memory:");
   const adapter = new KvAdapter(kv);
-  const traceStore = new TraceEventStore(adapter);
   const env = Layer.provide(
     Layer.mergeAll(
       ReviewRuns.layerNoDeps,
@@ -71,22 +70,25 @@ async function setup() {
     ),
     kvLayer(kv),
   );
-  return { adapter, traceStore, env };
+  return { adapter, env };
 }
 
-/** Run a small ReviewRuns program against the test's shared KV store. */
+/** Run a small program against the test's shared KV store: the body gets
+ * both services, as they come out of the shared env. */
 function viaRuns<A>(
   env: Layer.Layer<ReviewRuns | TraceEvents>,
-  body: (
-    runs: Context.Service.Shape<typeof ReviewRuns>,
-  ) => Effect.Effect<A, unknown, WorkspaceId>,
+  body: (deps: {
+    runs: Context.Service.Shape<typeof ReviewRuns>;
+    traces: Context.Service.Shape<typeof TraceEvents>;
+  }) => Effect.Effect<A, unknown, WorkspaceId>,
 ): Promise<A> {
   return Effect.runPromise(
     Effect.provide(
       Effect.provideService(
         Effect.gen(function* () {
           const runs = yield* ReviewRuns;
-          return yield* body(runs);
+          const traces = yield* TraceEvents;
+          return yield* body({ runs, traces });
         }),
         WorkspaceId,
         { wsId: "ws" },
@@ -157,7 +159,7 @@ function appliedEvents(trace: TraceEvent[]) {
 
 Deno.test("runReviewPass -- completes a pass with marks, summary, and a per-node trace", async () => {
   const { vfs, versionId } = await createFile("essay.txt", "hello brave world");
-  const { traceStore, env } = await setup();
+  const { env } = await setup();
   const { agent, inputs } = createSpyClient([
     { text: ANALYSIS_ROUND, reasoning: "reading closely" },
     {
@@ -169,7 +171,6 @@ Deno.test("runReviewPass -- completes a pass with marks, summary, and a per-node
   const run = await runPass(env, {
     agent,
     vfs,
-    traceStore,
     pass: passFixture([
       unitFixture({ id: "analyze" }),
       unitFixture({
@@ -197,7 +198,7 @@ Deno.test("runReviewPass -- completes a pass with marks, summary, and a per-node
     unitId: "mechanics",
   });
 
-  const trace = (await traceStore.get({ wsId: "ws", runId: run.id })) ?? [];
+  const trace = (await viaRuns(env, (deps) => deps.traces.get(run.id))) ?? [];
   assertEquals(byNode(trace), {
     content: ["node_start", "node_end"],
     analyze: [
@@ -232,7 +233,7 @@ Deno.test("runReviewPass -- completes a pass with marks, summary, and a per-node
 
 Deno.test("runReviewPass -- a repair round re-quotes the failed spans", async () => {
   const { vfs, versionId } = await createFile("essay.txt", "hello world");
-  const { traceStore, env } = await setup();
+  const { env } = await setup();
   const { agent, inputs } = createSpyClient([
     {
       text: '{"marks":[{"selected_text":"ghost span","comment":"not there","label":"grammar"}]}',
@@ -246,7 +247,6 @@ Deno.test("runReviewPass -- a repair round re-quotes the failed spans", async ()
   const run = await runPass(env, {
     agent,
     vfs,
-    traceStore,
     pass: passFixture([
       unitFixture({
         id: "mechanics",
@@ -261,7 +261,7 @@ Deno.test("runReviewPass -- a repair round re-quotes the failed spans", async ()
   assertEquals(run.status, "completed");
   assertEquals(run.summary, "Solid draft.");
 
-  const trace = (await traceStore.get({ wsId: "ws", runId: run.id })) ?? [];
+  const trace = (await viaRuns(env, (deps) => deps.traces.get(run.id))) ?? [];
   assertEquals(byNode(trace), {
     content: ["node_start", "node_end"],
     "mechanics.propose": [
@@ -295,7 +295,7 @@ Deno.test("runReviewPass -- a repair round re-quotes the failed spans", async ()
 
 Deno.test("runReviewPass -- a zero budget keeps failed marks with no repair nodes", async () => {
   const { vfs, versionId } = await createFile("essay.txt", "hello world");
-  const { traceStore, env } = await setup();
+  const { env } = await setup();
   const { agent } = createSpyClient([
     {
       text: '{"marks":[{"selected_text":"ghost span","comment":"not there","label":"grammar"}]}',
@@ -306,7 +306,6 @@ Deno.test("runReviewPass -- a zero budget keeps failed marks with no repair node
   const run = await runPass(env, {
     agent,
     vfs,
-    traceStore,
     pass: passFixture([
       unitFixture({
         id: "mechanics",
@@ -319,7 +318,7 @@ Deno.test("runReviewPass -- a zero budget keeps failed marks with no repair node
   });
 
   assertEquals(run.status, "completed");
-  const trace = (await traceStore.get({ wsId: "ws", runId: run.id })) ?? [];
+  const trace = (await viaRuns(env, (deps) => deps.traces.get(run.id))) ?? [];
   assertEquals(Object.keys(byNode(trace)), [
     "content",
     "mechanics.propose",
@@ -335,7 +334,7 @@ Deno.test("runReviewPass -- a zero budget keeps failed marks with no repair node
 
 Deno.test("runReviewPass -- resuming a run that does not exist is an error", async () => {
   const { vfs } = await createFile("essay.txt", "hello world");
-  const { traceStore, env } = await setup();
+  const { env } = await setup();
   const { agent } = createSpyClient([{ text: ANALYSIS_ROUND }]);
 
   await assertRejects(
@@ -345,7 +344,6 @@ Deno.test("runReviewPass -- resuming a run that does not exist is an error", asy
         {
           agent,
           vfs,
-          traceStore,
           pass: passFixture([unitFixture({ id: "analyze" })]),
           wsId: "ws",
           path: "essay.txt",
@@ -359,7 +357,7 @@ Deno.test("runReviewPass -- resuming a run that does not exist is an error", asy
 
 Deno.test("runReviewPass -- a resumed pass skips completed nodes and shows each once", async () => {
   const { vfs, versionId } = await createFile("essay.txt", "hello brave world");
-  const { traceStore, env } = await setup();
+  const { env } = await setup();
   // First attempt: analyze succeeds, then the unit below it fails on bad JSON.
   const first = createSpyClient([
     { text: ANALYSIS_ROUND },
@@ -369,7 +367,6 @@ Deno.test("runReviewPass -- a resumed pass skips completed nodes and shows each 
   const run = await runPass(env, {
     agent: first.agent,
     vfs,
-    traceStore,
     pass: passFixture([
       unitFixture({ id: "analyze" }),
       unitFixture({
@@ -385,7 +382,7 @@ Deno.test("runReviewPass -- a resumed pass skips completed nodes and shows each 
 
   assertEquals(run.status, "failed");
   const interrupted =
-    (await traceStore.get({ wsId: "ws", runId: run.id })) ?? [];
+    (await viaRuns(env, (deps) => deps.traces.get(run.id))) ?? [];
   // analyze completed, so its artifacts are recoverable from the trace.
   assertEquals(nodeEnd(interrupted, "analyze")?.status, "completed");
 
@@ -402,7 +399,6 @@ Deno.test("runReviewPass -- a resumed pass skips completed nodes and shows each 
     {
       agent: second.agent,
       vfs,
-      traceStore,
       pass: passFixture([
         unitFixture({ id: "analyze" }),
         unitFixture({
@@ -423,7 +419,7 @@ Deno.test("runReviewPass -- a resumed pass skips completed nodes and shows each 
   assertEquals(second.inputs.length, 2);
   assertEquals(second.inputs[0].includes("Good."), false);
 
-  const trace = (await traceStore.get({ wsId: "ws", runId: run.id })) ?? [];
+  const trace = (await viaRuns(env, (deps) => deps.traces.get(run.id))) ?? [];
   const analyzeEvents = byNode(trace).analyze;
   assertEquals(analyzeEvents.filter((type) => type === "node_start").length, 1);
   assertEquals(analyzeEvents.filter((type) => type === "node_end").length, 1);
@@ -434,13 +430,12 @@ Deno.test("runReviewPass -- a resumed pass skips completed nodes and shows each 
 
 Deno.test("runReviewPass -- a node error fails the run and skips dependents", async () => {
   const { vfs } = await createFile("essay.txt", "hello world");
-  const { traceStore, env } = await setup();
+  const { env } = await setup();
   const { agent } = createSpyClient([{ text: "not json" }]);
 
   const run = await runPass(env, {
     agent,
     vfs,
-    traceStore,
     pass: passFixture([
       unitFixture({ id: "analyze" }),
       unitFixture({
@@ -461,7 +456,7 @@ Deno.test("runReviewPass -- a node error fails the run and skips dependents", as
   assertEquals(run.status, "failed");
   assertEquals(run.error?.includes("not valid JSON"), true);
 
-  const trace = (await traceStore.get({ wsId: "ws", runId: run.id })) ?? [];
+  const trace = (await viaRuns(env, (deps) => deps.traces.get(run.id))) ?? [];
   const grouped = byNode(trace);
   // The prompt is recorded before each call, the repair says why the first
   // reply was rejected, and the re-ask that also failed leaves two
@@ -500,13 +495,12 @@ Deno.test("runReviewPass -- a node error fails the run and skips dependents", as
 
 Deno.test("runReviewPass -- fails a pass that commits no summary", async () => {
   const vfs = await createFile("essay.txt", "hello world").then((f) => f.vfs);
-  const { traceStore, env } = await setup();
+  const { env } = await setup();
   const { agent } = createSpyClient([{ text: ANALYSIS_ROUND }]);
 
   const run = await runPass(env, {
     agent,
     vfs,
-    traceStore,
     // No summary unit, so the graph commits no summary artifact. Reading it
     // back is a structural surprise, not a pass with a blank summary.
     pass: passFixture([unitFixture({ id: "analyze" })]),
@@ -521,7 +515,7 @@ Deno.test("runReviewPass -- fails a pass that commits no summary", async () => {
 
 Deno.test("runReviewPass -- fails with a typed error when the file does not exist", async () => {
   const vfs = (await createFile("other.txt", "x")).vfs;
-  const { traceStore, env } = await setup();
+  const { env } = await setup();
   const { agent } = createSpyClient([]);
 
   await assertRejects(
@@ -529,7 +523,6 @@ Deno.test("runReviewPass -- fails with a typed error when the file does not exis
       runPass(env, {
         agent,
         vfs,
-        traceStore,
         pass: passFixture([unitFixture({ id: "analyze" })]),
         wsId: "ws",
         path: "essay.txt",
@@ -539,14 +532,12 @@ Deno.test("runReviewPass -- fails with a typed error when the file does not exis
   );
 
   // No run row: nothing was reviewed, so there is nothing to report on.
-  assertEquals(await viaRuns(env, (runs) => runs.listRuns()), []);
+  assertEquals(await viaRuns(env, (deps) => deps.runs.listRuns()), []);
 });
 
 Deno.test("runReviewPass -- heartbeats the lease while running, then releases it", async () => {
   const { vfs } = await createFile("essay.txt", "hello brave world");
   const kv = await Deno.openKv(":memory:");
-  const adapter = new KvAdapter(kv);
-  const traceStore = new TraceEventStore(adapter);
   const count = { renewed: 0, refused: 0 };
   const env = countingReviews(kv, count);
   const { agent } = createSpyClient([
@@ -557,7 +548,6 @@ Deno.test("runReviewPass -- heartbeats the lease while running, then releases it
   const run = await runPass(env, {
     agent,
     vfs,
-    traceStore,
     pass: passFixture([
       unitFixture({ id: "analyze" }),
       unitFixture({ id: "summary", summary: true, inputs: ["analyze"] }),
@@ -570,24 +560,24 @@ Deno.test("runReviewPass -- heartbeats the lease while running, then releases it
   assert(count.renewed >= 1);
   // A refused beat would mean the finish raced the release.
   assertEquals(count.refused, 0);
-  const row = await viaRuns(env, (runs) => runs.getRun(run.id));
+  const row = await viaRuns(env, (deps) => deps.runs.getRun(run.id));
   assertEquals(row?.leaseOwner, undefined);
   assertEquals(row?.heartbeatAt, undefined);
 });
 
 Deno.test("runReviewPass -- refuses to resume a run another driver holds", async () => {
   const { vfs } = await createFile("essay.txt", "hello world");
-  const { traceStore, env } = await setup();
+  const { env } = await setup();
   const { agent } = createSpyClient([]);
-  const run = await viaRuns(env, (runs) =>
-    runs.createRun({
+  const run = await viaRuns(env, (deps) =>
+    deps.runs.createRun({
       path: "essay.txt",
       reviewPassId: "essay-review",
       versionId: "v1",
     }),
   );
-  await viaRuns(env, (runs) =>
-    runs.claimRun(run.id, { owner: "driver-x", heartbeatAtLeast: 0 }),
+  await viaRuns(env, (deps) =>
+    deps.runs.claimRun(run.id, { owner: "driver-x", heartbeatAtLeast: 0 }),
   );
 
   await assertRejects(
@@ -597,7 +587,6 @@ Deno.test("runReviewPass -- refuses to resume a run another driver holds", async
         {
           agent,
           vfs,
-          traceStore,
           pass: passFixture([unitFixture({ id: "analyze" })]),
           wsId: "ws",
           path: "essay.txt",
@@ -611,9 +600,9 @@ Deno.test("runReviewPass -- refuses to resume a run another driver holds", async
 
 Deno.test("runReviewPass -- resumes a run whose lease went stale", async () => {
   const { vfs, versionId } = await createFile("essay.txt", "hello brave world");
-  const { adapter, traceStore, env } = await setup();
-  const run = await viaRuns(env, (runs) =>
-    runs.createRun({
+  const { adapter, env } = await setup();
+  const run = await viaRuns(env, (deps) =>
+    deps.runs.createRun({
       path: "essay.txt",
       reviewPassId: "essay-review",
       versionId,
@@ -635,7 +624,6 @@ Deno.test("runReviewPass -- resumes a run whose lease went stale", async () => {
     {
       agent,
       vfs,
-      traceStore,
       pass: passFixture([
         unitFixture({ id: "analyze" }),
         unitFixture({ id: "summary", summary: true, inputs: ["analyze"] }),

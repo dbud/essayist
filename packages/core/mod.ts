@@ -65,12 +65,10 @@ export { ReviewRuns } from "@/reviews/service.ts";
 export type {
   TraceEvent,
   TraceNodeView,
-  TraceRecorder,
-  TraceStore,
   TraceTotals,
   TraceView,
 } from "@/reviews/trace/mod.ts";
-export { groupTraceNodes, TraceEventStore } from "@/reviews/trace/mod.ts";
+export { groupTraceNodes } from "@/reviews/trace/mod.ts";
 export { TraceEvents } from "@/reviews/trace/service.ts";
 export type {
   MarkAttempt,
