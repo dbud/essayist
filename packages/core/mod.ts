@@ -70,6 +70,7 @@ export type {
   ReviewRun,
   ReviewRunStatus,
 } from "@/reviews/types.ts";
+export { Search } from "@/search/service.ts";
 export { summarizeFile } from "@/summarize.ts";
 export {
   createGrepTool,
