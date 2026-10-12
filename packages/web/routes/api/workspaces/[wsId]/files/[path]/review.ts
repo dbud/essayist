@@ -1,13 +1,14 @@
 import {
   ConfigInvalidError,
   ConfigMissingError,
+  ModelClient,
   runReviewPass,
   WorkspaceId,
 } from "@essayist/core";
 import { Effect } from "effect";
 import { define } from "@/define.ts";
 import { runtime } from "@/store.ts";
-import { ResolveAgentError, resolveAgent } from "@/utils/agent.ts";
+import { ResolveAgentError, resolveReviewSetup } from "@/utils/agent.ts";
 import { sseResponse } from "@/utils/sse.ts";
 
 export const handler = {
@@ -22,21 +23,23 @@ export const handler = {
     // checkpoint, so it covers the current content.
     await vfs.promoteDraft(path);
     try {
-      const { agent, pass } = await resolveAgent(runtime);
+      const { apiKey, pass } = await resolveReviewSetup(runtime);
       return sseResponse(async (send) => {
         try {
           const run = await runtime.runPromise(
-            Effect.provideService(
-              runReviewPass({
-                agent,
-                vfs,
-                pass,
-                wsId,
-                path,
-                onProgress: (progress) => send("progress", progress),
-              }),
-              WorkspaceId,
-              { wsId },
+            Effect.provide(
+              Effect.provideService(
+                runReviewPass({
+                  vfs,
+                  pass,
+                  wsId,
+                  path,
+                  onProgress: (progress) => send("progress", progress),
+                }),
+                WorkspaceId,
+                { wsId },
+              ),
+              ModelClient.layerOpenRouter(apiKey),
             ),
           );
           send("done", run);

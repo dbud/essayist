@@ -10,20 +10,24 @@
  */
 
 import { type Context, Effect, Fiber, Result, Schema } from "effect";
-import type { Agent } from "@/agent.ts";
 import type { ResolvedReviewPass } from "@/config/types.ts";
 import { Files } from "@/files/service.ts";
 import { FlowRunner } from "@/flow/runner.ts";
 import type { FlowEvent } from "@/flow/types.ts";
 import { view } from "@/flow/view.ts";
 import { logger } from "@/logger.ts";
+import type { ModelClient } from "@/model/service.ts";
 import type { MissingChunksError } from "@/persistence/chunked_values.ts";
 import type {
   ConcurrentModificationError,
   PersistenceError,
 } from "@/persistence/mod.ts";
 import { buildReviewGraph } from "@/reviews/adapter.ts";
-import { createReviewRunners, type ReviewTypes } from "@/reviews/graph.ts";
+import {
+  createReviewRunners,
+  type ReviewServices,
+  type ReviewTypes,
+} from "@/reviews/graph.ts";
 import type { ReviewProgress } from "@/reviews/progress.ts";
 import { ReviewProgressTracker } from "@/reviews/progress.ts";
 import { ReviewRuns } from "@/reviews/service.ts";
@@ -38,7 +42,6 @@ import { WorkspaceId } from "@/workspace/WorkspaceId.ts";
 
 /** Options for {@linkcode runReviewPass}. */
 export interface RunReviewPassOptions {
-  agent: Agent;
   vfs: VFS;
   pass: ResolvedReviewPass;
   wsId: string;
@@ -46,6 +49,14 @@ export interface RunReviewPassOptions {
   /** Receives text-free progress snapshots as the run advances. */
   onProgress?: (progress: ReviewProgress) => void;
 }
+
+/** Services the review pass runs on: the steps pull them from context. */
+type RunnerServices =
+  | ReviewRuns
+  | TraceEvents
+  | WorkspaceId
+  | Files
+  | ModelClient;
 
 // Heartbeats go out every interval. The interval must stay far under the
 // staleness window, or a live run can be stolen.
@@ -95,11 +106,7 @@ export type RunnerError =
 /** Run a review pass over a file version. */
 export function runReviewPass(
   options: RunReviewPassOptions,
-): Effect.Effect<
-  ReviewRun,
-  RunnerError,
-  ReviewRuns | TraceEvents | WorkspaceId | Files
-> {
+): Effect.Effect<ReviewRun, RunnerError, RunnerServices> {
   const { path } = options;
   return Effect.gen(function* () {
     const files = yield* Files;
@@ -116,11 +123,7 @@ export function runReviewPass(
 export function resumeReviewPass(
   options: RunReviewPassOptions,
   runId: string,
-): Effect.Effect<
-  ReviewRun,
-  RunnerError,
-  ReviewRuns | TraceEvents | WorkspaceId | Files
-> {
+): Effect.Effect<ReviewRun, RunnerError, RunnerServices> {
   return Effect.gen(function* () {
     const runs = yield* ReviewRuns;
     const run = yield* runs.getRun(runId);
@@ -136,11 +139,7 @@ function resume(
   options: RunReviewPassOptions,
   run: ReviewRun,
   versionId: string,
-): Effect.Effect<
-  ReviewRun,
-  RunnerError,
-  ReviewRuns | TraceEvents | WorkspaceId | Files
-> {
+): Effect.Effect<ReviewRun, RunnerError, RunnerServices> {
   return Effect.gen(function* () {
     const traces = yield* TraceEvents;
     const priorTrace = yield* traces.get(run.id);
@@ -153,11 +152,7 @@ function resume(
 function start(
   options: RunReviewPassOptions,
   versionId: string,
-): Effect.Effect<
-  ReviewRun,
-  RunnerError,
-  ReviewRuns | TraceEvents | WorkspaceId | Files
-> {
+): Effect.Effect<ReviewRun, RunnerError, RunnerServices> {
   const { pass, path } = options;
   return Effect.gen(function* () {
     const runs = yield* ReviewRuns;
@@ -228,16 +223,12 @@ function execute(
   versionId: string,
   seq: number,
   priorTrace: TraceEvent[] | undefined,
-): Effect.Effect<
-  ReviewRun,
-  RunnerError,
-  ReviewRuns | TraceEvents | WorkspaceId | Files
-> {
+): Effect.Effect<ReviewRun, RunnerError, RunnerServices> {
   return Effect.gen(function* () {
     const runs = yield* ReviewRuns;
     const traces = yield* TraceEvents;
     const owner = yield* claim(runs, run.id);
-    const { agent, onProgress, pass, path, vfs } = options;
+    const { onProgress, pass, path, vfs } = options;
     const completed = priorTrace ? foldCompleted(priorTrace) : undefined;
     const pinned = new PinnedVFS(vfs, {
       path,
@@ -282,11 +273,10 @@ function execute(
     );
     const writerFiber = yield* Effect.forkChild(writer);
 
-    // The source step reads through the Files service; the pinned VFS
+    // The native steps read their services from context; the pinned VFS
     // serves the promise steps until they go native.
-    const flow = new FlowRunner<ReviewTypes, Files | WorkspaceId>({
+    const flow = new FlowRunner<ReviewTypes, ReviewServices>({
       runners: createReviewRunners({
-        agent,
         pinned,
       }),
       onEvent: (event) => {

@@ -1,7 +1,7 @@
+import { Effect } from "effect";
 import { z } from "zod";
-import type { Agent } from "@/agent.ts";
-import { fromStep } from "@/flow/bridge.ts";
 import type { NodeRunner } from "@/flow/types.ts";
+import type { ModelClient } from "@/model/service.ts";
 import { callStructured } from "@/reviews/call.ts";
 import type { ReviewTypes } from "@/reviews/graph.ts";
 import { composeCallInput } from "./input.ts";
@@ -14,20 +14,19 @@ export const StepSummarySchema = z.object({
 
 export type StepSummary = z.infer<typeof StepSummarySchema>;
 
-export function createSynthesizeRunner(
-  agent: Agent,
-): NodeRunner<ReviewTypes, "synthesize"> {
-  return {
-    execute: ({ prompts, pool }, { inputs, artifact, emit }) =>
-      fromStep(async () => {
-        const result = await callStructured({
-          agent,
-          onEvent: emit,
-          input: composeCallInput(prompts, inputs),
-          models: pool.models,
-          schema: StepSummarySchema,
-        });
-        return [artifact("summary", result.output.summary)];
-      }),
-  };
-}
+export const synthesizeRunner: NodeRunner<
+  ReviewTypes,
+  "synthesize",
+  ModelClient
+> = {
+  execute: ({ prompts, pool }, { inputs, artifact, emit }) =>
+    Effect.gen(function* () {
+      const result = yield* callStructured({
+        onEvent: emit,
+        input: composeCallInput(prompts, inputs),
+        models: pool.models,
+        schema: StepSummarySchema,
+      });
+      return [artifact("summary", result.output.summary)];
+    }),
+};

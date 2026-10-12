@@ -1,20 +1,20 @@
-import type { Agent, PostModelCallPayload } from "@/agent.ts";
+import type { PostModelCallPayload } from "@/agent.ts";
 import type { ResolvedReviewUnit } from "@/config/types.ts";
 import type { Files } from "@/files/service.ts";
 import type { ForwardSpec, PassWhenSpec } from "@/flow/helpers.ts";
 import { forward, passWhen } from "@/flow/helpers.ts";
 import type { FlowTypes, NodeRunners } from "@/flow/types.ts";
-import type { Analysis } from "@/reviews/steps/analyze.ts";
-import { createAnalyzeRunner } from "@/reviews/steps/analyze.ts";
-import type { MarkProposal } from "@/reviews/steps/mark.ts";
+import type { ModelClient } from "@/model/service.ts";
+import { type Analysis, analyzeRunner } from "@/reviews/steps/analyze.ts";
 import {
   createMarkApplier,
   createMarkApplyRunner,
-  createMarkProposeRunner,
-  createMarkRepairRunner,
+  type MarkProposal,
+  markProposeRunner,
+  markRepairRunner,
 } from "@/reviews/steps/mark.ts";
 import { sourceRunner } from "@/reviews/steps/source.ts";
-import { createSynthesizeRunner } from "@/reviews/steps/synthesize.ts";
+import { synthesizeRunner } from "@/reviews/steps/synthesize.ts";
 import type { MarkAttempt } from "@/reviews/types.ts";
 import type { PinnedVFS } from "@/vfs/pin.ts";
 import type { MarkProvenance } from "@/vfs/types.ts";
@@ -54,18 +54,20 @@ export interface ReviewTypes extends FlowTypes {
   };
 }
 
+/** The services the review graph's native steps consume. */
+export type ReviewServices = Files | WorkspaceId | ModelClient;
+
 export function createReviewRunners(options: {
-  agent: Agent;
   pinned: PinnedVFS;
-}): NodeRunners<ReviewTypes, Files | WorkspaceId> {
+}): NodeRunners<ReviewTypes, ReviewServices> {
   return {
     source: sourceRunner,
-    analyze: createAnalyzeRunner(options.agent),
-    "mark.propose": createMarkProposeRunner(options.agent),
-    "mark.propose.repair": createMarkRepairRunner(options.agent),
+    analyze: analyzeRunner,
+    "mark.propose": markProposeRunner,
+    "mark.propose.repair": markRepairRunner,
     "mark.apply": createMarkApplyRunner(createMarkApplier(options.pinned)),
     "mark.repair.gate": passWhen<ReviewTypes, "mark.repair.gate">(),
     "mark.collect": forward<ReviewTypes, "mark.collect">(),
-    synthesize: createSynthesizeRunner(options.agent),
+    synthesize: synthesizeRunner,
   };
 }

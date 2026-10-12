@@ -1,8 +1,9 @@
 import { partition } from "@std/collections";
+import { Effect } from "effect";
 import { z } from "zod";
-import type { Agent } from "@/agent.ts";
 import { fromStep } from "@/flow/bridge.ts";
 import type { NodeRunner } from "@/flow/types.ts";
+import type { ModelClient } from "@/model/service.ts";
 import { callStructured } from "@/reviews/call.ts";
 import type { ReviewTypes } from "@/reviews/graph.ts";
 import type { MarkAttempt } from "@/reviews/types.ts";
@@ -110,50 +111,48 @@ export function createMarkApplier(pinned: PinnedVFS) {
     tasks.add(() => applyMarks(pinned, { marks }, allowedLabels, provenance));
 }
 
-export function createMarkProposeRunner(
-  agent: Agent,
-): NodeRunner<ReviewTypes, "mark.propose"> {
-  return {
-    execute: ({ prompts, pool }, { inputs, artifact, emit }) =>
-      fromStep(async () => {
-        const result = await callStructured({
-          agent,
-          onEvent: emit,
-          input: composeCallInput(prompts, inputs),
-          models: pool.models,
-          schema: ProposedMarksSchema,
-          includeExample: true,
-        });
-        return [artifact("mark.proposals", result.output.marks)];
-      }),
-  };
-}
+export const markProposeRunner: NodeRunner<
+  ReviewTypes,
+  "mark.propose",
+  ModelClient
+> = {
+  execute: ({ prompts, pool }, { inputs, artifact, emit }) =>
+    Effect.gen(function* () {
+      const result = yield* callStructured({
+        onEvent: emit,
+        input: composeCallInput(prompts, inputs),
+        models: pool.models,
+        schema: ProposedMarksSchema,
+        includeExample: true,
+      });
+      return [artifact("mark.proposals", result.output.marks)];
+    }),
+};
 
 /** Re-proposes corrected marks for the failed attempts delivered through
  * its gate. */
-export function createMarkRepairRunner(
-  agent: Agent,
-): NodeRunner<ReviewTypes, "mark.propose.repair"> {
-  return {
-    execute: ({ prompts, pool }, { inputs, artifact, emit }) =>
-      fromStep(async () => {
-        const failed = inputs.of("mark.failed").flat();
-        if (failed.length === 0) {
-          // Activated by its gate with nothing to repair; stays idle.
-          return [];
-        }
-        const result = await callStructured({
-          agent,
-          onEvent: emit,
-          input: composeRepairInput(prompts, inputs),
-          models: pool.models,
-          schema: ProposedMarksSchema,
-          includeExample: true,
-        });
-        return [artifact("mark.proposals", result.output.marks)];
-      }),
-  };
-}
+export const markRepairRunner: NodeRunner<
+  ReviewTypes,
+  "mark.propose.repair",
+  ModelClient
+> = {
+  execute: ({ prompts, pool }, { inputs, artifact, emit }) =>
+    Effect.gen(function* () {
+      const failed = inputs.of("mark.failed").flat();
+      if (failed.length === 0) {
+        // Activated by its gate with nothing to repair; stays idle.
+        return [];
+      }
+      const result = yield* callStructured({
+        onEvent: emit,
+        input: composeRepairInput(prompts, inputs),
+        models: pool.models,
+        schema: ProposedMarksSchema,
+        includeExample: true,
+      });
+      return [artifact("mark.proposals", result.output.marks)];
+    }),
+};
 
 export function createMarkApplyRunner(
   apply: (

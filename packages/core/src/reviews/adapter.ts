@@ -12,19 +12,23 @@ const CONTENT = "content";
 /** Decompose a resolved review pass into a flow graph: a model-call node
  * per unit, with attempt units unrolling their mark subgraph behind gates.
  * Unit inputs stay symbolic (unit ids) until every unit is built; a final
- * pass resolves each unit to the node standing for the finished unit. The
- * source node pins the review to one file version. */
+ * pass resolves each unit to the node standing for the finished unit.
+ * The source node pins the review to one file version; a preview graph
+ * (pin omitted) carries an inert pin. */
 export function buildReviewGraph(
   pass: ResolvedReviewPass,
   runId: string,
-  pin: { path: string; versionId: string },
+  pin?: { path: string; versionId: string },
 ): FlowGraph<ReviewTypes> {
   const nodes: FlowNodeOf<ReviewTypes>[] = [
     {
       id: CONTENT,
       kind: "source",
       dependsOn: [],
-      payload: { path: pin.path, versionId: pin.versionId },
+      payload: {
+        path: pin?.path ?? "",
+        versionId: pin?.versionId ?? "",
+      },
     },
   ];
   const terminals = new Map<string, string>();

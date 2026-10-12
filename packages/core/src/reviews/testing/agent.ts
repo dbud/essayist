@@ -4,7 +4,7 @@ import type {
   Tool,
 } from "@openrouter/agent";
 import { HooksManager } from "@openrouter/agent";
-import { Agent, type ModelClient } from "@/agent.ts";
+import type { ModelClient as Transport } from "@/agent.ts";
 
 interface FakeRound {
   text: string;
@@ -40,14 +40,14 @@ function fakeResult(round: FakeRound): ModelResult<readonly Tool[]> {
   } as unknown as ModelResult<readonly Tool[]>;
 }
 
-/** An agent over a spy client that replays the given rounds in order and
- * records the input of every call. */
-export function createSpyClient(rounds: FakeRound[]): {
-  agent: Agent;
+/** A spy transport that replays the given rounds in order and records the
+ * input of every call. Compose it with ModelClient.layerOf in tests. */
+export function createSpyTransport(rounds: FakeRound[]): {
+  client: Transport;
   inputs: string[];
 } {
   const inputs: string[] = [];
-  const client: ModelClient = {
+  const client: Transport = {
     callModel: (request: { input: string; hooks?: HooksManager }) => {
       inputs.push(request.input);
       const hooks = request.hooks;
@@ -82,5 +82,5 @@ export function createSpyClient(rounds: FakeRound[]): {
       return result;
     },
   };
-  return { agent: new Agent("test-key", client), inputs };
+  return { client, inputs };
 }

@@ -11,14 +11,16 @@ import type {
   FlowGraph,
   FlowRunResult,
 } from "@/flow/types.ts";
+import { ModelClient } from "@/model/service.ts";
 import { KvAdapter } from "@/persistence/kv_adapter.ts";
 import { kvLayer } from "@/persistence/kv_layer.ts";
 import {
   createReviewRunners,
   type ReviewNodeEvent,
+  type ReviewServices,
   type ReviewTypes,
 } from "@/reviews/graph.ts";
-import { createSpyClient } from "@/reviews/testing/agent.ts";
+import { createSpyTransport } from "@/reviews/testing/agent.ts";
 import { PinnedVFS } from "@/vfs/pin.ts";
 import { VirtualFileSystem } from "@/vfs/vfs.ts";
 import { WorkspaceId } from "@/workspace/WorkspaceId.ts";
@@ -77,8 +79,8 @@ async function setup(content: string) {
 }
 
 const run = (
-  env: Layer.Layer<Files>,
-  flow: FlowRunner<ReviewTypes, Files | WorkspaceId>,
+  env: Layer.Layer<ModelClient | Files>,
+  flow: FlowRunner<ReviewTypes, ReviewServices>,
   graph: FlowGraph<ReviewTypes>,
 ): Promise<FlowRunResult<ReviewTypes>> =>
   Effect.runPromise(
@@ -89,18 +91,19 @@ const run = (
   );
 
 Deno.test("review runners -- analyze, propose, apply, and synthesize in a flow", async () => {
-  const { env, vfs, versionId } = await setup("hello brave world");
+  const { env: baseEnv, vfs, versionId } = await setup("hello brave world");
   const pinned = new PinnedVFS(vfs, { path: "essay.txt", versionId });
-  const { agent, inputs } = createSpyClient([
+  const { client, inputs } = createSpyTransport([
     { text: ANALYSIS_ROUND, reasoning: "reading closely" },
     {
       text: '{"marks":[{"selected_text":"brave","comment":"Good.","label":"grammar"}]}',
     },
     { text: '{"summary":"Solid draft."}' },
   ]);
-  const runners = createReviewRunners({ agent, pinned });
+  const env = Layer.merge(baseEnv, ModelClient.layerOf(client));
+  const runners = createReviewRunners({ pinned });
   const events: FlowEvent[] = [];
-  const flow = new FlowRunner<ReviewTypes, Files | WorkspaceId>({
+  const flow = new FlowRunner<ReviewTypes, ReviewServices>({
     runners,
     onEvent: (event) => {
       events.push(event);
@@ -182,16 +185,17 @@ Deno.test("review runners -- analyze, propose, apply, and synthesize in a flow",
 });
 
 Deno.test("review runners -- repair propose stays idle without failures", async () => {
-  const { env, vfs, versionId } = await setup("hello world");
+  const { env: baseEnv, vfs, versionId } = await setup("hello world");
   const pinned = new PinnedVFS(vfs, { path: "essay.txt", versionId });
-  const { agent, inputs } = createSpyClient([
+  const { client, inputs } = createSpyTransport([
     {
       text: '{"marks":[{"selected_text":"hello","comment":"found it","label":"grammar"}]}',
     },
   ]);
-  const runners = createReviewRunners({ agent, pinned });
+  const env = Layer.merge(baseEnv, ModelClient.layerOf(client));
+  const runners = createReviewRunners({ pinned });
   const provenance = { runId: "r", unitId: "m" };
-  const flow = new FlowRunner<ReviewTypes, Files | WorkspaceId>({ runners });
+  const flow = new FlowRunner<ReviewTypes, ReviewServices>({ runners });
 
   const result = await run(env, flow, {
     nodes: [
@@ -255,9 +259,9 @@ Deno.test("review runners -- repair propose stays idle without failures", async 
 });
 
 Deno.test("review runners -- a repair round re-quotes failed spans", async () => {
-  const { env, vfs, versionId } = await setup("hello world");
+  const { env: baseEnv, vfs, versionId } = await setup("hello world");
   const pinned = new PinnedVFS(vfs, { path: "essay.txt", versionId });
-  const { agent, inputs } = createSpyClient([
+  const { client, inputs } = createSpyTransport([
     {
       text: '{"marks":[{"selected_text":"ghost span","comment":"not there","label":"grammar"}]}',
     },
@@ -265,9 +269,10 @@ Deno.test("review runners -- a repair round re-quotes failed spans", async () =>
       text: '{"marks":[{"selected_text":"hello","comment":"found it","label":"grammar"}]}',
     },
   ]);
-  const runners = createReviewRunners({ agent, pinned });
+  const env = Layer.merge(baseEnv, ModelClient.layerOf(client));
+  const runners = createReviewRunners({ pinned });
   const provenance = { runId: "r", unitId: "m" };
-  const flow = new FlowRunner<ReviewTypes, Files | WorkspaceId>({ runners });
+  const flow = new FlowRunner<ReviewTypes, ReviewServices>({ runners });
 
   const result = await run(env, flow, {
     nodes: [

@@ -122,7 +122,12 @@ function buildImpl(transport: Transport) {
       );
 
       const firstParse = yield* Effect.result(
-        Effect.try(() => parseStructured(first.text, schema)),
+        Effect.try({
+          try: () => parseStructured(first.text, schema),
+          // The parse failure feeds the repair re-ask and the parse error, so
+          // the original message must survive the Effect boundary.
+          catch: (cause) => cause,
+        }),
       );
       if (Result.isSuccess(firstParse)) {
         return {
@@ -148,7 +153,10 @@ function buildImpl(transport: Transport) {
         options?.onRetry,
       );
       const retryParse = yield* Effect.result(
-        Effect.try(() => parseStructured(retry.text, schema)),
+        Effect.try({
+          try: () => parseStructured(retry.text, schema),
+          catch: (cause) => cause,
+        }),
       );
       if (Result.isFailure(retryParse)) {
         const retryMessage =

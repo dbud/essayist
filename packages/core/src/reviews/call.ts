@@ -1,5 +1,11 @@
+import { Effect } from "effect";
 import type { z } from "zod";
-import type { Agent, PostModelCallPayload, StructuredCall } from "@/agent.ts";
+import type {
+  PostModelCallPayload,
+  StructuredCall,
+  StructuredParseError,
+} from "@/agent.ts";
+import { type ModelCallError, ModelClient } from "@/model/service.ts";
 
 /** Events of a structured call, delivered in order. */
 export type CallEvent =
@@ -12,7 +18,6 @@ export type CallEvent =
 
 /** Options for {@linkcode callStructured}. */
 export interface CallStructuredOptions<T extends z.ZodObject<z.ZodRawShape>> {
-  agent: Agent;
   /** Delivers the prompt before the call, then the result events. */
   onEvent: (event: CallEvent) => void;
   input: string;
@@ -24,32 +29,39 @@ export interface CallStructuredOptions<T extends z.ZodObject<z.ZodRawShape>> {
 /** Call the model for a structured output, delivering a prompt as each call
  * happens, a model_call per call, the repairs between them, then the
  * reasoning and output. */
-export async function callStructured<T extends z.ZodObject<z.ZodRawShape>>(
+export function callStructured<T extends z.ZodObject<z.ZodRawShape>>(
   options: CallStructuredOptions<T>,
-): Promise<StructuredCall<z.output<T>>> {
-  const result = await options.agent.callModelStructured(
-    options.input,
-    options.schema,
-    options.models,
-    {
-      includeExample: options.includeExample,
-      onPrompt: (text) => {
-        options.onEvent({ type: "prompt", text });
+): Effect.Effect<
+  StructuredCall<z.output<T>>,
+  StructuredParseError | ModelCallError,
+  ModelClient
+> {
+  return Effect.gen(function* () {
+    const client = yield* ModelClient;
+    const result = yield* client.callModelStructured(
+      options.input,
+      options.schema,
+      options.models,
+      {
+        includeExample: options.includeExample,
+        onPrompt: (text) => {
+          options.onEvent({ type: "prompt", text });
+        },
+        onModelCall: (call) => {
+          options.onEvent({ type: "model_call", call });
+        },
+        onRepair: (repair) => {
+          options.onEvent({ type: "repair", ...repair });
+        },
+        onRetry: (failure) => {
+          options.onEvent({ type: "retry", ...failure });
+        },
       },
-      onModelCall: (call) => {
-        options.onEvent({ type: "model_call", call });
-      },
-      onRepair: (repair) => {
-        options.onEvent({ type: "repair", ...repair });
-      },
-      onRetry: (failure) => {
-        options.onEvent({ type: "retry", ...failure });
-      },
-    },
-  );
-  for (const text of result.reasoning) {
-    options.onEvent({ type: "reasoning", text });
-  }
-  options.onEvent({ type: "output", output: result.output });
-  return result;
+    );
+    for (const text of result.reasoning) {
+      options.onEvent({ type: "reasoning", text });
+    }
+    options.onEvent({ type: "output", output: result.output });
+    return result;
+  });
 }
