@@ -271,10 +271,7 @@ function execute(
     // The native steps read their services from context.
     const flow = new FlowRunner<ReviewTypes, ReviewServices>({
       runners: reviewRunners,
-      onEvent: (event) => {
-        record(event);
-        return Promise.resolve();
-      },
+      onEvent: record,
     });
 
     const flowRun = flow

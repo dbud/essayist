@@ -18,12 +18,12 @@ import type {
 } from "@/flow/types.ts";
 import { FlowGraphError } from "@/flow/types.ts";
 import { view } from "@/flow/view.ts";
-import { SerialTasks } from "@/utils/serial.ts";
 
 export interface FlowRunnerOptions<T extends FlowTypes, R = never> {
   runners: NodeRunners<T, R>;
-  /** Awaited per event; a throwing listener is logged and ignored. */
-  onEvent?: (event: FlowEvent<T>) => Promise<void> | void;
+  /** Called per event, in emission order; a throwing listener is logged
+   * and ignored. */
+  onEvent?: (event: FlowEvent<T>) => void;
   /** Max nodes executing at once. Default unbounded. */
   maxConcurrency?: number;
 }
@@ -149,7 +149,7 @@ export class FlowRunner<T extends FlowTypes, R = never> {
           reason: skipReason(entry, wired, errors),
         };
         nodeRuns.push(run);
-        yield* this.#emit({ type: "node_end", nodeId: entry.node.id, run });
+        this.#emit({ type: "node_end", nodeId: entry.node.id, run });
       }
 
       const position = new Map(
@@ -170,9 +170,8 @@ export class FlowRunner<T extends FlowTypes, R = never> {
   ): Effect.Effect<CompletedNodeRun<T> | FailedNodeRun, never, R> {
     return Effect.gen({ self: this }, function* () {
       const startedAt = Date.now();
-      yield* this.#emit({ type: "node_start", nodeId: node.id });
+      this.#emit({ type: "node_start", nodeId: node.id });
 
-      const emitted = new SerialTasks();
       // The payload boundary: the host's graph construction guarantees
       // configured kinds carry their payload.
       const payload = node.payload as T["nodes"][NodeKind<T>];
@@ -180,9 +179,7 @@ export class FlowRunner<T extends FlowTypes, R = never> {
         payload,
         inputs: view(inputs),
         emit: (event) => {
-          void emitted.add(() =>
-            this.#listen({ type: "custom", nodeId: node.id, event }),
-          );
+          this.#emit({ type: "custom", nodeId: node.id, event });
         },
         artifact: (type, data) => ({
           type,
@@ -196,12 +193,6 @@ export class FlowRunner<T extends FlowTypes, R = never> {
           ? Effect.fail(new Error(`no runner for node kind "${node.kind}"`))
           : runner.execute(payload, context);
       const exit = yield* Effect.exit(attempt);
-      // drain never rejects: tasks swallow their own errors, and so does the
-      // listener bridge.
-      yield* Effect.tryPromise({
-        try: () => emitted.drain(),
-        catch: asError,
-      }).pipe(Effect.ignore);
 
       const run: CompletedNodeRun<T> | FailedNodeRun = Exit.isSuccess(exit)
         ? {
@@ -218,21 +209,14 @@ export class FlowRunner<T extends FlowTypes, R = never> {
             completedAt: Date.now(),
             error: describe(exit.cause),
           };
-      yield* this.#emit({ type: "node_end", nodeId: node.id, run });
+      this.#emit({ type: "node_end", nodeId: node.id, run });
       return run;
     });
   }
 
-  #emit(event: FlowEvent<T>): Effect.Effect<void, never> {
-    return Effect.tryPromise({
-      try: () => this.#listen(event),
-      catch: asError,
-    }).pipe(Effect.ignore);
-  }
-
-  async #listen(event: FlowEvent<T>): Promise<void> {
+  #emit(event: FlowEvent<T>): void {
     try {
-      await this.#onEvent?.(event);
+      this.#onEvent?.(event);
     } catch (caught) {
       console.error("flow event listener failed", caught);
     }
@@ -349,8 +333,4 @@ function describe(cause: Cause.Cause<unknown>): string {
 
 function asMessage(value: unknown): string {
   return value instanceof Error ? value.message : String(value);
-}
-
-function asError(value: unknown): Error {
-  return value instanceof Error ? value : new Error(String(value));
 }
