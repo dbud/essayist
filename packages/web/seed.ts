@@ -1,6 +1,7 @@
-import type { PersistenceAdapter, User, Workspace } from "@essayist/core";
-import { VirtualFileSystem, Workspaces } from "@essayist/core";
+import type { PersistenceAdapter, User, VFS, Workspace } from "@essayist/core";
+import { Workspaces } from "@essayist/core";
 import type { Runtime } from "@/store.ts";
+import { vfsFor } from "@/vfs.ts";
 
 // Original demo essay. Paragraphs are single lines so mark selections can
 // match exact substrings without whitespace ambiguity.
@@ -38,9 +39,9 @@ The comma deserves special mention, because it is the smallest tool in the kit a
 An ending has to be earned twice -- once by the argument, and once by the reader's patience. The best endings rarely summarize. They return to the opening question carrying an answer the middle of the piece has made credible, and then they stop. A draft that knows where it is going can afford to walk; a revision knows the way, and can run.`,
 };
 
-/** Seed the given workspace with a sample essay and marks exercising every
- * category label. */
-export async function seedDemoFiles(vfs: VirtualFileSystem): Promise<void> {
+/** Seed the given workspace's files with a sample essay and marks exercising
+ * every category label. */
+export async function seedDemoFiles(vfs: VFS): Promise<void> {
   for (const [path, content] of Object.entries(files)) {
     await vfs.write(path, content);
   }
@@ -130,7 +131,7 @@ export async function seedDemo(
     Workspaces.use((store) => store.createWorkspace("Demo", demoUser.id)),
   );
 
-  await seedDemoFiles(new VirtualFileSystem(adapter, demoWorkspace.id));
+  await seedDemoFiles(vfsFor(runtime, demoWorkspace.id));
 
   await adapter.batch([{ type: "set", key: SEED_SENTINEL, value: true }]);
   return { demoUser, demoWorkspace };

@@ -1,10 +1,13 @@
 import {
   ChunkedValues,
+  Files,
   KvAdapter,
+  Marks,
   Persistence,
   type PersistenceError,
   ReviewConfig,
   ReviewRuns,
+  Search,
   TraceEvents,
   type User,
   UserState,
@@ -17,12 +20,9 @@ import { seedDemo } from "@/seed.ts";
 /**
  * Backing stores for the web app.
  *
- * Stores mid-migration to Effect live on a shared `KvAdapter`; migrated
- * ones are services behind one `ManagedRuntime`. UserState, Workspaces,
- * and ReviewConfig run on the runtime; Review and traces still use the
- * adapter.
- *
- * On Deno Deploy, `Deno.openKv()` connects to the platform KV. In local dev
+ * Migrated stores are services behind one `ManagedRuntime`; the `adapter`
+ * remains for the seed sentinel and dev demo bookkeeping. On Deno Deploy,
+ * `Deno.openKv()` connects to the platform KV. In local dev
  * (`DENO_ENV=development`) it opens a project-relative SQLite file
  * (`local-kv.sqlite3`, gitignored).
  */
@@ -36,13 +36,20 @@ export const adapter = new KvAdapter(kv);
 
 /** The runtime's service environment, for call sites that pass it on. */
 export type Runtime = ManagedRuntime.ManagedRuntime<
-  UserState | Workspaces | ReviewConfig | ReviewRuns | TraceEvents,
+  | UserState
+  | Workspaces
+  | ReviewConfig
+  | ReviewRuns
+  | TraceEvents
+  | Files
+  | Marks
+  | Search,
   PersistenceError
 >;
 
 /**
  * The Effect runtime for migrated stores. Its layers open their own KV
- * connections (the same file in dev as the legacy adapter below; multiple
+ * connections (the same file in dev as the legacy adapter above; multiple
  * connections to one store are safe) and close them when the runtime
  * disposes, which happens with process exit; there is no shutdown hook on
  * Deno Deploy or the dev server. Failure typing reaches call sites as
@@ -57,6 +64,9 @@ export const runtime: Runtime = ManagedRuntime.make(
       ReviewRuns.layerNoDeps,
       Layer.provide(TraceEvents.layerNoDeps, ChunkedValues.layerNoDeps),
       ChunkedValues.layerNoDeps,
+      Files.layerNoDeps,
+      Layer.provide(Marks.layerNoDeps, Files.layerNoDeps),
+      Layer.provide(Search.layerNoDeps, Files.layerNoDeps),
     ),
     Persistence.layerKv(isDev ? "./local-kv.sqlite3" : undefined),
   ),

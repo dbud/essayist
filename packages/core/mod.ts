@@ -107,6 +107,7 @@ export type {
   MarkResult,
   MarkStatus,
   ReadOptions,
+  VFS,
   WriteResult,
 } from "@/vfs/types.ts";
 export { VirtualFileSystem } from "@/vfs/vfs.ts";
