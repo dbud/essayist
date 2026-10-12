@@ -1,7 +1,6 @@
 import {
   ChunkedValues,
   Files,
-  KvAdapter,
   Marks,
   Persistence,
   type PersistenceError,
@@ -20,8 +19,8 @@ import { seedDemo } from "@/seed.ts";
 /**
  * Backing stores for the web app.
  *
- * Migrated stores are services behind one `ManagedRuntime`; the `adapter`
- * remains for the seed sentinel and dev demo bookkeeping. On Deno Deploy,
+ * Migrated stores are services behind one `ManagedRuntime`; the raw `kv`
+ * handle remains for the dev seed sentinel only. On Deno Deploy,
  * `Deno.openKv()` connects to the platform KV. In local dev
  * (`DENO_ENV=development`) it opens a project-relative SQLite file
  * (`local-kv.sqlite3`, gitignored).
@@ -31,8 +30,6 @@ const isDev = Deno.env.get("DENO_ENV") === "development";
 export const kv = isDev
   ? await Deno.openKv("./local-kv.sqlite3")
   : await Deno.openKv();
-
-export const adapter = new KvAdapter(kv);
 
 /** The runtime's service environment, for call sites that pass it on. */
 export type Runtime = ManagedRuntime.ManagedRuntime<
@@ -49,7 +46,7 @@ export type Runtime = ManagedRuntime.ManagedRuntime<
 
 /**
  * The Effect runtime for migrated stores. Its layers open their own KV
- * connections (the same file in dev as the legacy adapter above; multiple
+ * connections (the same file in dev as the raw `kv` handle above; multiple
  * connections to one store are safe) and close them when the runtime
  * disposes, which happens with process exit; there is no shutdown hook on
  * Deno Deploy or the dev server. Failure typing reaches call sites as
@@ -77,6 +74,6 @@ export const runtime: Runtime = ManagedRuntime.make(
  * boot via {@link seedDemo}. `undefined` outside dev; real auth/identity
  * replaces this later. IDs are stable across restarts once seeded.
  */
-const demo = isDev ? await seedDemo(runtime, adapter) : undefined;
+const demo = isDev ? await seedDemo(runtime, kv) : undefined;
 export const demoUser: User | undefined = demo?.demoUser;
 export const demoWorkspace: Workspace | undefined = demo?.demoWorkspace;

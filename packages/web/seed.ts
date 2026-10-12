@@ -1,4 +1,4 @@
-import type { PersistenceAdapter, User, VFS, Workspace } from "@essayist/core";
+import type { User, VFS, Workspace } from "@essayist/core";
 import { Workspaces } from "@essayist/core";
 import type { Runtime } from "@/store.ts";
 import { vfsFor } from "@/vfs.ts";
@@ -109,9 +109,11 @@ export interface DemoData {
  */
 export async function seedDemo(
   runtime: Runtime,
-  adapter: PersistenceAdapter,
+  kv: Deno.Kv,
 ): Promise<DemoData> {
-  const seeded = (await adapter.get<boolean>(SEED_SENTINEL))?.value;
+  // The sentinel goes through the raw KV handle on purpose: the seed flow is
+  // dev/debug bookkeeping, not part of the service surface.
+  const seeded = (await kv.get<boolean>(SEED_SENTINEL)).value;
   if (seeded) {
     return loadDemo(runtime);
   }
@@ -133,7 +135,7 @@ export async function seedDemo(
 
   await seedDemoFiles(vfsFor(runtime, demoWorkspace.id));
 
-  await adapter.batch([{ type: "set", key: SEED_SENTINEL, value: true }]);
+  await kv.set(SEED_SENTINEL, true);
   return { demoUser, demoWorkspace };
 }
 
