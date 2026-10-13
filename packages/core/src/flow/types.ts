@@ -37,7 +37,7 @@ export type FlowNode<
   id: string;
   kind: K;
   /** Node ids whose committed artifacts arrive as inputs, in order. */
-  dependsOn: string[];
+  dependsOn: readonly string[];
 } & (undefined extends T["nodes"][K]
   ? { payload?: T["nodes"][K] }
   : { payload: T["nodes"][K] });

@@ -10,7 +10,7 @@ import {
   ReviewPassSchema,
 } from "@essayist/core";
 import { mapNotNullish } from "@std/collections";
-import type { ManagedRuntime } from "effect";
+import { type ManagedRuntime, Result, Schema } from "effect";
 
 type ConfigRuntime = ManagedRuntime.ManagedRuntime<
   ReviewConfig,
@@ -30,26 +30,16 @@ export interface SyncCtx {
   target: ConfigRuntime;
 }
 
-/** Validate a single entity against a zod schema; returns an error message or
- *  null. Structural so kvctl does not need a zod dependency of its own. */
-function check<T>(
-  schema: {
-    safeParse(value: unknown):
-      | { success: true; data: T }
-      | {
-          success: false;
-          error: { issues: { message: string; path: PropertyKey[] }[] };
-        };
-  },
+/** Validate a single entity against a schema; returns an error message or
+ * null. */
+function check<S extends Schema.ConstraintDecoder<unknown, never>>(
+  schema: S,
   label: string,
 ): (value: unknown) => string | null {
   return (value) => {
-    const result = schema.safeParse(value);
-    if (result.success) return null;
-    const detail = result.error.issues
-      .map((issue) => `${issue.path.join(".") || "(root)"}: ${issue.message}`)
-      .join("; ");
-    return `${label}: ${detail}`;
+    const outcome = Schema.decodeUnknownResult(schema)(value);
+    if (Result.isSuccess(outcome)) return null;
+    return `${label}: ${outcome.failure.message}`;
   };
 }
 

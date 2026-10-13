@@ -17,7 +17,13 @@ export function Field({
 }
 
 /** Label with the items stacked as vertical lines; hidden when empty. */
-export function List({ label, items }: { label: string; items: string[] }) {
+export function List({
+  label,
+  items,
+}: {
+  label: string;
+  items: readonly string[];
+}) {
   if (items.length === 0) return null;
   return (
     <>

@@ -20,7 +20,7 @@ export interface CallStructuredOptions<
 > {
   onEvent: (event: CallEvent) => Effect.Effect<void>;
   input: string;
-  models: string[];
+  models: readonly string[];
   schema: T;
   includeExample?: boolean;
 }

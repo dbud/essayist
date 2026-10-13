@@ -97,7 +97,7 @@ export interface Interface {
   callModelStructured<T extends Schema.ConstraintDecoder<unknown>>(
     input: string,
     schema: T,
-    models: string[],
+    models: readonly string[],
     options?: StructuredCallOptions,
   ): Effect.Effect<T["Type"], StructuredParseError | ModelCallError>;
 }
@@ -146,7 +146,7 @@ function buildImpl(client: Service) {
   const callModelStructured = <T extends Schema.ConstraintDecoder<unknown>>(
     input: string,
     schema: T,
-    models: string[],
+    models: readonly string[],
     options?: StructuredCallOptions,
   ): Effect.Effect<T["Type"], StructuredParseError | ModelCallError> =>
     Effect.gen(function* () {

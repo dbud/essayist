@@ -124,7 +124,7 @@ const resolveUnit = (
   passPoolId: string,
   unit: ReviewUnit,
   system: string,
-  vars: Record<string, string>,
+  vars: Readonly<Record<string, string>>,
 ): Effect.Effect<ResolvedReviewUnit, ResolveError, ReviewConfig> =>
   Effect.gen(function* () {
     if (unit.attempt && unit.summary) {
@@ -165,7 +165,7 @@ const resolveUnit = (
 const resolveUnitInstructions = (
   passId: string,
   unit: ReviewUnit,
-  vars: Record<string, string>,
+  vars: Readonly<Record<string, string>>,
 ): Effect.Effect<string, ResolveError, ReviewConfig> =>
   unit.instructionsPromptKey === undefined
     ? Effect.succeed("")
@@ -178,7 +178,7 @@ const resolveUnitInstructions = (
 const renderPrompt = (
   where: string,
   key: string,
-  vars: Record<string, string>,
+  vars: Readonly<Record<string, string>>,
 ): Effect.Effect<string, ResolveError, ReviewConfig> =>
   Effect.gen(function* () {
     const config = yield* ReviewConfig;

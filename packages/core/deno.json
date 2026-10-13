@@ -7,8 +7,7 @@
     "effect/ai/AiError": "npm:effect@^4.0.3/ai/AiError",
     "effect/http/FetchHttpClient": "npm:effect@^4.0.3/http/FetchHttpClient",
     "effect/http/HttpClientResponse": "npm:effect@^4.0.3/http/HttpClientResponse",
-    "effect/testing": "npm:effect@^4.0.3/testing",
-    "zod": "npm:zod@^4.6.5"
+    "effect/testing": "npm:effect@^4.0.3/testing"
   },
   "lint": {
     "rules": {

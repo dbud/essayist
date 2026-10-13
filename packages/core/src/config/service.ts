@@ -65,7 +65,7 @@ export interface Interface {
   listCategories(): Effect.Effect<Category[], PersistenceError>;
   /** The requested ids split into found categories and missing ids. */
   getCategories(
-    ids: string[],
+    ids: readonly string[],
   ): Effect.Effect<[Category[], string[]], PersistenceError>;
 
   // review passes
@@ -147,7 +147,7 @@ export class ReviewConfig extends Context.Service<ReviewConfig, Interface>()(
             .pipe(
               Effect.map(({ entries }) => entries.map((entry) => entry.value)),
             );
-        const getCategories = (ids: string[]) =>
+        const getCategories = (ids: readonly string[]) =>
           Effect.gen(function* () {
             const entries = yield* persistence.getMany<Category>(
               ids.map((id) => [CFG, CATEGORIES, id]),

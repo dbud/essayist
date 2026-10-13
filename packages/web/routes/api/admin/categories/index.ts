@@ -1,21 +1,22 @@
 import { CategorySchema } from "@essayist/core";
+import { Result, Schema } from "effect";
 import { define } from "@/define.ts";
 import { saveCategory } from "@/signals/categories.server.ts";
 
 export const handler = {
   POST: define.handlers(async (ctx) => {
     const body = await ctx.req.json().catch(() => null);
-    const parsed = CategorySchema.safeParse({
+    const parsed = Schema.decodeUnknownResult(CategorySchema)({
       ...body,
       id: crypto.randomUUID(),
     });
-    if (!parsed.success) {
+    if (Result.isFailure(parsed)) {
       return Response.json(
-        { error: "Invalid category", issues: parsed.error.issues },
+        { error: "Invalid category", detail: parsed.failure.message },
         { status: 400 },
       );
     }
-    await saveCategory(parsed.data);
-    return Response.json(parsed.data, { status: 201 });
+    await saveCategory(parsed.success);
+    return Response.json(parsed.success, { status: 201 });
   }),
 };
