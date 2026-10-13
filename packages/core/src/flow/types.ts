@@ -62,7 +62,7 @@ export interface NodeContext<
   payload: T["nodes"][K];
   inputs: Artifacts<T>;
   /** Emit a host event; delivered before this node's terminal event. */
-  emit(event: T["events"]): void;
+  emit(event: T["events"]): Effect.Effect<void>;
   /** Create an output artifact; provenance is stamped with this node. */
   artifact<A extends ArtifactType<T>>(
     type: A,

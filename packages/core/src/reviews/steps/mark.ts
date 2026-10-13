@@ -119,7 +119,7 @@ export const markApplyRunner: NodeRunner<
         { path, versionId },
         provenance,
       );
-      emit({ type: "applied", attempts });
+      yield* emit({ type: "applied", attempts });
       const [placed, failed] = partition(attempts, (attempt) => attempt.marked);
       return [
         artifact("mark.placed", placed),

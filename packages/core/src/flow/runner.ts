@@ -21,15 +21,9 @@ import { view } from "@/flow/view.ts";
 
 export interface FlowRunnerOptions<T extends FlowTypes, R = never> {
   runners: NodeRunners<T, R>;
-  /** Called per event, in emission order; a throwing listener is logged
-   * and ignored. */
-  onEvent?: (event: FlowEvent<T>) => void;
-  // TODO -- the event chain starts at the OpenRouter SDK's sync hooks, so
-  // emission stays sync until the transport delivers events as an Effect
-  // stream. Once it does, make onEvent and NodeContext.emit effectful: a
-  // throwing listener then logs inline (dropping #listenerFailures), and the
-  // trace logging in reviews/runner.ts moves from flush time back to emit
-  // time.
+  /** Called per event, in emission order; a listener defect is logged and
+   * ignored. */
+  onEvent?: (event: FlowEvent<T>) => Effect.Effect<void>;
   /** Max nodes executing at once. Default unbounded. */
   maxConcurrency?: number;
 }
@@ -57,10 +51,8 @@ interface WiredNode<T extends FlowTypes> {
  * child fiber, so an interrupted run takes its in-flight nodes down. */
 export class FlowRunner<T extends FlowTypes, R = never> {
   #runners = new Map<string, NodeRunner<T, NodeKind<T>, R>>();
-  #onEvent?: (event: FlowEvent<T>) => Promise<void> | void;
+  #onEvent?: (event: FlowEvent<T>) => Effect.Effect<void>;
   #maxConcurrency: number;
-  /** Listener throws, logged through the logger service when the run exits. */
-  #listenerFailures: unknown[] = [];
 
   constructor(options: FlowRunnerOptions<T, R>) {
     // The registry key is the node kind, so the cast is sound.
@@ -157,7 +149,7 @@ export class FlowRunner<T extends FlowTypes, R = never> {
           reason: skipReason(entry, wired, errors),
         };
         nodeRuns.push(run);
-        this.#emit({ type: "node_end", nodeId: entry.node.id, run });
+        yield* this.#emit({ type: "node_end", nodeId: entry.node.id, run });
       }
 
       const position = new Map(
@@ -171,19 +163,7 @@ export class FlowRunner<T extends FlowTypes, R = never> {
         nodeRuns: sortBy(nodeRuns, (run) => position.get(run.nodeId) ?? 0),
         artifacts,
       };
-    }).pipe(
-      // The sync emission boundary cannot log through the logger service, so
-      // listener failures surface when the run exits.
-      Effect.ensuring(
-        Effect.gen({ self: this }, function* () {
-          for (const caught of this.#listenerFailures.splice(0)) {
-            yield* Effect.logError("flow event listener failed", {
-              error: asMessage(caught),
-            });
-          }
-        }),
-      ),
-    );
+    });
   }
 
   #execute(
@@ -192,7 +172,7 @@ export class FlowRunner<T extends FlowTypes, R = never> {
   ): Effect.Effect<CompletedNodeRun<T> | FailedNodeRun, never, R> {
     return Effect.gen({ self: this }, function* () {
       const startedAt = Date.now();
-      this.#emit({ type: "node_start", nodeId: node.id });
+      yield* this.#emit({ type: "node_start", nodeId: node.id });
 
       // The payload boundary: the host's graph construction guarantees
       // configured kinds carry their payload.
@@ -200,9 +180,7 @@ export class FlowRunner<T extends FlowTypes, R = never> {
       const context: NodeContext<T, NodeKind<T>> = {
         payload,
         inputs: view(inputs),
-        emit: (event) => {
-          this.#emit({ type: "custom", nodeId: node.id, event });
-        },
+        emit: (event) => this.#emit({ type: "custom", nodeId: node.id, event }),
         artifact: (type, data) => ({
           type,
           data,
@@ -231,17 +209,18 @@ export class FlowRunner<T extends FlowTypes, R = never> {
             completedAt: Date.now(),
             error: describe(exit.cause),
           };
-      this.#emit({ type: "node_end", nodeId: node.id, run });
+      yield* this.#emit({ type: "node_end", nodeId: node.id, run });
       return run;
     });
   }
 
-  #emit(event: FlowEvent<T>): void {
-    try {
-      this.#onEvent?.(event);
-    } catch (caught) {
-      this.#listenerFailures.push(caught);
-    }
+  /** A listener defect is logged and dropped, not failed into the run. */
+  #emit(event: FlowEvent<T>): Effect.Effect<void> {
+    return Effect.catchDefect(this.#onEvent?.(event) ?? Effect.void, (defect) =>
+      Effect.logError("flow event listener failed", {
+        error: asMessage(defect),
+      }),
+    );
   }
 }
 

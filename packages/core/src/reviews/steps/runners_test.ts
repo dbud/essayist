@@ -135,9 +135,7 @@ Deno.test("review runners -- analyze, propose, apply, and synthesize in a flow",
   const events: FlowEvent[] = [];
   const flow = new FlowRunner<ReviewTypes, ReviewServices>({
     runners,
-    onEvent: (event) => {
-      events.push(event);
-    },
+    onEvent: (event) => Effect.sync(() => events.push(event)),
   });
 
   const graph: FlowGraph<ReviewTypes> = {

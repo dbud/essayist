@@ -56,13 +56,15 @@ export interface RetryFailure {
   error: string;
 }
 
+/** Callbacks for watching a structured call as it runs; each delivers the
+ * event where it happens. */
 export interface StructuredCallOptions {
   includeExample?: boolean;
-  onPrompt?: (text: string) => void;
-  onModelCall?: (call: ModelCallRecord) => void;
-  onReasoning?: (text: string) => void;
-  onRepair?: (repair: RepairAttempt) => void;
-  onRetry?: (failure: RetryFailure) => void;
+  onPrompt?: (text: string) => Effect.Effect<void>;
+  onModelCall?: (call: ModelCallRecord) => Effect.Effect<void>;
+  onReasoning?: (text: string) => Effect.Effect<void>;
+  onRepair?: (repair: RepairAttempt) => Effect.Effect<void>;
+  onRetry?: (failure: RetryFailure) => Effect.Effect<void>;
 }
 
 /** The reply failed the schema twice. */
@@ -213,7 +215,9 @@ function buildImpl(client: Service) {
               );
             }
             const error = describeError(outcome.failure);
-            options?.onRetry?.({ attempt, error });
+            if (options?.onRetry) {
+              yield* options.onRetry({ attempt, error });
+            }
             yield* Effect.logWarning(
               "structured call failed transiently, retrying",
               { attempt, error },
@@ -222,11 +226,11 @@ function buildImpl(client: Service) {
           }
         });
 
-      options?.onPrompt?.(prompt);
+      if (options?.onPrompt) yield* options.onPrompt(prompt);
       const first = yield* attempted(prompt);
-      options?.onModelCall?.(first.call);
-      if (first.reasoning !== undefined) {
-        options?.onReasoning?.(first.reasoning);
+      if (options?.onModelCall) yield* options.onModelCall(first.call);
+      if (first.reasoning !== undefined && options?.onReasoning) {
+        yield* options.onReasoning(first.reasoning);
       }
 
       const firstParse = parseStructured(first.text, schema);
@@ -234,19 +238,21 @@ function buildImpl(client: Service) {
 
       const message = describeError(firstParse.failure);
       const repair: RepairAttempt = { raw: first.text, error: message };
-      options?.onRepair?.(repair);
+      if (options?.onRepair) yield* options.onRepair(repair);
       const repairPrompt = repairInput(prompt, first.text, message);
-      options?.onPrompt?.(repairPrompt);
+      if (options?.onPrompt) yield* options.onPrompt(repairPrompt);
       const retry = yield* attempted(repairPrompt);
-      options?.onModelCall?.(retry.call);
-      if (retry.reasoning !== undefined) {
-        options?.onReasoning?.(retry.reasoning);
+      if (options?.onModelCall) yield* options.onModelCall(retry.call);
+      if (retry.reasoning !== undefined && options?.onReasoning) {
+        yield* options.onReasoning(retry.reasoning);
       }
 
       const retryParse = parseStructured(retry.text, schema);
       if (Result.isFailure(retryParse)) {
         const retryMessage = describeError(retryParse.failure);
-        options?.onRepair?.({ raw: retry.text, error: retryMessage });
+        if (options?.onRepair) {
+          yield* options.onRepair({ raw: retry.text, error: retryMessage });
+        }
         return yield* Effect.fail(
           new StructuredParseError(retry.text, retryMessage),
         );

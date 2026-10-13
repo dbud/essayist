@@ -9,7 +9,7 @@
  * 60-second interval) keeps a live run claimed without event pacing.
  */
 
-import { type Context, Effect, Fiber, Result, Schema } from "effect";
+import { Clock, type Context, Effect, Fiber, Result, Schema } from "effect";
 import type { ResolvedReviewPass } from "@/config/types.ts";
 import { Files } from "@/files/service.ts";
 import { FlowRunner } from "@/flow/runner.ts";
@@ -243,21 +243,26 @@ function execute(
       ? new ReviewProgressTracker(onProgress, kindOf)
       : undefined;
 
-    // Trace events are stamped here and appended by a loop fiber shortly
-    // after; the buffer is flushed before the run reaches a terminal state.
+    // Events are logged and seq-stamped where they happen; appends buffer
+    // through a loop fiber and flush before the run reaches a terminal
+    // state.
     const pending: TraceEvent[] = [];
-    const record = (event: FlowEvent<ReviewTypes>): void => {
-      const entry: TraceEvent = {
-        seq: seq++,
-        at: Date.now(),
-        ...event,
-      };
-      tracker?.handle(entry);
-      pending.push(entry);
-    };
+    const record = (event: FlowEvent<ReviewTypes>): Effect.Effect<void> =>
+      Effect.gen(function* () {
+        // seq and the buffered push happen with no suspension between, so
+        // concurrent events cannot append out of order.
+        const at = yield* Clock.currentTimeMillis;
+        const entry: TraceEvent = {
+          seq: seq++,
+          at,
+          ...event,
+        };
+        tracker?.handle(entry);
+        pending.push(entry);
+        yield* logTraceEvent(entry);
+      });
     const flushPending = Effect.gen(function* () {
       for (const entry of pending.splice(0)) {
-        yield* logTraceEvent(entry);
         yield* Effect.uninterruptible(traces.append(run.id, entry));
       }
     });

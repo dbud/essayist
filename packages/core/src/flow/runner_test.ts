@@ -33,9 +33,9 @@ const runners: NodeRunners<TestTypes> = {
   },
   produce: {
     execute({ token }, { inputs, artifact, emit }) {
-      return Effect.sync(() => {
+      return Effect.gen(function* () {
         const content = inputs.one("content");
-        emit({ kind: "produced", content });
+        yield* emit({ kind: "produced", content });
         return [artifact("token", token)];
       });
     },
@@ -59,10 +59,10 @@ const emitted: unknown[] = [];
 const emitRunners: NodeRunners<TestTypes> = {
   ...runners,
   produce: {
-    // Captures emit's return value, so a leak shows up as a non-void value.
+    // Captures emit's awaited value, so a leak shows up as a non-void value.
     execute(_, { emit }) {
-      return Effect.sync(() => {
-        emitted.push(emit({ kind: "produced", content: "leaked" }));
+      return Effect.gen(function* () {
+        emitted.push(yield* emit({ kind: "produced", content: "leaked" }));
         return [];
       });
     },
@@ -94,9 +94,7 @@ Deno.test("FlowRunner -- commits artifacts along a chain", async () => {
   const events: FlowEvent<TestTypes>[] = [];
   const flow = new FlowRunner<TestTypes>({
     runners,
-    onEvent: (event) => {
-      events.push(event);
-    },
+    onEvent: (event) => Effect.sync(() => events.push(event)),
   });
 
   const result = await run(flow, {
@@ -175,8 +173,8 @@ Deno.test("FlowRunner -- delivers a custom event while the node still runs", asy
     ...runners,
     produce: {
       execute(_, { emit }) {
-        emit({ kind: "produced", content: "early" });
         return Effect.gen(function* () {
+          yield* emit({ kind: "produced", content: "early" });
           yield* Effect.sleep(20);
           running = false;
           return [];
@@ -186,9 +184,10 @@ Deno.test("FlowRunner -- delivers a custom event while the node still runs", asy
   };
   const flow = new FlowRunner<TestTypes>({
     runners: slow,
-    onEvent: (event) => {
-      if (event.type === "custom") deliveredDuringRun = running;
-    },
+    onEvent: (event) =>
+      Effect.sync(() => {
+        if (event.type === "custom") deliveredDuringRun = running;
+      }),
   });
 
   await run(flow, {
@@ -208,7 +207,7 @@ Deno.test("FlowRunner -- keeps custom events in emission order", async () => {
       execute(_, { emit }) {
         return Effect.gen(function* () {
           for (const content of ["one", "two", "three"]) {
-            emit({ kind: "produced", content });
+            yield* emit({ kind: "produced", content });
             yield* Effect.sleep(1);
           }
           return [];
@@ -218,11 +217,12 @@ Deno.test("FlowRunner -- keeps custom events in emission order", async () => {
   };
   const flow = new FlowRunner<TestTypes>({
     runners: chatty,
-    onEvent: (event) => {
-      if (event.type === "custom" && event.event.kind === "produced") {
-        seen.push(event.event.content);
-      }
-    },
+    onEvent: (event) =>
+      Effect.sync(() => {
+        if (event.type === "custom" && event.event.kind === "produced") {
+          seen.push(event.event.content);
+        }
+      }),
   });
 
   await run(flow, {
@@ -242,20 +242,18 @@ Deno.test("FlowRunner -- emits a failing node's events too", async () => {
       ...runners,
       boom: {
         execute(_, { emit }) {
-          emit({ kind: "produced", content: "before the throw" });
           return Effect.gen(function* () {
-            // Yield a macrotask so the queued emissions deliver first, as
-            // they did under the rejected promise's settle order.
-            yield* Effect.sleep(0);
+            yield* emit({ kind: "produced", content: "before the throw" });
             running = false;
             return yield* Effect.fail(new Error("boom"));
           });
         },
       },
     },
-    onEvent: (event) => {
-      if (event.type === "custom") delivered = running;
-    },
+    onEvent: (event) =>
+      Effect.sync(() => {
+        if (event.type === "custom") delivered = running;
+      }),
   });
 
   const result = await run(flow, {
@@ -264,6 +262,19 @@ Deno.test("FlowRunner -- emits a failing node's events too", async () => {
 
   assertEquals(result.status, "failed");
   assert(delivered);
+});
+
+Deno.test("FlowRunner -- a listener defect is dropped, not failed into the run", async () => {
+  const flow = new FlowRunner<TestTypes>({
+    runners,
+    onEvent: () => Effect.die(new Error("listener fault")),
+  });
+
+  const result = await run(flow, {
+    nodes: [{ id: "a", kind: "source", dependsOn: [], payload: { text: "x" } }],
+  });
+
+  assertEquals(result.status, "completed");
 });
 
 Deno.test("FlowRunner -- rejects broken graphs before running", async () => {
@@ -469,9 +480,7 @@ Deno.test("FlowRunner -- a resumed node does not re-run and seeds its artifacts"
   const events: FlowEvent<TestTypes>[] = [];
   const flow = new FlowRunner<TestTypes>({
     runners: counting,
-    onEvent: (event) => {
-      events.push(event);
-    },
+    onEvent: (event) => Effect.sync(() => events.push(event)),
   });
 
   const result = await run(
@@ -609,9 +618,7 @@ Deno.test("FlowRunner -- records what a completed node committed on node_end", a
   const events: FlowEvent<TestTypes>[] = [];
   const flow = new FlowRunner<TestTypes>({
     runners,
-    onEvent: (event) => {
-      events.push(event);
-    },
+    onEvent: (event) => Effect.sync(() => events.push(event)),
   });
 
   await run(flow, {
@@ -639,9 +646,7 @@ Deno.test("FlowRunner -- a node that produces nothing records an empty artifact 
         },
       },
     },
-    onEvent: (event) => {
-      events.push(event);
-    },
+    onEvent: (event) => Effect.sync(() => events.push(event)),
   });
 
   await run(flow, {
@@ -659,9 +664,7 @@ Deno.test("FlowRunner -- a failed node records no artifacts", async () => {
   const events: FlowEvent<TestTypes>[] = [];
   const flow = new FlowRunner<TestTypes>({
     runners,
-    onEvent: (event) => {
-      events.push(event);
-    },
+    onEvent: (event) => Effect.sync(() => events.push(event)),
   });
 
   await run(flow, {

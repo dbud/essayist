@@ -15,11 +15,10 @@ export type CallEvent =
   | { type: "output"; output: unknown }
   | { type: "model_call"; call: ModelCallRecord };
 
-/** Every event of a structured call, in order. */
 export interface CallStructuredOptions<
   T extends Schema.ConstraintDecoder<unknown>,
 > {
-  onEvent: (event: CallEvent) => void;
+  onEvent: (event: CallEvent) => Effect.Effect<void>;
   input: string;
   models: string[];
   schema: T;
@@ -43,24 +42,14 @@ export function callStructured<T extends Schema.ConstraintDecoder<unknown>>(
       options.models,
       {
         includeExample: options.includeExample,
-        onPrompt: (text) => {
-          options.onEvent({ type: "prompt", text });
-        },
-        onModelCall: (call) => {
-          options.onEvent({ type: "model_call", call });
-        },
-        onReasoning: (text) => {
-          options.onEvent({ type: "reasoning", text });
-        },
-        onRepair: (repair) => {
-          options.onEvent({ type: "repair", ...repair });
-        },
-        onRetry: (failure) => {
-          options.onEvent({ type: "retry", ...failure });
-        },
+        onPrompt: (text) => options.onEvent({ type: "prompt", text }),
+        onModelCall: (call) => options.onEvent({ type: "model_call", call }),
+        onReasoning: (text) => options.onEvent({ type: "reasoning", text }),
+        onRepair: (repair) => options.onEvent({ type: "repair", ...repair }),
+        onRetry: (failure) => options.onEvent({ type: "retry", ...failure }),
       },
     );
-    options.onEvent({ type: "output", output });
+    yield* options.onEvent({ type: "output", output });
     return output;
   });
 }

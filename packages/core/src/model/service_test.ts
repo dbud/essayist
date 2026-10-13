@@ -67,8 +67,8 @@ Deno.test("ModelClient.callModelStructured -- parses the first reply", async () 
   const result = await Effect.runPromise(
     provideWith(
       structured(Schema.Struct({ ok: Schema.Boolean }), {
-        onReasoning: (text) => reasoning.push(text),
-        onModelCall: (call) => modelCalls.push(call),
+        onReasoning: (text) => Effect.sync(() => reasoning.push(text)),
+        onModelCall: (call) => Effect.sync(() => modelCalls.push(call)),
       }),
       client,
     ),
@@ -95,8 +95,8 @@ Deno.test("ModelClient.callModelStructured -- an invalid reply triggers the re-a
   const result = await Effect.runPromise(
     provideWith(
       structured(Schema.Struct({ ok: Schema.Boolean }), {
-        onRepair: (repair) => repairs.push(repair),
-        onModelCall: (call) => modelCalls.push(call),
+        onRepair: (repair) => Effect.sync(() => repairs.push(repair)),
+        onModelCall: (call) => Effect.sync(() => modelCalls.push(call)),
       }),
       client,
     ),
@@ -157,7 +157,7 @@ Deno.test("ModelClient.callModelStructured -- a transient failure reports the re
   await Effect.runPromise(
     runClock(
       structured(Schema.Struct({ ok: Schema.Boolean }), {
-        onRetry: (failure) => retries.push(failure),
+        onRetry: (failure) => Effect.sync(() => retries.push(failure)),
       }),
       [
         { text: '{"ok":true}', failWith: networkAiError("socket hang up") },
@@ -236,7 +236,7 @@ Deno.test("ModelClient.callModelStructured -- a re-ask that fails transiently is
   const { result, inputs } = await Effect.runPromise(
     runClock(
       structured(Schema.Struct({ ok: Schema.Boolean }), {
-        onRepair: (repair) => repairs.push(repair),
+        onRepair: (repair) => Effect.sync(() => repairs.push(repair)),
       }),
       [
         { text: "not json at all" },
