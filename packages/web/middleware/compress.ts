@@ -1,10 +1,9 @@
 import type { Middleware } from "fresh";
 import { define, type State } from "@/define.ts";
+import { env } from "@/env.ts";
 
 const COMPRESSIBLE =
   /^(text\/|application\/(?:javascript|json|xml|wasm)|image\/svg)/;
-
-const isDev = Deno.env.get("DENO_ENV") === "development";
 
 /**
  * Compresses text-like responses with gzip. Register before `staticFiles()`
@@ -12,7 +11,7 @@ const isDev = Deno.env.get("DENO_ENV") === "development";
  * bodies for css injection and would corrupt encoded streams.
  */
 const compressMiddleware: Middleware<State> = define.middleware(async (ctx) => {
-  if (isDev) {
+  if (env.isDev) {
     return ctx.next();
   }
 

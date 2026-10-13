@@ -15,6 +15,7 @@ import {
   Workspaces,
 } from "@essayist/core";
 import { Layer, ManagedRuntime } from "effect";
+import { env } from "@/env.ts";
 import { seedDemo } from "@/seed.ts";
 
 /**
@@ -26,7 +27,7 @@ import { seedDemo } from "@/seed.ts";
  * (`DENO_ENV=development`) it opens a project-relative SQLite file
  * (`local-kv.sqlite3`, gitignored).
  */
-const isDev = Deno.env.get("DENO_ENV") === "development";
+const isDev = env.isDev;
 
 export const kv = isDev
   ? await Deno.openKv("./local-kv.sqlite3")

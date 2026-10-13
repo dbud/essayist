@@ -1,12 +1,10 @@
 import { Workspaces } from "@essayist/core";
 import type { Middleware } from "fresh";
 import { define, type State } from "@/define.ts";
+import { env } from "@/env.ts";
 import { demoUser, runtime } from "@/store.ts";
 import { getOAuthHelpers } from "@/utils/oauth.ts";
 import { getUserIdForSession } from "@/utils/sessions.ts";
-
-const isDev = Deno.env.get("DENO_ENV") === "development";
-const demoUserDisabled = Deno.env.get("DISABLE_DEMO_USER") === "1";
 
 /**
  * Resolves `ctx.state.user` for each request.
@@ -30,7 +28,7 @@ const authMiddleware: Middleware<State> = define.middleware(async (ctx) => {
 
   // Dev only: lets local scripts/tests act as a specific seeded user.
   // Disabled in production.
-  if (isDev) {
+  if (env.isDev) {
     const headerId = ctx.req.headers.get("X-User-Id");
     if (headerId) {
       const user = await runtime.runPromise(
@@ -65,7 +63,7 @@ const authMiddleware: Middleware<State> = define.middleware(async (ctx) => {
     // Fall through to the dev demo-user fallback below.
   }
 
-  if (isDev && demoUser && !demoUserDisabled) {
+  if (env.isDev && demoUser && !env.demoUserDisabled) {
     ctx.state.user = demoUser;
     return ctx.next();
   }

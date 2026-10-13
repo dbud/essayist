@@ -2,6 +2,7 @@ import {
   type ResolvedReviewPass,
   resolveActiveReviewPass,
 } from "@essayist/core";
+import { env } from "@/env.ts";
 import type { Runtime } from "@/store.ts";
 
 export class ResolveReviewError extends Error {}
@@ -16,7 +17,7 @@ export async function resolveReviewSetup(
   if (!pass) {
     throw new ResolveReviewError("No active review pass configured.");
   }
-  const apiKey = Deno.env.get("OPENROUTER_API_KEY");
+  const apiKey = env.openrouterApiKey;
   if (!apiKey) {
     throw new ResolveReviewError("OPENROUTER_API_KEY not configured");
   }
