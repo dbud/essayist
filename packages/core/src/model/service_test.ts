@@ -11,6 +11,7 @@ import { Duration, Effect, Fiber, Result, Schema } from "effect";
 import { TestClock } from "effect/testing";
 import { ModelCallError, ModelClient } from "./service.ts";
 import {
+  type RepairAttempt,
   type RetryFailure,
   ROUND_RETRY_DELAY_MS,
   type StructuredCallOptions,
@@ -156,15 +157,22 @@ Deno.test("ModelClient.callModelStructured -- parses the first reply", async () 
   const { client } = createSpyClient([
     { text: '{"ok":true}', reasoning: "because" },
   ]);
+  const reasoning: string[] = [];
+  const modelCalls: PostModelCallPayload[] = [];
 
   const result = await Effect.runPromise(
-    provideWith(structured(Schema.Struct({ ok: Schema.Boolean })), client),
+    provideWith(
+      structured(Schema.Struct({ ok: Schema.Boolean }), {
+        onReasoning: (text) => reasoning.push(text),
+        onModelCall: (call) => modelCalls.push(call),
+      }),
+      client,
+    ),
   );
 
-  assertEquals(result.output, { ok: true });
-  assertEquals(result.reasoning, ["because"]);
-  assertEquals(result.repairs, []);
-  assertEquals(result.usage.modelCalls, 1);
+  assertEquals(result, { ok: true });
+  assertEquals(reasoning, ["because"]);
+  assertEquals(modelCalls.length, 1);
 });
 
 Deno.test("ModelClient.callModelStructured -- an invalid reply triggers the re-ask", async () => {
@@ -172,16 +180,24 @@ Deno.test("ModelClient.callModelStructured -- an invalid reply triggers the re-a
     { text: "not json at all" },
     { text: '{"ok":true}' },
   ]);
+  const repairs: RepairAttempt[] = [];
+  const modelCalls: PostModelCallPayload[] = [];
 
   const result = await Effect.runPromise(
-    provideWith(structured(Schema.Struct({ ok: Schema.Boolean })), client),
+    provideWith(
+      structured(Schema.Struct({ ok: Schema.Boolean }), {
+        onRepair: (repair) => repairs.push(repair),
+        onModelCall: (call) => modelCalls.push(call),
+      }),
+      client,
+    ),
   );
 
   assertEquals(inputs.length, 2);
   assertEquals(inputs[1].includes("not json at all"), true);
-  assertEquals(result.output, { ok: true });
-  assertEquals(result.repairs.length, 1);
-  assertEquals(result.usage.modelCalls, 2);
+  assertEquals(result, { ok: true });
+  assertEquals(repairs.length, 1);
+  assertEquals(modelCalls.length, 2);
 });
 
 Deno.test("ModelClient.callModelStructured -- a second parse failure fails typed", async () => {
@@ -222,9 +238,9 @@ Deno.test("ModelClient.callModelStructured -- a transient failure is re-issued o
   );
 
   assertEquals(inputs.length, 2);
-  assertEquals(result.output, { ok: true });
+  assertEquals(result, { ok: true });
   // The retry is the same prompt, not a repair.
-  assertEquals(result.repairs, []);
+  assertEquals(inputs[0], inputs[1]);
 });
 
 Deno.test("ModelClient.callModelStructured -- a transient failure reports the retry", async () => {
@@ -320,17 +336,22 @@ Deno.test("ModelClient.callModelStructured -- a re-ask that fails transiently is
     { text: '{"ok":true}', failWith: new Error("socket hang up") },
     { text: '{"ok":true}' },
   ]);
+  const repairs: RepairAttempt[] = [];
 
   const result = await Effect.runPromise(
-    runClock(structured(Schema.Struct({ ok: Schema.Boolean })), client, [
-      ROUND_RETRY_DELAY_MS,
-    ]),
+    runClock(
+      structured(Schema.Struct({ ok: Schema.Boolean }), {
+        onRepair: (repair) => repairs.push(repair),
+      }),
+      client,
+      [ROUND_RETRY_DELAY_MS],
+    ),
   );
 
   // One repair prompt, then two attempts at the same re-ask.
   assertEquals(inputs.length, 3);
   assertEquals(inputs[1], inputs[2]);
   assertEquals(inputs[1].includes("not json at all"), true);
-  assertEquals(result.output, { ok: true });
-  assertEquals(result.repairs.length, 1);
+  assertEquals(result, { ok: true });
+  assertEquals(repairs.length, 1);
 });

@@ -2,7 +2,6 @@ import { Effect, type Schema } from "effect";
 import { type ModelCallError, ModelClient } from "@/model/service.ts";
 import type {
   PostModelCallPayload,
-  StructuredCall,
   StructuredParseError,
 } from "@/model/transport.ts";
 
@@ -28,18 +27,18 @@ export interface CallStructuredOptions<
 }
 
 /** Call the model for a structured output, delivering a prompt as each call
- * happens, a model_call per call, the repairs between them, then the
- * reasoning and output. */
+ * happens, a model_call per call with the reasoning after it, the repairs
+ * between calls, then the output. */
 export function callStructured<T extends Schema.ConstraintDecoder<unknown>>(
   options: CallStructuredOptions<T>,
 ): Effect.Effect<
-  StructuredCall<T["Type"]>,
+  T["Type"],
   StructuredParseError | ModelCallError,
   ModelClient
 > {
   return Effect.gen(function* () {
     const client = yield* ModelClient;
-    const result = yield* client.callModelStructured(
+    const output = yield* client.callModelStructured(
       options.input,
       options.schema,
       options.models,
@@ -51,6 +50,9 @@ export function callStructured<T extends Schema.ConstraintDecoder<unknown>>(
         onModelCall: (call) => {
           options.onEvent({ type: "model_call", call });
         },
+        onReasoning: (text) => {
+          options.onEvent({ type: "reasoning", text });
+        },
         onRepair: (repair) => {
           options.onEvent({ type: "repair", ...repair });
         },
@@ -59,10 +61,7 @@ export function callStructured<T extends Schema.ConstraintDecoder<unknown>>(
         },
       },
     );
-    for (const text of result.reasoning) {
-      options.onEvent({ type: "reasoning", text });
-    }
-    options.onEvent({ type: "output", output: result.output });
-    return result;
+    options.onEvent({ type: "output", output });
+    return output;
   });
 }

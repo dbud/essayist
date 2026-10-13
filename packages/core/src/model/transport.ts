@@ -10,11 +10,10 @@ import type {
   ModelResult,
   PostModelCallPayload,
   RequestOptions,
-  SessionUsageTotals,
   Tool,
 } from "@openrouter/agent";
 
-export type { PostModelCallPayload, SessionUsageTotals };
+export type { PostModelCallPayload };
 
 // The OpenRouter SDK retries only 5XX by default (retryCodes: ["5XX"]). Free
 // upstream providers commonly 429, so opt 429 into the same backoff loop.
@@ -64,19 +63,9 @@ export interface StructuredCallOptions {
   includeExample?: boolean;
   onPrompt?: (text: string) => void;
   onModelCall?: (call: PostModelCallPayload) => void;
+  onReasoning?: (text: string) => void;
   onRepair?: (repair: RepairAttempt) => void;
   onRetry?: (failure: RetryFailure) => void;
-}
-
-export interface StructuredCall<T> {
-  output: T;
-  usage: SessionUsageTotals;
-  /** Each call's reasoning, in call order. Empty when none did. */
-  reasoning: string[];
-  /** Every model call made, in order, including a re-ask. */
-  calls: PostModelCallPayload[];
-  /** Why each re-ask happened. Empty when the first reply parsed. */
-  repairs: RepairAttempt[];
 }
 
 export const ROUND_RETRY_DELAY_MS = 1_000;

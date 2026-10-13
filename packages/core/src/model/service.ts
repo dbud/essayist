@@ -1,21 +1,17 @@
 /**
  * The model client as an Effect service: schema-validated structured calls
- * (one repair round, transient retries) and tool calls, wrapped around a
- * transport ({@linkcode Transport}).
+ * (one repair round, transient retries), wrapped around a transport
+ * ({@linkcode Transport}).
  *
  * The workspace context does not apply: model calls carry no workspace
  * state. The transport is injected so tests can spy on the SDK.
  */
 
 import type {
-  ModelResult,
   PostModelCallPayload,
-  SessionUsageTotals,
-  Tool,
   UserPromptSubmitPayload,
 } from "@openrouter/agent";
 import { HooksManager, OpenRouter } from "@openrouter/agent";
-import { mapNotNullish } from "@std/collections";
 import { Context, Effect, Layer, Result, Schema } from "effect";
 import { generateInstructions, stripMarkdownFences } from "@/schema.ts";
 import { joinBlocks } from "@/text/markdown.ts";
@@ -25,7 +21,6 @@ import {
   type RepairAttempt,
   type RetryFailure,
   ROUND_RETRY_DELAY_MS,
-  type StructuredCall,
   type StructuredCallOptions,
   StructuredParseError,
   type ModelClient as Transport,
@@ -43,19 +38,17 @@ export class ModelCallError extends Schema.TaggedError<ModelCallError>()(
 
 export interface Interface {
   /**
-   * Ask for schema-validated JSON: the parsed output with usage and
-   * reasoning captured from the response stream. Invalid output triggers
-   * one re-ask; a second failure fails with {@linkcode StructuredParseError}.
+   * Ask for schema-validated JSON: the parsed output directly, with the
+   * prompt, model calls, reasoning, and repairs delivered through the
+   * callbacks. Invalid output triggers one re-ask; a second failure fails
+   * with {@linkcode StructuredParseError}.
    */
   callModelStructured<T extends Schema.ConstraintDecoder<unknown>>(
     input: string,
     schema: T,
     models: string[],
     options?: StructuredCallOptions,
-  ): Effect.Effect<
-    StructuredCall<T["Type"]>,
-    StructuredParseError | ModelCallError
-  >;
+  ): Effect.Effect<T["Type"], StructuredParseError | ModelCallError>;
 }
 
 export class ModelClient extends Context.Service<ModelClient, Interface>()(
@@ -82,13 +75,9 @@ function buildImpl(transport: Transport) {
     schema: T,
     models: string[],
     options?: StructuredCallOptions,
-  ): Effect.Effect<
-    StructuredCall<T["Type"]>,
-    StructuredParseError | ModelCallError
-  > =>
+  ): Effect.Effect<T["Type"], StructuredParseError | ModelCallError> =>
     Effect.gen(function* () {
       const fullInput = `${input}\n\n${generateInstructions(schema, options)}`;
-      const calls: PostModelCallPayload[] = [];
 
       const hooks = new HooksManager();
       hooks.on("UserPromptSubmit", {
@@ -98,7 +87,6 @@ function buildImpl(transport: Transport) {
       });
       hooks.on("PostModelCall", {
         handler: (payload: PostModelCallPayload) => {
-          calls.push(payload);
           options?.onModelCall?.(payload);
         },
       });
@@ -110,17 +98,12 @@ function buildImpl(transport: Transport) {
         hooks,
         options?.onRetry,
       );
+      if (first.reasoning !== undefined) {
+        options?.onReasoning?.(first.reasoning);
+      }
 
       const firstParse = parseStructured(first.text, schema);
-      if (Result.isSuccess(firstParse)) {
-        return {
-          output: firstParse.success,
-          usage: first.usage,
-          reasoning: mapNotNullish([first], (attempt) => attempt.reasoning),
-          calls,
-          repairs: [],
-        };
-      }
+      if (Result.isSuccess(firstParse)) return firstParse.success;
 
       const message = describeError(firstParse.failure);
       const repair: RepairAttempt = { raw: first.text, error: message };
@@ -132,6 +115,10 @@ function buildImpl(transport: Transport) {
         hooks,
         options?.onRetry,
       );
+      if (retry.reasoning !== undefined) {
+        options?.onReasoning?.(retry.reasoning);
+      }
+
       const retryParse = parseStructured(retry.text, schema);
       if (Result.isFailure(retryParse)) {
         const retryMessage = describeError(retryParse.failure);
@@ -140,16 +127,7 @@ function buildImpl(transport: Transport) {
           new StructuredParseError(retry.text, retryMessage),
         );
       }
-      return {
-        output: retryParse.success,
-        usage: addUsage(first.usage, retry.usage),
-        reasoning: mapNotNullish(
-          [first, retry],
-          (attempt) => attempt.reasoning,
-        ),
-        calls,
-        repairs: [repair],
-      };
+      return retryParse.success;
     });
 
   return ModelClient.of({ callModelStructured });
@@ -165,10 +143,7 @@ function roundEffect(
   input: string,
   models: string[],
   hooks: HooksManager,
-): Effect.Effect<
-  { text: string; usage: SessionUsageTotals; reasoning?: string },
-  unknown
-> {
+): Effect.Effect<{ text: string; reasoning?: string }, unknown> {
   return Effect.gen(function* () {
     const result = transport.callModel({ models, input, hooks }, RETRY_OPTIONS);
     const [text, { reasoning, error }] = yield* Effect.tryPromise({
@@ -181,14 +156,7 @@ function roundEffect(
       });
     }
     yield* Effect.logInfo("structured call settled", { models });
-    return {
-      text,
-      usage: yield* Effect.tryPromise({
-        try: () => result.getUsage(),
-        catch: (cause) => cause,
-      }),
-      reasoning,
-    };
+    return { text, reasoning };
   });
 }
 
@@ -198,10 +166,7 @@ function retriedRound(
   models: string[],
   hooks: HooksManager,
   onRetry?: (failure: RetryFailure) => void,
-): Effect.Effect<
-  { text: string; usage: SessionUsageTotals; reasoning?: string },
-  ModelCallError
-> {
+): Effect.Effect<{ text: string; reasoning?: string }, ModelCallError> {
   let attempt = 0;
   return Effect.retry(
     Effect.gen(function* () {
@@ -274,28 +239,11 @@ function repairInput(fullInput: string, raw: string, error: string): string {
   ]);
 }
 
-function addUsage(
-  a: SessionUsageTotals,
-  b: SessionUsageTotals,
-): SessionUsageTotals {
-  return {
-    inputTokens: a.inputTokens + b.inputTokens,
-    outputTokens: a.outputTokens + b.outputTokens,
-    totalTokens: a.totalTokens + b.totalTokens,
-    cachedTokens: a.cachedTokens + b.cachedTokens,
-    reasoningTokens: a.reasoningTokens + b.reasoningTokens,
-    modelCalls: a.modelCalls + b.modelCalls,
-    ...(a.cost != null || b.cost != null
-      ? { cost: (a.cost ?? 0) + (b.cost ?? 0) }
-      : {}),
-  };
-}
-
 /** Consume the response stream for reasoning items while getText() runs.
  * Capture failures are reported, not thrown, so a broken stream cannot fail
  * a call whose text was retrieved. */
 async function collectReasoning(
-  result: ModelResult<readonly Tool[]>,
+  result: Awaited<ReturnType<Transport["callModel"]>>,
 ): Promise<{ reasoning: string | undefined; error?: unknown }> {
   let reasoning: string | undefined;
   try {

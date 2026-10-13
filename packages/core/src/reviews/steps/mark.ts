@@ -142,7 +142,7 @@ export const markProposeRunner: NodeRunner<
         schema: ProposedMarksSchema,
         includeExample: true,
       });
-      return [artifact("mark.proposals", result.output.marks)];
+      return [artifact("mark.proposals", result.marks)];
     }),
 };
 
@@ -167,6 +167,6 @@ export const markRepairRunner: NodeRunner<
         schema: ProposedMarksSchema,
         includeExample: true,
       });
-      return [artifact("mark.proposals", result.output.marks)];
+      return [artifact("mark.proposals", result.marks)];
     }),
 };

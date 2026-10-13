@@ -68,6 +68,6 @@ export const analyzeRunner: NodeRunner<ReviewTypes, "analyze", ModelClient> = {
         schema: AnalysisSchema,
         includeExample: true,
       });
-      return [artifact("analysis", result.output)];
+      return [artifact("analysis", result)];
     }),
 };

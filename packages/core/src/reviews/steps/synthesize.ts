@@ -27,6 +27,6 @@ export const synthesizeRunner: NodeRunner<
         models: pool.models,
         schema: StepSummarySchema,
       });
-      return [artifact("summary", result.output.summary)];
+      return [artifact("summary", result.summary)];
     }),
 };
