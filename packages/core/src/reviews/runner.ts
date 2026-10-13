@@ -1,15 +1,23 @@
 /**
  * The review pass driver as an Effect program: the run lifecycle (claim,
- * heartbeat, complete, fail) goes through the ReviewRuns service, the flow
- * engine runs as an Effect, and promise steps bridge through it one step at
- * a time.
+ * heartbeat, complete, fail) goes through the ReviewRuns service, and the
+ * flow engine runs inside it.
  *
  * Heartbeats run interval-only: one loop fiber sleeps the interval between
  * beats, so beats never overlap and the staleness window (15 minutes vs a
  * 60-second interval) keeps a live run claimed without event pacing.
  */
 
-import { Clock, type Context, Effect, Fiber, Result, Schema } from "effect";
+import {
+  type Cause,
+  Clock,
+  type Context,
+  Effect,
+  Fiber,
+  Queue,
+  Result,
+  Schema,
+} from "effect";
 import type { ResolvedReviewPass } from "@/config/types.ts";
 import { Files } from "@/files/service.ts";
 import { FlowRunner } from "@/flow/runner.ts";
@@ -59,8 +67,6 @@ type RunnerServices =
 // staleness window, or a live run can be stolen.
 const HEARTBEAT_MS = 60_000;
 const HEARTBEAT_STALE_MS = 15 * 60_000;
-/** How often the trace writer checks for buffered events. */
-const TRACE_POLL_MS = 25;
 
 /** The file the pass targets has no versions. */
 export class ReviewFileMissingError extends Schema.TaggedError<ReviewFileMissingError>()(
@@ -243,14 +249,11 @@ function execute(
       ? new ReviewProgressTracker(onProgress, kindOf)
       : undefined;
 
-    // Events are logged and seq-stamped where they happen; appends buffer
-    // through a loop fiber and flush before the run reaches a terminal
-    // state.
-    const pending: TraceEvent[] = [];
+    // Events are logged and seq-stamped where they happen; a writer fiber
+    // appends them through a queue, off the emission path.
+    const queue = yield* Queue.unbounded<TraceEvent, Cause.Done>();
     const record = (event: FlowEvent<ReviewTypes>): Effect.Effect<void> =>
       Effect.gen(function* () {
-        // seq and the buffered push happen with no suspension between, so
-        // concurrent events cannot append out of order.
         const at = yield* Clock.currentTimeMillis;
         const entry: TraceEvent = {
           seq: seq++,
@@ -258,18 +261,17 @@ function execute(
           ...event,
         };
         tracker?.handle(entry);
-        pending.push(entry);
+        yield* Queue.offer(queue, entry);
         yield* logTraceEvent(entry);
       });
-    const flushPending = Effect.gen(function* () {
-      for (const entry of pending.splice(0)) {
-        yield* Effect.uninterruptible(traces.append(run.id, entry));
-      }
-    });
+
+    /** Appends until the queue ends; a storage fault fails the writer, and
+     * joining it re-raises the fault into the run. */
     const writer = Effect.gen(function* () {
       while (true) {
-        yield* flushPending;
-        yield* Effect.sleep(TRACE_POLL_MS);
+        const next = yield* Effect.result(Queue.take(queue));
+        if (Result.isFailure(next)) break;
+        yield* Effect.uninterruptible(traces.append(run.id, next.success));
       }
     });
 
@@ -289,12 +291,12 @@ function execute(
       .run(graph, { completed })
       .pipe(Effect.provideService(WorkspaceId, { wsId }));
     const flowOutcome = yield* Effect.result(flowRun);
-    // The loops stop before the terminal write; an in-flight write is
-    // uninterruptible, so it settles first, and the flush below catches
-    // anything still buffered.
+    // The heartbeat stops before the terminal write. No more events arrive,
+    // so the writer drains the queue and finishes; joining it stores the
+    // whole trace before the run settles, and re-raises a storage fault.
     yield* Fiber.interrupt(fiber);
-    yield* Fiber.interrupt(writerFiber);
-    yield* flushPending;
+    yield* Queue.end(queue);
+    yield* Fiber.join(writerFiber);
 
     if (Result.isFailure(flowOutcome)) {
       const caught = flowOutcome.failure;
