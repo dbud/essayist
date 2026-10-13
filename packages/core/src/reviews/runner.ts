@@ -187,9 +187,10 @@ function claim(
   return Effect.gen(function* () {
     const ids = yield* Ids;
     const owner = ids.next();
+    const now = yield* Clock.currentTimeMillis;
     const claimed = yield* runs.claimRun(runId, {
       owner,
-      heartbeatAtLeast: Date.now() - HEARTBEAT_STALE_MS,
+      heartbeatAtLeast: now - HEARTBEAT_STALE_MS,
     });
     if (!claimed) {
       return yield* Effect.fail(new ReviewLeaseTakenError({ runId }));

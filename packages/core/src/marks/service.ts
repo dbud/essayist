@@ -5,7 +5,7 @@
  * the pure resolver lives in resolver.ts.
  */
 
-import { Context, Effect, Layer } from "effect";
+import { Clock, Context, Effect, Layer } from "effect";
 import { Files } from "@/files/service.ts";
 import { Ids } from "@/ids.ts";
 import { TokenizedText } from "@/marks/tokenized.ts";
@@ -100,6 +100,7 @@ export class Marks extends Context.Service<Marks, Interface>()(
           );
 
           const ids = yield* Ids;
+          const created_at = yield* Clock.currentTimeMillis;
           const mark: Mark = {
             id: ids.next(),
             thread_id: threadId ?? ids.next(),
@@ -110,7 +111,7 @@ export class Marks extends Context.Service<Marks, Interface>()(
             after_context: afterContext,
             comment,
             label,
-            created_at: Date.now(),
+            created_at,
             offset,
             length: selectedText.length,
             status: "resolved",

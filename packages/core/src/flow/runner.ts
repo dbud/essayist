@@ -1,5 +1,5 @@
 import { distinct, sortBy } from "@std/collections";
-import { Cause, Deferred, Effect, Exit, Result } from "effect";
+import { Cause, Clock, Deferred, Effect, Exit, Result } from "effect";
 import type {
   Artifact,
   CompletedNodeRun,
@@ -171,7 +171,7 @@ export class FlowRunner<T extends FlowTypes, R = never> {
     inputs: readonly Artifact<T>[],
   ): Effect.Effect<CompletedNodeRun<T> | FailedNodeRun, never, R> {
     return Effect.gen({ self: this }, function* () {
-      const startedAt = Date.now();
+      const startedAt = yield* Clock.currentTimeMillis;
       yield* this.#emit({ type: "node_start", nodeId: node.id });
 
       // The payload boundary: the host's graph construction guarantees
@@ -193,20 +193,21 @@ export class FlowRunner<T extends FlowTypes, R = never> {
           ? Effect.fail(new Error(`no runner for node kind "${node.kind}"`))
           : runner.execute(payload, context);
       const exit = yield* Effect.exit(attempt);
+      const completedAt = yield* Clock.currentTimeMillis;
 
       const run: CompletedNodeRun<T> | FailedNodeRun = Exit.isSuccess(exit)
         ? {
             nodeId: node.id,
             status: "completed",
             startedAt,
-            completedAt: Date.now(),
+            completedAt,
             artifacts: exit.value,
           }
         : {
             nodeId: node.id,
             status: "failed",
             startedAt,
-            completedAt: Date.now(),
+            completedAt,
             error: describe(exit.cause),
           };
       yield* this.#emit({ type: "node_end", nodeId: node.id, run });

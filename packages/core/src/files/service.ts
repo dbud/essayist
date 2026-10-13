@@ -6,7 +6,7 @@
  */
 
 import { sortBy } from "@std/collections";
-import { Context, Effect, Layer } from "effect";
+import { Clock, Context, Effect, Layer } from "effect";
 import { unifiedDiff } from "@/diff/unified_diff.ts";
 import { type ContentManifest, chunkContent } from "@/files/chunked_content.ts";
 import { Ids } from "@/ids.ts";
@@ -204,7 +204,7 @@ export class Files extends Context.Service<Files, Interface>()(
             Effect.gen(function* () {
               const { wsId } = yield* WorkspaceId;
               const ids = yield* Ids;
-              const timestamp = Date.now();
+              const timestamp = yield* Clock.currentTimeMillis;
               const lines = content.split("\n").length;
               const versionId = ids.next();
               const version: FileVersion = {
@@ -346,7 +346,7 @@ export class Files extends Context.Service<Files, Interface>()(
         > =>
           Effect.gen(function* () {
             const { wsId } = yield* WorkspaceId;
-            const timestamp = Date.now();
+            const timestamp = yield* Clock.currentTimeMillis;
             const { manifest, extraChunks } = chunkContent(content);
 
             // Drop chunk keys left over from a larger previous draft.

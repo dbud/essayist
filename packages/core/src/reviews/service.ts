@@ -7,7 +7,7 @@
  */
 
 import { sortBy } from "@std/collections";
-import { Context, Effect, Layer, Result } from "effect";
+import { Clock, Context, Effect, Layer, Result } from "effect";
 import { Ids } from "@/ids.ts";
 import {
   type ClaimOptions,
@@ -117,7 +117,7 @@ export class ReviewRuns extends Context.Service<ReviewRuns, Interface>()(
               path: input.path,
               reviewPassId: input.reviewPassId,
               status: "running",
-              startedAt: input.startedAt ?? Date.now(),
+              startedAt: input.startedAt ?? (yield* Clock.currentTimeMillis),
               ...(input.versionId && { versionId: input.versionId }),
             };
             yield* persistence.set([REVIEWS, wsId, id], run);
@@ -177,7 +177,7 @@ export class ReviewRuns extends Context.Service<ReviewRuns, Interface>()(
             const ended: ReviewRun = {
               ...stripLease(entry.value),
               status,
-              completedAt: Date.now(),
+              completedAt: yield* Clock.currentTimeMillis,
               ...extra,
             };
             yield* persistence.batch([{ type: "set", key, value: ended }], {
@@ -214,7 +214,7 @@ export class ReviewRuns extends Context.Service<ReviewRuns, Interface>()(
             const claimed: ReviewRun = {
               ...entry.value,
               leaseOwner: owner,
-              heartbeatAt: Date.now(),
+              heartbeatAt: yield* Clock.currentTimeMillis,
             };
             // A lost race (concurrent claim) reads as "not claimable", not
             // as a backend fault.
@@ -243,7 +243,7 @@ export class ReviewRuns extends Context.Service<ReviewRuns, Interface>()(
             if (!entry || entry.value.leaseOwner !== owner) return false;
             const renewed: ReviewRun = {
               ...entry.value,
-              heartbeatAt: Date.now(),
+              heartbeatAt: yield* Clock.currentTimeMillis,
             };
             const outcome = yield* Effect.result(
               persistence.batch([{ type: "set", key, value: renewed }], {

@@ -8,7 +8,7 @@
  */
 
 import { mapNotNullish, sortBy } from "@std/collections";
-import { Context, Effect, Layer, Result } from "effect";
+import { Clock, Context, Effect, Layer, Result } from "effect";
 import { Ids } from "@/ids.ts";
 import {
   ConcurrentModificationError,
@@ -132,10 +132,11 @@ export class Workspaces extends Context.Service<Workspaces, Interface>()(
         const createUser = (data: UserInput) =>
           Effect.gen(function* () {
             const ids = yield* Ids;
+            const createdAt = yield* Clock.currentTimeMillis;
             const user: User = {
               id: ids.next(),
               ...data,
-              createdAt: Date.now(),
+              createdAt,
             };
             const emailKey: Key = [USER_EMAILS, data.email];
             const outcome = yield* Effect.result(
@@ -200,7 +201,7 @@ export class Workspaces extends Context.Service<Workspaces, Interface>()(
           Effect.gen(function* () {
             const ids = yield* Ids;
             const id = ids.next();
-            const createdAt = Date.now();
+            const createdAt = yield* Clock.currentTimeMillis;
             const workspace: Workspace = { id, name, ownerId, createdAt };
             const ownerMember: WorkspaceMember = {
               wsId: id,
@@ -288,7 +289,8 @@ export class Workspaces extends Context.Service<Workspaces, Interface>()(
               wsId,
               userId,
               role,
-              createdAt: existing?.value.createdAt ?? Date.now(),
+              createdAt:
+                existing?.value.createdAt ?? (yield* Clock.currentTimeMillis),
             };
             // Optimistic concurrency: reject if the membership changed since
             // read.

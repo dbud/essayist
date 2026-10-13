@@ -1,5 +1,6 @@
 import { assertEquals } from "@std/assert";
-import { Effect } from "effect";
+import { Clock, Duration, Effect } from "effect";
+import { TestClock } from "effect/testing";
 import type {
   ConcurrentModificationError,
   PersistenceError,
@@ -19,6 +20,11 @@ const run = <A>(
       testLayer(ReviewRuns.layerNoDeps),
     ),
   );
+
+/** Like run, with the program clock under the test clock. */
+const runOnClock = <A>(
+  program: Effect.Effect<A, E, ReviewRuns | WorkspaceId>,
+): Promise<A> => run(Effect.provide(program, TestClock.layer()));
 
 Deno.test("ReviewRuns.createRun + getRun", async () => {
   await run(
@@ -261,6 +267,42 @@ Deno.test("ReviewRuns.claimRun -- takes over a stale lease", async () => {
         heartbeatAtLeast: Date.now() + 1_000,
       });
 
+      assertEquals(takeover?.leaseOwner, "driver-b");
+    }),
+  );
+});
+
+Deno.test("ReviewRuns.claimRun -- a lease ages out with the clock", async () => {
+  await runOnClock(
+    Effect.gen(function* () {
+      const runs = yield* ReviewRuns;
+      const created = yield* runs.createRun({
+        path: "essay.txt",
+        reviewPassId: "pass",
+      });
+      yield* runs.claimRun(created.id, {
+        owner: "driver-a",
+        heartbeatAtLeast: 0,
+      });
+      const claimedAt = yield* Clock.currentTimeMillis;
+
+      // A heartbeat at least as fresh as demanded keeps the lease.
+      assertEquals(
+        yield* runs.claimRun(created.id, {
+          owner: "driver-b",
+          heartbeatAtLeast: claimedAt,
+        }),
+        undefined,
+      );
+
+      // Past the window the lease goes stale: the driver again demands
+      // proof of life in the last 15 minutes, and the clock says the
+      // heartbeat is 16 minutes old.
+      yield* TestClock.adjust(Duration.minutes(16));
+      const takeover = yield* runs.claimRun(created.id, {
+        owner: "driver-b",
+        heartbeatAtLeast: (yield* Clock.currentTimeMillis) - 15 * 60_000,
+      });
       assertEquals(takeover?.leaseOwner, "driver-b");
     }),
   );
