@@ -65,6 +65,7 @@
     "npm:@babel/preset-react@^7.27.1": "7.29.7_@babel+core@7.29.7",
     "npm:@biomejs/biome@*": "2.5.15",
     "npm:@biomejs/biome@^2.5.14": "2.5.15",
+    "npm:@deno/kv@0.14": "0.14.0",
     "npm:@effect/ai-openrouter@*": "4.0.3_effect@4.0.3",
     "npm:@effect/ai-openrouter@^4.0.3": "4.0.3_effect@4.0.3",
     "npm:@effect/ai-openrouter@~4.0.3": "4.0.3_effect@4.0.3",
@@ -636,6 +637,41 @@
     },
     "@chevrotain/utils@11.1.2": {
       "integrity": "sha512-4mudFAQ6H+MqBTfqLmU7G1ZwRzCLfJEooL/fsF6rCX5eePMbGhoy5n4g+G4vlh2muDcsCTJtL+uKbOzWxs5LHA=="
+    },
+    "@deno/kv-darwin-arm64@0.14.0": {
+      "integrity": "sha512-lo9FmjWcR0VmQN+4keQnfn/HuCppqh2od7nYfU6hVPplnZnLwan+oTh24qQg+Mcwbb1AgvvByCO3FX+vnhFPdA==",
+      "os": ["darwin"],
+      "cpu": ["arm64"]
+    },
+    "@deno/kv-darwin-x64@0.14.0": {
+      "integrity": "sha512-xc749JPa8snKIQpjWTtBzFSGQKAQC03oSHmJ5ovRvR6IREhtrFCFm8f4TitooBrofPEV3E67MhDYqXuTYNYX9g==",
+      "os": ["darwin"],
+      "cpu": ["x64"]
+    },
+    "@deno/kv-linux-arm64-gnu@0.14.0": {
+      "integrity": "sha512-zUBTkwug1HFZmZwhY+hbIqXssywFNwVVcwoJMKbYB2Tw4mQ5/X6ZFzMh8tbVRboItBimBodZAZLvgTbmzrU0CQ==",
+      "os": ["linux"],
+      "cpu": ["arm64"]
+    },
+    "@deno/kv-linux-x64-gnu@0.14.0": {
+      "integrity": "sha512-v2eDXLEFaoi81SAkwfjvtgqPU2p9sPz+bmBOhzqhorR3sKw+ozkM/7n5VflE6VKnQZlXXmGr4sosmQX480OSwg==",
+      "os": ["linux"],
+      "cpu": ["x64"]
+    },
+    "@deno/kv-win32-x64-msvc@0.14.0": {
+      "integrity": "sha512-9tyxx3NGiLPX+J9M8kObjxWzeJRX4nhSxXXliu1KEdD/XiFSNJXlAG2cx4nIm2XsIzYqHfA7dc+3WUZ1CGHs8A==",
+      "os": ["win32"],
+      "cpu": ["x64"]
+    },
+    "@deno/kv@0.14.0": {
+      "integrity": "sha512-k/grNUE/UuKPjzhRl7bKf3Yrc32n0O4KZvIKsiaWm/ruwiPnG9GKaeSkNp1FVonXiVADcTyN9js5nUQbAYrKsg==",
+      "optionalDependencies": [
+        "@deno/kv-darwin-arm64",
+        "@deno/kv-darwin-x64",
+        "@deno/kv-linux-arm64-gnu",
+        "@deno/kv-linux-x64-gnu",
+        "@deno/kv-win32-x64-msvc"
+      ]
     },
     "@effect/ai-openrouter@4.0.3_effect@4.0.3": {
       "integrity": "sha512-P7yP8iAAVrVSnpIxjOWlfKwA2b9PX+Vy7pbGYJz0tDQiW0MZXJKLIvDMyOKcG9kGt0wDpH6ACNVQL43oAQgKRQ==",
@@ -2854,6 +2890,7 @@
         ],
         "packageJson": {
           "dependencies": [
+            "npm:@deno/kv@0.14",
             "npm:@effect/ai-openrouter@~4.0.3",
             "npm:@jsr/std__collections@^1.4.0",
             "npm:effect@~4.0.3"

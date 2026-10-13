@@ -2,7 +2,8 @@
 
 import { Layer } from "effect";
 import { jsonLogLayer } from "@/log.ts";
-import { Persistence, type PersistenceError } from "@/persistence/mod.ts";
+import { layerKv } from "@/persistence/kv_layer.ts";
+import type { Persistence, PersistenceError } from "@/persistence/mod.ts";
 
 /**
  * The test layer for a service that requires Persistence: composes the
@@ -14,6 +15,6 @@ export function testLayer<S>(
 ): Layer.Layer<S, PersistenceError> {
   return Layer.provide(
     service,
-    Layer.mergeAll(Persistence.layerKv(":memory:"), jsonLogLayer),
+    Layer.mergeAll(layerKv(":memory:"), jsonLogLayer),
   );
 }

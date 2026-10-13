@@ -1,11 +1,13 @@
 {
   "dependencies": {
+    "@deno/kv": "^0.14.0",
     "@effect/ai-openrouter": "~4.0.3",
     "@std/collections": "npm:@jsr/std__collections@^1.4.0",
     "effect": "~4.0.3"
   },
   "exports": {
-    ".": "./mod.ts"
+    ".": "./mod.ts",
+    "./kv_layer": "./src/persistence/kv_layer.ts"
   },
   "name": "@essayist/core",
   "private": true,

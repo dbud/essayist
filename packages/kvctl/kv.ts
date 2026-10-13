@@ -3,12 +3,12 @@
 import { fileURLToPath } from "node:url";
 import {
   ChunkedValues,
-  Persistence,
   type PersistenceError,
   ReviewConfig,
   TraceEvents,
   Workspaces,
 } from "@essayist/core";
+import { layerKv } from "@essayist/core/kv_layer";
 import { Layer, ManagedRuntime } from "effect";
 import type { KvctlGlobals } from "@/globals.ts";
 
@@ -56,7 +56,7 @@ export async function withKv<T>(
         Layer.provide(TraceEvents.layerNoDeps, ChunkedValues.layerNoDeps),
         ChunkedValues.layerNoDeps,
       ),
-      Persistence.layerKv(resolveTarget(globals)),
+      layerKv(resolveTarget(globals)),
     ),
   );
   try {

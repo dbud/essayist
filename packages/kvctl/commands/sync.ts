@@ -1,5 +1,6 @@
 import { Command, EnumType } from "@cliffy/command";
-import { Persistence, ReviewConfig } from "@essayist/core";
+import { ReviewConfig } from "@essayist/core";
+import { layerKv } from "@essayist/core/kv_layer";
 import { Layer, ManagedRuntime } from "effect";
 import {
   FAMILIES,
@@ -43,10 +44,10 @@ export const sync = new Command<KvctlGlobals>()
     // epoch bump, a plain key write outside the config service.
     const targetKv = await Deno.openKv(targetPath);
     const sourceRuntime = ManagedRuntime.make(
-      Layer.provide(ReviewConfig.layerNoDeps, Persistence.layerKv(sourcePath)),
+      Layer.provide(ReviewConfig.layerNoDeps, layerKv(sourcePath)),
     );
     const targetRuntime = ManagedRuntime.make(
-      Layer.provide(ReviewConfig.layerNoDeps, Persistence.layerKv(targetPath)),
+      Layer.provide(ReviewConfig.layerNoDeps, layerKv(targetPath)),
     );
     try {
       const ctx: SyncCtx = {

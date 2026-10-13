@@ -3,8 +3,7 @@
  * versionstamp-based optimistic concurrency, as Effects.
  */
 
-import { Context, Effect, Layer, Schema } from "effect";
-import { kvLayer } from "./kv_layer.ts";
+import { Context, type Effect, Schema } from "effect";
 import type {
   BatchOptions,
   ConcurrentModificationError,
@@ -61,22 +60,4 @@ export interface Interface {
 /** Key/value persistence with tuple keys, as an Effect service. */
 export class Persistence extends Context.Service<Persistence, Interface>()(
   "@essayist/core/persistence/Persistence",
-) {
-  /** A layer that opens its own connection, closing it when the runtime
-   * disposes. Omit `path` for the platform KV; pass a file path for a
-   * local store, or `:memory:` for an ephemeral one (tests). */
-  static layerKv(path?: string): Layer.Layer<Persistence, PersistenceError> {
-    return Layer.unwrap(
-      Effect.map(
-        Effect.acquireRelease(
-          Effect.tryPromise({
-            try: () => Deno.openKv(path),
-            catch: (cause) => new PersistenceError({ cause }),
-          }),
-          (kv) => Effect.sync(() => kv.close()),
-        ),
-        kvLayer,
-      ),
-    );
-  }
-}
+) {}

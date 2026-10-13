@@ -6,6 +6,7 @@
 
 import { assertEquals, assertInstanceOf } from "@std/assert";
 import { Effect, Result } from "effect";
+import { layerKv } from "./kv_layer.ts";
 import { ConcurrentModificationError } from "./mod.ts";
 import { Persistence } from "./service.ts";
 
@@ -242,11 +243,9 @@ const SCENARIOS: [string, Scenario][] = [
 ];
 
 for (const [title, run] of SCENARIOS) {
-  Deno.test(`Persistence.layerKv -- ${title}`, async () => {
+  Deno.test(`layerKv -- ${title}`, async () => {
     // A fresh ephemeral KV per test; the layer owns the connection and
     // closes it at scope end.
-    await Effect.runPromise(
-      Effect.provide(run(), Persistence.layerKv(":memory:")),
-    );
+    await Effect.runPromise(Effect.provide(run(), layerKv(":memory:")));
   });
 }

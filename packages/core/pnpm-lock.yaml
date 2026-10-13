@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@deno/kv':
+        specifier: ^0.14.0
+        version: 0.14.0
       '@effect/ai-openrouter':
         specifier: ~4.0.3
         version: 4.0.3(effect@4.0.3)
@@ -19,6 +22,41 @@ importers:
         version: 4.0.3
 
 packages:
+
+  '@deno/kv-darwin-arm64@0.14.0':
+    resolution: {integrity: sha512-lo9FmjWcR0VmQN+4keQnfn/HuCppqh2od7nYfU6hVPplnZnLwan+oTh24qQg+Mcwbb1AgvvByCO3FX+vnhFPdA==}
+    engines: {node: '>= 18'}
+    cpu: [arm64]
+    os: [darwin]
+
+  '@deno/kv-darwin-x64@0.14.0':
+    resolution: {integrity: sha512-xc749JPa8snKIQpjWTtBzFSGQKAQC03oSHmJ5ovRvR6IREhtrFCFm8f4TitooBrofPEV3E67MhDYqXuTYNYX9g==}
+    engines: {node: '>= 18'}
+    cpu: [x64]
+    os: [darwin]
+
+  '@deno/kv-linux-arm64-gnu@0.14.0':
+    resolution: {integrity: sha512-zUBTkwug1HFZmZwhY+hbIqXssywFNwVVcwoJMKbYB2Tw4mQ5/X6ZFzMh8tbVRboItBimBodZAZLvgTbmzrU0CQ==}
+    engines: {node: '>= 18'}
+    cpu: [arm64]
+    os: [linux]
+    libc: [glibc]
+
+  '@deno/kv-linux-x64-gnu@0.14.0':
+    resolution: {integrity: sha512-v2eDXLEFaoi81SAkwfjvtgqPU2p9sPz+bmBOhzqhorR3sKw+ozkM/7n5VflE6VKnQZlXXmGr4sosmQX480OSwg==}
+    engines: {node: '>= 18'}
+    cpu: [x64]
+    os: [linux]
+    libc: [glibc]
+
+  '@deno/kv-win32-x64-msvc@0.14.0':
+    resolution: {integrity: sha512-9tyxx3NGiLPX+J9M8kObjxWzeJRX4nhSxXXliu1KEdD/XiFSNJXlAG2cx4nIm2XsIzYqHfA7dc+3WUZ1CGHs8A==}
+    engines: {node: '>= 18'}
+    cpu: [x64]
+    os: [win32]
+
+  '@deno/kv@0.14.0':
+    resolution: {integrity: sha512-k/grNUE/UuKPjzhRl7bKf3Yrc32n0O4KZvIKsiaWm/ruwiPnG9GKaeSkNp1FVonXiVADcTyN9js5nUQbAYrKsg==}
 
   '@effect/ai-openrouter@4.0.3':
     resolution: {integrity: sha512-P7yP8iAAVrVSnpIxjOWlfKwA2b9PX+Vy7pbGYJz0tDQiW0MZXJKLIvDMyOKcG9kGt0wDpH6ACNVQL43oAQgKRQ==}
@@ -32,6 +70,29 @@ packages:
     resolution: {integrity: sha512-LoWn/Uwwx0JjHSDmBAAahx8sB+klzM6vsZovnbYowBNw6B4QScJLRLBByO61plvNiycx7HPN8FnsWUCu0eXW5w==}
 
 snapshots:
+
+  '@deno/kv-darwin-arm64@0.14.0':
+    optional: true
+
+  '@deno/kv-darwin-x64@0.14.0':
+    optional: true
+
+  '@deno/kv-linux-arm64-gnu@0.14.0':
+    optional: true
+
+  '@deno/kv-linux-x64-gnu@0.14.0':
+    optional: true
+
+  '@deno/kv-win32-x64-msvc@0.14.0':
+    optional: true
+
+  '@deno/kv@0.14.0':
+    optionalDependencies:
+      '@deno/kv-darwin-arm64': 0.14.0
+      '@deno/kv-darwin-x64': 0.14.0
+      '@deno/kv-linux-arm64-gnu': 0.14.0
+      '@deno/kv-linux-x64-gnu': 0.14.0
+      '@deno/kv-win32-x64-msvc': 0.14.0
 
   '@effect/ai-openrouter@4.0.3(effect@4.0.3)':
     dependencies:

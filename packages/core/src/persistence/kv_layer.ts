@@ -1,10 +1,15 @@
 /**
- * Native KV implementation of the {@linkcode Persistence} service: the
- * same `Deno.Kv` calls {@linkcode KvAdapter} makes, wrapped in Effects,
- * with a failed concurrency check failing as
- * {@linkcode ConcurrentModificationError}.
+ * Native KV implementation of the {@linkcode Persistence} service:
+ * `Deno.Kv`-shaped calls wrapped in Effects, with a failed concurrency
+ * check failing as {@linkcode ConcurrentModificationError}.
+ *
+ * {@linkcode kvLayerCompat} is the implementation, typed structurally
+ * against the npm `@deno/kv` client interface, so non-Deno runtimes (vitest,
+ * the future KV Connect bridge) pass handles from that package. Deno call
+ * sites use {@linkcode kvLayer} over a native `Deno.Kv` handle.
  */
 
+import type { Kv, KvEntryMaybe } from "@deno/kv";
 import { Effect, Layer } from "effect";
 import {
   type BatchOptions,
@@ -20,7 +25,7 @@ import { Persistence, PersistenceError } from "./service.ts";
 /** Wrap a promise rejection (or a thrown fault) as a PersistenceError. */
 const backendFault = (cause: unknown) => new PersistenceError({ cause });
 
-export function kvLayer(kv: Deno.Kv): Layer.Layer<Persistence> {
+export function kvLayerCompat(kv: Kv): Layer.Layer<Persistence> {
   const batch = (ops: WriteOp[], options?: BatchOptions) =>
     Effect.tryPromise({
       try: async () => {
@@ -77,7 +82,7 @@ export function kvLayer(kv: Deno.Kv): Layer.Layer<Persistence> {
               const entries = (await kv.getMany(
                 keys.map((k) => [...k]),
                 { consistency: options?.consistency },
-              )) as Deno.KvEntryMaybe<T>[];
+              )) as KvEntryMaybe<T>[];
               return entries.map((entry) =>
                 entry.versionstamp === null
                   ? undefined
@@ -119,6 +124,33 @@ export function kvLayer(kv: Deno.Kv): Layer.Layer<Persistence> {
         set: (key: Key, value: unknown) => batch([{ type: "set", key, value }]),
         delete: (key: Key) => batch([{ type: "delete", key }]),
       }),
+    ),
+  );
+}
+
+/** A native `Deno.Kv` handle meets the `@deno/kv` interface at runtime; the
+ * libraries type the missing-key entry of `get` differently, so the boundary
+ * casts once here and call sites stay untouched. */
+export function kvLayer(kv: Deno.Kv): Layer.Layer<Persistence> {
+  return kvLayerCompat(kv as unknown as Kv);
+}
+
+/** A layer that opens its own connection, closing it when the runtime
+ * disposes. Omit `path` for the platform KV; pass a file path for a
+ * local store, or `:memory:` for an ephemeral one (tests). */
+export function layerKv(
+  path?: string,
+): Layer.Layer<Persistence, PersistenceError> {
+  return Layer.unwrap(
+    Effect.map(
+      Effect.acquireRelease(
+        Effect.tryPromise({
+          try: () => Deno.openKv(path),
+          catch: (cause) => new PersistenceError({ cause }),
+        }),
+        (kv) => Effect.sync(() => kv.close()),
+      ),
+      kvLayer,
     ),
   );
 }

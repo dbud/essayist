@@ -1,5 +1,8 @@
 {
-  "exports": "./mod.ts",
+  "exports": {
+    ".": "./mod.ts",
+    "./kv_layer": "./src/persistence/kv_layer.ts"
+  },
   "imports": {
     "@/": "./src/",
     "@effect/ai-openrouter": "npm:@effect/ai-openrouter@^4.0.3",

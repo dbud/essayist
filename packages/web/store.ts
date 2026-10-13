@@ -3,7 +3,6 @@ import {
   Files,
   jsonLogLayer,
   Marks,
-  Persistence,
   type PersistenceError,
   ReviewConfig,
   ReviewRuns,
@@ -14,6 +13,7 @@ import {
   type Workspace,
   Workspaces,
 } from "@essayist/core";
+import { layerKv } from "@essayist/core/kv_layer";
 import { Layer, ManagedRuntime } from "effect";
 import { env } from "@/env.ts";
 import { seedDemo } from "@/seed.ts";
@@ -68,7 +68,7 @@ export const runtime: Runtime = ManagedRuntime.make(
       Layer.provide(Search.layerNoDeps, Files.layerNoDeps),
       jsonLogLayer,
     ),
-    Persistence.layerKv(isDev ? "./local-kv.sqlite3" : undefined),
+    layerKv(isDev ? "./local-kv.sqlite3" : undefined),
   ),
 );
 
