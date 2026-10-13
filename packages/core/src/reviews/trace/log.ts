@@ -40,12 +40,11 @@ function logCustom(
 ): Effect.Effect<void> {
   switch (event.type) {
     case "model_call": {
-      const { model, turnType, durationMs } = event.call;
+      const { model, durationMs } = event.call;
       return Effect.gen(function* () {
         yield* Effect.logInfo("model_call", {
           node: nodeId,
           model,
-          turnType,
           durationMs,
         });
         yield* Effect.logDebug("model_call", {

@@ -5,8 +5,7 @@ import { forward, passWhen } from "@/flow/helpers.ts";
 import type { FlowTypes, NodeRunners } from "@/flow/types.ts";
 import type { Marks } from "@/marks/service.ts";
 import type { MarkProvenance } from "@/marks/types.ts";
-import type { ModelClient } from "@/model/service.ts";
-import type { PostModelCallPayload } from "@/model/transport.ts";
+import type { ModelCallRecord, ModelClient } from "@/model/service.ts";
 import { type Analysis, analyzeRunner } from "@/reviews/steps/analyze.ts";
 import {
   type MarkProposal,
@@ -25,7 +24,7 @@ export type ReviewNodeEvent =
   | { type: "output"; output: unknown }
   | { type: "repair"; raw: string; error: string }
   | { type: "retry"; attempt: number; error: string }
-  | { type: "model_call"; call: PostModelCallPayload }
+  | { type: "model_call"; call: ModelCallRecord }
   | { type: "applied"; attempts: MarkAttempt[] };
 
 export interface ReviewTypes extends FlowTypes {

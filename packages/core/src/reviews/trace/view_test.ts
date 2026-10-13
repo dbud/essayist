@@ -119,9 +119,6 @@ function modelCall(
   usage?: {
     inputTokens: number;
     outputTokens: number;
-    totalTokens: number;
-    cachedTokens: number;
-    reasoningTokens: number;
     cost?: number;
   },
   nodeId = "n",
@@ -132,12 +129,8 @@ function modelCall(
     event: {
       type: "model_call",
       call: {
-        sessionId: "s",
-        responseId: "r",
         model: "openai/gpt-5.2",
         durationMs: 100,
-        turnType: "initial",
-        turnNumber: 1,
         ...(usage ? { usage } : {}),
       },
     },
@@ -148,17 +141,7 @@ Deno.test("groupTraceNodes -- totals usage across every model call", () => {
   const { totals } = groupTraceNodes(
     trace([
       { type: "node_start", nodeId: "a" },
-      modelCall(
-        {
-          inputTokens: 10,
-          outputTokens: 5,
-          totalTokens: 15,
-          cachedTokens: 0,
-          reasoningTokens: 0,
-          cost: 0.25,
-        },
-        "a",
-      ),
+      modelCall({ inputTokens: 10, outputTokens: 5, cost: 0.25 }, "a"),
       {
         type: "node_end",
         nodeId: "a",
@@ -171,16 +154,7 @@ Deno.test("groupTraceNodes -- totals usage across every model call", () => {
         },
       },
       { type: "node_start", nodeId: "b" },
-      modelCall(
-        {
-          inputTokens: 1,
-          outputTokens: 2,
-          totalTokens: 3,
-          cachedTokens: 0,
-          reasoningTokens: 0,
-        },
-        "b",
-      ),
+      modelCall({ inputTokens: 1, outputTokens: 2 }, "b"),
     ]),
   );
   assertEquals(totals, {

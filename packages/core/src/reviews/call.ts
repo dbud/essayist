@@ -1,9 +1,10 @@
 import { Effect, type Schema } from "effect";
-import { type ModelCallError, ModelClient } from "@/model/service.ts";
-import type {
-  PostModelCallPayload,
-  StructuredParseError,
-} from "@/model/transport.ts";
+import {
+  type ModelCallError,
+  type ModelCallRecord,
+  ModelClient,
+  type StructuredParseError,
+} from "@/model/service.ts";
 
 /** Events of a structured call, delivered in order. */
 export type CallEvent =
@@ -12,13 +13,12 @@ export type CallEvent =
   | { type: "repair"; raw: string; error: string }
   | { type: "retry"; attempt: number; error: string }
   | { type: "output"; output: unknown }
-  | { type: "model_call"; call: PostModelCallPayload };
+  | { type: "model_call"; call: ModelCallRecord };
 
-/** Options for {@linkcode callStructured}. */
+/** Every event of a structured call, in order. */
 export interface CallStructuredOptions<
   T extends Schema.ConstraintDecoder<unknown>,
 > {
-  /** Delivers the prompt before the call, then the result events. */
   onEvent: (event: CallEvent) => void;
   input: string;
   models: string[];
@@ -26,9 +26,8 @@ export interface CallStructuredOptions<
   includeExample?: boolean;
 }
 
-/** Call the model for a structured output, delivering a prompt as each call
- * happens, a model_call per call with the reasoning after it, the repairs
- * between calls, then the output. */
+/** Call the model for a structured output, delivering the events to
+ * onEvent as they happen and ending with the output event. */
 export function callStructured<T extends Schema.ConstraintDecoder<unknown>>(
   options: CallStructuredOptions<T>,
 ): Effect.Effect<

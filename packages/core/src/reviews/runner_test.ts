@@ -4,6 +4,7 @@ import type { ResolvedReviewPass, ReviewUnit } from "@/config/types.ts";
 import { Files } from "@/files/service.ts";
 import type { NodeRun } from "@/flow/types.ts";
 import { Marks } from "@/marks/service.ts";
+import { createFakeClient } from "@/model/fake_client.ts";
 import { ModelClient } from "@/model/service.ts";
 import { ChunkedValues } from "@/persistence/chunked_values.ts";
 import { kvLayer } from "@/persistence/kv_layer.ts";
@@ -17,7 +18,6 @@ import {
   runReviewPass,
 } from "@/reviews/runner.ts";
 import { ReviewRuns } from "@/reviews/service.ts";
-import { createSpyTransport } from "@/reviews/testing/agent.ts";
 import { TraceEvents } from "@/reviews/trace/service.ts";
 import type { TraceEvent } from "@/reviews/trace/types.ts";
 import type { ReviewRun } from "@/reviews/types.ts";
@@ -202,7 +202,7 @@ Deno.test("runReviewPass -- completes a pass with marks, summary, and a per-node
     path: "essay.txt",
     content: "hello brave world",
   });
-  const { client, inputs } = createSpyTransport([
+  const { client, inputs } = createFakeClient([
     { text: ANALYSIS_ROUND, reasoning: "reading closely" },
     {
       text: '{"marks":[{"selected_text":"brave","comment":"Good.","label":"grammar"}]}',
@@ -278,7 +278,7 @@ Deno.test("runReviewPass -- a repair round re-quotes the failed spans", async ()
     path: "essay.txt",
     content: "hello world",
   });
-  const { client, inputs } = createSpyTransport([
+  const { client, inputs } = createFakeClient([
     {
       text: '{"marks":[{"selected_text":"ghost span","comment":"not there","label":"grammar"}]}',
     },
@@ -342,7 +342,7 @@ Deno.test("runReviewPass -- a zero budget keeps failed marks with no repair node
     path: "essay.txt",
     content: "hello world",
   });
-  const { client } = createSpyTransport([
+  const { client } = createFakeClient([
     {
       text: '{"marks":[{"selected_text":"ghost span","comment":"not there","label":"grammar"}]}',
     },
@@ -383,7 +383,7 @@ Deno.test("runReviewPass -- resuming a run that does not exist is an error", asy
     path: "essay.txt",
     content: "hello world",
   });
-  const { client } = createSpyTransport([{ text: ANALYSIS_ROUND }]);
+  const { client } = createFakeClient([{ text: ANALYSIS_ROUND }]);
   const env = Layer.merge(baseEnv, ModelClient.layerOf(client));
 
   await assertRejects(
@@ -407,7 +407,7 @@ Deno.test("runReviewPass -- a resumed pass skips completed nodes and shows each 
     content: "hello brave world",
   });
   // First attempt: analyze succeeds, then the unit below it fails on bad JSON.
-  const first = createSpyTransport([
+  const first = createFakeClient([
     { text: ANALYSIS_ROUND },
     { text: "not json" },
   ]);
@@ -434,7 +434,7 @@ Deno.test("runReviewPass -- a resumed pass skips completed nodes and shows each 
 
   // Second attempt over the same run: the fold supplies analyze's artifacts,
   // so only the failed unit is scheduled.
-  const second = createSpyTransport([
+  const second = createFakeClient([
     {
       text: '{"marks":[{"selected_text":"brave","comment":"Good.","label":"grammar"}]}',
     },
@@ -479,7 +479,7 @@ Deno.test("runReviewPass -- a node error fails the run and skips dependents", as
     path: "essay.txt",
     content: "hello world",
   });
-  const { client } = createSpyTransport([{ text: "not json" }]);
+  const { client } = createFakeClient([{ text: "not json" }]);
   const env = Layer.merge(baseEnv, ModelClient.layerOf(client));
 
   const run = await runPass(env, {
@@ -544,7 +544,7 @@ Deno.test("runReviewPass -- fails a pass that commits no summary", async () => {
     path: "essay.txt",
     content: "hello world",
   });
-  const { client } = createSpyTransport([{ text: ANALYSIS_ROUND }]);
+  const { client } = createFakeClient([{ text: ANALYSIS_ROUND }]);
   const env = Layer.merge(baseEnv, ModelClient.layerOf(client));
 
   const run = await runPass(env, {
@@ -564,7 +564,7 @@ Deno.test("runReviewPass -- fails with a typed error when the file does not exis
     path: "other.txt",
     content: "x",
   });
-  const { client } = createSpyTransport([]);
+  const { client } = createFakeClient([]);
   const env = Layer.merge(baseEnv, ModelClient.layerOf(client));
 
   await assertRejects(
@@ -587,7 +587,7 @@ Deno.test("runReviewPass -- heartbeats the lease while running, then releases it
     content: "hello brave world",
   });
   const count = { renewed: 0, refused: 0 };
-  const { client } = createSpyTransport([
+  const { client } = createFakeClient([
     { text: ANALYSIS_ROUND },
     { text: '{"summary":"Solid draft."}' },
   ]);
@@ -618,7 +618,7 @@ Deno.test("runReviewPass -- refuses to resume a run another driver holds", async
     path: "essay.txt",
     content: "hello world",
   });
-  const { client } = createSpyTransport([]);
+  const { client } = createFakeClient([]);
   const env = Layer.merge(baseEnv, ModelClient.layerOf(client));
   const run = await viaRuns(env, (deps) =>
     deps.runs.createRun({
@@ -651,7 +651,7 @@ Deno.test("runReviewPass -- resumes a run whose lease went stale", async () => {
     path: "essay.txt",
     content: "hello brave world",
   });
-  const { client } = createSpyTransport([
+  const { client } = createFakeClient([
     { text: ANALYSIS_ROUND },
     { text: '{"summary":"Solid draft."}' },
   ]);

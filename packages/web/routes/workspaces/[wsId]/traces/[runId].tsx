@@ -1,6 +1,6 @@
 import type {
   MarkAttempt,
-  PostModelCallPayload,
+  ModelCallRecord,
   ReviewRun,
   ReviewRunStatus,
   TraceEvent,
@@ -260,7 +260,7 @@ function AppliedRow({ attempts }: { attempts: MarkAttempt[] }) {
   );
 }
 
-function ModelCallRow({ call }: { call: PostModelCallPayload }) {
+function ModelCallRow({ call }: { call: ModelCallRecord }) {
   const cost = call.usage?.cost;
   return (
     <>
@@ -270,7 +270,6 @@ function ModelCallRow({ call }: { call: PostModelCallPayload }) {
       </div>
       <div class="cell--data col-span-2 min-w-0 break-words gap-2">
         <span>{call.model}</span>
-        <span>{call.turnType}</span>
         <span>{(call.durationMs / 1000).toFixed(1)}s</span>
         <span>{cost !== undefined && cost > 0 && `$${cost.toFixed(4)}`}</span>
       </div>

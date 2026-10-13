@@ -1,128 +1,27 @@
-import type {
-  CallModelInput,
-  ModelResult,
-  PostModelCallPayload,
-  RequestOptions,
-  Tool,
-} from "@openrouter/agent";
-import { HooksManager } from "@openrouter/agent";
+import type { Service } from "@effect/ai-openrouter/OpenRouterClient";
 import { assert, assertEquals } from "@std/assert";
 import { Duration, Effect, Fiber, Result, Schema } from "effect";
 import { TestClock } from "effect/testing";
-import { ModelCallError, ModelClient } from "./service.ts";
 import {
+  authAiError,
+  createFakeClient,
+  type FakeRound,
+  networkAiError,
+} from "./fake_client.ts";
+import {
+  ModelCallError,
+  type ModelCallRecord,
+  ModelClient,
   type RepairAttempt,
   type RetryFailure,
   ROUND_RETRY_DELAY_MS,
   type StructuredCallOptions,
   StructuredParseError,
-  type ModelClient as Transport,
-} from "./transport.ts";
+} from "./service.ts";
 
-interface FakeRound {
-  text: string;
-  reasoning?: string;
-  model?: string;
-  durationMs?: number;
-  /** Rejects getText with this, as a dropped connection would. */
-  failWith?: Error;
-  turnType?: PostModelCallPayload["turnType"];
-  usage?: {
-    inputTokens: number;
-    outputTokens: number;
-    totalTokens: number;
-    cachedTokens: number;
-    reasoningTokens: number;
-    cost?: number;
-  };
-}
-
-// A minimal ModelResult stand-in. getText() feeds the parse path;
-// getFullResponsesStream() feeds reasoning capture; getUsage() feeds usage.
-function fakeResult(round: FakeRound): ModelResult<readonly Tool[]> {
-  return {
-    getText: () => Promise.resolve(round.text),
-    getTextStream: async function* () {
-      yield round.text;
-    },
-    getItemsStream: async function* () {},
-    getFullResponsesStream: async function* () {
-      if (round.reasoning !== undefined) {
-        yield {
-          type: "response.output_item.done",
-          item: {
-            type: "reasoning",
-            content: [{ text: round.reasoning }],
-            summary: [],
-          },
-        };
-      }
-    },
-    getUsage: () =>
-      Promise.resolve({
-        inputTokens: 0,
-        outputTokens: 0,
-        totalTokens: 0,
-        cachedTokens: 0,
-        reasoningTokens: 0,
-        modelCalls: 1,
-        ...round.usage,
-      }),
-    cancel: () => {},
-  } as unknown as ModelResult<readonly Tool[]>;
-}
-
-function createSpyClient(rounds: FakeRound[]): {
-  client: Transport;
-  inputs: string[];
-  options: (RequestOptions | undefined)[];
-} {
-  const inputs: string[] = [];
-  const options: (RequestOptions | undefined)[] = [];
-  const client: Transport = {
-    callModel: (request: CallModelInput, requestOptions?: RequestOptions) => {
-      inputs.push(String(request.input));
-      options.push(requestOptions);
-      const round = rounds[Math.min(inputs.length - 1, rounds.length - 1)];
-      const hooks = request.hooks;
-      const result = fakeResult(round);
-      if (hooks instanceof HooksManager) {
-        // The SDK emits UserPromptSubmit from the first stream read, not from
-        // callModel, so fire it from getText the way the engine does.
-        const submitPrompt = () =>
-          void hooks.emit("UserPromptSubmit", {
-            prompt: String(request.input),
-          });
-        const onGetText = result.getText;
-        result.getText = () => {
-          submitPrompt();
-          if (round.failWith) return Promise.reject(round.failWith);
-          return onGetText();
-        };
-        if (!round.failWith) {
-          queueMicrotask(() => {
-            void hooks.emit("PostModelCall", {
-              sessionId: "s",
-              responseId: "r",
-              model: round.model ?? "test/model",
-              durationMs: round.durationMs ?? 1,
-              turnType: round.turnType ?? "initial",
-              turnNumber: 1,
-              ...(round.usage ? { usage: round.usage } : {}),
-            } as PostModelCallPayload);
-          });
-        }
-      }
-      return result;
-    },
-  };
-  return { client, inputs, options };
-}
-
-/** Provide a program with the service over the spy transport. */
 const provideWith = <A, E>(
   program: Effect.Effect<A, E, ModelClient>,
-  client: Transport,
+  client: Service,
 ): Effect.Effect<A, E> => Effect.provide(program, ModelClient.layerOf(client));
 
 function structured<T extends Schema.ConstraintDecoder<unknown>>(
@@ -137,28 +36,33 @@ function structured<T extends Schema.ConstraintDecoder<unknown>>(
 
 /**
  * Run a retrying program on the test clock: fork it, advance time through
- * the sleeps, and join.
+ * the sleeps, and join, handing back the replayed prompts.
  */
 const runClock = <A, E>(
   program: Effect.Effect<A, E, ModelClient>,
-  client: Transport,
+  rounds: FakeRound[],
   advance: Duration.Input[],
-) =>
+): Effect.Effect<{ result: A; inputs: string[] }, E> =>
   Effect.gen(function* () {
+    const { client, inputs } = createFakeClient(rounds);
     const fiber = yield* Effect.forkChild(provideWith(program, client));
     for (const step of advance) {
       yield* TestClock.adjust(step);
       yield* Effect.yieldNow;
     }
-    return yield* Fiber.join(fiber);
+    return { result: yield* Fiber.join(fiber), inputs };
   }).pipe(Effect.provide(TestClock.layer()));
 
 Deno.test("ModelClient.callModelStructured -- parses the first reply", async () => {
-  const { client } = createSpyClient([
-    { text: '{"ok":true}', reasoning: "because" },
+  const { client } = createFakeClient([
+    {
+      text: '{"ok":true}',
+      reasoning: "because",
+      usage: { inputTokens: 3, outputTokens: 2, cachedTokens: 1 },
+    },
   ]);
   const reasoning: string[] = [];
-  const modelCalls: PostModelCallPayload[] = [];
+  const modelCalls: ModelCallRecord[] = [];
 
   const result = await Effect.runPromise(
     provideWith(
@@ -173,15 +77,20 @@ Deno.test("ModelClient.callModelStructured -- parses the first reply", async () 
   assertEquals(result, { ok: true });
   assertEquals(reasoning, ["because"]);
   assertEquals(modelCalls.length, 1);
+  assertEquals(modelCalls[0].usage, {
+    inputTokens: 3,
+    outputTokens: 2,
+    cachedTokens: 1,
+  });
 });
 
 Deno.test("ModelClient.callModelStructured -- an invalid reply triggers the re-ask", async () => {
-  const { client, inputs } = createSpyClient([
+  const { client, inputs } = createFakeClient([
     { text: "not json at all" },
     { text: '{"ok":true}' },
   ]);
   const repairs: RepairAttempt[] = [];
-  const modelCalls: PostModelCallPayload[] = [];
+  const modelCalls: ModelCallRecord[] = [];
 
   const result = await Effect.runPromise(
     provideWith(
@@ -201,7 +110,7 @@ Deno.test("ModelClient.callModelStructured -- an invalid reply triggers the re-a
 });
 
 Deno.test("ModelClient.callModelStructured -- a second parse failure fails typed", async () => {
-  const { client } = createSpyClient([
+  const { client } = createFakeClient([
     { text: "wrong once" },
     { text: "wrong twice" },
   ]);
@@ -223,34 +132,26 @@ Deno.test("ModelClient.callModelStructured -- a second parse failure fails typed
 });
 
 Deno.test("ModelClient.callModelStructured -- a transient failure is re-issued one second later", async () => {
-  const abort = new Error(
-    'Response failed: {"code":"server_error","message":"The operation was aborted"}',
-  );
-  const { client, inputs } = createSpyClient([
-    { text: '{"ok":true}', failWith: abort },
-    { text: '{"ok":true}' },
-  ]);
-
-  const result = await Effect.runPromise(
-    runClock(structured(Schema.Struct({ ok: Schema.Boolean })), client, [
-      ROUND_RETRY_DELAY_MS,
-    ]),
+  const { result, inputs } = await Effect.runPromise(
+    runClock(
+      structured(Schema.Struct({ ok: Schema.Boolean })),
+      [
+        { text: '{"ok":true}', failWith: networkAiError("socket hang up") },
+        {
+          text: '{"ok":true}',
+        },
+      ],
+      [ROUND_RETRY_DELAY_MS],
+    ),
   );
 
   assertEquals(inputs.length, 2);
-  assertEquals(result, { ok: true });
   // The retry is the same prompt, not a repair.
   assertEquals(inputs[0], inputs[1]);
+  assertEquals(result, { ok: true });
 });
 
 Deno.test("ModelClient.callModelStructured -- a transient failure reports the retry", async () => {
-  const abort = new Error(
-    'Response failed: {"code":"server_error","message":"The operation was aborted"}',
-  );
-  const { client } = createSpyClient([
-    { text: '{"ok":true}', failWith: abort },
-    { text: '{"ok":true}' },
-  ]);
   const retries: RetryFailure[] = [];
 
   await Effect.runPromise(
@@ -258,24 +159,24 @@ Deno.test("ModelClient.callModelStructured -- a transient failure reports the re
       structured(Schema.Struct({ ok: Schema.Boolean }), {
         onRetry: (failure) => retries.push(failure),
       }),
-      client,
+      [
+        { text: '{"ok":true}', failWith: networkAiError("socket hang up") },
+        {
+          text: '{"ok":true}',
+        },
+      ],
       [ROUND_RETRY_DELAY_MS],
     ),
   );
 
-  assertEquals(retries, [
-    {
-      attempt: 1,
-      error:
-        'Response failed: {"code":"server_error","message":"The operation was aborted"}',
-    },
-  ]);
+  assertEquals(retries.length, 1);
+  assertEquals(retries[0].attempt, 1);
+  assert(retries[0].error.includes("socket hang up"), "the error report");
 });
 
 Deno.test("ModelClient.callModelStructured -- a transient failure gives up after three attempts, spaced linearly", async () => {
-  const abort = new Error("fetch failed");
-  const { client, inputs } = createSpyClient([
-    { text: '{"ok":true}', failWith: abort },
+  const { client, inputs } = createFakeClient([
+    { text: '{"ok":true}', failWith: networkAiError("socket hang up") },
   ]);
 
   const outcome = await Effect.runPromise(
@@ -316,8 +217,8 @@ Deno.test("ModelClient.callModelStructured -- a transient failure gives up after
 });
 
 Deno.test("ModelClient.callModelStructured -- a deterministic failure is not retried", async () => {
-  const { client, inputs } = createSpyClient([
-    { text: '{"ok":true}', failWith: new SyntaxError("Unexpected token") },
+  const { client, inputs } = createFakeClient([
+    { text: '{"ok":true}', failWith: authAiError("invalid key") },
   ]);
 
   await Effect.runPromise(
@@ -331,19 +232,17 @@ Deno.test("ModelClient.callModelStructured -- a deterministic failure is not ret
 });
 
 Deno.test("ModelClient.callModelStructured -- a re-ask that fails transiently is retried", async () => {
-  const { client, inputs } = createSpyClient([
-    { text: "not json at all" },
-    { text: '{"ok":true}', failWith: new Error("socket hang up") },
-    { text: '{"ok":true}' },
-  ]);
   const repairs: RepairAttempt[] = [];
-
-  const result = await Effect.runPromise(
+  const { result, inputs } = await Effect.runPromise(
     runClock(
       structured(Schema.Struct({ ok: Schema.Boolean }), {
         onRepair: (repair) => repairs.push(repair),
       }),
-      client,
+      [
+        { text: "not json at all" },
+        { text: '{"ok":true}', failWith: networkAiError("socket hang up") },
+        { text: '{"ok":true}' },
+      ],
       [ROUND_RETRY_DELAY_MS],
     ),
   );

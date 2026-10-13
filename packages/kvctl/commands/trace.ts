@@ -50,7 +50,7 @@ function summarise(event: TraceEvent): string {
     if (!inner) return "";
     switch (inner.type) {
       case "model_call":
-        return `${inner.call.model} turn=${inner.call.turnType}`;
+        return `${inner.call.model} ${inner.call.durationMs}ms`;
       case "output":
         return `keys=${Object.keys((inner.output ?? {}) as object).join(",")}`;
       case "prompt":

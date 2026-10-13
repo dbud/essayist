@@ -46,8 +46,8 @@ export type {
   MarkStatus,
   MigrateMarksResult,
 } from "@/marks/types.ts";
+export type { ModelCallRecord } from "@/model/service.ts";
 export { ModelClient } from "@/model/service.ts";
-export type { PostModelCallPayload } from "@/model/transport.ts";
 export {
   ChunkedValues,
   MissingChunksError,

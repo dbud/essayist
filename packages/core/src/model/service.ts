@@ -1,32 +1,81 @@
 /**
  * The model client as an Effect service: schema-validated structured calls
- * (one repair round, transient retries), wrapped around a transport
- * ({@linkcode Transport}).
- *
- * The workspace context does not apply: model calls carry no workspace
- * state. The transport is injected so tests can spy on the SDK.
+ * (a repair round, transient retries) over an OpenRouter chat completion
+ * client.
  */
 
-import type {
-  PostModelCallPayload,
-  UserPromptSubmitPayload,
-} from "@openrouter/agent";
-import { HooksManager, OpenRouter } from "@openrouter/agent";
-import { Context, Effect, Layer, Result, Schema } from "effect";
+import type { Generated } from "@effect/ai-openrouter";
+import {
+  OpenRouterClient,
+  layer as openRouterClientLayer,
+  type Service,
+} from "@effect/ai-openrouter/OpenRouterClient";
+import {
+  Cause,
+  Clock,
+  Context,
+  Effect,
+  Layer,
+  Redacted,
+  Result,
+  Schema,
+} from "effect";
+import { AiError, InvalidOutputError } from "effect/ai/AiError";
+import * as FetchHttpClient from "effect/http/FetchHttpClient";
 import { generateInstructions, stripMarkdownFences } from "@/schema.ts";
 import { joinBlocks } from "@/text/markdown.ts";
-import { isTransientError } from "./retry_policy.ts";
-import {
-  RETRY_OPTIONS,
-  type RepairAttempt,
-  type RetryFailure,
-  ROUND_RETRY_DELAY_MS,
-  type StructuredCallOptions,
-  StructuredParseError,
-  type ModelClient as Transport,
-} from "./transport.ts";
 
-/** A call's round retries ran out, or the transport faulted. */
+export interface ModelCallUsage {
+  inputTokens: number;
+  outputTokens: number;
+  cachedTokens?: number;
+  reasoningTokens?: number;
+  cost?: number;
+}
+
+/** A settled model call, for the trace. */
+export interface ModelCallRecord {
+  /** The model that actually served the reply. */
+  model: string;
+  durationMs: number;
+  usage?: ModelCallUsage;
+}
+
+/** A re-ask: what the model replied, and why it did not fit the schema. */
+export interface RepairAttempt {
+  /** The reply that was rejected. */
+  raw: string;
+  /** The validation error, included in the re-ask prompt. */
+  error: string;
+}
+
+/** A failed attempt at a round, and the attempt it was. */
+export interface RetryFailure {
+  /** Which attempt failed, counting the first. */
+  attempt: number;
+  error: string;
+}
+
+export interface StructuredCallOptions {
+  includeExample?: boolean;
+  onPrompt?: (text: string) => void;
+  onModelCall?: (call: ModelCallRecord) => void;
+  onReasoning?: (text: string) => void;
+  onRepair?: (repair: RepairAttempt) => void;
+  onRetry?: (failure: RetryFailure) => void;
+}
+
+/** The reply failed the schema twice. */
+export class StructuredParseError extends Error {
+  constructor(
+    public readonly raw: string,
+    message: string,
+  ) {
+    super(message);
+  }
+}
+
+/** A call's round retries ran out, or the provider faulted. */
 export class ModelCallError extends Schema.TaggedError<ModelCallError>()(
   "ModelCallError",
   { cause: Schema.Defect() },
@@ -39,9 +88,9 @@ export class ModelCallError extends Schema.TaggedError<ModelCallError>()(
 export interface Interface {
   /**
    * Ask for schema-validated JSON: the parsed output directly, with the
-   * prompt, model calls, reasoning, and repairs delivered through the
-   * callbacks. Invalid output triggers one re-ask; a second failure fails
-   * with {@linkcode StructuredParseError}.
+   * prompt, model calls, reasoning, repairs, and retries delivered through
+   * the callbacks. Invalid output triggers a re-ask; a second failure
+   * fails with {@linkcode StructuredParseError}.
    */
   callModelStructured<T extends Schema.ConstraintDecoder<unknown>>(
     input: string,
@@ -54,22 +103,44 @@ export interface Interface {
 export class ModelClient extends Context.Service<ModelClient, Interface>()(
   "@essayist/core/model/ModelClient",
 ) {
-  /** Build the service over an explicit transport: tests pass a spy, and
-   * the promise bridge composes `layerOpenRouter`. */
-  static layerOf(transport: Transport): Layer.Layer<ModelClient> {
-    return Layer.effect(ModelClient, Effect.succeed(buildImpl(transport)));
+  /** Build the service over an explicit client: tests pass a fake. */
+  static layerOf(client: Service): Layer.Layer<ModelClient> {
+    return Layer.effect(ModelClient, Effect.succeed(buildImpl(client)));
   }
 
-  /** The OpenRouter transport, configured by the composition root. */
+  /** OpenRouter over the platform fetch client, configured by the
+   * composition root. */
   static layerOpenRouter(apiKey: string): Layer.Layer<ModelClient> {
-    return ModelClient.layerOf(new OpenRouter({ apiKey }));
+    return Layer.provide(
+      Layer.effect(
+        ModelClient,
+        Effect.gen(function* () {
+          return buildImpl(yield* OpenRouterClient);
+        }),
+      ),
+      Layer.provide(
+        openRouterClientLayer({ apiKey: Redacted.make(apiKey) }),
+        FetchHttpClient.layer,
+      ),
+    );
   }
 }
 
-/** Attempts at a structured round, counting the first. */
+/** Total attempts at a round, counting the first. */
 const MAX_ROUND_ATTEMPTS = 3;
 
-function buildImpl(transport: Transport) {
+/** The time a single provider request may run before it is failed. */
+const ROUND_TIMEOUT_MS = 5 * 60_000;
+
+export const ROUND_RETRY_DELAY_MS = 1_000;
+
+interface Settled {
+  text: string;
+  reasoning: string | undefined;
+  call: ModelCallRecord;
+}
+
+function buildImpl(client: Service) {
   const callModelStructured = <T extends Schema.ConstraintDecoder<unknown>>(
     input: string,
     schema: T,
@@ -77,27 +148,83 @@ function buildImpl(transport: Transport) {
     options?: StructuredCallOptions,
   ): Effect.Effect<T["Type"], StructuredParseError | ModelCallError> =>
     Effect.gen(function* () {
-      const fullInput = `${input}\n\n${generateInstructions(schema, options)}`;
+      const prompt = `${input}\n\n${generateInstructions(schema, options)}`;
 
-      const hooks = new HooksManager();
-      hooks.on("UserPromptSubmit", {
-        handler: (payload: UserPromptSubmitPayload) => {
-          options?.onPrompt?.(payload.prompt);
-        },
-      });
-      hooks.on("PostModelCall", {
-        handler: (payload: PostModelCallPayload) => {
-          options?.onModelCall?.(payload);
-        },
-      });
+      const post = (
+        prompt: string,
+      ): Effect.Effect<Settled, AiError | Cause.TimeoutError> =>
+        Effect.gen(function* () {
+          const startedAt = yield* Clock.currentTimeMillis;
+          const [body] = yield* client
+            .createChatCompletion({
+              models,
+              messages: [{ role: "user", content: prompt }],
+            })
+            .pipe(Effect.timeout(ROUND_TIMEOUT_MS));
+          const finishedAt = yield* Clock.currentTimeMillis;
 
-      const first = yield* retriedRound(
-        transport,
-        fullInput,
-        models,
-        hooks,
-        options?.onRetry,
-      );
+          const choice = body.choices[0];
+          const text = contentOf(choice?.message);
+          if (text === undefined) {
+            return yield* Effect.fail(
+              new AiError({
+                module: "@essayist/core",
+                method: "createChatCompletion",
+                reason: new InvalidOutputError({
+                  description: "the reply carried no message content",
+                }),
+              }),
+            );
+          }
+
+          const usage = usageOf(body.usage);
+          return {
+            text,
+            reasoning: choice?.message?.reasoning ?? undefined,
+            call: {
+              model: body.model,
+              durationMs: finishedAt - startedAt,
+              ...(usage !== undefined ? { usage } : {}),
+            },
+          };
+        });
+
+      /** Re-issues the round while a later attempt could clear the failure. */
+      const attempted = (
+        prompt: string,
+      ): Effect.Effect<Settled, ModelCallError> =>
+        Effect.gen(function* () {
+          for (let attempt = 1; ; attempt++) {
+            yield* Effect.logInfo("structured call dispatched", {
+              attempt,
+              models,
+            });
+            const outcome = yield* Effect.result(post(prompt));
+            if (Result.isSuccess(outcome)) {
+              yield* Effect.logInfo("structured call settled", { models });
+              return outcome.success;
+            }
+            if (
+              !isTransient(outcome.failure) ||
+              attempt >= MAX_ROUND_ATTEMPTS
+            ) {
+              return yield* Effect.fail(
+                new ModelCallError({ cause: outcome.failure }),
+              );
+            }
+            const error = describeError(outcome.failure);
+            options?.onRetry?.({ attempt, error });
+            yield* Effect.logWarning(
+              "structured call failed transiently, retrying",
+              { attempt, error },
+            );
+            yield* Effect.sleep(attempt * ROUND_RETRY_DELAY_MS);
+          }
+        });
+
+      options?.onPrompt?.(prompt);
+      const first = yield* attempted(prompt);
+      options?.onModelCall?.(first.call);
       if (first.reasoning !== undefined) {
         options?.onReasoning?.(first.reasoning);
       }
@@ -108,13 +235,10 @@ function buildImpl(transport: Transport) {
       const message = describeError(firstParse.failure);
       const repair: RepairAttempt = { raw: first.text, error: message };
       options?.onRepair?.(repair);
-      const retry = yield* retriedRound(
-        transport,
-        repairInput(fullInput, first.text, message),
-        models,
-        hooks,
-        options?.onRetry,
-      );
+      const repairPrompt = repairInput(prompt, first.text, message);
+      options?.onPrompt?.(repairPrompt);
+      const retry = yield* attempted(repairPrompt);
+      options?.onModelCall?.(retry.call);
       if (retry.reasoning !== undefined) {
         options?.onReasoning?.(retry.reasoning);
       }
@@ -133,80 +257,11 @@ function buildImpl(transport: Transport) {
   return ModelClient.of({ callModelStructured });
 }
 
-// The structured round: RETRY_OPTIONS covers a failure before the stream
-// starts; a connection dropped mid-stream reaches us as an error from
-// getText(), so the round is re-issued through the retry policy. Attempts
-// rise to three, spaced linearly in the attempt number.
-
-function roundEffect(
-  transport: Transport,
-  input: string,
-  models: string[],
-  hooks: HooksManager,
-): Effect.Effect<{ text: string; reasoning?: string }, unknown> {
-  return Effect.gen(function* () {
-    const result = transport.callModel({ models, input, hooks }, RETRY_OPTIONS);
-    const [text, { reasoning, error }] = yield* Effect.tryPromise({
-      try: () => Promise.all([result.getText(), collectReasoning(result)]),
-      catch: (cause) => cause,
-    });
-    if (error !== undefined) {
-      yield* Effect.logError("reasoning capture failed", {
-        error: describeError(error),
-      });
-    }
-    yield* Effect.logInfo("structured call settled", { models });
-    return { text, reasoning };
-  });
-}
-
-function retriedRound(
-  transport: Transport,
-  input: string,
-  models: string[],
-  hooks: HooksManager,
-  onRetry?: (failure: RetryFailure) => void,
-): Effect.Effect<{ text: string; reasoning?: string }, ModelCallError> {
-  let attempt = 0;
-  return Effect.retry(
-    Effect.gen(function* () {
-      attempt++;
-      yield* Effect.logInfo("structured call dispatched", {
-        attempt,
-        models,
-      });
-      return yield* roundEffect(transport, input, models, hooks).pipe(
-        // The round's unknown failure becomes a typed fault before the retry
-        // policy sees it, so an exhausted retry propagates
-        // ModelCallError rather than a defect.
-        Effect.mapError((cause) => new ModelCallError({ cause })),
-        Effect.tapError((err) =>
-          Effect.gen(function* () {
-            // The report and the delay cover only the failures that lead to
-            // another attempt, like the promise loop did.
-            if (isTransientCause(err) && attempt < MAX_ROUND_ATTEMPTS) {
-              const error = describeError(err.cause);
-              onRetry?.({ attempt, error });
-              yield* Effect.logWarning(
-                "structured call failed transiently, retrying",
-                { attempt, model: models[0], error },
-              );
-              yield* Effect.sleep(attempt * ROUND_RETRY_DELAY_MS);
-            }
-          }),
-        ),
-      );
-    }),
-    {
-      times: MAX_ROUND_ATTEMPTS - 1,
-      while: isTransientCause,
-    },
-  );
-}
-
-/** Transiency of the fault the round wrapped, read from its cause. */
-function isTransientCause(err: ModelCallError): boolean {
-  return isTransientError(err.cause);
+/** True for a failure a later attempt could clear: the provider errors that
+ * say so themselves, and a timed-out request. */
+function isTransient(err: unknown): boolean {
+  if (err instanceof AiError) return err.isRetryable;
+  return Cause.isTimeoutError(err);
 }
 
 function describeError(value: unknown): string {
@@ -228,9 +283,9 @@ function parseStructured<T extends Schema.ConstraintDecoder<unknown>>(
   return Schema.decodeUnknownResult(schema)(json);
 }
 
-function repairInput(fullInput: string, raw: string, error: string): string {
+function repairInput(prompt: string, raw: string, error: string): string {
   return joinBlocks([
-    fullInput,
+    prompt,
     "Your previous reply was not valid for the schema.",
     "Raw reply:",
     raw,
@@ -239,26 +294,35 @@ function repairInput(fullInput: string, raw: string, error: string): string {
   ]);
 }
 
-/** Consume the response stream for reasoning items while getText() runs.
- * Capture failures are reported, not thrown, so a broken stream cannot fail
- * a call whose text was retrieved. */
-async function collectReasoning(
-  result: Awaited<ReturnType<Transport["callModel"]>>,
-): Promise<{ reasoning: string | undefined; error?: unknown }> {
-  let reasoning: string | undefined;
-  try {
-    for await (const event of result.getFullResponsesStream()) {
-      if (event.type !== "response.output_item.done") continue;
-      const item = event.item;
-      if (item.type !== "reasoning") continue;
-      const content = (item.content ?? []).map((c) => c.text).join("");
-      const summary = item.summary.map((c) => c.text).join("");
-      const text = [content, summary].filter(Boolean).join("\n");
-      if (!text) continue;
-      reasoning = reasoning ? `${reasoning}\n${text}` : text;
-    }
-  } catch (error) {
-    return { reasoning, error };
+type ChatReply = typeof Generated.SendChatCompletionRequest200.Type;
+
+// Generated reply message content: a plain string, content parts, or null.
+function contentOf(
+  message: ChatReply["choices"][number]["message"] | undefined,
+): string | undefined {
+  const content = message?.content;
+  if (typeof content === "string") {
+    return content === "" ? undefined : content;
   }
-  return { reasoning };
+  if (Array.isArray(content)) {
+    const text = content
+      .filter((part) => part.type === "text")
+      .map((part) => part.text)
+      .join("");
+    return text === "" ? undefined : text;
+  }
+  return undefined;
+}
+
+function usageOf(usage: ChatReply["usage"]): ModelCallUsage | undefined {
+  if (usage === undefined) return undefined;
+  const cachedTokens = usage.prompt_tokens_details?.cached_tokens;
+  const reasoningTokens = usage.completion_tokens_details?.reasoning_tokens;
+  return {
+    inputTokens: usage.prompt_tokens,
+    outputTokens: usage.completion_tokens,
+    ...(typeof cachedTokens === "number" ? { cachedTokens } : {}),
+    ...(typeof reasoningTokens === "number" ? { reasoningTokens } : {}),
+    ...(typeof usage.cost === "number" ? { cost: usage.cost } : {}),
+  };
 }

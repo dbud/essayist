@@ -13,6 +13,7 @@ import type {
 } from "@/flow/types.ts";
 import { Marks } from "@/marks/service.ts";
 import type { Mark } from "@/marks/types.ts";
+import { createFakeClient } from "@/model/fake_client.ts";
 import { ModelClient } from "@/model/service.ts";
 import { kvLayer } from "@/persistence/kv_layer.ts";
 import {
@@ -21,7 +22,6 @@ import {
   type ReviewTypes,
   reviewRunners,
 } from "@/reviews/graph.ts";
-import { createSpyTransport } from "@/reviews/testing/agent.ts";
 import { WorkspaceId } from "@/workspace/WorkspaceId.ts";
 
 const ANALYSIS_ROUND =
@@ -123,7 +123,7 @@ const run = (
 
 Deno.test("review runners -- analyze, propose, apply, and synthesize in a flow", async () => {
   const { env: baseEnv, versionId } = await setup("hello brave world");
-  const { client, inputs } = createSpyTransport([
+  const { client, inputs } = createFakeClient([
     { text: ANALYSIS_ROUND, reasoning: "reading closely" },
     {
       text: '{"marks":[{"selected_text":"brave","comment":"Good.","label":"grammar"}]}',
@@ -218,7 +218,7 @@ Deno.test("review runners -- analyze, propose, apply, and synthesize in a flow",
 
 Deno.test("review runners -- repair propose stays idle without failures", async () => {
   const { env: baseEnv, versionId } = await setup("hello world");
-  const { client, inputs } = createSpyTransport([
+  const { client, inputs } = createFakeClient([
     {
       text: '{"marks":[{"selected_text":"hello","comment":"found it","label":"grammar"}]}',
     },
@@ -301,7 +301,7 @@ Deno.test("review runners -- repair propose stays idle without failures", async 
 
 Deno.test("review runners -- a repair round re-quotes failed spans", async () => {
   const { env: baseEnv, versionId } = await setup("hello world");
-  const { client, inputs } = createSpyTransport([
+  const { client, inputs } = createFakeClient([
     {
       text: '{"marks":[{"selected_text":"ghost span","comment":"not there","label":"grammar"}]}',
     },
