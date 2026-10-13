@@ -9,6 +9,7 @@ import { sortBy } from "@std/collections";
 import { Context, Effect, Layer } from "effect";
 import { unifiedDiff } from "@/diff/unified_diff.ts";
 import { type ContentManifest, chunkContent } from "@/files/chunked_content.ts";
+import { Ids } from "@/ids.ts";
 import type { Mark, MigrateMarksResult } from "@/marks/types.ts";
 import {
   type ConcurrentModificationError,
@@ -158,7 +159,6 @@ export class Files extends Context.Service<Files, Interface>()(
         const persistence = yield* Persistence;
         const internals = makeInternals(persistence);
         const markLists = makeMarkLists(persistence, internals);
-        let versionSeq = 0;
 
         const read = (
           path: string,
@@ -203,9 +203,10 @@ export class Files extends Context.Service<Files, Interface>()(
           retryConcurrency(
             Effect.gen(function* () {
               const { wsId } = yield* WorkspaceId;
+              const ids = yield* Ids;
               const timestamp = Date.now();
               const lines = content.split("\n").length;
-              const versionId = `${timestamp}_${++versionSeq}`;
+              const versionId = ids.next();
               const version: FileVersion = {
                 version_id: versionId,
                 timestamp,

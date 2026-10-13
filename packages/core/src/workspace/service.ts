@@ -9,6 +9,7 @@
 
 import { mapNotNullish, sortBy } from "@std/collections";
 import { Context, Effect, Layer, Result } from "effect";
+import { Ids } from "@/ids.ts";
 import {
   ConcurrentModificationError,
   type Key,
@@ -130,8 +131,9 @@ export class Workspaces extends Context.Service<Workspaces, Interface>()(
 
         const createUser = (data: UserInput) =>
           Effect.gen(function* () {
+            const ids = yield* Ids;
             const user: User = {
-              id: crypto.randomUUID(),
+              id: ids.next(),
               ...data,
               createdAt: Date.now(),
             };
@@ -194,37 +196,39 @@ export class Workspaces extends Context.Service<Workspaces, Interface>()(
 
         const isAdmin = (user: User): boolean => user.role === "admin";
 
-        const createWorkspace = (name: string, ownerId: string) => {
-          const id = crypto.randomUUID();
-          const createdAt = Date.now();
-          const workspace: Workspace = { id, name, ownerId, createdAt };
-          const ownerMember: WorkspaceMember = {
-            wsId: id,
-            userId: ownerId,
-            role: "owner",
-            createdAt,
-          };
-          return persistence
-            .batch([
-              { type: "set", key: [WORKSPACES, id], value: workspace },
-              {
-                type: "set",
-                key: [WORKSPACES_BY_OWNER, ownerId, id],
-                value: true,
-              },
-              {
-                type: "set",
-                key: [MEMBERS_BY_WS, id, ownerId],
-                value: ownerMember,
-              },
-              {
-                type: "set",
-                key: [MEMBERS_BY_USER, ownerId, id],
-                value: true,
-              },
-            ])
-            .pipe(Effect.as(workspace));
-        };
+        const createWorkspace = (name: string, ownerId: string) =>
+          Effect.gen(function* () {
+            const ids = yield* Ids;
+            const id = ids.next();
+            const createdAt = Date.now();
+            const workspace: Workspace = { id, name, ownerId, createdAt };
+            const ownerMember: WorkspaceMember = {
+              wsId: id,
+              userId: ownerId,
+              role: "owner",
+              createdAt,
+            };
+            return yield* persistence
+              .batch([
+                { type: "set", key: [WORKSPACES, id], value: workspace },
+                {
+                  type: "set",
+                  key: [WORKSPACES_BY_OWNER, ownerId, id],
+                  value: true,
+                },
+                {
+                  type: "set",
+                  key: [MEMBERS_BY_WS, id, ownerId],
+                  value: ownerMember,
+                },
+                {
+                  type: "set",
+                  key: [MEMBERS_BY_USER, ownerId, id],
+                  value: true,
+                },
+              ])
+              .pipe(Effect.as(workspace));
+          });
 
         const getWorkspace = (id: string) =>
           persistence

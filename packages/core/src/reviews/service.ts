@@ -8,6 +8,7 @@
 
 import { sortBy } from "@std/collections";
 import { Context, Effect, Layer, Result } from "effect";
+import { Ids } from "@/ids.ts";
 import {
   type ClaimOptions,
   ConcurrentModificationError,
@@ -108,7 +109,8 @@ export class ReviewRuns extends Context.Service<ReviewRuns, Interface>()(
         > =>
           Effect.gen(function* () {
             const { wsId } = yield* WorkspaceId;
-            const id = crypto.randomUUID();
+            const ids = yield* Ids;
+            const id = ids.next();
             const run: ReviewRun = {
               id,
               wsId,

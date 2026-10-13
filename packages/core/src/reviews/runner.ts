@@ -23,6 +23,7 @@ import { Files } from "@/files/service.ts";
 import { FlowRunner } from "@/flow/runner.ts";
 import type { FlowEvent } from "@/flow/types.ts";
 import { view } from "@/flow/view.ts";
+import { Ids } from "@/ids.ts";
 import type { Marks } from "@/marks/service.ts";
 import type { ModelClient } from "@/model/service.ts";
 import type { MissingChunksError } from "@/persistence/chunked_values.ts";
@@ -184,7 +185,8 @@ function claim(
   WorkspaceId
 > {
   return Effect.gen(function* () {
-    const owner = crypto.randomUUID();
+    const ids = yield* Ids;
+    const owner = ids.next();
     const claimed = yield* runs.claimRun(runId, {
       owner,
       heartbeatAtLeast: Date.now() - HEARTBEAT_STALE_MS,

@@ -7,6 +7,7 @@
 
 import { Context, Effect, Layer } from "effect";
 import { Files } from "@/files/service.ts";
+import { Ids } from "@/ids.ts";
 import { TokenizedText } from "@/marks/tokenized.ts";
 import type { Mark, MarkOptions, MarkResult } from "@/marks/types.ts";
 import type {
@@ -58,8 +59,6 @@ export class Marks extends Context.Service<Marks, Interface>()(
     Marks,
     Effect.gen(function* () {
       const files = yield* Files;
-      let markSeq = 0;
-      const generateMarkId = () => `mark_${Date.now()}_${++markSeq}`;
 
       const mark = (
         path: string,
@@ -100,10 +99,10 @@ export class Marks extends Context.Service<Marks, Interface>()(
             contextSpan,
           );
 
-          const id = generateMarkId();
+          const ids = yield* Ids;
           const mark: Mark = {
-            id,
-            thread_id: threadId ?? generateMarkId(),
+            id: ids.next(),
+            thread_id: threadId ?? ids.next(),
             path,
             version_id,
             selected_text: selectedText,
