@@ -16,3 +16,6 @@ export const Ids: Context.Reference<IdGenerator> = Context.Reference(
   "@essayist/core/Ids",
   { defaultValue: () => ({ next: randomId }) },
 );
+
+/** The reference's default generator, for callers outside an Effect. */
+export const nextId = (): string => Ids.defaultValue().next();

@@ -1,4 +1,4 @@
-import { CategorySchema } from "@essayist/core";
+import { CategorySchema, nextId } from "@essayist/core";
 import { Result, Schema } from "effect";
 import { define } from "@/define.ts";
 import { saveCategory } from "@/signals/categories.server.ts";
@@ -8,7 +8,7 @@ export const handler = {
     const body = await ctx.req.json().catch(() => null);
     const parsed = Schema.decodeUnknownResult(CategorySchema)({
       ...body,
-      id: crypto.randomUUID(),
+      id: nextId(),
     });
     if (Result.isFailure(parsed)) {
       return Response.json(

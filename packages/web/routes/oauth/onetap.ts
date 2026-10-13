@@ -1,3 +1,4 @@
+import { nextId } from "@essayist/core";
 import { define } from "@/define.ts";
 import type { GoogleIdTokenClaims } from "@/utils/googleIdToken.ts";
 import { verifyGoogleIdToken } from "@/utils/googleIdToken.ts";
@@ -57,7 +58,7 @@ export const handler = define.handlers({
     // returning users; brand-new users get a tokenless session and re-auth
     // on first Drive use (see utils/googleToken.ts).
     const tokens = await refreshTokensForUser(user.id);
-    const sessionId = crypto.randomUUID();
+    const sessionId = nextId();
     await createSession(sessionId, user.id, tokens ?? undefined);
 
     const response = new Response(null, {

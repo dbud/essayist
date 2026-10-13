@@ -1,4 +1,4 @@
-import { ModelPoolSchema, ReviewConfig } from "@essayist/core";
+import { ModelPoolSchema, nextId, ReviewConfig } from "@essayist/core";
 import { Result, Schema } from "effect";
 import { define } from "@/define.ts";
 import { runtime } from "@/store.ts";
@@ -8,7 +8,7 @@ export const handler = {
     const body = await ctx.req.json().catch(() => null);
     const parsed = Schema.decodeUnknownResult(ModelPoolSchema)({
       ...body,
-      id: crypto.randomUUID(),
+      id: nextId(),
     });
     if (Result.isFailure(parsed)) {
       return Response.json(

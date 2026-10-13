@@ -1,4 +1,4 @@
-import { ReviewConfig, ReviewPassSchema } from "@essayist/core";
+import { nextId, ReviewConfig, ReviewPassSchema } from "@essayist/core";
 import { Result, Schema } from "effect";
 import { define } from "@/define.ts";
 import { runtime } from "@/store.ts";
@@ -8,7 +8,7 @@ export const handler = {
     const body = await ctx.req.json().catch(() => null);
     const parsed = Schema.decodeUnknownResult(ReviewPassSchema)({
       ...body,
-      id: crypto.randomUUID(),
+      id: nextId(),
     });
     if (Result.isFailure(parsed)) {
       return Response.json(
