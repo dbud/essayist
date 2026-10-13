@@ -151,7 +151,9 @@ export class Workspaces extends Context.Service<Workspaces, Interface>()(
             );
             if (Result.isFailure(outcome)) {
               if (outcome.failure instanceof ConcurrentModificationError) {
-                return yield* Effect.fail(new UserEmailTakenError(data.email));
+                return yield* Effect.fail(
+                  new UserEmailTakenError({ email: data.email }),
+                );
               }
               return yield* Effect.fail(outcome.failure);
             }
@@ -271,7 +273,7 @@ export class Workspaces extends Context.Service<Workspaces, Interface>()(
             const members = yield* getMembers(wsId);
             const owners = members.filter((m) => m.role === "owner");
             if (owners.length <= 1) {
-              return yield* Effect.fail(new LastOwnerError(wsId));
+              return yield* Effect.fail(new LastOwnerError({ wsId }));
             }
           });
 

@@ -555,7 +555,7 @@ Deno.test("runReviewPass -- fails a pass that commits no summary", async () => {
   });
 
   assertEquals(run.status, "failed");
-  assertEquals(run.error?.includes('exactly one "summary"'), true);
+  assertEquals(run.error?.includes("no summary artifact"), true);
   assertEquals(run.summary, undefined);
 });
 

@@ -320,23 +320,29 @@ function execute(
       Effect.gen(function* () {
         const summary = yield* Effect.try({
           try: () => view<ReviewTypes>(result.artifacts).one("summary"),
-          catch: asMessage,
+          catch: () => new SummaryMissingError(),
         });
         const files = yield* Files;
-        yield* files
-          .migrateMarks(path, versionId)
-          .pipe(Effect.mapError(asMessage));
-        const done = yield* runs
-          .completeRun(run.id, summary)
-          .pipe(Effect.mapError(asMessage));
+        yield* files.migrateMarks(path, versionId);
+        const done = yield* runs.completeRun(run.id, summary);
         return { summary, done };
       }),
     );
     if (Result.isFailure(tail)) {
-      return yield* fail(runs, run, tail.failure);
+      return yield* fail(runs, run, asMessage(tail.failure));
     }
     return tail.success.done ?? run;
   });
+}
+
+/** The pass committed no summary artifact for the run to finish with. */
+class SummaryMissingError extends Schema.TaggedError<SummaryMissingError>()(
+  "SummaryMissingError",
+  {},
+) {
+  override get message() {
+    return "the run committed no summary artifact";
+  }
 }
 
 function asMessage(cause: unknown): string {

@@ -3,7 +3,8 @@
  * ResolvedReviewPass bundle. Requires the ReviewConfig service.
  */
 
-import { Effect } from "effect";
+import { Effect, Schema } from "effect";
+import type { PersistenceError } from "@/persistence/mod.ts";
 import { renderCategories } from "@/reviews/steps/input.ts";
 import { ReviewConfig } from "./service.ts";
 import { renderTemplate } from "./template.ts";
@@ -17,20 +18,26 @@ import type {
 } from "./types.ts";
 
 /** Resolution fails on config entities the pass references but that are missing. */
-export class ConfigMissingError extends Error {
-  constructor(what: string) {
-    super(`Config missing: ${what}`);
+export class ConfigMissingError extends Schema.TaggedError<ConfigMissingError>()(
+  "ConfigMissingError",
+  { what: Schema.String },
+) {
+  override get message() {
+    return `Config missing: ${this.what}`;
   }
 }
 
 /** Resolution fails on a structurally invalid pass. */
-export class ConfigInvalidError extends Error {
-  constructor(what: string) {
-    super(`Config invalid: ${what}`);
+export class ConfigInvalidError extends Schema.TaggedError<ConfigInvalidError>()(
+  "ConfigInvalidError",
+  { what: Schema.String },
+) {
+  override get message() {
+    return `Config invalid: ${this.what}`;
   }
 }
 
-type ResolveError = ConfigMissingError | ConfigInvalidError;
+type ResolveError = ConfigMissingError | ConfigInvalidError | PersistenceError;
 
 /**
  * Resolve the active review pass into a ResolvedReviewPass bundle.
@@ -48,7 +55,7 @@ export const resolveActiveReviewPass: Effect.Effect<
   const pass = yield* config.getReviewPass(activeId);
   if (!pass) {
     return yield* Effect.fail(
-      new ConfigMissingError(`review pass "${activeId}"`),
+      new ConfigMissingError({ what: `review pass "${activeId}"` }),
     );
   }
   return yield* resolveReviewPass(pass);
@@ -87,24 +94,24 @@ const assertUnitOrder = (
     for (const unit of pass.units) {
       if (unit.id.includes(".")) {
         return yield* Effect.fail(
-          new ConfigInvalidError(
-            `unit id "${unit.id}" in pass "${pass.id}" must not contain ".", which is reserved for derived node ids`,
-          ),
+          new ConfigInvalidError({
+            what: `unit id "${unit.id}" in pass "${pass.id}" must not contain ".", which is reserved for derived node ids`,
+          }),
         );
       }
       if (seen.has(unit.id)) {
         return yield* Effect.fail(
-          new ConfigInvalidError(
-            `unit id "${unit.id}" is used more than once in pass "${pass.id}"`,
-          ),
+          new ConfigInvalidError({
+            what: `unit id "${unit.id}" is used more than once in pass "${pass.id}"`,
+          }),
         );
       }
       for (const ref of unit.inputs ?? []) {
         if (!seen.has(ref)) {
           return yield* Effect.fail(
-            new ConfigInvalidError(
-              `unit "${unit.id}" in pass "${pass.id}" references unknown or later unit "${ref}"`,
-            ),
+            new ConfigInvalidError({
+              what: `unit "${unit.id}" in pass "${pass.id}" references unknown or later unit "${ref}"`,
+            }),
           );
         }
       }
@@ -124,9 +131,9 @@ const resolveUnit = (
       // A unit could both place marks and summarize them; exclusive until a
       // pass needs it.
       return yield* Effect.fail(
-        new ConfigInvalidError(
-          `unit "${unit.id}" in pass "${passId}" sets both attempt and summary`,
-        ),
+        new ConfigInvalidError({
+          what: `unit "${unit.id}" in pass "${passId}" sets both attempt and summary`,
+        }),
       );
     }
     const [directive, instructions, pool, attempt] = yield* Effect.all([
@@ -178,7 +185,7 @@ const renderPrompt = (
     const prompt = yield* config.getPrompt(key);
     if (!prompt) {
       return yield* Effect.fail(
-        new ConfigMissingError(`prompt "${key}" for ${where}`),
+        new ConfigMissingError({ what: `prompt "${key}" for ${where}` }),
       );
     }
     return renderTemplate(prompt.body, vars);
@@ -194,12 +201,14 @@ const resolveUnitPool = (
     const pool = yield* config.getModelPool(poolId);
     if (!pool) {
       return yield* Effect.fail(
-        new ConfigMissingError(`model pool "${poolId}"`),
+        new ConfigMissingError({ what: `model pool "${poolId}"` }),
       );
     }
     if (pool.models.length === 0) {
       return yield* Effect.fail(
-        new ConfigMissingError(`model pool "${pool.id}" has no models`),
+        new ConfigMissingError({
+          what: `model pool "${pool.id}" has no models`,
+        }),
       );
     }
     return pool;
@@ -219,9 +228,9 @@ const resolveUnitAttempt = (
     if (!attempt) return undefined;
     if (attempt.allowedCategoryIds.length === 0) {
       return yield* Effect.fail(
-        new ConfigInvalidError(
-          `attempt unit "${unit.id}" in pass "${passId}" has no allowed categories`,
-        ),
+        new ConfigInvalidError({
+          what: `attempt unit "${unit.id}" in pass "${passId}" has no allowed categories`,
+        }),
       );
     }
     const config = yield* ReviewConfig;
@@ -230,9 +239,9 @@ const resolveUnitAttempt = (
     );
     if (missing.length > 0) {
       return yield* Effect.fail(
-        new ConfigMissingError(
-          `categories ${missing.map((id) => `"${id}"`).join(", ")} for unit "${unit.id}" in pass "${passId}"`,
-        ),
+        new ConfigMissingError({
+          what: `categories ${missing.map((id) => `"${id}"`).join(", ")} for unit "${unit.id}" in pass "${passId}"`,
+        }),
       );
     }
     return { categories, repairRounds: attempt.repairRounds ?? 1 };

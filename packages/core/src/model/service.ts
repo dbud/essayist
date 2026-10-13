@@ -68,12 +68,12 @@ export interface StructuredCallOptions {
 }
 
 /** The reply failed the schema twice. */
-export class StructuredParseError extends Error {
-  constructor(
-    public readonly raw: string,
-    message: string,
-  ) {
-    super(message);
+export class StructuredParseError extends Schema.TaggedError<StructuredParseError>()(
+  "StructuredParseError",
+  { raw: Schema.String, detail: Schema.String },
+) {
+  override get message() {
+    return this.detail;
   }
 }
 
@@ -254,7 +254,7 @@ function buildImpl(client: Service) {
           yield* options.onRepair({ raw: retry.text, error: retryMessage });
         }
         return yield* Effect.fail(
-          new StructuredParseError(retry.text, retryMessage),
+          new StructuredParseError({ raw: retry.text, detail: retryMessage }),
         );
       }
       return retryParse.success;

@@ -40,7 +40,9 @@ export function kvLayer(kv: Deno.Kv): Layer.Layer<Persistence> {
         if (!result.ok) {
           // A check failed (concurrent modification); pick the key from the
           // first check for the error, or an empty key if there were none.
-          throw new ConcurrentModificationError(checks[0]?.key ?? []);
+          throw new ConcurrentModificationError({
+            key: [...(checks[0]?.key ?? [])],
+          });
         }
       },
       catch: (cause) =>

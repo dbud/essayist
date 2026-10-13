@@ -1,5 +1,7 @@
 /** Persistence layer for the VFS: a key/value adapter with tuple keys. */
 
+import { Schema } from "effect";
+
 /** A tuple key. Parts are strings; KV supports richer types but we don't need them. */
 export type Key = readonly string[];
 
@@ -50,10 +52,14 @@ export interface BatchOptions {
   checks?: Array<{ key: Key; versionstamp: string | null }>;
 }
 
-/** Error thrown when the `checks` of a batch fail optimistic-concurrency validation. */
-export class ConcurrentModificationError extends Error {
-  constructor(public readonly key: Key) {
-    super(`Concurrent modification detected for key ${JSON.stringify(key)}`);
+/** The `checks` of a batch failed optimistic-concurrency validation; no ops
+ * were applied. */
+export class ConcurrentModificationError extends Schema.TaggedError<ConcurrentModificationError>()(
+  "ConcurrentModificationError",
+  { key: Schema.Array(Schema.String) },
+) {
+  override get message() {
+    return `Concurrent modification detected for key ${JSON.stringify(this.key)}`;
   }
 }
 
