@@ -1,8 +1,9 @@
-import { VirtualFileSystem } from "@essayist/core";
+import { UserState, Workspaces } from "@essayist/core";
 import { define } from "@/define.ts";
+import { runScoped } from "@/run.ts";
 import { seedDemoFiles } from "@/seed.ts";
 import { workspacesLoader } from "@/signals/workspace.server.ts";
-import { adapter, userStateStore, workspaceStore } from "@/store.ts";
+import { runtime } from "@/store.ts";
 
 export const handler = {
   GET: define.handlers(async ({ state, url }) => {
@@ -17,10 +18,17 @@ export const handler = {
     if (!selectedId) {
       return Response.json({ error: "Missing 'selectedId'" }, { status: 400 });
     }
-    if (!(await workspaceStore.hasAccess(selectedId, ctx.state.user.id))) {
+    const allowed = await runtime.runPromise(
+      Workspaces.use((store) => store.hasAccess(selectedId, ctx.state.user.id)),
+    );
+    if (!allowed) {
       return Response.json({ error: "Forbidden" }, { status: 403 });
     }
-    await userStateStore.setSelectedWorkspace(ctx.state.user.id, selectedId);
+    await runtime.runPromise(
+      UserState.use((store) =>
+        store.setSelectedWorkspace(ctx.state.user.id, selectedId),
+      ),
+    );
     return new Response(null, { status: 204 });
   }),
 
@@ -32,13 +40,12 @@ export const handler = {
     if (!name) {
       return Response.json({ error: "Missing 'name'" }, { status: 400 });
     }
-    const workspace = await workspaceStore.createWorkspace(
-      name,
-      ctx.state.user.id,
+    const workspace = await runtime.runPromise(
+      Workspaces.use((store) => store.createWorkspace(name, ctx.state.user.id)),
     );
     // Seed the new workspace with the same sample essay + marks used by the
     // demo workspace, so it isn't empty on first open.
-    await seedDemoFiles(new VirtualFileSystem(adapter, workspace.id));
+    await seedDemoFiles(runScoped(runtime, workspace.id));
     return Response.json(workspace, { status: 201 });
   }),
 };

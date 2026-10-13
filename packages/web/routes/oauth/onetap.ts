@@ -1,4 +1,6 @@
+import { nextId } from "@essayist/core";
 import { define } from "@/define.ts";
+import { env } from "@/env.ts";
 import type { GoogleIdTokenClaims } from "@/utils/googleIdToken.ts";
 import { verifyGoogleIdToken } from "@/utils/googleIdToken.ts";
 import { refreshTokensForUser } from "@/utils/googleToken.ts";
@@ -21,7 +23,7 @@ export const handler = define.handlers({
       return new Response("Cross-origin sign-in rejected", { status: 403 });
     }
 
-    const clientId = Deno.env.get("GOOGLE_CLIENT_ID");
+    const clientId = env.googleClientId;
     if (!clientId) {
       return new Response(
         "Google One Tap is not configured: set GOOGLE_CLIENT_ID.",
@@ -57,7 +59,7 @@ export const handler = define.handlers({
     // returning users; brand-new users get a tokenless session and re-auth
     // on first Drive use (see utils/googleToken.ts).
     const tokens = await refreshTokensForUser(user.id);
-    const sessionId = crypto.randomUUID();
+    const sessionId = nextId();
     await createSession(sessionId, user.id, tokens ?? undefined);
 
     const response = new Response(null, {

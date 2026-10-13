@@ -1,22 +1,22 @@
-import type { Agent, PostModelCallPayload } from "@/agent.ts";
 import type { ResolvedReviewUnit } from "@/config/types.ts";
+import type { Files } from "@/files/service.ts";
 import type { ForwardSpec, PassWhenSpec } from "@/flow/helpers.ts";
 import { forward, passWhen } from "@/flow/helpers.ts";
 import type { FlowTypes, NodeRunners } from "@/flow/types.ts";
-import type { Analysis } from "@/reviews/steps/analyze.ts";
-import { createAnalyzeRunner } from "@/reviews/steps/analyze.ts";
-import type { MarkProposal } from "@/reviews/steps/mark.ts";
+import type { Marks } from "@/marks/service.ts";
+import type { MarkProvenance } from "@/marks/types.ts";
+import type { ModelCallRecord, ModelClient } from "@/model/service.ts";
+import { type Analysis, analyzeRunner } from "@/reviews/steps/analyze.ts";
 import {
-  createMarkApplier,
-  createMarkApplyRunner,
-  createMarkProposeRunner,
-  createMarkRepairRunner,
+  type MarkProposal,
+  markApplyRunner,
+  markProposeRunner,
+  markRepairRunner,
 } from "@/reviews/steps/mark.ts";
-import { createSourceRunner } from "@/reviews/steps/source.ts";
-import { createSynthesizeRunner } from "@/reviews/steps/synthesize.ts";
+import { sourceRunner } from "@/reviews/steps/source.ts";
+import { synthesizeRunner } from "@/reviews/steps/synthesize.ts";
 import type { MarkAttempt } from "@/reviews/types.ts";
-import type { PinnedVFS } from "@/vfs/pin.ts";
-import type { MarkProvenance } from "@/vfs/types.ts";
+import type { WorkspaceId } from "@/workspace/WorkspaceId.ts";
 
 export type ReviewNodeEvent =
   | { type: "prompt"; text: string }
@@ -24,17 +24,19 @@ export type ReviewNodeEvent =
   | { type: "output"; output: unknown }
   | { type: "repair"; raw: string; error: string }
   | { type: "retry"; attempt: number; error: string }
-  | { type: "model_call"; call: PostModelCallPayload }
+  | { type: "model_call"; call: ModelCallRecord }
   | { type: "applied"; attempts: MarkAttempt[] };
 
 export interface ReviewTypes extends FlowTypes {
   events: ReviewNodeEvent;
   nodes: {
-    source: undefined;
+    source: { path: string; versionId: string };
     analyze: ResolvedReviewUnit;
     "mark.propose": ResolvedReviewUnit;
     "mark.propose.repair": ResolvedReviewUnit;
     "mark.apply": {
+      path: string;
+      versionId: string;
       allowedLabels: readonly string[];
       provenance: MarkProvenance;
     };
@@ -45,25 +47,23 @@ export interface ReviewTypes extends FlowTypes {
   artifacts: {
     content: string;
     analysis: Analysis;
-    "mark.proposals": MarkProposal[];
+    "mark.proposals": readonly MarkProposal[];
     "mark.placed": MarkAttempt[];
     "mark.failed": MarkAttempt[];
     summary: string;
   };
 }
 
-export function createReviewRunners(options: {
-  agent: Agent;
-  pinned: PinnedVFS;
-}): NodeRunners<ReviewTypes> {
-  return {
-    source: createSourceRunner(options.pinned),
-    analyze: createAnalyzeRunner(options.agent),
-    "mark.propose": createMarkProposeRunner(options.agent),
-    "mark.propose.repair": createMarkRepairRunner(options.agent),
-    "mark.apply": createMarkApplyRunner(createMarkApplier(options.pinned)),
-    "mark.repair.gate": passWhen<ReviewTypes, "mark.repair.gate">(),
-    "mark.collect": forward<ReviewTypes, "mark.collect">(),
-    synthesize: createSynthesizeRunner(options.agent),
-  };
-}
+/** The services the review graph's native steps consume. */
+export type ReviewServices = Files | WorkspaceId | Marks | ModelClient;
+
+export const reviewRunners: NodeRunners<ReviewTypes, ReviewServices> = {
+  source: sourceRunner,
+  analyze: analyzeRunner,
+  "mark.propose": markProposeRunner,
+  "mark.propose.repair": markRepairRunner,
+  "mark.apply": markApplyRunner,
+  "mark.repair.gate": passWhen<ReviewTypes, "mark.repair.gate">(),
+  "mark.collect": forward<ReviewTypes, "mark.collect">(),
+  synthesize: synthesizeRunner,
+};

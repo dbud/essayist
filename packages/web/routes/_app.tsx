@@ -2,6 +2,7 @@
 // first-party; it must run before first paint.
 import type { PageProps } from "fresh";
 import type { State } from "@/define.ts";
+import { env } from "@/env.ts";
 import Toaster from "@/islands/Toaster.tsx";
 import Tooltip from "@/islands/Tooltip.tsx";
 import { FONT_AXIS_KEYS } from "@/signals/fonts.ts";
@@ -18,22 +19,18 @@ const fontAxisScript = `for (const key of ${JSON.stringify(FONT_AXIS_KEYS)}) {
   }
 }`;
 
-const sentryDsn = Deno.env.get("SENTRY_DSN");
-const sentryEnvironment = Deno.env.get("DENO_ENV") ?? "production";
-const sentryRelease = Deno.env.get("DENO_DEPLOYMENT_ID");
-
 export default function App({ Component }: PageProps<unknown, State>) {
   return (
     <html lang="en">
       <head>
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        {sentryDsn && (
+        {env.sentryDsn && (
           <meta
             name="sentry-dsn"
-            content={sentryDsn}
-            data-environment={sentryEnvironment}
-            data-release={sentryRelease}
+            content={env.sentryDsn}
+            data-environment={env.sentryEnvironment}
+            data-release={env.sentryRelease}
           />
         )}
         <script dangerouslySetInnerHTML={{ __html: fontAxisScript }} />

@@ -6,7 +6,8 @@
  * with the per-run state that `start` creates before each open.
  */
 
-import { logger } from "@essayist/core";
+import { Effect } from "effect";
+import { runtime } from "@/store.ts";
 import { delay } from "@/utils/delay.ts";
 
 /** Delay before the first stream reconnect (doubling, capped). */
@@ -117,7 +118,12 @@ async function runStream<T, S>(
       await it.return?.();
     }
   } catch (err) {
-    logger.warn({ err, stream: hooks.name }, "stream failed");
+    runtime.runFork(
+      Effect.logWarning("stream failed", {
+        stream: hooks.name,
+        error: err instanceof Error ? err.message : String(err),
+      }),
+    );
   }
   return signal.fired ? "restarted" : delivered ? "delivered" : "failed";
 }

@@ -1,21 +1,24 @@
-import { ModelPoolSchema } from "@essayist/core";
+import { ModelPoolSchema, nextId, ReviewConfig } from "@essayist/core";
+import { Result, Schema } from "effect";
 import { define } from "@/define.ts";
-import { configStore } from "@/store.ts";
+import { runtime } from "@/store.ts";
 
 export const handler = {
   POST: define.handlers(async (ctx) => {
     const body = await ctx.req.json().catch(() => null);
-    const parsed = ModelPoolSchema.safeParse({
+    const parsed = Schema.decodeUnknownResult(ModelPoolSchema)({
       ...body,
-      id: crypto.randomUUID(),
+      id: nextId(),
     });
-    if (!parsed.success) {
+    if (Result.isFailure(parsed)) {
       return Response.json(
-        { error: "Invalid model pool", issues: parsed.error.issues },
+        { error: "Invalid model pool", detail: parsed.failure.message },
         { status: 400 },
       );
     }
-    await configStore.saveModelPool(parsed.data);
-    return Response.json(parsed.data, { status: 201 });
+    await runtime.runPromise(
+      ReviewConfig.use((store) => store.saveModelPool(parsed.success)),
+    );
+    return Response.json(parsed.success, { status: 201 });
   }),
 };

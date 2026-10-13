@@ -43,17 +43,11 @@ Deno.test("ReviewProgressTracker -- derives node phases and note counts", () => 
       event: {
         type: "model_call",
         call: {
-          sessionId: "s",
-          responseId: "r",
           model: "m/a",
           durationMs: 1,
-          turnType: "initial",
-          turnNumber: 1,
           usage: {
             inputTokens: 1,
             outputTokens: 1,
-            totalTokens: 2,
-            cachedTokens: 0,
             reasoningTokens: 0,
           },
         },

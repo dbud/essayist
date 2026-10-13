@@ -1,14 +1,20 @@
-import { VirtualFileSystem } from "@essayist/core";
+import { Files, UserState } from "@essayist/core";
+import { runScoped } from "@/run.ts";
 import { type TreeData, treeNs } from "@/signals/fileTree.ts";
 import { type Context, registerLoader } from "@/signals/models.server.ts";
-import { adapter, userStateStore } from "@/store.ts";
+import { runtime } from "@/store.ts";
 
 export async function fileTreeLoader(
   wsId: string,
   ctx: Context,
 ): Promise<TreeData> {
-  const files = await new VirtualFileSystem(adapter, wsId).list();
-  const persisted = await userStateStore.getSelectedFile(ctx.user.id, wsId);
+  const files = await runScoped(
+    runtime,
+    wsId,
+  )(Files.use((files) => files.list()));
+  const persisted = await runtime.runPromise(
+    UserState.use((store) => store.getSelectedFile(ctx.user.id, wsId)),
+  );
   const intent = ctx.url.searchParams.get("file");
   const known = (p: string | null | undefined): p is string =>
     !!p && files.some((f) => f.path === p);

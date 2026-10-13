@@ -9,7 +9,7 @@ import {
   joinLines,
   listOf,
   section,
-} from "@/utils/text.ts";
+} from "@/text/markdown.ts";
 import type { Analysis } from "./analyze.ts";
 import type { MarkProposal } from "./mark.ts";
 
@@ -70,7 +70,7 @@ function renderSummary(data: string): string {
   return joinBlocks(section("Summary"), data);
 }
 
-function renderProposedMarks(data: MarkProposal[]): string {
+function renderProposedMarks(data: readonly MarkProposal[]): string {
   return renderAttemptList("Proposed marks", data);
 }
 

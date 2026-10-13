@@ -1,4 +1,5 @@
 import { define } from "@/define.ts";
+import { env } from "@/env.ts";
 import { getValidAccessToken } from "@/utils/googleToken.ts";
 
 // GET /api/integrations/google-picker-config -> { accessToken, developerKey,
@@ -11,7 +12,7 @@ import { getValidAccessToken } from "@/utils/googleToken.ts";
 // in Cloud Console.
 export const handler = {
   GET: define.handlers(async (ctx) => {
-    const developerKey = Deno.env.get("GOOGLE_API_KEY");
+    const developerKey = env.googleApiKey;
     if (!developerKey) {
       return Response.json(
         { error: "Google Picker not configured (set GOOGLE_API_KEY)" },
@@ -31,7 +32,7 @@ export const handler = {
       );
     }
 
-    const appId = Deno.env.get("GOOGLE_APP_ID");
+    const appId = env.googleAppId;
     return Response.json({ accessToken, developerKey, appId });
   }),
 };

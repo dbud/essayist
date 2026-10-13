@@ -1,10 +1,13 @@
-import type {
-  PersistenceAdapter,
-  User,
-  Workspace,
-  WorkspaceStore,
+import {
+  Files,
+  Marks,
+  type User,
+  type Workspace,
+  Workspaces,
 } from "@essayist/core";
-import { VirtualFileSystem } from "@essayist/core";
+import type { RunScoped } from "@/run.ts";
+import { runScoped } from "@/run.ts";
+import type { Runtime } from "@/store.ts";
 
 // Original demo essay. Paragraphs are single lines so mark selections can
 // match exact substrings without whitespace ambiguity.
@@ -42,54 +45,78 @@ The comma deserves special mention, because it is the smallest tool in the kit a
 An ending has to be earned twice -- once by the argument, and once by the reader's patience. The best endings rarely summarize. They return to the opening question carrying an answer the middle of the piece has made credible, and then they stop. A draft that knows where it is going can afford to walk; a revision knows the way, and can run.`,
 };
 
-/** Seed the given workspace with a sample essay and marks exercising every
- * category label. */
-export async function seedDemoFiles(vfs: VirtualFileSystem): Promise<void> {
+/** Seed the given workspace's files with a sample essay and marks exercising
+ * every category label. */
+export async function seedDemoFiles(run: RunScoped): Promise<void> {
   for (const [path, content] of Object.entries(files)) {
-    await vfs.write(path, content);
+    await run(Files.use((f) => f.write(path, content)));
   }
 
-  await vfs.mark(
-    "essay.md",
-    "The blank page promises nothing, so the first draft exists to give the second draft something to argue with.",
-    "The claim the whole piece defends. Keep it early and unqualified.",
-    { label: "thesis" },
+  await run(
+    Marks.use((m) =>
+      m.mark(
+        "essay.md",
+        "The blank page promises nothing, so the first draft exists to give the second draft something to argue with.",
+        "The claim the whole piece defends. Keep it early and unqualified.",
+        { label: "thesis" },
+      ),
+    ),
   );
 
   // Long mark spanning two paragraphs; fully contains the evidence mark below,
   // exercising nested/overlapping mark rendering and band stacking.
-  await vfs.mark(
-    "essay.md",
-    `The useful fiction about first drafts is that they are private. Nobody reads them, so they can be honest. A first draft can admit that a section does not work yet, or lean on a stock phrase while it waits for the right one. That freedom is temporary -- revision is the process of paying for it -- but while it lasts, it lets a writer find out what the piece is actually about.
+  await run(
+    Marks.use((m) =>
+      m.mark(
+        "essay.md",
+        `The useful fiction about first drafts is that they are private. Nobody reads them, so they can be honest. A first draft can admit that a section does not work yet, or lean on a stock phrase while it waits for the right one. That freedom is temporary -- revision is the process of paying for it -- but while it lasts, it lets a writer find out what the piece is actually about.
 
 What surprises most new writers is how much of the work happens after the draft exists. The psychologist Ronald Kellogg described composing as three activities that share one mind: planning what to say, translating intention into sentences, and reviewing what appears on the page. Expert writers spend more of their time reviewing than beginners do, not less. The draft is not the end of writing; it is the switch that turns writing into editing.`,
-    "The section carries the main argument. Consider a sharper topic sentence for the second paragraph.",
-    { label: "structure" },
+        "The section carries the main argument. Consider a sharper topic sentence for the second paragraph.",
+        { label: "structure" },
+      ),
+    ),
   );
-  await vfs.mark(
-    "essay.md",
-    "Expert writers spend more of their time reviewing than beginners do, not less.",
-    "Kellogg's model earns this generalization; name the book or study when you cite it.",
-    { label: "evidence" },
+  await run(
+    Marks.use((m) =>
+      m.mark(
+        "essay.md",
+        "Expert writers spend more of their time reviewing than beginners do, not less.",
+        "Kellogg's model earns this generalization; name the book or study when you cite it.",
+        { label: "evidence" },
+      ),
+    ),
   );
 
   // No label: exercises the ink fallback alongside categorized marks.
-  await vfs.mark(
-    "essay.md",
-    "Setting a draft aside for a day is the cheapest revision tool there is",
-    "The distance point repeats; consider cutting one of the two.",
+  await run(
+    Marks.use((m) =>
+      m.mark(
+        "essay.md",
+        "Setting a draft aside for a day is the cheapest revision tool there is",
+        "The distance point repeats; consider cutting one of the two.",
+      ),
+    ),
   );
-  await vfs.mark(
-    "essay.md",
-    "Neither flaw is fatal, and both are cheap to fix once someone points at them.",
-    "The dry, even register here is the voice of the piece; hold it through the mechanics section.",
-    { label: "tone" },
+  await run(
+    Marks.use((m) =>
+      m.mark(
+        "essay.md",
+        "Neither flaw is fatal, and both are cheap to fix once someone points at them.",
+        "The dry, even register here is the voice of the piece; hold it through the mechanics section.",
+        { label: "tone" },
+      ),
+    ),
   );
-  await vfs.mark(
-    "essay.md",
-    "A comma splice joins two independent clauses with nothing but a comma",
-    "Concrete usage note; the piece could use one or two more like this.",
-    { label: "grammar" },
+  await run(
+    Marks.use((m) =>
+      m.mark(
+        "essay.md",
+        "A comma splice joins two independent clauses with nothing but a comma",
+        "Concrete usage note; the piece could use one or two more like this.",
+        { label: "grammar" },
+      ),
+    ),
   );
 }
 
@@ -111,42 +138,50 @@ export interface DemoData {
  * file; the next boot re-seeds from scratch.
  */
 export async function seedDemo(
-  workspaceStore: WorkspaceStore,
-  adapter: PersistenceAdapter,
+  runtime: Runtime,
+  kv: Deno.Kv,
 ): Promise<DemoData> {
-  const seeded = (await adapter.get<boolean>(SEED_SENTINEL))?.value;
+  // The sentinel goes through the raw KV handle on purpose: the seed flow is
+  // dev/debug bookkeeping, not part of the service surface.
+  const seeded = (await kv.get<boolean>(SEED_SENTINEL)).value;
   if (seeded) {
-    return loadDemo(workspaceStore);
+    return loadDemo(runtime);
   }
 
   // Dev demo data; the only caller gates on DENO_ENV=development. Granting
   // admin here keeps /admin reachable after a wipe without kvctl.
-  const created = await workspaceStore.createUser({
-    email: "demo@example.com",
-    name: "Demo User",
-  });
+  const created = await runtime.runPromise(
+    Workspaces.use((store) =>
+      store.createUser({ email: "demo@example.com", name: "Demo User" }),
+    ),
+  );
   const demoUser =
-    (await workspaceStore.setUserRole(created.id, "admin")) ?? created;
-  const demoWorkspace = await workspaceStore.createWorkspace(
-    "Demo",
-    demoUser.id,
+    (await runtime.runPromise(
+      Workspaces.use((store) => store.setUserRole(created.id, "admin")),
+    )) ?? created;
+  const demoWorkspace = await runtime.runPromise(
+    Workspaces.use((store) => store.createWorkspace("Demo", demoUser.id)),
   );
 
-  await seedDemoFiles(new VirtualFileSystem(adapter, demoWorkspace.id));
+  await seedDemoFiles(runScoped(runtime, demoWorkspace.id));
 
-  await adapter.batch([{ type: "set", key: SEED_SENTINEL, value: true }]);
+  await kv.set(SEED_SENTINEL, true);
   return { demoUser, demoWorkspace };
 }
 
 /** Load the previously-seeded demo entities (sentinel already set). */
-async function loadDemo(workspaceStore: WorkspaceStore): Promise<DemoData> {
-  const demoUser = await workspaceStore.getUserByEmail("demo@example.com");
+async function loadDemo(runtime: Runtime): Promise<DemoData> {
+  const demoUser = await runtime.runPromise(
+    Workspaces.use((store) => store.getUserByEmail("demo@example.com")),
+  );
   if (!demoUser) {
     throw new Error(
       "Seed sentinel is set but demo users are missing; run `deno task kvctl wipe` and restart.",
     );
   }
-  const workspaces = await workspaceStore.listWorkspacesForUser(demoUser.id);
+  const workspaces = await runtime.runPromise(
+    Workspaces.use((store) => store.listWorkspacesForUser(demoUser.id)),
+  );
   const demoWorkspace = workspaces.find((w) => w.name === "Demo");
   if (!demoWorkspace) {
     throw new Error(

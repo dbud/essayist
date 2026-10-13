@@ -12,6 +12,8 @@ const PROMPTS = {
 };
 
 const APPLY_PAYLOAD = {
+  path: "essay.txt",
+  versionId: "v1",
   allowedLabels: ["grammar"],
   provenance: { runId: "r", unitId: "mechanics" },
 };
@@ -59,7 +61,10 @@ Deno.test("buildReviewGraph -- decomposes a pass into nodes", () => {
     }),
     unitFixture({ id: "summary", summary: true, inputs: ["analyze"] }),
   ]);
-  const graph = buildReviewGraph(pass, "r");
+  const graph = buildReviewGraph(pass, "r", {
+    path: "essay.txt",
+    versionId: "v1",
+  });
 
   assertEquals(
     graph.nodes.map((node) => [node.id, node.kind, node.dependsOn]),
@@ -99,6 +104,7 @@ Deno.test("buildReviewGraph -- unrolls two repair rounds in a chain", () => {
       }),
     ]),
     "r",
+    { path: "essay.txt", versionId: "v1" },
   );
 
   assertEquals(
@@ -147,6 +153,7 @@ Deno.test("buildReviewGraph -- a zero budget has no repair nodes", () => {
       }),
     ]),
     "r",
+    { path: "essay.txt", versionId: "v1" },
   );
 
   assertEquals(
@@ -165,6 +172,7 @@ Deno.test("buildReviewGraph -- a unit input resolves to the unit's collect node"
       unitFixture({ id: "summary", summary: true, inputs: ["mechanics"] }),
     ]),
     "r",
+    { path: "essay.txt", versionId: "v1" },
   );
 
   const summary = graph.nodes.find((node) => node.id === "summary");
@@ -181,6 +189,7 @@ Deno.test("buildReviewGraph -- artifact references pass through as deps", () => 
       }),
     ]),
     "r",
+    { path: "essay.txt", versionId: "v1" },
   );
 
   assertEquals(

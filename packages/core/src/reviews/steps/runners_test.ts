@@ -1,5 +1,7 @@
 import { assertEquals } from "@std/assert";
+import { Effect, Layer } from "effect";
 import type { ResolvedReviewUnit } from "@/config/types.ts";
+import { Files } from "@/files/service.ts";
 import type { PassWhenSpec } from "@/flow/helpers.ts";
 import { FlowRunner } from "@/flow/runner.ts";
 import type {
@@ -9,14 +11,18 @@ import type {
   FlowGraph,
   FlowRunResult,
 } from "@/flow/types.ts";
+import { Marks } from "@/marks/service.ts";
+import type { Mark } from "@/marks/types.ts";
+import { createFakeClient } from "@/model/fake_client.ts";
+import { ModelClient } from "@/model/service.ts";
+import { kvLayer } from "@/persistence/kv_layer.ts";
 import {
-  createReviewRunners,
   type ReviewNodeEvent,
+  type ReviewServices,
   type ReviewTypes,
+  reviewRunners,
 } from "@/reviews/graph.ts";
-import { createSpyClient } from "@/reviews/testing/agent.ts";
-import { PinnedVFS } from "@/vfs/pin.ts";
-import { createFile } from "@/vfs/testing/helpers.ts";
+import { WorkspaceId } from "@/workspace/WorkspaceId.ts";
 
 const ANALYSIS_ROUND =
   '{"thesis":"Drafts are raw material.","claims":[],"outline":[],"strengths":[],"risks":[]}';
@@ -61,28 +67,85 @@ function artifactsOf<A extends keyof ReviewTypes["artifacts"]>(
     .map((artifact) => artifact.data);
 }
 
+/** One shared KV per test, seeded through the Files service. */
+async function setup(content: string) {
+  const kv = await Deno.openKv(":memory:");
+  const env = Layer.provide(
+    Layer.mergeAll(
+      Files.layerNoDeps,
+      Layer.provide(Marks.layerNoDeps, Files.layerNoDeps),
+    ),
+    kvLayer(kv),
+  );
+  const versionId = await Effect.runPromise(
+    Effect.provide(
+      Effect.provideService(
+        Effect.gen(function* () {
+          const files = yield* Files;
+          const write = yield* files.write("essay.txt", content);
+          return write.version_id;
+        }),
+        WorkspaceId,
+        { wsId: "ws" },
+      ),
+      env,
+    ),
+  );
+  return { env, versionId };
+}
+
+const readMarks = (
+  env: Layer.Layer<ModelClient | Files | Marks>,
+  versionId: string,
+): Promise<Mark[]> =>
+  Effect.runPromise(
+    Effect.provide(
+      Effect.provideService(
+        Files.use((files) => files.getMarks("essay.txt", versionId)),
+        WorkspaceId,
+        { wsId: "ws" },
+      ),
+      env,
+    ),
+  );
+
+const run = (
+  env: Layer.Layer<ModelClient | Files | Marks>,
+  flow: FlowRunner<ReviewTypes, ReviewServices>,
+  graph: FlowGraph<ReviewTypes>,
+): Promise<FlowRunResult<ReviewTypes>> =>
+  Effect.runPromise(
+    Effect.provide(
+      Effect.provideService(flow.run(graph), WorkspaceId, { wsId: "ws" }),
+      env,
+    ),
+  );
+
 Deno.test("review runners -- analyze, propose, apply, and synthesize in a flow", async () => {
-  const { vfs, versionId } = await createFile("essay.txt", "hello brave world");
-  const pinned = new PinnedVFS(vfs, { path: "essay.txt", versionId });
-  const { agent, inputs } = createSpyClient([
+  const { env: baseEnv, versionId } = await setup("hello brave world");
+  const { client, inputs } = createFakeClient([
     { text: ANALYSIS_ROUND, reasoning: "reading closely" },
     {
       text: '{"marks":[{"selected_text":"brave","comment":"Good.","label":"grammar"}]}',
     },
     { text: '{"summary":"Solid draft."}' },
   ]);
-  const runners = createReviewRunners({ agent, pinned });
+  const env = Layer.merge(baseEnv, ModelClient.layerOf(client));
+  const runners = reviewRunners;
   const events: FlowEvent[] = [];
-  const flow = new FlowRunner<ReviewTypes>({
+  const flow = new FlowRunner<ReviewTypes, ReviewServices>({
     runners,
-    onEvent: (event) => {
-      events.push(event);
-    },
+    onEvent: (event) => Effect.sync(() => events.push(event)),
   });
 
   const graph: FlowGraph<ReviewTypes> = {
     nodes: [
-      { id: "content", kind: "source", dependsOn: [] },
+      {
+        id: "content",
+        kind: "source",
+        dependsOn: [],
+        payload: { path: "essay.txt", versionId },
+      },
       {
         id: "structure",
         kind: "analyze",
@@ -100,6 +163,8 @@ Deno.test("review runners -- analyze, propose, apply, and synthesize in a flow",
         kind: "mark.apply",
         dependsOn: ["mechanics.propose"],
         payload: {
+          path: "essay.txt",
+          versionId,
           allowedLabels: ["grammar"],
           provenance: { runId: "r", unitId: "mechanics" },
         },
@@ -113,7 +178,7 @@ Deno.test("review runners -- analyze, propose, apply, and synthesize in a flow",
     ],
   };
 
-  const result = await flow.run(graph);
+  const result = await run(env, flow, graph);
 
   assertEquals(result.errors, []);
   assertEquals(result.status, "completed");
@@ -144,26 +209,31 @@ Deno.test("review runners -- analyze, propose, apply, and synthesize in a flow",
     ["summary", "output"],
   ]);
 
-  const marks = await vfs.getMarks("essay.txt", versionId);
+  const marks = await readMarks(env, versionId);
   assertEquals(marks.length, 1);
   assertEquals(marks[0].meta, { runId: "r", unitId: "mechanics" });
 });
 
 Deno.test("review runners -- repair propose stays idle without failures", async () => {
-  const { vfs, versionId } = await createFile("essay.txt", "hello world");
-  const pinned = new PinnedVFS(vfs, { path: "essay.txt", versionId });
-  const { agent, inputs } = createSpyClient([
+  const { env: baseEnv, versionId } = await setup("hello world");
+  const { client, inputs } = createFakeClient([
     {
       text: '{"marks":[{"selected_text":"hello","comment":"found it","label":"grammar"}]}',
     },
   ]);
-  const runners = createReviewRunners({ agent, pinned });
+  const env = Layer.merge(baseEnv, ModelClient.layerOf(client));
+  const runners = reviewRunners;
   const provenance = { runId: "r", unitId: "m" };
-  const flow = new FlowRunner<ReviewTypes>({ runners });
+  const flow = new FlowRunner<ReviewTypes, ReviewServices>({ runners });
 
-  const result = await flow.run({
+  const result = await run(env, flow, {
     nodes: [
-      { id: "content", kind: "source", dependsOn: [] },
+      {
+        id: "content",
+        kind: "source",
+        dependsOn: [],
+        payload: { path: "essay.txt", versionId },
+      },
       {
         id: "m.propose",
         kind: "mark.propose",
@@ -174,7 +244,12 @@ Deno.test("review runners -- repair propose stays idle without failures", async 
         id: "m.apply",
         kind: "mark.apply",
         dependsOn: ["m.propose"],
-        payload: { allowedLabels: ["grammar"], provenance },
+        payload: {
+          path: "essay.txt",
+          versionId,
+          allowedLabels: ["grammar"],
+          provenance,
+        },
       },
       {
         id: "m.repair1.gate",
@@ -192,7 +267,12 @@ Deno.test("review runners -- repair propose stays idle without failures", async 
         id: "m.repair1.apply",
         kind: "mark.apply",
         dependsOn: ["m.repair1.propose"],
-        payload: { allowedLabels: ["grammar"], provenance },
+        payload: {
+          path: "essay.txt",
+          versionId,
+          allowedLabels: ["grammar"],
+          provenance,
+        },
       },
     ],
   } as FlowGraph<ReviewTypes>);
@@ -210,7 +290,7 @@ Deno.test("review runners -- repair propose stays idle without failures", async 
   );
   assertEquals(proposals.length, 1);
   assertEquals(proposals[0].producedBy, "m.propose");
-  const marks = await vfs.getMarks("essay.txt", versionId);
+  const marks = await readMarks(env, versionId);
   assertEquals(
     marks.map((mark) => mark.selected_text),
     ["hello"],
@@ -218,9 +298,8 @@ Deno.test("review runners -- repair propose stays idle without failures", async 
 });
 
 Deno.test("review runners -- a repair round re-quotes failed spans", async () => {
-  const { vfs, versionId } = await createFile("essay.txt", "hello world");
-  const pinned = new PinnedVFS(vfs, { path: "essay.txt", versionId });
-  const { agent, inputs } = createSpyClient([
+  const { env: baseEnv, versionId } = await setup("hello world");
+  const { client, inputs } = createFakeClient([
     {
       text: '{"marks":[{"selected_text":"ghost span","comment":"not there","label":"grammar"}]}',
     },
@@ -228,13 +307,19 @@ Deno.test("review runners -- a repair round re-quotes failed spans", async () =>
       text: '{"marks":[{"selected_text":"hello","comment":"found it","label":"grammar"}]}',
     },
   ]);
-  const runners = createReviewRunners({ agent, pinned });
+  const env = Layer.merge(baseEnv, ModelClient.layerOf(client));
+  const runners = reviewRunners;
   const provenance = { runId: "r", unitId: "m" };
-  const flow = new FlowRunner<ReviewTypes>({ runners });
+  const flow = new FlowRunner<ReviewTypes, ReviewServices>({ runners });
 
-  const result = await flow.run({
+  const result = await run(env, flow, {
     nodes: [
-      { id: "content", kind: "source", dependsOn: [] },
+      {
+        id: "content",
+        kind: "source",
+        dependsOn: [],
+        payload: { path: "essay.txt", versionId },
+      },
       {
         id: "m.propose",
         kind: "mark.propose",
@@ -245,7 +330,12 @@ Deno.test("review runners -- a repair round re-quotes failed spans", async () =>
         id: "m.apply",
         kind: "mark.apply",
         dependsOn: ["m.propose"],
-        payload: { allowedLabels: ["grammar"], provenance },
+        payload: {
+          path: "essay.txt",
+          versionId,
+          allowedLabels: ["grammar"],
+          provenance,
+        },
       },
       {
         id: "m.repair1.gate",
@@ -263,7 +353,12 @@ Deno.test("review runners -- a repair round re-quotes failed spans", async () =>
         id: "m.repair1.apply",
         kind: "mark.apply",
         dependsOn: ["m.repair1.propose"],
-        payload: { allowedLabels: ["grammar"], provenance },
+        payload: {
+          path: "essay.txt",
+          versionId,
+          allowedLabels: ["grammar"],
+          provenance,
+        },
       },
     ],
   } as FlowGraph<ReviewTypes>);
@@ -289,7 +384,7 @@ Deno.test("review runners -- a repair round re-quotes failed spans", async () =>
   assertEquals(placed[1][0].marked, true);
   assertEquals(inputs[1].includes('Attempted span: "ghost span"'), true);
 
-  const marks = await vfs.getMarks("essay.txt", versionId);
+  const marks = await readMarks(env, versionId);
   assertEquals(
     marks.map((mark) => mark.selected_text),
     ["hello"],

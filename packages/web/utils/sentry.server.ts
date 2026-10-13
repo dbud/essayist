@@ -1,14 +1,16 @@
 // The SDK hook must register before any other module loads.
 import "@sentry/deno/import";
 import * as Sentry from "@sentry/deno";
+import { env } from "@/env.ts";
 
-const dsn = Deno.env.get("SENTRY_DSN");
+// The middleware and error reporter share this module's SDK instance.
+export { Sentry };
 
-if (dsn) {
+if (env.sentryDsn) {
   Sentry.init({
-    dsn,
-    environment: Deno.env.get("DENO_ENV") ?? "production",
-    release: Deno.env.get("DENO_DEPLOYMENT_ID"),
+    dsn: env.sentryDsn,
+    environment: env.sentryEnvironment,
+    release: env.sentryRelease,
     dataCollection: {
       httpBodies: [],
       httpHeaders: false,
@@ -17,5 +19,3 @@ if (dsn) {
     },
   });
 }
-
-export { Sentry };

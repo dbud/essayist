@@ -1,10 +1,5 @@
 export { foldCompleted } from "./fold.ts";
-export { TraceEventStore } from "./store.ts";
-export type {
-  TraceEvent,
-  TraceRecorder,
-  TraceStore,
-} from "./types.ts";
+export type { TraceEvent } from "./types.ts";
 export type {
   TraceNodeView,
   TraceTotals,

@@ -1,9 +1,10 @@
 import type { PageProps } from "fresh";
+import { env } from "@/env.ts";
 import GoogleOneTap from "@/islands/GoogleOneTap.tsx";
 import Navigation from "@/islands/Navigation.tsx";
 import { safeNext } from "@/utils/nextUrl.ts";
 
-const clientId = Deno.env.get("GOOGLE_CLIENT_ID");
+const clientId = env.googleClientId;
 
 /**
  * Sign-in landing page. Shown to unauthenticated browser users (the auth

@@ -1,5 +1,5 @@
+import { Files } from "@essayist/core";
 import { define } from "@/define.ts";
-
 import { fileLoader } from "@/signals/file.server.ts";
 
 export const handler = {
@@ -18,9 +18,9 @@ export const handler = {
       return Response.json({ error: "Missing 'path'" }, { status: 400 });
     }
 
-    const existing = (await ctx.state.vfs.list(filePath)).some(
-      (f) => f.path === filePath,
-    );
+    const existing = (
+      await ctx.state.run(Files.use((files) => files.list(filePath)))
+    ).some((file) => file.path === filePath);
     if (existing) {
       return Response.json({ error: "File already exists" }, { status: 409 });
     }
@@ -29,7 +29,9 @@ export const handler = {
       content?: string;
     } | null;
     const content = body?.content ?? "";
-    const result = await ctx.state.vfs.write(filePath, content);
+    const result = await ctx.state.run(
+      Files.use((files) => files.write(filePath, content)),
+    );
     return Response.json(result, { status: 201 });
   }),
 
@@ -44,7 +46,9 @@ export const handler = {
       content?: string;
     } | null;
     const content = body?.content ?? "";
-    const result = await ctx.state.vfs.write(filePath, content);
+    const result = await ctx.state.run(
+      Files.use((files) => files.write(filePath, content)),
+    );
     return Response.json(result, { status: result.created ? 201 : 200 });
   }),
 };

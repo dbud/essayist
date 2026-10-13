@@ -2,11 +2,14 @@
 
 import { fileURLToPath } from "node:url";
 import {
-  ConfigStore,
-  KvAdapter,
-  TraceEventStore,
-  WorkspaceStore,
+  ChunkedValues,
+  Persistence,
+  type PersistenceError,
+  ReviewConfig,
+  TraceEvents,
+  Workspaces,
 } from "@essayist/core";
+import { Layer, ManagedRuntime } from "effect";
 import type { KvctlGlobals } from "@/globals.ts";
 
 // The local playground KV, also used by the web dev server. Resolved from
@@ -19,11 +22,15 @@ export const LOCAL_KV = fileURLToPath(
 // every isolate drop its cache instead of waiting out the TTL.
 export const CATEGORIES_EPOCH: Deno.KvKey = ["cache_epoch", "categories"];
 
+/** The services kvctl commands reach through the runtime. */
+export type KvRuntime = ManagedRuntime.ManagedRuntime<
+  Workspaces | ReviewConfig | TraceEvents | ChunkedValues,
+  PersistenceError
+>;
+
 interface KvCtx {
   kv: Deno.Kv;
-  workspaceStore: WorkspaceStore;
-  config: ConfigStore;
-  traceStore: TraceEventStore;
+  runtime: KvRuntime;
 }
 
 export function resolveTarget(globals: KvctlGlobals): string {
@@ -39,15 +46,23 @@ export async function withKv<T>(
   fn: (ctx: KvCtx) => Promise<T>,
 ): Promise<T> {
   const kv = await Deno.openKv(resolveTarget(globals));
-  const adapter = new KvAdapter(kv);
+  // The runtime opens its own handle to the same store, and closes it on
+  // dispose, so the fn's promise does not outlive the CLI invocation.
+  const runtime: KvRuntime = ManagedRuntime.make(
+    Layer.provide(
+      Layer.mergeAll(
+        Workspaces.layerNoDeps,
+        ReviewConfig.layerNoDeps,
+        Layer.provide(TraceEvents.layerNoDeps, ChunkedValues.layerNoDeps),
+        ChunkedValues.layerNoDeps,
+      ),
+      Persistence.layerKv(resolveTarget(globals)),
+    ),
+  );
   try {
-    return await fn({
-      kv,
-      workspaceStore: new WorkspaceStore(adapter),
-      config: new ConfigStore(adapter),
-      traceStore: new TraceEventStore(adapter),
-    });
+    return await fn({ kv, runtime });
   } finally {
+    await runtime.dispose();
     kv.close();
   }
 }

@@ -1,17 +1,26 @@
 import { assertEquals } from "@std/assert";
-import { z } from "zod";
+import { Schema } from "effect";
 import { generateInstructions, stripMarkdownFences } from "./schema.ts";
 
+const HEADER =
+  "Return only one valid JSON object matching this shape. Do not use markdown fences, code blocks, comments, or any extra text:";
+
 Deno.test("generateInstructions produces correct output for modelResponseSchema", () => {
-  const schema = z.object({
-    success: z.boolean().describe("true if successful, false otherwise"),
-    result: z.string().nullable().describe("the answer"),
-    diagnostic: z.string().describe("explanation of the result"),
+  const schema = Schema.Struct({
+    success: Schema.Boolean.annotate({
+      description: "true if successful, false otherwise",
+    }),
+    result: Schema.NullOr(Schema.String).annotate({
+      description: "the answer",
+    }),
+    diagnostic: Schema.String.annotate({
+      description: "explanation of the result",
+    }),
   });
 
   assertEquals(
     generateInstructions(schema),
-    `Return only one valid JSON object matching this shape. Do not use markdown fences, code blocks, comments, or any extra text:
+    `${HEADER}
 
 - success: boolean -- true if successful, false otherwise
 - result: string, nullable -- the answer
@@ -20,15 +29,24 @@ Deno.test("generateInstructions produces correct output for modelResponseSchema"
 });
 
 Deno.test("generateInstructions includes example when includeExample is true", () => {
-  const schema = z.object({
-    success: z.boolean().describe("ok").meta({ example: true }),
-    result: z.string().nullable().describe("answer").meta({ example: "Paris" }),
-    diagnostic: z.string().describe("info").meta({ example: "Found capital" }),
+  const schema = Schema.Struct({
+    success: Schema.Boolean.annotate({
+      description: "ok",
+      examples: [true],
+    }),
+    result: Schema.NullOr(Schema.String).annotate({
+      description: "answer",
+      examples: ["Paris"],
+    }),
+    diagnostic: Schema.String.annotate({
+      description: "info",
+      examples: ["Found capital"],
+    }),
   });
 
   assertEquals(
     generateInstructions(schema, { includeExample: true }),
-    `Return only one valid JSON object matching this shape. Do not use markdown fences, code blocks, comments, or any extra text:
+    `${HEADER}
 
 - success: boolean -- ok
 - result: string, nullable -- answer
@@ -44,27 +62,27 @@ Example:
 });
 
 Deno.test("generateInstructions marks nullable fields as nullable", () => {
-  const schema = z.object({
-    value: z.string().nullable(),
+  const schema = Schema.Struct({
+    value: Schema.NullOr(Schema.String),
   });
 
   assertEquals(
     generateInstructions(schema),
-    `Return only one valid JSON object matching this shape. Do not use markdown fences, code blocks, comments, or any extra text:
+    `${HEADER}
 
 - value: string, nullable`,
   );
 });
 
 Deno.test("generateInstructions handles optional fields", () => {
-  const schema = z.object({
-    name: z.string(),
-    nickname: z.string().optional(),
+  const schema = Schema.Struct({
+    name: Schema.String,
+    nickname: Schema.optionalKey(Schema.String),
   });
 
   assertEquals(
     generateInstructions(schema),
-    `Return only one valid JSON object matching this shape. Do not use markdown fences, code blocks, comments, or any extra text:
+    `${HEADER}
 
 - name: string
 - nickname: string, optional`,
@@ -72,105 +90,105 @@ Deno.test("generateInstructions handles optional fields", () => {
 });
 
 Deno.test("generateInstructions handles enum fields", () => {
-  const schema = z.object({
-    status: z.enum(["active", "inactive"]),
+  const schema = Schema.Struct({
+    status: Schema.Literals(["active", "inactive"]),
   });
 
   assertEquals(
     generateInstructions(schema),
-    `Return only one valid JSON object matching this shape. Do not use markdown fences, code blocks, comments, or any extra text:
+    `${HEADER}
 
 - status: one of "active", "inactive", string`,
   );
 });
 
 Deno.test("generateInstructions handles array fields", () => {
-  const schema = z.object({
-    tags: z.array(z.string()),
+  const schema = Schema.Struct({
+    tags: Schema.Array(Schema.String),
   });
 
   assertEquals(
     generateInstructions(schema),
-    `Return only one valid JSON object matching this shape. Do not use markdown fences, code blocks, comments, or any extra text:
+    `${HEADER}
 
 - tags: string array`,
   );
 });
 
 Deno.test("generateInstructions handles union types", () => {
-  const schema = z.object({
-    value: z.union([z.string(), z.number()]),
+  const schema = Schema.Struct({
+    value: Schema.Union([Schema.String, Schema.Number]),
   });
 
   assertEquals(
     generateInstructions(schema),
-    `Return only one valid JSON object matching this shape. Do not use markdown fences, code blocks, comments, or any extra text:
+    `${HEADER}
 
 - value: string | number`,
   );
 });
 
 Deno.test("generateInstructions handles nullable arrays", () => {
-  const schema = z.object({
-    items: z.array(z.string()).nullable(),
+  const schema = Schema.Struct({
+    items: Schema.NullOr(Schema.Array(Schema.String)),
   });
 
   assertEquals(
     generateInstructions(schema),
-    `Return only one valid JSON object matching this shape. Do not use markdown fences, code blocks, comments, or any extra text:
+    `${HEADER}
 
 - items: string array, nullable`,
   );
 });
 
 Deno.test("generateInstructions handles optional arrays", () => {
-  const schema = z.object({
-    items: z.array(z.string()).optional(),
+  const schema = Schema.Struct({
+    items: Schema.optionalKey(Schema.Array(Schema.String)),
   });
 
   assertEquals(
     generateInstructions(schema),
-    `Return only one valid JSON object matching this shape. Do not use markdown fences, code blocks, comments, or any extra text:
+    `${HEADER}
 
 - items: string array, optional`,
   );
 });
 
 Deno.test("generateInstructions handles record types", () => {
-  const schema = z.object({
-    metadata: z.record(z.string(), z.string()),
+  const schema = Schema.Struct({
+    metadata: Schema.Record(Schema.String, Schema.String),
   });
 
   assertEquals(
     generateInstructions(schema),
-    `Return only one valid JSON object matching this shape. Do not use markdown fences, code blocks, comments, or any extra text:
+    `${HEADER}
 
 - metadata: string record`,
   );
 });
 
 Deno.test("generateInstructions handles literal types", () => {
-  const schema = z.object({
-    type: z.literal("article", { error: "must be article" }),
+  const schema = Schema.Struct({
+    type: Schema.Literal("article"),
   });
 
   assertEquals(
     generateInstructions(schema),
-    `Return only one valid JSON object matching this shape. Do not use markdown fences, code blocks, comments, or any extra text:
+    `${HEADER}
 
 - type: literal "article", string`,
   );
 });
 
 Deno.test("generateInstructions handles default values", () => {
-  const schema = z.object({
-    name: z.string(),
-    status: z.string().default("active"),
+  const schema = Schema.Struct({
+    name: Schema.String,
+    status: Schema.String.annotate({ default: "active" }),
   });
 
   assertEquals(
     generateInstructions(schema),
-    `Return only one valid JSON object matching this shape. Do not use markdown fences, code blocks, comments, or any extra text:
+    `${HEADER}
 
 - name: string
 - status: string, default: "active"`,
@@ -178,52 +196,34 @@ Deno.test("generateInstructions handles default values", () => {
 });
 
 Deno.test("generateInstructions handles nullable objects", () => {
-  const schema = z.object({
-    user: z
-      .object({
-        name: z.string(),
-      })
-      .nullable(),
+  const schema = Schema.Struct({
+    user: Schema.NullOr(
+      Schema.Struct({
+        name: Schema.String,
+      }),
+    ),
   });
 
   assertEquals(
     generateInstructions(schema),
-    `Return only one valid JSON object matching this shape. Do not use markdown fences, code blocks, comments, or any extra text:
+    `${HEADER}
 
 - user: object, nullable
   - name: string`,
   );
 });
 
-Deno.test("generateInstructions expands intersection fields", () => {
-  const schema = z.object({
-    value: z.intersection(
-      z.object({ name: z.string() }),
-      z.object({ age: z.number() }),
-    ),
-  });
-
-  assertEquals(
-    generateInstructions(schema),
-    `Return only one valid JSON object matching this shape. Do not use markdown fences, code blocks, comments, or any extra text:
-
-- value: object
-  - name: string
-  - age: number`,
-  );
-});
-
 Deno.test("generateInstructions lists the fields of a nested object", () => {
-  const schema = z.object({
-    user: z.object({
-      name: z.string(),
-      age: z.number().optional(),
+  const schema = Schema.Struct({
+    user: Schema.Struct({
+      name: Schema.String,
+      age: Schema.optionalKey(Schema.Number),
     }),
   });
 
   assertEquals(
     generateInstructions(schema),
-    `Return only one valid JSON object matching this shape. Do not use markdown fences, code blocks, comments, or any extra text:
+    `${HEADER}
 
 - user: object
   - name: string
@@ -232,18 +232,22 @@ Deno.test("generateInstructions lists the fields of a nested object", () => {
 });
 
 Deno.test("generateInstructions lists the fields of an array of objects", () => {
-  const schema = z.object({
-    outline: z
-      .object({
-        first_line: z.number().int().describe("Where the section starts."),
-        gist: z.string().describe("What the section does."),
-      })
-      .array(),
+  const schema = Schema.Struct({
+    outline: Schema.Array(
+      Schema.Struct({
+        first_line: Schema.Int.annotate({
+          description: "Where the section starts.",
+        }),
+        gist: Schema.String.annotate({
+          description: "What the section does.",
+        }),
+      }),
+    ),
   });
 
   assertEquals(
     generateInstructions(schema),
-    `Return only one valid JSON object matching this shape. Do not use markdown fences, code blocks, comments, or any extra text:
+    `${HEADER}
 
 - outline: object array
   - first_line: integer -- Where the section starts.
@@ -252,18 +256,20 @@ Deno.test("generateInstructions lists the fields of an array of objects", () => 
 });
 
 Deno.test("generateInstructions recurses through nested arrays of objects", () => {
-  const schema = z.object({
-    groups: z.array(
-      z.object({
-        title: z.string(),
-        items: z.array(z.object({ id: z.string(), qty: z.number() })),
+  const schema = Schema.Struct({
+    groups: Schema.Array(
+      Schema.Struct({
+        title: Schema.String,
+        items: Schema.Array(
+          Schema.Struct({ id: Schema.String, qty: Schema.Number }),
+        ),
       }),
     ),
   });
 
   assertEquals(
     generateInstructions(schema),
-    `Return only one valid JSON object matching this shape. Do not use markdown fences, code blocks, comments, or any extra text:
+    `${HEADER}
 
 - groups: object array
   - title: string
@@ -274,17 +280,15 @@ Deno.test("generateInstructions recurses through nested arrays of objects", () =
 });
 
 Deno.test("generateInstructions prefers a whole-value example over per-field ones", () => {
-  const schema = z
-    .object({
-      outline: z.array(z.object({ first_line: z.number().int() })),
-    })
-    .meta({
-      example: { outline: [{ first_line: 3 }] },
-    });
+  const schema = Schema.Struct({
+    outline: Schema.Array(Schema.Struct({ first_line: Schema.Int })),
+  }).annotate({
+    examples: [{ outline: [{ first_line: 3 }] }],
+  });
 
   assertEquals(
     generateInstructions(schema, { includeExample: true }),
-    `Return only one valid JSON object matching this shape. Do not use markdown fences, code blocks, comments, or any extra text:
+    `${HEADER}
 
 - outline: object array
   - first_line: integer
@@ -303,14 +307,14 @@ Example:
 Deno.test("generateInstructions lists the fields of a nullable object", () => {
   // A nullable object is the object unioned with null, so the union has to be
   // unwrapped before the fields are read.
-  const schema = z.object({
-    user: z.object({ name: z.string() }).nullable(),
-    tags: z.array(z.string()).nullable(),
+  const schema = Schema.Struct({
+    user: Schema.NullOr(Schema.Struct({ name: Schema.String })),
+    tags: Schema.NullOr(Schema.Array(Schema.String)),
   });
 
   assertEquals(
     generateInstructions(schema),
-    `Return only one valid JSON object matching this shape. Do not use markdown fences, code blocks, comments, or any extra text:
+    `${HEADER}
 
 - user: object, nullable
   - name: string
@@ -319,52 +323,52 @@ Deno.test("generateInstructions lists the fields of a nullable object", () => {
 });
 
 Deno.test("generateInstructions describes a record by its value type, not its keys", () => {
-  const schema = z.object({
-    scores: z.array(z.record(z.string(), z.number())),
+  const schema = Schema.Struct({
+    scores: Schema.Array(Schema.Record(Schema.String, Schema.Number)),
   });
 
   assertEquals(
     generateInstructions(schema),
-    `Return only one valid JSON object matching this shape. Do not use markdown fences, code blocks, comments, or any extra text:
+    `${HEADER}
 
 - scores: number record array`,
   );
 });
 
 Deno.test("generateInstructions handles tuple types", () => {
-  const schema = z.object({
-    coords: z.tuple([z.number(), z.number()]),
+  const schema = Schema.Struct({
+    coords: Schema.Tuple([Schema.Number, Schema.Number]),
   });
 
   assertEquals(
     generateInstructions(schema),
-    `Return only one valid JSON object matching this shape. Do not use markdown fences, code blocks, comments, or any extra text:
+    `${HEADER}
 
 - coords: (number, number) tuple`,
   );
 });
 
 Deno.test("generateInstructions handles boolean fields", () => {
-  const schema = z.object({
-    active: z.boolean(),
+  const schema = Schema.Struct({
+    active: Schema.Boolean,
   });
 
   assertEquals(
     generateInstructions(schema),
-    `Return only one valid JSON object matching this shape. Do not use markdown fences, code blocks, comments, or any extra text:
+    `${HEADER}
 
 - active: boolean`,
   );
 });
 
 Deno.test("generateInstructions handles number fields", () => {
-  const schema = z.object({
-    count: z.number(),
+  const schema = Schema.Struct({
+    count: Schema.Number,
   });
 
   assertEquals(
     generateInstructions(schema),
-    `Return only one valid JSON object matching this shape. Do not use markdown fences, code blocks, comments, or any extra text:
+    `${HEADER}
 
 - count: number`,
   );

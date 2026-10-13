@@ -1,25 +1,30 @@
-import { PromptSchema } from "@essayist/core";
+import { PromptSchema, ReviewConfig } from "@essayist/core";
+import { Result, Schema } from "effect";
 import { define } from "@/define.ts";
-import { configStore } from "@/store.ts";
+import { runtime } from "@/store.ts";
 
 export const handler = {
   PUT: define.handlers(async (ctx) => {
     const { key } = ctx.params;
     const body = await ctx.req.json().catch(() => null);
-    const parsed = PromptSchema.safeParse({ ...body, key });
-    if (!parsed.success) {
+    const parsed = Schema.decodeUnknownResult(PromptSchema)({ ...body, key });
+    if (Result.isFailure(parsed)) {
       return Response.json(
-        { error: "Invalid prompt", issues: parsed.error.issues },
+        { error: "Invalid prompt", detail: parsed.failure.message },
         { status: 400 },
       );
     }
-    await configStore.savePrompt(parsed.data);
-    return Response.json(parsed.data);
+    await runtime.runPromise(
+      ReviewConfig.use((store) => store.savePrompt(parsed.success)),
+    );
+    return Response.json(parsed.success);
   }),
 
   DELETE: define.handlers(async (ctx) => {
     const { key } = ctx.params;
-    await configStore.deletePrompt(key);
+    await runtime.runPromise(
+      ReviewConfig.use((store) => store.deletePrompt(key)),
+    );
     return Response.json({ ok: true });
   }),
 };

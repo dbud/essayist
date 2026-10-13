@@ -1,5 +1,7 @@
 /** A generic DAG runner over typed artifacts. */
 
+import { type Effect, Schema } from "effect";
+
 /** The host's typing vocabulary: node kinds, artifact types, and custom
  * events. */
 export interface FlowTypes {
@@ -35,7 +37,7 @@ export type FlowNode<
   id: string;
   kind: K;
   /** Node ids whose committed artifacts arrive as inputs, in order. */
-  dependsOn: string[];
+  dependsOn: readonly string[];
 } & (undefined extends T["nodes"][K]
   ? { payload?: T["nodes"][K] }
   : { payload: T["nodes"][K] });
@@ -60,7 +62,7 @@ export interface NodeContext<
   payload: T["nodes"][K];
   inputs: Artifacts<T>;
   /** Emit a host event; delivered before this node's terminal event. */
-  emit(event: T["events"]): void;
+  emit(event: T["events"]): Effect.Effect<void>;
   /** Create an output artifact; provenance is stamped with this node. */
   artifact<A extends ArtifactType<T>>(
     type: A,
@@ -68,19 +70,31 @@ export interface NodeContext<
   ): Artifact<T, A>;
 }
 
+/** The graph is structurally invalid: a duplicate id, an unknown
+ * dependency or kind, or a cycle. Rejected before any node runs. */
+export class FlowGraphError extends Schema.TaggedError<FlowGraphError>()(
+  "FlowGraphError",
+  { reason: Schema.String },
+) {
+  override get message() {
+    return this.reason;
+  }
+}
+
 export interface NodeRunner<
   T extends FlowTypes,
   K extends NodeKind<T> = NodeKind<T>,
+  R = never,
 > {
   execute(
     payload: T["nodes"][K],
     ctx: NodeContext<T, K>,
-  ): Promise<Artifact<T>[]>;
+  ): Effect.Effect<Artifact<T>[], Error, R>;
 }
 
 /** One runner per node kind; a missing one is a compile error. */
-export type NodeRunners<T extends FlowTypes> = {
-  [K in NodeKind<T>]: NodeRunner<T, K>;
+export type NodeRunners<T extends FlowTypes, R = never> = {
+  [K in NodeKind<T>]: NodeRunner<T, K, R>;
 };
 
 export interface CompletedNodeRun<T extends FlowTypes = FlowTypes> {

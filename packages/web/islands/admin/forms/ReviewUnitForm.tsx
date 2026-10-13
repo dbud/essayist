@@ -33,11 +33,11 @@ export function ReviewUnitForm({
     unit?.instructionsPromptKey ?? "",
   );
   const [poolOverride, setPoolOverride] = useState(unit?.modelPoolId ?? "");
-  const [inputs, setInputs] = useState<string[]>(unit?.inputs ?? []);
+  const [inputs, setInputs] = useState<string[]>([...(unit?.inputs ?? [])]);
   const [marks, setMarks] = useState(unit?.attempt !== undefined);
-  const [categoryIds, setCategoryIds] = useState<string[]>(
-    unit?.attempt?.allowedCategoryIds ?? [],
-  );
+  const [categoryIds, setCategoryIds] = useState<string[]>([
+    ...(unit?.attempt?.allowedCategoryIds ?? []),
+  ]);
   const [rounds, setRounds] = useState(unit?.attempt?.repairRounds ?? 1);
   const [summary, setSummary] = useState(unit?.summary === true);
   const [error, setError] = useState<string | null>(null);

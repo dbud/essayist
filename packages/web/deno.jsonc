@@ -58,6 +58,7 @@
     "culori": "npm:culori@^4.0.2",
     "date-fns": "npm:date-fns@^4.4.0",
     "dompurify": "npm:dompurify@^3.4.16",
+    "effect": "npm:effect@^4.0.3",
     "fresh": "jsr:@fresh/core@^2.3.3",
     "happy-dom": "npm:happy-dom@^20.14.5",
     "jose": "npm:jose@^6.2.12",

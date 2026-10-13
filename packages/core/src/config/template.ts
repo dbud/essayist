@@ -10,7 +10,7 @@ export function extractVariables(body: string): string[] {
 /** {{var}} placeholder replacement for prompt templates. Unknown placeholders are left intact. */
 export function renderTemplate(
   body: string,
-  variables: Record<string, string> = {},
+  variables: Readonly<Record<string, string>> = {},
 ): string {
   return body.replace(PLACEHOLDER_PATTERN, (match, name: string) =>
     Object.hasOwn(variables, name) ? variables[name] : match,

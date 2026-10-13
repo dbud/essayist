@@ -1,3 +1,4 @@
+import { env } from "@/env.ts";
 import {
   getSession,
   getUserRefreshToken,
@@ -63,8 +64,8 @@ export async function refreshTokensForUser(
 
 async function refreshTokens(refreshToken: string): Promise<SessionTokens> {
   const body = new URLSearchParams({
-    client_id: Deno.env.get("GOOGLE_CLIENT_ID") ?? "",
-    client_secret: Deno.env.get("GOOGLE_CLIENT_SECRET") ?? "",
+    client_id: env.googleClientId ?? "",
+    client_secret: env.googleClientSecret ?? "",
     refresh_token: refreshToken,
     grant_type: "refresh_token",
   });

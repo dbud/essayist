@@ -1,6 +1,7 @@
+import { UserState } from "@essayist/core";
 import { define } from "@/define.ts";
 import { fileTreeLoader } from "@/signals/fileTree.server.ts";
-import { userStateStore } from "@/store.ts";
+import { runtime } from "@/store.ts";
 
 export const handler = {
   GET: define.handlers(async (ctx) => {
@@ -23,10 +24,10 @@ export const handler = {
         { status: 400 },
       );
     }
-    await userStateStore.setSelectedFile(
-      ctx.state.user.id,
-      ctx.state.wsId,
-      selectedPath,
+    await runtime.runPromise(
+      UserState.use((store) =>
+        store.setSelectedFile(ctx.state.user.id, ctx.state.wsId, selectedPath),
+      ),
     );
     return new Response(null, { status: 204 });
   }),

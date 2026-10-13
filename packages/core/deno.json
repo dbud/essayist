@@ -2,7 +2,12 @@
   "exports": "./mod.ts",
   "imports": {
     "@/": "./src/",
-    "zod": "npm:zod@^4.6.5"
+    "@effect/ai-openrouter": "npm:@effect/ai-openrouter@^4.0.3",
+    "effect": "npm:effect@^4.0.3",
+    "effect/ai/AiError": "npm:effect@^4.0.3/ai/AiError",
+    "effect/http/FetchHttpClient": "npm:effect@^4.0.3/http/FetchHttpClient",
+    "effect/http/HttpClientResponse": "npm:effect@^4.0.3/http/HttpClientResponse",
+    "effect/testing": "npm:effect@^4.0.3/testing"
   },
   "lint": {
     "rules": {
@@ -17,7 +22,6 @@
   "tasks": {
     "check": "deno run -A npm:@biomejs/biome check && deno lint . && deno check",
     "test": "deno test -A --unstable-kv --coverage",
-    "test:integration": "DENO_ENV=development deno test -A --env --coverage integration/ | pino-pretty --colorize --translateTime SYS:standard --ignore pid,hostname",
     "test:watch": "deno test -A --watch"
   },
   "version": "0.1.0"

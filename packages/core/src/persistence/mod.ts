@@ -1,5 +1,7 @@
 /** Persistence layer for the VFS: a key/value adapter with tuple keys. */
 
+import { Schema } from "effect";
+
 /** A tuple key. Parts are strings; KV supports richer types but we don't need them. */
 export type Key = readonly string[];
 
@@ -31,7 +33,7 @@ export interface ListResult<T = unknown> {
   cursor?: string;
 }
 
-/** A write applied atomically within a {@link PersistenceAdapter.batch} call. */
+/** A write applied atomically within one batch call. */
 export type WriteOp =
   | { type: "set"; key: Key; value: unknown }
   | { type: "delete"; key: Key };
@@ -50,47 +52,33 @@ export interface BatchOptions {
   checks?: Array<{ key: Key; versionstamp: string | null }>;
 }
 
-/** Error thrown when the `checks` of a batch fail optimistic-concurrency validation. */
-export class ConcurrentModificationError extends Error {
-  constructor(public readonly key: Key) {
-    super(`Concurrent modification detected for key ${JSON.stringify(key)}`);
+/** The `checks` of a batch failed optimistic-concurrency validation; no ops
+ * were applied. */
+export class ConcurrentModificationError extends Schema.TaggedError<ConcurrentModificationError>()(
+  "ConcurrentModificationError",
+  { key: Schema.Array(Schema.String) },
+) {
+  override get message() {
+    return `Concurrent modification detected for key ${JSON.stringify(this.key)}`;
   }
 }
 
-/**
- * Key/value persistence with tuple keys, batch/atomic writes, and
- * versionstamp-based optimistic concurrency.
- *
- * Single-key {@link PersistenceAdapter.set} / {@link PersistenceAdapter.delete}
- * are convenience wrappers over {@link PersistenceAdapter.batch}.
- */
-export interface PersistenceAdapter {
-  /** Read a single entry, or `undefined` if absent. */
-  get<T = unknown>(
-    key: Key,
-    options?: ReadOptions,
-  ): Promise<Entry<T> | undefined>;
-
-  /** Read many keys in a single round trip. */
-  getMany<T = unknown>(
-    keys: Key[],
-    options?: ReadOptions,
-  ): Promise<(Entry<T> | undefined)[]>;
-
-  /** Scan a tuple-prefix range, a page at a time. */
-  list<T = unknown>(prefix: Key, options?: ListOptions): Promise<ListResult<T>>;
-
-  /**
-   * Apply a set of writes atomically. Without `checks` this is a batch write;
-   * with `checks` it is a conditional update that rejects on conflict.
-   */
-  batch(ops: WriteOp[], options?: BatchOptions): Promise<void>;
-
-  /** Convenience: single-key set (delegates to {@link batch}). */
-  set(key: Key, value: unknown): Promise<void>;
-
-  /** Convenience: single-key delete (delegates to {@link batch}). */
-  delete(key: Key): Promise<void>;
+/** Fields a record carries to be leasable by one owner at a time. */
+export interface Lease {
+  /** Id of the driver currently advancing this record. */
+  leaseOwner?: string;
+  /** When the owner last proved it was alive. */
+  heartbeatAt?: number;
 }
 
-export { InMemoryAdapter } from "./in_memory_adapter.ts";
+/** A record with {@link Lease} fields on it. */
+export type Leased<T> = T & Lease;
+
+export interface ClaimOptions {
+  owner: string;
+  heartbeatAtLeast: number;
+}
+
+/** Leases the service layer puts on records: claims and heartbeats read and
+ * write the {@link Lease} fields with checked batches. */
+export { Persistence, PersistenceError } from "./service.ts";

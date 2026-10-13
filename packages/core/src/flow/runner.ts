@@ -1,4 +1,5 @@
 import { distinct, sortBy } from "@std/collections";
+import { Cause, Clock, Deferred, Effect, Exit, Result } from "effect";
 import type {
   Artifact,
   CompletedNodeRun,
@@ -15,13 +16,14 @@ import type {
   NodeRunners,
   SkippedNodeRun,
 } from "@/flow/types.ts";
+import { FlowGraphError } from "@/flow/types.ts";
 import { view } from "@/flow/view.ts";
-import { SerialTasks } from "@/utils/serial.ts";
 
-export interface FlowRunnerOptions<T extends FlowTypes> {
-  runners: NodeRunners<T>;
-  /** Awaited per event; a throwing listener is logged and ignored. */
-  onEvent?: (event: FlowEvent<T>) => Promise<void> | void;
+export interface FlowRunnerOptions<T extends FlowTypes, R = never> {
+  runners: NodeRunners<T, R>;
+  /** Called per event, in emission order; a listener defect is logged and
+   * ignored. */
+  onEvent?: (event: FlowEvent<T>) => Effect.Effect<void>;
   /** Max nodes executing at once. Default unbounded. */
   maxConcurrency?: number;
 }
@@ -45,17 +47,18 @@ interface WiredNode<T extends FlowTypes> {
 }
 
 /** Executes a graph: schedules ready nodes in declaration order and
- * commits artifacts. Nodes never re-execute. */
-export class FlowRunner<T extends FlowTypes> {
-  #runners = new Map<string, NodeRunner<T>>();
-  #onEvent?: (event: FlowEvent<T>) => Promise<void> | void;
+ * commits artifacts. Nodes never re-execute. Each node runs on its own
+ * child fiber, so an interrupted run takes its in-flight nodes down. */
+export class FlowRunner<T extends FlowTypes, R = never> {
+  #runners = new Map<string, NodeRunner<T, NodeKind<T>, R>>();
+  #onEvent?: (event: FlowEvent<T>) => Effect.Effect<void>;
   #maxConcurrency: number;
 
-  constructor(options: FlowRunnerOptions<T>) {
+  constructor(options: FlowRunnerOptions<T, R>) {
     // The registry key is the node kind, so the cast is sound.
     const registry = options.runners as unknown as Record<
       string,
-      NodeRunner<T>
+      NodeRunner<T, NodeKind<T>, R>
     >;
     for (const [kind, runner] of Object.entries(registry)) {
       this.#runners.set(kind, runner);
@@ -64,168 +67,184 @@ export class FlowRunner<T extends FlowTypes> {
     this.#maxConcurrency = options.maxConcurrency ?? Number.POSITIVE_INFINITY;
   }
 
-  async run(
+  run(
     graph: FlowGraph<T>,
     options: FlowRunOptions<T> = {},
-  ): Promise<FlowRunResult<T>> {
-    const wired = wire(graph, this.#runners);
-    const committed = new Map<string, Artifact<T>[]>();
-    const artifacts: Artifact<T>[] = [];
-    const nodeRuns: NodeRun<T>[] = [];
-    const running = new Set<Promise<void>>();
-    const errors = new Map<string, string>();
-
-    const commit = (entry: WiredNode<T>, produced: Artifact<T>[]): void => {
-      committed.set(entry.node.id, produced);
-      artifacts.push(...produced);
-      for (const id of entry.consumedBy) {
-        const consumer = wired.get(id);
-        if (consumer !== undefined) consumer.remaining -= 1;
+  ): Effect.Effect<FlowRunResult<T>, FlowGraphError, R> {
+    return Effect.gen({ self: this }, function* () {
+      const wiredResult = wire(graph, this.#runners);
+      if (Result.isFailure(wiredResult)) {
+        return yield* Effect.fail(wiredResult.failure);
       }
-    };
+      const wired = wiredResult.success;
 
-    for (const entry of wired.values()) {
-      const completed = options.completed?.get(entry.node.id);
-      if (completed === undefined) continue;
-      commit(entry, completed);
-      entry.launched = true;
-    }
+      const committed = new Map<string, Artifact<T>[]>();
+      const artifacts: Artifact<T>[] = [];
+      const nodeRuns: NodeRun<T>[] = [];
+      /** Completed on each node's fiber once its outcome is recorded;
+       * the scheduler wakes on the node id. */
+      const pending = new Map<string, Deferred.Deferred<string, never>>();
+      const errors = new Map<string, string>();
 
-    const launch = async (entry: WiredNode<T>): Promise<void> => {
-      entry.launched = true;
-      const { promise, resolve } = Promise.withResolvers<void>();
-      running.add(promise);
-      try {
-        const inputs = entry.consumes.flatMap(
-          (dep) => committed.get(dep) ?? [],
-        );
-        const run = await this.#execute(entry.node, inputs);
-        nodeRuns.push(run);
-        if (run.status === "completed") {
-          commit(entry, run.artifacts);
-        } else {
-          errors.set(entry.node.id, run.error);
+      const commit = (entry: WiredNode<T>, produced: Artifact<T>[]): void => {
+        committed.set(entry.node.id, produced);
+        artifacts.push(...produced);
+        for (const id of entry.consumedBy) {
+          const consumer = wired.get(id);
+          if (consumer !== undefined) consumer.remaining -= 1;
         }
-      } finally {
-        running.delete(promise);
-        resolve();
-      }
-    };
-
-    while (true) {
-      for (const entry of wired.values()) {
-        if (running.size >= this.#maxConcurrency) break;
-        if (!entry.launched && entry.remaining === 0) {
-          void launch(entry);
-        }
-      }
-      if (running.size === 0) break;
-      await Promise.race([...running]);
-    }
-
-    for (const entry of wired
-      .values()
-      .filter((candidate) => !candidate.launched)) {
-      const run: SkippedNodeRun = {
-        nodeId: entry.node.id,
-        status: "skipped",
-        reason: skipReason(entry, wired, errors),
       };
-      nodeRuns.push(run);
-      await this.#emit({ type: "node_end", nodeId: entry.node.id, run });
-    }
 
-    const position = new Map(
-      wired.keys().map((nodeId, index) => [nodeId, index] as const),
-    );
-    return {
-      status: errors.size === 0 ? "completed" : "failed",
-      errors: [...errors.values()],
-      nodeRuns: sortBy(nodeRuns, (run) => position.get(run.nodeId) ?? 0),
-      artifacts,
-    };
+      for (const entry of wired.values()) {
+        const completed = options.completed?.get(entry.node.id);
+        if (completed === undefined) continue;
+        commit(entry, completed);
+        entry.launched = true;
+      }
+
+      const launch = (entry: WiredNode<T>) =>
+        Effect.gen({ self: this }, function* () {
+          entry.launched = true;
+          const waker = yield* Deferred.make<string>();
+          pending.set(entry.node.id, waker);
+          const inputs = entry.consumes.flatMap(
+            (dep) => committed.get(dep) ?? [],
+          );
+          // Mutations stay on the engine's single thread, on the node's fiber
+          // in completion order: record, commit, then wake the scheduler.
+          yield* Effect.forkChild(
+            Effect.gen({ self: this }, function* () {
+              const run = yield* this.#execute(entry.node, inputs);
+              nodeRuns.push(run);
+              if (run.status === "completed") {
+                commit(entry, run.artifacts);
+              } else {
+                errors.set(entry.node.id, run.error);
+              }
+              yield* Deferred.succeed(waker, entry.node.id);
+            }),
+          );
+        });
+
+      while (true) {
+        for (const entry of wired.values()) {
+          if (pending.size >= this.#maxConcurrency) break;
+          if (!entry.launched && entry.remaining === 0) {
+            yield* launch(entry);
+          }
+        }
+        if (pending.size === 0) break;
+        const doneId = yield* Effect.raceAll(
+          [...pending.values()].map((waker) => Deferred.await(waker)),
+        );
+        pending.delete(doneId);
+      }
+
+      for (const entry of wired
+        .values()
+        .filter((candidate) => !candidate.launched)) {
+        const run: SkippedNodeRun = {
+          nodeId: entry.node.id,
+          status: "skipped",
+          reason: skipReason(entry, wired, errors),
+        };
+        nodeRuns.push(run);
+        yield* this.#emit({ type: "node_end", nodeId: entry.node.id, run });
+      }
+
+      const position = new Map(
+        wired.keys().map((nodeId, index) => [nodeId, index] as const),
+      );
+      const status: FlowRunResult<T>["status"] =
+        errors.size === 0 ? "completed" : "failed";
+      return {
+        status,
+        errors: [...errors.values()],
+        nodeRuns: sortBy(nodeRuns, (run) => position.get(run.nodeId) ?? 0),
+        artifacts,
+      };
+    });
   }
 
-  async #execute(
+  #execute(
     node: FlowNode<T, NodeKind<T>>,
     inputs: readonly Artifact<T>[],
-  ): Promise<CompletedNodeRun<T> | FailedNodeRun> {
-    const startedAt = Date.now();
-    await this.#emit({ type: "node_start", nodeId: node.id });
+  ): Effect.Effect<CompletedNodeRun<T> | FailedNodeRun, never, R> {
+    return Effect.gen({ self: this }, function* () {
+      const startedAt = yield* Clock.currentTimeMillis;
+      yield* this.#emit({ type: "node_start", nodeId: node.id });
 
-    const emitted = new SerialTasks();
-    // The payload boundary: the host's graph construction guarantees
-    // configured kinds carry their payload.
-    const payload = node.payload as T["nodes"][NodeKind<T>];
-    const context: NodeContext<T, NodeKind<T>> = {
-      payload,
-      inputs: view(inputs),
-      emit: (event) => {
-        void emitted.add(() =>
-          this.#emit({ type: "custom", nodeId: node.id, event }),
-        );
-      },
-      artifact: (type, data) => ({
-        type,
-        data,
-        producedBy: node.id,
-      }),
-    };
-    let error: string | undefined;
-    let artifacts: Artifact<T>[] = [];
-    try {
+      // The payload boundary: the host's graph construction guarantees
+      // configured kinds carry their payload.
+      const payload = node.payload as T["nodes"][NodeKind<T>];
+      const context: NodeContext<T, NodeKind<T>> = {
+        payload,
+        inputs: view(inputs),
+        emit: (event) => this.#emit({ type: "custom", nodeId: node.id, event }),
+        artifact: (type, data) => ({
+          type,
+          data,
+          producedBy: node.id,
+        }),
+      };
       const runner = this.#runners.get(node.kind);
-      if (runner === undefined) {
-        throw new Error(`no runner for node kind "${node.kind}"`);
-      }
-      artifacts = await runner.execute(payload, context);
-    } catch (caught) {
-      error = caught instanceof Error ? caught.message : String(caught);
-    }
-    await emitted.drain();
-    const run: CompletedNodeRun<T> | FailedNodeRun =
-      error === undefined
+      const attempt: Effect.Effect<Artifact<T>[], Error, R> =
+        runner === undefined
+          ? Effect.fail(new Error(`no runner for node kind "${node.kind}"`))
+          : runner.execute(payload, context);
+      const exit = yield* Effect.exit(attempt);
+      const completedAt = yield* Clock.currentTimeMillis;
+
+      const run: CompletedNodeRun<T> | FailedNodeRun = Exit.isSuccess(exit)
         ? {
             nodeId: node.id,
             status: "completed",
             startedAt,
-            completedAt: Date.now(),
-            artifacts,
+            completedAt,
+            artifacts: exit.value,
           }
         : {
             nodeId: node.id,
             status: "failed",
             startedAt,
-            completedAt: Date.now(),
-            error,
+            completedAt,
+            error: describe(exit.cause),
           };
-    await this.#emit({ type: "node_end", nodeId: node.id, run });
-    return run;
+      yield* this.#emit({ type: "node_end", nodeId: node.id, run });
+      return run;
+    });
   }
 
-  async #emit(event: FlowEvent<T>): Promise<void> {
-    try {
-      await this.#onEvent?.(event);
-    } catch (caught) {
-      console.error("flow event listener failed", caught);
-    }
+  /** A listener defect is logged and dropped, not failed into the run. */
+  #emit(event: FlowEvent<T>): Effect.Effect<void> {
+    return Effect.catchDefect(this.#onEvent?.(event) ?? Effect.void, (defect) =>
+      Effect.logError("flow event listener failed", {
+        error: asMessage(defect),
+      }),
+    );
   }
 }
 
 /** Wires the graph for execution, rejecting broken graphs before any
  * node runs. */
-function wire<T extends FlowTypes>(
+function wire<T extends FlowTypes, R>(
   graph: FlowGraph<T>,
-  runners: Map<string, NodeRunner<T>>,
-): Map<string, WiredNode<T>> {
+  runners: Map<string, NodeRunner<T, NodeKind<T>, R>>,
+): Result.Result<Map<string, WiredNode<T>>, FlowGraphError> {
   const wired = new Map<string, WiredNode<T>>();
 
   for (const node of graph.nodes) {
     if (wired.has(node.id)) {
-      throw new Error(`duplicate node id "${node.id}"`);
+      return Result.fail(
+        new FlowGraphError({ reason: `duplicate node id "${node.id}"` }),
+      );
     }
     if (!runners.has(node.kind)) {
-      throw new Error(`no runner for node kind "${node.kind}"`);
+      return Result.fail(
+        new FlowGraphError({
+          reason: `no runner for node kind "${node.kind}"`,
+        }),
+      );
     }
     const consumes = distinct(node.dependsOn);
     wired.set(node.id, {
@@ -240,8 +259,10 @@ function wire<T extends FlowTypes>(
     for (const dep of entry.consumes) {
       const upstream = wired.get(dep);
       if (upstream === undefined) {
-        throw new Error(
-          `node "${entry.node.id}" depends on unknown node "${dep}"`,
+        return Result.fail(
+          new FlowGraphError({
+            reason: `node "${entry.node.id}" depends on unknown node "${dep}"`,
+          }),
         );
       }
       upstream.consumedBy.push(entry.node.id);
@@ -272,9 +293,11 @@ function wire<T extends FlowTypes>(
     .map((entry) => entry.node.id)
     .toArray();
   if (stuck.length > 0) {
-    throw new Error(`cycle detected: ${stuck.join(", ")}`);
+    return Result.fail(
+      new FlowGraphError({ reason: `cycle detected: ${stuck.join(", ")}` }),
+    );
   }
-  return wired;
+  return Result.succeed(wired);
 }
 
 /** The reason a node never ran: its nearest failed dependency. */
@@ -299,4 +322,17 @@ function skipReason<T extends FlowTypes>(
     }
   }
   return `upstream failure: ${[...errors.values()].join("; ")}`;
+}
+
+/** One-line text for a node's cause: the first typed error or defect. */
+function describe(cause: Cause.Cause<unknown>): string {
+  const error = Cause.findError(cause);
+  if (Result.isSuccess(error)) return asMessage(error.success);
+  const defect = Cause.findDefect(cause);
+  if (Result.isSuccess(defect)) return asMessage(defect.success);
+  return "interrupted";
+}
+
+function asMessage(value: unknown): string {
+  return value instanceof Error ? value.message : String(value);
 }

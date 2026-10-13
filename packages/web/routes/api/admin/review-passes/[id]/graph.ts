@@ -3,16 +3,19 @@ import {
   buildReviewGraph,
   ConfigInvalidError,
   ConfigMissingError,
+  ReviewConfig,
   resolveReviewPass,
 } from "@essayist/core";
 import { define } from "@/define.ts";
-import { configStore } from "@/store.ts";
+import { runtime } from "@/store.ts";
 
 /** The built flow graph of a review pass, as nodes, edges, and an
  * agentflow-beta definition for mermaid rendering. */
 export const handler = {
   GET: define.handlers(async (ctx) => {
-    const pass = await configStore.getReviewPass(ctx.params.id);
+    const pass = await runtime.runPromise(
+      ReviewConfig.use((store) => store.getReviewPass(ctx.params.id)),
+    );
     if (!pass) {
       return Response.json(
         { error: `Review pass "${ctx.params.id}" not found` },
@@ -20,7 +23,7 @@ export const handler = {
       );
     }
     try {
-      const resolved = await resolveReviewPass(configStore, pass);
+      const resolved = await runtime.runPromise(resolveReviewPass(pass));
       const graph = buildReviewGraph(resolved, "preview");
       return Response.json({
         name: pass.name,

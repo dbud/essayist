@@ -1,10 +1,10 @@
-import type { ConfigStore, User, VirtualFileSystem } from "@essayist/core";
+import type { User } from "@essayist/core";
 import { createDefine } from "fresh";
+import type { RunScoped } from "@/run.ts";
 
 export interface State {
-  config: ConfigStore;
   user: User;
-  vfs: VirtualFileSystem;
+  run: RunScoped;
   wsId: string;
   sessionId?: string;
 }

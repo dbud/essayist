@@ -1,20 +1,22 @@
-import { LastOwnerError, type Role } from "@essayist/core";
+import { LastOwnerError, type Role, Workspaces } from "@essayist/core";
 import { define } from "@/define.ts";
-import { workspaceStore } from "@/store.ts";
+import { runtime } from "@/store.ts";
 
 export const handler = {
   // Any member can list members.
   GET: define.handlers(async (ctx) => {
-    const members = await workspaceStore.getMembers(ctx.state.wsId);
+    const members = await runtime.runPromise(
+      Workspaces.use((store) => store.getMembers(ctx.state.wsId)),
+    );
     return Response.json(members);
   }),
 
   // Only owners can add/update members.
   POST: define.handlers(async (ctx) => {
-    const isOwner = await workspaceStore.hasAccess(
-      ctx.state.wsId,
-      ctx.state.user.id,
-      "owner",
+    const isOwner = await runtime.runPromise(
+      Workspaces.use((store) =>
+        store.hasAccess(ctx.state.wsId, ctx.state.user.id, "owner"),
+      ),
     );
     if (!isOwner) {
       return Response.json({ error: "Forbidden" }, { status: 403 });
@@ -33,16 +35,18 @@ export const handler = {
       );
     }
 
-    const user = await workspaceStore.getUser(userId);
+    const user = await runtime.runPromise(
+      Workspaces.use((store) => store.getUser(userId)),
+    );
     if (!user) {
       return Response.json({ error: "Unknown user" }, { status: 404 });
     }
 
     try {
-      const member = await workspaceStore.addMember(
-        ctx.state.wsId,
-        userId,
-        role,
+      const member = await runtime.runPromise(
+        Workspaces.use((store) =>
+          store.addMember(ctx.state.wsId, userId, role),
+        ),
       );
       return Response.json(member, { status: 201 });
     } catch (error) {

@@ -1,3 +1,4 @@
+import { Files } from "@essayist/core";
 import { define } from "@/define.ts";
 import {
   exportDocAsMarkdown,
@@ -8,7 +9,7 @@ import { getValidAccessToken } from "@/utils/googleToken.ts";
 
 // POST { docId, name? } -> exports the Google Doc as markdown and writes it
 // into the workspace VFS at `google-docs/<sanitized title>.md`. Sits under
-// [wsId]/_middleware.ts so ctx.state.vfs is already resolved and access-
+// [wsId]/_middleware.ts so ctx.state.run is already scoped and access-
 // checked.
 export const handler = {
   POST: define.handlers(async (ctx) => {
@@ -46,7 +47,9 @@ export const handler = {
     }
 
     const targetPath = `google-docs/${sanitizeDocTitle(body.name ?? "untitled")}`;
-    const result = await ctx.state.vfs.write(targetPath, markdown);
+    const result = await ctx.state.run(
+      Files.use((files) => files.write(targetPath, markdown)),
+    );
     return Response.json(
       { path: result.path, created: result.created },
       { status: result.created ? 201 : 200 },

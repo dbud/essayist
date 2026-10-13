@@ -1,15 +1,10 @@
-export type {
-  PostModelCallPayload,
-  SessionUsageTotals,
-} from "@/agent.ts";
-export { Agent } from "@/agent.ts";
 export {
   ConfigInvalidError,
   ConfigMissingError,
   resolveActiveReviewPass,
   resolveReviewPass,
 } from "@/config/resolve.ts";
-export { ConfigStore } from "@/config/store.ts";
+export { ReviewConfig } from "@/config/service.ts";
 export { extractVariables } from "@/config/template.ts";
 export type {
   Category,
@@ -27,82 +22,74 @@ export {
   ReviewPassSchema,
   ReviewUnitSchema,
 } from "@/config/types.ts";
-export { pluralize } from "@/format.ts";
-export { logger } from "@/logger.ts";
-export { measure, measureAsync } from "@/measure.ts";
-export { KvAdapter } from "@/persistence/kv_adapter.ts";
-export {
-  type BatchOptions,
-  ConcurrentModificationError,
-  type Entry,
-  InMemoryAdapter,
-  type Key,
-  type ListOptions,
-  type ListResult,
-  type PersistenceAdapter,
-  type ReadOptions as AdapterReadOptions,
-  type WriteOp,
-} from "@/persistence/mod.ts";
-export { isTransientError } from "@/retry_policy.ts";
-export { buildReviewGraph } from "@/reviews/adapter.ts";
-export { agentflowDefinition } from "@/reviews/agentflow.ts";
-export type { ReviewPhase, ReviewProgress } from "@/reviews/progress.ts";
-export { ReviewProgressTracker } from "@/reviews/progress.ts";
-export type { RunReviewPassOptions } from "@/reviews/runner.ts";
-export { runReviewPass } from "@/reviews/runner.ts";
-export { ReviewStore } from "@/reviews/store.ts";
-export type {
-  TraceEvent,
-  TraceNodeView,
-  TraceRecorder,
-  TraceStore,
-  TraceTotals,
-  TraceView,
-} from "@/reviews/trace/mod.ts";
-export { groupTraceNodes, TraceEventStore } from "@/reviews/trace/mod.ts";
-export type {
-  MarkAttempt,
-  ReviewRun,
-  ReviewRunStatus,
-} from "@/reviews/types.ts";
-export { summarizeFile } from "@/summarize.ts";
-export {
-  createGrepTool,
-  createListFilesTool,
-  createMarkTool,
-  createReadFileTool,
-  createWriteFileTool,
-} from "@/tools/index.ts";
-export type { MarkToolOptions } from "@/tools/mark.ts";
-export type {
-  ToolInfo,
-  ToolParameters,
-} from "@/tools/registry.ts";
-export { getToolInfos } from "@/tools/registry.ts";
-export { UserStateStore } from "@/user_state/store.ts";
-export { setMyers } from "@/vfs/diff.ts";
-export type { ResolveInput, ResolveOptions } from "@/vfs/marks_resolver.ts";
-export { resolveMarks } from "@/vfs/marks_resolver.ts";
-export type { VersionPin } from "@/vfs/pin.ts";
-export { PinnedVFS } from "@/vfs/pin.ts";
+export { setMyers } from "@/diff/diff.ts";
+export { Files } from "@/files/service.ts";
 export type {
   DiffResult,
   DraftSnapshot,
   FileEntry,
   FileSnapshot,
   FileVersion,
-  GrepOptions,
-  GrepResult,
+  ReadOptions,
+  WriteResult,
+} from "@/files/types.ts";
+export { pluralize } from "@/format.ts";
+export type { IdGenerator } from "@/ids.ts";
+export { Ids, nextId } from "@/ids.ts";
+export { jsonLogger, jsonLogLayer } from "@/log.ts";
+export type { ResolveInput, ResolveOptions } from "@/marks/resolver.ts";
+export { resolveMarks } from "@/marks/resolver.ts";
+export { Marks } from "@/marks/service.ts";
+export type {
   Mark,
   MarkOptions,
   MarkProvenance,
   MarkResult,
   MarkStatus,
-  ReadOptions,
-  WriteResult,
-} from "@/vfs/types.ts";
-export { VirtualFileSystem } from "@/vfs/vfs.ts";
-export { WorkspaceStore } from "@/workspace/store.ts";
+  MigrateMarksResult,
+} from "@/marks/types.ts";
+export type { ModelCallRecord } from "@/model/service.ts";
+export { ModelClient } from "@/model/service.ts";
+export {
+  ChunkedValues,
+  MissingChunksError,
+} from "@/persistence/chunked_values.ts";
+export {
+  type BatchOptions,
+  ConcurrentModificationError,
+  type Entry,
+  type Key,
+  type ListOptions,
+  type ListResult,
+  Persistence,
+  PersistenceError,
+  type ReadOptions as AdapterReadOptions,
+  type WriteOp,
+} from "@/persistence/mod.ts";
+export { buildReviewGraph } from "@/reviews/adapter.ts";
+export { agentflowDefinition } from "@/reviews/agentflow.ts";
+export type { ReviewPhase, ReviewProgress } from "@/reviews/progress.ts";
+export { ReviewProgressTracker } from "@/reviews/progress.ts";
+export type { RunReviewPassOptions } from "@/reviews/runner.ts";
+export { runReviewPass } from "@/reviews/runner.ts";
+export { ReviewRuns } from "@/reviews/service.ts";
+export type {
+  TraceEvent,
+  TraceNodeView,
+  TraceTotals,
+  TraceView,
+} from "@/reviews/trace/mod.ts";
+export { groupTraceNodes } from "@/reviews/trace/mod.ts";
+export { TraceEvents } from "@/reviews/trace/service.ts";
+export type {
+  MarkAttempt,
+  ReviewRun,
+  ReviewRunStatus,
+} from "@/reviews/types.ts";
+export { Search } from "@/search/service.ts";
+export type { GrepMatch, GrepOptions, GrepResult } from "@/search/types.ts";
+export { UserState } from "@/user_state/service.ts";
+export { Workspaces } from "@/workspace/service.ts";
 export {
   LastOwnerError,
   type Role,
@@ -115,3 +102,4 @@ export {
   type Workspace,
   type WorkspaceMember,
 } from "@/workspace/types.ts";
+export { WorkspaceId } from "@/workspace/WorkspaceId.ts";

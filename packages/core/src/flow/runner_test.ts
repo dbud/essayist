@@ -1,7 +1,11 @@
 import { assert, assertEquals, assertRejects } from "@std/assert";
+import { Effect } from "effect";
+import type { FlowRunOptions } from "./runner.ts";
 import { FlowRunner } from "./runner.ts";
 import type {
   FlowEvent,
+  FlowGraph,
+  FlowRunResult,
   FlowTypes,
   NodeRunners,
   SkippedNodeRun,
@@ -24,25 +28,29 @@ interface TestTypes extends FlowTypes {
 const runners: NodeRunners<TestTypes> = {
   source: {
     execute({ text }, { artifact }) {
-      return Promise.resolve([artifact("content", text)]);
+      return Effect.succeed([artifact("content", text)]);
     },
   },
   produce: {
     execute({ token }, { inputs, artifact, emit }) {
-      const content = inputs.one("content");
-      emit({ kind: "produced", content });
-      return Promise.resolve([artifact("token", token)]);
+      return Effect.gen(function* () {
+        const content = inputs.one("content");
+        yield* emit({ kind: "produced", content });
+        return [artifact("token", token)];
+      });
     },
   },
   boom: {
     execute() {
-      return Promise.reject(new Error("boom"));
+      return Effect.fail(new Error("boom"));
     },
   },
   sink: {
     execute(_, { inputs, artifact }) {
-      const tokens = inputs.of("token");
-      return Promise.resolve([artifact("content", tokens.join(","))]);
+      return Effect.sync(() => {
+        const tokens = inputs.of("token");
+        return [artifact("content", tokens.join(","))];
+      });
     },
   },
 };
@@ -51,18 +59,27 @@ const emitted: unknown[] = [];
 const emitRunners: NodeRunners<TestTypes> = {
   ...runners,
   produce: {
-    // Captures emit's return value, so a leak shows up as a non-void value.
+    // Captures emit's awaited value, so a leak shows up as a non-void value.
     execute(_, { emit }) {
-      emitted.push(emit({ kind: "produced", content: "leaked" }));
-      return Promise.resolve([]);
+      return Effect.gen(function* () {
+        emitted.push(yield* emit({ kind: "produced", content: "leaked" }));
+        return [];
+      });
     },
   },
 };
 
+const run = (
+  flow: FlowRunner<TestTypes>,
+  graph: FlowGraph<TestTypes>,
+  options?: FlowRunOptions<TestTypes>,
+): Promise<FlowRunResult<TestTypes>> =>
+  Effect.runPromise(flow.run(graph, options));
+
 Deno.test("FlowRunner -- emit returns undefined, so callers cannot leak a value", async () => {
   const flow = new FlowRunner<TestTypes>({ runners: emitRunners });
 
-  await flow.run({
+  await run(flow, {
     nodes: [
       { id: "s", kind: "source", dependsOn: [], payload: { text: "x" } },
       { id: "p", kind: "produce", dependsOn: ["s"], payload: { token: "t" } },
@@ -77,12 +94,10 @@ Deno.test("FlowRunner -- commits artifacts along a chain", async () => {
   const events: FlowEvent<TestTypes>[] = [];
   const flow = new FlowRunner<TestTypes>({
     runners,
-    onEvent: (event) => {
-      events.push(event);
-    },
+    onEvent: (event) => Effect.sync(() => events.push(event)),
   });
 
-  const result = await flow.run({
+  const result = await run(flow, {
     nodes: [
       { id: "a", kind: "source", dependsOn: [], payload: { text: "alpha" } },
       { id: "b", kind: "produce", dependsOn: ["a"], payload: { token: "tok" } },
@@ -117,14 +132,16 @@ Deno.test("FlowRunner -- unions same-type artifacts in dependsOn order", async (
       ...runners,
       sink: {
         execute(_, { inputs }) {
-          seen = inputs.of("token");
-          return Promise.resolve([]);
+          return Effect.sync(() => {
+            seen = inputs.of("token");
+            return [];
+          });
         },
       },
     },
   });
 
-  const result = await flow.run({
+  const result = await run(flow, {
     nodes: [
       { id: "a", kind: "source", dependsOn: [], payload: { text: "alpha" } },
       {
@@ -156,24 +173,24 @@ Deno.test("FlowRunner -- delivers a custom event while the node still runs", asy
     ...runners,
     produce: {
       execute(_, { emit }) {
-        emit({ kind: "produced", content: "early" });
-        return new Promise((resolve) =>
-          setTimeout(() => {
-            running = false;
-            resolve([]);
-          }, 20),
-        );
+        return Effect.gen(function* () {
+          yield* emit({ kind: "produced", content: "early" });
+          yield* Effect.sleep(20);
+          running = false;
+          return [];
+        });
       },
     },
   };
   const flow = new FlowRunner<TestTypes>({
     runners: slow,
-    onEvent: (event) => {
-      if (event.type === "custom") deliveredDuringRun = running;
-    },
+    onEvent: (event) =>
+      Effect.sync(() => {
+        if (event.type === "custom") deliveredDuringRun = running;
+      }),
   });
 
-  await flow.run({
+  await run(flow, {
     nodes: [
       { id: "p", kind: "produce", dependsOn: [], payload: { token: "t" } },
     ],
@@ -187,25 +204,28 @@ Deno.test("FlowRunner -- keeps custom events in emission order", async () => {
   const chatty: NodeRunners<TestTypes> = {
     ...runners,
     produce: {
-      async execute(_, { emit }) {
-        for (const content of ["one", "two", "three"]) {
-          emit({ kind: "produced", content });
-          await new Promise((resolve) => setTimeout(resolve, 1));
-        }
-        return [];
+      execute(_, { emit }) {
+        return Effect.gen(function* () {
+          for (const content of ["one", "two", "three"]) {
+            yield* emit({ kind: "produced", content });
+            yield* Effect.sleep(1);
+          }
+          return [];
+        });
       },
     },
   };
   const flow = new FlowRunner<TestTypes>({
     runners: chatty,
-    onEvent: (event) => {
-      if (event.type === "custom" && event.event.kind === "produced") {
-        seen.push(event.event.content);
-      }
-    },
+    onEvent: (event) =>
+      Effect.sync(() => {
+        if (event.type === "custom" && event.event.kind === "produced") {
+          seen.push(event.event.content);
+        }
+      }),
   });
 
-  await flow.run({
+  await run(flow, {
     nodes: [
       { id: "p", kind: "produce", dependsOn: [], payload: { token: "t" } },
     ],
@@ -222,19 +242,21 @@ Deno.test("FlowRunner -- emits a failing node's events too", async () => {
       ...runners,
       boom: {
         execute(_, { emit }) {
-          emit({ kind: "produced", content: "before the throw" });
-          return Promise.reject(new Error("boom")).finally(() => {
+          return Effect.gen(function* () {
+            yield* emit({ kind: "produced", content: "before the throw" });
             running = false;
+            return yield* Effect.fail(new Error("boom"));
           });
         },
       },
     },
-    onEvent: (event) => {
-      if (event.type === "custom") delivered = running;
-    },
+    onEvent: (event) =>
+      Effect.sync(() => {
+        if (event.type === "custom") delivered = running;
+      }),
   });
 
-  const result = await flow.run({
+  const result = await run(flow, {
     nodes: [{ id: "b", kind: "boom", dependsOn: [], payload: undefined }],
   });
 
@@ -242,12 +264,25 @@ Deno.test("FlowRunner -- emits a failing node's events too", async () => {
   assert(delivered);
 });
 
+Deno.test("FlowRunner -- a listener defect is dropped, not failed into the run", async () => {
+  const flow = new FlowRunner<TestTypes>({
+    runners,
+    onEvent: () => Effect.die(new Error("listener fault")),
+  });
+
+  const result = await run(flow, {
+    nodes: [{ id: "a", kind: "source", dependsOn: [], payload: { text: "x" } }],
+  });
+
+  assertEquals(result.status, "completed");
+});
+
 Deno.test("FlowRunner -- rejects broken graphs before running", async () => {
   const flow = new FlowRunner<TestTypes>({ runners });
 
   await assertRejects(
     () =>
-      flow.run({
+      run(flow, {
         nodes: [
           { id: "a", kind: "source", dependsOn: [], payload: { text: "x" } },
           { id: "a", kind: "produce", dependsOn: [], payload: { token: "t" } },
@@ -259,7 +294,7 @@ Deno.test("FlowRunner -- rejects broken graphs before running", async () => {
 
   await assertRejects(
     () =>
-      flow.run({
+      run(flow, {
         nodes: [
           { id: "a", kind: "source", dependsOn: [], payload: { text: "x" } },
           {
@@ -276,7 +311,7 @@ Deno.test("FlowRunner -- rejects broken graphs before running", async () => {
 
   await assertRejects(
     () =>
-      flow.run({
+      run(flow, {
         nodes: [
           {
             id: "a",
@@ -300,7 +335,7 @@ Deno.test("FlowRunner -- rejects broken graphs before running", async () => {
 Deno.test("FlowRunner -- skips nodes downstream of a failure", async () => {
   const flow = new FlowRunner<TestTypes>({ runners });
 
-  const result = await flow.run({
+  const result = await run(flow, {
     nodes: [
       { id: "a", kind: "source", dependsOn: [], payload: { text: "alpha" } },
       { id: "b", kind: "boom", dependsOn: ["a"] },
@@ -349,17 +384,16 @@ Deno.test("FlowRunner -- keeps independent branches running after a failure", as
     ...runners,
     produce: {
       execute({ token }, { artifact }) {
-        return new Promise((resolve) => {
-          setTimeout(() => {
-            resolve([artifact("token", token)]);
-          }, 5);
+        return Effect.gen(function* () {
+          yield* Effect.sleep(5);
+          return [artifact("token", token)];
         });
       },
     },
   };
   const flow = new FlowRunner<TestTypes>({ runners: delayed });
 
-  const result = await flow.run({
+  const result = await run(flow, {
     nodes: [
       { id: "a", kind: "source", dependsOn: [], payload: { text: "alpha" } },
       { id: "b", kind: "boom", dependsOn: ["a"] },
@@ -385,7 +419,7 @@ Deno.test("FlowRunner -- keeps independent branches running after a failure", as
 Deno.test("FlowRunner -- accumulates failures from concurrent nodes", async () => {
   const flow = new FlowRunner<TestTypes>({ runners });
 
-  const result = await flow.run({
+  const result = await run(flow, {
     nodes: [
       { id: "a", kind: "source", dependsOn: [], payload: { text: "alpha" } },
       { id: "b", kind: "boom", dependsOn: ["a"] },
@@ -406,11 +440,10 @@ Deno.test("FlowRunner -- respects maxConcurrency", async () => {
       execute({ token }, { artifact }) {
         active += 1;
         peak = Math.max(peak, active);
-        return new Promise((resolve) => {
-          setTimeout(() => {
-            active -= 1;
-            resolve([artifact("token", token)]);
-          }, 5);
+        return Effect.gen(function* () {
+          yield* Effect.sleep(5);
+          active -= 1;
+          return [artifact("token", token)];
         });
       },
     },
@@ -420,7 +453,7 @@ Deno.test("FlowRunner -- respects maxConcurrency", async () => {
     maxConcurrency: 1,
   });
 
-  const result = await flow.run({
+  const result = await run(flow, {
     nodes: [
       { id: "a", kind: "source", dependsOn: [], payload: { text: "alpha" } },
       { id: "p1", kind: "produce", dependsOn: ["a"], payload: { token: "t" } },
@@ -440,19 +473,18 @@ Deno.test("FlowRunner -- a resumed node does not re-run and seeds its artifacts"
     source: {
       execute(_, { artifact }) {
         ran = true;
-        return Promise.resolve([artifact("content", "fresh")]);
+        return Effect.succeed([artifact("content", "fresh")]);
       },
     },
   };
   const events: FlowEvent<TestTypes>[] = [];
   const flow = new FlowRunner<TestTypes>({
     runners: counting,
-    onEvent: (event) => {
-      events.push(event);
-    },
+    onEvent: (event) => Effect.sync(() => events.push(event)),
   });
 
-  const result = await flow.run(
+  const result = await run(
+    flow,
     {
       nodes: [
         { id: "a", kind: "source", dependsOn: [], payload: { text: "x" } },
@@ -481,14 +513,17 @@ Deno.test("FlowRunner -- a resumed node feeds its dependents", async () => {
       ...runners,
       sink: {
         execute(_, { inputs, artifact }) {
-          seen = inputs.of("token");
-          return Promise.resolve([artifact("content", "done")]);
+          return Effect.sync(() => {
+            seen = inputs.of("token");
+            return [artifact("content", "done")];
+          });
         },
       },
     },
   });
 
-  const result = await flow.run(
+  const result = await run(
+    flow,
     {
       nodes: [
         { id: "a", kind: "source", dependsOn: [], payload: { text: "x" } },
@@ -517,7 +552,8 @@ Deno.test("FlowRunner -- a resumed node feeds its dependents", async () => {
 Deno.test("FlowRunner -- a resumed node is not reported as skipped", async () => {
   const flow = new FlowRunner<TestTypes>({ runners });
 
-  const result = await flow.run(
+  const result = await run(
+    flow,
     {
       nodes: [
         { id: "a", kind: "source", dependsOn: [], payload: { text: "x" } },
@@ -541,7 +577,8 @@ Deno.test("FlowRunner -- a resumed node is not reported as skipped", async () =>
 Deno.test("FlowRunner -- ignores a completed entry the graph no longer has", async () => {
   const flow = new FlowRunner<TestTypes>({ runners });
 
-  const result = await flow.run(
+  const result = await run(
+    flow,
     {
       nodes: [
         { id: "a", kind: "source", dependsOn: [], payload: { text: "x" } },
@@ -570,7 +607,7 @@ Deno.test("FlowRunner -- ignores a completed entry the graph no longer has", asy
 
 Deno.test("FlowRunner -- completes an empty graph", async () => {
   const flow = new FlowRunner<TestTypes>({ runners });
-  const result = await flow.run({ nodes: [] });
+  const result = await run(flow, { nodes: [] });
 
   assertEquals(result.status, "completed");
   assertEquals(result.nodeRuns, []);
@@ -581,12 +618,10 @@ Deno.test("FlowRunner -- records what a completed node committed on node_end", a
   const events: FlowEvent<TestTypes>[] = [];
   const flow = new FlowRunner<TestTypes>({
     runners,
-    onEvent: (event) => {
-      events.push(event);
-    },
+    onEvent: (event) => Effect.sync(() => events.push(event)),
   });
 
-  await flow.run({
+  await run(flow, {
     nodes: [
       { id: "a", kind: "source", dependsOn: [], payload: { text: "alpha" } },
     ],
@@ -607,16 +642,14 @@ Deno.test("FlowRunner -- a node that produces nothing records an empty artifact 
       ...runners,
       sink: {
         execute() {
-          return Promise.resolve([]);
+          return Effect.succeed([]);
         },
       },
     },
-    onEvent: (event) => {
-      events.push(event);
-    },
+    onEvent: (event) => Effect.sync(() => events.push(event)),
   });
 
-  await flow.run({
+  await run(flow, {
     nodes: [{ id: "s", kind: "sink", dependsOn: [], payload: undefined }],
   });
 
@@ -631,12 +664,10 @@ Deno.test("FlowRunner -- a failed node records no artifacts", async () => {
   const events: FlowEvent<TestTypes>[] = [];
   const flow = new FlowRunner<TestTypes>({
     runners,
-    onEvent: (event) => {
-      events.push(event);
-    },
+    onEvent: (event) => Effect.sync(() => events.push(event)),
   });
 
-  await flow.run({
+  await run(flow, {
     nodes: [{ id: "b", kind: "boom", dependsOn: [], payload: undefined }],
   });
 

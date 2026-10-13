@@ -1,9 +1,7 @@
 import type { Category, ModelPool, Prompt, ReviewPass } from "@essayist/core";
-import { getToolInfos } from "@essayist/core";
 import { useSignal } from "@preact/signals";
 import type { ComponentChildren } from "preact";
-import { EntityCard, NewButton } from "@/components/ui/EntityCard.tsx";
-import { Field } from "@/components/ui/EntityRows.tsx";
+import { NewButton } from "@/components/ui/EntityCard.tsx";
 import Tabs, { type TabItem } from "@/components/ui/Tabs.tsx";
 import WaveBars from "@/components/ui/WaveBars.tsx";
 import { CategoriesExport } from "@/islands/admin/CategoriesExport.tsx";
@@ -18,7 +16,7 @@ import MarkSwatches from "@/islands/MarkSwatches.tsx";
 import { getAdminConfig } from "@/signals/admin.ts";
 import { persistentSignal } from "@/utils/persistentSignal.ts";
 
-type TabKey = "passes" | "graph" | "pools" | "prompts" | "categories" | "tools";
+type TabKey = "passes" | "graph" | "pools" | "prompts" | "categories";
 
 const TAB_ITEMS: TabItem<TabKey>[] = [
   { value: "passes", label: "Review passes" },
@@ -26,7 +24,6 @@ const TAB_ITEMS: TabItem<TabKey>[] = [
   { value: "pools", label: "Model pools" },
   { value: "prompts", label: "Prompts" },
   { value: "categories", label: "Categories" },
-  { value: "tools", label: "Tools" },
 ];
 
 const tab = persistentSignal<TabKey>("adminTab", "pools");
@@ -223,23 +220,6 @@ export default function AdminConfig() {
                 />
               ))
             )}
-          </div>
-        );
-        break;
-      case "tools":
-        body = (
-          <div class="flex flex-col gap-10">
-            {getToolInfos().map((tool) => (
-              <EntityCard key={tool.name} title={tool.name} actions={null}>
-                <Field label="description" value={tool.description} />
-                <Field label="instruction" value={tool.instruction} />
-                <div class="cell--data col-span-2 min-w-0">
-                  <pre class="whitespace-pre-wrap font-mono">
-                    {JSON.stringify(tool.parameters, null, 2)}
-                  </pre>
-                </div>
-              </EntityCard>
-            ))}
           </div>
         );
         break;

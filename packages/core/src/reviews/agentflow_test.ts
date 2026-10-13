@@ -48,7 +48,10 @@ global
 end`;
 
 Deno.test("agentflowDefinition -- an empty pass is just the source", () => {
-  const graph = buildReviewGraph(passFixture([]), "r");
+  const graph = buildReviewGraph(passFixture([]), "r", {
+    path: "essay.txt",
+    versionId: "v1",
+  });
 
   assertEquals(agentflowDefinition(graph), EMPTY_PASS);
 });
@@ -64,6 +67,7 @@ Deno.test("agentflowDefinition -- renders a pass with a mark unit", () => {
       unitFixture({ id: "synthesize", summary: true }),
     ]),
     "r",
+    { path: "essay.txt", versionId: "v1" },
   );
 
   assertEquals(

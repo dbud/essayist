@@ -1,3 +1,5 @@
+import { Schema } from "effect";
+
 /** A user identity. */
 export interface User {
   id: string;
@@ -45,19 +47,25 @@ export interface WorkspaceMember {
   createdAt: number;
 }
 
-/** Thrown when creating a user with an email that is already in use. */
-export class UserEmailTakenError extends Error {
-  constructor(public readonly email: string) {
-    super(`User with email ${email} already exists`);
+/** Creating a user with an email that is already in use. */
+export class UserEmailTakenError extends Schema.TaggedError<UserEmailTakenError>()(
+  "UserEmailTakenError",
+  { email: Schema.String },
+) {
+  override get message() {
+    return `User with email ${this.email} already exists`;
   }
 }
 
 /**
- * Thrown when an operation would leave a workspace with no owner
+ * An operation would leave a workspace with no owner
  * (removing or demoting the last owner).
  */
-export class LastOwnerError extends Error {
-  constructor(public readonly wsId: string) {
-    super(`Cannot remove the last owner of workspace ${wsId}`);
+export class LastOwnerError extends Schema.TaggedError<LastOwnerError>()(
+  "LastOwnerError",
+  { wsId: Schema.String },
+) {
+  override get message() {
+    return `Cannot remove the last owner of workspace ${this.wsId}`;
   }
 }

@@ -1,11 +1,15 @@
 import {
   ConfigInvalidError,
   ConfigMissingError,
+  Files,
+  ModelClient,
   runReviewPass,
+  WorkspaceId,
 } from "@essayist/core";
+import { Effect } from "effect";
 import { define } from "@/define.ts";
-import { reviewStore, traceStore } from "@/store.ts";
-import { ResolveAgentError, resolveAgent } from "@/utils/agent.ts";
+import { runtime } from "@/store.ts";
+import { ResolveReviewError, resolveReviewSetup } from "@/utils/review.ts";
 import { sseResponse } from "@/utils/sse.ts";
 
 export const handler = {
@@ -15,24 +19,28 @@ export const handler = {
       return Response.json({ error: "Missing 'path'" }, { status: 400 });
     }
 
-    const { config, vfs, wsId } = ctx.state;
+    const { wsId } = ctx.state;
     // Promote the pending draft first: the review reads the latest
     // checkpoint, so it covers the current content.
-    await vfs.promoteDraft(path);
+    await ctx.state.run(Files.use((files) => files.promoteDraft(path)));
     try {
-      const { agent, pass } = await resolveAgent(config);
+      const { apiKey, pass } = await resolveReviewSetup(runtime);
       return sseResponse(async (send) => {
         try {
-          const run = await runReviewPass({
-            agent,
-            vfs,
-            reviewStore,
-            traceStore,
-            pass,
-            wsId,
-            path,
-            onProgress: (progress) => send("progress", progress),
-          });
+          const run = await runtime.runPromise(
+            Effect.provide(
+              Effect.provideService(
+                runReviewPass({
+                  pass,
+                  path,
+                  onProgress: (progress) => send("progress", progress),
+                }),
+                WorkspaceId,
+                { wsId },
+              ),
+              ModelClient.layerOpenRouter(apiKey),
+            ),
+          );
           send("done", run);
         } catch (e) {
           send("error", {
@@ -42,7 +50,7 @@ export const handler = {
       });
     } catch (e) {
       if (
-        e instanceof ResolveAgentError ||
+        e instanceof ResolveReviewError ||
         e instanceof ConfigMissingError ||
         e instanceof ConfigInvalidError
       ) {

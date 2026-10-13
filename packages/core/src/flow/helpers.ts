@@ -1,3 +1,4 @@
+import { Effect } from "effect";
 import type {
   Artifact,
   Artifacts,
@@ -31,7 +32,7 @@ export function forward<
     execute: (payload, { inputs }) => {
       // The payload is trusted to be this kind's spec.
       const spec = payload as ForwardSpec<T>;
-      return Promise.resolve(picked(inputs, spec.types));
+      return Effect.succeed(picked(inputs, spec.types));
     },
   };
 }
@@ -47,9 +48,9 @@ export function passWhen<
       // The payload is trusted to be this kind's spec.
       const spec = payload as PassWhenSpec<T>;
       if (!spec.when(inputs)) {
-        return Promise.resolve([]);
+        return Effect.succeed([]);
       }
-      return Promise.resolve(picked(inputs, spec.types));
+      return Effect.succeed(picked(inputs, spec.types));
     },
   };
 }

@@ -1,5 +1,6 @@
 import { Command } from "@cliffy/command";
-import type { TraceEvent } from "@essayist/core";
+import { type TraceEvent, TraceEvents, WorkspaceId } from "@essayist/core";
+import { Effect } from "effect";
 import type { KvctlGlobals } from "@/globals.ts";
 import { withKv } from "@/kv.ts";
 import { pprint } from "@/utils/pprint.ts";
@@ -13,9 +14,18 @@ export const trace = new Command<KvctlGlobals>()
   .description("Print a run's trace, one JSON event per document.")
   .arguments("<wsId:string> <runId:string>")
   .option("--summary", "Print one line per event instead of full JSON.")
-  .action(({ target, local, summary }, wsId: string, runId: string) =>
-    withKv({ target, local }, async ({ traceStore }) => {
-      const events = await traceStore.get({ wsId, runId });
+  .action(({ local, summary }, wsId: string, runId: string) =>
+    withKv({ local }, async ({ runtime }) => {
+      const events = await runtime.runPromise(
+        Effect.provideService(
+          Effect.gen(function* () {
+            const traces = yield* TraceEvents;
+            return yield* traces.get(runId);
+          }),
+          WorkspaceId,
+          { wsId },
+        ),
+      );
       if (!events) {
         console.error(`No trace for run ${runId} in workspace ${wsId}`);
         Deno.exit(1);
@@ -40,7 +50,7 @@ function summarise(event: TraceEvent): string {
     if (!inner) return "";
     switch (inner.type) {
       case "model_call":
-        return `${inner.call.model} turn=${inner.call.turnType}`;
+        return `${inner.call.model} ${inner.call.durationMs}ms`;
       case "output":
         return `keys=${Object.keys((inner.output ?? {}) as object).join(",")}`;
       case "prompt":
