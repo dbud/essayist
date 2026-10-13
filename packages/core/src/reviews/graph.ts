@@ -48,7 +48,7 @@ export interface ReviewTypes extends FlowTypes {
   artifacts: {
     content: string;
     analysis: Analysis;
-    "mark.proposals": MarkProposal[];
+    "mark.proposals": readonly MarkProposal[];
     "mark.placed": MarkAttempt[];
     "mark.failed": MarkAttempt[];
     summary: string;

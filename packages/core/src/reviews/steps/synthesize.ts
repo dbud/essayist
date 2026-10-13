@@ -1,18 +1,18 @@
-import { Effect } from "effect";
-import { z } from "zod";
+import { Effect, Schema } from "effect";
 import type { NodeRunner } from "@/flow/types.ts";
 import type { ModelClient } from "@/model/service.ts";
 import { callStructured } from "@/reviews/call.ts";
 import type { ReviewTypes } from "@/reviews/graph.ts";
 import { composeCallInput } from "./input.ts";
 
-export const StepSummarySchema = z.object({
-  summary: z
-    .string()
-    .describe("Review summary for the writer, grounded in the provided marks."),
+export const StepSummarySchema = Schema.Struct({
+  summary: Schema.String.annotate({
+    description:
+      "Review summary for the writer, grounded in the provided marks.",
+  }),
 });
 
-export type StepSummary = z.infer<typeof StepSummarySchema>;
+export type StepSummary = Schema.Schema.Type<typeof StepSummarySchema>;
 
 export const synthesizeRunner: NodeRunner<
   ReviewTypes,

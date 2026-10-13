@@ -70,7 +70,7 @@ function renderSummary(data: string): string {
   return joinBlocks(section("Summary"), data);
 }
 
-function renderProposedMarks(data: MarkProposal[]): string {
+function renderProposedMarks(data: readonly MarkProposal[]): string {
   return renderAttemptList("Proposed marks", data);
 }
 

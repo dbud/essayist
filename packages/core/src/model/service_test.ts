@@ -7,9 +7,8 @@ import type {
 } from "@openrouter/agent";
 import { HooksManager } from "@openrouter/agent";
 import { assert, assertEquals } from "@std/assert";
-import { Duration, Effect, Fiber, Result } from "effect";
+import { Duration, Effect, Fiber, Result, Schema } from "effect";
 import { TestClock } from "effect/testing";
-import { z } from "zod";
 import { ModelCallError, ModelClient } from "./service.ts";
 import {
   type RetryFailure,
@@ -125,7 +124,7 @@ const provideWith = <A, E>(
   client: Transport,
 ): Effect.Effect<A, E> => Effect.provide(program, ModelClient.layerOf(client));
 
-function structured<T extends z.ZodObject<z.ZodRawShape>>(
+function structured<T extends Schema.ConstraintDecoder<unknown>>(
   schema: T,
   options?: StructuredCallOptions,
 ) {
@@ -159,7 +158,7 @@ Deno.test("ModelClient.callModelStructured -- parses the first reply", async () 
   ]);
 
   const result = await Effect.runPromise(
-    provideWith(structured(z.object({ ok: z.boolean() })), client),
+    provideWith(structured(Schema.Struct({ ok: Schema.Boolean })), client),
   );
 
   assertEquals(result.output, { ok: true });
@@ -175,7 +174,7 @@ Deno.test("ModelClient.callModelStructured -- an invalid reply triggers the re-a
   ]);
 
   const result = await Effect.runPromise(
-    provideWith(structured(z.object({ ok: z.boolean() })), client),
+    provideWith(structured(Schema.Struct({ ok: Schema.Boolean })), client),
   );
 
   assertEquals(inputs.length, 2);
@@ -193,7 +192,7 @@ Deno.test("ModelClient.callModelStructured -- a second parse failure fails typed
 
   const outcome = await Effect.runPromise(
     provideWith(
-      Effect.result(structured(z.object({ ok: z.boolean() }))),
+      Effect.result(structured(Schema.Struct({ ok: Schema.Boolean }))),
       client,
     ),
   );
@@ -217,7 +216,7 @@ Deno.test("ModelClient.callModelStructured -- a transient failure is re-issued o
   ]);
 
   const result = await Effect.runPromise(
-    runClock(structured(z.object({ ok: z.boolean() })), client, [
+    runClock(structured(Schema.Struct({ ok: Schema.Boolean })), client, [
       ROUND_RETRY_DELAY_MS,
     ]),
   );
@@ -240,7 +239,7 @@ Deno.test("ModelClient.callModelStructured -- a transient failure reports the re
 
   await Effect.runPromise(
     runClock(
-      structured(z.object({ ok: z.boolean() }), {
+      structured(Schema.Struct({ ok: Schema.Boolean }), {
         onRetry: (failure) => retries.push(failure),
       }),
       client,
@@ -267,7 +266,7 @@ Deno.test("ModelClient.callModelStructured -- a transient failure gives up after
     Effect.gen(function* () {
       const fiber = yield* Effect.forkChild(
         provideWith(
-          Effect.result(structured(z.object({ ok: z.boolean() }))),
+          Effect.result(structured(Schema.Struct({ ok: Schema.Boolean }))),
           client,
         ),
       );
@@ -307,7 +306,7 @@ Deno.test("ModelClient.callModelStructured -- a deterministic failure is not ret
 
   await Effect.runPromise(
     provideWith(
-      Effect.result(structured(z.object({ ok: z.boolean() }))),
+      Effect.result(structured(Schema.Struct({ ok: Schema.Boolean }))),
       client,
     ),
   );
@@ -323,7 +322,7 @@ Deno.test("ModelClient.callModelStructured -- a re-ask that fails transiently is
   ]);
 
   const result = await Effect.runPromise(
-    runClock(structured(z.object({ ok: z.boolean() })), client, [
+    runClock(structured(Schema.Struct({ ok: Schema.Boolean })), client, [
       ROUND_RETRY_DELAY_MS,
     ]),
   );

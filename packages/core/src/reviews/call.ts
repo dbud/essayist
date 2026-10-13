@@ -1,5 +1,4 @@
-import { Effect } from "effect";
-import type { z } from "zod";
+import { Effect, type Schema } from "effect";
 import { type ModelCallError, ModelClient } from "@/model/service.ts";
 import type {
   PostModelCallPayload,
@@ -17,7 +16,9 @@ export type CallEvent =
   | { type: "model_call"; call: PostModelCallPayload };
 
 /** Options for {@linkcode callStructured}. */
-export interface CallStructuredOptions<T extends z.ZodObject<z.ZodRawShape>> {
+export interface CallStructuredOptions<
+  T extends Schema.ConstraintDecoder<unknown>,
+> {
   /** Delivers the prompt before the call, then the result events. */
   onEvent: (event: CallEvent) => void;
   input: string;
@@ -29,10 +30,10 @@ export interface CallStructuredOptions<T extends z.ZodObject<z.ZodRawShape>> {
 /** Call the model for a structured output, delivering a prompt as each call
  * happens, a model_call per call, the repairs between them, then the
  * reasoning and output. */
-export function callStructured<T extends z.ZodObject<z.ZodRawShape>>(
+export function callStructured<T extends Schema.ConstraintDecoder<unknown>>(
   options: CallStructuredOptions<T>,
 ): Effect.Effect<
-  StructuredCall<z.output<T>>,
+  StructuredCall<T["Type"]>,
   StructuredParseError | ModelCallError,
   ModelClient
 > {

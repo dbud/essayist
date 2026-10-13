@@ -1,6 +1,5 @@
 import { partition } from "@std/collections";
-import { Effect } from "effect";
-import { z } from "zod";
+import { Effect, Schema } from "effect";
 import type { NodeRunner } from "@/flow/types.ts";
 import { Marks } from "@/marks/service.ts";
 import type { MarkProvenance } from "@/marks/types.ts";
@@ -15,39 +14,39 @@ import type { MarkAttempt } from "@/reviews/types.ts";
 import type { WorkspaceId } from "@/workspace/WorkspaceId.ts";
 import { composeCallInput, composeRepairInput } from "./input.ts";
 
-export const MarkProposalSchema = z.object({
-  selected_text: z
-    .string()
-    .describe(
+export const MarkProposalSchema = Schema.Struct({
+  selected_text: Schema.String.annotate({
+    description:
       "The exact text span to mark, copied verbatim from the source text.",
-    )
-    .meta({
-      example: "the second sentence of paragraph three, exactly as written",
+    examples: ["the second sentence of paragraph three, exactly as written"],
+  }),
+  comment: Schema.String.annotate({
+    description: "Concise, actionable comment attached to the mark.",
+    examples: ["This restates the thesis instead of advancing it."],
+  }),
+  label: Schema.String.annotate({
+    description: "Which aspect this mark is about. Use the allowed labels.",
+  }),
+  line_hint: Schema.optionalKey(
+    Schema.Int.annotate({
+      description:
+        "Line number of the span, when the text appears more than once.",
     }),
-  comment: z
-    .string()
-    .describe("Concise, actionable comment attached to the mark.")
-    .meta({ example: "This restates the thesis instead of advancing it." }),
-  label: z
-    .string()
-    .describe("Which aspect this mark is about. Use the allowed labels."),
-  line_hint: z
-    .number()
-    .int()
-    .optional()
-    .describe("Line number of the span, when the text appears more than once."),
+  ),
 });
 
-export type MarkProposal = z.infer<typeof MarkProposalSchema>;
+export type MarkProposal = Schema.Schema.Type<typeof MarkProposalSchema>;
 
-export const ProposedMarksSchema = z.object({
-  marks: MarkProposalSchema.array().meta({
-    example: [
-      {
-        selected_text: "the exact span from the essay",
-        comment: "what is wrong with it",
-        label: "grammar",
-      },
+export const ProposedMarksSchema = Schema.Struct({
+  marks: Schema.Array(MarkProposalSchema).annotate({
+    examples: [
+      [
+        {
+          selected_text: "the exact span from the essay",
+          comment: "what is wrong with it",
+          label: "grammar",
+        },
+      ],
     ],
   }),
 });

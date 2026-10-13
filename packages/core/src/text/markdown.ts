@@ -28,7 +28,7 @@ export function section(header: string): string {
 }
 
 /** Bulleted items on separate lines. */
-export function bulletList(items: string[]): string {
+export function bulletList(items: readonly string[]): string {
   return items.map((item) => `- ${item}`).join("\n");
 }
 
@@ -40,7 +40,7 @@ export interface ListOptions {
 /** A `##`-headered list of items, or undefined when empty. */
 export function listOf(
   header: string,
-  items: string[],
+  items: readonly string[],
   options?: ListOptions,
 ): string | undefined {
   return items.length > 0
@@ -48,7 +48,7 @@ export function listOf(
     : undefined;
 }
 
-function renderItems(items: string[], options?: ListOptions): string {
+function renderItems(items: readonly string[], options?: ListOptions): string {
   return options?.numbered
     ? items.map((item, i) => `${i + 1}. ${item}`).join("\n")
     : bulletList(items);

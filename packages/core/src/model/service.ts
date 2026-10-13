@@ -17,7 +17,6 @@ import type {
 import { HooksManager, OpenRouter } from "@openrouter/agent";
 import { mapNotNullish } from "@std/collections";
 import { Context, Effect, Layer, Result, Schema } from "effect";
-import type { z } from "zod";
 import { generateInstructions, stripMarkdownFences } from "@/schema.ts";
 import { joinBlocks } from "@/text/markdown.ts";
 import { isTransientError } from "./retry_policy.ts";
@@ -48,13 +47,13 @@ export interface Interface {
    * reasoning captured from the response stream. Invalid output triggers
    * one re-ask; a second failure fails with {@linkcode StructuredParseError}.
    */
-  callModelStructured<T extends z.ZodObject<z.ZodRawShape>>(
+  callModelStructured<T extends Schema.ConstraintDecoder<unknown>>(
     input: string,
     schema: T,
     models: string[],
     options?: StructuredCallOptions,
   ): Effect.Effect<
-    StructuredCall<z.output<T>>,
+    StructuredCall<T["Type"]>,
     StructuredParseError | ModelCallError
   >;
 }
@@ -78,13 +77,13 @@ export class ModelClient extends Context.Service<ModelClient, Interface>()(
 const MAX_ROUND_ATTEMPTS = 3;
 
 function buildImpl(transport: Transport) {
-  const callModelStructured = <T extends z.ZodObject<z.ZodRawShape>>(
+  const callModelStructured = <T extends Schema.ConstraintDecoder<unknown>>(
     input: string,
     schema: T,
     models: string[],
     options?: StructuredCallOptions,
   ): Effect.Effect<
-    StructuredCall<z.output<T>>,
+    StructuredCall<T["Type"]>,
     StructuredParseError | ModelCallError
   > =>
     Effect.gen(function* () {
@@ -112,14 +111,7 @@ function buildImpl(transport: Transport) {
         options?.onRetry,
       );
 
-      const firstParse = yield* Effect.result(
-        Effect.try({
-          try: () => parseStructured(first.text, schema),
-          // The parse failure feeds the repair re-ask and the parse error, so
-          // the original message must survive the Effect boundary.
-          catch: (cause) => cause,
-        }),
-      );
+      const firstParse = parseStructured(first.text, schema);
       if (Result.isSuccess(firstParse)) {
         return {
           output: firstParse.success,
@@ -140,12 +132,7 @@ function buildImpl(transport: Transport) {
         hooks,
         options?.onRetry,
       );
-      const retryParse = yield* Effect.result(
-        Effect.try({
-          try: () => parseStructured(retry.text, schema),
-          catch: (cause) => cause,
-        }),
-      );
+      const retryParse = parseStructured(retry.text, schema);
       if (Result.isFailure(retryParse)) {
         const retryMessage = describeError(retryParse.failure);
         options?.onRepair?.({ raw: retry.text, error: retryMessage });
@@ -261,11 +248,19 @@ function describeError(value: unknown): string {
   return value instanceof Error ? value.message : String(value);
 }
 
-function parseStructured<T extends z.ZodObject<z.ZodRawShape>>(
+function parseStructured<T extends Schema.ConstraintDecoder<unknown>>(
   text: string,
   schema: T,
-): z.output<T> {
-  return schema.parse(JSON.parse(stripMarkdownFences(text)));
+): Result.Result<T["Type"], Error> {
+  let json: unknown;
+  try {
+    json = JSON.parse(stripMarkdownFences(text));
+  } catch (cause) {
+    return Result.fail(
+      cause instanceof Error ? cause : new Error(String(cause)),
+    );
+  }
+  return Schema.decodeUnknownResult(schema)(json);
 }
 
 function repairInput(fullInput: string, raw: string, error: string): string {
