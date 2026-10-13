@@ -67,11 +67,13 @@
     "npm:@biomejs/biome@^2.5.14": "2.5.15",
     "npm:@effect/ai-openrouter@*": "4.0.3_effect@4.0.3",
     "npm:@effect/ai-openrouter@^4.0.3": "4.0.3_effect@4.0.3",
+    "npm:@effect/ai-openrouter@~4.0.3": "4.0.3_effect@4.0.3",
     "npm:@fontsource-variable/atkinson-hyperlegible-next@^5.3.0": "5.3.0",
     "npm:@fontsource-variable/recursive@^5.3.0": "5.3.0",
     "npm:@fontsource-variable/special-gothic@^5.3.0": "5.3.0",
     "npm:@fontsource-variable/vollkorn@^5.3.0": "5.3.0",
     "npm:@fontsource/ibm-plex-serif@^5.3.0": "5.3.0",
+    "npm:@jsr/std__collections@^1.4.0": "1.4.0",
     "npm:@lexical/clipboard@0.52": "0.52.0",
     "npm:@lexical/code@0.52": "0.52.0",
     "npm:@lexical/extension@0.52": "0.52.0",
@@ -104,6 +106,7 @@
     "npm:dompurify@^3.4.16": "3.4.16",
     "npm:effect@*": "4.0.3",
     "npm:effect@^4.0.3": "4.0.3",
+    "npm:effect@~4.0.3": "4.0.3",
     "npm:esbuild-wasm@~0.25.11": "0.25.12",
     "npm:esbuild@0.25.7": "0.25.7",
     "npm:esbuild@~0.25.5": "0.25.12",
@@ -986,6 +989,10 @@
         "@jridgewell/resolve-uri",
         "@jridgewell/sourcemap-codec"
       ]
+    },
+    "@jsr/std__collections@1.4.0": {
+      "integrity": "sha512-Px3STXCAB/zjWh2xpV0C1vyTVlJe8IVmzktBP+9WZFAJ6ihE9jG4mz0+stRdFC8ksf5bHP2b/dc2qADD9jJTKg==",
+      "tarball": "https://npm.jsr.io/~/11/@jsr/std__collections/1.4.0.tgz"
     },
     "@lexical/a11y@0.52.0": {
       "integrity": "sha512-FxcKnksrgeoPDxQgwHqTz81Tbv7vZnP2i09m7uU+zusNRt4g1dgbwSEq4Uee9yfLJ9qxM5P9YOGQTe0A6lAuAg==",
@@ -2844,7 +2851,14 @@
         "dependencies": [
           "npm:@effect/ai-openrouter@^4.0.3",
           "npm:effect@^4.0.3"
-        ]
+        ],
+        "packageJson": {
+          "dependencies": [
+            "npm:@effect/ai-openrouter@~4.0.3",
+            "npm:@jsr/std__collections@^1.4.0",
+            "npm:effect@~4.0.3"
+          ]
+        }
       },
       "packages/kvctl": {
         "dependencies": [

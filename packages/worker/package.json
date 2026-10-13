@@ -1,0 +1,28 @@
+{
+  "dependencies": {
+    "@effect/ai-openrouter": "~4.0.3",
+    "@essayist/core": "file:../core",
+    "@std/collections": "npm:@jsr/std__collections@^1.4.0",
+    "effect": "~4.0.3",
+    "hono": "^4.13.13"
+  },
+  "devDependencies": {
+    "@cloudflare/vite-plugin": "^1.63.2",
+    "@cloudflare/workers-types": "^5.20261013.1",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.4",
+    "wrangler": "^4.150.0"
+  },
+  "name": "@essayist/worker",
+  "private": true,
+  "scripts": {
+    "build": "vite build",
+    "check": "tsc --noEmit",
+    "deploy": "vite build && wrangler deploy",
+    "dev": "vite dev",
+    "preview": "vite preview",
+    "typegen": "wrangler types"
+  },
+  "type": "module",
+  "version": "0.0.0"
+}

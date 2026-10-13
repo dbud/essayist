@@ -1,0 +1,14 @@
+{
+  "dependencies": {
+    "@effect/ai-openrouter": "~4.0.3",
+    "@std/collections": "npm:@jsr/std__collections@^1.4.0",
+    "effect": "~4.0.3"
+  },
+  "exports": {
+    ".": "./mod.ts"
+  },
+  "name": "@essayist/core",
+  "private": true,
+  "type": "module",
+  "version": "0.1.0"
+}

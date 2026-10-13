@@ -1,0 +1,42 @@
+lockfileVersion: '9.0'
+
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
+
+importers:
+
+  .:
+    dependencies:
+      '@effect/ai-openrouter':
+        specifier: ~4.0.3
+        version: 4.0.3(effect@4.0.3)
+      '@std/collections':
+        specifier: npm:@jsr/std__collections@^1.4.0
+        version: '@jsr/std__collections@1.4.0'
+      effect:
+        specifier: ~4.0.3
+        version: 4.0.3
+
+packages:
+
+  '@effect/ai-openrouter@4.0.3':
+    resolution: {integrity: sha512-P7yP8iAAVrVSnpIxjOWlfKwA2b9PX+Vy7pbGYJz0tDQiW0MZXJKLIvDMyOKcG9kGt0wDpH6ACNVQL43oAQgKRQ==}
+    peerDependencies:
+      effect: ^4.0.3
+
+  '@jsr/std__collections@1.4.0':
+    resolution: {integrity: sha512-Px3STXCAB/zjWh2xpV0C1vyTVlJe8IVmzktBP+9WZFAJ6ihE9jG4mz0+stRdFC8ksf5bHP2b/dc2qADD9jJTKg==, tarball: https://npm.jsr.io/~/11/@jsr/std__collections/1.4.0.tgz}
+
+  effect@4.0.3:
+    resolution: {integrity: sha512-LoWn/Uwwx0JjHSDmBAAahx8sB+klzM6vsZovnbYowBNw6B4QScJLRLBByO61plvNiycx7HPN8FnsWUCu0eXW5w==}
+
+snapshots:
+
+  '@effect/ai-openrouter@4.0.3(effect@4.0.3)':
+    dependencies:
+      effect: 4.0.3
+
+  '@jsr/std__collections@1.4.0': {}
+
+  effect@4.0.3: {}

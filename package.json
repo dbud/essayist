@@ -1,0 +1,6 @@
+{
+  "name": "essayist",
+  "packageManager": "pnpm@12.11.2",
+  "private": true,
+  "version": "0.0.0"
+}
