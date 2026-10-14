@@ -24,7 +24,6 @@
   "lint": {
     "exclude": ["patches"]
   },
-  "nodeModulesDir": "auto",
   "tasks": {
     "check": "deno lint && deno check && deno run -A npm:@biomejs/biome check --error-on-warnings",
     "fmt": "deno run -A npm:@biomejs/biome check --write --error-on-warnings",

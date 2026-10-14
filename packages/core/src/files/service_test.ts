@@ -1,8 +1,10 @@
+import { openKv } from "@deno/kv";
 import { assert, assertEquals } from "@std/assert";
 import { assertObjectMatch } from "@std/assert/object-match";
 import { Effect, Layer } from "effect";
+import { test } from "vitest";
 import type { Mark } from "@/marks/types.ts";
-import { kvLayer } from "@/persistence/kv_layer.ts";
+import { kvLayerCompat } from "@/persistence/kv_layer_compat.ts";
 import {
   type ConcurrentModificationError,
   Persistence,
@@ -41,7 +43,7 @@ function largeContent(): string {
 
 // read
 
-Deno.test("Files.read -- full file (latest)", async () => {
+test("Files.read -- full file (latest)", async () => {
   await run(
     Effect.gen(function* () {
       const files = yield* Files;
@@ -55,7 +57,7 @@ Deno.test("Files.read -- full file (latest)", async () => {
   );
 });
 
-Deno.test("Files.read -- line range", async () => {
+test("Files.read -- line range", async () => {
   await run(
     Effect.gen(function* () {
       const files = yield* Files;
@@ -75,7 +77,7 @@ Deno.test("Files.read -- line range", async () => {
   );
 });
 
-Deno.test("Files.read -- numbered output", async () => {
+test("Files.read -- numbered output", async () => {
   await run(
     Effect.gen(function* () {
       const files = yield* Files;
@@ -93,7 +95,7 @@ Deno.test("Files.read -- numbered output", async () => {
   );
 });
 
-Deno.test("Files.read -- missing file returns empty", async () => {
+test("Files.read -- missing file returns empty", async () => {
   await run(
     Effect.gen(function* () {
       const files = yield* Files;
@@ -105,7 +107,7 @@ Deno.test("Files.read -- missing file returns empty", async () => {
   );
 });
 
-Deno.test("Files.read -- clamps line range", async () => {
+test("Files.read -- clamps line range", async () => {
   await run(
     Effect.gen(function* () {
       const files = yield* Files;
@@ -120,7 +122,7 @@ Deno.test("Files.read -- clamps line range", async () => {
   );
 });
 
-Deno.test("Files.read -- specific version", async () => {
+test("Files.read -- specific version", async () => {
   await run(
     Effect.gen(function* () {
       const files = yield* Files;
@@ -140,7 +142,7 @@ Deno.test("Files.read -- specific version", async () => {
   );
 });
 
-Deno.test("Files.read -- unknown version returns empty miss", async () => {
+test("Files.read -- unknown version returns empty miss", async () => {
   await run(
     Effect.gen(function* () {
       const files = yield* Files;
@@ -155,7 +157,7 @@ Deno.test("Files.read -- unknown version returns empty miss", async () => {
 
 // list
 
-Deno.test("Files.list -- all files", async () => {
+test("Files.list -- all files", async () => {
   await run(
     Effect.gen(function* () {
       const files = yield* Files;
@@ -171,7 +173,7 @@ Deno.test("Files.list -- all files", async () => {
   );
 });
 
-Deno.test("Files.list -- with prefix", async () => {
+test("Files.list -- with prefix", async () => {
   await run(
     Effect.gen(function* () {
       const files = yield* Files;
@@ -186,7 +188,7 @@ Deno.test("Files.list -- with prefix", async () => {
   );
 });
 
-Deno.test("Files.list -- empty", async () => {
+test("Files.list -- empty", async () => {
   await run(
     Effect.gen(function* () {
       const files = yield* Files;
@@ -197,7 +199,7 @@ Deno.test("Files.list -- empty", async () => {
 
 // history
 
-Deno.test("Files.getHistory -- includes all versions including latest", async () => {
+test("Files.getHistory -- includes all versions including latest", async () => {
   await run(
     Effect.gen(function* () {
       const files = yield* Files;
@@ -209,7 +211,7 @@ Deno.test("Files.getHistory -- includes all versions including latest", async ()
   );
 });
 
-Deno.test("Files.getHistory -- versions are sorted by timestamp", async () => {
+test("Files.getHistory -- versions are sorted by timestamp", async () => {
   await run(
     Effect.gen(function* () {
       const files = yield* Files;
@@ -226,7 +228,7 @@ Deno.test("Files.getHistory -- versions are sorted by timestamp", async () => {
   );
 });
 
-Deno.test("Files.getHistory -- includes line count per version", async () => {
+test("Files.getHistory -- includes line count per version", async () => {
   await run(
     Effect.gen(function* () {
       const files = yield* Files;
@@ -241,7 +243,7 @@ Deno.test("Files.getHistory -- includes line count per version", async () => {
 
 // drafts and revert
 
-Deno.test("Files.writeDraft -- stores and reads the draft without creating a version", async () => {
+test("Files.writeDraft -- stores and reads the draft without creating a version", async () => {
   await run(
     Effect.gen(function* () {
       const files = yield* Files;
@@ -257,7 +259,7 @@ Deno.test("Files.writeDraft -- stores and reads the draft without creating a ver
   );
 });
 
-Deno.test("Files.promoteDraft -- creates a version from the draft and clears it", async () => {
+test("Files.promoteDraft -- creates a version from the draft and clears it", async () => {
   await run(
     Effect.gen(function* () {
       const files = yield* Files;
@@ -273,7 +275,7 @@ Deno.test("Files.promoteDraft -- creates a version from the draft and clears it"
   );
 });
 
-Deno.test("Files.promoteDraft -- null when no draft exists", async () => {
+test("Files.promoteDraft -- null when no draft exists", async () => {
   await run(
     Effect.gen(function* () {
       const files = yield* Files;
@@ -283,7 +285,7 @@ Deno.test("Files.promoteDraft -- null when no draft exists", async () => {
   );
 });
 
-Deno.test("Files.write -- clears a pending draft", async () => {
+test("Files.write -- clears a pending draft", async () => {
   await run(
     Effect.gen(function* () {
       const files = yield* Files;
@@ -297,7 +299,7 @@ Deno.test("Files.write -- clears a pending draft", async () => {
   );
 });
 
-Deno.test("Files.writeDraft -- shrinks cleanly across chunk boundaries", async () => {
+test("Files.writeDraft -- shrinks cleanly across chunk boundaries", async () => {
   await run(
     Effect.gen(function* () {
       const files = yield* Files;
@@ -310,7 +312,7 @@ Deno.test("Files.writeDraft -- shrinks cleanly across chunk boundaries", async (
   );
 });
 
-Deno.test("Files.revert -- restores previous version as new version", async () => {
+test("Files.revert -- restores previous version as new version", async () => {
   await run(
     Effect.gen(function* () {
       const files = yield* Files;
@@ -324,7 +326,7 @@ Deno.test("Files.revert -- restores previous version as new version", async () =
   );
 });
 
-Deno.test("Files.revert -- creates a new version when reverting", async () => {
+test("Files.revert -- creates a new version when reverting", async () => {
   await run(
     Effect.gen(function* () {
       const files = yield* Files;
@@ -337,7 +339,7 @@ Deno.test("Files.revert -- creates a new version when reverting", async () => {
   );
 });
 
-Deno.test("Files.revert -- returns false for invalid version", async () => {
+test("Files.revert -- returns false for invalid version", async () => {
   await run(
     Effect.gen(function* () {
       const files = yield* Files;
@@ -349,7 +351,7 @@ Deno.test("Files.revert -- returns false for invalid version", async () => {
 
 // diff
 
-Deno.test("Files.diff -- between versions", async () => {
+test("Files.diff -- between versions", async () => {
   await run(
     Effect.gen(function* () {
       const files = yield* Files;
@@ -367,7 +369,7 @@ Deno.test("Files.diff -- between versions", async () => {
   );
 });
 
-Deno.test("Files.diff -- identical content produces empty diff", async () => {
+test("Files.diff -- identical content produces empty diff", async () => {
   await run(
     Effect.gen(function* () {
       const files = yield* Files;
@@ -388,7 +390,7 @@ Deno.test("Files.diff -- identical content produces empty diff", async () => {
   );
 });
 
-Deno.test("Files -- large document roundtrips", async () => {
+test("Files -- large document roundtrips", async () => {
   const content = largeContent();
   assert(content.length > 60 * 1024, "fixture should exceed one chunk");
   await run(
@@ -442,7 +444,7 @@ function createMark(
   };
 }
 
-Deno.test("Files.getMarks -- returns empty when no marks", async () => {
+test("Files.getMarks -- returns empty when no marks", async () => {
   await run(
     Effect.gen(function* () {
       const files = yield* Files;
@@ -452,7 +454,7 @@ Deno.test("Files.getMarks -- returns empty when no marks", async () => {
   );
 });
 
-Deno.test("Files.getMarks -- returns all marks for a version in save order", async () => {
+test("Files.getMarks -- returns all marks for a version in save order", async () => {
   await run(
     Effect.gen(function* () {
       const files = yield* Files;
@@ -472,7 +474,7 @@ Deno.test("Files.getMarks -- returns all marks for a version in save order", asy
   );
 });
 
-Deno.test("Files.deleteMark -- removes a mark", async () => {
+test("Files.deleteMark -- removes a mark", async () => {
   await run(
     Effect.gen(function* () {
       const files = yield* Files;
@@ -486,7 +488,7 @@ Deno.test("Files.deleteMark -- removes a mark", async () => {
   );
 });
 
-Deno.test("Files.deleteMark -- returns false for nonexistent mark", async () => {
+test("Files.deleteMark -- returns false for nonexistent mark", async () => {
   await run(
     Effect.gen(function* () {
       const files = yield* Files;
@@ -496,7 +498,7 @@ Deno.test("Files.deleteMark -- returns false for nonexistent mark", async () => 
   );
 });
 
-Deno.test("Files -- marks are isolated per workspace scope", async () => {
+test("Files -- marks are isolated per workspace scope", async () => {
   await run(
     Effect.gen(function* () {
       const files = yield* Files;
@@ -552,7 +554,7 @@ Deno.test("Files -- marks are isolated per workspace scope", async () => {
   );
 });
 
-Deno.test("Files.write -- migrates marks to the new version when text unchanged", async () => {
+test("Files.write -- migrates marks to the new version when text unchanged", async () => {
   await run(
     Effect.gen(function* () {
       const files = yield* Files;
@@ -574,7 +576,7 @@ Deno.test("Files.write -- migrates marks to the new version when text unchanged"
   );
 });
 
-Deno.test("Files.write -- migrates marks with shifted offset", async () => {
+test("Files.write -- migrates marks with shifted offset", async () => {
   await run(
     Effect.gen(function* () {
       const files = yield* Files;
@@ -592,7 +594,7 @@ Deno.test("Files.write -- migrates marks with shifted offset", async () => {
   );
 });
 
-Deno.test("Files.write -- marks become stale when text is deleted", async () => {
+test("Files.write -- marks become stale when text is deleted", async () => {
   await run(
     Effect.gen(function* () {
       const files = yield* Files;
@@ -609,7 +611,7 @@ Deno.test("Files.write -- marks become stale when text is deleted", async () => 
   );
 });
 
-Deno.test("Files.write -- stale marks survive subsequent writes", async () => {
+test("Files.write -- stale marks survive subsequent writes", async () => {
   await run(
     Effect.gen(function* () {
       const files = yield* Files;
@@ -628,7 +630,7 @@ Deno.test("Files.write -- stale marks survive subsequent writes", async () => {
   );
 });
 
-Deno.test("Files.revert -- migrates marks through write", async () => {
+test("Files.revert -- migrates marks through write", async () => {
   await run(
     Effect.gen(function* () {
       const files = yield* Files;
@@ -657,7 +659,7 @@ Deno.test("Files.revert -- migrates marks through write", async () => {
   );
 });
 
-Deno.test("Files.migrateMarks -- re-anchors marks added to an old version", async () => {
+test("Files.migrateMarks -- re-anchors marks added to an old version", async () => {
   await run(
     Effect.gen(function* () {
       const files = yield* Files;
@@ -686,7 +688,7 @@ Deno.test("Files.migrateMarks -- re-anchors marks added to an old version", asyn
   );
 });
 
-Deno.test("Files.migrateMarks -- skips marks already on the latest", async () => {
+test("Files.migrateMarks -- skips marks already on the latest", async () => {
   await run(
     Effect.gen(function* () {
       const files = yield* Files;
@@ -705,7 +707,7 @@ Deno.test("Files.migrateMarks -- skips marks already on the latest", async () =>
   );
 });
 
-Deno.test("Files.migrateMarks -- no-op when source version is latest", async () => {
+test("Files.migrateMarks -- no-op when source version is latest", async () => {
   await run(
     Effect.gen(function* () {
       const files = yield* Files;
@@ -721,7 +723,7 @@ Deno.test("Files.migrateMarks -- no-op when source version is latest", async () 
   );
 });
 
-Deno.test("Files.migrateMarks -- resolves shifted text", async () => {
+test("Files.migrateMarks -- resolves shifted text", async () => {
   await run(
     Effect.gen(function* () {
       const files = yield* Files;
@@ -745,7 +747,7 @@ Deno.test("Files.migrateMarks -- resolves shifted text", async () => {
   );
 });
 
-Deno.test("Files.migrateMarks -- marks go stale when text is gone", async () => {
+test("Files.migrateMarks -- marks go stale when text is gone", async () => {
   await run(
     Effect.gen(function* () {
       const files = yield* Files;
@@ -764,7 +766,7 @@ Deno.test("Files.migrateMarks -- marks go stale when text is gone", async () => 
   );
 });
 
-Deno.test("Files.migrateMarks -- returns zeros for unknown version", async () => {
+test("Files.migrateMarks -- returns zeros for unknown version", async () => {
   await run(
     Effect.gen(function* () {
       const files = yield* Files;
@@ -778,12 +780,12 @@ Deno.test("Files.migrateMarks -- returns zeros for unknown version", async () =>
 
 // storage layout: chunk 0 inlines in the manifest; the rest get chunk keys
 
-Deno.test("Files -- small file inlines content in the latest key (no chunk keys)", async () => {
-  const kv = await Deno.openKv(":memory:");
+test("Files -- small file inlines content in the latest key (no chunk keys)", async () => {
+  const kv = await openKv();
   try {
     const env = Layer.merge(
-      kvLayer(kv),
-      Layer.provide(Files.layerNoDeps, kvLayer(kv)),
+      kvLayerCompat(kv),
+      Layer.provide(Files.layerNoDeps, kvLayerCompat(kv)),
     );
     const { entries } = await Effect.runPromise(
       Effect.provide(
@@ -813,13 +815,13 @@ Deno.test("Files -- small file inlines content in the latest key (no chunk keys)
   }
 });
 
-Deno.test("Files -- large write inlines first chunk, rest as chunk keys", async () => {
+test("Files -- large write inlines first chunk, rest as chunk keys", async () => {
   const content = largeContent();
-  const kv = await Deno.openKv(":memory:");
+  const kv = await openKv();
   try {
     const env = Layer.merge(
-      kvLayer(kv),
-      Layer.provide(Files.layerNoDeps, kvLayer(kv)),
+      kvLayerCompat(kv),
+      Layer.provide(Files.layerNoDeps, kvLayerCompat(kv)),
     );
     const { entries } = await Effect.runPromise(
       Effect.provide(

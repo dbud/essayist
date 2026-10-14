@@ -1,0 +1,23 @@
+{
+  "compilerOptions": {
+    "allowImportingTsExtensions": true,
+    "forceConsistentCasingInFileNames": true,
+    "isolatedModules": true,
+    "lib": ["dom", "esnext", "esnext.iterator"],
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "noEmit": true,
+    "paths": {
+      "@/*": ["./src/*"]
+    },
+    "skipLibCheck": true,
+    "strict": true,
+    "target": "es2024"
+  },
+  "exclude": [
+    "src/diff/diff_wasm_glue.ts",
+    "src/diff/diff_wasm_test.ts",
+    "src/persistence/kv_layer.ts"
+  ],
+  "include": ["mod.ts", "src"]
+}

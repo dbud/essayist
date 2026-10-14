@@ -1,5 +1,6 @@
 import { assertEquals, assertObjectMatch } from "@std/assert";
 import { Effect, Layer } from "effect";
+import { test } from "vitest";
 import { Files } from "@/files/service.ts";
 import type {
   ConcurrentModificationError,
@@ -37,7 +38,7 @@ function createFile(path: string, content: string) {
 
 // mark
 
-Deno.test("Marks.mark -- places a mark on selected text", async () => {
+test("Marks.mark -- places a mark on selected text", async () => {
   await run(
     Effect.gen(function* () {
       yield* createFile(
@@ -59,7 +60,7 @@ Deno.test("Marks.mark -- places a mark on selected text", async () => {
   );
 });
 
-Deno.test("Marks.mark -- returns marked false when text not found", async () => {
+test("Marks.mark -- returns marked false when text not found", async () => {
   await run(
     Effect.gen(function* () {
       yield* createFile("f.txt", "hello world");
@@ -73,7 +74,7 @@ Deno.test("Marks.mark -- returns marked false when text not found", async () => 
   );
 });
 
-Deno.test("Marks.mark -- returns marked false for empty file", async () => {
+test("Marks.mark -- returns marked false for empty file", async () => {
   await run(
     Effect.gen(function* () {
       yield* createFile("f.txt", "");
@@ -86,7 +87,7 @@ Deno.test("Marks.mark -- returns marked false for empty file", async () => {
   );
 });
 
-Deno.test("Marks.mark -- returns marked false for missing file", async () => {
+test("Marks.mark -- returns marked false for missing file", async () => {
   await run(
     Effect.gen(function* () {
       const marks = yield* Marks;
@@ -98,7 +99,7 @@ Deno.test("Marks.mark -- returns marked false for missing file", async () => {
   );
 });
 
-Deno.test("Marks.mark -- uses lineHint to disambiguate duplicates", async () => {
+test("Marks.mark -- uses lineHint to disambiguate duplicates", async () => {
   await run(
     Effect.gen(function* () {
       const { files, versionId } = yield* createFile(
@@ -119,7 +120,7 @@ Deno.test("Marks.mark -- uses lineHint to disambiguate duplicates", async () => 
   );
 });
 
-Deno.test("Marks.mark -- lineHint 1 targets first line", async () => {
+test("Marks.mark -- lineHint 1 targets first line", async () => {
   await run(
     Effect.gen(function* () {
       const { files, versionId } = yield* createFile(
@@ -137,7 +138,7 @@ Deno.test("Marks.mark -- lineHint 1 targets first line", async () => {
   );
 });
 
-Deno.test("Marks.mark -- lineHint beyond last line clamps to end", async () => {
+test("Marks.mark -- lineHint beyond last line clamps to end", async () => {
   await run(
     Effect.gen(function* () {
       const { files, versionId } = yield* createFile("f.txt", "hello");
@@ -152,7 +153,7 @@ Deno.test("Marks.mark -- lineHint beyond last line clamps to end", async () => {
   );
 });
 
-Deno.test("Marks.mark -- lineHint with no newlines", async () => {
+test("Marks.mark -- lineHint with no newlines", async () => {
   await run(
     Effect.gen(function* () {
       const { files, versionId } = yield* createFile(
@@ -170,7 +171,7 @@ Deno.test("Marks.mark -- lineHint with no newlines", async () => {
   );
 });
 
-Deno.test("Marks.mark -- accepts explicit threadId", async () => {
+test("Marks.mark -- accepts explicit threadId", async () => {
   await run(
     Effect.gen(function* () {
       const { files, versionId } = yield* createFile("f.txt", "hello world");
@@ -187,7 +188,7 @@ Deno.test("Marks.mark -- accepts explicit threadId", async () => {
   );
 });
 
-Deno.test("Marks.mark -- captures context around selection", async () => {
+test("Marks.mark -- captures context around selection", async () => {
   // With no intervening word boundaries (a single long token run on each
   // side), the whole long word is included in full -- there is no cap, so a
   // pathological long token yields a large context.
@@ -209,7 +210,7 @@ Deno.test("Marks.mark -- captures context around selection", async () => {
   );
 });
 
-Deno.test("Marks.mark -- context snapped to word boundaries", async () => {
+test("Marks.mark -- context snapped to word boundaries", async () => {
   // Small contextSpan so snapping is observable: before_context starts at a
   // word start, after_context ends at a word end, instead of an arbitrary
   // char window. Trailing punctuation after a word is not included.
@@ -233,7 +234,7 @@ Deno.test("Marks.mark -- context snapped to word boundaries", async () => {
   );
 });
 
-Deno.test("Marks.mark -- context truncated at file boundaries", async () => {
+test("Marks.mark -- context truncated at file boundaries", async () => {
   await run(
     Effect.gen(function* () {
       const { files, versionId } = yield* createFile("f.txt", "hi world");
@@ -251,7 +252,7 @@ Deno.test("Marks.mark -- context truncated at file boundaries", async () => {
   );
 });
 
-Deno.test("Marks.mark -- uses custom contextSpan", async () => {
+test("Marks.mark -- uses custom contextSpan", async () => {
   // A larger span captures more words, confirming the option controls the
   // window (distinct from the contextSpan: 5 case above).
   await run(
@@ -274,7 +275,7 @@ Deno.test("Marks.mark -- uses custom contextSpan", async () => {
   );
 });
 
-Deno.test("Marks.mark -- stores label when provided", async () => {
+test("Marks.mark -- stores label when provided", async () => {
   await run(
     Effect.gen(function* () {
       const { files, versionId } = yield* createFile("f.txt", "hello world");
@@ -288,7 +289,7 @@ Deno.test("Marks.mark -- stores label when provided", async () => {
   );
 });
 
-Deno.test("Marks.mark -- stores provenance when provided", async () => {
+test("Marks.mark -- stores provenance when provided", async () => {
   await run(
     Effect.gen(function* () {
       const { files, versionId } = yield* createFile("f.txt", "hello world");
@@ -310,7 +311,7 @@ Deno.test("Marks.mark -- stores provenance when provided", async () => {
 
 // mark with versionId
 
-Deno.test("Marks.mark -- versionId marks the given version, not latest", async () => {
+test("Marks.mark -- versionId marks the given version, not latest", async () => {
   await run(
     Effect.gen(function* () {
       const { files, versionId: v1 } = yield* createFile(
@@ -336,7 +337,7 @@ Deno.test("Marks.mark -- versionId marks the given version, not latest", async (
   );
 });
 
-Deno.test("Marks.mark -- versionId resolves text against that version's content", async () => {
+test("Marks.mark -- versionId resolves text against that version's content", async () => {
   await run(
     Effect.gen(function* () {
       const { files, versionId: v1 } = yield* createFile(
@@ -362,7 +363,7 @@ Deno.test("Marks.mark -- versionId resolves text against that version's content"
   );
 });
 
-Deno.test("Marks.mark -- versionId uses lineHint against that version", async () => {
+test("Marks.mark -- versionId uses lineHint against that version", async () => {
   await run(
     Effect.gen(function* () {
       const { files, versionId: v1 } = yield* createFile(
@@ -390,7 +391,7 @@ Deno.test("Marks.mark -- versionId uses lineHint against that version", async ()
   );
 });
 
-Deno.test("Marks.mark -- versionId captures context from that version", async () => {
+test("Marks.mark -- versionId captures context from that version", async () => {
   await run(
     Effect.gen(function* () {
       const { files, versionId: v1 } = yield* createFile(
@@ -414,7 +415,7 @@ Deno.test("Marks.mark -- versionId captures context from that version", async ()
   );
 });
 
-Deno.test("Marks.mark -- returns marked false for unknown versionId", async () => {
+test("Marks.mark -- returns marked false for unknown versionId", async () => {
   await run(
     Effect.gen(function* () {
       yield* createFile("f.txt", "hello world");

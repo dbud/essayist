@@ -1,4 +1,5 @@
 import { assertEquals } from "@std/assert";
+import { test } from "vitest";
 import type { FlowEvent } from "@/flow/types.ts";
 import type { ReviewTypes } from "@/reviews/graph.ts";
 import { foldCompleted } from "./fold.ts";
@@ -9,7 +10,7 @@ function event(seq: number, flow: FlowEvent<ReviewTypes>): TraceEvent {
   return { seq, at: seq, ...flow };
 }
 
-Deno.test("foldCompleted -- reads completed nodes with what they committed", () => {
+test("foldCompleted -- reads completed nodes with what they committed", () => {
   const folded = foldCompleted([
     event(0, { type: "node_start", nodeId: "content" }),
     event(1, {
@@ -30,7 +31,7 @@ Deno.test("foldCompleted -- reads completed nodes with what they committed", () 
   ]);
 });
 
-Deno.test("foldCompleted -- treats a node that committed nothing as completed", () => {
+test("foldCompleted -- treats a node that committed nothing as completed", () => {
   const folded = foldCompleted([
     event(0, {
       type: "node_end",
@@ -49,7 +50,7 @@ Deno.test("foldCompleted -- treats a node that committed nothing as completed", 
   assertEquals(folded.get("repair"), []);
 });
 
-Deno.test("foldCompleted -- leaves out failed and skipped nodes", () => {
+test("foldCompleted -- leaves out failed and skipped nodes", () => {
   const folded = foldCompleted([
     event(0, {
       type: "node_end",
@@ -76,7 +77,7 @@ Deno.test("foldCompleted -- leaves out failed and skipped nodes", () => {
   assertEquals([...folded.keys()], []);
 });
 
-Deno.test("foldCompleted -- ignores custom events carrying artifact data", () => {
+test("foldCompleted -- ignores custom events carrying artifact data", () => {
   const folded = foldCompleted([
     event(0, {
       type: "custom",
@@ -88,7 +89,7 @@ Deno.test("foldCompleted -- ignores custom events carrying artifact data", () =>
   assertEquals([...folded.keys()], []);
 });
 
-Deno.test("foldCompleted -- a later node_end for a node wins", () => {
+test("foldCompleted -- a later node_end for a node wins", () => {
   const folded = foldCompleted([
     event(0, {
       type: "node_end",
@@ -119,6 +120,6 @@ Deno.test("foldCompleted -- a later node_end for a node wins", () => {
   ]);
 });
 
-Deno.test("foldCompleted -- reads an empty trace as nothing completed", () => {
+test("foldCompleted -- reads an empty trace as nothing completed", () => {
   assertEquals([...foldCompleted([]).keys()], []);
 });

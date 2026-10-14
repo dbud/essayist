@@ -1,5 +1,6 @@
 import { assertEquals } from "@std/assert";
 import { Effect, Layer } from "effect";
+import { test } from "vitest";
 import {
   ChunkedValues,
   type MissingChunksError,
@@ -30,7 +31,7 @@ const run = <A>(
     ),
   );
 
-Deno.test("TraceEvents -- get returns undefined for an unknown run", async () => {
+test("TraceEvents -- get returns undefined for an unknown run", async () => {
   await run(
     Effect.gen(function* () {
       const traces = yield* TraceEvents;
@@ -39,7 +40,7 @@ Deno.test("TraceEvents -- get returns undefined for an unknown run", async () =>
   );
 });
 
-Deno.test("TraceEvents -- get orders by seq, not by key", async () => {
+test("TraceEvents -- get orders by seq, not by key", async () => {
   await run(
     Effect.gen(function* () {
       const traces = yield* TraceEvents;
@@ -62,7 +63,7 @@ Deno.test("TraceEvents -- get orders by seq, not by key", async () => {
   );
 });
 
-Deno.test("TraceEvents -- traces are workspace-scoped", async () => {
+test("TraceEvents -- traces are workspace-scoped", async () => {
   await run(
     Effect.gen(function* () {
       const traces = yield* TraceEvents;
@@ -89,7 +90,7 @@ Deno.test("TraceEvents -- traces are workspace-scoped", async () => {
   );
 });
 
-Deno.test("TraceEvents -- an oversized event comes back whole", async () => {
+test("TraceEvents -- an oversized event comes back whole", async () => {
   await run(
     Effect.gen(function* () {
       const traces = yield* TraceEvents;
@@ -113,7 +114,7 @@ Deno.test("TraceEvents -- an oversized event comes back whole", async () => {
   );
 });
 
-Deno.test("TraceEvents -- escape-heavy content comes back whole", async () => {
+test("TraceEvents -- escape-heavy content comes back whole", async () => {
   // Newlines and quotes expand when serialized, so a chunk budget taken on
   // raw bytes would be too generous.
   await run(
@@ -139,7 +140,7 @@ Deno.test("TraceEvents -- escape-heavy content comes back whole", async () => {
   );
 });
 
-Deno.test("TraceEvents -- a value spanning many chunks reassembles", async () => {
+test("TraceEvents -- a value spanning many chunks reassembles", async () => {
   await run(
     Effect.gen(function* () {
       const traces = yield* TraceEvents;

@@ -1,14 +1,16 @@
 /**
- * A scenario battery for the Persistence service, run against the native KV
- * layer on an ephemeral store. Cursors are held opaquely (taken from a
- * previous page), so the scenarios describe production behavior.
+ * A scenario battery for the Persistence service, run against the
+ * in-memory KV backend of the npm `@deno/kv` client. Cursors are held
+ * opaquely (taken from a previous page), so the scenarios describe
+ * production behavior.
  */
 
 import { assertEquals, assertInstanceOf } from "@std/assert";
 import { Effect, Result } from "effect";
-import { layerKv } from "./kv_layer.ts";
+import { test } from "vitest";
 import { ConcurrentModificationError } from "./mod.ts";
 import { Persistence } from "./service.ts";
+import { layerKvCompat } from "./testing/kv.ts";
 
 type Scenario = () => Effect.Effect<void, unknown, Persistence>;
 
@@ -243,9 +245,9 @@ const SCENARIOS: [string, Scenario][] = [
 ];
 
 for (const [title, run] of SCENARIOS) {
-  Deno.test(`layerKv -- ${title}`, async () => {
+  test(`layerKvCompat -- ${title}`, async () => {
     // A fresh ephemeral KV per test; the layer owns the connection and
     // closes it at scope end.
-    await Effect.runPromise(Effect.provide(run(), layerKv(":memory:")));
+    await Effect.runPromise(Effect.provide(run(), layerKvCompat()));
   });
 }

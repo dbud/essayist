@@ -1,5 +1,6 @@
 import { assert, assertEquals, assertInstanceOf } from "@std/assert";
 import { Effect, Result } from "effect";
+import { test } from "vitest";
 import type {
   ConcurrentModificationError,
   PersistenceError,
@@ -140,7 +141,7 @@ function seedFullConfig(config: ReviewConfig["Service"]) {
 
 // happy paths
 
-Deno.test("resolveActiveReviewPass -- resolves the active pass unit by unit", async () => {
+test("resolveActiveReviewPass -- resolves the active pass unit by unit", async () => {
   const program = Effect.gen(function* () {
     const outcome = yield* run(seedFullConfig);
     if (Result.isFailure(outcome)) {
@@ -200,7 +201,7 @@ Deno.test("resolveActiveReviewPass -- resolves the active pass unit by unit", as
   );
 });
 
-Deno.test("resolveActiveReviewPass -- undefined when no pin", async () => {
+test("resolveActiveReviewPass -- undefined when no pin", async () => {
   const program = Effect.gen(function* () {
     const outcome = yield* run();
     if (Result.isFailure(outcome)) {
@@ -215,7 +216,7 @@ Deno.test("resolveActiveReviewPass -- undefined when no pin", async () => {
 
 // missing entities
 
-Deno.test("resolveActiveReviewPass -- fails on a missing review pass", async () => {
+test("resolveActiveReviewPass -- fails on a missing review pass", async () => {
   const program = Effect.gen(function* () {
     const outcome = yield* run((config) => config.setActiveReviewPass("nope"));
     assertFailsWith(outcome, ConfigMissingError, 'review pass "nope"');
@@ -225,7 +226,7 @@ Deno.test("resolveActiveReviewPass -- fails on a missing review pass", async () 
   );
 });
 
-Deno.test("resolveActiveReviewPass -- fails on a missing unit pool", async () => {
+test("resolveActiveReviewPass -- fails on a missing unit pool", async () => {
   const program = Effect.gen(function* () {
     const outcome = yield* run((config) =>
       Effect.gen(function* () {
@@ -254,7 +255,7 @@ Deno.test("resolveActiveReviewPass -- fails on a missing unit pool", async () =>
   );
 });
 
-Deno.test("resolveActiveReviewPass -- fails on an empty unit pool", async () => {
+test("resolveActiveReviewPass -- fails on an empty unit pool", async () => {
   const program = Effect.gen(function* () {
     const outcome = yield* run((config) =>
       Effect.gen(function* () {
@@ -288,7 +289,7 @@ Deno.test("resolveActiveReviewPass -- fails on an empty unit pool", async () => 
   );
 });
 
-Deno.test("resolveActiveReviewPass -- fails on a missing unit prompt", async () => {
+test("resolveActiveReviewPass -- fails on a missing unit prompt", async () => {
   const program = Effect.gen(function* () {
     const outcome = yield* run((config) =>
       Effect.gen(function* () {
@@ -326,7 +327,7 @@ Deno.test("resolveActiveReviewPass -- fails on a missing unit prompt", async () 
   );
 });
 
-Deno.test("resolveActiveReviewPass -- fails on a missing pass system prompt", async () => {
+test("resolveActiveReviewPass -- fails on a missing pass system prompt", async () => {
   const program = Effect.gen(function* () {
     const outcome = yield* run((config) =>
       Effect.gen(function* () {
@@ -363,7 +364,7 @@ Deno.test("resolveActiveReviewPass -- fails on a missing pass system prompt", as
   );
 });
 
-Deno.test("resolveActiveReviewPass -- fails on missing referenced categories", async () => {
+test("resolveActiveReviewPass -- fails on missing referenced categories", async () => {
   const program = Effect.gen(function* () {
     const outcome = yield* run((config) =>
       Effect.gen(function* () {
@@ -400,7 +401,7 @@ Deno.test("resolveActiveReviewPass -- fails on missing referenced categories", a
 
 // invalid passes
 
-Deno.test("resolveActiveReviewPass -- fails on attempt units without categories", async () => {
+test("resolveActiveReviewPass -- fails on attempt units without categories", async () => {
   const program = Effect.gen(function* () {
     const outcome = yield* run((config) =>
       Effect.gen(function* () {
@@ -437,7 +438,7 @@ Deno.test("resolveActiveReviewPass -- fails on attempt units without categories"
   );
 });
 
-Deno.test("resolveActiveReviewPass -- fails on duplicate unit ids", async () => {
+test("resolveActiveReviewPass -- fails on duplicate unit ids", async () => {
   const program = Effect.gen(function* () {
     const outcome = yield* run((config) =>
       Effect.gen(function* () {
@@ -480,7 +481,7 @@ Deno.test("resolveActiveReviewPass -- fails on duplicate unit ids", async () => 
   );
 });
 
-Deno.test("resolveActiveReviewPass -- fails on dotted unit ids", async () => {
+test("resolveActiveReviewPass -- fails on dotted unit ids", async () => {
   const program = Effect.gen(function* () {
     const outcome = yield* run((config) =>
       Effect.gen(function* () {
@@ -507,7 +508,7 @@ Deno.test("resolveActiveReviewPass -- fails on dotted unit ids", async () => {
   );
 });
 
-Deno.test("resolveActiveReviewPass -- fails on forward unit inputs", async () => {
+test("resolveActiveReviewPass -- fails on forward unit inputs", async () => {
   const program = Effect.gen(function* () {
     const outcome = yield* run((config) =>
       Effect.gen(function* () {
@@ -541,7 +542,7 @@ Deno.test("resolveActiveReviewPass -- fails on forward unit inputs", async () =>
   );
 });
 
-Deno.test("resolveActiveReviewPass -- fails on unknown unit inputs", async () => {
+test("resolveActiveReviewPass -- fails on unknown unit inputs", async () => {
   const program = Effect.gen(function* () {
     const outcome = yield* run((config) =>
       Effect.gen(function* () {
@@ -572,7 +573,7 @@ Deno.test("resolveActiveReviewPass -- fails on unknown unit inputs", async () =>
   );
 });
 
-Deno.test("resolveActiveReviewPass -- fails on attempt and summary together", async () => {
+test("resolveActiveReviewPass -- fails on attempt and summary together", async () => {
   const program = Effect.gen(function* () {
     const outcome = yield* run((config) =>
       Effect.gen(function* () {

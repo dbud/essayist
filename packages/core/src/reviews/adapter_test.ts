@@ -1,4 +1,5 @@
 import { assertEquals } from "@std/assert";
+import { test } from "vitest";
 import type { ResolvedReviewPass, ReviewUnit } from "@/config/types.ts";
 import type { ForwardSpec } from "@/flow/helpers.ts";
 import { buildReviewGraph } from "@/reviews/adapter.ts";
@@ -51,7 +52,7 @@ function passFixture(units: ReviewUnit[]): ResolvedReviewPass {
   };
 }
 
-Deno.test("buildReviewGraph -- decomposes a pass into nodes", () => {
+test("buildReviewGraph -- decomposes a pass into nodes", () => {
   const pass = passFixture([
     unitFixture({ id: "analyze" }),
     unitFixture({
@@ -95,7 +96,7 @@ Deno.test("buildReviewGraph -- decomposes a pass into nodes", () => {
   assertEquals(payloadOf("mechanics.collect"), COLLECT_PAYLOAD);
 });
 
-Deno.test("buildReviewGraph -- unrolls two repair rounds in a chain", () => {
+test("buildReviewGraph -- unrolls two repair rounds in a chain", () => {
   const graph = buildReviewGraph(
     passFixture([
       unitFixture({
@@ -144,7 +145,7 @@ Deno.test("buildReviewGraph -- unrolls two repair rounds in a chain", () => {
   );
 });
 
-Deno.test("buildReviewGraph -- a zero budget has no repair nodes", () => {
+test("buildReviewGraph -- a zero budget has no repair nodes", () => {
   const graph = buildReviewGraph(
     passFixture([
       unitFixture({
@@ -162,7 +163,7 @@ Deno.test("buildReviewGraph -- a zero budget has no repair nodes", () => {
   );
 });
 
-Deno.test("buildReviewGraph -- a unit input resolves to the unit's collect node", () => {
+test("buildReviewGraph -- a unit input resolves to the unit's collect node", () => {
   const graph = buildReviewGraph(
     passFixture([
       unitFixture({
@@ -179,7 +180,7 @@ Deno.test("buildReviewGraph -- a unit input resolves to the unit's collect node"
   assertEquals(summary?.dependsOn, ["mechanics.collect", "content"]);
 });
 
-Deno.test("buildReviewGraph -- artifact references pass through as deps", () => {
+test("buildReviewGraph -- artifact references pass through as deps", () => {
   const graph = buildReviewGraph(
     passFixture([
       unitFixture({

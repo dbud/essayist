@@ -1,5 +1,6 @@
 import { assertEquals } from "@std/assert";
 import { Effect, Layer, Result, Schema } from "effect";
+import { test } from "vitest";
 import { Files } from "@/files/service.ts";
 import { Marks } from "@/marks/service.ts";
 import { testLayer } from "@/persistence/testing/kv.ts";
@@ -29,7 +30,7 @@ const run = <A>(
     ),
   );
 
-Deno.test("applyProposedMarks -- places marks on the pinned version", async () => {
+test("applyProposedMarks -- places marks on the pinned version", async () => {
   await run(
     Effect.gen(function* () {
       const files = yield* Files;
@@ -67,7 +68,7 @@ Deno.test("applyProposedMarks -- places marks on the pinned version", async () =
   );
 });
 
-Deno.test("applyProposedMarks -- failed spans keep an error", async () => {
+test("applyProposedMarks -- failed spans keep an error", async () => {
   await run(
     Effect.gen(function* () {
       const files = yield* Files;
@@ -86,7 +87,7 @@ Deno.test("applyProposedMarks -- failed spans keep an error", async () => {
   );
 });
 
-Deno.test("applyProposedMarks -- rejects labels outside the allowed set", async () => {
+test("applyProposedMarks -- rejects labels outside the allowed set", async () => {
   await run(
     Effect.gen(function* () {
       const files = yield* Files;
@@ -108,7 +109,7 @@ Deno.test("applyProposedMarks -- rejects labels outside the allowed set", async 
   );
 });
 
-Deno.test("applyProposedMarks -- every mark carries a label", () => {
+test("applyProposedMarks -- every mark carries a label", () => {
   // A mark with no label would apply without the aspect check and render
   // without a badge, so the schema requires one.
   const parsed = Schema.decodeUnknownResult(ProposedMarksSchema)({

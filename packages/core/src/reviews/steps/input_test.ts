@@ -1,4 +1,5 @@
 import { assertEquals } from "@std/assert";
+import { test } from "vitest";
 import type { ResolvedPrompts } from "@/config/types.ts";
 import type { Artifact, Artifacts, ArtifactType } from "@/flow/types.ts";
 import type { ReviewTypes } from "@/reviews/graph.ts";
@@ -45,7 +46,7 @@ const ANALYSIS = {
   risks: [],
 };
 
-Deno.test("composeCallInput -- renders an outline section as a line range", () => {
+test("composeCallInput -- renders an outline section as a line range", () => {
   const input = composeCallInput(
     PROMPTS,
     inputsOf({ type: "analysis", data: ANALYSIS, producedBy: "analyze" }),
@@ -57,7 +58,7 @@ Deno.test("composeCallInput -- renders an outline section as a line range", () =
   );
 });
 
-Deno.test("composeCallInput -- prompts first, artifacts in order, essay last", () => {
+test("composeCallInput -- prompts first, artifacts in order, essay last", () => {
   const input = composeCallInput(
     PROMPTS,
     inputsOf(
@@ -80,7 +81,7 @@ Deno.test("composeCallInput -- prompts first, artifacts in order, essay last", (
   assertEquals(input.endsWith("     1: hello brave world"), true);
 });
 
-Deno.test("composeCallInput -- renders every artifact in dependsOn order", () => {
+test("composeCallInput -- renders every artifact in dependsOn order", () => {
   const input = composeCallInput(
     PROMPTS,
     inputsOf(
@@ -104,7 +105,7 @@ Deno.test("composeCallInput -- renders every artifact in dependsOn order", () =>
   );
 });
 
-Deno.test("composeRepairInput -- windows content around the hinted line", () => {
+test("composeRepairInput -- windows content around the hinted line", () => {
   const essay = Array.from(
     { length: 20 },
     (_, i) => `${String(i + 1).padStart(6)}: line ${i + 1}`,
@@ -138,7 +139,7 @@ Deno.test("composeRepairInput -- windows content around the hinted line", () => 
   assertEquals(input.includes("line 16:"), false);
 });
 
-Deno.test("composeRepairInput -- attempts without a hint get the full essay", () => {
+test("composeRepairInput -- attempts without a hint get the full essay", () => {
   const failed = [
     {
       selected_text: "nowhere to anchor",

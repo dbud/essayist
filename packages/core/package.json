@@ -2,6 +2,7 @@
   "dependencies": {
     "@deno/kv": "^0.14.0",
     "@effect/ai-openrouter": "~4.0.3",
+    "@std/assert": "npm:@jsr/std__assert@^1.0.19",
     "@std/collections": "npm:@jsr/std__collections@^1.4.0",
     "effect": "~4.0.3"
   },
@@ -11,6 +12,12 @@
   },
   "name": "@essayist/core",
   "private": true,
+  "scripts": {
+    "check": "biome check --error-on-warnings . && tsc --noEmit",
+    "fmt": "biome check --write .",
+    "lint": "biome lint .",
+    "test": "vitest run"
+  },
   "type": "module",
   "version": "0.1.0"
 }

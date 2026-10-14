@@ -1,10 +1,12 @@
+import type { Kv } from "@deno/kv";
 import { assertEquals, assertInstanceOf } from "@std/assert";
 import { Effect, Result } from "effect";
-import { kvLayer } from "./kv_layer.ts";
+import { test } from "vitest";
+import { kvLayerCompat } from "./kv_layer_compat.ts";
 import { ConcurrentModificationError } from "./mod.ts";
 import { Persistence, PersistenceError } from "./service.ts";
 
-Deno.test("kvLayer -- a rejecting backend maps faults into PersistenceError", async () => {
+test("kvLayerCompat -- a rejecting backend maps faults into PersistenceError", async () => {
   // An atomic chain that never commits: exercises the conflict path.
   const atomic = {
     check: () => atomic,
@@ -15,7 +17,7 @@ Deno.test("kvLayer -- a rejecting backend maps faults into PersistenceError", as
   const failing = {
     get: () => Promise.reject(new Error("kv down")),
     atomic: () => atomic,
-  } as unknown as Deno.Kv;
+  } as unknown as Kv;
   const program = Effect.gen(function* () {
     const store = yield* Persistence;
 
@@ -35,5 +37,5 @@ Deno.test("kvLayer -- a rejecting backend maps faults into PersistenceError", as
     }
     assertInstanceOf(write.failure, ConcurrentModificationError);
   });
-  await Effect.runPromise(Effect.provide(program, kvLayer(failing)));
+  await Effect.runPromise(Effect.provide(program, kvLayerCompat(failing)));
 });

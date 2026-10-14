@@ -1,5 +1,7 @@
+import { type Kv, openKv } from "@deno/kv";
 import { assert, assertEquals, assertRejects } from "@std/assert";
 import { type Context, Effect, Layer } from "effect";
+import { test } from "vitest";
 import type { ResolvedReviewPass, ReviewUnit } from "@/config/types.ts";
 import { Files } from "@/files/service.ts";
 import type { NodeRun } from "@/flow/types.ts";
@@ -7,7 +9,7 @@ import { Marks } from "@/marks/service.ts";
 import { createFakeClient } from "@/model/fake_client.ts";
 import { ModelClient } from "@/model/service.ts";
 import { ChunkedValues } from "@/persistence/chunked_values.ts";
-import { kvLayer } from "@/persistence/kv_layer.ts";
+import { kvLayerCompat } from "@/persistence/kv_layer_compat.ts";
 import { Persistence } from "@/persistence/mod.ts";
 import {
   ReviewFileMissingError,
@@ -62,7 +64,7 @@ function passFixture(units: ReviewUnit[]): ResolvedReviewPass {
 // The file content and the runner's services share one KV store; the env
 // also exposes Persistence for raw row fixtures.
 interface Setup {
-  kv: Deno.Kv;
+  kv: Kv;
   env: Layer.Layer<Marks | Persistence | ReviewRuns | TraceEvents | Files>;
   versionId?: string;
 }
@@ -76,7 +78,7 @@ async function setup(file?: {
   path: string;
   content: string;
 }): Promise<Setup & { versionId?: string }> {
-  const kv = await Deno.openKv(":memory:");
+  const kv = await openKv();
   const env = Layer.provide(
     Layer.mergeAll(
       ReviewRuns.layerNoDeps,
@@ -84,9 +86,9 @@ async function setup(file?: {
       ChunkedValues.layerNoDeps,
       Files.layerNoDeps,
       Layer.provide(Marks.layerNoDeps, Files.layerNoDeps),
-      kvLayer(kv),
+      kvLayerCompat(kv),
     ),
-    kvLayer(kv),
+    kvLayerCompat(kv),
   );
   const versionId = file
     ? await Effect.runPromise(
@@ -197,7 +199,7 @@ function appliedEvents(trace: TraceEvent[]) {
   );
 }
 
-Deno.test("runReviewPass -- completes a pass with marks, summary, and a per-node trace", async () => {
+test("runReviewPass -- completes a pass with marks, summary, and a per-node trace", async () => {
   const { env: baseEnv, versionId } = await setup({
     path: "essay.txt",
     content: "hello brave world",
@@ -273,7 +275,7 @@ Deno.test("runReviewPass -- completes a pass with marks, summary, and a per-node
   assertEquals(inputs[1].includes("Thesis: Drafts are raw material."), true);
 });
 
-Deno.test("runReviewPass -- a repair round re-quotes the failed spans", async () => {
+test("runReviewPass -- a repair round re-quotes the failed spans", async () => {
   const { env: baseEnv, versionId } = await setup({
     path: "essay.txt",
     content: "hello world",
@@ -337,7 +339,7 @@ Deno.test("runReviewPass -- a repair round re-quotes the failed spans", async ()
   assertEquals(marks[0].selected_text, "hello");
 });
 
-Deno.test("runReviewPass -- a zero budget keeps failed marks with no repair nodes", async () => {
+test("runReviewPass -- a zero budget keeps failed marks with no repair nodes", async () => {
   const { env: baseEnv, versionId } = await setup({
     path: "essay.txt",
     content: "hello world",
@@ -378,7 +380,7 @@ Deno.test("runReviewPass -- a zero budget keeps failed marks with no repair node
   assertEquals(marks, []);
 });
 
-Deno.test("runReviewPass -- resuming a run that does not exist is an error", async () => {
+test("runReviewPass -- resuming a run that does not exist is an error", async () => {
   const { env: baseEnv } = await setup({
     path: "essay.txt",
     content: "hello world",
@@ -401,7 +403,7 @@ Deno.test("runReviewPass -- resuming a run that does not exist is an error", asy
   );
 });
 
-Deno.test("runReviewPass -- a resumed pass skips completed nodes and shows each once", async () => {
+test("runReviewPass -- a resumed pass skips completed nodes and shows each once", async () => {
   const { env: baseEnv, versionId } = await setup({
     path: "essay.txt",
     content: "hello brave world",
@@ -474,7 +476,7 @@ Deno.test("runReviewPass -- a resumed pass skips completed nodes and shows each 
   assertEquals(marks[0]?.selected_text, "brave");
 });
 
-Deno.test("runReviewPass -- a node error fails the run and skips dependents", async () => {
+test("runReviewPass -- a node error fails the run and skips dependents", async () => {
   const { env: baseEnv } = await setup({
     path: "essay.txt",
     content: "hello world",
@@ -539,7 +541,7 @@ Deno.test("runReviewPass -- a node error fails the run and skips dependents", as
   }
 });
 
-Deno.test("runReviewPass -- fails a pass that commits no summary", async () => {
+test("runReviewPass -- fails a pass that commits no summary", async () => {
   const { env: baseEnv } = await setup({
     path: "essay.txt",
     content: "hello world",
@@ -559,7 +561,7 @@ Deno.test("runReviewPass -- fails a pass that commits no summary", async () => {
   assertEquals(run.summary, undefined);
 });
 
-Deno.test("runReviewPass -- fails with a typed error when the file does not exist", async () => {
+test("runReviewPass -- fails with a typed error when the file does not exist", async () => {
   const { env: baseEnv } = await setup({
     path: "other.txt",
     content: "x",
@@ -581,7 +583,7 @@ Deno.test("runReviewPass -- fails with a typed error when the file does not exis
   assertEquals(await viaRuns(env, (deps) => deps.runs.listRuns()), []);
 });
 
-Deno.test("runReviewPass -- heartbeats the lease while running, then releases it", async () => {
+test("runReviewPass -- heartbeats the lease while running, then releases it", async () => {
   const { kv } = await setup({
     path: "essay.txt",
     content: "hello brave world",
@@ -613,7 +615,7 @@ Deno.test("runReviewPass -- heartbeats the lease while running, then releases it
   assertEquals(row?.heartbeatAt, undefined);
 });
 
-Deno.test("runReviewPass -- refuses to resume a run another driver holds", async () => {
+test("runReviewPass -- refuses to resume a run another driver holds", async () => {
   const { env: baseEnv } = await setup({
     path: "essay.txt",
     content: "hello world",
@@ -646,7 +648,7 @@ Deno.test("runReviewPass -- refuses to resume a run another driver holds", async
   );
 });
 
-Deno.test("runReviewPass -- resumes a run whose lease went stale", async () => {
+test("runReviewPass -- resumes a run whose lease went stale", async () => {
   const { env: baseEnv, versionId } = await setup({
     path: "essay.txt",
     content: "hello brave world",
@@ -690,7 +692,7 @@ Deno.test("runReviewPass -- resumes a run whose lease went stale", async () => {
 /** Wraps the ReviewRuns service with heartbeat counters, backed by the same
  * KV store as the fixtures. */
 function countingReviews(
-  kv: Deno.Kv,
+  kv: Kv,
   count: { renewed: number; refused: number },
 ): Layer.Layer<Marks | Persistence | ReviewRuns | TraceEvents | Files> {
   const heartbeats = Layer.effect(
@@ -715,10 +717,10 @@ function countingReviews(
       Layer.provide(TraceEvents.layerNoDeps, ChunkedValues.layerNoDeps),
       Files.layerNoDeps,
       Layer.provide(Marks.layerNoDeps, Files.layerNoDeps),
-      kvLayer(kv),
+      kvLayerCompat(kv),
     ),
   ).pipe(
-    Layer.provide(Layer.provide(ReviewRuns.layerNoDeps, kvLayer(kv))),
-    Layer.provide(kvLayer(kv)),
+    Layer.provide(Layer.provide(ReviewRuns.layerNoDeps, kvLayerCompat(kv))),
+    Layer.provide(kvLayerCompat(kv)),
   );
 }

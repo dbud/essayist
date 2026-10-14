@@ -1,25 +1,26 @@
 {
   "dependencies": {
-    "@effect/ai-openrouter": "~4.0.3",
-    "@essayist/core": "file:../core",
-    "@std/collections": "npm:@jsr/std__collections@^1.4.0",
-    "effect": "~4.0.3",
+    "@effect/ai-openrouter": "catalog:",
+    "@essayist/core": "workspace:*",
+    "@std/collections": "catalog:",
+    "effect": "catalog:",
     "hono": "^4.13.13"
   },
   "devDependencies": {
     "@cloudflare/vite-plugin": "^1.63.2",
     "@cloudflare/workers-types": "^5.20261013.1",
-    "typescript": "^7.0.2",
-    "vite": "^8.3.4",
+    "vite": "catalog:",
     "wrangler": "^4.150.0"
   },
   "name": "@essayist/worker",
   "private": true,
   "scripts": {
     "build": "vite build",
-    "check": "tsc --noEmit",
+    "check": "biome check --error-on-warnings . && tsc --noEmit",
     "deploy": "vite build && wrangler deploy",
     "dev": "vite dev",
+    "fmt": "biome check --write .",
+    "lint": "biome lint .",
     "preview": "vite preview",
     "typegen": "wrangler types"
   },

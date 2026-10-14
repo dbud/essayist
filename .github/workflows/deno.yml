@@ -74,6 +74,28 @@ jobs:
       - name: Favicon freshness
         run: deno task -f web favicon:check
 
+      # pnpm loop (core + worker). Ordered after every deno step so deno
+      # never sees a node_modules and stays in global-cache resolution.
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Install pnpm workspace
+        run: pnpm install --frozen-lockfile
+
+      - name: Check core and worker
+        run: pnpm check
+
+      - name: Test core
+        run: pnpm test
+
+      - name: Build worker
+        run: pnpm build
+
       # Production deploy: gated to pushes on main, after every check
       # above. The deploy packer skips gitignored paths, so the artifact
       # is staged outside the workspace before uploading.

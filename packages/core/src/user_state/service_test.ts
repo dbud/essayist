@@ -1,9 +1,10 @@
 import { assertEquals } from "@std/assert";
 import { Effect } from "effect";
+import { test } from "vitest";
 import { testLayer } from "@/persistence/testing/kv.ts";
 import { UserState } from "./service.ts";
 
-Deno.test("UserState -- selected workspace round-trips", async () => {
+test("UserState -- selected workspace round-trips", async () => {
   const program = Effect.gen(function* () {
     const store = yield* UserState;
     assertEquals(yield* store.getSelectedWorkspace("u1"), undefined);
@@ -17,7 +18,7 @@ Deno.test("UserState -- selected workspace round-trips", async () => {
   );
 });
 
-Deno.test("UserState -- selected file round-trips, scoped per workspace", async () => {
+test("UserState -- selected file round-trips, scoped per workspace", async () => {
   const program = Effect.gen(function* () {
     const store = yield* UserState;
     assertEquals(yield* store.getSelectedFile("u1", "ws1"), undefined);
@@ -33,7 +34,7 @@ Deno.test("UserState -- selected file round-trips, scoped per workspace", async 
   );
 });
 
-Deno.test("UserState -- users are isolated", async () => {
+test("UserState -- users are isolated", async () => {
   const program = Effect.gen(function* () {
     const store = yield* UserState;
     yield* store.setSelectedWorkspace("u1", "ws1");

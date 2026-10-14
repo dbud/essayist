@@ -1,6 +1,19 @@
 {
+  "devDependencies": {
+    "@biomejs/biome": "catalog:",
+    "@types/node": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  },
   "name": "essayist",
   "packageManager": "pnpm@12.11.2",
   "private": true,
+  "scripts": {
+    "build": "pnpm -C packages/worker build",
+    "check": "pnpm -C packages/core check && pnpm -C packages/worker check",
+    "fmt": "pnpm -C packages/core fmt && pnpm -C packages/worker fmt",
+    "lint": "pnpm -C packages/core lint && pnpm -C packages/worker lint",
+    "test": "pnpm -C packages/core test"
+  },
   "version": "0.0.0"
 }

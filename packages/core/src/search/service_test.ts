@@ -1,5 +1,6 @@
 import { assertEquals } from "@std/assert";
 import { Effect, Layer } from "effect";
+import { test } from "vitest";
 import { Files } from "@/files/service.ts";
 import type {
   ConcurrentModificationError,
@@ -28,7 +29,7 @@ const run = <A>(
 
 // grep
 
-Deno.test("Search.grep -- finds matches across files", async () => {
+test("Search.grep -- finds matches across files", async () => {
   await run(
     Effect.gen(function* () {
       const files = yield* Files;
@@ -64,7 +65,7 @@ Deno.test("Search.grep -- finds matches across files", async () => {
   );
 });
 
-Deno.test("Search.grep -- case insensitive by default", async () => {
+test("Search.grep -- case insensitive by default", async () => {
   await run(
     Effect.gen(function* () {
       const files = yield* Files;
@@ -92,7 +93,7 @@ Deno.test("Search.grep -- case insensitive by default", async () => {
   );
 });
 
-Deno.test("Search.grep -- case sensitive", async () => {
+test("Search.grep -- case sensitive", async () => {
   await run(
     Effect.gen(function* () {
       const files = yield* Files;
@@ -113,7 +114,7 @@ Deno.test("Search.grep -- case sensitive", async () => {
   );
 });
 
-Deno.test("Search.grep -- with context lines", async () => {
+test("Search.grep -- with context lines", async () => {
   await run(
     Effect.gen(function* () {
       const files = yield* Files;
@@ -134,7 +135,7 @@ Deno.test("Search.grep -- with context lines", async () => {
   );
 });
 
-Deno.test("Search.grep -- filters to specific path", async () => {
+test("Search.grep -- filters to specific path", async () => {
   await run(
     Effect.gen(function* () {
       const files = yield* Files;
@@ -156,7 +157,7 @@ Deno.test("Search.grep -- filters to specific path", async () => {
   );
 });
 
-Deno.test("Search.grep -- path as directory prefix", async () => {
+test("Search.grep -- path as directory prefix", async () => {
   await run(
     Effect.gen(function* () {
       const files = yield* Files;
@@ -173,7 +174,7 @@ Deno.test("Search.grep -- path as directory prefix", async () => {
   );
 });
 
-Deno.test("Search.grep -- max results", async () => {
+test("Search.grep -- max results", async () => {
   await run(
     Effect.gen(function* () {
       const files = yield* Files;
@@ -187,7 +188,7 @@ Deno.test("Search.grep -- max results", async () => {
   );
 });
 
-Deno.test("Search.grep -- skips empty files", async () => {
+test("Search.grep -- skips empty files", async () => {
   await run(
     Effect.gen(function* () {
       const files = yield* Files;
@@ -202,7 +203,7 @@ Deno.test("Search.grep -- skips empty files", async () => {
   );
 });
 
-Deno.test("Search.grep -- invalid regex falls back to literal", async () => {
+test("Search.grep -- invalid regex falls back to literal", async () => {
   await run(
     Effect.gen(function* () {
       const files = yield* Files;
@@ -217,7 +218,7 @@ Deno.test("Search.grep -- invalid regex falls back to literal", async () => {
 
 // search
 
-Deno.test("Search.search -- plain text with special chars", async () => {
+test("Search.search -- plain text with special chars", async () => {
   await run(
     Effect.gen(function* () {
       const files = yield* Files;
@@ -231,7 +232,7 @@ Deno.test("Search.search -- plain text with special chars", async () => {
   );
 });
 
-Deno.test("Search.search -- plain text with regex metacharacters", async () => {
+test("Search.search -- plain text with regex metacharacters", async () => {
   await run(
     Effect.gen(function* () {
       const files = yield* Files;
@@ -244,7 +245,7 @@ Deno.test("Search.search -- plain text with regex metacharacters", async () => {
   );
 });
 
-Deno.test("Search.search -- delegates to grep with escaped pattern", async () => {
+test("Search.search -- delegates to grep with escaped pattern", async () => {
   await run(
     Effect.gen(function* () {
       const files = yield* Files;

@@ -1,5 +1,6 @@
 import { assert, assertEquals, assertRejects } from "@std/assert";
 import { Effect } from "effect";
+import { test } from "vitest";
 import type { FlowRunOptions } from "./runner.ts";
 import { FlowRunner } from "./runner.ts";
 import type {
@@ -76,7 +77,7 @@ const run = (
 ): Promise<FlowRunResult<TestTypes>> =>
   Effect.runPromise(flow.run(graph, options));
 
-Deno.test("FlowRunner -- emit returns undefined, so callers cannot leak a value", async () => {
+test("FlowRunner -- emit returns undefined, so callers cannot leak a value", async () => {
   const flow = new FlowRunner<TestTypes>({ runners: emitRunners });
 
   await run(flow, {
@@ -90,7 +91,7 @@ Deno.test("FlowRunner -- emit returns undefined, so callers cannot leak a value"
   assertEquals(emitted, [undefined]);
 });
 
-Deno.test("FlowRunner -- commits artifacts along a chain", async () => {
+test("FlowRunner -- commits artifacts along a chain", async () => {
   const events: FlowEvent<TestTypes>[] = [];
   const flow = new FlowRunner<TestTypes>({
     runners,
@@ -125,7 +126,7 @@ Deno.test("FlowRunner -- commits artifacts along a chain", async () => {
   );
 });
 
-Deno.test("FlowRunner -- unions same-type artifacts in dependsOn order", async () => {
+test("FlowRunner -- unions same-type artifacts in dependsOn order", async () => {
   let seen: string[] = [];
   const flow = new FlowRunner<TestTypes>({
     runners: {
@@ -164,7 +165,7 @@ Deno.test("FlowRunner -- unions same-type artifacts in dependsOn order", async (
   assertEquals(seen, ["one", "two"]);
 });
 
-Deno.test("FlowRunner -- delivers a custom event while the node still runs", async () => {
+test("FlowRunner -- delivers a custom event while the node still runs", async () => {
   // The node is still executing when the event arrives. Buffering to node end
   // delays delivery until after execute resolves, so this fails there.
   let deliveredDuringRun = false;
@@ -199,7 +200,7 @@ Deno.test("FlowRunner -- delivers a custom event while the node still runs", asy
   assert(deliveredDuringRun);
 });
 
-Deno.test("FlowRunner -- keeps custom events in emission order", async () => {
+test("FlowRunner -- keeps custom events in emission order", async () => {
   const seen: string[] = [];
   const chatty: NodeRunners<TestTypes> = {
     ...runners,
@@ -234,7 +235,7 @@ Deno.test("FlowRunner -- keeps custom events in emission order", async () => {
   assertEquals(seen, ["one", "two", "three"]);
 });
 
-Deno.test("FlowRunner -- emits a failing node's events too", async () => {
+test("FlowRunner -- emits a failing node's events too", async () => {
   let delivered = false;
   let running = true;
   const flow = new FlowRunner<TestTypes>({
@@ -264,7 +265,7 @@ Deno.test("FlowRunner -- emits a failing node's events too", async () => {
   assert(delivered);
 });
 
-Deno.test("FlowRunner -- a listener defect is dropped, not failed into the run", async () => {
+test("FlowRunner -- a listener defect is dropped, not failed into the run", async () => {
   const flow = new FlowRunner<TestTypes>({
     runners,
     onEvent: () => Effect.die(new Error("listener fault")),
@@ -277,7 +278,7 @@ Deno.test("FlowRunner -- a listener defect is dropped, not failed into the run",
   assertEquals(result.status, "completed");
 });
 
-Deno.test("FlowRunner -- rejects broken graphs before running", async () => {
+test("FlowRunner -- rejects broken graphs before running", async () => {
   const flow = new FlowRunner<TestTypes>({ runners });
 
   await assertRejects(
@@ -332,7 +333,7 @@ Deno.test("FlowRunner -- rejects broken graphs before running", async () => {
   );
 });
 
-Deno.test("FlowRunner -- skips nodes downstream of a failure", async () => {
+test("FlowRunner -- skips nodes downstream of a failure", async () => {
   const flow = new FlowRunner<TestTypes>({ runners });
 
   const result = await run(flow, {
@@ -379,7 +380,7 @@ Deno.test("FlowRunner -- skips nodes downstream of a failure", async () => {
   assertEquals(skipped?.reason, 'dependency "b" failed: boom');
 });
 
-Deno.test("FlowRunner -- keeps independent branches running after a failure", async () => {
+test("FlowRunner -- keeps independent branches running after a failure", async () => {
   const delayed: NodeRunners<TestTypes> = {
     ...runners,
     produce: {
@@ -416,7 +417,7 @@ Deno.test("FlowRunner -- keeps independent branches running after a failure", as
   );
 });
 
-Deno.test("FlowRunner -- accumulates failures from concurrent nodes", async () => {
+test("FlowRunner -- accumulates failures from concurrent nodes", async () => {
   const flow = new FlowRunner<TestTypes>({ runners });
 
   const result = await run(flow, {
@@ -431,7 +432,7 @@ Deno.test("FlowRunner -- accumulates failures from concurrent nodes", async () =
   assertEquals(result.errors, ["boom", "boom"]);
 });
 
-Deno.test("FlowRunner -- respects maxConcurrency", async () => {
+test("FlowRunner -- respects maxConcurrency", async () => {
   let active = 0;
   let peak = 0;
   const capped: NodeRunners<TestTypes> = {
@@ -466,7 +467,7 @@ Deno.test("FlowRunner -- respects maxConcurrency", async () => {
   assertEquals(peak, 1);
 });
 
-Deno.test("FlowRunner -- a resumed node does not re-run and seeds its artifacts", async () => {
+test("FlowRunner -- a resumed node does not re-run and seeds its artifacts", async () => {
   let ran = false;
   const counting: NodeRunners<TestTypes> = {
     ...runners,
@@ -506,7 +507,7 @@ Deno.test("FlowRunner -- a resumed node does not re-run and seeds its artifacts"
   assertEquals(result.nodeRuns, []);
 });
 
-Deno.test("FlowRunner -- a resumed node feeds its dependents", async () => {
+test("FlowRunner -- a resumed node feeds its dependents", async () => {
   let seen: string[] = [];
   const flow = new FlowRunner<TestTypes>({
     runners: {
@@ -549,7 +550,7 @@ Deno.test("FlowRunner -- a resumed node feeds its dependents", async () => {
   );
 });
 
-Deno.test("FlowRunner -- a resumed node is not reported as skipped", async () => {
+test("FlowRunner -- a resumed node is not reported as skipped", async () => {
   const flow = new FlowRunner<TestTypes>({ runners });
 
   const result = await run(
@@ -574,7 +575,7 @@ Deno.test("FlowRunner -- a resumed node is not reported as skipped", async () =>
   assertEquals(result.errors, []);
 });
 
-Deno.test("FlowRunner -- ignores a completed entry the graph no longer has", async () => {
+test("FlowRunner -- ignores a completed entry the graph no longer has", async () => {
   const flow = new FlowRunner<TestTypes>({ runners });
 
   const result = await run(
@@ -605,7 +606,7 @@ Deno.test("FlowRunner -- ignores a completed entry the graph no longer has", asy
   ]);
 });
 
-Deno.test("FlowRunner -- completes an empty graph", async () => {
+test("FlowRunner -- completes an empty graph", async () => {
   const flow = new FlowRunner<TestTypes>({ runners });
   const result = await run(flow, { nodes: [] });
 
@@ -614,7 +615,7 @@ Deno.test("FlowRunner -- completes an empty graph", async () => {
   assertEquals(result.artifacts, []);
 });
 
-Deno.test("FlowRunner -- records what a completed node committed on node_end", async () => {
+test("FlowRunner -- records what a completed node committed on node_end", async () => {
   const events: FlowEvent<TestTypes>[] = [];
   const flow = new FlowRunner<TestTypes>({
     runners,
@@ -635,7 +636,7 @@ Deno.test("FlowRunner -- records what a completed node committed on node_end", a
   );
 });
 
-Deno.test("FlowRunner -- a node that produces nothing records an empty artifact list", async () => {
+test("FlowRunner -- a node that produces nothing records an empty artifact list", async () => {
   const events: FlowEvent<TestTypes>[] = [];
   const flow = new FlowRunner<TestTypes>({
     runners: {
@@ -660,7 +661,7 @@ Deno.test("FlowRunner -- a node that produces nothing records an empty artifact 
   );
 });
 
-Deno.test("FlowRunner -- a failed node records no artifacts", async () => {
+test("FlowRunner -- a failed node records no artifacts", async () => {
   const events: FlowEvent<TestTypes>[] = [];
   const flow = new FlowRunner<TestTypes>({
     runners,

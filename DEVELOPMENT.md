@@ -1,40 +1,83 @@
 # Development Guide
 
-Essayist is a monorepo: a Deno workspace with `packages/core` (shared logic)
-and `packages/web` (Fresh app), plus a Rust `crates/wasm` crate compiled to
-WASM for the diff core.
+Essayist is a monorepo. `packages/core` (Effect services) and
+`packages/worker` (Hono on Workers, Vite + TypeScript 7) form a pnpm
+workspace; shared dev tooling (Biome, TypeScript, vitest) lives at the
+workspace root. `packages/web` (the Fresh app still serving Deno Deploy),
+`packages/kvctl`, and `crates/wasm` are a dormant deno workspace kept for
+CI until their migration steps land; see the Linear project "Cloudflare
+migration" (ESS-77 through ESS-90) for phase planning.
 
-## Commands
+## Uniform pnpm loop (core and worker)
 
-### Formatting
-
-Biome is the primary formatter for JS/TS/JSON/CSS files:
-
-```
-deno task fmt          # Format all files (Biome write)
-deno task check        # Lint, type check, and check formatting (Biome check)
-```
-
-### Linting
+Commands run from the repo root:
 
 ```
-deno lint
+pnpm check          # Biome check + tsc --noEmit for core and worker
+pnpm fmt            # Biome check --write for core and worker
+pnpm lint           # Biome lint for core and worker
+pnpm test           # core's full test suite (vitest)
+pnpm build          # vite build of the worker package
 ```
 
-### Type Checking
+Per-package form: `pnpm -C packages/core <script>` and
+`pnpm -C packages/worker <script>`. Scripts on core: check, fmt, lint, test.
+Scripts on worker: build, check, deploy, dev, preview, typegen, fmt, lint.
+
+pnpm-workspace.yaml lists `packages/*`, carries the catalog (shared version
+ranges for effect, @deno/kv, typescript, biome, vitest, vite) and the
+pnpm build-script allowances the worker package needs. There is a single
+root pnpm-lock.yaml.
+
+Biome is the single formatter and linter for JS/TS/JSON/CSS; the config is
+the root `biome.json`, discovered by walking up from each package. `pnpm
+fmt` runs `biome check --write`, which also applies organize-imports and
+other safe assists (matching what the old deno task did).
+
+Type checking is `tsc --noEmit` (TypeScript 7) in each package; the
+workspace root's binaries are on PATH for member scripts. core's tsconfig
+maps `@/` to `src`, includes the `dom` lib for the portable web APIs core
+uses, and excludes the deno-boundary files: `kv_layer.ts` (deno entry
+points) and the two wasm files.
+
+## Testing (core)
+
+core runs vitest (`pnpm test`; config in `packages/core/vitest.config.ts`).
+The suite uses `@std/assert` (via the JSR npm alias) and the npm `@deno/kv`
+client's in-memory backend: tests compose `kvLayerCompat` over `openKv()`,
+and the shared helper lives in `src/persistence/testing/kv.ts`
+(`layerKvCompat`, `testLayer`). The runtime-neutral KV implementation is
+`src/persistence/kv_layer_compat.ts`; `kv_layer.ts` keeps only the
+deno-facing entry points (`kvLayer`, `layerKv`) used by web and kvctl.
+
+The diff wasm convergence tests (`diff_wasm_test.ts`) are dormant until
+the WASM worker returns (ESS-90).
+
+## Deno workspace (legacy surface; CI only)
+
+deno still exists for web (Fresh on Deno Deploy builds), kvctl, and the
+wasm pkg, but only in CI. Do not run deno locally: with
+pnpm's `node_modules` present, deno switches to a node_modules resolution
+mode, fails on this layout, and rewrites `package.json` (adding
+`workspaces`/`catalog` mirrors of pnpm-workspace.yaml). If that happens,
+strip the added fields and rerun `pnpm install`.
+
+CI order: every deno step (`deno install`, checks, tests,
+favicon, web build, Deploy on main) runs BEFORE the pnpm steps, so deno
+always runs without a node_modules directory and resolves everything from
+import maps (web's and kvctl's deno.jsonc plus a `@deno/kv` entry in
+core's).
+
+deno tasks remain available in CI:
 
 ```
-deno check
+deno task check     # deno lint + deno check + Biome (deno workspace)
+deno task fmt
+deno task -f core check
+deno task -f web check
 ```
 
-### Testing
-
-```
-deno test -A
-deno test -A --watch
-```
-
-### Web Development
+### Web Development (legacy, until cutover)
 
 ```
 deno task -f web dev        # Dev server with HMR
@@ -42,18 +85,23 @@ deno task -f web build      # Production build (vite build → _fresh/)
 deno task -f web favicon    # Regenerate favicon assets
 ```
 
-To exercise the real sign-in flows (Google One Tap, OAuth) instead of the
-seeded demo user, disable the fallback (Google credentials come from the
-`.env` file):
-
-```
-DISABLE_DEMO_USER=1 deno task -f web dev
-```
-
-The Google Cloud OAuth client needs `http://localhost:5173` in its
-Authorized JavaScript origins for One Tap to appear.
-
 Production builds and serving are handled by Deno Deploy.
+
+## Workers App (migration)
+
+`packages/worker` is a pnpm workspace package depending on `@essayist/core`
+via `workspace:*` (a live source symlink). Its wrangler config sits at the
+repo root (`wrangler.jsonc`, main points to `./packages/worker/src/main.ts`)
+and is kept celld-compatible: only standard keys, no Cloudflare-only
+settings, so self-hosting on a runtime like celld stays a deploy-time
+choice.
+
+```
+pnpm -C packages/worker dev       # vite dev (wrangler dev with HMR)
+pnpm -C packages/worker preview   # preview the built bundle
+pnpm -C packages/worker typegen   # regenerate Workers types from wrangler
+pnpm -C packages/worker deploy    # manual; CI does not deploy the worker
+```
 
 ## Favicon
 
@@ -64,7 +112,7 @@ Production builds and serving are handled by Deno Deploy.
 `assets/styles.css`, run `deno task -f web favicon` and commit the results.
 CI fails on stale favicons (`favicon:check`).
 
-### WASM
+## WASM
 
 `crates/wasm` compiles the Rust diff core to WASM with `wasm-pack`, emitting
 `crates/wasm/pkg/` (imported as `@essayist/wasm`). The pkg is force-tracked in
@@ -73,28 +121,18 @@ Rebuild after changing Rust sources:
 
 ```
 deno task wasm:build        # Optimized build (what gets committed)
-deno task wasm:build:dev     # Unoptimized build for faster iteration
+deno task wasm:build:dev    # Unoptimized build for faster iteration
 ```
 
-The pre-commit hook rebuilds and re-stages `crates/wasm/pkg/` automatically
-when Rust files are staged (see below), so manual rebuilds are only needed
-when iterating locally.
-
-### Per-package Check
-
-Each package has a `check` task that runs fmt, lint, and type check:
-
-```
-deno task -f core check
-deno task -f web check
-```
+During the Cloudflare migration the wasm diff worker is deferred (ESS-90);
+the editor ports to the pure-JS diff in core first.
 
 ## Pre-commit Checklist
 
-1. `deno task check`
-2. `deno test -A`
+1. `pnpm check`
+2. `pnpm test`
 
 The `.husky/pre-commit` hook runs `cargo fmt --check` and
-`cargo clippy --all-targets -- -D warnings` (plus `deno task wasm:build` and
-re-staging `crates/wasm/pkg/`) when Rust files are staged, then
-`deno task check` before every commit.
+`cargo clippy --all-targets -- -D warnings` (plus a `wasm-pack` rebuild and
+re-staging of `crates/wasm/pkg/`) when Rust files are staged, then
+`pnpm check` before every commit.

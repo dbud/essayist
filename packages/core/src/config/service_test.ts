@@ -1,9 +1,10 @@
 import { assertEquals } from "@std/assert";
 import { Effect } from "effect";
+import { test } from "vitest";
 import { testLayer } from "@/persistence/testing/kv.ts";
 import { ReviewConfig } from "./service.ts";
 
-Deno.test("ReviewConfig -- CRUD round-trips", async () => {
+test("ReviewConfig -- CRUD round-trips", async () => {
   const program = Effect.gen(function* () {
     const store = yield* ReviewConfig;
     yield* store.saveModelPool({ id: "p", name: "P", models: ["m/a"] });
@@ -38,7 +39,7 @@ Deno.test("ReviewConfig -- CRUD round-trips", async () => {
   );
 });
 
-Deno.test("ReviewConfig -- getCategories splits found and missing ids", async () => {
+test("ReviewConfig -- getCategories splits found and missing ids", async () => {
   const program = Effect.gen(function* () {
     const store = yield* ReviewConfig;
     yield* store.saveCategory({ id: "a", label: "A" });
@@ -57,7 +58,7 @@ Deno.test("ReviewConfig -- getCategories splits found and missing ids", async ()
   );
 });
 
-Deno.test("ReviewConfig -- active pin set and clear", async () => {
+test("ReviewConfig -- active pin set and clear", async () => {
   const program = Effect.gen(function* () {
     const store = yield* ReviewConfig;
     yield* store.saveReviewPass({
@@ -79,7 +80,7 @@ Deno.test("ReviewConfig -- active pin set and clear", async () => {
   );
 });
 
-Deno.test("ReviewConfig -- list helpers", async () => {
+test("ReviewConfig -- list helpers", async () => {
   const program = Effect.gen(function* () {
     const store = yield* ReviewConfig;
     yield* store.saveModelPool({ id: "p", name: "P", models: ["m/a"] });

@@ -7,8 +7,8 @@ if [ -n "$staged_rs" ]; then
   # re-stage the tracked pkg files. The pkg dir stays gitignored so tooling
   # skips the generated files; the files are force-tracked for Deno Deploy,
   # which can't build Rust.
-  deno task wasm:build
+  wasm-pack build crates/wasm --target web --out-dir pkg --out-name wasm
   git add -u crates/wasm/pkg/
 fi
 
-deno task check
+pnpm check

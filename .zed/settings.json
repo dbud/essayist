@@ -15,9 +15,8 @@
       "formatter": "language_server",
       "language_servers": [
         "biome",
-        "deno",
+        "vtsls",
         "!typescript-language-server",
-        "!vtsls",
         "!eslint"
       ]
     },
@@ -47,9 +46,8 @@
       "formatter": "language_server",
       "language_servers": [
         "biome",
-        "deno",
+        "vtsls",
         "!typescript-language-server",
-        "!vtsls",
         "!eslint"
       ]
     },
@@ -61,9 +59,8 @@
       "formatter": "language_server",
       "language_servers": [
         "biome",
-        "deno",
+        "vtsls",
         "!typescript-language-server",
-        "!vtsls",
         "!eslint"
       ]
     }
@@ -72,13 +69,6 @@
     "biome": {
       "settings": {
         "require_config_file": true
-      }
-    },
-    "deno": {
-      "settings": {
-        "deno": {
-          "enable": true
-        }
       }
     }
   }

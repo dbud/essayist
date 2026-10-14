@@ -1,4 +1,5 @@
 import { assertEquals } from "@std/assert";
+import { test } from "vitest";
 import type { FlowEvent, NodeKind } from "@/flow/types.ts";
 import type { ReviewTypes } from "@/reviews/graph.ts";
 import type { TraceEvent } from "./types.ts";
@@ -11,7 +12,7 @@ function trace(events: FlowEvent<ReviewTypes>[]): TraceEvent[] {
   );
 }
 
-Deno.test("groupTraceNodes -- groups custom events under their node", () => {
+test("groupTraceNodes -- groups custom events under their node", () => {
   const { nodes } = groupTraceNodes(
     trace([
       { type: "node_start", nodeId: "analyze" },
@@ -49,7 +50,7 @@ Deno.test("groupTraceNodes -- groups custom events under their node", () => {
   assertEquals(nodes[0].completedAt, 140);
 });
 
-Deno.test("groupTraceNodes -- keeps node order as first-start order", () => {
+test("groupTraceNodes -- keeps node order as first-start order", () => {
   const { nodes } = groupTraceNodes(
     trace([
       { type: "node_start", nodeId: "source" },
@@ -84,7 +85,7 @@ Deno.test("groupTraceNodes -- keeps node order as first-start order", () => {
   );
 });
 
-Deno.test("groupTraceNodes -- records failure error and skip reason", () => {
+test("groupTraceNodes -- records failure error and skip reason", () => {
   const { nodes } = groupTraceNodes(
     trace([
       { type: "node_start", nodeId: "boom" },
@@ -137,7 +138,7 @@ function modelCall(
   };
 }
 
-Deno.test("groupTraceNodes -- totals usage across every model call", () => {
+test("groupTraceNodes -- totals usage across every model call", () => {
   const { totals } = groupTraceNodes(
     trace([
       { type: "node_start", nodeId: "a" },
@@ -165,7 +166,7 @@ Deno.test("groupTraceNodes -- totals usage across every model call", () => {
   });
 });
 
-Deno.test("groupTraceNodes -- a model call without usage still counts", () => {
+test("groupTraceNodes -- a model call without usage still counts", () => {
   const { totals } = groupTraceNodes(
     trace([{ type: "node_start", nodeId: "a" }, modelCall(undefined, "a")]),
   );
@@ -177,7 +178,7 @@ Deno.test("groupTraceNodes -- a model call without usage still counts", () => {
   });
 });
 
-Deno.test("groupTraceNodes -- orphans a custom event with no node", () => {
+test("groupTraceNodes -- orphans a custom event with no node", () => {
   const { nodes, orphans } = groupTraceNodes(
     trace([
       {
@@ -194,7 +195,7 @@ Deno.test("groupTraceNodes -- orphans a custom event with no node", () => {
   );
 });
 
-Deno.test("groupTraceNodes -- a skipped node opens its own section", () => {
+test("groupTraceNodes -- a skipped node opens its own section", () => {
   // A node skipped for a failed dependency emits node_end with no
   // node_start, so it must still get a section carrying the reason.
   const { nodes, orphans } = groupTraceNodes(
@@ -236,7 +237,7 @@ Deno.test("groupTraceNodes -- a skipped node opens its own section", () => {
   assertEquals(skipped.completedAt, undefined);
 });
 
-Deno.test("groupTraceNodes -- attaches kind when a map is supplied", () => {
+test("groupTraceNodes -- attaches kind when a map is supplied", () => {
   const kindOf = new Map<string, NodeKind<ReviewTypes>>([
     ["analyze", "analyze"],
   ]);
@@ -251,7 +252,7 @@ Deno.test("groupTraceNodes -- attaches kind when a map is supplied", () => {
   assertEquals(nodes[1].kind, undefined);
 });
 
-Deno.test("groupTraceNodes -- applied events collect attempts", () => {
+test("groupTraceNodes -- applied events collect attempts", () => {
   const { nodes } = groupTraceNodes(
     trace([
       { type: "node_start", nodeId: "u.apply" },

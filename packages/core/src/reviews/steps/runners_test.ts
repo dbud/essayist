@@ -1,5 +1,7 @@
+import { openKv } from "@deno/kv";
 import { assertEquals } from "@std/assert";
 import { Effect, Layer } from "effect";
+import { test } from "vitest";
 import type { ResolvedReviewUnit } from "@/config/types.ts";
 import { Files } from "@/files/service.ts";
 import type { PassWhenSpec } from "@/flow/helpers.ts";
@@ -15,7 +17,7 @@ import { Marks } from "@/marks/service.ts";
 import type { Mark } from "@/marks/types.ts";
 import { createFakeClient } from "@/model/fake_client.ts";
 import { ModelClient } from "@/model/service.ts";
-import { kvLayer } from "@/persistence/kv_layer.ts";
+import { kvLayerCompat } from "@/persistence/kv_layer_compat.ts";
 import {
   type ReviewNodeEvent,
   type ReviewServices,
@@ -69,13 +71,13 @@ function artifactsOf<A extends keyof ReviewTypes["artifacts"]>(
 
 /** One shared KV per test, seeded through the Files service. */
 async function setup(content: string) {
-  const kv = await Deno.openKv(":memory:");
+  const kv = await openKv();
   const env = Layer.provide(
     Layer.mergeAll(
       Files.layerNoDeps,
       Layer.provide(Marks.layerNoDeps, Files.layerNoDeps),
     ),
-    kvLayer(kv),
+    kvLayerCompat(kv),
   );
   const versionId = await Effect.runPromise(
     Effect.provide(
@@ -121,7 +123,7 @@ const run = (
     ),
   );
 
-Deno.test("review runners -- analyze, propose, apply, and synthesize in a flow", async () => {
+test("review runners -- analyze, propose, apply, and synthesize in a flow", async () => {
   const { env: baseEnv, versionId } = await setup("hello brave world");
   const { client, inputs } = createFakeClient([
     { text: ANALYSIS_ROUND, reasoning: "reading closely" },
@@ -214,7 +216,7 @@ Deno.test("review runners -- analyze, propose, apply, and synthesize in a flow",
   assertEquals(marks[0].meta, { runId: "r", unitId: "mechanics" });
 });
 
-Deno.test("review runners -- repair propose stays idle without failures", async () => {
+test("review runners -- repair propose stays idle without failures", async () => {
   const { env: baseEnv, versionId } = await setup("hello world");
   const { client, inputs } = createFakeClient([
     {
@@ -297,7 +299,7 @@ Deno.test("review runners -- repair propose stays idle without failures", async 
   );
 });
 
-Deno.test("review runners -- a repair round re-quotes failed spans", async () => {
+test("review runners -- a repair round re-quotes failed spans", async () => {
   const { env: baseEnv, versionId } = await setup("hello world");
   const { client, inputs } = createFakeClient([
     {

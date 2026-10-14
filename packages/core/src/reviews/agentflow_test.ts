@@ -1,4 +1,5 @@
 import { assertEquals } from "@std/assert";
+import { test } from "vitest";
 import type { ResolvedReviewPass, ReviewUnit } from "@/config/types.ts";
 import { buildReviewGraph } from "@/reviews/adapter.ts";
 import { agentflowDefinition } from "@/reviews/agentflow.ts";
@@ -47,7 +48,7 @@ global
   content@{ shape: input }
 end`;
 
-Deno.test("agentflowDefinition -- an empty pass is just the source", () => {
+test("agentflowDefinition -- an empty pass is just the source", () => {
   const graph = buildReviewGraph(passFixture([]), "r", {
     path: "essay.txt",
     versionId: "v1",
@@ -56,7 +57,7 @@ Deno.test("agentflowDefinition -- an empty pass is just the source", () => {
   assertEquals(agentflowDefinition(graph), EMPTY_PASS);
 });
 
-Deno.test("agentflowDefinition -- renders a pass with a mark unit", () => {
+test("agentflowDefinition -- renders a pass with a mark unit", () => {
   const graph = buildReviewGraph(
     passFixture([
       unitFixture({ id: "analyze" }),

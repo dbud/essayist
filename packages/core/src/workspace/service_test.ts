@@ -1,5 +1,6 @@
 import { assertEquals, assertInstanceOf } from "@std/assert";
 import { Effect, Result } from "effect";
+import { test } from "vitest";
 import { testLayer } from "@/persistence/testing/kv.ts";
 import { Workspaces } from "./service.ts";
 import {
@@ -8,7 +9,7 @@ import {
   type WorkspaceMember,
 } from "./types.ts";
 
-Deno.test("Workspaces -- create + get user", async () => {
+test("Workspaces -- create + get user", async () => {
   const program = Effect.gen(function* () {
     const store = yield* Workspaces;
     const user = yield* store.createUser({
@@ -31,7 +32,7 @@ Deno.test("Workspaces -- create + get user", async () => {
   );
 });
 
-Deno.test("Workspaces -- updateUser patches profile fields", async () => {
+test("Workspaces -- updateUser patches profile fields", async () => {
   const program = Effect.gen(function* () {
     const store = yield* Workspaces;
     const created = yield* store.createUser({ email: "alice@example.com" });
@@ -47,7 +48,7 @@ Deno.test("Workspaces -- updateUser patches profile fields", async () => {
   );
 });
 
-Deno.test("Workspaces -- updateUser returns undefined for an unknown id", async () => {
+test("Workspaces -- updateUser returns undefined for an unknown id", async () => {
   const program = Effect.gen(function* () {
     const store = yield* Workspaces;
     assertEquals(yield* store.updateUser("nope", { name: "x" }), undefined);
@@ -57,7 +58,7 @@ Deno.test("Workspaces -- updateUser returns undefined for an unknown id", async 
   );
 });
 
-Deno.test("Workspaces -- setUserRole grants admin", async () => {
+test("Workspaces -- setUserRole grants admin", async () => {
   const program = Effect.gen(function* () {
     const store = yield* Workspaces;
     const created = yield* store.createUser({ email: "alice@example.com" });
@@ -73,7 +74,7 @@ Deno.test("Workspaces -- setUserRole grants admin", async () => {
   );
 });
 
-Deno.test("Workspaces -- setUserRole returns undefined for an unknown id", async () => {
+test("Workspaces -- setUserRole returns undefined for an unknown id", async () => {
   const program = Effect.gen(function* () {
     const store = yield* Workspaces;
     assertEquals(yield* store.setUserRole("nope", "admin"), undefined);
@@ -83,7 +84,7 @@ Deno.test("Workspaces -- setUserRole returns undefined for an unknown id", async
   );
 });
 
-Deno.test("Workspaces -- a missing user reads as undefined", async () => {
+test("Workspaces -- a missing user reads as undefined", async () => {
   const program = Effect.gen(function* () {
     const store = yield* Workspaces;
     assertEquals(yield* store.getUser("nope"), undefined);
@@ -94,7 +95,7 @@ Deno.test("Workspaces -- a missing user reads as undefined", async () => {
   );
 });
 
-Deno.test("Workspaces -- a duplicate email is rejected", async () => {
+test("Workspaces -- a duplicate email is rejected", async () => {
   const program = Effect.gen(function* () {
     const store = yield* Workspaces;
     yield* store.createUser({ email: "bob@example.com" });
@@ -112,7 +113,7 @@ Deno.test("Workspaces -- a duplicate email is rejected", async () => {
 });
 
 // workspaces
-Deno.test("Workspaces -- createWorkspace adds the owner membership", async () => {
+test("Workspaces -- createWorkspace adds the owner membership", async () => {
   const program = Effect.gen(function* () {
     const store = yield* Workspaces;
     const owner = yield* store.createUser({ email: "owner@example.com" });
@@ -129,7 +130,7 @@ Deno.test("Workspaces -- createWorkspace adds the owner membership", async () =>
   );
 });
 
-Deno.test("Workspaces -- listWorkspacesForUser returns memberships", async () => {
+test("Workspaces -- listWorkspacesForUser returns memberships", async () => {
   const program = Effect.gen(function* () {
     const store = yield* Workspaces;
     const alice = yield* store.createUser({ email: "alice@example.com" });
@@ -148,7 +149,7 @@ Deno.test("Workspaces -- listWorkspacesForUser returns memberships", async () =>
   );
 });
 
-Deno.test("Workspaces -- a missing workspace reads as undefined", async () => {
+test("Workspaces -- a missing workspace reads as undefined", async () => {
   const program = Effect.gen(function* () {
     const store = yield* Workspaces;
     assertEquals(yield* store.getWorkspace("missing"), undefined);
@@ -159,7 +160,7 @@ Deno.test("Workspaces -- a missing workspace reads as undefined", async () => {
 });
 
 // members
-Deno.test("Workspaces -- addMember + getMembers", async () => {
+test("Workspaces -- addMember + getMembers", async () => {
   const program = Effect.gen(function* () {
     const store = yield* Workspaces;
     const owner = yield* store.createUser({ email: "owner@example.com" });
@@ -177,7 +178,7 @@ Deno.test("Workspaces -- addMember + getMembers", async () => {
   );
 });
 
-Deno.test("Workspaces -- addMember upserts the role", async () => {
+test("Workspaces -- addMember upserts the role", async () => {
   const program = Effect.gen(function* () {
     const store = yield* Workspaces;
     const owner = yield* store.createUser({ email: "owner@example.com" });
@@ -195,7 +196,7 @@ Deno.test("Workspaces -- addMember upserts the role", async () => {
   );
 });
 
-Deno.test("Workspaces -- removeMember", async () => {
+test("Workspaces -- removeMember", async () => {
   const program = Effect.gen(function* () {
     const store = yield* Workspaces;
     const owner = yield* store.createUser({ email: "owner@example.com" });
@@ -213,7 +214,7 @@ Deno.test("Workspaces -- removeMember", async () => {
 });
 
 // access checks
-Deno.test("Workspaces -- hasAccess", async () => {
+test("Workspaces -- hasAccess", async () => {
   const program = Effect.gen(function* () {
     const store = yield* Workspaces;
     const owner = yield* store.createUser({ email: "owner@example.com" });
@@ -242,7 +243,7 @@ Deno.test("Workspaces -- hasAccess", async () => {
 });
 
 // last-owner guard
-Deno.test("Workspaces -- the last owner cannot be removed", async () => {
+test("Workspaces -- the last owner cannot be removed", async () => {
   const program = Effect.gen(function* () {
     const store = yield* Workspaces;
     const owner = yield* store.createUser({ email: "owner@example.com" });
@@ -261,7 +262,7 @@ Deno.test("Workspaces -- the last owner cannot be removed", async () => {
   );
 });
 
-Deno.test("Workspaces -- the last owner cannot be demoted via addMember", async () => {
+test("Workspaces -- the last owner cannot be demoted via addMember", async () => {
   const program = Effect.gen(function* () {
     const store = yield* Workspaces;
     const owner = yield* store.createUser({ email: "owner@example.com" });
@@ -281,7 +282,7 @@ Deno.test("Workspaces -- the last owner cannot be demoted via addMember", async 
   );
 });
 
-Deno.test("Workspaces -- an owner can be removed when another owner exists", async () => {
+test("Workspaces -- an owner can be removed when another owner exists", async () => {
   const program = Effect.gen(function* () {
     const store = yield* Workspaces;
     const a = yield* store.createUser({ email: "a@example.com" });

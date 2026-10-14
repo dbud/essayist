@@ -1,4 +1,5 @@
 import { assertEquals } from "@std/assert";
+import { test } from "vitest";
 import type { FlowEvent, NodeKind } from "@/flow/types.ts";
 import type { ReviewTypes } from "@/reviews/graph.ts";
 import type { ReviewProgress } from "./progress.ts";
@@ -14,14 +15,14 @@ const KIND_OF = new Map<string, NodeKind<ReviewTypes>>([
   ["synthesize", "synthesize"],
 ]);
 
-Deno.test("ReviewProgressTracker -- emits initial state on construction", () => {
+test("ReviewProgressTracker -- emits initial state on construction", () => {
   const events: ReviewProgress[] = [];
   new ReviewProgressTracker((p) => events.push(p), KIND_OF);
 
   assertEquals(events, [{ phase: "working", notes: 0 }]);
 });
 
-Deno.test("ReviewProgressTracker -- derives node phases and note counts", () => {
+test("ReviewProgressTracker -- derives node phases and note counts", () => {
   const events: ReviewProgress[] = [];
   const tracker = new ReviewProgressTracker((p) => events.push(p), KIND_OF);
 

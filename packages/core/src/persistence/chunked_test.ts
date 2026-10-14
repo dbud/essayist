@@ -1,5 +1,7 @@
+import { type Kv, openKv } from "@deno/kv";
 import { assertEquals, assertLessOrEqual } from "@std/assert";
 import { type Context, Effect } from "effect";
+import { test } from "vitest";
 import {
   assembleList,
   CHUNK_PAYLOAD_BYTES,
@@ -8,7 +10,7 @@ import {
   planChunks,
   unframeChunk,
 } from "./chunked.ts";
-import { kvLayer } from "./kv_layer.ts";
+import { kvLayerCompat } from "./kv_layer_compat.ts";
 import type { Entry, Key } from "./mod.ts";
 import { Persistence } from "./mod.ts";
 
@@ -35,7 +37,7 @@ const writePlan = (
 
 /** Run a body against a Persistence instance on a fresh store. */
 const store = <A>(
-  kv: Deno.Kv,
+  kv: Kv,
   body: (
     persistence: Context.Service.Shape<typeof Persistence>,
   ) => Effect.Effect<A, unknown, never>,
@@ -46,18 +48,18 @@ const store = <A>(
         const persistence = yield* Persistence;
         return yield* body(persistence);
       }),
-      kvLayer(kv),
+      kvLayerCompat(kv),
     ),
   );
 
-Deno.test("frameChunk/unframeChunk -- round-trip a payload with its chunk count", () => {
+test("frameChunk/unframeChunk -- round-trip a payload with its chunk count", () => {
   const payload = new TextEncoder().encode("hello chunk");
   const header = unframeChunk(frameChunk(payload, 7));
   assertEquals(header?.nChunks, 7);
   assertEquals(text(header?.payload ?? new Uint8Array()), "hello chunk");
 });
 
-Deno.test("frameChunk -- reserves a byte and counts the head", () => {
+test("frameChunk -- reserves a byte and counts the head", () => {
   const framed = frameChunk(new Uint8Array(2), 1);
   assertEquals(framed.length, 8);
   assertEquals(framed[0], 0xc1);
@@ -65,7 +67,7 @@ Deno.test("frameChunk -- reserves a byte and counts the head", () => {
   assertEquals(new DataView(framed.buffer).getUint32(2, true), 1);
 });
 
-Deno.test("unframeChunk -- null for values this layer did not write", () => {
+test("unframeChunk -- null for values this layer did not write", () => {
   assertEquals(unframeChunk({ some: "object" }), null);
   assertEquals(unframeChunk("a string"), null);
   assertEquals(unframeChunk(42), null);
@@ -74,17 +76,17 @@ Deno.test("unframeChunk -- null for values this layer did not write", () => {
   assertEquals(unframeChunk(new TextEncoder().encode("hello")), null);
 });
 
-Deno.test("unframeChunk -- a zero chunk count is not a header", () => {
+test("unframeChunk -- a zero chunk count is not a header", () => {
   assertEquals(unframeChunk(frameChunk(new Uint8Array(1), 0)), null);
 });
 
-Deno.test("planChunks -- a payload at the limit is a single chunk", () => {
+test("planChunks -- a payload at the limit is a single chunk", () => {
   const chunks = planChunks(bytes(CHUNK_PAYLOAD_BYTES));
   assertEquals(chunks.length, 1);
   assertEquals(chunks[0].key, []);
 });
 
-Deno.test("planChunks -- one byte over the limit splits in two", () => {
+test("planChunks -- one byte over the limit splits in two", () => {
   const chunks = planChunks(bytes(CHUNK_PAYLOAD_BYTES + 1));
   assertEquals(chunks.length, 2);
   assertEquals(
@@ -95,20 +97,20 @@ Deno.test("planChunks -- one byte over the limit splits in two", () => {
   assertEquals(unframeChunk(chunks[1].value)?.nChunks, 2);
 });
 
-Deno.test("planChunks -- every chunk is a full KV value at most", () => {
+test("planChunks -- every chunk is a full KV value at most", () => {
   for (const chunk of planChunks(bytes(CHUNK_PAYLOAD_BYTES * 3 + 17))) {
     assertLessOrEqual(chunk.value.length, MAX_VALUE_BYTES);
   }
 });
 
-Deno.test("planChunks -- an empty payload still yields one chunk", () => {
+test("planChunks -- an empty payload still yields one chunk", () => {
   const chunks = planChunks(new Uint8Array(0));
   assertEquals(chunks.length, 1);
   assertEquals(chunks[0].value.length, 6);
 });
 
-Deno.test("assembleList -- a scan reassembles interleaved heads and chunks", async () => {
-  const kv = await Deno.openKv(":memory:");
+test("assembleList -- a scan reassembles interleaved heads and chunks", async () => {
+  const kv = await openKv();
   // Neighbours share the scan, so order cannot come from reading alone.
   const values = await store(kv, (persistence) =>
     Effect.gen(function* () {
@@ -135,8 +137,8 @@ Deno.test("assembleList -- a scan reassembles interleaved heads and chunks", asy
   );
 });
 
-Deno.test("assembleList -- a value this layer did not write keeps its own bytes", async () => {
-  const kv = await Deno.openKv(":memory:");
+test("assembleList -- a value this layer did not write keeps its own bytes", async () => {
+  const kv = await openKv();
   const values = await store(kv, (persistence) =>
     Effect.gen(function* () {
       yield* persistence.set(["t", "000001"], { version_id: "abc" });
@@ -154,7 +156,7 @@ Deno.test("assembleList -- a value this layer did not write keeps its own bytes"
   );
 });
 
-Deno.test("assembleList -- chunks are joined in index order, whatever the input order", () => {
+test("assembleList -- chunks are joined in index order, whatever the input order", () => {
   const chunk = (index: number, byte: number): Entry => ({
     key: index === 0 ? ["t", "000001"] : ["t", "000001", `c${index}`],
     value: frameChunk(new Uint8Array([byte]), 3),
@@ -167,7 +169,7 @@ Deno.test("assembleList -- chunks are joined in index order, whatever the input 
   assertEquals([...(value.payload ?? new Uint8Array())], [0x61, 0x62, 0x63]);
 });
 
-Deno.test("assembleList -- keeps scan order and leaves plain values alone", () => {
+test("assembleList -- keeps scan order and leaves plain values alone", () => {
   const entries: Entry[] = [
     {
       key: ["t", "000001"],

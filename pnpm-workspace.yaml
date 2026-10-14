@@ -1,0 +1,16 @@
+packages:
+  - packages/*
+allowBuilds:
+  esbuild: true
+  workerd: true
+minimumReleaseAge: 1440
+catalog:
+  "@biomejs/biome": ^2.5.15
+  "@deno/kv": ^0.14.0
+  "@effect/ai-openrouter": ~4.0.3
+  "@std/collections": npm:@jsr/std__collections@^1.4.0
+  "@types/node": ^26.6.5
+  effect: ~4.0.3
+  typescript: ^7.0.2
+  vite: ^8.3.4
+  vitest: ^5.0.4
