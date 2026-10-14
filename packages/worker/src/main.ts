@@ -1,15 +1,13 @@
-import { USER_ROLES } from "@essayist/core";
+// Worker entry (ESS-79). API tier first: /api/* goes to the effect http-api
+// prototype; everything else to the pages tier. Static assets and middleware
+// port with the first real features.
 import { Hono } from "hono";
-import { SMOKE } from "./smoke";
+import { apiHandler } from "./api/hello";
+import { webApp } from "./app/hono";
 
-// Target app skeleton: Fresh keeps serving Deno Deploy until cutover, and
-// features migrate here one route folder at a time (ESS-79, ESS-80).
-// Worker-side modules use relative imports; "@/..." is an alias for core's
-// internal imports until the toolchain cutover (ESS-89).
 const app = new Hono();
 
-app.get("/", (c) =>
-  c.text(`${SMOKE}: ${USER_ROLES.join(", ")} roles loaded from @essayist/core`),
-);
+app.all("/api/*", (c) => apiHandler(c.req.raw));
+app.route("/", webApp);
 
 export default app;

@@ -3,12 +3,14 @@
     "allowImportingTsExtensions": true,
     "forceConsistentCasingInFileNames": true,
     "isolatedModules": true,
+    "jsx": "react-jsx",
+    "jsxImportSource": "preact",
     "lib": ["esnext", "esnext.iterator"],
     "module": "esnext",
     "moduleResolution": "bundler",
     "noEmit": true,
     "paths": {
-      "@/*": ["../core/src/*"]
+      "@/*": ["./src/*"]
     },
     "skipLibCheck": true,
     "strict": true,

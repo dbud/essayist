@@ -97,11 +97,10 @@ Production builds and serving are handled by Deno Deploy.
 ## Workers App (migration)
 
 `packages/worker` is a pnpm workspace package depending on `@essayist/core`
-via `workspace:*` (a live source symlink). Its wrangler config sits at the
-repo root (`wrangler.jsonc`, main points to `./packages/worker/src/main.ts`)
-and is kept celld-compatible: only standard keys, no Cloudflare-only
-settings, so self-hosting on a runtime like celld stays a deploy-time
-choice.
+via `workspace:*` (a live source symlink). Its wrangler config sits next to
+its vite config (`packages/worker/wrangler.jsonc`, main points to `./src/main.ts`);
+no celld compatibility requirement: Cloudflare-only keys (assets, bindings)
+are fine to add as the migration needs them.
 
 ```
 pnpm -C packages/worker dev       # vite dev (wrangler dev with HMR)

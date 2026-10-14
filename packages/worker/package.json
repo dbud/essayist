@@ -4,7 +4,9 @@
     "@essayist/core": "workspace:*",
     "@std/collections": "catalog:",
     "effect": "catalog:",
-    "hono": "^4.13.13"
+    "hono": "^4.13.13",
+    "preact": "^11.0.1",
+    "preact-render-to-string": "^6.8.0"
   },
   "devDependencies": {
     "@cloudflare/vite-plugin": "^1.63.2",
