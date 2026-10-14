@@ -70,6 +70,24 @@
       "settings": {
         "require_config_file": true
       }
+    },
+    "vtsls": {
+      "settings": {
+        "javascript": {
+          "tsserver": {
+            "experimental": {
+              "enableProjectDiagnostics": false
+            }
+          }
+        },
+        "typescript": {
+          "tsserver": {
+            "experimental": {
+              "enableProjectDiagnostics": false
+            }
+          }
+        }
+      }
     }
   }
 }
