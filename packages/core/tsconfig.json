@@ -19,5 +19,5 @@
     "src/diff/diff_wasm_test.ts",
     "src/persistence/kv_layer.ts"
   ],
-  "include": ["mod.ts", "src"]
+  "include": ["mod.ts", "src", "vitest.config.ts"]
 }
