@@ -1,5 +1,6 @@
 import { cloudflare } from "@cloudflare/vite-plugin";
 import { defineConfig } from "vite";
+import { clientEntryPath, pageNames } from "./src/app/pages.ts";
 
 export default defineConfig({
   plugins: [cloudflare({ viteEnvironment: { name: "worker" } })],
@@ -8,9 +9,9 @@ export default defineConfig({
     client: {
       build: {
         rolldownOptions: {
-          input: {
-            app: "src/client/main.tsx",
-          },
+          input: Object.fromEntries(
+            pageNames.map((name) => [name, clientEntryPath(name)]),
+          ),
           output: { entryFileNames: "assets/[name].js" },
         },
       },

@@ -1,6 +1,5 @@
-// Loader glue and the seam for request env wiring. Loaders are framework
-// agnostic Effect programs; the bindings layer built from worker env attaches
-// here when the first real feature ports (the env.ts seam).
+// Loader glue. The worker-env bindings layer attaches here when a real
+// feature lands.
 import { Effect } from "effect";
 
 export async function runLoader<A>(

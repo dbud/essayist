@@ -1,7 +1,5 @@
-// API tier prototype (ESS-79): one schema-first endpoint, mounted into hono
-// at /api/* by main.ts. Endpoint paths carry the /api prefix because hono
-// forwards matching requests untouched. Group middleware and typed errors
-// arrive with the first real feature port.
+// API tier prototype. Endpoint paths carry the /api prefix: hono forwards
+// matching requests untouched, so the paths must be absolute from the root.
 import { Effect, Layer, Schema } from "effect";
 import { HttpRouter, HttpServer } from "effect/http";
 import {

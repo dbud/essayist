@@ -1,47 +1,40 @@
-import { useSignal } from "@preact/signals";
 import type { JSX } from "preact";
-import type { HomeData } from "./loader";
+import { type HomeModels, HomeModelsProvider, useHomeModels } from "./models";
 
 function Counter() {
-  const count = useSignal(0);
+  const { votes } = useHomeModels();
   return (
-    <p>
-      <button
-        type="button"
-        onClick={() => {
-          count.value -= 1;
-        }}
-      >
-        -
-      </button>
-      <span style="padding: 0 0.75rem;">{String(count.value)}</span>
-      <button
-        type="button"
-        onClick={() => {
-          count.value += 1;
-        }}
-      >
-        +
-      </button>
-    </p>
+    <div>
+      <p>{votes.summary.value}</p>
+      <p>
+        <button type="button" onClick={votes.dec}>
+          -
+        </button>
+        <span style="padding: 0 0.75rem;">{votes.count.value}</span>
+        <button type="button" onClick={votes.inc}>
+          +
+        </button>
+      </p>
+    </div>
   );
 }
 
-export interface HomePageProps {
-  readonly data: HomeData;
-}
-
-export function HomePage({ data }: HomePageProps): JSX.Element {
+export function HomePage(): JSX.Element {
+  const models = useHomeModels();
   return (
     <main>
       <h1>essayist</h1>
-      <p>{data.message}</p>
-      <p>rendered by hono + preact at {data.renderedAt}</p>
+      <p>{models.pageInfo.message.value}</p>
+      <p>rendered by hono + preact at {models.pageInfo.renderedAt.value}</p>
       <Counter />
     </main>
   );
 }
 
-export function homePage(data: HomeData): JSX.Element {
-  return <HomePage data={data} />;
+export function HomeTree(models: HomeModels): JSX.Element {
+  return (
+    <HomeModelsProvider value={models}>
+      <HomePage />
+    </HomeModelsProvider>
+  );
 }

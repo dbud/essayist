@@ -1,5 +1,4 @@
-// Pages tier: hono serves SSR pages and middleware. Routes mount here;
-// requestLog, models, and sentry port with the first real features.
+// Pages tier: SSR pages and middleware mount here.
 import { Hono } from "hono";
 import { homeRoute } from "@/routes/home/route";
 

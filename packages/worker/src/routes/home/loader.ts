@@ -1,14 +1,14 @@
 import { DateTime, Effect } from "effect";
+import type { PageInfoData } from "@/models/pageInfo";
+import type { VotesData } from "@/models/votes";
+import type { HomePageData } from "./data";
 
-export interface HomeData {
-  readonly message: string;
-  readonly renderedAt: string;
-}
-
-export const homeLoader: Effect.Effect<HomeData> = Effect.gen(function* () {
+export const homeLoader: Effect.Effect<HomePageData> = Effect.gen(function* () {
   const now = yield* DateTime.now;
-  return {
+  const pageInfo: PageInfoData = {
     message: "Worker runtime prototype: hono + preact SSR",
     renderedAt: DateTime.formatIso(now),
   };
+  const votes: VotesData = { count: 0 };
+  return { pageInfo, votes };
 });

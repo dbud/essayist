@@ -1,12 +1,6 @@
-import { hydrate } from "preact";
-import type { HomeData } from "@/routes/home/loader";
-import { HomePage } from "@/routes/home/page";
+// Home's client entry: a script target of the SSR document, imported by nothing.
+import { boot } from "@/client/boot";
+import { createHomeModels } from "@/routes/home/models";
+import { HomeTree } from "@/routes/home/page";
 
-// The page module is shared with SSR; this boots it against the server
-// markup, reconciling instead of remounting.
-export function boot() {
-  const el = document.getElementById("page-data");
-  if (!el?.textContent) return;
-  const data = JSON.parse(el.textContent) as HomeData;
-  hydrate(<HomePage data={data} />, document.body);
-}
+void boot({ models: createHomeModels, tree: HomeTree });

@@ -1,6 +1,4 @@
-// Worker entry (ESS-79). API tier first: /api/* goes to the effect http-api
-// prototype; everything else to the pages tier. Static assets and middleware
-// port with the first real features.
+// Worker entry: /api/* goes to the api tier; everything else to the pages tier.
 import { Hono } from "hono";
 import { apiHandler } from "./api/hello";
 import { webApp } from "./app/hono";

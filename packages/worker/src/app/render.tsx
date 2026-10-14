@@ -1,20 +1,11 @@
 import type { ComponentChildren } from "preact";
 import { render } from "preact-render-to-string";
-
-// The client bundle exists in both modes under different URLs: the dev
-// transform serves it at its source path; the build emits it at assets/.
-const clientScript = import.meta.env.DEV
-  ? "/src/client/main.tsx"
-  : "/assets/app.js";
-
-function serializePageData(data: unknown): string {
-  // "<" is escaped so the HTML parser cannot end a script tag early.
-  return JSON.stringify(data).replace(/</g, "\\u003c");
-}
+import { PageDataScript } from "./pageData";
+import { clientScriptUrl, type PageName } from "./pages";
 
 export interface DocumentProps {
   readonly title: string;
-  readonly client?: string;
+  readonly client?: PageName;
   readonly pageData?: unknown;
   readonly children?: ComponentChildren;
 }
@@ -30,16 +21,12 @@ export function Document({ title, client, pageData, children }: DocumentProps) {
 body { margin: 0 auto; max-width: 42rem; padding: 2rem 1.25rem; font-family: system-ui, sans-serif; }
 h1 { font-size: 1.6rem; }
 `}</style>
-        {pageData !== undefined ? (
-          <script
-            type="application/json"
-            id="page-data"
-            dangerouslySetInnerHTML={{ __html: serializePageData(pageData) }}
-          />
+        {pageData !== undefined ? <PageDataScript data={pageData} /> : null}
+        {client !== undefined ? (
+          <script type="module" src={clientScriptUrl(client)} />
         ) : null}
-        <script type="module" src={clientScript} />
       </head>
-      <body data-client={client}>{children}</body>
+      <body>{children}</body>
     </html>
   );
 }
@@ -47,7 +34,7 @@ h1 { font-size: 1.6rem; }
 export function renderDocument(
   title: string,
   page: ComponentChildren,
-  options?: { readonly client?: string; readonly pageData?: unknown },
+  options?: { readonly client?: PageName; readonly pageData?: unknown },
 ): string {
   return `<!doctype html>${render(
     <Document
