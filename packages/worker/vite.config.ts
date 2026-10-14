@@ -15,7 +15,7 @@ export default defineConfig({
               pageNames.map((name) => [name, clientEntryPath(name)]),
             ),
             // The global stylesheet: one entry, referenced by every page.
-            styles: "src/client/styles.css",
+            styles: "src/client/styles/styles.css",
           },
           output: {
             entryFileNames: "assets/[name].js",

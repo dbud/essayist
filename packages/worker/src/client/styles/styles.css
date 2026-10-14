@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "./fonts.css";
 @import "./badges.css";
 @import "./buttons.css";
 @import "./caret.css";

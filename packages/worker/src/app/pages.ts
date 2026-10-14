@@ -15,5 +15,7 @@ export function clientScriptUrl(page: PageName): string {
 }
 
 export function styleSheetUrl(): string {
-  return import.meta.env.DEV ? "/src/client/styles.css" : "/assets/styles.css";
+  return import.meta.env.DEV
+    ? "/src/client/styles/styles.css"
+    : "/assets/styles.css";
 }
