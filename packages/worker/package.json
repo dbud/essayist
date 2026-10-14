@@ -2,6 +2,11 @@
   "dependencies": {
     "@effect/ai-openrouter": "catalog:",
     "@essayist/core": "workspace:*",
+    "@fontsource-variable/atkinson-hyperlegible-next": "^5.3.0",
+    "@fontsource-variable/recursive": "^5.3.0",
+    "@fontsource-variable/special-gothic": "^5.3.0",
+    "@fontsource-variable/vollkorn": "^5.3.0",
+    "@fontsource/ibm-plex-serif": "^5.3.0",
     "@preact/signals": "^2.11.3",
     "@std/collections": "catalog:",
     "@tailwindcss/vite": "^4.3.3",

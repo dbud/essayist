@@ -1,5 +1,16 @@
 @import "tailwindcss";
 
+@import "@fontsource/ibm-plex-serif/400.css";
+@import "@fontsource/ibm-plex-serif/600.css";
+@import "@fontsource/ibm-plex-serif/400-italic.css";
+@import "@fontsource/ibm-plex-serif/600-italic.css";
+@import "@fontsource-variable/atkinson-hyperlegible-next/wght.css";
+@import "@fontsource-variable/atkinson-hyperlegible-next/wght-italic.css";
+@import "@fontsource-variable/recursive/mono.css";
+@import "@fontsource-variable/special-gothic/wdth.css";
+@import "@fontsource-variable/vollkorn";
+@import "@fontsource-variable/vollkorn/wght-italic";
+
 :root {
   --color-paper: light-dark(oklch(100% 0 50), oklch(25% 0 50));
   --color-ink: light-dark(oklch(15% 0.01 60), oklch(95% 0.01 60));

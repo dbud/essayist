@@ -232,6 +232,21 @@ importers:
       '@essayist/core':
         specifier: workspace:*
         version: link:../core
+      '@fontsource-variable/atkinson-hyperlegible-next':
+        specifier: ^5.3.0
+        version: 5.3.0
+      '@fontsource-variable/recursive':
+        specifier: ^5.3.0
+        version: 5.3.0
+      '@fontsource-variable/special-gothic':
+        specifier: ^5.3.0
+        version: 5.3.0
+      '@fontsource-variable/vollkorn':
+        specifier: ^5.3.0
+        version: 5.3.0
+      '@fontsource/ibm-plex-serif':
+        specifier: ^5.3.0
+        version: 5.3.0
       '@preact/signals':
         specifier: ^2.11.3
         version: 2.11.3(preact@11.0.1)
@@ -584,6 +599,21 @@ packages:
     engines: {node: '>=18'}
     cpu: [x64]
     os: [win32]
+
+  '@fontsource-variable/atkinson-hyperlegible-next@5.3.0':
+    resolution: {integrity: sha512-UnLzNUy1RWoLDfydAatP4NaRm99X/WbQEph7q/PymJnCFIOOwKOx3pBmp5ys8trO0dM+CKGuJgeZP9fAR4mQpA==}
+
+  '@fontsource-variable/recursive@5.3.0':
+    resolution: {integrity: sha512-4B4/lWCVeZgdbpJdIIU1sOVO/ECjjM673ohuxvyQ6uCK41TPlGzKRNokKY84noUgGYnpwc//MW4k2KrOMY19jQ==}
+
+  '@fontsource-variable/special-gothic@5.3.0':
+    resolution: {integrity: sha512-O2DGNqYH/HJ6NkWTiRxLNWngtjidQlANImwgjXchH0MA56vK1mJzwBf9j338orlgho2VuoiIym5KR0jD7TE37A==}
+
+  '@fontsource-variable/vollkorn@5.3.0':
+    resolution: {integrity: sha512-EYzMw2FGZXrR6oB7A3/pck3HY2ZjIGfoTFIZV5OsXexLu0nqPELuCmOoS7oQiQ6TkNjlQ3UgUIU24tNvxEKzcw==}
+
+  '@fontsource/ibm-plex-serif@5.3.0':
+    resolution: {integrity: sha512-zwPfHB7EJbS5B8qnitPigJYzNdnt6PUeaoOA1gAAt//1pjpTVZN5sOU14NIAZ+C1xypL6GWsUG2VMYJW9bhJqQ==}
 
   '@img/colour@1.1.0':
     resolution: {integrity: sha512-Td76q7j57o/tLVdgS746cYARfSyxk8iEfRxewL9h4OMzYhbW4TAcppl0mT4eyqXddh6L/jwoM75mo7ixa/pCeQ==}
@@ -1789,6 +1819,16 @@ snapshots:
 
   '@esbuild/win32-x64@0.28.2':
     optional: true
+
+  '@fontsource-variable/atkinson-hyperlegible-next@5.3.0': {}
+
+  '@fontsource-variable/recursive@5.3.0': {}
+
+  '@fontsource-variable/special-gothic@5.3.0': {}
+
+  '@fontsource-variable/vollkorn@5.3.0': {}
+
+  '@fontsource/ibm-plex-serif@5.3.0': {}
 
   '@img/colour@1.1.0': {}
 
