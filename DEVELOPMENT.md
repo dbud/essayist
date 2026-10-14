@@ -62,11 +62,18 @@ mode, fails on this layout, and rewrites `package.json` (adding
 `workspaces`/`catalog` mirrors of pnpm-workspace.yaml). If that happens,
 strip the added fields and rerun `pnpm install`.
 
-CI order: every deno step (`deno install`, checks, tests,
-favicon, web build, Deploy on main) runs BEFORE the pnpm steps, so deno
-always runs without a node_modules directory and resolves everything from
-import maps (web's and kvctl's deno.jsonc plus a `@deno/kv` entry in
-core's).
+CI runs two jobs. The deno job (type checks, tests, wasm build, favicon
+check, Deploy build and release) runs on main pushes only; the deno
+members are frozen during the migration. Everything deno needs resolves
+from import maps (web's and kvctl's deno.jsonc plus a `@deno/kv` entry in
+core's), so its global-cache mode needs no node_modules. The pnpm job
+(install, check, test, worker build) runs on every push and PR and is the
+real gate while migration branches churn.
+
+Note before this branch merges back: the deno job's three diagnostics
+(PNG.sync typing, two unused @ts-expect-error Workarounds in patches,
+surfaced by the nodeModulesDir removal) must be fixed, or
+`nodeModulesDir: "auto"` restored, so the job passes on main again.
 
 deno tasks remain available in CI:
 
