@@ -1,11 +1,6 @@
 import type { Signal } from "@preact/signals";
 import { CircleCheckBig, Info, TriangleAlert, X } from "lucide-preact";
-import {
-  dismissToast,
-  removeToast,
-  type Toast,
-  toasts,
-} from "@/signals/toast.ts";
+import { dismissToast, removeToast, type Toast, toasts } from "@/models/toast";
 
 const ICONS = {
   info: Info,
@@ -59,7 +54,7 @@ function ToastView({ toast }: { toast: Signal<Toast> }) {
   );
 }
 
-export default function Toaster() {
+export function Toaster() {
   return (
     <div class="toast">
       {toasts.value.map((toast) => (

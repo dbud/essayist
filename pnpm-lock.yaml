@@ -265,6 +265,9 @@ importers:
       hono:
         specifier: ^4.13.13
         version: 4.13.13
+      lucide-preact:
+        specifier: ^1.56.0
+        version: 1.56.0(preact@11.0.1)
       preact:
         specifier: ^11.0.1
         version: 11.0.1(preact-render-to-string@6.8.0)
@@ -1405,6 +1408,11 @@ packages:
     resolution: {integrity: sha512-WkUDrojuJs0xkgGf2udWxa3yGBRxPtxUkB79i6aCZLRgc7PM8fZe9TosfPDcvEpQZbuFASnHYmRLBLUbmLOIIA==}
     engines: {node: '>= 12.0.0'}
 
+  lucide-preact@1.56.0:
+    resolution: {integrity: sha512-ysQiAj+PrOO8V0kf+5cVQOu28z5NSKdARxY8hC1+jjr9c0yfmKjTh/3q1sbusIF5j4dVzfQRTV9WE2hZprcFxg==}
+    peerDependencies:
+      preact: ^10.27.2 || ^11.0.0-0
+
   magic-string@0.30.21:
     resolution: {integrity: sha512-vd2F4YUyEXKGcLHoq+TEyCjxueSeHnFxyyjNp80yg0XV4vUhnDer/lvvlqM/arB5bXQN5K2/3oinyCRyx8T2CQ==}
 
@@ -2387,6 +2395,10 @@ snapshots:
       lightningcss-linux-x64-musl: 1.33.0
       lightningcss-win32-arm64-msvc: 1.33.0
       lightningcss-win32-x64-msvc: 1.33.0
+
+  lucide-preact@1.56.0(preact@11.0.1):
+    dependencies:
+      preact: 11.0.1(preact-render-to-string@6.8.0)
 
   magic-string@0.30.21:
     dependencies:
