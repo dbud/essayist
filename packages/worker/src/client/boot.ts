@@ -1,6 +1,6 @@
 import type { ComponentChild } from "preact";
 import { hydrate } from "preact";
-import { pageDataScriptId } from "@/app/pageData";
+import { PAGE_DATA_SCRIPT_ID } from "@/app/pageData";
 
 // One boot for every client page. Data and Models infer from the page's
 // model factory; tree must accept those models, so drift fails tsc here.
@@ -16,9 +16,9 @@ export async function boot<Data, Models>(
     await import("preact/debug");
   }
 
-  const el = document.getElementById(pageDataScriptId);
+  const el = document.getElementById(PAGE_DATA_SCRIPT_ID);
   if (!el?.textContent) {
-    throw new Error("boot: #page-data missing from the document");
+    throw new Error(`boot: #${PAGE_DATA_SCRIPT_ID} missing from the document`);
   }
 
   // The page data is this bundle's own SSR output, so it is cast. Pages on

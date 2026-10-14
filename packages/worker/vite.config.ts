@@ -1,7 +1,7 @@
 import { cloudflare } from "@cloudflare/vite-plugin";
 import tailwindcss from "@tailwindcss/vite";
 import { defineConfig } from "vite";
-import { clientEntryPath, pageNames } from "./src/app/pages.ts";
+import { clientEntryPath, PAGE_NAMES } from "./src/app/pages.ts";
 
 export default defineConfig({
   plugins: [tailwindcss(), cloudflare({ viteEnvironment: { name: "worker" } })],
@@ -12,7 +12,7 @@ export default defineConfig({
         rolldownOptions: {
           input: {
             ...Object.fromEntries(
-              pageNames.map((name) => [name, clientEntryPath(name)]),
+              PAGE_NAMES.map((name) => [name, clientEntryPath(name)]),
             ),
             // The global stylesheet: one entry, referenced by every page.
             styles: "src/client/styles/styles.css",

@@ -1,8 +1,8 @@
 // The page registry. The vite config derives the client build's inputs
 // from it; the SSR document derives the page's script tag from it.
-export const pageNames = ["home"] as const;
+export const PAGE_NAMES = ["home"] as const;
 
-export type PageName = (typeof pageNames)[number];
+export type PageName = (typeof PAGE_NAMES)[number];
 
 export function clientEntryPath(page: PageName): string {
   return `src/client/pages/${page}.tsx`;
