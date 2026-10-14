@@ -2,6 +2,7 @@
   "dependencies": {
     "@effect/ai-openrouter": "catalog:",
     "@essayist/core": "workspace:*",
+    "@preact/signals": "^2.11.3",
     "@std/collections": "catalog:",
     "effect": "catalog:",
     "hono": "^4.13.13",
@@ -18,7 +19,7 @@
   "private": true,
   "scripts": {
     "build": "vite build",
-    "check": "biome check --error-on-warnings . && tsc --noEmit",
+    "check": "biome check --error-on-warnings . && tsc --noEmit && tsc --noEmit -p src/client",
     "deploy": "vite build && wrangler deploy",
     "dev": "vite dev",
     "fmt": "biome check --write .",
