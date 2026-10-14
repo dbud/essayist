@@ -1,7 +1,7 @@
 import type { ComponentChildren } from "preact";
 import { render } from "preact-render-to-string";
 import { PageDataScript } from "./pageData";
-import { clientScriptUrl, type PageName } from "./pages";
+import { clientScriptUrl, type PageName, styleSheetUrl } from "./pages";
 
 export interface DocumentProps {
   readonly title: string;
@@ -17,10 +17,7 @@ export function Document({ title, client, pageData, children }: DocumentProps) {
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <title>{title}</title>
-        <style>{`
-body { margin: 0 auto; max-width: 42rem; padding: 2rem 1.25rem; font-family: system-ui, sans-serif; }
-h1 { font-size: 1.6rem; }
-`}</style>
+        <link rel="stylesheet" href={styleSheetUrl()} />
         {pageData !== undefined ? <PageDataScript data={pageData} /> : null}
         {client !== undefined ? (
           <script type="module" src={clientScriptUrl(client)} />

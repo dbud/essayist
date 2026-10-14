@@ -13,3 +13,7 @@ export function clientScriptUrl(page: PageName): string {
     ? `/src/client/pages/${page}.tsx`
     : `/assets/${page}.js`;
 }
+
+export function styleSheetUrl(): string {
+  return import.meta.env.DEV ? "/src/client/styles.css" : "/assets/styles.css";
+}
