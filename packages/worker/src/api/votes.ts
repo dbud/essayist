@@ -1,6 +1,6 @@
 // API tier prototype. Endpoint paths carry the /api prefix: hono forwards
 // matching requests untouched, so the paths must be absolute from the root.
-import { Effect, Layer } from "effect";
+import { Effect, Layer, Schema } from "effect";
 import { HttpRouter, HttpServer } from "effect/http";
 import {
   HttpApi,
@@ -27,10 +27,15 @@ const decrementVotes = HttpApiEndpoint.post(
   { success: VotesDataSchema },
 );
 
+const chaosVotes = HttpApiEndpoint.post("chaosVotes", "/api/votes/chaos", {
+  success: Schema.Struct({ armed: Schema.Boolean }),
+});
+
 const VotesGroup = HttpApiGroup.make("votes")
   .add(getVotes)
   .add(incrementVotes)
-  .add(decrementVotes);
+  .add(decrementVotes)
+  .add(chaosVotes);
 
 export const VotesApi = HttpApi.make("votes").add(VotesGroup);
 
@@ -46,6 +51,7 @@ const VotesHandlers = HttpApiBuilder.group(
       getVotes: () => store.get().pipe(Effect.map(withCount)),
       incrementVotes: () => store.increment().pipe(Effect.map(withCount)),
       decrementVotes: () => store.decrement().pipe(Effect.map(withCount)),
+      chaosVotes: () => store.chaos().pipe(Effect.map((armed) => ({ armed }))),
     });
   }),
 ).pipe(Layer.provide(Votes.layerMemory));

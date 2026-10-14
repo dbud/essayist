@@ -1,4 +1,5 @@
 import type { JSX } from "preact";
+import { Toaster } from "@/components/Toaster";
 import { type HomeModels, HomeModelsProvider, useHomeModels } from "./models";
 
 function Counter() {
@@ -24,7 +25,26 @@ function Counter() {
         >
           +
         </button>
+        <button
+          class="btn btn--ghost ms-2"
+          type="button"
+          disabled={votes.refreshing.value}
+          onClick={votes.refresh}
+        >
+          refresh
+        </button>
       </p>
+      {votes.refreshing.value ? (
+        <p class="mt-1 text-sm text-ink/50">refreshing</p>
+      ) : null}
+      {votes.refreshError.value ? (
+        <p class="badge badge--error mt-1">{votes.refreshError.value}</p>
+      ) : null}
+      {import.meta.env.DEV ? (
+        <button class="btn btn--ghost mt-2" type="button" onClick={votes.chaos}>
+          chaos {votes.chaosArmed.value ? "armed" : "idle"}
+        </button>
+      ) : null}
     </div>
   );
 }
@@ -47,6 +67,7 @@ export function HomeTree(models: HomeModels): JSX.Element {
   return (
     <HomeModelsProvider value={models}>
       <HomePage />
+      <Toaster />
     </HomeModelsProvider>
   );
 }
