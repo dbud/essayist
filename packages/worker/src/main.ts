@@ -1,6 +1,6 @@
 // Worker entry: /api/* goes to the api tier; everything else to the pages tier.
 import { Hono } from "hono";
-import { apiHandler } from "./api/hello";
+import { apiHandler } from "./api/votes";
 import { webApp } from "./app/hono";
 
 const app = new Hono();

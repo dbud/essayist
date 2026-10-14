@@ -1,4 +1,5 @@
 import { computed, createModel, signal } from "@preact/signals";
+import { postJson } from "@/models/http";
 import type { VotesData } from "./votes.data";
 
 export type { VotesData };
@@ -13,12 +14,16 @@ export const VotesModel = createModel((data: VotesData) => {
         : `${count.value} votes`,
   );
 
-  function inc(): void {
-    count.value += 1;
+  async function inc(): Promise<void> {
+    apply(await postJson<VotesData>("/api/votes/increment"));
   }
 
-  function dec(): void {
-    count.value -= 1;
+  async function dec(): Promise<void> {
+    apply(await postJson<VotesData>("/api/votes/decrement"));
+  }
+
+  function apply(data: VotesData): void {
+    count.value = data.count;
   }
 
   return { count, summary, inc, dec };
