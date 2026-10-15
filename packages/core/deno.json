@@ -7,7 +7,7 @@
   ],
   "exports": {
     ".": "./mod.ts",
-    "./kv_layer": "./src/persistence/kv_layer.ts"
+    "./kv_deno": "./src/persistence/kv_deno.ts"
   },
   "imports": {
     "@deno/kv": "npm:@deno/kv@^0.14.0",

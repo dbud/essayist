@@ -4,7 +4,7 @@ import { type Context, Effect, Layer, Result } from "effect";
 import { test } from "vitest";
 import { unframeChunk } from "./chunked.ts";
 import { ChunkedValues, MissingChunksError } from "./chunked_values.ts";
-import { kvLayerCompat } from "./kv_layer_compat.ts";
+import { kvLayer } from "./kv_layer.ts";
 import { Persistence } from "./mod.ts";
 
 interface Note {
@@ -24,8 +24,8 @@ const readWithStore = async <A>(
   const kv = await openKv();
   try {
     const env = Layer.merge(
-      kvLayerCompat(kv),
-      Layer.provide(ChunkedValues.layerNoDeps, kvLayerCompat(kv)),
+      kvLayer(kv),
+      Layer.provide(ChunkedValues.layerNoDeps, kvLayer(kv)),
     );
     return await Effect.runPromise(
       Effect.provide(

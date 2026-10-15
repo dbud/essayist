@@ -13,7 +13,7 @@ import {
   type Workspace,
   Workspaces,
 } from "@essayist/core";
-import { layerKv } from "@essayist/core/kv_layer";
+import { layerKv } from "@essayist/core/kv_deno";
 import { Layer, ManagedRuntime } from "effect";
 import { env } from "#/env.ts";
 import { seedDemo } from "#/seed.ts";

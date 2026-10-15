@@ -14,7 +14,7 @@
   "exclude": [
     "src/diff/diff_wasm_glue.ts",
     "src/diff/diff_wasm_test.ts",
-    "src/persistence/kv_layer.ts"
+    "src/persistence/kv_deno.ts"
   ],
   "include": ["mod.ts", "src", "vitest.config.ts"]
 }

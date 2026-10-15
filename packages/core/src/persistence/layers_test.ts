@@ -10,7 +10,7 @@ import { Effect, Result } from "effect";
 import { test } from "vitest";
 import { ConcurrentModificationError } from "./mod.ts";
 import { Persistence } from "./service.ts";
-import { layerKvCompat } from "./testing/kv.ts";
+import { layerKvMemory } from "./testing/kv.ts";
 
 type Scenario = () => Effect.Effect<void, unknown, Persistence>;
 
@@ -245,9 +245,9 @@ const SCENARIOS: [string, Scenario][] = [
 ];
 
 for (const [title, run] of SCENARIOS) {
-  test(`layerKvCompat -- ${title}`, async () => {
+  test(`layerKvMemory -- ${title}`, async () => {
     // A fresh ephemeral KV per test; the layer owns the connection and
     // closes it at scope end.
-    await Effect.runPromise(Effect.provide(run(), layerKvCompat()));
+    await Effect.runPromise(Effect.provide(run(), layerKvMemory()));
   });
 }

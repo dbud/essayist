@@ -17,7 +17,7 @@ import { Marks } from "#/marks/service.ts";
 import type { Mark } from "#/marks/types.ts";
 import { createFakeClient } from "#/model/fake_client.ts";
 import { ModelClient } from "#/model/service.ts";
-import { kvLayerCompat } from "#/persistence/kv_layer_compat.ts";
+import { kvLayer } from "#/persistence/kv_layer.ts";
 import {
   type ReviewNodeEvent,
   type ReviewServices,
@@ -77,7 +77,7 @@ async function setup(content: string) {
       Files.layerNoDeps,
       Layer.provide(Marks.layerNoDeps, Files.layerNoDeps),
     ),
-    kvLayerCompat(kv),
+    kvLayer(kv),
   );
   const versionId = await Effect.runPromise(
     Effect.provide(

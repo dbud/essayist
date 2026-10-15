@@ -8,7 +8,8 @@
   },
   "exports": {
     ".": "./mod.ts",
-    "./kv_layer": "./src/persistence/kv_layer.ts"
+    "./kv_connect": "./src/persistence/kv_connect.ts",
+    "./kv_deno": "./src/persistence/kv_deno.ts"
   },
   "imports": {
     "#/*": "./src/*"

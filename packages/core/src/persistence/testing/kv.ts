@@ -3,24 +3,18 @@
 import { openKv } from "@deno/kv";
 import { Effect, Layer } from "effect";
 import { jsonLogLayer } from "#/log.ts";
-import { kvLayerCompat } from "#/persistence/kv_layer_compat.ts";
+import { layerKvHandle } from "#/persistence/kv_layer.ts";
 import { type Persistence, PersistenceError } from "#/persistence/mod.ts";
 
 /** An ephemeral in-memory Persistence layer that owns its connection and
- * closes it when the layer disposes. The Node twin of `kv_layer.ts`'s
+ * closes it when the layer disposes. The Node twin of `kv_deno.ts`'s
  * `layerKv` (which opens via `Deno.openKv`). */
-export function layerKvCompat(): Layer.Layer<Persistence, PersistenceError> {
-  return Layer.unwrap(
-    Effect.map(
-      Effect.acquireRelease(
-        Effect.tryPromise({
-          try: () => openKv(),
-          catch: (cause) => new PersistenceError({ cause }),
-        }),
-        (kv) => Effect.sync(() => kv.close()),
-      ),
-      kvLayerCompat,
-    ),
+export function layerKvMemory(): Layer.Layer<Persistence, PersistenceError> {
+  return layerKvHandle(
+    Effect.tryPromise({
+      try: () => openKv(),
+      catch: (cause) => new PersistenceError({ cause }),
+    }),
   );
 }
 
@@ -32,5 +26,5 @@ export function layerKvCompat(): Layer.Layer<Persistence, PersistenceError> {
 export function testLayer<S>(
   service: Layer.Layer<S, never, Persistence>,
 ): Layer.Layer<S, PersistenceError> {
-  return Layer.provide(service, Layer.mergeAll(layerKvCompat(), jsonLogLayer));
+  return Layer.provide(service, Layer.mergeAll(layerKvMemory(), jsonLogLayer));
 }

@@ -9,7 +9,7 @@ import { Marks } from "#/marks/service.ts";
 import { createFakeClient } from "#/model/fake_client.ts";
 import { ModelClient } from "#/model/service.ts";
 import { ChunkedValues } from "#/persistence/chunked_values.ts";
-import { kvLayerCompat } from "#/persistence/kv_layer_compat.ts";
+import { kvLayer } from "#/persistence/kv_layer.ts";
 import { Persistence } from "#/persistence/mod.ts";
 import {
   ReviewFileMissingError,
@@ -86,9 +86,9 @@ async function setup(file?: {
       ChunkedValues.layerNoDeps,
       Files.layerNoDeps,
       Layer.provide(Marks.layerNoDeps, Files.layerNoDeps),
-      kvLayerCompat(kv),
+      kvLayer(kv),
     ),
-    kvLayerCompat(kv),
+    kvLayer(kv),
   );
   const versionId = file
     ? await Effect.runPromise(
@@ -717,10 +717,10 @@ function countingReviews(
       Layer.provide(TraceEvents.layerNoDeps, ChunkedValues.layerNoDeps),
       Files.layerNoDeps,
       Layer.provide(Marks.layerNoDeps, Files.layerNoDeps),
-      kvLayerCompat(kv),
+      kvLayer(kv),
     ),
   ).pipe(
-    Layer.provide(Layer.provide(ReviewRuns.layerNoDeps, kvLayerCompat(kv))),
-    Layer.provide(kvLayerCompat(kv)),
+    Layer.provide(Layer.provide(ReviewRuns.layerNoDeps, kvLayer(kv))),
+    Layer.provide(kvLayer(kv)),
   );
 }

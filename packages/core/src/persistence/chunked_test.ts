@@ -10,7 +10,7 @@ import {
   planChunks,
   unframeChunk,
 } from "./chunked.ts";
-import { kvLayerCompat } from "./kv_layer_compat.ts";
+import { kvLayer } from "./kv_layer.ts";
 import type { Entry, Key } from "./mod.ts";
 import { Persistence } from "./mod.ts";
 
@@ -48,7 +48,7 @@ const store = <A>(
         const persistence = yield* Persistence;
         return yield* body(persistence);
       }),
-      kvLayerCompat(kv),
+      kvLayer(kv),
     ),
   );
 

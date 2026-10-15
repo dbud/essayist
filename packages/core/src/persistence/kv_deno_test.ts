@@ -2,11 +2,11 @@ import type { Kv } from "@deno/kv";
 import { assertEquals, assertInstanceOf } from "@std/assert";
 import { Effect, Result } from "effect";
 import { test } from "vitest";
-import { kvLayerCompat } from "./kv_layer_compat.ts";
+import { kvLayer } from "./kv_layer.ts";
 import { ConcurrentModificationError } from "./mod.ts";
 import { Persistence, PersistenceError } from "./service.ts";
 
-test("kvLayerCompat -- a rejecting backend maps faults into PersistenceError", async () => {
+test("kvLayer -- a rejecting backend maps faults into PersistenceError", async () => {
   // An atomic chain that never commits: exercises the conflict path.
   const atomic = {
     check: () => atomic,
@@ -37,5 +37,5 @@ test("kvLayerCompat -- a rejecting backend maps faults into PersistenceError", a
     }
     assertInstanceOf(write.failure, ConcurrentModificationError);
   });
-  await Effect.runPromise(Effect.provide(program, kvLayerCompat(failing)));
+  await Effect.runPromise(Effect.provide(program, kvLayer(failing)));
 });

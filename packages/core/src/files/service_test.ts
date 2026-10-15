@@ -4,7 +4,7 @@ import { assertObjectMatch } from "@std/assert/object-match";
 import { Effect, Layer } from "effect";
 import { test } from "vitest";
 import type { Mark } from "#/marks/types.ts";
-import { kvLayerCompat } from "#/persistence/kv_layer_compat.ts";
+import { kvLayer } from "#/persistence/kv_layer.ts";
 import {
   type ConcurrentModificationError,
   Persistence,
@@ -784,8 +784,8 @@ test("Files -- small file inlines content in the latest key (no chunk keys)", as
   const kv = await openKv();
   try {
     const env = Layer.merge(
-      kvLayerCompat(kv),
-      Layer.provide(Files.layerNoDeps, kvLayerCompat(kv)),
+      kvLayer(kv),
+      Layer.provide(Files.layerNoDeps, kvLayer(kv)),
     );
     const { entries } = await Effect.runPromise(
       Effect.provide(
@@ -820,8 +820,8 @@ test("Files -- large write inlines first chunk, rest as chunk keys", async () =>
   const kv = await openKv();
   try {
     const env = Layer.merge(
-      kvLayerCompat(kv),
-      Layer.provide(Files.layerNoDeps, kvLayerCompat(kv)),
+      kvLayer(kv),
+      Layer.provide(Files.layerNoDeps, kvLayer(kv)),
     );
     const { entries } = await Effect.runPromise(
       Effect.provide(

@@ -8,7 +8,7 @@ import {
   TraceEvents,
   Workspaces,
 } from "@essayist/core";
-import { layerKv } from "@essayist/core/kv_layer";
+import { layerKv } from "@essayist/core/kv_deno";
 import { Layer, ManagedRuntime } from "effect";
 import type { KvctlGlobals } from "#/globals.ts";
 
