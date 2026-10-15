@@ -22,3 +22,5 @@ coverage/
 
 TODO*
 .DS_Store
+.dev.vars
+tmp/
