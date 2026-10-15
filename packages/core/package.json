@@ -16,7 +16,6 @@
   },
   "exports": {
     ".": "./mod.ts",
-    "./kv_connect": "./src/persistence/kv_connect.ts",
     "./kv_d1": "./src/persistence/kv_d1.ts",
     "./kv_deno": "./src/persistence/kv_deno.ts"
   },

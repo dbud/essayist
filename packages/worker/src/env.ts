@@ -1,29 +1,33 @@
 // The worker environment: Effect Config over the fetch handler's Cloudflare
-// bindings (workerd exposes no process.env at module scope). The first
-// request composes the provider and memoizes the snapshot per isolate; vite
-// feeds the same keys via .dev.vars locally.
+// bindings (workerd exposes no process.env at module scope), memoized per
+// isolate; vite feeds the same keys via .dev.vars locally.
 
+import type { D1Database } from "@cloudflare/workers-types";
 import { Config, ConfigProvider, Effect, Option } from "effect";
 
-const optional = (name: string) => Config.option(Config.String(name));
-
 const config = Config.all({
-  LOG_LEVEL: optional("LOG_LEVEL"),
-  DENO_KV_REMOTE_URL: optional("DENO_KV_REMOTE_URL"),
-  DENO_KV_ACCESS_TOKEN: optional("DENO_KV_ACCESS_TOKEN"),
+  LOG_LEVEL: Config.option(Config.String("LOG_LEVEL")),
 });
 
 export interface WorkerEnv {
   readonly logLevel: string | undefined;
-  readonly kvRemoteUrl: string | undefined;
-  readonly kvAccessToken: string | undefined;
+  readonly db: D1Database;
 }
 
 let cached: WorkerEnv | undefined;
 
+// The one boundary cast: hono's fetch env is untyped, and the D1 binding
+// is the account's database.
+function dbBinding(bindings: unknown): D1Database {
+  const db = (bindings as { DB?: unknown }).DB;
+  if (db === undefined) throw new Error("the D1 binding DB is missing");
+  return db as D1Database;
+}
+
 export function env(bindings: unknown): WorkerEnv {
   if (cached !== undefined) return cached;
 
+  const db = dbBinding(bindings);
   const snapshot = Effect.runSync(
     config.pipe(
       Effect.provideService(
@@ -45,8 +49,7 @@ export function env(bindings: unknown): WorkerEnv {
 
   cached = {
     logLevel: Option.getOrUndefined(snapshot.LOG_LEVEL),
-    kvRemoteUrl: Option.getOrUndefined(snapshot.DENO_KV_REMOTE_URL),
-    kvAccessToken: Option.getOrUndefined(snapshot.DENO_KV_ACCESS_TOKEN),
+    db,
   };
   return cached;
 }

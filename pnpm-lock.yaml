@@ -263,6 +263,9 @@ importers:
       '@effect/ai-openrouter':
         specifier: 'catalog:'
         version: 4.0.5(effect@4.0.5)
+      '@effect/sql-d1':
+        specifier: ~4.0.5
+        version: 4.0.5(effect@4.0.5)
       '@essayist/core':
         specifier: workspace:*
         version: link:../core
