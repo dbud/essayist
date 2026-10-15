@@ -1,17 +1,9 @@
 {
   "compilerOptions": {
-    "allowImportingTsExtensions": true,
-    "forceConsistentCasingInFileNames": true,
-    "isolatedModules": true,
-    "jsx": "react-jsx",
-    "jsxImportSource": "preact",
     "lib": ["dom", "esnext", "esnext.iterator"],
-    "module": "esnext",
-    "moduleResolution": "bundler",
-    "noEmit": true,
-    "strict": true,
-    "target": "es2024",
     "types": ["vite/client"]
   },
+  "exclude": [],
+  "extends": "../../tsconfig.json",
   "include": ["**/*"]
 }
