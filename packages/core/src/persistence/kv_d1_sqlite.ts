@@ -1,7 +1,8 @@
 /**
- * A `D1Database`-shaped shim over `node:sqlite` for tests: the same
- * prepare/bind surface the worker binding implements. Batches run in a
- * transaction and stop on the first failing statement, mirroring D1.
+ * A `D1Database`-shaped adapter over `node:sqlite`: the local transport for
+ * kvctl's `--local` (the vite dev server's own D1 state) and the test
+ * shim. Batches run in a transaction and stop on the first failing
+ * statement, mirroring D1's all-or-nothing batch.
  */
 
 import type { DatabaseSync } from "node:sqlite";

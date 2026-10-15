@@ -9,8 +9,8 @@ import { Effect } from "effect";
 import * as Reactivity from "effect/reactivity/Reactivity";
 import { test } from "vitest";
 import { KV_D1_SCHEMA, layerKvD1 } from "./kv_d1.ts";
+import { d1SqliteShim } from "./kv_d1_sqlite.ts";
 import { SCENARIOS } from "./scenarios.ts";
-import { d1SqliteShim } from "./testing/d1.ts";
 
 for (const [title, run] of SCENARIOS) {
   test(`layerKvD1 -- ${title}`, async () => {
