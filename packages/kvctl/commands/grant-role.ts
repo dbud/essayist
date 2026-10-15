@@ -1,7 +1,7 @@
 import { Command, EnumType } from "@cliffy/command";
 import { USER_ROLES, Workspaces } from "@essayist/core";
 import type { KvctlGlobals } from "#/globals.ts";
-import { withKv } from "#/kv.ts";
+import { withStore } from "#/kv.ts";
 
 const ROLE = new EnumType([...USER_ROLES]);
 
@@ -10,7 +10,7 @@ export const grantRole = new Command<KvctlGlobals>()
   .type("role", ROLE)
   .arguments("<emailOrId:string> <role:role>")
   .action(({ target, local }, emailOrId: string, role: "admin" | "writer") =>
-    withKv({ target, local }, async ({ runtime }) => {
+    withStore({ target, local }, async ({ runtime }) => {
       let user = await runtime.runPromise(
         Workspaces.use((store) => store.getUserByEmail(emailOrId)),
       );
@@ -21,7 +21,7 @@ export const grantRole = new Command<KvctlGlobals>()
       }
       if (!user) {
         console.error(`no user matching "${emailOrId}"`);
-        Deno.exit(1);
+        process.exit(1);
       }
       // A const alias keeps the narrowing inside the use() callback.
       const current = user;

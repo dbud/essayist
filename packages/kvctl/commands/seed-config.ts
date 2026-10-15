@@ -1,12 +1,12 @@
 import { Command } from "@cliffy/command";
 import { ReviewConfig } from "@essayist/core";
 import type { KvctlGlobals } from "#/globals.ts";
-import { withKv } from "#/kv.ts";
+import { withStore } from "#/kv.ts";
 
 export const seedConfig = new Command<KvctlGlobals>()
   .description("Seed default review config.")
   .action(({ target, local }) =>
-    withKv({ target, local }, async ({ runtime }) => {
+    withStore({ target, local }, async ({ runtime }) => {
       const poolId = "free-pool";
       await runtime.runPromise(
         ReviewConfig.use((store) =>

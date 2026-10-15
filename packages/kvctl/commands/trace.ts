@@ -2,7 +2,7 @@ import { Command } from "@cliffy/command";
 import { type TraceEvent, TraceEvents, WorkspaceId } from "@essayist/core";
 import { Effect } from "effect";
 import type { KvctlGlobals } from "#/globals.ts";
-import { withKv } from "#/kv.ts";
+import { withStore } from "#/kv.ts";
 import { pprint } from "#/utils/pprint.ts";
 
 /**
@@ -15,7 +15,7 @@ export const trace = new Command<KvctlGlobals>()
   .arguments("<wsId:string> <runId:string>")
   .option("--summary", "Print one line per event instead of full JSON.")
   .action(({ local, summary }, wsId: string, runId: string) =>
-    withKv({ local }, async ({ runtime }) => {
+    withStore({ local }, async ({ runtime }) => {
       const events = await runtime.runPromise(
         Effect.provideService(
           Effect.gen(function* () {
@@ -28,7 +28,7 @@ export const trace = new Command<KvctlGlobals>()
       );
       if (!events) {
         console.error(`No trace for run ${runId} in workspace ${wsId}`);
-        Deno.exit(1);
+        process.exit(1);
       }
       for (const event of events) {
         if (summary) {

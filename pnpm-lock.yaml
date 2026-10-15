@@ -176,6 +176,9 @@ catalogs:
     '@effect/ai-openrouter':
       specifier: ~4.0.5
       version: 4.0.5
+    '@effect/sql-d1':
+      specifier: ~4.0.5
+      version: 4.0.5
     '@std/assert':
       specifier: npm:@jsr/std__assert@^1.0.19
       version: 1.0.19
@@ -230,7 +233,7 @@ importers:
         specifier: 'catalog:'
         version: 4.0.5(effect@4.0.5)
       '@effect/sql-d1':
-        specifier: ~4.0.5
+        specifier: 'catalog:'
         version: 4.0.5(effect@4.0.5)
       '@std/assert':
         specifier: 'catalog:'
@@ -258,13 +261,35 @@ importers:
         specifier: 'catalog:'
         version: 26.6.5
 
+  packages/kvctl:
+    dependencies:
+      '@cliffy/command':
+        specifier: jsr:@cliffy/command@^1.3.1
+        version: '@jsr/cliffy__command@1.3.1'
+      '@effect/sql-d1':
+        specifier: 'catalog:'
+        version: 4.0.5(effect@4.0.5)
+      '@essayist/core':
+        specifier: workspace:*
+        version: link:../core
+      effect:
+        specifier: 'catalog:'
+        version: 4.0.5
+    devDependencies:
+      '@cloudflare/workers-types':
+        specifier: 'catalog:'
+        version: 5.20261013.1
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.6.5
+
   packages/worker:
     dependencies:
       '@effect/ai-openrouter':
         specifier: 'catalog:'
         version: 4.0.5(effect@4.0.5)
       '@effect/sql-d1':
-        specifier: ~4.0.5
+        specifier: 'catalog:'
         version: 4.0.5(effect@4.0.5)
       '@essayist/core':
         specifier: workspace:*
@@ -877,8 +902,26 @@ packages:
   '@jridgewell/trace-mapping@0.3.9':
     resolution: {integrity: sha512-3Belt6tdc8bPgAtbcmdtNJlirVoTmEb5e2gC94PnkwEW9jI6CAHUeoG85tjWP5WquqfavoMtMwiG4P926ZKKuQ==}
 
+  '@jsr/cliffy__command@1.3.1':
+    resolution: {integrity: sha512-xfwUppZF3FxaUPdiYncET/wgQerVpeiqbc4ASlIBW6Ze6yxkNK5/A3iOMbqWl/IF8mCS8Q+iDApcl+hxrtyTaQ==, tarball: https://npm.jsr.io/~/11/@jsr/cliffy__command/1.3.1.tgz}
+
+  '@jsr/cliffy__flags@1.3.1':
+    resolution: {integrity: sha512-ossBdyZ7YZksdq9R0hWNpF8WPPxVKM3qXRQfM9LEbPvh7B3beFnDsUPGmgXB1v0scUMz3p6qIpWXdIClyNeTbw==, tarball: https://npm.jsr.io/~/11/@jsr/cliffy__flags/1.3.1.tgz}
+
+  '@jsr/cliffy__internal@1.3.1':
+    resolution: {integrity: sha512-i26tW16HBMsoB2RE73QmZdFM93bveVUeaWwscDynvIsVk2nobThfVXRjgzH3PXmQNKU2FmAkitHlqYcEZOBdJw==, tarball: https://npm.jsr.io/~/11/@jsr/cliffy__internal/1.3.1.tgz}
+
+  '@jsr/cliffy__table@1.3.1':
+    resolution: {integrity: sha512-nme6FiT7jJ0/SLdapswVIlpxEWhfi6ZYM0gP90ASQpqNinvC/roilx77LPlNl+TVFoEqhJcVQzWcy8ax8kFfSA==, tarball: https://npm.jsr.io/~/11/@jsr/cliffy__table/1.3.1.tgz}
+
+  '@jsr/cliffy__upgrade@1.3.1':
+    resolution: {integrity: sha512-iXwRgWF4FZLpH89t6r1qMIErNvjSn6CAoC6SiEXxG7qQz+eQ8msknv/RoAiaSVsxU6wcKk8qwDP9mRn8pPA6RA==, tarball: https://npm.jsr.io/~/11/@jsr/cliffy__upgrade/1.3.1.tgz}
+
   '@jsr/std__assert@1.0.19':
     resolution: {integrity: sha512-pEj6RPkGbqlgRmyKwATp4cUs6+ijxtdrv3bq8v1d2I2CEcMEyPaO8cVKro61wGRDH4cNg8Zx6haztvK/9m7gkA==, tarball: https://npm.jsr.io/~/11/@jsr/std__assert/1.0.19.tgz}
+
+  '@jsr/std__bytes@1.0.6':
+    resolution: {integrity: sha512-St6yKggjFGhxS52IFLJWvkchRFbAKg2Xh8UxA4S1EGz7GJ2Ui+ssDDldj/w2c8vCxvl6qgR0HaYbKeFJNqujmA==, tarball: https://npm.jsr.io/~/11/@jsr/std__bytes/1.0.6.tgz}
 
   '@jsr/std__collections@1.4.0':
     resolution: {integrity: sha512-Px3STXCAB/zjWh2xpV0C1vyTVlJe8IVmzktBP+9WZFAJ6ihE9jG4mz0+stRdFC8ksf5bHP2b/dc2qADD9jJTKg==, tarball: https://npm.jsr.io/~/11/@jsr/std__collections/1.4.0.tgz}
@@ -886,8 +929,29 @@ packages:
   '@jsr/std__encoding@1.0.11':
     resolution: {integrity: sha512-4SmW8WXf4x4FjkxVpxbir06QYwxw/h/2+RU5A66iKXbJC9WAYCICZkH01mcOGj8FgSitF/lSTlT585RZfo8Ukg==, tarball: https://npm.jsr.io/~/11/@jsr/std__encoding/1.0.11.tgz}
 
+  '@jsr/std__fmt@1.0.10':
+    resolution: {integrity: sha512-Q2N8XDNkh/c1IKTi+sO4Vm64M5m4W0o47qTURmMX0vgHm9AJ6jL7jEQ2kw0M1T2rBZiwAY78eUbYzFyOYWaCqQ==, tarball: https://npm.jsr.io/~/11/@jsr/std__fmt/1.0.10.tgz}
+
   '@jsr/std__internal@1.0.14':
     resolution: {integrity: sha512-JT8b/t40WcR9q0GDwRZUooY7aXeXnFal8iidE/5TckdAFtvpVAsaJ71/Xgf1SfoChs41s6CZkuCYM8toaNgdvA==, tarball: https://npm.jsr.io/~/11/@jsr/std__internal/1.0.14.tgz}
+
+  '@jsr/std__path@1.1.6':
+    resolution: {integrity: sha512-H1Cmg6z8jFyIsQbVV+vZB4eOx4k6Qg8lyUM6l7nZysj5MZumg89kb0M1bsPBTGQis3fw6mJFkJELo5+AK6oCFA==, tarball: https://npm.jsr.io/~/11/@jsr/std__path/1.1.6.tgz}
+
+  '@jsr/std__regexp@1.0.2':
+    resolution: {integrity: sha512-wvJnzBWsPW4YLdAhCSggh4NyNia/qtzsuJr0kSYuqUBtvOU/RsI/WKB5lu7ehlzuZ5Sy+efr0ACyogCCZmw0YQ==, tarball: https://npm.jsr.io/~/11/@jsr/std__regexp/1.0.2.tgz}
+
+  '@jsr/std__semver@1.0.8':
+    resolution: {integrity: sha512-YhkykPU2Majz66e+rQbP0okYc7kKv+U32aguLPCXZZAL+vEVmBA+khHjPHhLBpWR073gzU3WHqGRgB7a/aXCjg==, tarball: https://npm.jsr.io/~/11/@jsr/std__semver/1.0.8.tgz}
+
+  '@jsr/std__streams@1.2.0':
+    resolution: {integrity: sha512-cQnU2wdP12rYRy+gGAiFarEK9YmWjVwnFMiOGIe0wMKmRLY68INH9hB/mqjKdPX/ruUhNYB70x5YRPLzUYIrbg==, tarball: https://npm.jsr.io/~/11/@jsr/std__streams/1.2.0.tgz}
+
+  '@jsr/std__tar@0.1.10':
+    resolution: {integrity: sha512-ikXNVN4gBptpqTctaF0j1El/vhxv1WVw4pMC+3TAFugCDFBe2OtG3DqeDFMkWMHvJ/JGITdk/B9O5bM0bxFdeA==, tarball: https://npm.jsr.io/~/11/@jsr/std__tar/0.1.10.tgz}
+
+  '@jsr/std__text@1.1.0':
+    resolution: {integrity: sha512-ofJfYrlnxcUZs4LxsFz83YmEvOV2DxbiFl7LoYF9ORUrKgnWD2DaRfRwyqm26xleQTWdc2d0rWMEzwe6C+v6MA==, tarball: https://npm.jsr.io/~/11/@jsr/std__text/1.1.0.tgz}
 
   '@oxc-project/types@0.153.0':
     resolution: {integrity: sha512-jSNrRIyvPVLL5E1z/tS5zLAprosGz/FuI1PWwEOz59j3E4TTTzSpqKb/RDGqJhhW0QHYISGXxq582wGx6T11Tw==}
@@ -2108,15 +2172,70 @@ snapshots:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.6.0
 
+  '@jsr/cliffy__command@1.3.1':
+    dependencies:
+      '@jsr/cliffy__flags': 1.3.1
+      '@jsr/cliffy__internal': 1.3.1
+      '@jsr/cliffy__table': 1.3.1
+      '@jsr/cliffy__upgrade': 1.3.1
+      '@jsr/std__fmt': 1.0.10
+      '@jsr/std__text': 1.1.0
+
+  '@jsr/cliffy__flags@1.3.1':
+    dependencies:
+      '@jsr/cliffy__internal': 1.3.1
+      '@jsr/std__text': 1.1.0
+
+  '@jsr/cliffy__internal@1.3.1':
+    dependencies:
+      '@jsr/std__fmt': 1.0.10
+
+  '@jsr/cliffy__table@1.3.1':
+    dependencies:
+      '@jsr/std__fmt': 1.0.10
+
+  '@jsr/cliffy__upgrade@1.3.1':
+    dependencies:
+      '@jsr/cliffy__internal': 1.3.1
+      '@jsr/cliffy__table': 1.3.1
+      '@jsr/std__fmt': 1.0.10
+      '@jsr/std__path': 1.1.6
+      '@jsr/std__semver': 1.0.8
+      '@jsr/std__tar': 0.1.10
+
   '@jsr/std__assert@1.0.19':
     dependencies:
       '@jsr/std__internal': 1.0.14
+
+  '@jsr/std__bytes@1.0.6': {}
 
   '@jsr/std__collections@1.4.0': {}
 
   '@jsr/std__encoding@1.0.11': {}
 
+  '@jsr/std__fmt@1.0.10': {}
+
   '@jsr/std__internal@1.0.14': {}
+
+  '@jsr/std__path@1.1.6':
+    dependencies:
+      '@jsr/std__internal': 1.0.14
+
+  '@jsr/std__regexp@1.0.2': {}
+
+  '@jsr/std__semver@1.0.8': {}
+
+  '@jsr/std__streams@1.2.0':
+    dependencies:
+      '@jsr/std__bytes': 1.0.6
+
+  '@jsr/std__tar@0.1.10':
+    dependencies:
+      '@jsr/std__streams': 1.2.0
+
+  '@jsr/std__text@1.1.0':
+    dependencies:
+      '@jsr/std__regexp': 1.0.2
 
   '@oxc-project/types@0.153.0': {}
 

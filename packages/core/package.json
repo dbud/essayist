@@ -2,7 +2,7 @@
   "dependencies": {
     "@deno/kv": "catalog:",
     "@effect/ai-openrouter": "catalog:",
-    "@effect/sql-d1": "~4.0.5",
+    "@effect/sql-d1": "catalog:",
     "@std/assert": "catalog:",
     "@std/collections": "catalog:",
     "@std/encoding": "catalog:",

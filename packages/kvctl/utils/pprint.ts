@@ -1,9 +1,12 @@
 // colored inspect on a TTY; plain JSON when stdout is piped, a single
 // document per call, so jq can parse the stream
+
+import { inspect } from "node:util";
+
 export function pprint<T>(value: T): void {
-  const body = Deno.stdout.isTerminal()
-    ? Deno.inspect(value, {
-        colors: !Deno.env.has("NO_COLOR"),
+  const body = process.stdout.isTTY
+    ? inspect(value, {
+        colors: process.env.NO_COLOR === undefined,
         sorted: true,
         compact: true,
       })
