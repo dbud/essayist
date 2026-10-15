@@ -179,6 +179,9 @@ catalogs:
     '@std/collections':
       specifier: npm:@jsr/std__collections@^1.4.0
       version: 1.4.0
+    '@std/encoding':
+      specifier: npm:@jsr/std__encoding@^1.0.11
+      version: 1.0.11
     '@types/node':
       specifier: ^26.6.5
       version: 26.6.5
@@ -229,9 +232,22 @@ importers:
       '@std/collections':
         specifier: 'catalog:'
         version: '@jsr/std__collections@1.4.0'
+      '@std/encoding':
+        specifier: 'catalog:'
+        version: '@jsr/std__encoding@1.0.11'
+      cbor-x:
+        specifier: ^1.6.6
+        version: 1.6.6
       effect:
         specifier: 'catalog:'
         version: 4.0.5
+      fdb-tuple:
+        specifier: ^1.0.0
+        version: 1.0.0
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.6.5
 
   packages/worker:
     dependencies:
@@ -293,6 +309,9 @@ importers:
       '@cloudflare/workers-types':
         specifier: ^5.20261013.1
         version: 5.20261013.1
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.6.5
       vite:
         specifier: 'catalog:'
         version: 8.3.4(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)
@@ -356,6 +375,36 @@ packages:
   '@biomejs/cli-win32-x64@2.5.15':
     resolution: {integrity: sha512-yAzh4UqEImV6Hcy0zjUqNfJAsUhoD64FBQCdTG8Md/Z2wQeVP/ZmJ3XRYAs1g8J9fjTFyl2fCtc5FB5til47+g==}
     engines: {node: '>=14.21.3'}
+    cpu: [x64]
+    os: [win32]
+
+  '@cbor-extract/cbor-extract-darwin-arm64@2.2.2':
+    resolution: {integrity: sha512-ZKZ/F8US7JR92J4DMct6cLW/Y66o2K576+zjlEN/MevH70bFIsB10wkZEQPLzl2oNh2SMGy55xpJ9JoBRl5DOA==}
+    cpu: [arm64]
+    os: [darwin]
+
+  '@cbor-extract/cbor-extract-darwin-x64@2.2.2':
+    resolution: {integrity: sha512-32b1mgc+P61Js+KW9VZv/c+xRw5EfmOcPx990JbCBSkYJFY0l25VinvyyWfl+3KjibQmAcYwmyzKF9J4DyKP/Q==}
+    cpu: [x64]
+    os: [darwin]
+
+  '@cbor-extract/cbor-extract-linux-arm64@2.2.2':
+    resolution: {integrity: sha512-wfqgzqCAy/Vn8i6WVIh7qZd0DdBFaWBjPdB6ma+Wihcjv0gHqD/mw3ouVv7kbbUNrab6dKEx/w3xQZEdeXIlzg==}
+    cpu: [arm64]
+    os: [linux]
+
+  '@cbor-extract/cbor-extract-linux-arm@2.2.2':
+    resolution: {integrity: sha512-tNg0za41TpQfkhWjptD+0gSD2fggMiDCSacuIeELyb2xZhr7PrhPe5h66Jc67B/5dmpIhI2QOUtv4SBsricyYQ==}
+    cpu: [arm]
+    os: [linux]
+
+  '@cbor-extract/cbor-extract-linux-x64@2.2.2':
+    resolution: {integrity: sha512-rpiLnVEsqtPJ+mXTdx1rfz4RtUGYIUg2rUAZgd1KjiC1SehYUSkJN7Yh+aVfSjvCGtVP0/bfkQkXpPXKbmSUaA==}
+    cpu: [x64]
+    os: [linux]
+
+  '@cbor-extract/cbor-extract-win32-x64@2.2.2':
+    resolution: {integrity: sha512-dI+9P7cfWxkTQ+oE+7Aa6onEn92PHgfWXZivjNheCRmTBDBf2fx6RyTi0cmgpYLnD1KLZK9ZYrMxaPZ4oiXhGA==}
     cpu: [x64]
     os: [win32]
 
@@ -817,6 +866,9 @@ packages:
   '@jsr/std__collections@1.4.0':
     resolution: {integrity: sha512-Px3STXCAB/zjWh2xpV0C1vyTVlJe8IVmzktBP+9WZFAJ6ihE9jG4mz0+stRdFC8ksf5bHP2b/dc2qADD9jJTKg==, tarball: https://npm.jsr.io/~/11/@jsr/std__collections/1.4.0.tgz}
 
+  '@jsr/std__encoding@1.0.11':
+    resolution: {integrity: sha512-4SmW8WXf4x4FjkxVpxbir06QYwxw/h/2+RU5A66iKXbJC9WAYCICZkH01mcOGj8FgSitF/lSTlT585RZfo8Ukg==, tarball: https://npm.jsr.io/~/11/@jsr/std__encoding/1.0.11.tgz}
+
   '@jsr/std__internal@1.0.14':
     resolution: {integrity: sha512-JT8b/t40WcR9q0GDwRZUooY7aXeXnFal8iidE/5TckdAFtvpVAsaJ71/Xgf1SfoChs41s6CZkuCYM8toaNgdvA==, tarball: https://npm.jsr.io/~/11/@jsr/std__internal/1.0.14.tgz}
 
@@ -1198,6 +1250,13 @@ packages:
   blake3-wasm@2.1.5:
     resolution: {integrity: sha512-F1+K8EbfOZE49dtoPtmxUQrpXaBIl3ICvasLh+nJta0xkz+9kF/7uet9fLnwKqhDrmj6g+6K3Tw9yQPUg2ka5g==}
 
+  cbor-extract@2.2.2:
+    resolution: {integrity: sha512-hlSxxI9XO2yQfe9g6msd3g4xCfDqK5T5P0fRMLuaLHhxn4ViPrm+a+MUfhrvH2W962RGxcBwEGzLQyjbDG1gng==}
+    hasBin: true
+
+  cbor-x@1.6.6:
+    resolution: {integrity: sha512-8QiD9PGOxyQHo7s2pzwTBH6lTjqekxPdl9Aq6fXvZgCuCJHOht1puDEA/fTr6mciB76c+M+Gi0qT2i1a4pm4Wg==}
+
   chai@6.3.0:
     resolution: {integrity: sha512-XWAtwJ6OHO+tj0EKCs0Y2UamnyOxseZWltU4x2U2wh8g4AigdjwvtUjvLP2tqkA/avxHEtzxNaqGq/YGNwckKg==}
     engines: {node: '>=18'}
@@ -1239,6 +1298,9 @@ packages:
   expect-type@1.4.0:
     resolution: {integrity: sha512-KfYbmpRm0VbLjEvVa9yGwCi9GI34xvi7A/HXYWQO65CSD2u3MczUJSuwXKFIxlGsgBQizV9q5J9NHj4VG0n+pA==}
     engines: {node: '>=12.0.0'}
+
+  fdb-tuple@1.0.0:
+    resolution: {integrity: sha512-8jSvKPCYCgTpi9Pt87qlfTk6griyMx4Gk3Xv31Dp72Qp8b6XgIyFsMm8KzPmFJ9iJ8K4pGvRxvOS8D0XGnrkjw==}
 
   fdir@6.5.0:
     resolution: {integrity: sha512-tIbYtZbucOs0BRGqPJkshJUYdL+SDH7dVM8gjy+ERp3WAUjLEFJE+02kanyHtwjWOnwrKYBiwAmM0p4kLJAnXg==}
@@ -1435,6 +1497,10 @@ packages:
   nanoid@3.3.20:
     resolution: {integrity: sha512-uKdg2G3GNCKQn9byYOpxbGqrT2fGO5KRt5J/8b3pok8rT6qxGWF6hxMyJiEYtAf+FVyYuD9hRaDqX5uPFYJ4ZQ==}
     engines: {node: ^10 || ^12 || ^13.7 || ^14 || >=15.0.1}
+    hasBin: true
+
+  node-gyp-build-optional-packages@5.1.1:
+    resolution: {integrity: sha512-+P72GAjVAbTxjjwUmwjVrqrdZROD4nf8KgpBoDxqXXTiYZZt/ud60dE5yvCSr9lRO8e8yv6kgJIC0K0PfZFVQw==}
     hasBin: true
 
   obug@3.0.0:
@@ -1707,6 +1773,24 @@ snapshots:
     optional: true
 
   '@biomejs/cli-win32-x64@2.5.15':
+    optional: true
+
+  '@cbor-extract/cbor-extract-darwin-arm64@2.2.2':
+    optional: true
+
+  '@cbor-extract/cbor-extract-darwin-x64@2.2.2':
+    optional: true
+
+  '@cbor-extract/cbor-extract-linux-arm64@2.2.2':
+    optional: true
+
+  '@cbor-extract/cbor-extract-linux-arm@2.2.2':
+    optional: true
+
+  '@cbor-extract/cbor-extract-linux-x64@2.2.2':
+    optional: true
+
+  '@cbor-extract/cbor-extract-win32-x64@2.2.2':
     optional: true
 
   '@cloudflare/kv-asset-handler@0.5.0': {}
@@ -2008,6 +2092,8 @@ snapshots:
 
   '@jsr/std__collections@1.4.0': {}
 
+  '@jsr/std__encoding@1.0.11': {}
+
   '@jsr/std__internal@1.0.14': {}
 
   '@oxc-project/types@0.153.0': {}
@@ -2243,6 +2329,22 @@ snapshots:
 
   blake3-wasm@2.1.5: {}
 
+  cbor-extract@2.2.2:
+    dependencies:
+      node-gyp-build-optional-packages: 5.1.1
+    optionalDependencies:
+      '@cbor-extract/cbor-extract-darwin-arm64': 2.2.2
+      '@cbor-extract/cbor-extract-darwin-x64': 2.2.2
+      '@cbor-extract/cbor-extract-linux-arm': 2.2.2
+      '@cbor-extract/cbor-extract-linux-arm64': 2.2.2
+      '@cbor-extract/cbor-extract-linux-x64': 2.2.2
+      '@cbor-extract/cbor-extract-win32-x64': 2.2.2
+    optional: true
+
+  cbor-x@1.6.6:
+    optionalDependencies:
+      cbor-extract: 2.2.2
+
   chai@6.3.0: {}
 
   cookie@1.1.1: {}
@@ -2296,6 +2398,8 @@ snapshots:
       '@types/estree': 1.0.9
 
   expect-type@1.4.0: {}
+
+  fdb-tuple@1.0.0: {}
 
   fdir@6.5.0(picomatch@4.0.7):
     optionalDependencies:
@@ -2436,6 +2540,11 @@ snapshots:
       - utf-8-validate
 
   nanoid@3.3.20: {}
+
+  node-gyp-build-optional-packages@5.1.1:
+    dependencies:
+      detect-libc: 2.1.2
+    optional: true
 
   obug@3.0.0: {}
 

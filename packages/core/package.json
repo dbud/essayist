@@ -4,7 +4,13 @@
     "@effect/ai-openrouter": "catalog:",
     "@std/assert": "catalog:",
     "@std/collections": "catalog:",
-    "effect": "catalog:"
+    "@std/encoding": "catalog:",
+    "cbor-x": "^1.6.6",
+    "effect": "catalog:",
+    "fdb-tuple": "^1.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:"
   },
   "exports": {
     ".": "./mod.ts",

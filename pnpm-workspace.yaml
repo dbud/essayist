@@ -3,6 +3,7 @@ packages:
 allowBuilds:
   esbuild: true
   workerd: true
+  cbor-extract: false
 minimumReleaseAge: 1440
 minimumReleaseAgeExclude:
   - effect
@@ -13,6 +14,7 @@ catalog:
   "@effect/ai-openrouter": ~4.0.5
   "@std/assert": npm:@jsr/std__assert@^1.0.19
   "@std/collections": npm:@jsr/std__collections@^1.4.0
+  "@std/encoding": npm:@jsr/std__encoding@^1.0.11
   "@types/node": ^26.6.5
   effect: ~4.0.5
   typescript: ^7.0.2
