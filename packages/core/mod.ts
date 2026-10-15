@@ -1,3 +1,5 @@
+export { AuthStore } from "#/auth/service.ts";
+export type { Session, SessionTokens } from "#/auth/types.ts";
 export {
   ConfigInvalidError,
   ConfigMissingError,
