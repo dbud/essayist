@@ -74,6 +74,7 @@
     "vtsls": {
       "settings": {
         "javascript": {
+          "tsdk": "node_modules/typescript-lsp/lib",
           "tsserver": {
             "experimental": {
               "enableProjectDiagnostics": false
@@ -81,6 +82,7 @@
           }
         },
         "typescript": {
+          "tsdk": "node_modules/typescript-lsp/lib",
           "tsserver": {
             "experimental": {
               "enableProjectDiagnostics": false
