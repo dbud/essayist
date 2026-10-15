@@ -2,6 +2,7 @@
   "dependencies": {
     "@deno/kv": "catalog:",
     "@effect/ai-openrouter": "catalog:",
+    "@effect/sql-d1": "~4.0.5",
     "@std/assert": "catalog:",
     "@std/collections": "catalog:",
     "@std/encoding": "catalog:",
@@ -10,11 +11,13 @@
     "fdb-tuple": "^1.0.0"
   },
   "devDependencies": {
+    "@cloudflare/workers-types": "catalog:",
     "@types/node": "catalog:"
   },
   "exports": {
     ".": "./mod.ts",
     "./kv_connect": "./src/persistence/kv_connect.ts",
+    "./kv_d1": "./src/persistence/kv_d1.ts",
     "./kv_deno": "./src/persistence/kv_deno.ts"
   },
   "imports": {

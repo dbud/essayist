@@ -1,14 +1,11 @@
 /**
  * Wire encoding for the D1-backed kv table.
  *
- * Keys use the FoundationDB tuple encoding (via fdb-tuple): order-preserving,
- * self-framing bytes, so byte order equals tuple order and a prefix scan is
- * a plain range over the storage order. Values use CBOR (via cbor-x), which
- * round-trips JSON-like shapes and Uint8Array chunks exactly.
- *
- * Both transports (worker binding and REST) only carry TEXT, so keys are
- * stored hex-encoded and values base64-stored; byte order then equals the
- * order of the hex text.
+ * Keys hex-encode the FoundationDB tuple format (via fdb-tuple):
+ * order-preserving, self-framing bytes, so byte order equals tuple order,
+ * prefix scans are a plain range, and hex text keeps the order. Values
+ * base64-encode CBOR (via cbor-x), which carries the JSON-like domain
+ * values and Uint8Array chunks intact. Both transports only see TEXT.
  */
 
 import {
@@ -37,17 +34,16 @@ export function unpackKey(text: string): Key {
   return unpack(Buffer.from(decodeHex(text))) as Key;
 }
 
-/** The [begin, end) storage range containing exactly the keys with `key` as
- * a prefix, the prefix key itself included. The last byte of a packed tuple
- * is the 0x00 terminator for our string-only keys, so the exclusive upper
- * bound is the same bytes with that byte bumped. */
 export interface KeyRange {
   readonly begin: string;
-  /** undefined means no upper bound: an empty prefix spans the table. */
+  /** The exclusive upper bound; undefined = unbounded. */
   readonly end: string | undefined;
 }
 
-/** The storage range for a prefix scan. */
+/** The [begin, end) hex-text range containing exactly the keys with `key`
+ * as a prefix, the prefix key included. The last byte of a packed tuple is
+ * the 0x00 terminator, so the exclusive bound bumps that byte; an empty
+ * prefix is unbounded. */
 export function keyRange(prefix: Key): KeyRange {
   const bytes = packKeyBytes(prefix);
   if (bytes.length === 0) return { begin: "", end: undefined };
@@ -59,12 +55,10 @@ export function keyRange(prefix: Key): KeyRange {
   };
 }
 
-/** A value as the base64 text stored in the D1 table. */
 export function encodeValue(value: unknown): string {
   return encodeBase64(cbor.encode(value));
 }
 
-/** The value of a base64 text stored in the D1 table. */
 export function decodeValue<T = unknown>(text: string): T {
   return cbor.decode(decodeBase64(text)) as T;
 }

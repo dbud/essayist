@@ -8,8 +8,10 @@ minimumReleaseAge: 1440
 minimumReleaseAgeExclude:
   - effect
   - "@effect/ai-openrouter"
+  - "@effect/sql-d1"
 catalog:
   "@biomejs/biome": ^2.5.15
+  "@cloudflare/workers-types": ^5.20261013.1
   "@deno/kv": ^0.14.0
   "@effect/ai-openrouter": ~4.0.5
   "@std/assert": npm:@jsr/std__assert@^1.0.19

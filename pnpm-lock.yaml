@@ -167,6 +167,9 @@ catalogs:
     '@biomejs/biome':
       specifier: ^2.5.15
       version: 2.5.15
+    '@cloudflare/workers-types':
+      specifier: ^5.20261013.1
+      version: 5.20261013.1
     '@deno/kv':
       specifier: ^0.14.0
       version: 0.14.0
@@ -226,6 +229,9 @@ importers:
       '@effect/ai-openrouter':
         specifier: 'catalog:'
         version: 4.0.5(effect@4.0.5)
+      '@effect/sql-d1':
+        specifier: ~4.0.5
+        version: 4.0.5(effect@4.0.5)
       '@std/assert':
         specifier: 'catalog:'
         version: '@jsr/std__assert@1.0.19'
@@ -245,6 +251,9 @@ importers:
         specifier: ^1.0.0
         version: 1.0.0
     devDependencies:
+      '@cloudflare/workers-types':
+        specifier: 'catalog:'
+        version: 5.20261013.1
       '@types/node':
         specifier: 'catalog:'
         version: 26.6.5
@@ -307,7 +316,7 @@ importers:
         specifier: ^1.63.2
         version: 1.63.2(@types/node@26.6.5)(vite@8.3.4(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0))(wrangler@4.150.0(@cloudflare/workers-types@5.20261013.1)(@types/node@26.6.5))
       '@cloudflare/workers-types':
-        specifier: ^5.20261013.1
+        specifier: 'catalog:'
         version: 5.20261013.1
       '@types/node':
         specifier: 'catalog:'
@@ -502,6 +511,11 @@ packages:
 
   '@effect/ai-openrouter@4.0.5':
     resolution: {integrity: sha512-kyOL7mFFuYWiU4igg2eA8ySQ5wS9wxvEYHna9UpjNKZSPCCn8RgkGuFpRQzAHpqbV8C2p2Lrh/aJOu7eskU64Q==}
+    peerDependencies:
+      effect: ^4.0.5
+
+  '@effect/sql-d1@4.0.5':
+    resolution: {integrity: sha512-ERArvCS/qOHx52yKFePc8v5qs0y18Ld+Ha6Xkkm/I1R+zTf+flfWpsuxlxkPKlwQCqB9K+yfU6Kw1gshKGRCPQ==}
     peerDependencies:
       effect: ^4.0.5
 
@@ -1861,6 +1875,11 @@ snapshots:
 
   '@effect/ai-openrouter@4.0.5(effect@4.0.5)':
     dependencies:
+      effect: 4.0.5
+
+  '@effect/sql-d1@4.0.5(effect@4.0.5)':
+    dependencies:
+      '@cloudflare/workers-types': 5.20261013.1
       effect: 4.0.5
 
   '@emnapi/runtime@1.11.3':

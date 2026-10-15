@@ -78,10 +78,9 @@ test("keyRange brackets exactly the prefix children", () => {
     const packed = packKey(key);
     return packed >= range.begin && packed < end;
   });
-  // Tuple children of ["cfg", "a"]. By byte order, a string continuation of
-  // the last part ("a\0b" contains a NUL escape) is inside too; the same is
-  // true in FDB and Deno KV with their NUL escaping, and no key here
-  // contains a NUL in practice.
+  // Tuple children of ["cfg", "a"]. By byte order, a string continuation
+  // of the last part (the NUL in "a\0b") also lands inside, as in FDB and
+  // Deno KV; no key here contains a NUL in practice.
   assertEquals(inside, [
     ["cfg", "a"],
     ["cfg", "a", "z"],
