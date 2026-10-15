@@ -59,6 +59,9 @@ export function HomePage(): JSX.Element {
         rendered by hono + preact at {models.pageInfo.renderedAt.value}
       </p>
       <Counter />
+      <pre class="mt-6 max-w-lg overflow-x-auto text-xs leading-snug text-ink/70">
+        {JSON.stringify(models.categories.list.value, null, 2)}
+      </pre>
     </main>
   );
 }
