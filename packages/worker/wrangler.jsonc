@@ -11,6 +11,12 @@
   ],
   "main": "./src/main.ts",
   "name": "essayist-worker",
+  "observability": {
+    "logs": {
+      "enabled": true,
+      "invocation_logs": true
+    }
+  },
   "upload_source_maps": true,
   "vars": {
     "LOG_LEVEL": "info"
