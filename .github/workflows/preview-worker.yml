@@ -1,0 +1,44 @@
+name: Worker preview (branch pushes)
+
+on:
+  push:
+    branches-ignore: [cloudflare-migration, main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    concurrency:
+      group: preview-${{ github.ref }}
+      cancel-in-progress: true
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v7.1.0
+        with:
+          node-version: 26
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - id: slug
+        env:
+          BRANCH: ${{ github.ref_name }}
+        run: |
+          slug=$(printf '%s' "$BRANCH" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9]+/-/g; s/-+/-/g; s/^-+//; s/-+$//' | cut -c1-25 | sed -E 's/-+$//')
+          if [ -z "$slug" ]; then slug=preview; fi
+          echo "slug=$slug" >> "$GITHUB_OUTPUT"
+      - id: upload
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          SLUG: ${{ steps.slug.outputs.slug }}
+        run: |
+          pnpm -C packages/worker run deploy-preview --tag "$SLUG" --message "$GITHUB_SHA" --preview-alias "$SLUG" > upload.log 2>&1
+          url=$(grep -oE 'https://[a-z0-9-]+\.workers\.dev' upload.log | head -1)
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+          tail -5 upload.log >> "$GITHUB_STEP_SUMMARY"
+      - name: Preview URL
+        run: |
+          echo "Preview URL for ${{ github.ref_name }}: ${{ steps.upload.outputs.url }}" >> "$GITHUB_STEP_SUMMARY"

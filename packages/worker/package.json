@@ -35,6 +35,7 @@
     "build": "vite build",
     "check": "biome check --error-on-warnings . && tsc --noEmit && tsc --noEmit -p src/client",
     "deploy": "vite build && wrangler deploy",
+    "deploy-preview": "vite build && wrangler versions upload",
     "dev": "vite dev",
     "fmt": "biome check --write .",
     "lint": "biome lint .",
