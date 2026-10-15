@@ -167,9 +167,15 @@ catalogs:
     '@biomejs/biome':
       specifier: ^2.5.15
       version: 2.5.15
+    '@deno/kv':
+      specifier: ^0.14.0
+      version: 0.14.0
     '@effect/ai-openrouter':
-      specifier: ~4.0.3
-      version: 4.0.4
+      specifier: ~4.0.5
+      version: 4.0.5
+    '@std/assert':
+      specifier: npm:@jsr/std__assert@^1.0.19
+      version: 1.0.19
     '@std/collections':
       specifier: npm:@jsr/std__collections@^1.4.0
       version: 1.4.0
@@ -177,8 +183,8 @@ catalogs:
       specifier: ^26.6.5
       version: 26.6.5
     effect:
-      specifier: ~4.0.3
-      version: 4.0.4
+      specifier: ~4.0.5
+      version: 4.0.5
     typescript:
       specifier: ^7.0.2
       version: 7.0.2
@@ -212,26 +218,26 @@ importers:
   packages/core:
     dependencies:
       '@deno/kv':
-        specifier: ^0.14.0
+        specifier: 'catalog:'
         version: 0.14.0
       '@effect/ai-openrouter':
-        specifier: ~4.0.3
-        version: 4.0.4(effect@4.0.4)
+        specifier: 'catalog:'
+        version: 4.0.5(effect@4.0.5)
       '@std/assert':
-        specifier: npm:@jsr/std__assert@^1.0.19
+        specifier: 'catalog:'
         version: '@jsr/std__assert@1.0.19'
       '@std/collections':
-        specifier: npm:@jsr/std__collections@^1.4.0
+        specifier: 'catalog:'
         version: '@jsr/std__collections@1.4.0'
       effect:
-        specifier: ~4.0.3
-        version: 4.0.4
+        specifier: 'catalog:'
+        version: 4.0.5
 
   packages/worker:
     dependencies:
       '@effect/ai-openrouter':
         specifier: 'catalog:'
-        version: 4.0.4(effect@4.0.4)
+        version: 4.0.5(effect@4.0.5)
       '@essayist/core':
         specifier: workspace:*
         version: link:../core
@@ -264,7 +270,7 @@ importers:
         version: 4.3.3(vite@8.3.4(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0))
       effect:
         specifier: 'catalog:'
-        version: 4.0.4
+        version: 4.0.5
       hono:
         specifier: ^4.13.13
         version: 4.13.13
@@ -445,10 +451,10 @@ packages:
   '@deno/kv@0.14.0':
     resolution: {integrity: sha512-k/grNUE/UuKPjzhRl7bKf3Yrc32n0O4KZvIKsiaWm/ruwiPnG9GKaeSkNp1FVonXiVADcTyN9js5nUQbAYrKsg==}
 
-  '@effect/ai-openrouter@4.0.4':
-    resolution: {integrity: sha512-8xt2Y0VMZ8KMuflHR+S9jTVEq1TijIIF1wmexoh+6bNc6ggbAv3KnGbft0R/s0M72nMrD5xc183+7qS5nl7teA==}
+  '@effect/ai-openrouter@4.0.5':
+    resolution: {integrity: sha512-kyOL7mFFuYWiU4igg2eA8ySQ5wS9wxvEYHna9UpjNKZSPCCn8RgkGuFpRQzAHpqbV8C2p2Lrh/aJOu7eskU64Q==}
     peerDependencies:
-      effect: ^4.0.4
+      effect: ^4.0.5
 
   '@emnapi/runtime@1.11.3':
     resolution: {integrity: sha512-Xz4Tpyki7XyrpbUK1jR1AhdAdaXyhhY4lZ3neLodmhpuWfy2PAQN5B46sAiU4liOXGLkHypn/qU+jvfWSCYYLA==}
@@ -1209,8 +1215,8 @@ packages:
     resolution: {integrity: sha512-Btj2BOOO83o3WyH59e8MgXsxEQVcarkUOpEYrubB0urwnN10yQ364rsiByU11nZlqWYZm05i/of7io4mzihBtQ==}
     engines: {node: '>=8'}
 
-  effect@4.0.4:
-    resolution: {integrity: sha512-Sr50OeVSC3M5UkoUYUhFf3EULryhGaZZUf6OzDHTvaznOw7HRlxOKdF3/4nvQXHL22StOyMG3Cvo8Bt7xUp+Ng==}
+  effect@4.0.5:
+    resolution: {integrity: sha512-BY4/28NlpOd99yzmV741xbVGmp+1U7tks4oB7F/Png64bTa5tm5eCA6W0RiXsnuLDDoJpjfVSo4Dnq4BZb/89Q==}
 
   enhanced-resolve@5.26.0:
     resolution: {integrity: sha512-9vhedylFonb2YGogzUKX6+Ja72gOJbN1QHAqdrvqLwhdl/QWbKopzoUC9EbQNVsAns/bx/4uyqalrQAoy1IByw==}
@@ -1769,9 +1775,9 @@ snapshots:
       '@deno/kv-linux-x64-gnu': 0.14.0
       '@deno/kv-win32-x64-msvc': 0.14.0
 
-  '@effect/ai-openrouter@4.0.4(effect@4.0.4)':
+  '@effect/ai-openrouter@4.0.5(effect@4.0.5)':
     dependencies:
-      effect: 4.0.4
+      effect: 4.0.5
 
   '@emnapi/runtime@1.11.3':
     dependencies:
@@ -2245,7 +2251,7 @@ snapshots:
 
   detect-libc@2.1.2: {}
 
-  effect@4.0.4: {}
+  effect@4.0.5: {}
 
   enhanced-resolve@5.26.0:
     dependencies:
