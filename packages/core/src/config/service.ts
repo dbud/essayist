@@ -8,7 +8,7 @@ import {
   type ConcurrentModificationError,
   Persistence,
   type PersistenceError,
-} from "@/persistence/mod.ts";
+} from "#/persistence/mod.ts";
 import type { Category, ModelPool, Prompt, ReviewPass } from "./types.ts";
 
 // Key layout:

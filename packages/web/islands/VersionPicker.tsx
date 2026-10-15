@@ -4,19 +4,19 @@ import type { ComponentChild } from "preact";
 import Dropdown, {
   DropdownItem,
   DropdownMenu,
-} from "@/components/ui/Dropdown.tsx";
-import { CircleCheckIcon } from "@/components/ui/icons.tsx";
-import Swappable from "@/components/ui/Swappable.tsx";
-import WaveBars from "@/components/ui/WaveBars.tsx";
-import { useBooting } from "@/hooks/useBooting.ts";
-import { useTick } from "@/hooks/useTick.ts";
-import type { FileKey } from "@/signals/file.ts";
-import { getFile } from "@/signals/file.ts";
-import { getFileTreeFor } from "@/signals/fileTree.ts";
-import { autoSave } from "@/signals/preferences.ts";
-import { getVersionHistory } from "@/signals/versionHistory.ts";
-import { formatDateTime, formatRelativeTime } from "@/utils/format.ts";
-import { META_KEY } from "@/utils/platform.ts";
+} from "#/components/ui/Dropdown.tsx";
+import { CircleCheckIcon } from "#/components/ui/icons.tsx";
+import Swappable from "#/components/ui/Swappable.tsx";
+import WaveBars from "#/components/ui/WaveBars.tsx";
+import { useBooting } from "#/hooks/useBooting.ts";
+import { useTick } from "#/hooks/useTick.ts";
+import type { FileKey } from "#/signals/file.ts";
+import { getFile } from "#/signals/file.ts";
+import { getFileTreeFor } from "#/signals/fileTree.ts";
+import { autoSave } from "#/signals/preferences.ts";
+import { getVersionHistory } from "#/signals/versionHistory.ts";
+import { formatDateTime, formatRelativeTime } from "#/utils/format.ts";
+import { META_KEY } from "#/utils/platform.ts";
 
 type VersionPickerProps = FileKey;
 

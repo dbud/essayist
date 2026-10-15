@@ -1,10 +1,10 @@
 import type { FileVersion } from "@essayist/core";
 import { createModel, effect, signal, untracked } from "@preact/signals";
 import { IS_BROWSER } from "fresh/runtime";
-import type { FileKey } from "@/signals/file.ts";
-import { getFile } from "@/signals/file.ts";
-import { get, modelData, namespace } from "@/signals/models.ts";
-import { ensureOk } from "@/utils/ensureOk.ts";
+import type { FileKey } from "#/signals/file.ts";
+import { getFile } from "#/signals/file.ts";
+import { get, modelData, namespace } from "#/signals/models.ts";
+import { ensureOk } from "#/utils/ensureOk.ts";
 
 export interface VersionHistoryData {
   versions: FileVersion[];

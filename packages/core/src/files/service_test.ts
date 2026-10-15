@@ -3,15 +3,15 @@ import { assert, assertEquals } from "@std/assert";
 import { assertObjectMatch } from "@std/assert/object-match";
 import { Effect, Layer } from "effect";
 import { test } from "vitest";
-import type { Mark } from "@/marks/types.ts";
-import { kvLayerCompat } from "@/persistence/kv_layer_compat.ts";
+import type { Mark } from "#/marks/types.ts";
+import { kvLayerCompat } from "#/persistence/kv_layer_compat.ts";
 import {
   type ConcurrentModificationError,
   Persistence,
   type PersistenceError,
-} from "@/persistence/mod.ts";
-import { testLayer } from "@/persistence/testing/kv.ts";
-import { WorkspaceId } from "@/workspace/WorkspaceId.ts";
+} from "#/persistence/mod.ts";
+import { testLayer } from "#/persistence/testing/kv.ts";
+import { WorkspaceId } from "#/workspace/WorkspaceId.ts";
 import { Files } from "./service.ts";
 
 type E = PersistenceError | ConcurrentModificationError;

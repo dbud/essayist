@@ -8,19 +8,19 @@ import {
   Settings2,
   SlidersVertical,
 } from "lucide-preact";
-import Avatar from "@/components/Avatar.tsx";
-import AutoSaveIntervalSelect from "@/components/ui/AutoSaveIntervalSelect.tsx";
+import Avatar from "#/components/Avatar.tsx";
+import AutoSaveIntervalSelect from "#/components/ui/AutoSaveIntervalSelect.tsx";
 import Dropdown, {
   DropdownItem,
   DropdownMenu,
-} from "@/components/ui/Dropdown.tsx";
-import FontAxisSelect from "@/components/ui/FontAxisSelect.tsx";
-import { CheckboxIcon } from "@/components/ui/icons.tsx";
-import MarkStyleSelect from "@/components/ui/MarkStyleSelect.tsx";
-import Panel from "@/components/ui/Panel.tsx";
-import { sansFont, serifFont } from "@/signals/fonts.ts";
-import { autoSave } from "@/signals/preferences.ts";
-import { rightSidebarOpened } from "@/signals/sidebar.ts";
+} from "#/components/ui/Dropdown.tsx";
+import FontAxisSelect from "#/components/ui/FontAxisSelect.tsx";
+import { CheckboxIcon } from "#/components/ui/icons.tsx";
+import MarkStyleSelect from "#/components/ui/MarkStyleSelect.tsx";
+import Panel from "#/components/ui/Panel.tsx";
+import { sansFont, serifFont } from "#/signals/fonts.ts";
+import { autoSave } from "#/signals/preferences.ts";
+import { rightSidebarOpened } from "#/signals/sidebar.ts";
 
 interface SettingsMenuProps {
   user: User;

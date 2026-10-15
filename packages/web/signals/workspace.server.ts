@@ -1,7 +1,7 @@
 import { UserState, Workspaces } from "@essayist/core";
-import { type Context, registerLoader } from "@/signals/models.server.ts";
-import { type WorkspacesData, workspacesNs } from "@/signals/workspace.ts";
-import { runtime } from "@/store.ts";
+import { type Context, registerLoader } from "#/signals/models.server.ts";
+import { type WorkspacesData, workspacesNs } from "#/signals/workspace.ts";
+import { runtime } from "#/store.ts";
 
 export async function workspacesLoader(ctx: Context): Promise<WorkspacesData> {
   const workspaces = await runtime.runPromise(

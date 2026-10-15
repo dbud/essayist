@@ -10,7 +10,7 @@
 import { initWasm, Resvg } from "@resvg/resvg-wasm";
 import { sumOf } from "@std/collections";
 import { formatHex } from "culori";
-import { logoMark } from "@/components/ui/logo-mark.ts";
+import { logoMark } from "#/components/ui/logo-mark.ts";
 
 const ICON_SCALE = 0.9;
 const ICO_SIZES = [16, 32, 48];

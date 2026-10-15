@@ -1,9 +1,9 @@
 import { UserState, Workspaces } from "@essayist/core";
-import { define } from "@/define.ts";
-import { runScoped } from "@/run.ts";
-import { seedDemoFiles } from "@/seed.ts";
-import { workspacesLoader } from "@/signals/workspace.server.ts";
-import { runtime } from "@/store.ts";
+import { define } from "#/define.ts";
+import { runScoped } from "#/run.ts";
+import { seedDemoFiles } from "#/seed.ts";
+import { workspacesLoader } from "#/signals/workspace.server.ts";
+import { runtime } from "#/store.ts";
 
 export const handler = {
   GET: define.handlers(async ({ state, url }) => {

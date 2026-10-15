@@ -1,7 +1,7 @@
 import { assertEquals } from "@std/assert";
 import { Effect } from "effect";
 import { test } from "vitest";
-import { testLayer } from "@/persistence/testing/kv.ts";
+import { testLayer } from "#/persistence/testing/kv.ts";
 import { UserState } from "./service.ts";
 
 test("UserState -- selected workspace round-trips", async () => {

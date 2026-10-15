@@ -1,11 +1,11 @@
 import type { Mark } from "@essayist/core";
 import { mapNotNullish } from "@std/collections";
-import { segmentMarks } from "@/editor/markSegments.ts";
-import Section from "@/islands/Section.tsx";
-import { getFile } from "@/signals/file.ts";
-import { getFileTree } from "@/signals/fileTree.ts";
-import { getMarks } from "@/signals/marks.ts";
-import { getWorkspaces } from "@/signals/workspace.ts";
+import { segmentMarks } from "#/editor/markSegments.ts";
+import Section from "#/islands/Section.tsx";
+import { getFile } from "#/signals/file.ts";
+import { getFileTree } from "#/signals/fileTree.ts";
+import { getMarks } from "#/signals/marks.ts";
+import { getWorkspaces } from "#/signals/workspace.ts";
 
 export default function ExportPreviewSection() {
   const wsId = getWorkspaces().selectedId.value;

@@ -1,5 +1,5 @@
-import { OptionsRow } from "@/components/ui/forms/OptionsRow.tsx";
-import type { FontAxis } from "@/signals/fonts.ts";
+import { OptionsRow } from "#/components/ui/forms/OptionsRow.tsx";
+import type { FontAxis } from "#/signals/fonts.ts";
 
 interface FontAxisSelectProps {
   axis: FontAxis<string>;

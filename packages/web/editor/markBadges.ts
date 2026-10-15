@@ -7,7 +7,7 @@ import {
   type LexicalEditor,
   type LexicalNode,
 } from "lexical";
-import type { MarkBadge, MarkNumbers } from "@/signals/sidenotes.ts";
+import type { MarkBadge, MarkNumbers } from "#/signals/sidenotes.ts";
 import { contentEndRect, hasRect, type MeasureContext } from "./domMeasure.ts";
 import type { TrackedFragment } from "./trackNodePositions.ts";
 

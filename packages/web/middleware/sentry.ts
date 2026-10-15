@@ -1,6 +1,6 @@
 import type { Middleware } from "fresh";
-import { define, type State } from "@/define.ts";
-import { Sentry } from "@/utils/sentry.server.ts";
+import { define, type State } from "#/define.ts";
+import { Sentry } from "#/utils/sentry.server.ts";
 
 const sentryMiddleware: Middleware<State> = define.middleware(async (ctx) => {
   return await Sentry.withIsolationScope(async (scope) => {

@@ -1,7 +1,7 @@
 import { CategorySchema } from "@essayist/core";
 import { Result, Schema } from "effect";
-import { define } from "@/define.ts";
-import { deleteCategory, saveCategory } from "@/signals/categories.server.ts";
+import { define } from "#/define.ts";
+import { deleteCategory, saveCategory } from "#/signals/categories.server.ts";
 
 export const handler = {
   PUT: define.handlers(async (ctx) => {

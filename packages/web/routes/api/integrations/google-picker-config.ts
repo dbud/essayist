@@ -1,6 +1,6 @@
-import { define } from "@/define.ts";
-import { env } from "@/env.ts";
-import { getValidAccessToken } from "@/utils/googleToken.ts";
+import { define } from "#/define.ts";
+import { env } from "#/env.ts";
+import { getValidAccessToken } from "#/utils/googleToken.ts";
 
 // GET /api/integrations/google-picker-config -> { accessToken, developerKey,
 // appId? }. 503 if GOOGLE_API_KEY is unset, 401 if no session or no tokens.

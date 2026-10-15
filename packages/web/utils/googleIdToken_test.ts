@@ -4,7 +4,7 @@ import type { JWTHeaderParameters } from "jose";
 import {
   GoogleIdTokenError,
   verifyGoogleIdToken,
-} from "@/utils/googleIdToken.ts";
+} from "#/utils/googleIdToken.ts";
 
 const CLIENT_ID = "test-client-id";
 const NOW = 1_700_000_000_000;

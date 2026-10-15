@@ -1,8 +1,8 @@
 import type { Prompt, ReviewPass } from "@essayist/core";
 import { CircleCheck, Pencil, Plus, Trash2 } from "lucide-preact";
 import { Fragment } from "preact";
-import { ActionBtn, EntityCard } from "@/components/ui/EntityCard.tsx";
-import { Field, List } from "@/components/ui/EntityRows.tsx";
+import { ActionBtn, EntityCard } from "#/components/ui/EntityCard.tsx";
+import { Field, List } from "#/components/ui/EntityRows.tsx";
 
 function PromptField({ label, prompt }: { label: string; prompt?: Prompt }) {
   return (

@@ -1,5 +1,5 @@
-import type { NodeKind } from "@/flow/types.ts";
-import type { ReviewNodeEvent, ReviewTypes } from "@/reviews/graph.ts";
+import type { NodeKind } from "#/flow/types.ts";
+import type { ReviewNodeEvent, ReviewTypes } from "#/reviews/graph.ts";
 import type { TraceEvent } from "./types.ts";
 
 /** The events and lifecycle of a single node. */

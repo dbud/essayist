@@ -2,16 +2,16 @@ import { ChevronDown } from "lucide-preact";
 import Dropdown, {
   DropdownItem,
   DropdownMenu,
-} from "@/components/ui/Dropdown.tsx";
-import { CheckboxIcon } from "@/components/ui/icons.tsx";
-import type { FileKey } from "@/signals/file.ts";
-import { getFile } from "@/signals/file.ts";
-import { getFileStats } from "@/signals/fileStats.ts";
+} from "#/components/ui/Dropdown.tsx";
+import { CheckboxIcon } from "#/components/ui/icons.tsx";
+import type { FileKey } from "#/signals/file.ts";
+import { getFile } from "#/signals/file.ts";
+import { getFileStats } from "#/signals/fileStats.ts";
 import {
   type FileStatSection,
   fileStatsSections,
-} from "@/signals/preferences.ts";
-import { formatCount } from "@/utils/format.ts";
+} from "#/signals/preferences.ts";
+import { formatCount } from "#/utils/format.ts";
 
 type FileStatsProps = FileKey;
 

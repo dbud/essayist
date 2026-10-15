@@ -2,29 +2,29 @@ import { openKv } from "@deno/kv";
 import { assertEquals } from "@std/assert";
 import { Effect, Layer } from "effect";
 import { test } from "vitest";
-import type { ResolvedReviewUnit } from "@/config/types.ts";
-import { Files } from "@/files/service.ts";
-import type { PassWhenSpec } from "@/flow/helpers.ts";
-import { FlowRunner } from "@/flow/runner.ts";
+import type { ResolvedReviewUnit } from "#/config/types.ts";
+import { Files } from "#/files/service.ts";
+import type { PassWhenSpec } from "#/flow/helpers.ts";
+import { FlowRunner } from "#/flow/runner.ts";
 import type {
   Artifact,
   Artifacts,
   FlowEvent,
   FlowGraph,
   FlowRunResult,
-} from "@/flow/types.ts";
-import { Marks } from "@/marks/service.ts";
-import type { Mark } from "@/marks/types.ts";
-import { createFakeClient } from "@/model/fake_client.ts";
-import { ModelClient } from "@/model/service.ts";
-import { kvLayerCompat } from "@/persistence/kv_layer_compat.ts";
+} from "#/flow/types.ts";
+import { Marks } from "#/marks/service.ts";
+import type { Mark } from "#/marks/types.ts";
+import { createFakeClient } from "#/model/fake_client.ts";
+import { ModelClient } from "#/model/service.ts";
+import { kvLayerCompat } from "#/persistence/kv_layer_compat.ts";
 import {
   type ReviewNodeEvent,
   type ReviewServices,
   type ReviewTypes,
   reviewRunners,
-} from "@/reviews/graph.ts";
-import { WorkspaceId } from "@/workspace/WorkspaceId.ts";
+} from "#/reviews/graph.ts";
+import { WorkspaceId } from "#/workspace/WorkspaceId.ts";
 
 const ANALYSIS_ROUND =
   '{"thesis":"Drafts are raw material.","claims":[],"outline":[],"strengths":[],"risks":[]}';

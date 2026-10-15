@@ -1,7 +1,7 @@
 import { assertEquals, assertInstanceOf } from "@std/assert";
 import { Effect, Result } from "effect";
 import { test } from "vitest";
-import { testLayer } from "@/persistence/testing/kv.ts";
+import { testLayer } from "#/persistence/testing/kv.ts";
 import { Workspaces } from "./service.ts";
 import {
   LastOwnerError,

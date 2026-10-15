@@ -1,5 +1,5 @@
 import { assertEquals } from "@std/assert";
-import { cached } from "@/utils/kvCache.server.ts";
+import { cached } from "#/utils/kvCache.server.ts";
 
 /** Loads resolve to distinct "v1", "v2", ... values so value assertions
  * never read like counts; `loads` counts load invocations. */

@@ -1,7 +1,7 @@
 import { computed, createModel, signal } from "@preact/signals";
-import createAsyncState from "@/models/asyncState";
-import { getJson, postJson } from "@/models/http";
-import { showToast } from "@/models/toast";
+import createAsyncState from "#/models/asyncState.ts";
+import { getJson, postJson } from "#/models/http.ts";
+import { showToast } from "#/models/toast.ts";
 import type { VotesData } from "./votes.data";
 
 export type { VotesData };

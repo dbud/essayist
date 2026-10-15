@@ -6,8 +6,8 @@ import {
   ReviewConfig,
   resolveReviewPass,
 } from "@essayist/core";
-import { define } from "@/define.ts";
-import { runtime } from "@/store.ts";
+import { define } from "#/define.ts";
+import { runtime } from "#/store.ts";
 
 /** The built flow graph of a review pass, as nodes, edges, and an
  * agentflow-beta definition for mermaid rendering. */

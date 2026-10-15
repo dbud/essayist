@@ -1,7 +1,7 @@
 import type { Category } from "@essayist/core";
 import { Pencil, Trash2 } from "lucide-preact";
-import { ActionBtn, EntityCard } from "@/components/ui/EntityCard.tsx";
-import { Field } from "@/components/ui/EntityRows.tsx";
+import { ActionBtn, EntityCard } from "#/components/ui/EntityCard.tsx";
+import { Field } from "#/components/ui/EntityRows.tsx";
 
 export function CategoryRow({
   category,

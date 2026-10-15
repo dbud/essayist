@@ -9,9 +9,6 @@
     "module": "esnext",
     "moduleResolution": "bundler",
     "noEmit": true,
-    "paths": {
-      "@/*": ["../*"]
-    },
     "strict": true,
     "target": "es2024",
     "types": ["vite/client"]

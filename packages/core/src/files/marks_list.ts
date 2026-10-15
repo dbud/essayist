@@ -6,14 +6,14 @@
  */
 
 import { type Context, Effect } from "effect";
-import { type Internals, retryConcurrency } from "@/files/internals.ts";
-import type { Mark, MigrateMarksResult } from "@/marks/types.ts";
+import { type Internals, retryConcurrency } from "#/files/internals.ts";
+import type { Mark, MigrateMarksResult } from "#/marks/types.ts";
 import type {
   ConcurrentModificationError,
   Persistence,
   PersistenceError,
-} from "@/persistence/mod.ts";
-import { WorkspaceId } from "@/workspace/WorkspaceId.ts";
+} from "#/persistence/mod.ts";
+import { WorkspaceId } from "#/workspace/WorkspaceId.ts";
 import { latestKey, marksKey, type StoredSnapshot } from "./keys.ts";
 
 export function makeMarkLists(

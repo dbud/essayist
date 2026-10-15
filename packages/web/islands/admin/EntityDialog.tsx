@@ -1,13 +1,13 @@
 import type { Signal } from "@preact/signals";
 import type { ComponentChildren } from "preact";
-import Dialog from "@/components/ui/Dialog.tsx";
-import { CategoryForm } from "@/islands/admin/forms/CategoryForm.tsx";
-import { ModelPoolForm } from "@/islands/admin/forms/ModelPoolForm.tsx";
-import { PromptForm } from "@/islands/admin/forms/PromptForm.tsx";
-import { ReviewPassForm } from "@/islands/admin/forms/ReviewPassForm.tsx";
-import { ReviewUnitForm } from "@/islands/admin/forms/ReviewUnitForm.tsx";
-import type { DialogRequest } from "@/islands/admin/types.ts";
-import MarkSwatches from "@/islands/MarkSwatches.tsx";
+import Dialog from "#/components/ui/Dialog.tsx";
+import { CategoryForm } from "#/islands/admin/forms/CategoryForm.tsx";
+import { ModelPoolForm } from "#/islands/admin/forms/ModelPoolForm.tsx";
+import { PromptForm } from "#/islands/admin/forms/PromptForm.tsx";
+import { ReviewPassForm } from "#/islands/admin/forms/ReviewPassForm.tsx";
+import { ReviewUnitForm } from "#/islands/admin/forms/ReviewUnitForm.tsx";
+import type { DialogRequest } from "#/islands/admin/types.ts";
+import MarkSwatches from "#/islands/MarkSwatches.tsx";
 
 export default function EntityDialog({
   open,

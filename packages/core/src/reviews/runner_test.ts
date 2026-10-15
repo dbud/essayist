@@ -2,15 +2,15 @@ import { type Kv, openKv } from "@deno/kv";
 import { assert, assertEquals, assertRejects } from "@std/assert";
 import { type Context, Effect, Layer } from "effect";
 import { test } from "vitest";
-import type { ResolvedReviewPass, ReviewUnit } from "@/config/types.ts";
-import { Files } from "@/files/service.ts";
-import type { NodeRun } from "@/flow/types.ts";
-import { Marks } from "@/marks/service.ts";
-import { createFakeClient } from "@/model/fake_client.ts";
-import { ModelClient } from "@/model/service.ts";
-import { ChunkedValues } from "@/persistence/chunked_values.ts";
-import { kvLayerCompat } from "@/persistence/kv_layer_compat.ts";
-import { Persistence } from "@/persistence/mod.ts";
+import type { ResolvedReviewPass, ReviewUnit } from "#/config/types.ts";
+import { Files } from "#/files/service.ts";
+import type { NodeRun } from "#/flow/types.ts";
+import { Marks } from "#/marks/service.ts";
+import { createFakeClient } from "#/model/fake_client.ts";
+import { ModelClient } from "#/model/service.ts";
+import { ChunkedValues } from "#/persistence/chunked_values.ts";
+import { kvLayerCompat } from "#/persistence/kv_layer_compat.ts";
+import { Persistence } from "#/persistence/mod.ts";
 import {
   ReviewFileMissingError,
   ReviewLeaseTakenError,
@@ -18,12 +18,12 @@ import {
   type RunReviewPassOptions,
   resumeReviewPass,
   runReviewPass,
-} from "@/reviews/runner.ts";
-import { ReviewRuns } from "@/reviews/service.ts";
-import { TraceEvents } from "@/reviews/trace/service.ts";
-import type { TraceEvent } from "@/reviews/trace/types.ts";
-import type { ReviewRun } from "@/reviews/types.ts";
-import { WorkspaceId } from "@/workspace/WorkspaceId.ts";
+} from "#/reviews/runner.ts";
+import { ReviewRuns } from "#/reviews/service.ts";
+import { TraceEvents } from "#/reviews/trace/service.ts";
+import type { TraceEvent } from "#/reviews/trace/types.ts";
+import type { ReviewRun } from "#/reviews/types.ts";
+import { WorkspaceId } from "#/workspace/WorkspaceId.ts";
 
 function unitFixture(
   partial: Partial<ReviewUnit> & Pick<ReviewUnit, "id">,

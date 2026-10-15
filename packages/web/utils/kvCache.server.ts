@@ -1,6 +1,6 @@
 import { Effect } from "effect";
-import { runtime } from "@/store.ts";
-import { bumpKey, watchKey } from "@/utils/kvWatch.server.ts";
+import { runtime } from "#/store.ts";
+import { bumpKey, watchKey } from "#/utils/kvWatch.server.ts";
 
 /**
  * Per-isolate cache for a shared async value.

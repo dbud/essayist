@@ -3,7 +3,7 @@ import type {
   Artifacts,
   ArtifactType,
   FlowTypes,
-} from "@/flow/types.ts";
+} from "#/flow/types.ts";
 
 /** The input view handed to a node. Type-scoped reads trust artifact
  * data to match the vocabulary's declared data types. */

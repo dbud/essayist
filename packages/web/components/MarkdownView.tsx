@@ -1,4 +1,4 @@
-import { renderMarkdown } from "@/utils/markdown.ts";
+import { renderMarkdown } from "#/utils/markdown.ts";
 
 interface MarkdownViewProps {
   content: string;

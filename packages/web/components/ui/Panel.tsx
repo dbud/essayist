@@ -1,6 +1,6 @@
 import type { ComponentChildren } from "preact";
-import { useClickOutside } from "@/hooks/useClickOutside.ts";
-import { usePaneClip } from "@/hooks/usePaneClip.ts";
+import { useClickOutside } from "#/hooks/useClickOutside.ts";
+import { usePaneClip } from "#/hooks/usePaneClip.ts";
 
 export interface PanelProps {
   open?: boolean;

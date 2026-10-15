@@ -1,7 +1,7 @@
 import type { Signal } from "@preact/signals";
-import { showToast } from "@/signals/toast.ts";
-import createAsyncState from "@/utils/asyncState.ts";
-import { ensureOk } from "@/utils/ensureOk.ts";
+import { showToast } from "#/signals/toast.ts";
+import createAsyncState from "#/utils/asyncState.ts";
+import { ensureOk } from "#/utils/ensureOk.ts";
 
 export interface Mutations {
   mutating: Signal<boolean>;

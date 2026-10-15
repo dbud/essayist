@@ -1,11 +1,11 @@
 import { Files } from "@essayist/core";
-import { define } from "@/define.ts";
+import { define } from "#/define.ts";
 import {
   exportDocAsMarkdown,
   GoogleDriveError,
   sanitizeDocTitle,
-} from "@/utils/googleDrive.ts";
-import { getValidAccessToken } from "@/utils/googleToken.ts";
+} from "#/utils/googleDrive.ts";
+import { getValidAccessToken } from "#/utils/googleToken.ts";
 
 // POST { docId, name? } -> exports the Google Doc as markdown and writes it
 // into the workspace VFS at `google-docs/<sanitized title>.md`. Sits under

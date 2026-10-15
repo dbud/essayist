@@ -4,8 +4,8 @@ import { test } from "vitest";
 import type {
   ConcurrentModificationError,
   PersistenceError,
-} from "@/persistence/mod.ts";
-import { testLayer } from "@/persistence/testing/kv.ts";
+} from "#/persistence/mod.ts";
+import { testLayer } from "#/persistence/testing/kv.ts";
 import {
   ConfigInvalidError,
   ConfigMissingError,

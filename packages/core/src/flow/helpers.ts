@@ -6,7 +6,7 @@ import type {
   FlowTypes,
   NodeKind,
   NodeRunner,
-} from "@/flow/types.ts";
+} from "#/flow/types.ts";
 
 /** Spec carried on a forwarding node's payload. */
 export interface ForwardSpec<T extends FlowTypes> {

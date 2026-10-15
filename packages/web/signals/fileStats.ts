@@ -1,11 +1,11 @@
 import { computed, createModel } from "@preact/signals";
-import type { FileKey } from "@/signals/file.ts";
-import { getFile } from "@/signals/file.ts";
+import type { FileKey } from "#/signals/file.ts";
+import { getFile } from "#/signals/file.ts";
 import {
   editorStateCharCount,
   editorStateCharCountWithSpaces,
   editorStateWordCount,
-} from "@/utils/textStats.ts";
+} from "#/utils/textStats.ts";
 
 // Per-file stats derived from the editor state of the file.
 export const FileStatsModel = createModel((key: FileKey) => {

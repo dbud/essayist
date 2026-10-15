@@ -8,8 +8,8 @@ import {
   HttpApiEndpoint,
   HttpApiGroup,
 } from "effect/http-api";
-import { VotesDataSchema } from "@/models/votes.data";
-import { Votes } from "@/votes/service";
+import { VotesDataSchema } from "#/models/votes.data.ts";
+import { Votes } from "#/votes/service.ts";
 
 const getVotes = HttpApiEndpoint.get("getVotes", "/api/votes", {
   success: VotesDataSchema,

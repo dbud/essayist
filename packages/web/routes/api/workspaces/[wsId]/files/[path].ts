@@ -1,6 +1,6 @@
 import { Files } from "@essayist/core";
-import { define } from "@/define.ts";
-import { fileLoader } from "@/signals/file.server.ts";
+import { define } from "#/define.ts";
+import { fileLoader } from "#/signals/file.server.ts";
 
 export const handler = {
   GET: define.handlers(async (ctx) => {

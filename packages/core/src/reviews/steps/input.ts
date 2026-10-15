@@ -1,15 +1,15 @@
-import { renderTemplate } from "@/config/template.ts";
-import type { Category, ResolvedPrompts } from "@/config/types.ts";
-import type { Artifact, Artifacts, ArtifactType } from "@/flow/types.ts";
-import type { ReviewTypes } from "@/reviews/graph.ts";
-import type { MarkAttempt } from "@/reviews/types.ts";
+import { renderTemplate } from "#/config/template.ts";
+import type { Category, ResolvedPrompts } from "#/config/types.ts";
+import type { Artifact, Artifacts, ArtifactType } from "#/flow/types.ts";
+import type { ReviewTypes } from "#/reviews/graph.ts";
+import type { MarkAttempt } from "#/reviews/types.ts";
 import {
   bulletList,
   joinBlocks,
   joinLines,
   listOf,
   section,
-} from "@/text/markdown.ts";
+} from "#/text/markdown.ts";
 import type { Analysis } from "./analyze.ts";
 import type { MarkProposal } from "./mark.ts";
 

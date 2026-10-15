@@ -1,6 +1,6 @@
 import { computed, effect, signal } from "@preact/signals";
 import { IS_BROWSER } from "fresh/runtime";
-import { persistentSignal } from "@/utils/persistentSignal.ts";
+import { persistentSignal } from "#/utils/persistentSignal.ts";
 
 export const viewerFont = persistentSignal<string>("viewerFont", "font-serif");
 export const viewMode = persistentSignal<string>("viewMode", "auto");

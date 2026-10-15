@@ -8,16 +8,16 @@ import {
 } from "@preact/signals";
 import { IS_BROWSER } from "fresh/runtime";
 import type { EditorState } from "lexical";
-import { getFileTreeFor } from "@/signals/fileTree.ts";
-import { get, instances, modelData, namespace } from "@/signals/models.ts";
-import { autoSave, autoSaveInterval } from "@/signals/preferences.ts";
-import { dismissToast, showToast, type Toast } from "@/signals/toast.ts";
-import createAsyncState from "@/utils/asyncState.ts";
-import { ensureOk } from "@/utils/ensureOk.ts";
+import { getFileTreeFor } from "#/signals/fileTree.ts";
+import { get, instances, modelData, namespace } from "#/signals/models.ts";
+import { autoSave, autoSaveInterval } from "#/signals/preferences.ts";
+import { dismissToast, showToast, type Toast } from "#/signals/toast.ts";
+import createAsyncState from "#/utils/asyncState.ts";
+import { ensureOk } from "#/utils/ensureOk.ts";
 import {
   editorStateToMarkdown,
   markdownToEditorState,
-} from "@/utils/markdown.ts";
+} from "#/utils/markdown.ts";
 
 const AUTO_SAVE_MAX_WAIT_MS = 30_000;
 

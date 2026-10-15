@@ -15,11 +15,11 @@ import {
   type LexicalEditor,
   type UpdateListenerPayload,
 } from "lexical";
-import { bootstrapEditorExtension } from "@/editor/extension.ts";
+import { bootstrapEditorExtension } from "#/editor/extension.ts";
 import {
   editorStateToMarkdown,
   markdownFold,
-} from "@/utils/incrementalMarkdown.ts";
+} from "#/utils/incrementalMarkdown.ts";
 
 function createEditor(): LexicalEditor {
   return buildEditorFromExtensions({

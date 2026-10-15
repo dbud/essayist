@@ -1,7 +1,7 @@
 import { ReviewConfig, ReviewPassSchema } from "@essayist/core";
 import { Result, Schema } from "effect";
-import { define } from "@/define.ts";
-import { runtime } from "@/store.ts";
+import { define } from "#/define.ts";
+import { runtime } from "#/store.ts";
 
 export const handler = {
   PUT: define.handlers(async (ctx) => {

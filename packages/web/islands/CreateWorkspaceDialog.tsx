@@ -1,7 +1,7 @@
 import { type Signal, useSignal } from "@preact/signals";
-import Dialog from "@/components/ui/Dialog.tsx";
-import WaveBars from "@/components/ui/WaveBars.tsx";
-import { getWorkspaces } from "@/signals/workspace.ts";
+import Dialog from "#/components/ui/Dialog.tsx";
+import WaveBars from "#/components/ui/WaveBars.tsx";
+import { getWorkspaces } from "#/signals/workspace.ts";
 
 interface CreateWorkspaceDialogProps {
   open: Signal<boolean>;

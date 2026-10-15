@@ -1,7 +1,7 @@
 import { assertEquals } from "@std/assert";
 import { Effect } from "effect";
 import { test } from "vitest";
-import { testLayer } from "@/persistence/testing/kv.ts";
+import { testLayer } from "#/persistence/testing/kv.ts";
 import { ReviewConfig } from "./service.ts";
 
 test("ReviewConfig -- CRUD round-trips", async () => {

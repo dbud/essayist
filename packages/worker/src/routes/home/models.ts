@@ -1,6 +1,6 @@
-import { createModelContext } from "@/models/context";
-import { PageInfoModel } from "@/models/pageInfo";
-import { VotesModel } from "@/models/votes";
+import { createModelContext } from "#/models/context.ts";
+import { PageInfoModel } from "#/models/pageInfo.ts";
+import { VotesModel } from "#/models/votes.ts";
 import type { HomePageData } from "./data";
 
 // Models instantiate in dependency order; later models can take earlier ones.

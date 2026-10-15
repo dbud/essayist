@@ -1,10 +1,10 @@
 import type { FileEntry } from "@essayist/core";
 import { computed, createModel, signal } from "@preact/signals";
-import { get, modelData, namespace } from "@/signals/models.ts";
-import { getWorkspaces } from "@/signals/workspace.ts";
-import { ensureOk } from "@/utils/ensureOk.ts";
-import type { UploadedFile } from "@/utils/fileUpload.ts";
-import createProgressState from "@/utils/progressState.ts";
+import { get, modelData, namespace } from "#/signals/models.ts";
+import { getWorkspaces } from "#/signals/workspace.ts";
+import { ensureOk } from "#/utils/ensureOk.ts";
+import type { UploadedFile } from "#/utils/fileUpload.ts";
+import createProgressState from "#/utils/progressState.ts";
 
 export interface TreeData {
   files: FileEntry[];

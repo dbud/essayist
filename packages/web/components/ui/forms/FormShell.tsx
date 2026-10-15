@@ -1,5 +1,5 @@
 import type { ComponentChildren } from "preact";
-import WaveBars from "@/components/ui/WaveBars.tsx";
+import WaveBars from "#/components/ui/WaveBars.tsx";
 
 interface FormShellProps {
   title: string;

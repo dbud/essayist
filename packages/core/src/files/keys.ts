@@ -11,7 +11,7 @@
  *   ["ws", wsId, "marks", path, version]                           -> Mark[]
  */
 
-import type { Key } from "@/persistence/mod.ts";
+import type { Key } from "#/persistence/mod.ts";
 import type { ContentManifest } from "./chunked_content.ts";
 import type { FileVersion } from "./types.ts";
 

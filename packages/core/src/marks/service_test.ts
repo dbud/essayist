@@ -1,13 +1,13 @@
 import { assertEquals, assertObjectMatch } from "@std/assert";
 import { Effect, Layer } from "effect";
 import { test } from "vitest";
-import { Files } from "@/files/service.ts";
+import { Files } from "#/files/service.ts";
 import type {
   ConcurrentModificationError,
   PersistenceError,
-} from "@/persistence/mod.ts";
-import { testLayer } from "@/persistence/testing/kv.ts";
-import { WorkspaceId } from "@/workspace/WorkspaceId.ts";
+} from "#/persistence/mod.ts";
+import { testLayer } from "#/persistence/testing/kv.ts";
+import { WorkspaceId } from "#/workspace/WorkspaceId.ts";
 import { Marks } from "./service.ts";
 
 type E = PersistenceError | ConcurrentModificationError;

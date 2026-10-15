@@ -31,10 +31,10 @@ import {
   Wrench,
 } from "lucide-preact";
 import type { ComponentChildren } from "preact";
-import MarkdownView from "@/components/MarkdownView.tsx";
-import { define, type State } from "@/define.ts";
-import Navigation from "@/islands/Navigation.tsx";
-import { runtime } from "@/store.ts";
+import MarkdownView from "#/components/MarkdownView.tsx";
+import { define, type State } from "#/define.ts";
+import Navigation from "#/islands/Navigation.tsx";
+import { runtime } from "#/store.ts";
 
 interface TracePageData {
   run: ReviewRun;

@@ -1,10 +1,10 @@
 import { assertEquals } from "@std/assert";
 import { Effect, Layer, Result, Schema } from "effect";
 import { test } from "vitest";
-import { Files } from "@/files/service.ts";
-import { Marks } from "@/marks/service.ts";
-import { testLayer } from "@/persistence/testing/kv.ts";
-import { WorkspaceId } from "@/workspace/WorkspaceId.ts";
+import { Files } from "#/files/service.ts";
+import { Marks } from "#/marks/service.ts";
+import { testLayer } from "#/persistence/testing/kv.ts";
+import { WorkspaceId } from "#/workspace/WorkspaceId.ts";
 import {
   applyProposedMarks,
   type MarkProposal,

@@ -1,10 +1,10 @@
 import type { ReviewRun, ReviewRunStatus } from "@essayist/core";
 import { ScrollText } from "lucide-preact";
-import MarkdownView from "@/components/MarkdownView.tsx";
-import Section from "@/islands/Section.tsx";
-import { getFileTree } from "@/signals/fileTree.ts";
-import { getReview } from "@/signals/review.ts";
-import { getWorkspaces } from "@/signals/workspace.ts";
+import MarkdownView from "#/components/MarkdownView.tsx";
+import Section from "#/islands/Section.tsx";
+import { getFileTree } from "#/signals/fileTree.ts";
+import { getReview } from "#/signals/review.ts";
+import { getWorkspaces } from "#/signals/workspace.ts";
 
 function statusBadge(status: ReviewRunStatus) {
   const classes =

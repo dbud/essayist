@@ -4,7 +4,7 @@ import {
   type UserInput,
   Workspaces,
 } from "@essayist/core";
-import { runtime } from "@/store.ts";
+import { runtime } from "#/store.ts";
 
 /**
  * Finds or creates the app user for a Google profile and refreshes the

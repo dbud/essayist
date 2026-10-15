@@ -1,9 +1,9 @@
 import { assertEquals } from "@std/assert";
 import { test } from "vitest";
-import type { ResolvedReviewPass, ReviewUnit } from "@/config/types.ts";
-import type { ForwardSpec } from "@/flow/helpers.ts";
-import { buildReviewGraph } from "@/reviews/adapter.ts";
-import type { ReviewTypes } from "@/reviews/graph.ts";
+import type { ResolvedReviewPass, ReviewUnit } from "#/config/types.ts";
+import type { ForwardSpec } from "#/flow/helpers.ts";
+import { buildReviewGraph } from "#/reviews/adapter.ts";
+import type { ReviewTypes } from "#/reviews/graph.ts";
 
 const PROMPTS = {
   system: "You are an editor.",

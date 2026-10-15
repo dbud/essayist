@@ -18,13 +18,13 @@ import {
   chunkKeyPart,
   planChunks,
   unframeChunk,
-} from "@/persistence/chunked.ts";
+} from "#/persistence/chunked.ts";
 import {
   type ConcurrentModificationError,
   type Key,
   Persistence,
   type PersistenceError,
-} from "@/persistence/mod.ts";
+} from "#/persistence/mod.ts";
 
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();

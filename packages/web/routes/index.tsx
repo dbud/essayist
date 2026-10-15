@@ -1,17 +1,17 @@
-import { define } from "@/define.ts";
-import FileNavigation from "@/islands/FileNavigation.tsx";
-import FileViewer from "@/islands/FileViewer.tsx";
-import Navigation from "@/islands/Navigation.tsx";
-import RightSidebar from "@/islands/RightSidebar.tsx";
-import { getCategories } from "@/signals/categories.ts";
-import { getFile } from "@/signals/file.ts";
-import { getFileTreeFor } from "@/signals/fileTree.ts";
-import { getMarks } from "@/signals/marks.ts";
-import { seed, settle, settleAll } from "@/signals/models.ts";
-import { getOpenedFilesFor } from "@/signals/openedFiles.ts";
-import { getReview } from "@/signals/review.ts";
-import { getVersionHistory } from "@/signals/versionHistory.ts";
-import { getWorkspaces } from "@/signals/workspace.ts";
+import { define } from "#/define.ts";
+import FileNavigation from "#/islands/FileNavigation.tsx";
+import FileViewer from "#/islands/FileViewer.tsx";
+import Navigation from "#/islands/Navigation.tsx";
+import RightSidebar from "#/islands/RightSidebar.tsx";
+import { getCategories } from "#/signals/categories.ts";
+import { getFile } from "#/signals/file.ts";
+import { getFileTreeFor } from "#/signals/fileTree.ts";
+import { getMarks } from "#/signals/marks.ts";
+import { seed, settle, settleAll } from "#/signals/models.ts";
+import { getOpenedFilesFor } from "#/signals/openedFiles.ts";
+import { getReview } from "#/signals/review.ts";
+import { getVersionHistory } from "#/signals/versionHistory.ts";
+import { getWorkspaces } from "#/signals/workspace.ts";
 
 export default define.page(async ({ state }) => {
   const snapshot = await seed(function* () {

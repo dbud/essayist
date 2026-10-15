@@ -1,5 +1,5 @@
 import { Effect } from "effect";
-import type { ReviewNodeEvent } from "@/reviews/graph.ts";
+import type { ReviewNodeEvent } from "#/reviews/graph.ts";
 import type { TraceEvent } from "./types.ts";
 
 /**

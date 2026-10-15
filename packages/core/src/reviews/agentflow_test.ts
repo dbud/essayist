@@ -1,8 +1,8 @@
 import { assertEquals } from "@std/assert";
 import { test } from "vitest";
-import type { ResolvedReviewPass, ReviewUnit } from "@/config/types.ts";
-import { buildReviewGraph } from "@/reviews/adapter.ts";
-import { agentflowDefinition } from "@/reviews/agentflow.ts";
+import type { ResolvedReviewPass, ReviewUnit } from "#/config/types.ts";
+import { buildReviewGraph } from "#/reviews/adapter.ts";
+import { agentflowDefinition } from "#/reviews/agentflow.ts";
 
 const PROMPTS = {
   system: "You are an editor.",

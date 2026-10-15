@@ -11,7 +11,7 @@ import {
   mergeRegister,
   SELECTION_CHANGE_COMMAND,
 } from "lexical";
-import { defaultEditorSelection } from "@/signals/editorSelection.ts";
+import { defaultEditorSelection } from "#/signals/editorSelection.ts";
 import {
   adjacentElementRect,
   charRectAt,

@@ -5,7 +5,7 @@ import {
   WorkspaceId,
 } from "@essayist/core";
 import { Effect } from "effect";
-import type { Runtime } from "@/store.ts";
+import type { Runtime } from "#/store.ts";
 
 export type RunScoped = <A, E>(
   effect: Effect.Effect<A, E, Files | Marks | Search | WorkspaceId>,

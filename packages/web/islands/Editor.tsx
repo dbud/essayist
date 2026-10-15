@@ -8,13 +8,13 @@ import { OnChangePlugin } from "@lexical/react/LexicalOnChangePlugin";
 import { IS_BROWSER } from "fresh/runtime";
 import type { EditorState } from "lexical";
 import { useMemo } from "preact/hooks";
-import { createEditorExtension } from "@/editor/extension.ts";
-import { MARK_RANGE_TAG } from "@/editor/markExtension.ts";
-import { getEditorSelection } from "@/signals/editorSelection.ts";
-import { type FileKey, getFile } from "@/signals/file.ts";
-import { getMarks } from "@/signals/marks.ts";
-import { viewerFont } from "@/signals/preferences.ts";
-import { getSidenotes } from "@/signals/sidenotes.ts";
+import { createEditorExtension } from "#/editor/extension.ts";
+import { MARK_RANGE_TAG } from "#/editor/markExtension.ts";
+import { getEditorSelection } from "#/signals/editorSelection.ts";
+import { type FileKey, getFile } from "#/signals/file.ts";
+import { getMarks } from "#/signals/marks.ts";
+import { viewerFont } from "#/signals/preferences.ts";
+import { getSidenotes } from "#/signals/sidenotes.ts";
 import ActiveEditorRef from "./ActiveEditorRef.tsx";
 
 interface EditorProps extends FileKey {

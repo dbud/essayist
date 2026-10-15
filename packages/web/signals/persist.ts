@@ -1,7 +1,7 @@
 import { effect } from "@preact/signals";
 import { IS_BROWSER } from "fresh/runtime";
-import { getFileTreeFor } from "@/signals/fileTree.ts";
-import { getWorkspaces } from "@/signals/workspace.ts";
+import { getFileTreeFor } from "#/signals/fileTree.ts";
+import { getWorkspaces } from "#/signals/workspace.ts";
 
 // Persists the selected workspace and file to their PATCH endpoints. User
 // changes are debounced; pending writes flush with keepalive at pagehide.

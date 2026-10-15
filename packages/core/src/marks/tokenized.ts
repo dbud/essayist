@@ -1,4 +1,4 @@
-import { createTokenizer, type Token } from "@/text/tokenizer.ts";
+import { createTokenizer, type Token } from "#/text/tokenizer.ts";
 
 const WORD_REGEX = /[\p{L}\p{N}]+/gu;
 

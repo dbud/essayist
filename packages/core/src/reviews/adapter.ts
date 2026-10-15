@@ -2,10 +2,10 @@ import type {
   Category,
   ResolvedReviewPass,
   ResolvedReviewUnit,
-} from "@/config/types.ts";
-import type { ForwardSpec, PassWhenSpec } from "@/flow/helpers.ts";
-import type { FlowGraph, FlowNodeOf } from "@/flow/types.ts";
-import type { ReviewTypes } from "@/reviews/graph.ts";
+} from "#/config/types.ts";
+import type { ForwardSpec, PassWhenSpec } from "#/flow/helpers.ts";
+import type { FlowGraph, FlowNodeOf } from "#/flow/types.ts";
+import type { ReviewTypes } from "#/reviews/graph.ts";
 
 const CONTENT = "content";
 

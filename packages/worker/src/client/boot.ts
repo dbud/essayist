@@ -1,6 +1,6 @@
 import type { ComponentChild } from "preact";
 import { hydrate } from "preact";
-import { PAGE_DATA_SCRIPT_ID } from "@/app/pageData";
+import { PAGE_DATA_SCRIPT_ID } from "#/app/pageData.tsx";
 
 // One boot for every client page. Data and Models infer from the page's
 // model factory; tree must accept those models, so drift fails tsc here.

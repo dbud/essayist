@@ -6,7 +6,7 @@
 
 import type { ReadonlySignal } from "@preact/signals";
 import { IS_BROWSER } from "fresh/runtime";
-import createAsyncState from "@/utils/asyncState.ts";
+import createAsyncState from "#/utils/asyncState.ts";
 
 /**
  * A namespace token: the cache key's shape plus the model's data shape.

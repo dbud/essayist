@@ -1,8 +1,8 @@
 import { ReviewRuns, WorkspaceId } from "@essayist/core";
 import { Effect } from "effect";
-import { define } from "@/define.ts";
-import { reviewLoader } from "@/signals/review.server.ts";
-import { runtime } from "@/store.ts";
+import { define } from "#/define.ts";
+import { reviewLoader } from "#/signals/review.server.ts";
+import { runtime } from "#/store.ts";
 
 export const handler = {
   GET: define.handlers(async (ctx) => {

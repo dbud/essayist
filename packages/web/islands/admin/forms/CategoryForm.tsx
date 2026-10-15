@@ -1,15 +1,15 @@
 import type { Category } from "@essayist/core";
 import type { Signal } from "@preact/signals";
 import { useEffect, useState } from "preact/hooks";
-import { ColorSwatch } from "@/components/highlights/ColorSwatch.tsx";
-import { FormShell } from "@/components/ui/forms/FormShell.tsx";
-import { TextareaRow } from "@/components/ui/forms/TextareaRow.tsx";
-import { TextRow } from "@/components/ui/forms/TextRow.tsx";
-import { CheckboxIcon } from "@/components/ui/icons.tsx";
-import Slider from "@/components/ui/Slider.tsx";
-import { FALLBACK_COLOR } from "@/editor/markColors.ts";
-import { type CategoryInput, getAdminConfig } from "@/signals/admin.ts";
-import { categoryPreview } from "@/signals/categoryPreview.ts";
+import { ColorSwatch } from "#/components/highlights/ColorSwatch.tsx";
+import { FormShell } from "#/components/ui/forms/FormShell.tsx";
+import { TextareaRow } from "#/components/ui/forms/TextareaRow.tsx";
+import { TextRow } from "#/components/ui/forms/TextRow.tsx";
+import { CheckboxIcon } from "#/components/ui/icons.tsx";
+import Slider from "#/components/ui/Slider.tsx";
+import { FALLBACK_COLOR } from "#/editor/markColors.ts";
+import { type CategoryInput, getAdminConfig } from "#/signals/admin.ts";
+import { categoryPreview } from "#/signals/categoryPreview.ts";
 
 // Canonical stored form: oklch(<L>% <C> <H>).
 const OKLCH_RE = /^oklch\(([\d.]+)%\s+([\d.]+)\s+([\d.]+)\)$/;

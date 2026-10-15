@@ -24,6 +24,9 @@
     "vite": "catalog:",
     "wrangler": "^4.150.0"
   },
+  "imports": {
+    "#/*": "./src/*"
+  },
   "name": "@essayist/worker",
   "private": true,
   "scripts": {

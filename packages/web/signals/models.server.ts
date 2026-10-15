@@ -5,7 +5,7 @@ import {
   type Namespace,
   setResolver,
   setScopeProvider,
-} from "@/signals/models.ts";
+} from "#/signals/models.ts";
 
 /**
  * Server-only ALS wiring for the model store: `node:async_hooks` never

@@ -4,7 +4,7 @@ import {
   type ModelCallRecord,
   ModelClient,
   type StructuredParseError,
-} from "@/model/service.ts";
+} from "#/model/service.ts";
 
 /** Events of a structured call, delivered in order. */
 export type CallEvent =

@@ -1,6 +1,6 @@
 import { useSignal } from "@preact/signals";
 import { useEffect } from "preact/hooks";
-import { openGooglePicker, type PickerDoc } from "@/utils/googlePicker.ts";
+import { openGooglePicker, type PickerDoc } from "#/utils/googlePicker.ts";
 
 type Status = "opening" | "cancelled" | "error";
 

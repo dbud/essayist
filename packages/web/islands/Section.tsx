@@ -1,8 +1,8 @@
 import { toKebabCase } from "@std/text/to-kebab-case";
 import { ChevronDown } from "lucide-preact";
 import type { ComponentChildren } from "preact";
-import Panel from "@/components/ui/Panel.tsx";
-import { usePersistentSignal } from "@/utils/persistentSignal.ts";
+import Panel from "#/components/ui/Panel.tsx";
+import { usePersistentSignal } from "#/utils/persistentSignal.ts";
 
 interface SectionProps {
   title: string;

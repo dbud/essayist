@@ -15,8 +15,8 @@ import {
 } from "@essayist/core";
 import { layerKv } from "@essayist/core/kv_layer";
 import { Layer, ManagedRuntime } from "effect";
-import { env } from "@/env.ts";
-import { seedDemo } from "@/seed.ts";
+import { env } from "#/env.ts";
+import { seedDemo } from "#/seed.ts";
 
 /**
  * Backing stores for the web app.

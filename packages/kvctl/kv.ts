@@ -10,7 +10,7 @@ import {
 } from "@essayist/core";
 import { layerKv } from "@essayist/core/kv_layer";
 import { Layer, ManagedRuntime } from "effect";
-import type { KvctlGlobals } from "@/globals.ts";
+import type { KvctlGlobals } from "#/globals.ts";
 
 // The local playground KV, also used by the web dev server. Resolved from
 // this module so the default works from any working directory.

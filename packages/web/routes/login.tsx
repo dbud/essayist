@@ -1,8 +1,8 @@
 import type { PageProps } from "fresh";
-import { env } from "@/env.ts";
-import GoogleOneTap from "@/islands/GoogleOneTap.tsx";
-import Navigation from "@/islands/Navigation.tsx";
-import { safeNext } from "@/utils/nextUrl.ts";
+import { env } from "#/env.ts";
+import GoogleOneTap from "#/islands/GoogleOneTap.tsx";
+import Navigation from "#/islands/Navigation.tsx";
+import { safeNext } from "#/utils/nextUrl.ts";
 
 const clientId = env.googleClientId;
 

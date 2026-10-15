@@ -6,7 +6,7 @@ import {
   mergeRegister,
   SELECTION_CHANGE_COMMAND,
 } from "lexical";
-import { defaultEditorSelection } from "@/signals/editorSelection.ts";
+import { defaultEditorSelection } from "#/signals/editorSelection.ts";
 import { $innerMarkIdAtAnchor, $markIdsAtAnchor } from "./markSelection.ts";
 import type { SelectionExtensionConfig } from "./toolbarStateExtension.ts";
 

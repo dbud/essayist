@@ -1,8 +1,8 @@
 import { assertEquals } from "@std/assert";
 import { test } from "vitest";
-import type { ResolvedPrompts } from "@/config/types.ts";
-import type { Artifact, Artifacts, ArtifactType } from "@/flow/types.ts";
-import type { ReviewTypes } from "@/reviews/graph.ts";
+import type { ResolvedPrompts } from "#/config/types.ts";
+import type { Artifact, Artifacts, ArtifactType } from "#/flow/types.ts";
+import type { ReviewTypes } from "#/reviews/graph.ts";
 import { composeCallInput, composeRepairInput } from "./input.ts";
 
 const PROMPTS: ResolvedPrompts = {

@@ -1,9 +1,9 @@
 import { Command } from "@cliffy/command";
 import { type TraceEvent, TraceEvents, WorkspaceId } from "@essayist/core";
 import { Effect } from "effect";
-import type { KvctlGlobals } from "@/globals.ts";
-import { withKv } from "@/kv.ts";
-import { pprint } from "@/utils/pprint.ts";
+import type { KvctlGlobals } from "#/globals.ts";
+import { withKv } from "#/kv.ts";
+import { pprint } from "#/utils/pprint.ts";
 
 /**
  * Print a run's trace as reassembled events, so the events can be piped to

@@ -1,9 +1,9 @@
 import { effect } from "@preact/signals";
 import { Upload } from "lucide-preact";
-import { getFileTree } from "@/signals/fileTree.ts";
-import { showToast } from "@/signals/toast.ts";
-import { filesFromFileInput, readFilesAsText } from "@/utils/fileUpload.ts";
-import { formatCount } from "@/utils/format.ts";
+import { getFileTree } from "#/signals/fileTree.ts";
+import { showToast } from "#/signals/toast.ts";
+import { filesFromFileInput, readFilesAsText } from "#/utils/fileUpload.ts";
+import { formatCount } from "#/utils/format.ts";
 
 /**
  * The upload button + hidden file input. On selection, files are read as

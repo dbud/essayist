@@ -1,4 +1,4 @@
-import { logoMark } from "@/components/ui/logo-mark.ts";
+import { logoMark } from "#/components/ui/logo-mark.ts";
 
 interface EssayistLogoProps {
   class?: string;

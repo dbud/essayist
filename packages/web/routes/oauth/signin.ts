@@ -1,5 +1,5 @@
-import { define } from "@/define.ts";
-import { getOAuthHelpers } from "@/utils/oauth.ts";
+import { define } from "#/define.ts";
+import { getOAuthHelpers } from "#/utils/oauth.ts";
 
 export const handler = define.handlers(async (ctx) => {
   try {

@@ -1,7 +1,7 @@
 import { assertEquals } from "@std/assert";
 import { assertObjectMatch } from "@std/assert/object-match";
 import { test } from "vitest";
-import type { Mark } from "@/marks/types.ts";
+import type { Mark } from "#/marks/types.ts";
 import { type ResolveOptions, resolveMarks } from "./resolver.ts";
 
 function createMark(

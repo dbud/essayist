@@ -1,6 +1,11 @@
 import type { Signal } from "@preact/signals";
 import { CircleCheckBig, Info, TriangleAlert, X } from "lucide-preact";
-import { dismissToast, removeToast, type Toast, toasts } from "@/models/toast";
+import {
+  dismissToast,
+  removeToast,
+  type Toast,
+  toasts,
+} from "#/models/toast.ts";
 
 const ICONS = {
   info: Info,

@@ -1,8 +1,8 @@
 import type { User } from "@essayist/core";
 import type { ComponentChildren } from "preact";
-import EssayistLogo from "@/components/ui/EssayistLogo.tsx";
-import SettingsMenu from "@/islands/SettingsMenu.tsx";
-import ThemeToggle from "@/islands/ThemeToggle.tsx";
+import EssayistLogo from "#/components/ui/EssayistLogo.tsx";
+import SettingsMenu from "#/islands/SettingsMenu.tsx";
+import ThemeToggle from "#/islands/ThemeToggle.tsx";
 
 interface NavigationProps {
   user?: User;

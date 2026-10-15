@@ -13,9 +13,9 @@ import type { ComponentChild } from "preact";
 import Dropdown, {
   DropdownItem,
   DropdownMenu,
-} from "@/components/ui/Dropdown.tsx";
-import Swappable from "@/components/ui/Swappable.tsx";
-import type { BlockType } from "@/editor/blockFormat.ts";
+} from "#/components/ui/Dropdown.tsx";
+import Swappable from "#/components/ui/Swappable.tsx";
+import type { BlockType } from "#/editor/blockFormat.ts";
 
 interface BlockOption {
   value: BlockType;

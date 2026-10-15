@@ -1,7 +1,7 @@
 import { UserState } from "@essayist/core";
-import { define } from "@/define.ts";
-import { fileTreeLoader } from "@/signals/fileTree.server.ts";
-import { runtime } from "@/store.ts";
+import { define } from "#/define.ts";
+import { fileTreeLoader } from "#/signals/fileTree.server.ts";
+import { runtime } from "#/store.ts";
 
 export const handler = {
   GET: define.handlers(async (ctx) => {

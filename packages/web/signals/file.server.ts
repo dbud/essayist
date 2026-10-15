@@ -1,9 +1,9 @@
 import { Files } from "@essayist/core";
-import { runScoped } from "@/run.ts";
-import type { FileKey } from "@/signals/file.ts";
-import { type FileData, fileNs } from "@/signals/file.ts";
-import { registerLoader } from "@/signals/models.server.ts";
-import { runtime } from "@/store.ts";
+import { runScoped } from "#/run.ts";
+import type { FileKey } from "#/signals/file.ts";
+import { type FileData, fileNs } from "#/signals/file.ts";
+import { registerLoader } from "#/signals/models.server.ts";
+import { runtime } from "#/store.ts";
 
 export async function fileLoader({
   wsId,

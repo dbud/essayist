@@ -10,6 +10,9 @@
     ".": "./mod.ts",
     "./kv_layer": "./src/persistence/kv_layer.ts"
   },
+  "imports": {
+    "#/*": "./src/*"
+  },
   "name": "@essayist/core",
   "private": true,
   "scripts": {

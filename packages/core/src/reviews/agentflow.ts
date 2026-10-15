@@ -1,5 +1,5 @@
-import type { FlowGraph, FlowNodeOf, NodeKind } from "@/flow/types.ts";
-import type { ReviewTypes } from "@/reviews/graph.ts";
+import type { FlowGraph, FlowNodeOf, NodeKind } from "#/flow/types.ts";
+import type { ReviewTypes } from "#/reviews/graph.ts";
 
 /** Agentflow shape per review node kind. */
 const SHAPES: Record<NodeKind<ReviewTypes>, string> = {

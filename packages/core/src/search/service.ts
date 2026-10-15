@@ -4,16 +4,16 @@
  */
 
 import { Context, Effect, Layer } from "effect";
-import { Files } from "@/files/service.ts";
-import type { PersistenceError } from "@/persistence/mod.ts";
+import { Files } from "#/files/service.ts";
+import type { PersistenceError } from "#/persistence/mod.ts";
 import {
   compilePattern,
   DEFAULT_CONTEXT_LINES,
   escapeRegex,
   matchLines,
-} from "@/search/match.ts";
-import type { GrepMatch, GrepOptions, GrepResult } from "@/search/types.ts";
-import type { WorkspaceId } from "@/workspace/WorkspaceId.ts";
+} from "#/search/match.ts";
+import type { GrepMatch, GrepOptions, GrepResult } from "#/search/types.ts";
+import type { WorkspaceId } from "#/workspace/WorkspaceId.ts";
 
 export interface Interface {
   /**

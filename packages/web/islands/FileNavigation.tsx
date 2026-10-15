@@ -1,18 +1,18 @@
 import { useSignal } from "@preact/signals";
 import { ArrowDownRight, ChevronDown, Plus, Slash } from "lucide-preact";
 import type { TargetedMouseEvent } from "preact";
-import Panel from "@/components/ui/Panel.tsx";
-import Swappable from "@/components/ui/Swappable.tsx";
-import WaveBars from "@/components/ui/WaveBars.tsx";
-import { useClickOutside } from "@/hooks/useClickOutside.ts";
-import CreateFileDialog from "@/islands/CreateFileDialog.tsx";
-import CreateWorkspaceDialog from "@/islands/CreateWorkspaceDialog.tsx";
-import FileUploader from "@/islands/FileUploader.tsx";
-import GoogleDocImporter from "@/islands/GoogleDocImporter.tsx";
-import { getFileTree, type TreeNode } from "@/signals/fileTree.ts";
-import { getOpenedFiles } from "@/signals/openedFiles.ts";
-import { navigationOpened } from "@/signals/sidebar.ts";
-import { getWorkspaces } from "@/signals/workspace.ts";
+import Panel from "#/components/ui/Panel.tsx";
+import Swappable from "#/components/ui/Swappable.tsx";
+import WaveBars from "#/components/ui/WaveBars.tsx";
+import { useClickOutside } from "#/hooks/useClickOutside.ts";
+import CreateFileDialog from "#/islands/CreateFileDialog.tsx";
+import CreateWorkspaceDialog from "#/islands/CreateWorkspaceDialog.tsx";
+import FileUploader from "#/islands/FileUploader.tsx";
+import GoogleDocImporter from "#/islands/GoogleDocImporter.tsx";
+import { getFileTree, type TreeNode } from "#/signals/fileTree.ts";
+import { getOpenedFiles } from "#/signals/openedFiles.ts";
+import { navigationOpened } from "#/signals/sidebar.ts";
+import { getWorkspaces } from "#/signals/workspace.ts";
 
 interface PathPart {
   segment: string;

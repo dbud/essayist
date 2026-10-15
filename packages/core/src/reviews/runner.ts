@@ -18,34 +18,34 @@ import {
   Result,
   Schema,
 } from "effect";
-import type { ResolvedReviewPass } from "@/config/types.ts";
-import { Files } from "@/files/service.ts";
-import { FlowRunner } from "@/flow/runner.ts";
-import type { FlowEvent } from "@/flow/types.ts";
-import { view } from "@/flow/view.ts";
-import { Ids } from "@/ids.ts";
-import type { Marks } from "@/marks/service.ts";
-import type { ModelClient } from "@/model/service.ts";
-import type { MissingChunksError } from "@/persistence/chunked_values.ts";
+import type { ResolvedReviewPass } from "#/config/types.ts";
+import { Files } from "#/files/service.ts";
+import { FlowRunner } from "#/flow/runner.ts";
+import type { FlowEvent } from "#/flow/types.ts";
+import { view } from "#/flow/view.ts";
+import { Ids } from "#/ids.ts";
+import type { Marks } from "#/marks/service.ts";
+import type { ModelClient } from "#/model/service.ts";
+import type { MissingChunksError } from "#/persistence/chunked_values.ts";
 import type {
   ConcurrentModificationError,
   PersistenceError,
-} from "@/persistence/mod.ts";
-import { buildReviewGraph } from "@/reviews/adapter.ts";
+} from "#/persistence/mod.ts";
+import { buildReviewGraph } from "#/reviews/adapter.ts";
 import {
   type ReviewServices,
   type ReviewTypes,
   reviewRunners,
-} from "@/reviews/graph.ts";
-import type { ReviewProgress } from "@/reviews/progress.ts";
-import { ReviewProgressTracker } from "@/reviews/progress.ts";
-import { ReviewRuns } from "@/reviews/service.ts";
-import { logTraceEvent } from "@/reviews/trace/log.ts";
-import { foldCompleted } from "@/reviews/trace/mod.ts";
-import { TraceEvents } from "@/reviews/trace/service.ts";
-import type { TraceEvent } from "@/reviews/trace/types.ts";
-import type { ReviewRun } from "@/reviews/types.ts";
-import { WorkspaceId } from "@/workspace/WorkspaceId.ts";
+} from "#/reviews/graph.ts";
+import type { ReviewProgress } from "#/reviews/progress.ts";
+import { ReviewProgressTracker } from "#/reviews/progress.ts";
+import { ReviewRuns } from "#/reviews/service.ts";
+import { logTraceEvent } from "#/reviews/trace/log.ts";
+import { foldCompleted } from "#/reviews/trace/mod.ts";
+import { TraceEvents } from "#/reviews/trace/service.ts";
+import type { TraceEvent } from "#/reviews/trace/types.ts";
+import type { ReviewRun } from "#/reviews/types.ts";
+import { WorkspaceId } from "#/workspace/WorkspaceId.ts";
 
 /** Options for {@linkcode runReviewPass}. */
 export interface RunReviewPassOptions {

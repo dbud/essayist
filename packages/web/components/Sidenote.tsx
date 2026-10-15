@@ -1,7 +1,7 @@
 import type { LexicalEditor } from "lexical";
-import { colorForMark } from "@/editor/markColors.ts";
-import { SELECT_MARK_COMMAND } from "@/editor/markExtension.ts";
-import type { SidenoteView } from "@/signals/sidenotes.ts";
+import { colorForMark } from "#/editor/markColors.ts";
+import { SELECT_MARK_COMMAND } from "#/editor/markExtension.ts";
+import type { SidenoteView } from "#/signals/sidenotes.ts";
 
 interface SidenoteProps {
   view: SidenoteView;

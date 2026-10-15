@@ -15,9 +15,9 @@ import type {
   NodeRunner,
   NodeRunners,
   SkippedNodeRun,
-} from "@/flow/types.ts";
-import { FlowGraphError } from "@/flow/types.ts";
-import { view } from "@/flow/view.ts";
+} from "#/flow/types.ts";
+import { FlowGraphError } from "#/flow/types.ts";
+import { view } from "#/flow/view.ts";
 
 export interface FlowRunnerOptions<T extends FlowTypes, R = never> {
   runners: NodeRunners<T, R>;

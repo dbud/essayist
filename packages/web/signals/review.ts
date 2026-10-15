@@ -1,13 +1,13 @@
 import type { ReviewProgress, ReviewRun } from "@essayist/core";
 import { createModel, signal } from "@preact/signals";
-import { getMarks } from "@/signals/marks.ts";
-import { get, modelData, namespace } from "@/signals/models.ts";
-import createAsyncState from "@/utils/asyncState.ts";
-import { ensureOk } from "@/utils/ensureOk.ts";
+import { getMarks } from "#/signals/marks.ts";
+import { get, modelData, namespace } from "#/signals/models.ts";
+import createAsyncState from "#/utils/asyncState.ts";
+import { ensureOk } from "#/utils/ensureOk.ts";
 // Replay parked during the multipass rework; replayRun returns with the
 // step-based trace format.
-// import { playTrace } from "@/utils/reviewReplay.ts";
-import { parseSSE } from "@/utils/sse.ts";
+// import { playTrace } from "#/utils/reviewReplay.ts";
+import { parseSSE } from "#/utils/sse.ts";
 
 export interface ReviewKey {
   wsId: string;

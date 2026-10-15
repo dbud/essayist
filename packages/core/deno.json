@@ -10,9 +10,9 @@
     "./kv_layer": "./src/persistence/kv_layer.ts"
   },
   "imports": {
-    "@/": "./src/",
     "@deno/kv": "npm:@deno/kv@^0.14.0",
     "@effect/ai-openrouter": "npm:@effect/ai-openrouter@^4.0.3",
+    "#/": "./src/",
     "effect": "npm:effect@^4.0.3",
     "effect/ai/AiError": "npm:effect@^4.0.3/ai/AiError",
     "effect/http/FetchHttpClient": "npm:effect@^4.0.3/http/FetchHttpClient",

@@ -1,7 +1,7 @@
 import { Command } from "@cliffy/command";
 import { ReviewConfig } from "@essayist/core";
-import type { KvctlGlobals } from "@/globals.ts";
-import { withKv } from "@/kv.ts";
+import type { KvctlGlobals } from "#/globals.ts";
+import { withKv } from "#/kv.ts";
 
 export const seedConfig = new Command<KvctlGlobals>()
   .description("Seed default review config.")

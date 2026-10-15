@@ -1,8 +1,8 @@
 import { Command } from "@cliffy/command";
 import { pluralize } from "@essayist/core";
-import type { KvctlGlobals } from "@/globals.ts";
-import { withKv } from "@/kv.ts";
-import { pprint } from "@/utils/pprint.ts";
+import type { KvctlGlobals } from "#/globals.ts";
+import { withKv } from "#/kv.ts";
+import { pprint } from "#/utils/pprint.ts";
 
 export const explore = new Command<KvctlGlobals>()
   .description("List keys, optionally under a tuple prefix.")

@@ -20,7 +20,7 @@ import {
 import {
   type EditorSelection,
   EditorSelectionModel,
-} from "@/signals/editorSelection.ts";
+} from "#/signals/editorSelection.ts";
 import { MarksAtCursorExtension } from "./marksAtCursorExtension.ts";
 
 const selection: EditorSelection = new EditorSelectionModel({

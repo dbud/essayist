@@ -2,9 +2,9 @@ import { ChevronDown } from "lucide-preact";
 import Dropdown, {
   DropdownItem,
   DropdownMenu,
-} from "@/components/ui/Dropdown.tsx";
-import Swappable from "@/components/ui/Swappable.tsx";
-import { viewerFont } from "@/signals/preferences.ts";
+} from "#/components/ui/Dropdown.tsx";
+import Swappable from "#/components/ui/Swappable.tsx";
+import { viewerFont } from "#/signals/preferences.ts";
 
 const OPTIONS = [
   { value: "font-serif", label: "Serif" },

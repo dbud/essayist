@@ -1,5 +1,5 @@
 import type { JSX } from "preact";
-import { Toaster } from "@/components/Toaster";
+import { Toaster } from "#/components/Toaster.tsx";
 import { type HomeModels, HomeModelsProvider, useHomeModels } from "./models";
 
 function Counter() {

@@ -1,5 +1,5 @@
-import Slider from "@/components/ui/Slider.tsx";
-import { autoSaveInterval } from "@/signals/preferences.ts";
+import Slider from "#/components/ui/Slider.tsx";
+import { autoSaveInterval } from "#/signals/preferences.ts";
 
 const INTERVALS = [2, 5, 10, 15, 30, 60, 120];
 

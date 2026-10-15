@@ -1,6 +1,6 @@
 import { assertEquals } from "@std/assert";
 import { test } from "vitest";
-import { extractVariables, renderTemplate } from "@/config/template.ts";
+import { extractVariables, renderTemplate } from "#/config/template.ts";
 
 test("extractVariables -- returns unique names in order", () => {
   assertEquals(extractVariables("{{b}} {{a}} {{b}}"), ["b", "a"]);

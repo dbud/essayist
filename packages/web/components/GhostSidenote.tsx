@@ -1,10 +1,10 @@
 import type { LexicalEditor } from "lexical";
 import { MoveDown, MoveUp } from "lucide-preact";
-import { colorForMark } from "@/editor/markColors.ts";
-import { SELECT_MARK_COMMAND } from "@/editor/markExtension.ts";
-import { useMediaQuery } from "@/hooks/useMediaQuery.ts";
-import type { ScrollContainerRef } from "@/hooks/useScrollViewport.ts";
-import type { GhostSidenoteView } from "@/signals/sidenotes.ts";
+import { colorForMark } from "#/editor/markColors.ts";
+import { SELECT_MARK_COMMAND } from "#/editor/markExtension.ts";
+import { useMediaQuery } from "#/hooks/useMediaQuery.ts";
+import type { ScrollContainerRef } from "#/hooks/useScrollViewport.ts";
+import type { GhostSidenoteView } from "#/signals/sidenotes.ts";
 
 interface GhostSidenoteProps {
   view: GhostSidenoteView;

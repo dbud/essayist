@@ -7,17 +7,17 @@
 
 import { sortBy } from "@std/collections";
 import { Clock, Context, Effect, Layer } from "effect";
-import { unifiedDiff } from "@/diff/unified_diff.ts";
-import { type ContentManifest, chunkContent } from "@/files/chunked_content.ts";
-import { Ids } from "@/ids.ts";
-import type { Mark, MigrateMarksResult } from "@/marks/types.ts";
+import { unifiedDiff } from "#/diff/unified_diff.ts";
+import { type ContentManifest, chunkContent } from "#/files/chunked_content.ts";
+import { Ids } from "#/ids.ts";
+import type { Mark, MigrateMarksResult } from "#/marks/types.ts";
 import {
   type ConcurrentModificationError,
   Persistence,
   type PersistenceError,
   type WriteOp,
-} from "@/persistence/mod.ts";
-import { WorkspaceId } from "@/workspace/WorkspaceId.ts";
+} from "#/persistence/mod.ts";
+import { WorkspaceId } from "#/workspace/WorkspaceId.ts";
 import { makeInternals, retryConcurrency } from "./internals.ts";
 import {
   contentChunkKey,

@@ -1,5 +1,5 @@
-import type { Artifact } from "@/flow/types.ts";
-import type { ReviewTypes } from "@/reviews/graph.ts";
+import type { Artifact } from "#/flow/types.ts";
+import type { ReviewTypes } from "#/reviews/graph.ts";
 import type { TraceEvent } from "./types.ts";
 
 /**

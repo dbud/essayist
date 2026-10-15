@@ -1,8 +1,8 @@
 import { Effect, Schema } from "effect";
-import type { NodeRunner } from "@/flow/types.ts";
-import type { ModelClient } from "@/model/service.ts";
-import { callStructured } from "@/reviews/call.ts";
-import type { ReviewTypes } from "@/reviews/graph.ts";
+import type { NodeRunner } from "#/flow/types.ts";
+import type { ModelClient } from "#/model/service.ts";
+import { callStructured } from "#/reviews/call.ts";
+import type { ReviewTypes } from "#/reviews/graph.ts";
 import { composeCallInput } from "./input.ts";
 
 export const AnalysisSchema = Schema.Struct({

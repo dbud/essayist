@@ -2,7 +2,7 @@ import { buildEditorFromExtensions } from "@lexical/extension";
 import { $convertFromMarkdownString, TRANSFORMERS } from "@lexical/markdown";
 import { assert, assertEquals } from "@std/assert";
 import { $getRoot, type EditorState, type LexicalEditor } from "lexical";
-import { bootstrapEditorExtension } from "@/editor/extension.ts";
+import { bootstrapEditorExtension } from "#/editor/extension.ts";
 import {
   $collectTextNodeSpans,
   findPosition,

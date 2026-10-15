@@ -1,5 +1,5 @@
 import type { RouteConfig } from "fresh";
-import GoogleDocImporterPage from "@/islands/GoogleDocImporterPage.tsx";
+import GoogleDocImporterPage from "#/islands/GoogleDocImporterPage.tsx";
 
 // Standalone page (no routes/_app wrapper): the Google Picker script lives in
 // <head> here so it isn't loaded on every page.

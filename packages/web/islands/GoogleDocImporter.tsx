@@ -1,14 +1,14 @@
 import { useSignal } from "@preact/signals";
 import { Download } from "lucide-preact";
 import { useEffect, useRef } from "preact/hooks";
-import WaveBars from "@/components/ui/WaveBars.tsx";
-import { getFileTree } from "@/signals/fileTree.ts";
-import { getOpenedFiles } from "@/signals/openedFiles.ts";
-import { navigationOpened } from "@/signals/sidebar.ts";
-import { showToast } from "@/signals/toast.ts";
-import { getWorkspaces } from "@/signals/workspace.ts";
-import { formatCount } from "@/utils/format.ts";
-import type { PickerDoc } from "@/utils/googlePicker.ts";
+import WaveBars from "#/components/ui/WaveBars.tsx";
+import { getFileTree } from "#/signals/fileTree.ts";
+import { getOpenedFiles } from "#/signals/openedFiles.ts";
+import { navigationOpened } from "#/signals/sidebar.ts";
+import { showToast } from "#/signals/toast.ts";
+import { getWorkspaces } from "#/signals/workspace.ts";
+import { formatCount } from "#/utils/format.ts";
+import type { PickerDoc } from "#/utils/googlePicker.ts";
 
 interface PickedMessage {
   type: "picked";

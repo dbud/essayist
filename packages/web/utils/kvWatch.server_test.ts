@@ -1,7 +1,7 @@
 import { assertEquals } from "@std/assert";
-import { delay } from "@/utils/delay.ts";
-import { cached } from "@/utils/kvCache.server.ts";
-import { bumpKey, watchKey } from "@/utils/kvWatch.server.ts";
+import { delay } from "#/utils/delay.ts";
+import { cached } from "#/utils/kvCache.server.ts";
+import { bumpKey, watchKey } from "#/utils/kvWatch.server.ts";
 
 /**
  * A watch-capable KV fake mirroring real stream behavior: watch() primes

@@ -13,7 +13,7 @@ import {
 import {
   defaultEditorSelection,
   type EditorSelection,
-} from "@/signals/editorSelection.ts";
+} from "#/signals/editorSelection.ts";
 import { $getBlockType } from "./blockFormat.ts";
 
 export interface SelectionExtensionConfig {

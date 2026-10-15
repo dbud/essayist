@@ -1,7 +1,7 @@
 import { assertEquals } from "@std/assert";
 import { test } from "vitest";
-import type { FlowEvent } from "@/flow/types.ts";
-import type { ReviewTypes } from "@/reviews/graph.ts";
+import type { FlowEvent } from "#/flow/types.ts";
+import type { ReviewTypes } from "#/reviews/graph.ts";
 import { foldCompleted } from "./fold.ts";
 import type { TraceEvent } from "./types.ts";
 

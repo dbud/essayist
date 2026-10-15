@@ -2,9 +2,9 @@
 
 import { openKv } from "@deno/kv";
 import { Effect, Layer } from "effect";
-import { jsonLogLayer } from "@/log.ts";
-import { kvLayerCompat } from "@/persistence/kv_layer_compat.ts";
-import { type Persistence, PersistenceError } from "@/persistence/mod.ts";
+import { jsonLogLayer } from "#/log.ts";
+import { kvLayerCompat } from "#/persistence/kv_layer_compat.ts";
+import { type Persistence, PersistenceError } from "#/persistence/mod.ts";
 
 /** An ephemeral in-memory Persistence layer that owns its connection and
  * closes it when the layer disposes. The Node twin of `kv_layer.ts`'s

@@ -1,13 +1,13 @@
 import type { Mark } from "@essayist/core";
 import type { LexicalEditor } from "lexical";
 import { Crosshair } from "lucide-preact";
-import { SELECT_MARK_COMMAND } from "@/editor/markExtension.ts";
-import Section from "@/islands/Section.tsx";
-import { activeEditor } from "@/signals/activeEditor.ts";
-import { getEditorSelection } from "@/signals/editorSelection.ts";
-import { getFileTree } from "@/signals/fileTree.ts";
-import { getMarks } from "@/signals/marks.ts";
-import { getWorkspaces } from "@/signals/workspace.ts";
+import { SELECT_MARK_COMMAND } from "#/editor/markExtension.ts";
+import Section from "#/islands/Section.tsx";
+import { activeEditor } from "#/signals/activeEditor.ts";
+import { getEditorSelection } from "#/signals/editorSelection.ts";
+import { getFileTree } from "#/signals/fileTree.ts";
+import { getMarks } from "#/signals/marks.ts";
+import { getWorkspaces } from "#/signals/workspace.ts";
 
 function MarkDetail({
   mark,

@@ -1,7 +1,7 @@
 // Google Picker client wrapper: opens the picker and resolves with the
 // selected documents.
 
-import { loadScript } from "@/utils/loadScript.ts";
+import { loadScript } from "#/utils/loadScript.ts";
 
 export interface PickerDoc {
   id: string;

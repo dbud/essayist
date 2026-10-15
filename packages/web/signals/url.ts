@@ -1,8 +1,8 @@
 import { effect } from "@preact/signals";
 import { IS_BROWSER } from "fresh/runtime";
-import { getFileTreeFor } from "@/signals/fileTree.ts";
-import { getWorkspaces } from "@/signals/workspace.ts";
-import { parseReplayParams, type ReplayParams } from "@/utils/reviewReplay.ts";
+import { getFileTreeFor } from "#/signals/fileTree.ts";
+import { getWorkspaces } from "#/signals/workspace.ts";
+import { parseReplayParams, type ReplayParams } from "#/utils/reviewReplay.ts";
 
 /**
  * Keeps the URL query at ?ws=<wsId>&file=<path>[&v=<versionId>], matching

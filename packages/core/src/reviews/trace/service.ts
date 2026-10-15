@@ -15,12 +15,12 @@ import { Context, Effect, Layer } from "effect";
 import {
   ChunkedValues,
   type MissingChunksError,
-} from "@/persistence/chunked_values.ts";
+} from "#/persistence/chunked_values.ts";
 import type {
   ConcurrentModificationError,
   PersistenceError,
-} from "@/persistence/mod.ts";
-import { WorkspaceId } from "@/workspace/WorkspaceId.ts";
+} from "#/persistence/mod.ts";
+import { WorkspaceId } from "#/workspace/WorkspaceId.ts";
 import type { TraceEvent } from "./types.ts";
 
 const TRACES = "review_traces";

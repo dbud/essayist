@@ -1,5 +1,5 @@
 import type { ComponentChildren } from "preact";
-import { usePaneClip } from "@/hooks/usePaneClip.ts";
+import { usePaneClip } from "#/hooks/usePaneClip.ts";
 
 export interface SidebarProps {
   open: boolean;

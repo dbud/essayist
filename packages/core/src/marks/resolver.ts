@@ -1,5 +1,5 @@
-import { computeDiff, type DiffHunk } from "@/diff/diff.ts";
-import { randomId } from "@/ids.ts";
+import { computeDiff, type DiffHunk } from "#/diff/diff.ts";
+import { randomId } from "#/ids.ts";
 import { trimContextSeparators, wordEdges } from "./context.ts";
 import { TokenizedText, wordTokens } from "./tokenized.ts";
 import type { Mark } from "./types.ts";

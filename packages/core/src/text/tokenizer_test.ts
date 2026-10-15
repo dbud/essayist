@@ -1,6 +1,6 @@
 import { assertEquals, assertThrows } from "@std/assert";
 import { test } from "vitest";
-import { createTokenizer } from "@/text/tokenizer.ts";
+import { createTokenizer } from "#/text/tokenizer.ts";
 
 // createTokenizer -- scans a global regex into tokens with offsets
 

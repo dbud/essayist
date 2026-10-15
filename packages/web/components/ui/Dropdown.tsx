@@ -1,6 +1,6 @@
 import { useSignal } from "@preact/signals";
 import type { ComponentChildren } from "preact";
-import { useClickOutside } from "@/hooks/useClickOutside.ts";
+import { useClickOutside } from "#/hooks/useClickOutside.ts";
 
 interface DropdownProps {
   triggerClass?: string;

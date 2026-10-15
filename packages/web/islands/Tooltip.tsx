@@ -1,5 +1,5 @@
 import { useEffect } from "preact/hooks";
-import { tooltipText, tooltipX, tooltipY } from "@/signals/tooltip.ts";
+import { tooltipText, tooltipX, tooltipY } from "#/signals/tooltip.ts";
 
 export default function Tooltip() {
   useEffect(() => {

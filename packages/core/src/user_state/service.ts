@@ -8,7 +8,7 @@ import {
   type ConcurrentModificationError,
   Persistence,
   type PersistenceError,
-} from "@/persistence/mod.ts";
+} from "#/persistence/mod.ts";
 
 // Key layout:
 //   ["user_state", userId, "workspace"]      -> { wsId }

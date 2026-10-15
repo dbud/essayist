@@ -1,9 +1,9 @@
 import { FileText, X } from "lucide-preact";
-import Tabs from "@/islands/Tabs.tsx";
-import { getFile } from "@/signals/file.ts";
-import { getFileTree } from "@/signals/fileTree.ts";
-import { getOpenedFiles, type OpenedFiles } from "@/signals/openedFiles.ts";
-import { getWorkspaces } from "@/signals/workspace.ts";
+import Tabs from "#/islands/Tabs.tsx";
+import { getFile } from "#/signals/file.ts";
+import { getFileTree } from "#/signals/fileTree.ts";
+import { getOpenedFiles, type OpenedFiles } from "#/signals/openedFiles.ts";
+import { getWorkspaces } from "#/signals/workspace.ts";
 
 function Tab({
   wsId,

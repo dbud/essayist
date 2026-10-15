@@ -4,8 +4,8 @@
  */
 
 import { Effect, Schema } from "effect";
-import type { PersistenceError } from "@/persistence/mod.ts";
-import { renderCategories } from "@/reviews/steps/input.ts";
+import type { PersistenceError } from "#/persistence/mod.ts";
+import { renderCategories } from "#/reviews/steps/input.ts";
 import { ReviewConfig } from "./service.ts";
 import { renderTemplate } from "./template.ts";
 import type {

@@ -11,14 +11,14 @@ import { MarkExtension } from "@lexical/mark";
 import { RichTextExtension } from "@lexical/rich-text";
 import type { Signal } from "@preact/signals";
 import { configExtension, defineExtension } from "lexical";
-import { PartialUpdateExtension } from "@/editor/partialUpdateExtension.ts";
-import type { EditorSelection } from "@/signals/editorSelection.ts";
+import { PartialUpdateExtension } from "#/editor/partialUpdateExtension.ts";
+import type { EditorSelection } from "#/signals/editorSelection.ts";
 import type {
   MarkBadge,
   MarkNumbers,
   MarkRect,
   SidenotePositions,
-} from "@/signals/sidenotes.ts";
+} from "#/signals/sidenotes.ts";
 import { CaretExtension } from "./caretExtension.ts";
 import { MarksExtension } from "./markExtension.ts";
 import { MarksAtCursorExtension } from "./marksAtCursorExtension.ts";

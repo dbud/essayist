@@ -1,6 +1,6 @@
 import { Hono } from "hono";
-import { renderDocument } from "@/app/render";
-import { runLoader } from "@/app/runtime";
+import { renderDocument } from "#/app/render.tsx";
+import { runLoader } from "#/app/runtime.ts";
 import { homeLoader } from "./loader";
 import { createHomeModels } from "./models";
 import { HomeTree } from "./page";

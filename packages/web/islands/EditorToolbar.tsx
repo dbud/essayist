@@ -6,11 +6,11 @@ import {
 import { FORMAT_TEXT_COMMAND } from "lexical";
 import type { LucideIcon } from "lucide-preact";
 import { Bold, Code, Italic, Strikethrough } from "lucide-preact";
-import BlockTypeSelect from "@/components/BlockTypeSelect.tsx";
-import { $setBlocksType, type BlockType } from "@/editor/blockFormat.ts";
-import { activeEditor } from "@/signals/activeEditor.ts";
-import { getEditorSelection } from "@/signals/editorSelection.ts";
-import type { FileKey } from "@/signals/file.ts";
+import BlockTypeSelect from "#/components/BlockTypeSelect.tsx";
+import { $setBlocksType, type BlockType } from "#/editor/blockFormat.ts";
+import { activeEditor } from "#/signals/activeEditor.ts";
+import { getEditorSelection } from "#/signals/editorSelection.ts";
+import type { FileKey } from "#/signals/file.ts";
 
 type FormatType = "bold" | "italic" | "strikethrough" | "code";
 

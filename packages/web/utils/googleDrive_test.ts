@@ -1,5 +1,5 @@
 import { assertEquals } from "@std/assert";
-import { sanitizeDocTitle } from "@/utils/googleDrive.ts";
+import { sanitizeDocTitle } from "#/utils/googleDrive.ts";
 
 Deno.test("sanitizeDocTitle -- appends .md suffix", () => {
   assertEquals(sanitizeDocTitle("My Draft"), "My Draft.md");

@@ -1,6 +1,6 @@
 import type { Tokens } from "@deno/kv-oauth";
 import { setCookie } from "@std/http/cookie";
-import { kv } from "@/store.ts";
+import { kv } from "#/store.ts";
 
 // Maps the kv-oauth session id (from the signed cookie) to an app user id and
 // optionally the Google OAuth tokens of the user. kv-oauth 0.11 returns tokens

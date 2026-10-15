@@ -5,9 +5,9 @@ import {
   type Workspace,
   Workspaces,
 } from "@essayist/core";
-import type { RunScoped } from "@/run.ts";
-import { runScoped } from "@/run.ts";
-import type { Runtime } from "@/store.ts";
+import type { RunScoped } from "#/run.ts";
+import { runScoped } from "#/run.ts";
+import type { Runtime } from "#/store.ts";
 
 // Original demo essay. Paragraphs are single lines so mark selections can
 // match exact substrings without whitespace ambiguity.

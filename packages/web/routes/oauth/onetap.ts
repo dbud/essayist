@@ -1,12 +1,12 @@
 import { nextId } from "@essayist/core";
-import { define } from "@/define.ts";
-import { env } from "@/env.ts";
-import type { GoogleIdTokenClaims } from "@/utils/googleIdToken.ts";
-import { verifyGoogleIdToken } from "@/utils/googleIdToken.ts";
-import { refreshTokensForUser } from "@/utils/googleToken.ts";
-import { resolveGoogleUser } from "@/utils/googleUser.ts";
-import { safeNext } from "@/utils/nextUrl.ts";
-import { createSession, createSiteSession } from "@/utils/sessions.ts";
+import { define } from "#/define.ts";
+import { env } from "#/env.ts";
+import type { GoogleIdTokenClaims } from "#/utils/googleIdToken.ts";
+import { verifyGoogleIdToken } from "#/utils/googleIdToken.ts";
+import { refreshTokensForUser } from "#/utils/googleToken.ts";
+import { resolveGoogleUser } from "#/utils/googleUser.ts";
+import { safeNext } from "#/utils/nextUrl.ts";
+import { createSession, createSiteSession } from "#/utils/sessions.ts";
 
 /**
  * Google One Tap credential exchange. The GIS client posts the ID token JWT

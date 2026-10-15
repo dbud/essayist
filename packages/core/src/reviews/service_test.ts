@@ -5,9 +5,9 @@ import { test } from "vitest";
 import type {
   ConcurrentModificationError,
   PersistenceError,
-} from "@/persistence/mod.ts";
-import { testLayer } from "@/persistence/testing/kv.ts";
-import { WorkspaceId } from "@/workspace/WorkspaceId.ts";
+} from "#/persistence/mod.ts";
+import { testLayer } from "#/persistence/testing/kv.ts";
+import { WorkspaceId } from "#/workspace/WorkspaceId.ts";
 import { ReviewRuns } from "./service.ts";
 
 type E = PersistenceError | ConcurrentModificationError;

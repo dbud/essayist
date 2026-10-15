@@ -1,7 +1,7 @@
-import { BandRenderer } from "@/components/highlights/BandRenderer.tsx";
-import type { HighlightRendererProps } from "@/components/highlights/types.ts";
-import { WavyRenderer } from "@/components/highlights/WavyRenderer.tsx";
-import { highlightStyle } from "@/signals/preferences.ts";
+import { BandRenderer } from "#/components/highlights/BandRenderer.tsx";
+import type { HighlightRendererProps } from "#/components/highlights/types.ts";
+import { WavyRenderer } from "#/components/highlights/WavyRenderer.tsx";
+import { highlightStyle } from "#/signals/preferences.ts";
 
 // Mark highlight overlay. Bands tint behind the text (negative z). Wavy
 // strokes ride the line-box bottom and paint above the text so they stay

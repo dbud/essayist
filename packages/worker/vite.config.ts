@@ -26,7 +26,6 @@ export default defineConfig({
     },
   },
   resolve: {
-    tsconfigPaths: true,
     dedupe: ["effect", "@effect/ai-openrouter"],
   },
 });

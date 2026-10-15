@@ -1,7 +1,7 @@
 import { Command, EnumType } from "@cliffy/command";
 import { USER_ROLES, Workspaces } from "@essayist/core";
-import type { KvctlGlobals } from "@/globals.ts";
-import { withKv } from "@/kv.ts";
+import type { KvctlGlobals } from "#/globals.ts";
+import { withKv } from "#/kv.ts";
 
 const ROLE = new EnumType([...USER_ROLES]);
 

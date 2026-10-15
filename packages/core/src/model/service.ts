@@ -22,8 +22,8 @@ import {
 } from "effect";
 import { AiError, InvalidOutputError } from "effect/ai/AiError";
 import * as FetchHttpClient from "effect/http/FetchHttpClient";
-import { generateInstructions, stripMarkdownFences } from "@/schema.ts";
-import { joinBlocks } from "@/text/markdown.ts";
+import { generateInstructions, stripMarkdownFences } from "#/schema.ts";
+import { joinBlocks } from "#/text/markdown.ts";
 
 export interface ModelCallUsage {
   inputTokens: number;

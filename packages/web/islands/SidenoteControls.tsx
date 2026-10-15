@@ -5,14 +5,14 @@ import { useMemo } from "preact/hooks";
 // import Dropdown, {
 //   DropdownItem,
 //   DropdownMenu,
-// } from "@/components/ui/Dropdown.tsx";
-import WaveBars from "@/components/ui/WaveBars.tsx";
-import type { FileKey } from "@/signals/file.ts";
-import { getMarks } from "@/signals/marks.ts";
-// import { replayParams, setReplayParams } from "@/signals/replay.ts";
-import { getReview } from "@/signals/review.ts";
-import { showToast } from "@/signals/toast.ts";
-import { delayedRise } from "@/utils/delayedRise.ts";
+// } from "#/components/ui/Dropdown.tsx";
+import WaveBars from "#/components/ui/WaveBars.tsx";
+import type { FileKey } from "#/signals/file.ts";
+import { getMarks } from "#/signals/marks.ts";
+// import { replayParams, setReplayParams } from "#/signals/replay.ts";
+import { getReview } from "#/signals/review.ts";
+import { showToast } from "#/signals/toast.ts";
+import { delayedRise } from "#/utils/delayedRise.ts";
 
 // Replay controls stay parked until the replay feature returns.
 

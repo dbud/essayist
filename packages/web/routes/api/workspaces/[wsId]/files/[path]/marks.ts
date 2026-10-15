@@ -1,5 +1,5 @@
-import { define } from "@/define.ts";
-import { marksLoader } from "@/signals/marks.server.ts";
+import { define } from "#/define.ts";
+import { marksLoader } from "#/signals/marks.server.ts";
 
 export const handler = {
   GET: define.handlers(async (ctx) => {

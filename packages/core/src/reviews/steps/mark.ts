@@ -1,17 +1,17 @@
 import { partition } from "@std/collections";
 import { Effect, Schema } from "effect";
-import type { NodeRunner } from "@/flow/types.ts";
-import { Marks } from "@/marks/service.ts";
-import type { MarkProvenance } from "@/marks/types.ts";
-import type { ModelClient } from "@/model/service.ts";
+import type { NodeRunner } from "#/flow/types.ts";
+import { Marks } from "#/marks/service.ts";
+import type { MarkProvenance } from "#/marks/types.ts";
+import type { ModelClient } from "#/model/service.ts";
 import type {
   ConcurrentModificationError,
   PersistenceError,
-} from "@/persistence/mod.ts";
-import { callStructured } from "@/reviews/call.ts";
-import type { ReviewTypes } from "@/reviews/graph.ts";
-import type { MarkAttempt } from "@/reviews/types.ts";
-import type { WorkspaceId } from "@/workspace/WorkspaceId.ts";
+} from "#/persistence/mod.ts";
+import { callStructured } from "#/reviews/call.ts";
+import type { ReviewTypes } from "#/reviews/graph.ts";
+import type { MarkAttempt } from "#/reviews/types.ts";
+import type { WorkspaceId } from "#/workspace/WorkspaceId.ts";
 import { composeCallInput, composeRepairInput } from "./input.ts";
 
 export const MarkProposalSchema = Schema.Struct({

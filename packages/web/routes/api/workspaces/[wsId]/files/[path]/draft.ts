@@ -1,5 +1,5 @@
 import { Files } from "@essayist/core";
-import { define } from "@/define.ts";
+import { define } from "#/define.ts";
 
 export const handler = {
   PUT: define.handlers(async (ctx) => {

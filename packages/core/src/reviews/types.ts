@@ -1,6 +1,6 @@
 export type ReviewRunStatus = "running" | "completed" | "failed";
 
-import type { Lease } from "@/persistence/mod.ts";
+import type { Lease } from "#/persistence/mod.ts";
 
 /** A review pass run over a file in a workspace. */
 export interface ReviewRun extends Lease {

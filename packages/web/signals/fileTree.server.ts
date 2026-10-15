@@ -1,8 +1,8 @@
 import { Files, UserState } from "@essayist/core";
-import { runScoped } from "@/run.ts";
-import { type TreeData, treeNs } from "@/signals/fileTree.ts";
-import { type Context, registerLoader } from "@/signals/models.server.ts";
-import { runtime } from "@/store.ts";
+import { runScoped } from "#/run.ts";
+import { type TreeData, treeNs } from "#/signals/fileTree.ts";
+import { type Context, registerLoader } from "#/signals/models.server.ts";
+import { runtime } from "#/store.ts";
 
 export async function fileTreeLoader(
   wsId: string,

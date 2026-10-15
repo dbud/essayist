@@ -8,9 +8,9 @@ import {
   type FamilyKey,
   type SyncCtx,
   warnBrokenRefs,
-} from "@/families.ts";
-import type { KvctlGlobals } from "@/globals.ts";
-import { CATEGORIES_EPOCH, LOCAL_KV, resolveTarget } from "@/kv.ts";
+} from "#/families.ts";
+import type { KvctlGlobals } from "#/globals.ts";
+import { CATEGORIES_EPOCH, LOCAL_KV, resolveTarget } from "#/kv.ts";
 
 const FAMILY = new EnumType([...FAMILY_ORDER, "all"]);
 

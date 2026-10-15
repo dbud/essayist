@@ -1,6 +1,6 @@
 import { LastOwnerError, Workspaces } from "@essayist/core";
-import { define } from "@/define.ts";
-import { runtime } from "@/store.ts";
+import { define } from "#/define.ts";
+import { runtime } from "#/store.ts";
 
 export const handler = {
   // Only owners can remove members.

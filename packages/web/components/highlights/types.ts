@@ -1,4 +1,4 @@
-import type { MarkRect } from "@/signals/sidenotes.ts";
+import type { MarkRect } from "#/signals/sidenotes.ts";
 
 /** Shared input for a highlight renderer (band, wavy, underline, ...). */
 export interface HighlightRendererProps {

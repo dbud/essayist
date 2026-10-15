@@ -1,4 +1,4 @@
-import type { AssetGenerator } from "@/vite/asset-generate.ts";
+import type { AssetGenerator } from "#/vite/asset-generate.ts";
 
 function mulberry32(seed: number) {
   return () => {

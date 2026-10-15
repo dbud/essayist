@@ -1,5 +1,5 @@
-import type { FlowEvent, NodeKind } from "@/flow/types.ts";
-import type { ReviewTypes } from "@/reviews/graph.ts";
+import type { FlowEvent, NodeKind } from "#/flow/types.ts";
+import type { ReviewTypes } from "#/reviews/graph.ts";
 
 /** Coarse activity label for a running review. */
 export type ReviewPhase =

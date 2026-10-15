@@ -6,15 +6,15 @@
  */
 
 import { Clock, Context, Effect, Layer } from "effect";
-import { Files } from "@/files/service.ts";
-import { Ids } from "@/ids.ts";
-import { TokenizedText } from "@/marks/tokenized.ts";
-import type { Mark, MarkOptions, MarkResult } from "@/marks/types.ts";
+import { Files } from "#/files/service.ts";
+import { Ids } from "#/ids.ts";
+import { TokenizedText } from "#/marks/tokenized.ts";
+import type { Mark, MarkOptions, MarkResult } from "#/marks/types.ts";
 import type {
   ConcurrentModificationError,
   PersistenceError,
-} from "@/persistence/mod.ts";
-import type { WorkspaceId } from "@/workspace/WorkspaceId.ts";
+} from "#/persistence/mod.ts";
+import type { WorkspaceId } from "#/workspace/WorkspaceId.ts";
 
 /** Context span captured around a selection when none is given. */
 const DEFAULT_CONTEXT_SPAN = 60;

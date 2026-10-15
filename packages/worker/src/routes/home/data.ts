@@ -1,6 +1,6 @@
 import { Schema } from "effect";
-import { PageInfoDataSchema } from "@/models/pageInfo.data";
-import { VotesDataSchema } from "@/models/votes.data";
+import { PageInfoDataSchema } from "#/models/pageInfo.data.ts";
+import { VotesDataSchema } from "#/models/votes.data.ts";
 
 // The page's data contract: one entry per model, embedded as the
 // page-data script. Server-side; the models module imports the type only.

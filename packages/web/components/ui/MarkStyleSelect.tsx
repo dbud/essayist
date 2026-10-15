@@ -1,5 +1,5 @@
-import { OptionsRow } from "@/components/ui/forms/OptionsRow.tsx";
-import { type HighlightStyle, highlightStyle } from "@/signals/preferences.ts";
+import { OptionsRow } from "#/components/ui/forms/OptionsRow.tsx";
+import { type HighlightStyle, highlightStyle } from "#/signals/preferences.ts";
 
 const OPTIONS: { value: HighlightStyle; label: string }[] = [
   { value: "band", label: "Band" },

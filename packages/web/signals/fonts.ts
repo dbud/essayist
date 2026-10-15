@@ -1,6 +1,6 @@
 import { effect, type Signal } from "@preact/signals";
 import { IS_BROWSER } from "fresh/runtime";
-import { persistentSignal } from "@/utils/persistentSignal.ts";
+import { persistentSignal } from "#/utils/persistentSignal.ts";
 
 export interface FontOption {
   value: string;

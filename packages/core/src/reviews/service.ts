@@ -8,15 +8,15 @@
 
 import { sortBy } from "@std/collections";
 import { Clock, Context, Effect, Layer, Result } from "effect";
-import { Ids } from "@/ids.ts";
+import { Ids } from "#/ids.ts";
 import {
   type ClaimOptions,
   ConcurrentModificationError,
   type Key,
   Persistence,
   type PersistenceError,
-} from "@/persistence/mod.ts";
-import { WorkspaceId } from "@/workspace/WorkspaceId.ts";
+} from "#/persistence/mod.ts";
+import { WorkspaceId } from "#/workspace/WorkspaceId.ts";
 import type { ReviewRun, ReviewRunStatus } from "./types.ts";
 
 const REVIEWS = "reviews";
