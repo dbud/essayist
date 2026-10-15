@@ -9,6 +9,7 @@ export function pprint<T>(value: T): void {
         colors: process.env.NO_COLOR === undefined,
         sorted: true,
         compact: true,
+        depth: 12,
       })
     : JSON.stringify(value, null, 2);
   console.log(`${body}\n`);

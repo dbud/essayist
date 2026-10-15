@@ -3,7 +3,7 @@
 // transport over the vite dev server's D1 state.
 
 import { readdirSync } from "node:fs";
-import { join } from "node:path";
+import { basename, join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { fileURLToPath } from "node:url";
 import type { D1Database } from "@cloudflare/workers-types";
@@ -43,7 +43,9 @@ const D1_STATE = fileURLToPath(
 function localDatabase(): D1Database {
   const files = readdirSync(D1_STATE, { recursive: true })
     .filter((path): path is string => typeof path === "string")
-    .filter((path) => path.endsWith(".sqlite"));
+    .filter((path) => path.endsWith(".sqlite"))
+    // miniflare's bookkeeping database; its content db sits next to it.
+    .filter((path) => basename(path) !== "metadata.sqlite");
   if (files.length === 0) {
     throw new Error(
       "no local D1 state; start the vite dev server once, then retry",
