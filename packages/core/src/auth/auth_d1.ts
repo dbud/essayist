@@ -59,6 +59,10 @@ const backendFault = (cause: unknown) => new PersistenceError({ cause });
 export function layerAuthD1(
   client: D1Client.D1Client,
 ): Layer.Layer<AuthStore, PersistenceError> {
+  // TODO -- this DDL batch runs on every isolate spin-up; consider a
+  // schema version check to skip it when the schema already exists
+  // (ESS-92)
+
   const ensureSchema = SqlSchema.void({
     Request: Schema.Void,
     execute: () =>
@@ -142,6 +146,11 @@ export function layerAuthD1(
       ),
       backendFault,
     );
+
+  // TODO -- getSession always fetches and decodes the google tokens
+  // column, but the session middleware only needs the user id; only
+  // the token refresh flow needs tokens. A tokens-free read variant
+  // would lighten the hot path. (ESS-92)
 
   const getSession = (
     id: string,
