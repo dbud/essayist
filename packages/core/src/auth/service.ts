@@ -1,9 +1,3 @@
-/**
- * Auth session and refresh-token storage as an Effect service. The D1
- * transport lives in persistence/auth_d1.ts, over dedicated tables
- * with no kv encoding.
- */
-
 import { Context, type Effect } from "effect";
 import type { PersistenceError } from "#/persistence/service.ts";
 import type { Session, SessionTokens } from "./types.ts";
@@ -21,6 +15,7 @@ export interface Interface {
    * when the session is gone. */
   updateSessionTokens(
     id: string,
+    userId: string,
     tokens: SessionTokens,
   ): Effect.Effect<void, PersistenceError>;
   /** Remove a session (sign-out). */

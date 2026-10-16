@@ -10,8 +10,8 @@ import * as D1Client from "@effect/sql-d1/D1Client";
 import { Clock, Effect } from "effect";
 import * as Reactivity from "effect/reactivity/Reactivity";
 import { expect, test } from "vitest";
-import { layerAuthD1 } from "#/persistence/auth_d1.ts";
 import { d1SqliteShim } from "#/persistence/kv_d1_sqlite.ts";
+import { layerAuthD1 } from "./auth_d1.ts";
 import { AuthStore, type Interface } from "./service.ts";
 import type { SessionTokens } from "./types.ts";
 
@@ -95,13 +95,32 @@ test("tokens round trip", async () => {
   );
 });
 
+test("a token blob with absent optional fields reads as unset", async () => {
+  await makeHarness().run((t) =>
+    Effect.gen(function* () {
+      yield* t.auth.createSession("s1", "user-1", {
+        accessToken: "at",
+        tokenType: undefined,
+        expiresIn: undefined,
+        refreshToken: undefined,
+        expiresAt: 12345,
+      });
+      const session = yield* t.auth.getSession("s1");
+      expect(session?.tokens?.accessToken).toBe("at");
+      expect(session?.tokens?.tokenType).toBeUndefined();
+      expect(session?.tokens?.refreshToken).toBeUndefined();
+      expect(session?.tokens?.expiresIn).toBeUndefined();
+    }),
+  );
+});
+
 test("update rewrites tokens and slides the TTL", async () => {
   await makeHarness().run((t) =>
     Effect.gen(function* () {
       yield* t.auth.createSession("s1", "user-1", tokens);
       t.tick(3_600_000);
       const refreshed = { ...tokens, accessToken: "at2" };
-      yield* t.auth.updateSessionTokens("s1", refreshed);
+      yield* t.auth.updateSessionTokens("s1", "user-1", refreshed);
       const session = yield* t.auth.getSession("s1");
       expect(session?.tokens).toEqual(refreshed);
       const row = t.db
@@ -136,7 +155,7 @@ test("delete session and refresh token upsert", async () => {
       expect(yield* t.auth.getSession("s1")).toBeUndefined();
 
       // Updating the tokens of a deleted session changes nothing.
-      yield* t.auth.updateSessionTokens("s1", tokens);
+      yield* t.auth.updateSessionTokens("s1", "user-1", tokens);
       expect(yield* t.auth.getSession("s1")).toBeUndefined();
     }),
   );

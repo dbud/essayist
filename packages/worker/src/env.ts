@@ -7,10 +7,14 @@ import { Config, ConfigProvider, Effect, Option } from "effect";
 
 const config = Config.all({
   LOG_LEVEL: Config.option(Config.String("LOG_LEVEL")),
+  GOOGLE_CLIENT_ID: Config.option(Config.String("GOOGLE_CLIENT_ID")),
+  GOOGLE_CLIENT_SECRET: Config.option(Config.String("GOOGLE_CLIENT_SECRET")),
 });
 
 export interface WorkerEnv {
   readonly logLevel: string | undefined;
+  readonly googleClientId: string | undefined;
+  readonly googleClientSecret: string | undefined;
   readonly db: D1Database;
 }
 
@@ -49,6 +53,8 @@ export function env(bindings: unknown): WorkerEnv {
 
   cached = {
     logLevel: Option.getOrUndefined(snapshot.LOG_LEVEL),
+    googleClientId: Option.getOrUndefined(snapshot.GOOGLE_CLIENT_ID),
+    googleClientSecret: Option.getOrUndefined(snapshot.GOOGLE_CLIENT_SECRET),
     db,
   };
   return cached;

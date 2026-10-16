@@ -16,7 +16,6 @@
   },
   "exports": {
     ".": "./mod.ts",
-    "./auth_d1": "./src/persistence/auth_d1.ts",
     "./kv_d1": "./src/persistence/kv_d1.ts",
     "./kv_d1_rest": "./src/persistence/kv_d1_rest.ts",
     "./kv_d1_sqlite": "./src/persistence/kv_d1_sqlite.ts",

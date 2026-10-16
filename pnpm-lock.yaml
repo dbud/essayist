@@ -309,6 +309,9 @@ importers:
       '@fontsource/ibm-plex-serif':
         specifier: ^5.3.0
         version: 5.3.0
+      '@hono/oauth-providers':
+        specifier: ^0.9.0
+        version: 0.9.0(hono@4.13.13)
       '@preact/signals':
         specifier: ^2.11.3
         version: 2.11.3(preact@11.0.1)
@@ -720,6 +723,12 @@ packages:
 
   '@fontsource/ibm-plex-serif@5.3.0':
     resolution: {integrity: sha512-zwPfHB7EJbS5B8qnitPigJYzNdnt6PUeaoOA1gAAt//1pjpTVZN5sOU14NIAZ+C1xypL6GWsUG2VMYJW9bhJqQ==}
+
+  '@hono/oauth-providers@0.9.0':
+    resolution: {integrity: sha512-OgDPB+AM6OgA5ys1y+7G24bkb8V4OINr+6JFDSuSYni80Mmd7BGpJ0e02StQDMPL9ebuWI8ABhxx1bk+9VBcBA==}
+    engines: {node: '>=18.4.0'}
+    peerDependencies:
+      hono: '>=3.0.0'
 
   '@img/colour@1.1.0':
     resolution: {integrity: sha512-Td76q7j57o/tLVdgS746cYARfSyxk8iEfRxewL9h4OMzYhbW4TAcppl0mT4eyqXddh6L/jwoM75mo7ixa/pCeQ==}
@@ -2041,6 +2050,10 @@ snapshots:
   '@fontsource-variable/vollkorn@5.3.0': {}
 
   '@fontsource/ibm-plex-serif@5.3.0': {}
+
+  '@hono/oauth-providers@0.9.0(hono@4.13.13)':
+    dependencies:
+      hono: 4.13.13
 
   '@img/colour@1.1.0': {}
 

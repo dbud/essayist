@@ -1,8 +1,11 @@
-import * as D1 from "@effect/sql-d1/D1Client";
+import * as D1Client from "@effect/sql-d1/D1Client";
 import {
+  type AuthStore,
   jsonLogLayer,
+  layerAuthD1,
   type PersistenceError,
   ReviewConfig,
+  Workspaces,
 } from "@essayist/core";
 import { layerKvD1 } from "@essayist/core/kv_d1";
 import { Effect, Layer, LogLevel, ManagedRuntime, References } from "effect";
@@ -12,7 +15,7 @@ import { Votes } from "#/votes/service.ts";
 
 // The Persistence requirement is satisfied internally by the D1 layer.
 type WorkerRuntime = ManagedRuntime.ManagedRuntime<
-  Votes | ReviewConfig,
+  Votes | ReviewConfig | Workspaces | AuthStore,
   PersistenceError
 >;
 
@@ -28,27 +31,31 @@ const runtimeCache = new Map<WorkerEnv, WorkerRuntime>();
 
 // One runtime per env snapshot; snapshots are stable per isolate, so the
 // D1 client builds once per isolate.
-export function workerRuntime(e: WorkerEnv): WorkerRuntime {
+export function runtime(e: WorkerEnv): WorkerRuntime {
   return runtimeCache.getOrInsertComputed(e, ({ db }) =>
     ManagedRuntime.make(
-      Layer.provide(
-        Layer.mergeAll(
-          Votes.layerMemory,
-          ReviewConfig.layerNoDeps,
-          jsonLogLayer,
-          Layer.succeed(References.MinimumLogLevel, parseLogLevel(e.logLevel)),
-        ),
-        Layer.unwrap(Effect.map(D1.make({ db }), layerKvD1)).pipe(
-          Layer.provide(Reactivity.layer),
-        ),
-      ),
+      Layer.unwrap(
+        Effect.gen(function* () {
+          const client = yield* D1Client.make({ db: db });
+          const storage = layerKvD1(client);
+          return Layer.mergeAll(
+            Layer.provide(
+              Layer.mergeAll(
+                Votes.layerMemory,
+                ReviewConfig.layerNoDeps,
+                jsonLogLayer,
+                Layer.succeed(
+                  References.MinimumLogLevel,
+                  parseLogLevel(e.logLevel),
+                ),
+              ),
+              storage,
+            ),
+            Layer.provide(Workspaces.layerNoDeps, storage),
+            layerAuthD1(client),
+          );
+        }),
+      ).pipe(Layer.provide(Reactivity.layer)),
     ),
   );
-}
-
-export async function runLoader<A>(
-  self: Effect.Effect<A, PersistenceError, Votes | ReviewConfig>,
-  e: WorkerEnv,
-): Promise<A> {
-  return workerRuntime(e).runPromise(self);
 }

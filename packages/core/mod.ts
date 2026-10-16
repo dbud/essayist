@@ -1,5 +1,6 @@
+export { layerAuthD1 } from "#/auth/auth_d1.ts";
 export { AuthStore } from "#/auth/service.ts";
-export type { Session, SessionTokens } from "#/auth/types.ts";
+export { Session, SessionTokens } from "#/auth/types.ts";
 export {
   ConfigInvalidError,
   ConfigMissingError,

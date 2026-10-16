@@ -1,18 +1,17 @@
-/** Auth session and refresh-token models. */
+import { Schema } from "effect";
 
-/** Google OAuth tokens attached to a session, plus the epoch-ms expiry
- * derived from `expiresIn` at sign-in. */
-export interface SessionTokens {
-  readonly accessToken: string;
-  readonly tokenType: string | undefined;
-  readonly expiresIn: number | undefined;
-  readonly refreshToken: string | undefined;
-  readonly expiresAt: number;
-}
+export const SessionTokens = Schema.Struct({
+  accessToken: Schema.NonEmptyString,
+  tokenType: Schema.optional(Schema.String),
+  expiresIn: Schema.optional(Schema.Number),
+  refreshToken: Schema.optional(Schema.NonEmptyString),
+  expiresAt: Schema.Number,
+});
+export type SessionTokens = Schema.Schema.Type<typeof SessionTokens>;
 
-/** A session: the user it belongs to and its optional tokens. */
-export interface Session {
-  readonly id: string;
-  readonly userId: string;
-  readonly tokens: SessionTokens | undefined;
-}
+export const Session = Schema.Struct({
+  id: Schema.String,
+  userId: Schema.String,
+  tokens: Schema.optional(SessionTokens),
+});
+export type Session = Schema.Schema.Type<typeof Session>;
