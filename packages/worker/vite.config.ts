@@ -1,7 +1,15 @@
+import { readdirSync } from "node:fs";
 import { cloudflare } from "@cloudflare/vite-plugin";
 import tailwindcss from "@tailwindcss/vite";
 import { defineConfig } from "vite";
-import { clientEntryPath, PAGE_NAMES } from "./src/app/pages.ts";
+
+// Client entry files are build inputs by file name; pages without one
+// (login) get no script tag.
+const clientEntries = Object.fromEntries(
+  readdirSync("src/client/pages")
+    .filter((file) => file.endsWith(".tsx"))
+    .map((file) => [file.replace(/\.tsx$/, ""), `src/client/pages/${file}`]),
+);
 
 export default defineConfig({
   plugins: [tailwindcss(), cloudflare({ viteEnvironment: { name: "worker" } })],
@@ -11,10 +19,7 @@ export default defineConfig({
       build: {
         rolldownOptions: {
           input: {
-            ...Object.fromEntries(
-              PAGE_NAMES.map((name) => [name, clientEntryPath(name)]),
-            ),
-            // The global stylesheet: one entry, referenced by every page.
+            ...clientEntries,
             styles: "src/client/styles/styles.css",
           },
           output: {

@@ -3,7 +3,7 @@ import { renderDocument } from "#/app/render.tsx";
 import { safeNext } from "#/auth/nextUrl.ts";
 import { env } from "#/env.ts";
 
-export const loginRoute = new Hono().get("/", (c) => {
+export default new Hono().get("/", (c) => {
   const next = safeNext(c.req.query("next") ?? null);
   const configured = env(c.env).googleClientId !== undefined;
   return c.html(

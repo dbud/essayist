@@ -49,7 +49,7 @@ function Counter() {
   );
 }
 
-export function HomePage(): JSX.Element {
+function HomePage(): JSX.Element {
   const models = useHomeModels();
   return (
     <main class="mx-auto max-w-2xl px-6 py-10 font-sans">
@@ -66,7 +66,7 @@ export function HomePage(): JSX.Element {
   );
 }
 
-export function HomeTree(models: HomeModels): JSX.Element {
+export default function page(models: HomeModels): JSX.Element {
   return (
     <HomeModelsProvider value={models}>
       <HomePage />

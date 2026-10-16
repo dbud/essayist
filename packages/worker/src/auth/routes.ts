@@ -40,7 +40,7 @@ const notConfigured = (
   client_secret: string | undefined,
 ): boolean => client_id === undefined || client_secret === undefined;
 
-export const oauthRoute = new Hono()
+export const oauthRoutes = new Hono()
   .get("/signout", async (c) => {
     const sessionId = readSiteSession(c);
     if (sessionId !== undefined) {

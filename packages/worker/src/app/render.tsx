@@ -1,11 +1,11 @@
 import type { ComponentChildren } from "preact";
 import { render } from "preact-render-to-string";
+import { clientScriptUrl, styleSheetUrl } from "#/pages/meta.ts";
 import { PageDataScript } from "./pageData";
-import { clientScriptUrl, type PageName, styleSheetUrl } from "./pages";
 
 export interface DocumentProps {
   readonly title: string;
-  readonly client?: PageName;
+  readonly client?: string;
   readonly pageData?: unknown;
   readonly children?: ComponentChildren;
 }
@@ -31,7 +31,7 @@ export function Document({ title, client, pageData, children }: DocumentProps) {
 export function renderDocument(
   title: string,
   page: ComponentChildren,
-  options?: { readonly client?: PageName; readonly pageData?: unknown },
+  options?: { readonly client?: string; readonly pageData?: unknown },
 ): string {
   return `<!doctype html>${render(
     <Document

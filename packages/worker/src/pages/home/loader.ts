@@ -9,7 +9,7 @@ import type { VotesData } from "#/models/votes.ts";
 import { Votes } from "#/votes/service.ts";
 import type { HomePageData } from "./data";
 
-export const homeLoader: Effect.Effect<
+const loader: Effect.Effect<
   HomePageData,
   PersistenceError,
   Votes | ReviewConfig
@@ -27,3 +27,5 @@ export const homeLoader: Effect.Effect<
   const votes: VotesData = { count };
   return { pageInfo, votes, categories };
 });
+
+export default loader;
