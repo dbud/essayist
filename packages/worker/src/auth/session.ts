@@ -55,6 +55,11 @@ export function readSiteSession(c: Context): string | undefined {
   return getCookie(c, siteSessionCookieName(new URL(c.req.url)));
 }
 
+/** The routes that sign in without a resolved session. */
+function isAuthRoute(path: string): boolean {
+  return path.startsWith("/oauth/") || path === "/login";
+}
+
 /**
  * Resolves `auth-user` and `auth-session-id` from the site session
  * cookie when one is present. Does not enforce: routes decide how to
@@ -62,7 +67,7 @@ export function readSiteSession(c: Context): string | undefined {
  */
 export const resolveSession: MiddlewareHandler = async (c, next) => {
   const path = new URL(c.req.url).pathname;
-  if (!path.startsWith("/oauth/") && path !== "/login") {
+  if (!isAuthRoute(path)) {
     const sessionId = readSiteSession(c);
     if (sessionId !== undefined) {
       const session = await runtime(env(c.env)).runPromise(
@@ -77,6 +82,19 @@ export const resolveSession: MiddlewareHandler = async (c, next) => {
           c.set("auth-user", user);
         }
       }
+    }
+  }
+  await next();
+};
+
+/** Anonymous browser requests redirect to /login with their target
+ * preserved. */
+export const requireUser: MiddlewareHandler = async (c, next) => {
+  const url = new URL(c.req.url);
+  if (!isAuthRoute(url.pathname)) {
+    if (c.get("auth-user") === undefined) {
+      const next = `${url.pathname}${url.search}`;
+      return c.redirect(`/login?next=${encodeURIComponent(next)}`, 303);
     }
   }
   await next();
