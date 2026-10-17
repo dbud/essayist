@@ -7,8 +7,8 @@ import type { User } from "@essayist/core";
 import { AuthStore, Workspaces } from "@essayist/core";
 import type { Context, MiddlewareHandler } from "hono";
 import { generateCookie, getCookie } from "hono/cookie";
-import { runtime } from "#/app/runtime.ts";
 import { env } from "#/env.ts";
+import { runtime } from "#/runtime.ts";
 
 declare module "hono" {
   interface ContextVariableMap {

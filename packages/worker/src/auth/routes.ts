@@ -10,7 +10,6 @@ import { googleAuth } from "@hono/oauth-providers/google";
 import { Clock, Effect } from "effect";
 import { Hono } from "hono";
 import { getCookie, setCookie } from "hono/cookie";
-import { runtime } from "#/app/runtime.ts";
 import { safeNext } from "#/auth/nextUrl.ts";
 import {
   expiredCookie,
@@ -20,6 +19,7 @@ import {
 } from "#/auth/session.ts";
 import { resolveGoogleUser } from "#/auth/user.ts";
 import { env } from "#/env.ts";
+import { runtime } from "#/runtime.ts";
 
 // `drive.file` grants access only to files the user explicitly picks in
 // the app, never their whole Drive.

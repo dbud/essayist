@@ -13,7 +13,6 @@ import * as Reactivity from "effect/reactivity/Reactivity";
 import type { WorkerEnv } from "#/env.ts";
 import { Votes } from "#/votes/service.ts";
 
-// The Persistence requirement is satisfied internally by the D1 layer.
 type WorkerRuntime = ManagedRuntime.ManagedRuntime<
   Votes | ReviewConfig | Workspaces | AuthStore,
   PersistenceError
@@ -27,35 +26,6 @@ function parseLogLevel(raw: string | undefined) {
   return level ?? "Info";
 }
 
-const bootLayer = (
-  e: WorkerEnv,
-): Layer.Layer<
-  Votes | ReviewConfig | Workspaces | AuthStore,
-  PersistenceError
-> =>
-  Layer.unwrap(
-    Effect.gen(function* () {
-      const client = yield* D1Client.make({ db: e.db });
-      const storage = layerKvD1(client);
-      return Layer.mergeAll(
-        Layer.provide(
-          Layer.mergeAll(
-            Votes.layerMemory,
-            ReviewConfig.layerNoDeps,
-            jsonLogLayer,
-            Layer.succeed(
-              References.MinimumLogLevel,
-              parseLogLevel(e.logLevel),
-            ),
-          ),
-          storage,
-        ),
-        Layer.provide(Workspaces.layerNoDeps, storage),
-        layerAuthD1(client),
-      );
-    }),
-  ).pipe(Layer.provide(Reactivity.layer));
-
 type RuntimeLayer = Layer.Layer<
   Votes | ReviewConfig | Workspaces | AuthStore,
   PersistenceError
@@ -68,16 +38,37 @@ interface RuntimeCell {
 
 const cells = new Map<WorkerEnv, RuntimeCell>();
 
-// One cell per env snapshot; snapshots are stable per isolate, so the D1
-// client builds once per isolate.
+// One cell per env snapshot. env() memoizes the snapshot per isolate, so
+// a cell builds once per isolate: its layer, its runtime, and the D1
+// client inside the layer.
 function cell(e: WorkerEnv): RuntimeCell {
   return cells.getOrInsertComputed(e, (e) => {
-    const layer = bootLayer(e);
+    const layer: RuntimeLayer = Layer.unwrap(
+      Effect.gen(function* () {
+        const client = yield* D1Client.make({ db: e.db });
+        const storage = layerKvD1(client);
+        return Layer.mergeAll(
+          Layer.provide(
+            Layer.mergeAll(
+              Votes.layerMemory,
+              ReviewConfig.layerNoDeps,
+              jsonLogLayer,
+              Layer.succeed(
+                References.MinimumLogLevel,
+                parseLogLevel(e.logLevel),
+              ),
+            ),
+            storage,
+          ),
+          Layer.provide(Workspaces.layerNoDeps, storage),
+          layerAuthD1(client),
+        );
+      }),
+    ).pipe(Layer.provide(Reactivity.layer));
     return { layer, runtime: ManagedRuntime.make(layer) };
   });
 }
 
-// The api tier shares the same layer as the runtime, joining its memo map.
 export function runtimeLayer(e: WorkerEnv): RuntimeLayer {
   return cell(e).layer;
 }

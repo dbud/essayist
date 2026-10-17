@@ -1,6 +1,6 @@
-import type { JSX } from "preact";
 import { Toaster } from "#/components/Toaster.tsx";
-import { type HomeModels, HomeModelsProvider, useHomeModels } from "./models";
+import { useAppState } from "#/state.ts";
+import { useHomeModels } from "./models";
 
 function Counter() {
   const votes = useHomeModels().votes;
@@ -49,11 +49,17 @@ function Counter() {
   );
 }
 
-function HomePage(): JSX.Element {
+function HomePage() {
   const models = useHomeModels();
+  const { user } = useAppState();
   return (
     <main class="mx-auto max-w-2xl px-6 py-10 font-sans">
       <h1 class="font-serif text-3xl text-ink">essayist</h1>
+      {user ? (
+        <p class="mt-3 text-sm text-ink/70">
+          signed in as {user.name ?? user.email}
+        </p>
+      ) : null}
       <p class="mt-3 max-w-lg text-ink/80">{models.pageInfo.message.value}</p>
       <p class="mt-1 text-sm text-ink/50">
         rendered by hono + preact at {models.pageInfo.renderedAt.value}
@@ -66,11 +72,11 @@ function HomePage(): JSX.Element {
   );
 }
 
-export default function page(models: HomeModels): JSX.Element {
+export default function Page() {
   return (
-    <HomeModelsProvider value={models}>
+    <>
       <HomePage />
       <Toaster />
-    </HomeModelsProvider>
+    </>
   );
 }

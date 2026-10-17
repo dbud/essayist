@@ -1,6 +1,6 @@
-// Page build conventions: the export map keys in pages/index.ts name a
-// client entry file under src/client/pages/; a page without one renders
-// server-only. Dev serves source paths; the build emits to assets/.
+// Page conventions: client entry files live under src/client/pages/, one
+// per page by file name; a page without one renders server-only. Dev
+// serves source paths; the build emits to assets/.
 
 export function clientScriptUrl(page: string): string {
   return import.meta.env.DEV
