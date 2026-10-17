@@ -63,11 +63,13 @@ rewrites `package.json` (adding `workspaces`/`catalog` mirrors of
 pnpm-workspace.yaml). If that happens, strip the added fields and rerun
 `pnpm install`.
 
-CI is the single pnpm job (install, check, test, worker build) on every
-push and PR. The deno CI job and the Deno Deploy release were dropped
-while the migration branch churns; its import maps (web's and kvctl's
-deno.jsonc plus a `@deno/kv` entry in core's) still resolve the global
-cache, so the tasks below keep working if run deliberately.
+CI is a two-job workflow: `pnpm` (install, check, test, worker build)
+gates every push and PR, and `worker-deploy` ships the migration branch's
+live environment after it (manual via workflow_dispatch). The deno CI
+and the Deno Deploy release were dropped for the migration; its import
+maps (web's and kvctl's deno.jsonc plus a `@deno/kv` entry in core's)
+still resolve the global cache, so the tasks below keep working if run
+deliberately.
 
 deno tasks:
 
@@ -101,7 +103,7 @@ are fine to add as the migration needs them.
 pnpm -C packages/worker dev       # vite dev (wrangler dev with HMR)
 pnpm -C packages/worker preview   # preview the built bundle
 pnpm -C packages/worker typegen   # regenerate Workers types from wrangler
-pnpm -C packages/worker deploy    # manual; CI does not deploy the worker
+pnpm -C packages/worker deploy    # live environment; CI deploys on migration pushes
 ```
 
 ## Favicon
@@ -109,11 +111,10 @@ pnpm -C packages/worker deploy    # manual; CI does not deploy the worker
 `static/favicon.svg`, `static/favicon.ico` (16/32/48) and
 `static/apple-touch-icon.png` are generated from the shared logo mark in
 `packages/web/components/ui/logo-mark.ts`, which also feeds the
-`EssayistLogo` component. After changing the mark or its palette in
-`assets/styles.css`, run `deno task -f web favicon` and commit the results.
-CI no longer checks favicons; after changing the mark or its palette in
-`assets/styles.css`, run `deno task -f web favicon` and commit the
-results (and `favicon:check` to verify).
+`EssayistLogo` component. CI no longer checks favicons: after changing
+the mark or its palette in `assets/styles.css`, run
+`deno task -f web favicon` and commit the results (`favicon:check` to
+verify).
 
 ## WASM
 

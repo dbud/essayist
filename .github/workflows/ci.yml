@@ -4,10 +4,16 @@ on:
   push:
   pull_request:
     branches: ["main"]
+  workflow_dispatch:
 
 permissions:
   contents: read
 
+# The active world: core and worker on the pnpm workspace. Gates every
+# push and PR, including migration branches; the deploy ships the
+# migration branch's live environment only after the checks and tests
+# pass. The deno world (web, kvctl, wasm) is frozen for the duration of
+# the Cloudflare migration.
 jobs:
   pnpm:
     runs-on: ubuntu-latest
@@ -35,3 +41,32 @@ jobs:
 
       - name: Build worker
         run: pnpm build
+
+  # The live migration deployment; manual from any ref.
+  worker-deploy:
+    needs: pnpm
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'push' && github.ref == 'refs/heads/cloudflare-migration')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup repo
+        uses: actions/checkout@v7
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 26
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Deploy worker
+        run: pnpm -C packages/worker run deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
