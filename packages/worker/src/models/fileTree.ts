@@ -1,126 +1,46 @@
-import type { FileEntry } from "@essayist/core";
 import { computed, createModel, signal } from "@preact/signals";
-import { get, modelData, namespace } from "#/signals/models.ts";
-import { getWorkspaces } from "#/signals/workspace.ts";
-import { ensureOk } from "#/utils/ensureOk.ts";
-import type { UploadedFile } from "#/utils/fileUpload.ts";
-import createProgressState from "#/utils/progressState.ts";
+import createAsyncState from "#/models/asyncState.ts";
+import { getJson } from "#/models/http.ts";
+import type { FileTreeData } from "./fileTree.data";
 
-export interface TreeData {
-  files: FileEntry[];
-  selectedPath: string | null;
-  selectedVersionId: string | null;
-}
+export type { FileTreeData };
 
-export const treeNs = namespace<TreeData>("tree");
-
-export const FileTreeModel = createModel((wsId: string) => {
-  const files = signal<FileEntry[]>([]);
-  const selectedPath = signal<string | null>(null);
-  const selectedVersionId = signal<string | null>(null);
-  const [runUpload, { progress: uploadProgress }] = createProgressState();
+// TODO -- createFile and uploadFiles when the files api lands
+export const FileTreeModel = createModel((data: FileTreeData, wsId: string) => {
+  const files = signal(data.files);
+  const selectedPath = signal(data.selectedPath);
 
   const tree = computed(() => buildFileTree(files.value));
 
-  const { loading, error, refresh } = modelData(
-    treeNs,
-    wsId,
-    (data) => {
+  const [runRefresh, { loading, error }] = createAsyncState();
+
+  async function refresh(): Promise<void> {
+    await runRefresh(async () => {
+      const params = new URLSearchParams({ wsId });
+      const data = await getJson<FileTreeData>(
+        `/api/workspaces/files?${params}`,
+      );
       files.value = data.files;
       selectedPath.value = data.selectedPath;
-      selectedVersionId.value = data.selectedVersionId;
-    },
-    async () => {
-      const res = await fetch(
-        `/api/workspaces/${encodeURIComponent(wsId)}/files`,
-      );
-      await ensureOk(res);
-      return (await res.json()) as TreeData;
-    },
-  );
+    });
+  }
 
   function select(path: string | null): void {
-    if (selectedPath.value !== path) {
-      selectedVersionId.value = null;
-    }
     selectedPath.value = path;
-  }
-
-  function selectVersion(versionId: string | null): void {
-    selectedVersionId.value = versionId;
-  }
-
-  /** Create a new file via POST to the files endpoint, then reload the tree. */
-  async function createFile(path: string, content = ""): Promise<void> {
-    const res = await fetch(
-      `/api/workspaces/${encodeURIComponent(wsId)}/files/${encodeURIComponent(path)}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content }),
-      },
-    );
-    await ensureOk(res);
-    await refresh();
-  }
-
-  /**
-   * Upsert files via PUT. Used by uploads where replacing existing content
-   * is expected. Files are uploaded in parallel; the runner's
-   * `uploadProgress` signal updates as each file settles so the caller can
-   * subscribe via `effect()`. The tree is reloaded once after all uploads settle.
-   */
-  async function uploadFiles(items: UploadedFile[]): Promise<void> {
-    if (items.length === 0) return;
-
-    await runUpload(items, async ({ path, content }) => {
-      const res = await fetch(
-        `/api/workspaces/${encodeURIComponent(wsId)}/files/${encodeURIComponent(path)}`,
-        {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ content }),
-        },
-      );
-      try {
-        await ensureOk(res);
-      } catch (err) {
-        throw new Error(
-          `${path}: ${err instanceof Error ? err.message : String(err)}`,
-        );
-      }
-    });
-
-    await refresh();
   }
 
   return {
     files,
     selectedPath,
-    selectedVersionId,
     select,
-    selectVersion,
     tree,
     loading,
     error,
-    createFile,
-    uploadFiles,
-    uploadProgress,
     refresh,
   };
 });
 
 export type FileTree = InstanceType<typeof FileTreeModel>;
-
-export function getFileTreeFor(wsId: string): FileTree {
-  return get(treeNs, wsId, () => new FileTreeModel(wsId));
-}
-
-// Returns `null` while no workspace is selected (bootstrap, login page).
-export function getFileTree(): FileTree | null {
-  const wsId = getWorkspaces().selectedId.value;
-  return wsId ? getFileTreeFor(wsId) : null;
-}
 
 export interface TreeNode {
   name: string;
@@ -129,7 +49,7 @@ export interface TreeNode {
   children: TreeNode[];
 }
 
-function buildFileTree(files: FileEntry[]): TreeNode {
+function buildFileTree(files: FileTreeData["files"]): TreeNode {
   const root: TreeNode = {
     name: "",
     path: "",

@@ -1,6 +1,7 @@
 import * as D1Client from "@effect/sql-d1/D1Client";
 import {
   type AuthStore,
+  Files,
   jsonLogLayer,
   layerAuthD1,
   type PersistenceError,
@@ -15,7 +16,7 @@ import type { WorkerEnv } from "#/env.ts";
 import { Votes } from "#/votes/service.ts";
 
 type WorkerRuntime = ManagedRuntime.ManagedRuntime<
-  Votes | ReviewConfig | Workspaces | AuthStore | UserState,
+  Votes | ReviewConfig | Workspaces | AuthStore | UserState | Files,
   PersistenceError
 >;
 
@@ -28,7 +29,7 @@ function parseLogLevel(raw: string | undefined) {
 }
 
 type RuntimeLayer = Layer.Layer<
-  Votes | ReviewConfig | Workspaces | AuthStore | UserState,
+  Votes | ReviewConfig | Workspaces | AuthStore | UserState | Files,
   PersistenceError
 >;
 
@@ -52,6 +53,7 @@ function cell(e: WorkerEnv): RuntimeCell {
           Votes.layerMemory,
           ReviewConfig.layerNoDeps,
           UserState.layerNoDeps,
+          Files.layerNoDeps,
           Workspaces.layerNoDeps,
           layerAuthD1(client),
           jsonLogLayer,

@@ -1,6 +1,6 @@
 import { type PersistenceError, UserState, Workspaces } from "@essayist/core";
 import { Effect } from "effect";
-import type { WorkspacesData } from "#/models/workspaces.data.ts";
+import type { WorkspacesData } from "./workspaces.data.ts";
 
 export function workspacesLoader(
   userId: string,

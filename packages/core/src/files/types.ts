@@ -1,3 +1,5 @@
+import { Schema } from "effect";
+
 /** Options for reading a file. */
 export interface ReadOptions {
   /** Version ID to read. If omitted, reads the latest version. */
@@ -17,10 +19,11 @@ export interface WriteResult extends FileVersion {
 }
 
 /** A file entry from listing. */
-export interface FileEntry {
-  path: string;
-  lines: number;
-}
+export const FileEntry = Schema.Struct({
+  path: Schema.String,
+  lines: Schema.Number,
+});
+export type FileEntry = Schema.Schema.Type<typeof FileEntry>;
 
 /** A file version snapshot -- version metadata + content. */
 export interface FileSnapshot extends FileVersion {

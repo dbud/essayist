@@ -28,14 +28,14 @@ export {
 export { demoFiles, seedDemoFiles } from "#/demo.ts";
 export { setMyers } from "#/diff/diff.ts";
 export { Files } from "#/files/service.ts";
-export type {
-  DiffResult,
-  DraftSnapshot,
+export {
+  type DiffResult,
+  type DraftSnapshot,
   FileEntry,
-  FileSnapshot,
-  FileVersion,
-  ReadOptions,
-  WriteResult,
+  type FileSnapshot,
+  type FileVersion,
+  type ReadOptions,
+  type WriteResult,
 } from "#/files/types.ts";
 export { pluralize } from "#/format.ts";
 export type { IdGenerator } from "#/ids.ts";
