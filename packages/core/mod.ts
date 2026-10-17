@@ -25,6 +25,7 @@ export {
   ReviewPassSchema,
   ReviewUnitSchema,
 } from "#/config/types.ts";
+export { demoFiles, seedDemoFiles } from "#/demo.ts";
 export { setMyers } from "#/diff/diff.ts";
 export { Files } from "#/files/service.ts";
 export type {

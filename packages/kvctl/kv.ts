@@ -11,7 +11,9 @@ import * as D1 from "@effect/sql-d1/D1Client";
 import {
   ChunkedValues,
   type Entry,
+  Files,
   type Key,
+  Marks,
   Persistence,
   type PersistenceError,
   ReviewConfig,
@@ -27,7 +29,13 @@ import type { KvctlGlobals } from "#/globals.ts";
 
 /** The services kvctl commands reach through the runtime. */
 export type KvRuntime = ManagedRuntime.ManagedRuntime<
-  Workspaces | ReviewConfig | TraceEvents | ChunkedValues | Persistence,
+  | Workspaces
+  | ReviewConfig
+  | TraceEvents
+  | ChunkedValues
+  | Persistence
+  | Files
+  | Marks,
   PersistenceError
 >;
 
@@ -95,7 +103,13 @@ function database(globals: KvctlGlobals): D1Database {
 export function storeLayer(
   db: D1Database,
 ): Layer.Layer<
-  Workspaces | ReviewConfig | TraceEvents | ChunkedValues | Persistence
+  | Workspaces
+  | ReviewConfig
+  | TraceEvents
+  | ChunkedValues
+  | Persistence
+  | Files
+  | Marks
 > {
   const d1 = Layer.unwrap(Effect.map(D1.make({ db }), layerKvD1)).pipe(
     Layer.provide(Reactivity.layer),
@@ -106,6 +120,8 @@ export function storeLayer(
       ReviewConfig.layerNoDeps,
       Layer.provide(TraceEvents.layerNoDeps, ChunkedValues.layerNoDeps),
       ChunkedValues.layerNoDeps,
+      Layer.provide(Marks.layerNoDeps, Files.layerNoDeps),
+      Files.layerNoDeps,
       d1,
     ),
     d1,

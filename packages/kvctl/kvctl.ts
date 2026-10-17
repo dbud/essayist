@@ -13,6 +13,7 @@ import { explore } from "#/commands/explore.ts";
 import { grantRole } from "#/commands/grant-role.ts";
 import { listUsers } from "#/commands/list-users.ts";
 import { seedConfig } from "#/commands/seed-config.ts";
+import { seedDemo } from "#/commands/seed-demo.ts";
 import { trace } from "#/commands/trace.ts";
 import { wipe } from "#/commands/wipe.ts";
 
@@ -35,4 +36,5 @@ await new Command()
   .command("grant-role", grantRole)
   .command("list-users", listUsers)
   .command("seed-config", seedConfig)
+  .command("seed-demo", seedDemo)
   .parse(process.argv.slice(2));
