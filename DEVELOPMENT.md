@@ -53,29 +53,23 @@ deno-facing entry points (`kvLayer`, `layerKv`) used by web and kvctl.
 The diff wasm convergence tests (`diff_wasm_test.ts`) are dormant until
 the WASM worker returns (ESS-90).
 
-## Deno workspace (legacy surface; CI only)
+## Deno workspace (dormant)
 
 deno still exists for web (Fresh on Deno Deploy builds), kvctl, and the
-wasm pkg, but only in CI. Do not run deno locally: with
-pnpm's `node_modules` present, deno switches to a node_modules resolution
-mode, fails on this layout, and rewrites `package.json` (adding
-`workspaces`/`catalog` mirrors of pnpm-workspace.yaml). If that happens,
-strip the added fields and rerun `pnpm install`.
+wasm pkg, and is frozen for the duration of the Cloudflare migration.
+Do not run deno locally: with pnpm's `node_modules` present, deno
+switches to a node_modules resolution mode, fails on this layout, and
+rewrites `package.json` (adding `workspaces`/`catalog` mirrors of
+pnpm-workspace.yaml). If that happens, strip the added fields and rerun
+`pnpm install`.
 
-CI runs two jobs. The deno job (type checks, tests, wasm build, favicon
-check, Deploy build and release) runs on main pushes only; the deno
-members are frozen during the migration. Everything deno needs resolves
-from import maps (web's and kvctl's deno.jsonc plus a `@deno/kv` entry in
-core's), so its global-cache mode needs no node_modules. The pnpm job
-(install, check, test, worker build) runs on every push and PR and is the
-real gate while migration branches churn.
+CI is the single pnpm job (install, check, test, worker build) on every
+push and PR. The deno CI job and the Deno Deploy release were dropped
+while the migration branch churns; its import maps (web's and kvctl's
+deno.jsonc plus a `@deno/kv` entry in core's) still resolve the global
+cache, so the tasks below keep working if run deliberately.
 
-Note before this branch merges back: the deno job's three diagnostics
-(PNG.sync typing, two unused @ts-expect-error Workarounds in patches,
-surfaced by the nodeModulesDir removal) must be fixed, or
-`nodeModulesDir: "auto"` restored, so the job passes on main again.
-
-deno tasks remain available in CI:
+deno tasks:
 
 ```
 deno task check     # deno lint + deno check + Biome (deno workspace)
@@ -92,7 +86,8 @@ deno task -f web build      # Production build (vite build → _fresh/)
 deno task -f web favicon    # Regenerate favicon assets
 ```
 
-Production builds and serving are handled by Deno Deploy.
+Production serving stays on the last frozen Deno Deploy release until
+the cutover.
 
 ## Workers App (migration)
 
@@ -116,7 +111,9 @@ pnpm -C packages/worker deploy    # manual; CI does not deploy the worker
 `packages/web/components/ui/logo-mark.ts`, which also feeds the
 `EssayistLogo` component. After changing the mark or its palette in
 `assets/styles.css`, run `deno task -f web favicon` and commit the results.
-CI fails on stale favicons (`favicon:check`).
+CI no longer checks favicons; after changing the mark or its palette in
+`assets/styles.css`, run `deno task -f web favicon` and commit the
+results (and `favicon:check` to verify).
 
 ## WASM
 
