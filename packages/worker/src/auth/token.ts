@@ -108,3 +108,38 @@ export const getValidAccessToken = (
 function expiresAtValid(tokens: SessionTokens, now: number): boolean {
   return tokens.expiresAt - now > REFRESH_BUFFER_MS;
 }
+
+/**
+ * Fresh session tokens via the user-level refresh token; `undefined`
+ * without one, or when the grant is rejected (revoked). On failure the
+ * sign-in still succeeds, just without Google API access.
+ */
+export const refreshTokensForUser = (
+  userId: string,
+  clientId: string,
+  clientSecret: string,
+): Effect.Effect<SessionTokens | undefined, PersistenceError, AuthStore> =>
+  Effect.gen(function* () {
+    const auth = yield* AuthStore;
+    const refreshToken = yield* auth.getRefreshToken(userId);
+    if (refreshToken === undefined) return undefined;
+
+    const now = yield* Clock.currentTimeMillis;
+    const fresh = yield* refreshRequest(
+      clientId,
+      clientSecret,
+      refreshToken,
+    ).pipe(
+      // A rejected grant still signs the user in, without Google API access.
+      Effect.catchTag("TokenRefreshError", () => Effect.succeed(undefined)),
+    );
+    if (fresh === undefined) return undefined;
+
+    return {
+      accessToken: fresh.access_token,
+      tokenType: undefined,
+      expiresIn: fresh.expires_in,
+      refreshToken: fresh.refresh_token ?? refreshToken,
+      expiresAt: now + fresh.expires_in * 1000,
+    } satisfies SessionTokens;
+  });

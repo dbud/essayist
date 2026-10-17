@@ -1,7 +1,8 @@
 /**
  * The Google OAuth routes: `/oauth/google` starts the sign-in and
  * receives the callback (the @hono/oauth-providers middleware redirects
- * entry requests and handles the callback when `code` is present) and
+ * entry requests and handles the callback when `code` is present),
+ * `/oauth/onetap` exchanges the GIS credential form post, and
  * `/oauth/signout` deletes the session.
  */
 
@@ -10,6 +11,10 @@ import { googleAuth } from "@hono/oauth-providers/google";
 import { Clock, Effect } from "effect";
 import { Hono } from "hono";
 import { getCookie, setCookie } from "hono/cookie";
+import {
+  type GoogleIdTokenClaims,
+  verifyGoogleIdToken,
+} from "#/auth/googleIdToken.ts";
 import { safeNext } from "#/auth/nextUrl.ts";
 import {
   expiredCookie,
@@ -17,6 +22,7 @@ import {
   siteSessionCookie,
   siteSessionCookieName,
 } from "#/auth/session.ts";
+import { refreshTokensForUser } from "#/auth/token.ts";
 import { resolveGoogleUser } from "#/auth/user.ts";
 import { env } from "#/env.ts";
 import { runtime } from "#/runtime.ts";
@@ -130,5 +136,64 @@ export const oauthRoutes = new Hono()
       "Set-Cookie",
       expiredCookie(new URL(c.req.url), NEXT_COOKIE),
     );
+    return response;
+  })
+  .post("/onetap", async (c) => {
+    // The credential form posts from the island are same-origin; reject
+    // anything else.
+    const origin = c.req.header("origin");
+    if (origin !== new URL(c.req.url).origin) {
+      return c.text("Cross-origin sign-in rejected", 403);
+    }
+
+    const { googleClientId, googleClientSecret } = env(c.env);
+    if (googleClientId === undefined || googleClientSecret === undefined) {
+      return c.text(
+        "Google One Tap is not configured: set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET",
+        500,
+      );
+    }
+
+    const form = await c.req.formData();
+    const credential = form.get("credential");
+    const next = form.get("next");
+    if (typeof credential !== "string" || credential === "") {
+      return c.text("Missing credential", 400);
+    }
+
+    let claims: GoogleIdTokenClaims;
+    try {
+      claims = await verifyGoogleIdToken(credential, {
+        clientId: googleClientId,
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      return c.text(`Invalid Google credential: ${message}`, 401);
+    }
+
+    const sessionId = await runtime(env(c.env)).runPromise(
+      Effect.gen(function* () {
+        const user = yield* resolveGoogleUser({
+          email: claims.email,
+          name: claims.name,
+          picture: claims.picture,
+        });
+        const tokens = yield* refreshTokensForUser(
+          user.id,
+          googleClientId,
+          googleClientSecret,
+        );
+        const id = nextId();
+        yield* AuthStore.use((auth) => auth.createSession(id, user.id, tokens));
+        return id;
+      }),
+    );
+
+    const response = c.redirect(
+      safeNext(typeof next === "string" ? next : null),
+      303,
+    );
+    const url = new URL(c.req.url);
+    response.headers.append("Set-Cookie", siteSessionCookie(url, sessionId));
     return response;
   });
