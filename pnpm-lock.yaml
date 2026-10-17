@@ -188,12 +188,18 @@ catalogs:
     '@std/encoding':
       specifier: npm:@jsr/std__encoding@^1.0.11
       version: 1.0.11
+    '@types/google.accounts':
+      specifier: ^0.0.18
+      version: 0.0.18
     '@types/node':
       specifier: ^26.6.5
       version: 26.6.5
     effect:
       specifier: ~4.0.5
       version: 4.0.5
+    jose:
+      specifier: ^6.2.12
+      version: 6.2.12
     typescript:
       specifier: ^7.0.2
       version: 7.0.2
@@ -330,6 +336,9 @@ importers:
       hono:
         specifier: ^4.13.13
         version: 4.13.13
+      jose:
+        specifier: 'catalog:'
+        version: 6.2.12
       lucide-preact:
         specifier: ^1.56.0
         version: 1.56.0(preact@11.0.1)
@@ -349,6 +358,9 @@ importers:
       '@cloudflare/workers-types':
         specifier: 'catalog:'
         version: 5.20261013.1
+      '@types/google.accounts':
+        specifier: 'catalog:'
+        version: 0.0.18
       '@types/node':
         specifier: 'catalog:'
         version: 26.6.5
@@ -1196,6 +1208,9 @@ packages:
   '@types/estree@1.0.9':
     resolution: {integrity: sha512-GhdPgy1el4/ImP05X05Uw4cw2/M93BCUmnEvWZNStlCzEKME4Fkk+YpoA5OiHNQmoS7Cafb8Xa3Pya8m1Qrzeg==}
 
+  '@types/google.accounts@0.0.18':
+    resolution: {integrity: sha512-yHaPznll97ZnMJlPABHyeiIlLn3u6gQaUjA5k/O9lrrpgFB9VT10CKPLuKM0qTHMl50uXpW5sIcG+utm8jMOHw==}
+
   '@types/node@26.6.5':
     resolution: {integrity: sha512-uMzsv9stDdofIZBx4UGh4Z9ZgXnGC9seRDscilBcTHAeOFk67MZg/k9bWVfO+bk4qZmG+l52hRnLwUiH2LnJTg==}
 
@@ -1416,6 +1431,9 @@ packages:
   jiti@2.7.0:
     resolution: {integrity: sha512-AC/7JofJvZGrrneWNaEnJeOLUx+JlGt7tNa0wZiRPT4MY1wmfKjt2+6O2p2uz2+skll8OZZmJMNqeke7kKbNgQ==}
     hasBin: true
+
+  jose@6.2.12:
+    resolution: {integrity: sha512-9NiFmJEex0sy2Dk58j2UGBSHgUs2ypF9eZSu4L6vjOX3Dp96Sw1F3uL+H+D1sx02jZZdzUT0HgvCy59CuvXcWw==}
 
   kleur@4.1.5:
     resolution: {integrity: sha512-o+NO+8WrRiQEE4/7nwRJhN1HWpVmJm511pBHUxPLtp0BUISzlBplORYSmTclCnJvQq2tKu/sgl3xVpkc7ZWuQQ==}
@@ -2404,6 +2422,8 @@ snapshots:
 
   '@types/estree@1.0.9': {}
 
+  '@types/google.accounts@0.0.18': {}
+
   '@types/node@26.6.5':
     dependencies:
       undici-types: 8.9.0
@@ -2567,6 +2587,8 @@ snapshots:
   hono@4.13.13: {}
 
   jiti@2.7.0: {}
+
+  jose@6.2.12: {}
 
   kleur@4.1.5: {}
 

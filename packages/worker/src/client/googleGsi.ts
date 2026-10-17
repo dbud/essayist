@@ -1,6 +1,6 @@
 // Google Identity Services (GIS) client loader.
 
-import { loadScript } from "#/utils/loadScript.ts";
+import { loadScript } from "#/client/loadScript.ts";
 
 const GSI_SRC = "https://accounts.google.com/gsi/client";
 
