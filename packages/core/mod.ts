@@ -102,7 +102,7 @@ export {
   type UserInput,
   type UserProfile,
   type UserRole,
-  type Workspace,
+  Workspace,
   type WorkspaceMember,
 } from "#/workspace/types.ts";
 export { WorkspaceId } from "#/workspace/WorkspaceId.ts";

@@ -32,12 +32,13 @@ export interface UserInput extends UserProfile {
 export type Role = "owner" | "editor";
 
 /** A named collection of files owned by a user, shareable with others. */
-export interface Workspace {
-  id: string;
-  name: string;
-  ownerId: string;
-  createdAt: number;
-}
+export const Workspace = Schema.Struct({
+  id: Schema.String,
+  name: Schema.String,
+  ownerId: Schema.String,
+  createdAt: Schema.Number,
+});
+export type Workspace = Schema.Schema.Type<typeof Workspace>;
 
 /** The many-to-many share edge between a user and a workspace. */
 export interface WorkspaceMember {
