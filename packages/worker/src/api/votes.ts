@@ -1,70 +1,31 @@
-// API tier prototype. Endpoint paths carry the /api prefix: hono forwards
-// matching requests untouched, so the paths must be absolute from the root.
-import { Effect, Layer, Schema } from "effect";
-import { HttpRouter, HttpServer } from "effect/http";
-import {
-  HttpApi,
-  HttpApiBuilder,
-  HttpApiEndpoint,
-  HttpApiGroup,
-} from "effect/http-api";
+// The votes endpoints: a blueprint for wrapping core services in HttpApi
+// groups.
+import { Schema } from "effect";
+import { HttpApiEndpoint, HttpApiGroup } from "effect/http-api";
 import { VotesDataSchema } from "#/models/votes.data.ts";
-import { Votes } from "#/votes/service.ts";
 
-const getVotes = HttpApiEndpoint.get("getVotes", "/api/votes", {
+const getVotes = HttpApiEndpoint.get("getVotes", "/votes", {
   success: VotesDataSchema,
 });
 
 const incrementVotes = HttpApiEndpoint.post(
   "incrementVotes",
-  "/api/votes/increment",
+  "/votes/increment",
   { success: VotesDataSchema },
 );
 
 const decrementVotes = HttpApiEndpoint.post(
   "decrementVotes",
-  "/api/votes/decrement",
+  "/votes/decrement",
   { success: VotesDataSchema },
 );
 
-const chaosVotes = HttpApiEndpoint.post("chaosVotes", "/api/votes/chaos", {
+const chaosVotes = HttpApiEndpoint.post("chaosVotes", "/votes/chaos", {
   success: Schema.Struct({ armed: Schema.Boolean }),
 });
 
-const VotesGroup = HttpApiGroup.make("votes")
+export const votesGroup = HttpApiGroup.make("votes")
   .add(getVotes)
   .add(incrementVotes)
   .add(decrementVotes)
   .add(chaosVotes);
-
-export const VotesApi = HttpApi.make("votes").add(VotesGroup);
-
-const VotesHandlers = HttpApiBuilder.group(
-  VotesApi,
-  "votes",
-  Effect.fn(function* (handlers) {
-    const withCount = (count: number) => ({ count });
-
-    const store = yield* Votes;
-
-    return handlers.handleAll({
-      getVotes: () => store.get().pipe(Effect.map(withCount)),
-      incrementVotes: () => store.increment().pipe(Effect.map(withCount)),
-      decrementVotes: () => store.decrement().pipe(Effect.map(withCount)),
-      chaosVotes: () => store.chaos().pipe(Effect.map((armed) => ({ armed }))),
-    });
-  }),
-).pipe(Layer.provide(Votes.layerMemory));
-
-const apiRoutes = HttpApiBuilder.layer(VotesApi).pipe(
-  Layer.provide([VotesHandlers]),
-);
-
-// Built eagerly at module scope: fibers started inside fetch capture the
-// request async context on Workers (HttpRouter.toWebHandler guidance).
-const apiHandler = HttpRouter.toWebHandler(
-  apiRoutes.pipe(Layer.provide(HttpServer.layerServices)),
-  { disableLogger: true },
-).handler;
-
-export { apiHandler };

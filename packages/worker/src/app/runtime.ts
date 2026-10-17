@@ -27,35 +27,61 @@ function parseLogLevel(raw: string | undefined) {
   return level ?? "Info";
 }
 
-const runtimeCache = new Map<WorkerEnv, WorkerRuntime>();
-
-// One runtime per env snapshot; snapshots are stable per isolate, so the
-// D1 client builds once per isolate.
-export function runtime(e: WorkerEnv): WorkerRuntime {
-  return runtimeCache.getOrInsertComputed(e, ({ db }) =>
-    ManagedRuntime.make(
-      Layer.unwrap(
-        Effect.gen(function* () {
-          const client = yield* D1Client.make({ db: db });
-          const storage = layerKvD1(client);
-          return Layer.mergeAll(
-            Layer.provide(
-              Layer.mergeAll(
-                Votes.layerMemory,
-                ReviewConfig.layerNoDeps,
-                jsonLogLayer,
-                Layer.succeed(
-                  References.MinimumLogLevel,
-                  parseLogLevel(e.logLevel),
-                ),
-              ),
-              storage,
+const bootLayer = (
+  e: WorkerEnv,
+): Layer.Layer<
+  Votes | ReviewConfig | Workspaces | AuthStore,
+  PersistenceError
+> =>
+  Layer.unwrap(
+    Effect.gen(function* () {
+      const client = yield* D1Client.make({ db: e.db });
+      const storage = layerKvD1(client);
+      return Layer.mergeAll(
+        Layer.provide(
+          Layer.mergeAll(
+            Votes.layerMemory,
+            ReviewConfig.layerNoDeps,
+            jsonLogLayer,
+            Layer.succeed(
+              References.MinimumLogLevel,
+              parseLogLevel(e.logLevel),
             ),
-            Layer.provide(Workspaces.layerNoDeps, storage),
-            layerAuthD1(client),
-          );
-        }),
-      ).pipe(Layer.provide(Reactivity.layer)),
-    ),
-  );
+          ),
+          storage,
+        ),
+        Layer.provide(Workspaces.layerNoDeps, storage),
+        layerAuthD1(client),
+      );
+    }),
+  ).pipe(Layer.provide(Reactivity.layer));
+
+type RuntimeLayer = Layer.Layer<
+  Votes | ReviewConfig | Workspaces | AuthStore,
+  PersistenceError
+>;
+
+interface RuntimeCell {
+  readonly layer: RuntimeLayer;
+  readonly runtime: WorkerRuntime;
+}
+
+const cells = new Map<WorkerEnv, RuntimeCell>();
+
+// One cell per env snapshot; snapshots are stable per isolate, so the D1
+// client builds once per isolate.
+function cell(e: WorkerEnv): RuntimeCell {
+  return cells.getOrInsertComputed(e, (e) => {
+    const layer = bootLayer(e);
+    return { layer, runtime: ManagedRuntime.make(layer) };
+  });
+}
+
+// The api tier shares the same layer as the runtime, joining its memo map.
+export function runtimeLayer(e: WorkerEnv): RuntimeLayer {
+  return cell(e).layer;
+}
+
+export function runtime(e: WorkerEnv): WorkerRuntime {
+  return cell(e).runtime;
 }

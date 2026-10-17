@@ -1,11 +1,11 @@
-// Worker entry: /api/* goes to the api tier; everything else to the pages tier.
 import { Hono } from "hono";
-import { apiHandler } from "./api/votes";
+import { env } from "#/env.ts";
+import { apiHandler } from "./api/handler.ts";
 import { webApp } from "./app/hono";
 
 const app = new Hono();
 
-app.all("/api/*", (c) => apiHandler(c.req.raw));
+app.all("/api/*", (c) => apiHandler(c.req.raw, env(c.env)));
 app.route("/", webApp);
 
 export default app;

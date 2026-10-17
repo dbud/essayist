@@ -12,6 +12,6 @@ export const webApp = new Hono()
   .use("*", resolveSession)
   .route("/oauth", oauthRoutes);
 
-for (const route of Object.values(pages)) {
-  webApp.route("/", route);
+for (const [path, route] of Object.entries(pages)) {
+  webApp.route(path, route);
 }
