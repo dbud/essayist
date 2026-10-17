@@ -1,13 +1,20 @@
 // The api tier; endpoint paths are root-relative and the /api prefix is
 // applied once at assembly.
+import { UserState, Workspaces } from "@essayist/core";
 import { Effect, Layer } from "effect";
-import { HttpApi, HttpApiBuilder } from "effect/http-api";
+import { HttpApi, HttpApiBuilder, HttpApiError } from "effect/http-api";
 import { sessionMiddleware, UserSession } from "#/api/sessionMiddleware.ts";
 import { Votes } from "#/votes/service.ts";
+import { workspacesLoader } from "#/workspaces/loader.ts";
 import { userGroup } from "./user";
 import { votesGroup } from "./votes";
+import { workspaceGroup } from "./workspaces";
 
-const api = HttpApi.make("api").add(votesGroup).add(userGroup).prefix("/api");
+const api = HttpApi.make("api")
+  .add(votesGroup)
+  .add(userGroup)
+  .add(workspaceGroup)
+  .prefix("/api");
 
 const votesHandlers = HttpApiBuilder.group(
   api,
@@ -35,8 +42,45 @@ const userHandlers = HttpApiBuilder.group(
   }),
 );
 
+const workspaceHandlers = HttpApiBuilder.group(
+  api,
+  "workspaces",
+  Effect.fn(function* (handlers) {
+    const stores = yield* Effect.context<Workspaces | UserState>();
+    const workspacesStore = yield* Workspaces;
+    const userState = yield* UserState;
+
+    return handlers.handleAll({
+      getWorkspaces: (req) =>
+        Effect.gen(function* () {
+          const { user } = yield* UserSession;
+          return yield* Effect.orDie(
+            workspacesLoader(user.id, req.query.ws).pipe(
+              Effect.provide(stores),
+            ),
+          );
+        }),
+      selectWorkspace: (req) =>
+        Effect.gen(function* () {
+          const { user } = yield* UserSession;
+          const selectedId = req.payload.selectedId.trim();
+          const allowed = yield* Effect.orDie(
+            workspacesStore.hasAccess(selectedId, user.id),
+          );
+          if (!allowed) {
+            return yield* Effect.fail(new HttpApiError.Forbidden());
+          }
+          yield* Effect.orDie(
+            userState.setSelectedWorkspace(user.id, selectedId),
+          );
+        }),
+    });
+  }),
+);
+
 export const layerApi = HttpApiBuilder.layer(api).pipe(
   Layer.provide(votesHandlers),
   Layer.provide(userHandlers),
+  Layer.provide(workspaceHandlers),
   Layer.provide(sessionMiddleware),
 );

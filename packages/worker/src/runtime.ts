@@ -5,6 +5,7 @@ import {
   layerAuthD1,
   type PersistenceError,
   ReviewConfig,
+  UserState,
   Workspaces,
 } from "@essayist/core";
 import { layerKvD1 } from "@essayist/core/kv_d1";
@@ -14,7 +15,7 @@ import type { WorkerEnv } from "#/env.ts";
 import { Votes } from "#/votes/service.ts";
 
 type WorkerRuntime = ManagedRuntime.ManagedRuntime<
-  Votes | ReviewConfig | Workspaces | AuthStore,
+  Votes | ReviewConfig | Workspaces | AuthStore | UserState,
   PersistenceError
 >;
 
@@ -27,7 +28,7 @@ function parseLogLevel(raw: string | undefined) {
 }
 
 type RuntimeLayer = Layer.Layer<
-  Votes | ReviewConfig | Workspaces | AuthStore,
+  Votes | ReviewConfig | Workspaces | AuthStore | UserState,
   PersistenceError
 >;
 
@@ -48,21 +49,14 @@ function cell(e: WorkerEnv): RuntimeCell {
         const client = yield* D1Client.make({ db: e.db });
         const storage = layerKvD1(client);
         return Layer.mergeAll(
-          Layer.provide(
-            Layer.mergeAll(
-              Votes.layerMemory,
-              ReviewConfig.layerNoDeps,
-              jsonLogLayer,
-              Layer.succeed(
-                References.MinimumLogLevel,
-                parseLogLevel(e.logLevel),
-              ),
-            ),
-            storage,
-          ),
-          Layer.provide(Workspaces.layerNoDeps, storage),
+          Votes.layerMemory,
+          ReviewConfig.layerNoDeps,
+          UserState.layerNoDeps,
+          Workspaces.layerNoDeps,
           layerAuthD1(client),
-        );
+          jsonLogLayer,
+          Layer.succeed(References.MinimumLogLevel, parseLogLevel(e.logLevel)),
+        ).pipe(Layer.provide(storage));
       }),
     ).pipe(Layer.provide(Reactivity.layer));
     return { layer, runtime: ManagedRuntime.make(layer) };

@@ -22,3 +22,24 @@ export async function postJson<T>(path: string, body?: unknown): Promise<T> {
   }
   return (await res.json()) as T;
 }
+
+// Pins and similar writes resolve 204 with no body, so the parsed
+// result only exists when the backend sends one.
+export async function patchJson<T = void>(
+  path: string,
+  body: unknown,
+  options?: {
+    readonly keepalive?: boolean;
+  },
+): Promise<T> {
+  const res = await fetch(path, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+    keepalive: options?.keepalive,
+  });
+  if (!res.ok) {
+    throw new Error(`transport: PATCH ${path} failed with ${res.status}`);
+  }
+  return res.status === 204 ? (undefined as T) : ((await res.json()) as T);
+}
