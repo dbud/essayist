@@ -2,7 +2,7 @@ import { useAppState } from "#/state.ts";
 import { useEditorModels } from "./models";
 
 function EditorPage() {
-  const { workspaces, fileTrees } = useEditorModels();
+  const { workspaces, fileTrees, categories } = useEditorModels();
   const { user } = useAppState();
   const tree = fileTrees.current.value;
 
@@ -77,8 +77,9 @@ function EditorPage() {
       <pre class="mt-1 whitespace-pre-wrap text-xs leading-snug text-ink/70">
         {JSON.stringify(
           {
-            selectedWorkspaceId: workspaces.selectedId.value,
+            selectedId: workspaces.selectedId.value,
             file: tree?.selectedPath.value ?? null,
+            categories: categories.list.value,
           },
           null,
           2,

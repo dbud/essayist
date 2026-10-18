@@ -1,6 +1,7 @@
 import { Effect } from "effect";
 import { Hono } from "hono";
 import { env } from "#/env.ts";
+import { categoriesLoader } from "#/models/categories.loader.ts";
 import { fileTreesLoader } from "#/models/fileTrees.loader.ts";
 import { workspacesLoader } from "#/models/workspaces.loader.ts";
 import { runtime } from "#/runtime.ts";
@@ -18,7 +19,12 @@ export default new Hono().get("/", async (c) => {
       workspaces.selectedId,
       c.req.query("path"),
     );
-    return { workspaces, fileTrees };
+    const categories = yield* categoriesLoader();
+    return {
+      workspaces,
+      fileTrees,
+      categories,
+    };
   });
   const data = await runtime(env(c.env)).runPromise(seed);
   return c.render(

@@ -1,8 +1,8 @@
-import { CategorySchema } from "@essayist/core";
 import { Schema } from "effect";
+import { CategoriesData } from "#/models/categories.data.ts";
 
 export const HomePageData = Schema.Struct({
-  categories: Schema.Array(CategorySchema),
+  categories: CategoriesData,
 });
 
 export type HomePageData = Schema.Schema.Type<typeof HomePageData>;
