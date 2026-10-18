@@ -1,6 +1,6 @@
 import { computed, createModel, signal } from "@preact/signals";
-import createAsyncState from "#/models/asyncState.ts";
-import { getJson } from "#/models/http.ts";
+import createAsyncState from "#/models/utils/asyncState.ts";
+import { getJson } from "#/models/utils/http.ts";
 import type { WorkspacesData } from "./workspaces.data";
 
 export type { WorkspacesData };

@@ -5,7 +5,7 @@ import {
   removeToast,
   type Toast,
   toasts,
-} from "#/models/toast.ts";
+} from "#/models/utils/toast.ts";
 
 const ICONS = {
   info: Info,

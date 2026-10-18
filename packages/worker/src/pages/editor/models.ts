@@ -1,5 +1,5 @@
-import { createModelContext } from "#/models/context.ts";
 import { FileTreesModel } from "#/models/fileTrees.ts";
+import { createModelContext } from "#/models/utils/context.ts";
 import { WorkspacesModel } from "#/models/workspaces.ts";
 import type { EditorData } from "./data";
 

@@ -1,5 +1,5 @@
 import type { User } from "@essayist/core";
-import { createModelContext } from "#/models/context.ts";
+import { createModelContext } from "#/models/utils/context.ts";
 
 export interface AppState {
   readonly user?: User;

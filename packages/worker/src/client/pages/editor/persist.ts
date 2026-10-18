@@ -1,5 +1,5 @@
 import { effect } from "@preact/signals";
-import { patchJson } from "#/models/http.ts";
+import { patchJson } from "#/models/utils/http.ts";
 import type { EditorModels } from "#/pages/editor/models.ts";
 
 let timer: ReturnType<typeof setTimeout> | undefined;
