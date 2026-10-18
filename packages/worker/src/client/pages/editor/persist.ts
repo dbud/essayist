@@ -4,25 +4,23 @@ import type { EditorModels } from "#/pages/editor/models.ts";
 
 let timer: ReturnType<typeof setTimeout> | undefined;
 let pendingWsId: string | null = null;
-let pendingFile: { wsId: string; path: string } | null = null;
+let pendingPath: { wsId: string; path: string } | null = null;
 
 const DEBOUNCE_MS = 500;
 
 function flush(keepalive: boolean): void {
-  if (pendingWsId !== null) {
+  if (pendingWsId) {
     patchJson("/api/workspaces", { wsId: pendingWsId }, { keepalive }).catch(
       () => {},
     );
+    pendingWsId = null;
   }
-  if (pendingFile) {
-    patchJson(
-      "/api/workspaces/files",
-      { wsId: pendingFile.wsId, path: pendingFile.path },
-      { keepalive },
-    ).catch(() => {});
+  if (pendingPath) {
+    patchJson("/api/workspaces/files", pendingPath, { keepalive }).catch(
+      () => {},
+    );
+    pendingPath = null;
   }
-  pendingWsId = null;
-  pendingFile = null;
 }
 
 function schedule(): void {
@@ -30,10 +28,11 @@ function schedule(): void {
   timer = setTimeout(() => flush(false), DEBOUNCE_MS);
 }
 
-// The pagehide flush uses keepalive so pending writes survive page unload.
+// The pagehide flush uses keepalive so pending writes survive page
+// unload.
 export function setupSelectionPersist({
   workspaces,
-  fileTree,
+  fileTrees,
 }: EditorModels): void {
   effect(() => {
     const wsId = workspaces.selectedId.value;
@@ -43,12 +42,11 @@ export function setupSelectionPersist({
   });
 
   effect(() => {
-    if (!fileTree) return;
     const wsId = workspaces.selectedId.value;
-    if (wsId === null || fileTree.wsId !== wsId) return;
-    const path = fileTree.tree.selectedPath.value;
+    if (!wsId) return;
+    const path = fileTrees.current.value?.selectedPath.value;
     if (!path) return;
-    pendingFile = { wsId, path };
+    pendingPath = { wsId, path };
     schedule();
   });
 

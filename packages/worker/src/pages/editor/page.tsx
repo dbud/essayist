@@ -2,20 +2,12 @@ import { useAppState } from "#/state.ts";
 import { useEditorModels } from "./models";
 
 function EditorPage() {
-  const { workspaces, fileTree } = useEditorModels();
+  const { workspaces, fileTrees } = useEditorModels();
   const { user } = useAppState();
-  const wsId = workspaces.selectedId.value;
-  const tree = fileTree?.wsId === wsId ? fileTree.tree : null;
-
-  const fileUrl = (file: string): string => {
-    const params = new URLSearchParams();
-    if (wsId !== null) params.set("wsId", wsId);
-    if (file !== "") params.set("path", file);
-    return `/editor?${params.toString()}`;
-  };
+  const tree = fileTrees.current.value;
 
   return (
-    <main class="mx-auto max-w-2xl px-6 py-10 font-mono text-sm text-ink">
+    <main class="mx-auto max-w-2xl px-6 py-10 text-sm text-ink">
       <h1 class="font-serif text-2xl text-ink">editor prototype</h1>
       <p class="mt-2 text-ink/70">
         {user ? (user.name ?? user.email) : "anonymous"}
@@ -50,7 +42,7 @@ function EditorPage() {
         class="btn btn--ghost ms-2"
         type="button"
         disabled={tree?.loading.value ?? true}
-        onClick={() => void tree?.refresh()}
+        onClick={() => void tree?.load()}
       >
         refresh files
       </button>
@@ -67,10 +59,16 @@ function EditorPage() {
           ? null
           : tree.files.value.map((file) => (
               <li key={file.path}>
-                <a class="underline" href={fileUrl(file.path)}>
-                  {file.path}
-                </a>
-                {` (${file.path === tree.selectedPath.value ? "selected, " : ""}${file.lines} lines)`}
+                <button
+                  class="underline"
+                  type="button"
+                  onClick={() => tree.select(file.path)}
+                >
+                  {file.path === tree.selectedPath.value
+                    ? `[x] ${file.path}`
+                    : file.path}
+                </button>
+                {` (${file.lines} lines)`}
               </li>
             ))}
       </ul>
@@ -79,9 +77,8 @@ function EditorPage() {
       <pre class="mt-1 whitespace-pre-wrap text-xs leading-snug text-ink/70">
         {JSON.stringify(
           {
-            selectedId: workspaces.selectedId.value,
+            selectedWorkspaceId: workspaces.selectedId.value,
             file: tree?.selectedPath.value ?? null,
-            tree: tree?.tree.value ?? null,
           },
           null,
           2,

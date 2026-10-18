@@ -6,39 +6,35 @@ import type { FileTreeData } from "./fileTree.data";
 export type { FileTreeData };
 
 // TODO -- createFile and uploadFiles when the files api lands
-export const FileTreeModel = createModel((data: FileTreeData, wsId: string) => {
-  const files = signal(data.files);
-  const selectedPath = signal(data.selectedPath);
+export const FileTreeModel = createModel(
+  (wsId: string, data?: FileTreeData) => {
+    const files = signal(data?.files ?? []);
+    const selectedPath = signal(data?.selectedPath ?? null);
 
-  const tree = computed(() => buildFileTree(files.value));
+    const tree = computed(() => buildFileTree(files.value));
 
-  const [runRefresh, { loading, error }] = createAsyncState();
+    const [runLoad, { loading, error }] = createAsyncState();
 
-  async function refresh(): Promise<void> {
-    await runRefresh(async () => {
+    async function load(): Promise<void> {
       const params = new URLSearchParams({ wsId });
-      const data = await getJson<FileTreeData>(
-        `/api/workspaces/files?${params}`,
+      const data = await runLoad(async () =>
+        getJson<FileTreeData>(`/api/workspaces/files?${params}`),
       );
-      files.value = data.files;
-      selectedPath.value = data.selectedPath;
-    });
-  }
+      if (data) {
+        files.value = data.files;
+        selectedPath.value = data.selectedPath;
+      }
+    }
 
-  function select(path: string | null): void {
-    selectedPath.value = path;
-  }
+    if (data === undefined && !import.meta.env.SSR) void load();
 
-  return {
-    files,
-    selectedPath,
-    select,
-    tree,
-    loading,
-    error,
-    refresh,
-  };
-});
+    function select(path: string | null): void {
+      selectedPath.value = path;
+    }
+
+    return { files, selectedPath, select, tree, load, loading, error };
+  },
+);
 
 export type FileTree = InstanceType<typeof FileTreeModel>;
 
