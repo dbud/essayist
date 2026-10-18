@@ -6,32 +6,13 @@ import { HttpApi, HttpApiBuilder, HttpApiError } from "effect/http-api";
 import { sessionMiddleware, UserSession } from "#/api/sessionMiddleware.ts";
 import { fileTreeLoader } from "#/models/fileTree.loader.ts";
 import { workspacesLoader } from "#/models/workspaces.loader.ts";
-import { Votes } from "#/votes/service.ts";
 import { userGroup } from "./user";
-import { votesGroup } from "./votes";
 import { workspaceGroup } from "./workspaces";
 
 const api = HttpApi.make("api")
-  .add(votesGroup)
   .add(userGroup)
   .add(workspaceGroup)
   .prefix("/api");
-
-const votesHandlers = HttpApiBuilder.group(
-  api,
-  "votes",
-  Effect.fn(function* (handlers) {
-    const store = yield* Votes;
-    const withCount = (count: number) => ({ count });
-
-    return handlers.handleAll({
-      getVotes: () => store.get().pipe(Effect.map(withCount)),
-      incrementVotes: () => store.increment().pipe(Effect.map(withCount)),
-      decrementVotes: () => store.decrement().pipe(Effect.map(withCount)),
-      chaosVotes: () => store.chaos().pipe(Effect.map((armed) => ({ armed }))),
-    });
-  }),
-);
 
 const userHandlers = HttpApiBuilder.group(
   api,
@@ -100,7 +81,6 @@ const workspaceHandlers = HttpApiBuilder.group(
 );
 
 export const layerApi = HttpApiBuilder.layer(api).pipe(
-  Layer.provide(votesHandlers),
   Layer.provide(userHandlers),
   Layer.provide(workspaceHandlers),
   Layer.provide(sessionMiddleware),

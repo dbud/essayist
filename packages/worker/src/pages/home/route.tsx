@@ -12,9 +12,7 @@ export default new Hono().get("/", async (c) => {
       <Page />
     </HomeModelsProvider>,
     {
-      title: "essayist prototype",
-      client: "home",
-      data,
+      title: "essayist",
     },
   );
 });

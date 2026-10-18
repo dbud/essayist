@@ -13,10 +13,9 @@ import { layerKvD1 } from "@essayist/core/kv_d1";
 import { Effect, Layer, LogLevel, ManagedRuntime, References } from "effect";
 import * as Reactivity from "effect/reactivity/Reactivity";
 import type { WorkerEnv } from "#/env.ts";
-import { Votes } from "#/votes/service.ts";
 
 type WorkerRuntime = ManagedRuntime.ManagedRuntime<
-  Votes | ReviewConfig | Workspaces | AuthStore | UserState | Files,
+  ReviewConfig | Workspaces | AuthStore | UserState | Files,
   PersistenceError
 >;
 
@@ -29,7 +28,7 @@ function parseLogLevel(raw: string | undefined) {
 }
 
 type RuntimeLayer = Layer.Layer<
-  Votes | ReviewConfig | Workspaces | AuthStore | UserState | Files,
+  ReviewConfig | Workspaces | AuthStore | UserState | Files,
   PersistenceError
 >;
 
@@ -50,7 +49,6 @@ function cell(e: WorkerEnv): RuntimeCell {
         const client = yield* D1Client.make({ db: e.db });
         const storage = layerKvD1(client);
         return Layer.mergeAll(
-          Votes.layerMemory,
           ReviewConfig.layerNoDeps,
           UserState.layerNoDeps,
           Files.layerNoDeps,
