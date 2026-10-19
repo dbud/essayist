@@ -32,5 +32,10 @@ export default defineConfig({
   },
   resolve: {
     dedupe: ["effect", "@effect/ai-openrouter"],
+    // @lexical/react speaks react; preact/compat covers it.
+    alias: {
+      react: "preact/compat",
+      "react-dom": "preact/compat",
+    },
   },
 });
