@@ -2,9 +2,10 @@ import { useAppState } from "#/state.ts";
 import { useEditorModels } from "./models";
 
 function EditorPage() {
-  const { workspaces, fileTrees, categories } = useEditorModels();
+  const { workspaces, fileTrees, fileContents, categories } = useEditorModels();
   const { user } = useAppState();
   const tree = fileTrees.current.value;
+  const file = fileContents.current.value;
 
   return (
     <main class="mx-auto max-w-2xl px-6 py-10 text-sm text-ink">
@@ -73,12 +74,52 @@ function EditorPage() {
             ))}
       </ul>
 
+      <h2 class="mt-6 text-ink/70">content</h2>
+      {file === null ? (
+        <p class="text-ink/70">no file selected</p>
+      ) : file.content.value === null ? (
+        <p class="text-ink/70">{file.loading.value ? "loading" : "empty"}</p>
+      ) : (
+        <div class="mt-1">
+          <textarea
+            class="h-48 w-full rounded border border-black/10 p-2 font-mono text-xs"
+            value={file.content.value}
+            onInput={(e) => {
+              file.content.value = e.currentTarget.value;
+            }}
+          ></textarea>
+          <button
+            class="btn btn--ghost mt-2"
+            type="button"
+            disabled={file.saving.value || !file.dirty.value}
+            onClick={() => void file.save()}
+          >
+            save draft
+          </button>
+          {file.dirty.value ? (
+            <span class="ms-2 text-ink/60">unsaved</span>
+          ) : null}
+          {file.saving.value ? (
+            <span class="ms-2 text-ink/60">saving</span>
+          ) : null}
+          {file.saveError.value ? (
+            <p class="badge badge--error">{file.saveError.value}</p>
+          ) : null}
+          {file.error.value ? (
+            <p class="badge badge--error">{file.error.value}</p>
+          ) : null}
+        </div>
+      )}
+
       <h2 class="mt-6 text-ink/70">model state</h2>
       <pre class="mt-1 whitespace-pre-wrap text-xs leading-snug text-ink/70">
         {JSON.stringify(
           {
             selectedId: workspaces.selectedId.value,
             file: tree?.selectedPath.value ?? null,
+            version: file?.version.value?.version_id ?? null,
+            draft: file?.draft.value?.timestamp ?? null,
+            dirty: file?.dirty.value ?? false,
             categories: categories.list.value,
           },
           null,

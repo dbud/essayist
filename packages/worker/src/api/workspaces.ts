@@ -1,5 +1,7 @@
+import { DraftSnapshot } from "@essayist/core";
 import { Schema } from "effect";
 import { HttpApiEndpoint, HttpApiError, HttpApiGroup } from "effect/http-api";
+import { FileContentData } from "#/models/fileContent.data.ts";
 import { FileTreeData } from "#/models/fileTree.data.ts";
 import { WorkspacesData } from "#/models/workspaces.data.ts";
 import { SessionMiddleware } from "./sessionMiddleware";
@@ -41,9 +43,42 @@ const selectFile = HttpApiEndpoint.patch("selectFile", "/workspaces/files", {
   error: HttpApiError.Forbidden,
 });
 
+const ContentQuery = Schema.Struct({
+  wsId: Schema.NonEmptyString,
+  path: Schema.NonEmptyString,
+});
+
+const DraftPayload = Schema.Struct({
+  wsId: Schema.NonEmptyString,
+  path: Schema.NonEmptyString,
+  content: Schema.String,
+});
+
+const getFileContent = HttpApiEndpoint.get(
+  "getFileContent",
+  "/workspaces/files/content",
+  {
+    query: ContentQuery,
+    success: FileContentData,
+    error: [HttpApiError.Forbidden, HttpApiError.NotFound],
+  },
+);
+
+const saveFileDraft = HttpApiEndpoint.put(
+  "saveFileDraft",
+  "/workspaces/files/draft",
+  {
+    payload: DraftPayload,
+    success: DraftSnapshot,
+    error: [HttpApiError.Forbidden, HttpApiError.NotFound],
+  },
+);
+
 export const workspaceGroup = HttpApiGroup.make("workspaces")
   .add(getWorkspaces)
   .add(selectWorkspace)
   .add(getFiles)
   .add(selectFile)
+  .add(getFileContent)
+  .add(saveFileDraft)
   .middleware(SessionMiddleware);

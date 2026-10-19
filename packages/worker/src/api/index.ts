@@ -1,9 +1,10 @@
 // The api tier; endpoint paths are root-relative and the /api prefix is
 // applied once at assembly.
-import { type Files, UserState, Workspaces } from "@essayist/core";
+import { Files, UserState, WorkspaceId, Workspaces } from "@essayist/core";
 import { Effect, Layer } from "effect";
 import { HttpApi, HttpApiBuilder, HttpApiError } from "effect/http-api";
 import { sessionMiddleware, UserSession } from "#/api/sessionMiddleware.ts";
+import { fileContentLoader } from "#/models/fileContent.loader.ts";
 import { fileTreeLoader } from "#/models/fileTree.loader.ts";
 import { workspacesLoader } from "#/models/workspaces.loader.ts";
 import { userGroup } from "./user";
@@ -31,6 +32,7 @@ const workspaceHandlers = HttpApiBuilder.group(
     const stores = yield* Effect.context<Workspaces | UserState | Files>();
     const workspacesStore = yield* Workspaces;
     const userState = yield* UserState;
+    const files = yield* Files;
 
     const requireAccess = (wsId: string, userId: string) =>
       Effect.gen(function* () {
@@ -75,6 +77,36 @@ const workspaceHandlers = HttpApiBuilder.group(
           const { wsId, path } = req.payload;
           yield* requireAccess(wsId, user.id);
           yield* Effect.orDie(userState.setSelectedFile(user.id, wsId, path));
+        }),
+      getFileContent: (req) =>
+        Effect.gen(function* () {
+          const { user } = yield* UserSession;
+          const { wsId, path } = req.query;
+          yield* requireAccess(wsId, user.id);
+          const data = yield* Effect.orDie(
+            fileContentLoader(wsId, path).pipe(Effect.provide(stores)),
+          );
+          if (data.version.version_id === "") {
+            return yield* Effect.fail(new HttpApiError.NotFound());
+          }
+          return data;
+        }),
+      saveFileDraft: (req) =>
+        Effect.gen(function* () {
+          const { user } = yield* UserSession;
+          const { wsId, path, content } = req.payload;
+          yield* requireAccess(wsId, user.id);
+          const snapshot = yield* Effect.orDie(
+            files.read(path).pipe(Effect.provideService(WorkspaceId, { wsId })),
+          );
+          if (snapshot.version_id === "") {
+            return yield* Effect.fail(new HttpApiError.NotFound());
+          }
+          return yield* Effect.orDie(
+            files
+              .writeDraft(path, content)
+              .pipe(Effect.provideService(WorkspaceId, { wsId })),
+          );
         }),
     });
   }),

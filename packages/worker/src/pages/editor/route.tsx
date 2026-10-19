@@ -2,6 +2,7 @@ import { Effect } from "effect";
 import { Hono } from "hono";
 import { env } from "#/env.ts";
 import { categoriesLoader } from "#/models/categories.loader.ts";
+import { fileContentsLoader } from "#/models/fileContents.loader.ts";
 import { fileTreesLoader } from "#/models/fileTrees.loader.ts";
 import { workspacesLoader } from "#/models/workspaces.loader.ts";
 import { runtime } from "#/runtime.ts";
@@ -19,10 +20,15 @@ export default new Hono().get("/", async (c) => {
       workspaces.selectedId,
       c.req.query("path"),
     );
+    const fileContents = yield* fileContentsLoader(
+      fileTrees.wsId,
+      fileTrees.tree?.selectedPath ?? null,
+    );
     const categories = yield* categoriesLoader();
     return {
       workspaces,
       fileTrees,
+      fileContents,
       categories,
     };
   });
