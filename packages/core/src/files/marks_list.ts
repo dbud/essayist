@@ -15,6 +15,7 @@ import type {
 } from "#/persistence/mod.ts";
 import { WorkspaceId } from "#/workspace/WorkspaceId.ts";
 import { latestKey, marksKey, type StoredSnapshot } from "./keys.ts";
+import type { FileMissingError } from "./types.ts";
 
 export function makeMarkLists(
   persistence: Context.Service.Shape<typeof Persistence>,
@@ -79,7 +80,7 @@ export function makeMarkLists(
     fromVersionId: string,
   ): Effect.Effect<
     MigrateMarksResult,
-    PersistenceError | ConcurrentModificationError,
+    PersistenceError | ConcurrentModificationError | FileMissingError,
     WorkspaceId
   > =>
     retryConcurrency(

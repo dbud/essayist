@@ -1,17 +1,5 @@
 import { Schema } from "effect";
 
-/** Options for reading a file. */
-export interface ReadOptions {
-  /** Version ID to read. If omitted, reads the latest version. */
-  versionId?: string;
-  /** First line to return (1-based, inclusive). Defaults to 1. */
-  startLine?: number;
-  /** Last line to return (1-based, inclusive). Defaults to the last line. */
-  endLine?: number;
-  /** If true, prefix each line with its line number. */
-  numbered?: boolean;
-}
-
 /** Metadata about a file version (no content). */
 export const FileVersion = Schema.Struct({
   version_id: Schema.String,
@@ -42,12 +30,6 @@ export const FileSnapshot = Schema.Struct({
 });
 export type FileSnapshot = Schema.Schema.Type<typeof FileSnapshot>;
 
-/** Result of a read operation -- snapshot + line range window. */
-export interface FileReadResult extends FileSnapshot {
-  start_line: number;
-  end_line: number;
-}
-
 /** The persisted draft head. */
 export const DraftSnapshot = Schema.Struct({
   content: Schema.String,
@@ -58,4 +40,16 @@ export type DraftSnapshot = Schema.Schema.Type<typeof DraftSnapshot>;
 /** Result of a diff operation. */
 export interface DiffResult {
   diff: string;
+}
+
+/** A read targeted a path or version that does not exist. */
+export class FileMissingError extends Schema.TaggedError<FileMissingError>()(
+  "FileMissingError",
+  { path: Schema.String, versionId: Schema.NullOr(Schema.String) },
+) {
+  override get message() {
+    return this.versionId === null
+      ? `File ${this.path} does not exist`
+      : `Version ${this.versionId} of ${this.path} does not exist`;
+  }
 }

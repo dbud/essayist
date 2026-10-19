@@ -12,16 +12,11 @@ export async function marksLoader({
 }: FileKey): Promise<MarksData> {
   const run = runScoped(runtime, wsId);
   const checkpoint = await run(
-    Files.use((files) => files.read(path, { versionId })),
+    Files.use((files) => files.read(path, versionId)),
   );
-  if (versionId && checkpoint.version_id === "") {
-    throw new Error(`Version not found: ${versionId}`);
-  }
-  const marks = checkpoint.version_id
-    ? await run(
-        Files.use((files) => files.getMarks(path, checkpoint.version_id)),
-      )
-    : [];
+  const marks = await run(
+    Files.use((files) => files.getMarks(path, checkpoint.version_id)),
+  );
   return {
     marks,
     versionId: checkpoint.version_id,

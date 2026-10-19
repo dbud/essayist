@@ -12,11 +12,8 @@ export async function fileLoader({
 }: FileKey): Promise<FileData> {
   const run = runScoped(runtime, wsId);
   const checkpoint = await run(
-    Files.use((files) => files.read(path, { versionId })),
+    Files.use((files) => files.read(path, versionId)),
   );
-  if (versionId && checkpoint.version_id === "") {
-    throw new Error(`Version not found: ${versionId}`);
-  }
   return {
     checkpoint,
     draft: versionId ? null : await run(Files.use((f) => f.readDraft(path))),

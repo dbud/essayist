@@ -30,38 +30,42 @@ import {
   type StoredSnapshot,
 } from "./keys.ts";
 import { makeMarkLists } from "./marks_list.ts";
-import type {
-  DiffResult,
-  DraftSnapshot,
-  FileEntry,
-  FileReadResult,
-  FileSnapshot,
-  FileVersion,
-  ReadOptions,
-  WriteResult,
+import {
+  type DiffResult,
+  type DraftSnapshot,
+  type FileEntry,
+  FileMissingError,
+  type FileSnapshot,
+  type FileVersion,
+  type WriteResult,
 } from "./types.ts";
 
 export interface Interface {
   /**
-   * Read file content. By default reads the latest version. Missing files
-   * and versions return an empty snapshot with version_id "" (reads never
-   * throw by design, parity with the legacy tool contract).
+   * Read file content: the latest version, or the pinned version when
+   * given. A missing file or version fails with FileMissingError.
    */
   read(
     path: string,
-    options?: ReadOptions,
-  ): Effect.Effect<FileReadResult, PersistenceError, WorkspaceId>;
+    versionId?: string,
+  ): Effect.Effect<
+    FileSnapshot,
+    PersistenceError | FileMissingError,
+    WorkspaceId
+  >;
   /**
    * Write new content as a new version. Snapshots the previous version and
    * migrates its marks into the new version in the same atomic batch,
-   * guarded on the versions list. Clears any pending draft.
+   * guarded on the versions list. Clears any pending draft. Fails with
+   * FileMissingError when the previous version's content is missing in
+   * storage.
    */
   write(
     path: string,
     content: string,
   ): Effect.Effect<
     WriteResult,
-    PersistenceError | ConcurrentModificationError,
+    PersistenceError | ConcurrentModificationError | FileMissingError,
     WorkspaceId
   >;
   /** List files in the workspace, optionally filtered by path prefix. */
@@ -72,13 +76,17 @@ export interface Interface {
   getHistory(
     path: string,
   ): Effect.Effect<FileVersion[], PersistenceError, WorkspaceId>;
-  /** Write the mutable draft head. No version, no marks migration. */
+  /**
+   * Write the mutable draft head. No version, no marks migration. A draft
+   * sits on top of an existing version, so a missing file fails with
+   * FileMissingError.
+   */
   writeDraft(
     path: string,
     content: string,
   ): Effect.Effect<
     DraftSnapshot,
-    PersistenceError | ConcurrentModificationError,
+    PersistenceError | ConcurrentModificationError | FileMissingError,
     WorkspaceId
   >;
   /** Read the draft head, or null when no draft exists. */
@@ -90,24 +98,31 @@ export interface Interface {
     path: string,
   ): Effect.Effect<
     WriteResult | null,
-    PersistenceError | ConcurrentModificationError,
+    PersistenceError | ConcurrentModificationError | FileMissingError,
     WorkspaceId
   >;
-  /** Revert a file to a previous version as a new version. */
+  /** Revert a file to a previous version as a new version. Fails with
+   * FileMissingError when the previous version's content is missing in
+   * storage. */
   revert(
     path: string,
     versionId: string,
   ): Effect.Effect<
     boolean,
-    PersistenceError | ConcurrentModificationError,
+    PersistenceError | ConcurrentModificationError | FileMissingError,
     WorkspaceId
   >;
-  /** Unified diff between two versions of a file. */
+  /** Unified diff between two versions of a file. A missing version fails
+   * with FileMissingError. */
   diff(
     path: string,
     versionA: string,
     versionB: string,
-  ): Effect.Effect<DiffResult, PersistenceError, WorkspaceId>;
+  ): Effect.Effect<
+    DiffResult,
+    PersistenceError | FileMissingError,
+    WorkspaceId
+  >;
   /** Marks placed on a specific version of a file. */
   getMarks(
     path: string,
@@ -134,14 +149,16 @@ export interface Interface {
   /**
    * Re-anchor a version's marks onto the latest version. Marks whose
    * thread_id is already on the latest are skipped; text that no longer
-   * resolves becomes stale. No-op when the given version is latest.
+   * resolves becomes stale. No-op when the given version is latest. Fails
+   * with FileMissingError when the source version's content is missing in
+   * storage.
    */
   migrateMarks(
     path: string,
     fromVersionId: string,
   ): Effect.Effect<
     MigrateMarksResult,
-    PersistenceError | ConcurrentModificationError,
+    PersistenceError | ConcurrentModificationError | FileMissingError,
     WorkspaceId
   >;
 }
@@ -162,34 +179,15 @@ export class Files extends Context.Service<Files, Interface>()(
 
         const read = (
           path: string,
-          { versionId, startLine, endLine, numbered }: ReadOptions = {},
-        ): Effect.Effect<FileReadResult, PersistenceError, WorkspaceId> =>
+          versionId?: string,
+        ): Effect.Effect<
+          FileSnapshot,
+          PersistenceError | FileMissingError,
+          WorkspaceId
+        > =>
           Effect.gen(function* () {
             const { wsId } = yield* WorkspaceId;
-            const snapshot: FileSnapshot = {
-              // version_id "" marks a miss; read never throws by design.
-              content: "",
-              version_id: "",
-              timestamp: 0,
-              lines: 0,
-              ...(yield* internals.getSnapshot(wsId, path, versionId)),
-            };
-            const start = Math.max(1, startLine ?? 1);
-            const end = Math.min(snapshot.lines, endLine ?? snapshot.lines);
-            let selectedLines = snapshot.content
-              .split("\n")
-              .slice(start - 1, end);
-            if (numbered) {
-              selectedLines = selectedLines.map(
-                (line, i) => `${String(start + i).padStart(6)}: ${line}`,
-              );
-            }
-            return {
-              ...snapshot,
-              content: selectedLines.join("\n"),
-              start_line: start,
-              end_line: end,
-            };
+            return yield* internals.getSnapshot(wsId, path, versionId);
           });
 
         const write = (
@@ -197,7 +195,7 @@ export class Files extends Context.Service<Files, Interface>()(
           content: string,
         ): Effect.Effect<
           WriteResult,
-          PersistenceError | ConcurrentModificationError,
+          PersistenceError | ConcurrentModificationError | FileMissingError,
           WorkspaceId
         > =>
           retryConcurrency(
@@ -341,11 +339,20 @@ export class Files extends Context.Service<Files, Interface>()(
           content: string,
         ): Effect.Effect<
           DraftSnapshot,
-          PersistenceError | ConcurrentModificationError,
+          PersistenceError | ConcurrentModificationError | FileMissingError,
           WorkspaceId
         > =>
           Effect.gen(function* () {
             const { wsId } = yield* WorkspaceId;
+            // TODO -- allow drafts without versions?
+            const latestEntry = yield* persistence.get<StoredSnapshot>(
+              latestKey(wsId, path),
+            );
+            if (!latestEntry) {
+              return yield* Effect.fail(
+                new FileMissingError({ path, versionId: null }),
+              );
+            }
             const timestamp = yield* Clock.currentTimeMillis;
             const { manifest, extraChunks } = chunkContent(content);
 
@@ -406,7 +413,7 @@ export class Files extends Context.Service<Files, Interface>()(
           path: string,
         ): Effect.Effect<
           WriteResult | null,
-          PersistenceError | ConcurrentModificationError,
+          PersistenceError | ConcurrentModificationError | FileMissingError,
           WorkspaceId
         > =>
           Effect.gen(function* () {
@@ -429,17 +436,19 @@ export class Files extends Context.Service<Files, Interface>()(
           versionId: string,
         ): Effect.Effect<
           boolean,
-          PersistenceError | ConcurrentModificationError,
+          PersistenceError | ConcurrentModificationError | FileMissingError,
           WorkspaceId
         > =>
           Effect.gen(function* () {
             const { wsId } = yield* WorkspaceId;
-            const content = yield* internals.getVersionContent(
-              wsId,
-              path,
-              versionId,
-            );
-            if (content === "") return false;
+            const content = yield* internals
+              .getVersionContent(wsId, path, versionId)
+              .pipe(
+                Effect.catchTag("FileMissingError", () =>
+                  Effect.succeed(undefined),
+                ),
+              );
+            if (content === undefined) return false;
             yield* write(path, content);
             return true;
           });
@@ -448,7 +457,11 @@ export class Files extends Context.Service<Files, Interface>()(
           path: string,
           versionA: string,
           versionB: string,
-        ): Effect.Effect<DiffResult, PersistenceError, WorkspaceId> =>
+        ): Effect.Effect<
+          DiffResult,
+          PersistenceError | FileMissingError,
+          WorkspaceId
+        > =>
           Effect.gen(function* () {
             const { wsId } = yield* WorkspaceId;
             const [contentA, contentB] = yield* Effect.all([

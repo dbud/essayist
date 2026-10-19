@@ -5,6 +5,7 @@
 
 import { Effect } from "effect";
 import { Files } from "#/files/service.ts";
+import type { FileMissingError } from "#/files/types.ts";
 import { Marks } from "#/marks/service.ts";
 import type {
   ConcurrentModificationError,
@@ -55,7 +56,7 @@ An ending has to be earned twice -- once by the argument, and once by the reader
  * new version and marks would duplicate. */
 export function seedDemoFiles(): Effect.Effect<
   void,
-  PersistenceError | ConcurrentModificationError,
+  PersistenceError | ConcurrentModificationError | FileMissingError,
   Files | Marks | WorkspaceId
 > {
   return Effect.gen(function* () {

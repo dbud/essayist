@@ -78,9 +78,13 @@ export class Marks extends Context.Service<Marks, Interface>()(
         WorkspaceId
       > =>
         Effect.gen(function* () {
-          const snapshot = yield* files.read(path, { versionId });
-          // version_id "" marks a missing file or version: not markable.
-          if (snapshot.version_id === "") {
+          const snapshot = yield* files
+            .read(path, versionId)
+            .pipe(
+              Effect.catchTag("FileMissingError", () => Effect.succeed(null)),
+            );
+          if (snapshot === null) {
+            // TODO -- harden failure on missing file
             return { mark_id: "", thread_id: "", marked: false };
           }
           const { content, version_id } = snapshot;

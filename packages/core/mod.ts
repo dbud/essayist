@@ -32,9 +32,9 @@ export {
   type DiffResult,
   DraftSnapshot,
   FileEntry,
+  FileMissingError,
   FileSnapshot,
   FileVersion,
-  type ReadOptions,
   type WriteResult,
 } from "#/files/types.ts";
 export { pluralize } from "#/format.ts";

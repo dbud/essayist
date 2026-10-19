@@ -1,7 +1,7 @@
 import { openKv } from "@deno/kv";
-import { assert, assertEquals } from "@std/assert";
+import { assert, assertEquals, assertInstanceOf } from "@std/assert";
 import { assertObjectMatch } from "@std/assert/object-match";
-import { Effect, Layer } from "effect";
+import { Effect, Layer, Result } from "effect";
 import { test } from "vitest";
 import type { Mark } from "#/marks/types.ts";
 import { kvLayer } from "#/persistence/kv_layer.ts";
@@ -13,8 +13,9 @@ import {
 import { testLayer } from "#/persistence/testing/kv.ts";
 import { WorkspaceId } from "#/workspace/WorkspaceId.ts";
 import { Files } from "./service.ts";
+import { FileMissingError } from "./types.ts";
 
-type E = PersistenceError | ConcurrentModificationError;
+type E = PersistenceError | ConcurrentModificationError | FileMissingError;
 
 const run = <A>(
   program: Effect.Effect<A, E, Files | WorkspaceId>,
@@ -51,73 +52,19 @@ test("Files.read -- full file (latest)", async () => {
       const result = yield* files.read("essay.txt");
       assertEquals(result.content, SAMPLE_ESSAY);
       assertEquals(result.lines, 4);
-      assertEquals(result.start_line, 1);
-      assertEquals(result.end_line, 4);
     }),
   );
 });
 
-test("Files.read -- line range", async () => {
+test("Files.read -- missing file fails", async () => {
   await run(
     Effect.gen(function* () {
       const files = yield* Files;
-      yield* files.write("essay.txt", SAMPLE_ESSAY);
-      const result = yield* files.read("essay.txt", {
-        startLine: 2,
-        endLine: 3,
-      });
-      assertEquals(
-        result.content,
-        SAMPLE_ESSAY.split("\n").slice(1, 3).join("\n"),
-      );
-      assertEquals(result.lines, 4);
-      assertEquals(result.start_line, 2);
-      assertEquals(result.end_line, 3);
-    }),
-  );
-});
-
-test("Files.read -- numbered output", async () => {
-  await run(
-    Effect.gen(function* () {
-      const files = yield* Files;
-      yield* files.write("essay.txt", SAMPLE_ESSAY);
-      const result = yield* files.read("essay.txt", {
-        startLine: 1,
-        endLine: 2,
-        numbered: true,
-      });
-      assertEquals(result.content.split("\n"), [
-        "     1: The quick brown fox jumps over the lazy dog.",
-        "     2: This sentence contains every letter of the alphabet.",
-      ]);
-    }),
-  );
-});
-
-test("Files.read -- missing file returns empty", async () => {
-  await run(
-    Effect.gen(function* () {
-      const files = yield* Files;
-      const result = yield* files.read("missing.txt");
-      assertEquals(result.content, "");
-      assertEquals(result.version_id, "");
-      assertEquals(result.lines, 0);
-    }),
-  );
-});
-
-test("Files.read -- clamps line range", async () => {
-  await run(
-    Effect.gen(function* () {
-      const files = yield* Files;
-      yield* files.write("essay.txt", SAMPLE_ESSAY);
-      const result = yield* files.read("essay.txt", {
-        startLine: -5,
-        endLine: 100,
-      });
-      assertEquals(result.start_line, 1);
-      assertEquals(result.end_line, 4);
+      const outcome = yield* Effect.result(files.read("missing.txt"));
+      if (Result.isSuccess(outcome)) {
+        throw new Error("a missing file read succeeded");
+      }
+      assertInstanceOf(outcome.failure, FileMissingError);
     }),
   );
 });
@@ -130,27 +77,26 @@ test("Files.read -- specific version", async () => {
       yield* files.write("f.txt", "modified");
       const history = yield* files.getHistory("f.txt");
       assertEquals(history.length, 2);
-      const original = yield* files.read("f.txt", {
-        versionId: history[0].version_id,
-      });
+      const original = yield* files.read("f.txt", history[0].version_id);
       assertEquals(original.content, "original");
-      const latest = yield* files.read("f.txt", {
-        versionId: history[1].version_id,
-      });
+      const latest = yield* files.read("f.txt", history[1].version_id);
       assertEquals(latest.content, "modified");
     }),
   );
 });
 
-test("Files.read -- unknown version returns empty miss", async () => {
+test("Files.read -- unknown version fails", async () => {
   await run(
     Effect.gen(function* () {
       const files = yield* Files;
       yield* files.write("f.txt", "original");
-      const miss = yield* files.read("f.txt", { versionId: "no_such_version" });
-      assertEquals(miss.version_id, "");
-      assertEquals(miss.content, "");
-      assertEquals(miss.lines, 0);
+      const outcome = yield* Effect.result(
+        files.read("f.txt", "no_such_version"),
+      );
+      if (Result.isSuccess(outcome)) {
+        throw new Error("an unknown version read succeeded");
+      }
+      assertInstanceOf(outcome.failure, FileMissingError);
     }),
   );
 });
@@ -303,6 +249,7 @@ test("Files.writeDraft -- shrinks cleanly across chunk boundaries", async () => 
   await run(
     Effect.gen(function* () {
       const files = yield* Files;
+      yield* files.write("f.txt", "");
       yield* files.writeDraft("f.txt", "x".repeat(60 * 1024 * 2 + 10));
       yield* files.writeDraft("f.txt", "short");
 

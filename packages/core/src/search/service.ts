@@ -58,9 +58,12 @@ export class Search extends Context.Service<Search, Interface>()(
           for (const file of fileList) {
             if (matches.length >= maxResults) break;
 
-            const latest = yield* files.read(file.path);
-            // Empty files and missing files share the "" sentinel.
-            if (latest.content === "") continue;
+            const latest = yield* files
+              .read(file.path)
+              .pipe(
+                Effect.catchTag("FileMissingError", () => Effect.succeed(null)),
+              );
+            if (latest === null || latest.content === "") continue;
 
             for (const match of matchLines(
               latest.content,

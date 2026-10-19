@@ -24,6 +24,7 @@ import {
   type StoredSnapshot,
 } from "./keys.ts";
 import type { FileSnapshot, FileVersion } from "./types.ts";
+import { FileMissingError } from "./types.ts";
 
 /** Max keys per getMany round trip; KV caps a single getMany at 10. */
 const MAX_GET_MANY = 10;
@@ -82,16 +83,20 @@ export function makeInternals(
       return reassemble(manifest, extraChunks);
     });
 
-  /** The latest version's snapshot, or undefined when the file is absent. */
+  /** The latest version's snapshot; fails when the file is absent. */
   const getFile = (
     wsId: string,
     path: string,
-  ): Effect.Effect<FileSnapshot | undefined, PersistenceError> =>
+  ): Effect.Effect<FileSnapshot, PersistenceError | FileMissingError> =>
     Effect.gen(function* () {
       const entry = yield* persistence.get<StoredSnapshot>(
         latestKey(wsId, path),
       );
-      if (!entry) return undefined;
+      if (!entry) {
+        return yield* Effect.fail(
+          new FileMissingError({ path, versionId: null }),
+        );
+      }
       const { version_id, chunkCount, firstChunk, ...rest } = entry.value;
       const content = yield* reassembleContent(wsId, path, version_id, {
         chunkCount,
@@ -100,28 +105,36 @@ export function makeInternals(
       return { version_id, content, ...rest };
     });
 
+  /** The version row; fails when the version is missing. */
   const getVersion = (
     wsId: string,
     path: string,
     versionId: string,
-  ): Effect.Effect<FileVersion | undefined, PersistenceError> =>
+  ): Effect.Effect<FileVersion, PersistenceError | FileMissingError> =>
     Effect.gen(function* () {
       const entry = yield* persistence.get<FileVersion[]>(
         fileVersionsKey(wsId, path),
       );
-      return entry?.value.find((v) => v.version_id === versionId);
+      const version = entry?.value.find((v) => v.version_id === versionId);
+      if (!version) {
+        return yield* Effect.fail(new FileMissingError({ path, versionId }));
+      }
+      return version;
     });
 
+  /** The content of a version; fails when the manifest is missing. */
   const getVersionContent = (
     wsId: string,
     path: string,
     versionId: string,
-  ): Effect.Effect<string, PersistenceError> =>
+  ): Effect.Effect<string, PersistenceError | FileMissingError> =>
     Effect.gen(function* () {
       const manifestEntry = yield* persistence.get<ContentManifest>(
         contentManifestKey(wsId, path, versionId),
       );
-      if (!manifestEntry) return "";
+      if (!manifestEntry) {
+        return yield* Effect.fail(new FileMissingError({ path, versionId }));
+      }
       return yield* reassembleContent(
         wsId,
         path,
@@ -130,19 +143,21 @@ export function makeInternals(
       );
     });
 
-  /** Snapshot of the given version, or the latest when none is given. */
+  /**
+   * Snapshot of the given version, or the latest when none is given.
+   * Fails with FileMissingError when the file or version is missing.
+   */
   const getSnapshot = (
     wsId: string,
     path: string,
     versionId?: string,
-  ): Effect.Effect<FileSnapshot | undefined, PersistenceError> =>
+  ): Effect.Effect<FileSnapshot, PersistenceError | FileMissingError> =>
     Effect.gen(function* () {
       if (!versionId) return yield* getFile(wsId, path);
       const [version, content] = yield* Effect.all([
         getVersion(wsId, path, versionId),
         getVersionContent(wsId, path, versionId),
       ]);
-      if (!version) return undefined;
       return { ...version, content };
     });
 
@@ -162,7 +177,8 @@ export function makeInternals(
    * Set-op giving targetVersionId's marks plus fromVersionId's marks
    * re-anchored onto newContent; undefined when nothing is pending.
    * fromVersionId marks whose thread_id is already on the target are
-   * skipped.
+   * skipped. The source version's content must exist in storage, or the
+   * migration cannot resolve anchors and the effect fails.
    */
   const migrationOp = (
     wsId: string,
@@ -173,7 +189,7 @@ export function makeInternals(
     newContent: string,
   ): Effect.Effect<
     { op: WriteOp; marks: Mark[] } | undefined,
-    PersistenceError
+    PersistenceError | FileMissingError
   > =>
     Effect.gen(function* () {
       const fromMarks = yield* getMarksList(wsId, path, fromVersionId);

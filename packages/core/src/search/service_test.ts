@@ -2,6 +2,7 @@ import { assertEquals } from "@std/assert";
 import { Effect, Layer } from "effect";
 import { test } from "vitest";
 import { Files } from "#/files/service.ts";
+import type { FileMissingError } from "#/files/types.ts";
 import type {
   ConcurrentModificationError,
   PersistenceError,
@@ -10,7 +11,7 @@ import { testLayer } from "#/persistence/testing/kv.ts";
 import { WorkspaceId } from "#/workspace/WorkspaceId.ts";
 import { Search } from "./service.ts";
 
-type E = PersistenceError | ConcurrentModificationError;
+type E = PersistenceError | ConcurrentModificationError | FileMissingError;
 
 const run = <A>(
   program: Effect.Effect<A, E, Files | Search | WorkspaceId>,
