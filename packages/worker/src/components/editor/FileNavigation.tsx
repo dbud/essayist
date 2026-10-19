@@ -1,13 +1,13 @@
 import { useSignal } from "@preact/signals";
 import { ArrowDownRight, ChevronDown, Plus, Slash } from "lucide-preact";
 import type { TargetedMouseEvent } from "preact";
+import CreateFileDialog from "#/components/editor/CreateFileDialog.tsx";
+import CreateWorkspaceDialog from "#/components/editor/CreateWorkspaceDialog.tsx";
+import FileUploader from "#/components/editor/FileUploader.tsx";
 import Panel from "#/components/ui/Panel.tsx";
 import Swappable from "#/components/ui/Swappable.tsx";
 import WaveBars from "#/components/ui/WaveBars.tsx";
 import { useClickOutside } from "#/hooks/useClickOutside.ts";
-import CreateFileDialog from "#/islands/CreateFileDialog.tsx";
-import CreateWorkspaceDialog from "#/islands/CreateWorkspaceDialog.tsx";
-import FileUploader from "#/islands/FileUploader.tsx";
 import GoogleDocImporter from "#/islands/GoogleDocImporter.tsx";
 import { getFileTree, type TreeNode } from "#/signals/fileTree.ts";
 import { getOpenedFiles } from "#/signals/openedFiles.ts";
