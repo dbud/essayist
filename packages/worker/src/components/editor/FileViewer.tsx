@@ -1,4 +1,7 @@
 import { Caret } from "#/components/Caret.tsx";
+import FileStats from "#/components/editor/FileStats.tsx";
+import FontSelect from "#/components/editor/FontSelect.tsx";
+import VersionPicker from "#/components/editor/VersionPicker.tsx";
 import { MarkBadges } from "#/components/MarkBadges.tsx";
 import { MarkHighlights } from "#/components/MarkHighlights.tsx";
 import Sidenotes from "#/components/Sidenotes.tsx";
@@ -7,10 +10,7 @@ import { useKeydown } from "#/hooks/useKeydown.ts";
 import { useScrollViewport } from "#/hooks/useScrollViewport.ts";
 import Editor from "#/islands/Editor.tsx";
 import EditorToolbar from "#/islands/EditorToolbar.tsx";
-import FileStats from "#/islands/FileStats.tsx";
-import FontSelect from "#/islands/FontSelect.tsx";
 import SidenoteControls from "#/islands/SidenoteControls.tsx";
-import VersionPicker from "#/islands/VersionPicker.tsx";
 import { activeEditor } from "#/signals/activeEditor.ts";
 import { getEditorSelection } from "#/signals/editorSelection.ts";
 import { type FileKey, getFile } from "#/signals/file.ts";
