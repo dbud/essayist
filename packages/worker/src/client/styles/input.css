@@ -53,5 +53,5 @@
 }
 
 @utility form-actions {
-  @apply col-span-2 -mx-px -mb-px flex stack justify-end;
+  @apply col-span-2 flex stack justify-end;
 }

@@ -1,3 +1,11 @@
+/** Inert until the worker's files api carries the upload verbs -- ESS-84.
+ * The original implementation follows in one block comment for the rewire. */
+
+export default function FileUploader() {
+  return null;
+}
+
+/*
 import { effect } from "@preact/signals";
 import { Upload } from "lucide-preact";
 import { getFileTree } from "#/signals/fileTree.ts";
@@ -5,11 +13,9 @@ import { showToast } from "#/signals/toast.ts";
 import { filesFromFileInput, readFilesAsText } from "#/utils/fileUpload.ts";
 import { formatCount } from "#/utils/format.ts";
 
-/**
- * The upload button + hidden file input. On selection, files are read as
- * text (binaries skipped), PUT to the workspace in parallel, and a toast in
- * the bottom-right mirrors the runner's progress signal.
- */
+// The upload button + hidden file input. On selection, files are read as
+// text (binaries skipped), PUT to the workspace in parallel, and a toast in
+// the bottom-right mirrors the runner's progress signal.
 export default function FileUploader() {
   const files = getFileTree();
   if (!files) return null;
@@ -35,7 +41,7 @@ export default function FileUploader() {
           ? `Uploaded ${formatCount(total, "file")}${
               errors.length > 0 ? ` (${errors.length} failed)` : ""
             }`
-          : `Uploading ${done}/${total}…`,
+          : `Uploading ${done}/${total}\u2026`,
         type: complete ? (errors.length > 0 ? "error" : "success") : "info",
         progress: complete ? undefined : { done, total },
       };
@@ -68,3 +74,4 @@ export default function FileUploader() {
     </label>
   );
 }
+*/

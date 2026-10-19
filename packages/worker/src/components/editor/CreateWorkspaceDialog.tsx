@@ -1,7 +1,9 @@
 import { type Signal, useSignal } from "@preact/signals";
 import Dialog from "#/components/ui/Dialog.tsx";
 import WaveBars from "#/components/ui/WaveBars.tsx";
-import { getWorkspaces } from "#/signals/workspace.ts";
+
+// TODO -- create-workspace api -- ESS-84
+// import { getWorkspaces } from "#/signals/workspace.ts";
 
 interface CreateWorkspaceDialogProps {
   open: Signal<boolean>;
@@ -21,7 +23,8 @@ export default function CreateWorkspaceDialog({
     submitting.value = true;
     error.value = null;
     try {
-      await getWorkspaces().create(trimmed);
+      // TODO -- create-project api -- ESS-84
+      // await getWorkspaces().create(trimmed);
       name.value = "";
       open.value = false;
     } catch (err) {

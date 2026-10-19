@@ -8,11 +8,12 @@ import Panel from "#/components/ui/Panel.tsx";
 import Swappable from "#/components/ui/Swappable.tsx";
 import WaveBars from "#/components/ui/WaveBars.tsx";
 import { useClickOutside } from "#/hooks/useClickOutside.ts";
-import GoogleDocImporter from "#/islands/GoogleDocImporter.tsx";
-import { getFileTree, type TreeNode } from "#/signals/fileTree.ts";
-import { getOpenedFiles } from "#/signals/openedFiles.ts";
+import type { TreeNode } from "#/models/fileTree.ts";
+import { useEditorModels } from "#/pages/editor/models.ts";
 import { navigationOpened } from "#/signals/sidebar.ts";
-import { getWorkspaces } from "#/signals/workspace.ts";
+
+// TODO -- Google Docs importer when the picker port lands -- ESS-84
+// import GoogleDocImporter from "#/islands/GoogleDocImporter.tsx";
 
 interface PathPart {
   segment: string;
@@ -58,8 +59,9 @@ function buildFileEntries(
 }
 
 function BreadcrumbsTrigger() {
-  const selectedWorkspace = getWorkspaces().current.value?.name ?? "";
-  const selectedPath = getFileTree()?.selectedPath.value ?? "";
+  const { workspaces, fileTrees } = useEditorModels();
+  const selectedWorkspace = workspaces.current.value?.name ?? "";
+  const selectedPath = fileTrees.current.value?.selectedPath.value ?? "";
 
   const open = (e: TargetedMouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
@@ -69,7 +71,7 @@ function BreadcrumbsTrigger() {
   return (
     <Swappable
       swapKey={
-        getWorkspaces().loading.value
+        workspaces.loading.value
           ? "loading"
           : navigationOpened.value
             ? "open"
@@ -78,13 +80,13 @@ function BreadcrumbsTrigger() {
       class="swap-slide leading-none relative z-dropdown"
     >
       <div class="flex stack stack--row">
-        {getWorkspaces().loading.value ? (
+        {workspaces.loading.value ? (
           <WaveBars class="h-10 text-ink/70 bg-surface" />
         ) : navigationOpened.value ? (
           <div class="cell cell--ink w-48 relative">
             <WaveBars
               fill
-              amplitude={getWorkspaces().loading.value ? 1 : 0}
+              amplitude={workspaces.loading.value ? 1 : 0}
               class="text-surface"
             />
             <ArrowDownRight size={14} />
@@ -114,8 +116,9 @@ export default function FileNavigation() {
 
   const ref = useClickOutside(() => (navigationOpened.value = false));
 
-  const files = getFileTree();
-  const selectedPath = getFileTree()?.selectedPath.value ?? "";
+  const { workspaces, fileTrees } = useEditorModels();
+  const files = fileTrees.current.value;
+  const selectedPath = files?.selectedPath.value ?? "";
   const fileEntries = buildFileEntries(
     files?.tree.value.children ?? [],
     selectedPath,
@@ -133,7 +136,9 @@ export default function FileNavigation() {
         New file&hellip;
       </button>
       <FileUploader />
+      {/* TODO -- Google Docs importer when the picker port lands -- ESS-84
       <GoogleDocImporter />
+      */}
     </>
   );
 
@@ -150,7 +155,7 @@ export default function FileNavigation() {
               type="button"
               class={`group btn ${fileSelected ? "is-selected" : ""}`}
               onClick={() => {
-                getOpenedFiles()?.open(path);
+                files?.select(path);
                 navigationOpened.value = false;
               }}
             >
@@ -183,14 +188,14 @@ export default function FileNavigation() {
     </button>
   );
 
-  const workspacesList = getWorkspaces().list.value.map(({ id, name }) => {
-    const selected = id === getWorkspaces().selectedId.value;
+  const workspacesList = workspaces.list.value.map(({ id, name }) => {
+    const selected = id === workspaces.selectedId.value;
     return (
       <div class="relative flex" key={id}>
         <button
           type="button"
           class={`btn min-w-48 ${selected ? "is-selected" : ""}`}
-          onClick={() => getWorkspaces().select(id)}
+          onClick={() => workspaces.select(id)}
         >
           {name}
           {selected && <ArrowDownRight size={14} class="absolute right-1" />}
@@ -217,7 +222,7 @@ export default function FileNavigation() {
         >
           <div class="flex flex-col stack min-w-48" data-stagger-children>
             {workspacesList}
-            {getWorkspaces().list.value.length > 0 && <div class="separator" />}
+            {workspaces.list.value.length > 0 && <div class="separator" />}
             {createWorkspace}
           </div>
         </Panel>

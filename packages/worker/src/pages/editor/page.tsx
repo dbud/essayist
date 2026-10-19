@@ -1,3 +1,4 @@
+import FileNavigation from "#/components/editor/FileNavigation.tsx";
 import Navigation from "#/components/Navigation.tsx";
 import { useAppState } from "#/state.ts";
 import { useEditorModels } from "./models";
@@ -10,7 +11,9 @@ function EditorPage() {
 
   return (
     <main class="flex flex-1 flex-col min-h-0 @container text-ink stack stack--col">
-      <Navigation user={user} />
+      <Navigation user={user}>
+        <FileNavigation />
+      </Navigation>
       <h1 class="font-serif text-2xl text-ink">editor prototype</h1>
       <p class="mt-2 text-ink/70">
         {user ? (user.name ?? user.email) : "anonymous"}
