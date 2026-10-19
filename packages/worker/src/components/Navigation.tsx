@@ -1,12 +1,12 @@
 import type { User } from "@essayist/core";
 import type { ComponentChildren } from "preact";
+import SettingsMenu from "#/components/SettingsMenu.tsx";
+import ThemeToggle from "#/components/ThemeToggle.tsx";
 import EssayistLogo from "#/components/ui/EssayistLogo.tsx";
-import SettingsMenu from "#/islands/SettingsMenu.tsx";
-import ThemeToggle from "#/islands/ThemeToggle.tsx";
 
 interface NavigationProps {
   user?: User;
-  children: ComponentChildren;
+  children?: ComponentChildren;
 }
 
 export default function Navigation({ user, children }: NavigationProps) {

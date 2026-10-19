@@ -1,11 +1,10 @@
 import { effect, type Signal, signal, useSignal } from "@preact/signals";
-import { IS_BROWSER } from "fresh/runtime";
 import { useEffect, useRef } from "preact/hooks";
 
 const cache = new Map<string, Signal<unknown>>();
 
 function readStored<T>(key: string, fallback: T): T {
-  if (!IS_BROWSER) return fallback;
+  if (import.meta.env.SSR) return fallback;
 
   const raw = localStorage.getItem(key);
   if (raw === null) return fallback;
@@ -23,7 +22,7 @@ export function persistentSignal<T>(key: string, fallback: T): Signal<T> {
 
   const s = signal<T>(readStored(key, fallback));
 
-  if (IS_BROWSER) {
+  if (!import.meta.env.SSR) {
     effect(() => {
       localStorage.setItem(key, JSON.stringify(s.value));
     });
@@ -43,7 +42,7 @@ export function usePersistentSignal<T>(key: string, fallback: T) {
   }, [key]);
 
   useEffect(() => {
-    if (!IS_BROWSER) return;
+    if (import.meta.env.SSR) return;
 
     if (skipNextPersist.current) {
       skipNextPersist.current = false;

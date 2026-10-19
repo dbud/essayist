@@ -1,9 +1,7 @@
 import { computed, effect, signal } from "@preact/signals";
-import { IS_BROWSER } from "fresh/runtime";
 import { persistentSignal } from "#/utils/persistentSignal.ts";
 
 export const viewerFont = persistentSignal<string>("viewerFont", "font-serif");
-export const viewMode = persistentSignal<string>("viewMode", "auto");
 
 export type HighlightStyle = "band" | "wavy";
 export const highlightStyle = persistentSignal<HighlightStyle>(
@@ -15,8 +13,10 @@ export type Theme = "light" | "dark";
 
 const DARK_QUERY = "(prefers-color-scheme: dark)";
 
-export const systemDark = signal(IS_BROWSER && matchMedia(DARK_QUERY).matches);
-if (IS_BROWSER) {
+export const systemDark = signal(
+  !import.meta.env.SSR && matchMedia(DARK_QUERY).matches,
+);
+if (!import.meta.env.SSR) {
   matchMedia(DARK_QUERY).addEventListener("change", (e) => {
     systemDark.value = e.matches;
   });
@@ -35,7 +35,7 @@ export const theme = computed<Theme>(
 
 // data-theme is only present while an override is pinned, so the unpinned
 // state keeps following prefers-color-scheme with no JS involved.
-if (IS_BROWSER) {
+if (!import.meta.env.SSR) {
   effect(() => {
     const root = document.documentElement;
     if (themeOverride.value) {

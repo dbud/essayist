@@ -1,5 +1,4 @@
 import { effect, type Signal } from "@preact/signals";
-import { IS_BROWSER } from "fresh/runtime";
 import { persistentSignal } from "#/utils/persistentSignal.ts";
 
 export interface FontOption {
@@ -30,7 +29,7 @@ function fontAxis<F extends string>(
 ): FontAxis<F> {
   const value = persistentSignal<F>(key, fallback);
 
-  if (IS_BROWSER) {
+  if (!import.meta.env.SSR) {
     effect(() => {
       document.documentElement.dataset[key] = value.value;
     });

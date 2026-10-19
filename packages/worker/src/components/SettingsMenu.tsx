@@ -6,7 +6,6 @@ import {
   PanelRightOpen,
   RotateCcw,
   Settings2,
-  SlidersVertical,
 } from "lucide-preact";
 import Avatar from "#/components/Avatar.tsx";
 import AutoSaveIntervalSelect from "#/components/ui/AutoSaveIntervalSelect.tsx";
@@ -90,12 +89,14 @@ export default function SettingsMenu({ user }: SettingsMenuProps) {
             )}
             {rightSidebarOpened.value ? "Hide sidebar" : "Show sidebar"}
           </DropdownItem>
+          {/* TODO -- control panel item when the admin port lands -- ESS-84
           {user.role === "admin" && (
             <DropdownItem href="/admin" onClick={close}>
               <SlidersVertical size={14} />
               Control panel
             </DropdownItem>
           )}
+          */}
           <DropdownItem
             onClick={() => {
               localStorage.clear();
