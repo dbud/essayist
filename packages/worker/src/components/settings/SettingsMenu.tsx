@@ -8,14 +8,14 @@ import {
   Settings2,
 } from "lucide-preact";
 import Avatar from "#/components/Avatar.tsx";
-import AutoSaveIntervalSelect from "#/components/ui/AutoSaveIntervalSelect.tsx";
+import AutoSaveIntervalSelect from "#/components/settings/AutoSaveIntervalSelect.tsx";
+import FontAxisSelect from "#/components/settings/FontAxisSelect.tsx";
+import MarkStyleSelect from "#/components/settings/MarkStyleSelect.tsx";
 import Dropdown, {
   DropdownItem,
   DropdownMenu,
 } from "#/components/ui/Dropdown.tsx";
-import FontAxisSelect from "#/components/ui/FontAxisSelect.tsx";
 import { CheckboxIcon } from "#/components/ui/icons.tsx";
-import MarkStyleSelect from "#/components/ui/MarkStyleSelect.tsx";
 import Panel from "#/components/ui/Panel.tsx";
 import { sansFont, serifFont } from "#/signals/fonts.ts";
 import { autoSave } from "#/signals/preferences.ts";

@@ -1,8 +1,8 @@
 import type { User } from "@essayist/core";
 import type { ComponentChildren } from "preact";
-import SettingsMenu from "#/components/SettingsMenu.tsx";
+import EssayistLogo from "#/components/logo/EssayistLogo.tsx";
+import SettingsMenu from "#/components/settings/SettingsMenu.tsx";
 import ThemeToggle from "#/components/ThemeToggle.tsx";
-import EssayistLogo from "#/components/ui/EssayistLogo.tsx";
 
 interface NavigationProps {
   user?: User;
