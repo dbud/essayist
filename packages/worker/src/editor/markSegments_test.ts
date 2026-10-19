@@ -1,3 +1,4 @@
+// TODO -- wire a test runner in the worker -- ESS-84
 import { assertEquals } from "@std/assert";
 import { segmentMarks } from "./markSegments.ts";
 

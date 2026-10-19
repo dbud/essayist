@@ -1,3 +1,4 @@
+// TODO -- wire a test runner in the worker -- ESS-84
 import { assertEquals } from "@std/assert";
 import { Window } from "happy-dom";
 import { transformPastedHtml } from "./htmlSanitizer.ts";

@@ -1,3 +1,4 @@
+// TODO -- wire a test runner in the worker -- ESS-84
 import { assertEquals } from "@std/assert";
 import { TEXT_TYPE_TO_FORMAT } from "lexical";
 import { JsonSanitizer } from "./jsonSanitizer.ts";

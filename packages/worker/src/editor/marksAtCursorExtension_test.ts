@@ -1,3 +1,4 @@
+// TODO -- wire a test runner in the worker -- ESS-84
 import { buildEditorFromExtensions } from "@lexical/extension";
 import {
   $createMarkNode,

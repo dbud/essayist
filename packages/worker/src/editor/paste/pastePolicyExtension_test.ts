@@ -1,3 +1,4 @@
+// TODO -- wire a test runner in the worker -- ESS-84
 import { $insertDataTransferForRichText } from "@lexical/clipboard";
 import { buildEditorFromExtensions } from "@lexical/extension";
 import { $convertToMarkdownString, TRANSFORMERS } from "@lexical/markdown";

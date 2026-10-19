@@ -1,3 +1,4 @@
+// TODO -- wire a test runner in the worker -- ESS-84
 import { assertEquals } from "@std/assert";
 import type { MarkNumbers } from "#/signals/sidenotes.ts";
 import { visibleBadgeNumbers } from "./markBadges.ts";
