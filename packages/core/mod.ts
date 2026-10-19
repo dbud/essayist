@@ -30,10 +30,10 @@ export { setMyers } from "#/diff/diff.ts";
 export { Files } from "#/files/service.ts";
 export {
   type DiffResult,
-  type DraftSnapshot,
+  DraftSnapshot,
   FileEntry,
-  type FileSnapshot,
-  type FileVersion,
+  FileSnapshot,
+  FileVersion,
   type ReadOptions,
   type WriteResult,
 } from "#/files/types.ts";

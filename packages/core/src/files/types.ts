@@ -12,6 +12,14 @@ export interface ReadOptions {
   numbered?: boolean;
 }
 
+/** Metadata about a file version (no content). */
+export const FileVersion = Schema.Struct({
+  version_id: Schema.String,
+  timestamp: Schema.Number,
+  lines: Schema.Number,
+});
+export type FileVersion = Schema.Schema.Type<typeof FileVersion>;
+
 /** Result of a write operation. */
 export interface WriteResult extends FileVersion {
   path: string;
@@ -26,9 +34,13 @@ export const FileEntry = Schema.Struct({
 export type FileEntry = Schema.Schema.Type<typeof FileEntry>;
 
 /** A file version snapshot -- version metadata + content. */
-export interface FileSnapshot extends FileVersion {
-  content: string;
-}
+export const FileSnapshot = Schema.Struct({
+  version_id: Schema.String,
+  timestamp: Schema.Number,
+  lines: Schema.Number,
+  content: Schema.String,
+});
+export type FileSnapshot = Schema.Schema.Type<typeof FileSnapshot>;
 
 /** Result of a read operation -- snapshot + line range window. */
 export interface FileReadResult extends FileSnapshot {
@@ -36,18 +48,12 @@ export interface FileReadResult extends FileSnapshot {
   end_line: number;
 }
 
-/** Metadata about a file version (no content). */
-export interface FileVersion {
-  version_id: string;
-  timestamp: number;
-  lines: number;
-}
-
 /** The persisted draft head. */
-export interface DraftSnapshot {
-  content: string;
-  timestamp: number;
-}
+export const DraftSnapshot = Schema.Struct({
+  content: Schema.String,
+  timestamp: Schema.Number,
+});
+export type DraftSnapshot = Schema.Schema.Type<typeof DraftSnapshot>;
 
 /** Result of a diff operation. */
 export interface DiffResult {
