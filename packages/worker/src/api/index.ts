@@ -1,9 +1,17 @@
 // The api tier; endpoint paths are root-relative and the /api prefix is
 // applied once at assembly.
-import { Files, UserState, WorkspaceId, Workspaces } from "@essayist/core";
+import {
+  type AuthStore,
+  Files,
+  UserState,
+  WorkspaceId,
+  Workspaces,
+} from "@essayist/core";
 import { Effect, Layer } from "effect";
 import { HttpApi, HttpApiBuilder, HttpApiError } from "effect/http-api";
+import { importGoogleDocFile } from "#/api/googleDocs.ts";
 import { sessionMiddleware, UserSession } from "#/api/sessionMiddleware.ts";
+import type { GoogleConfig } from "#/env.ts";
 import { fileContentLoader } from "#/models/fileContent.loader.ts";
 import { fileTreeLoader } from "#/models/fileTree.loader.ts";
 import { workspacesLoader } from "#/models/workspaces.loader.ts";
@@ -29,7 +37,9 @@ const workspaceHandlers = HttpApiBuilder.group(
   api,
   "workspaces",
   Effect.fn(function* (handlers) {
-    const stores = yield* Effect.context<Workspaces | UserState | Files>();
+    const stores = yield* Effect.context<
+      Workspaces | UserState | Files | AuthStore | GoogleConfig
+    >();
     const workspacesStore = yield* Workspaces;
     const userState = yield* UserState;
     const files = yield* Files;
@@ -106,6 +116,18 @@ const workspaceHandlers = HttpApiBuilder.group(
               Effect.fail(new HttpApiError.NotFound()),
             ),
           );
+        }),
+      importGoogleDoc: (req) =>
+        Effect.gen(function* () {
+          const { user, sessionId } = yield* UserSession;
+          const { wsId, docId, name } = req.payload;
+          yield* requireAccess(wsId, user.id);
+          return yield* importGoogleDocFile({
+            sessionId,
+            wsId,
+            docId,
+            name,
+          }).pipe(Effect.provide(stores));
         }),
     });
   }),

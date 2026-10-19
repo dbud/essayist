@@ -4,6 +4,7 @@ import type { TargetedMouseEvent } from "preact";
 import CreateFileDialog from "#/components/editor/CreateFileDialog.tsx";
 import CreateWorkspaceDialog from "#/components/editor/CreateWorkspaceDialog.tsx";
 import FileUploader from "#/components/editor/FileUploader.tsx";
+import GoogleDocImporter from "#/components/editor/GoogleDocImporter.tsx";
 import Panel from "#/components/ui/Panel.tsx";
 import Swappable from "#/components/ui/Swappable.tsx";
 import WaveBars from "#/components/ui/WaveBars.tsx";
@@ -11,9 +12,6 @@ import { useClickOutside } from "#/hooks/useClickOutside.ts";
 import type { TreeNode } from "#/models/fileTree.ts";
 import { useEditorModels } from "#/pages/editor/models.ts";
 import { navigationOpened } from "#/signals/sidebar.ts";
-
-// TODO -- Google Docs importer when the picker port lands -- ESS-84
-// import GoogleDocImporter from "#/islands/GoogleDocImporter.tsx";
 
 interface PathPart {
   segment: string;
@@ -136,9 +134,7 @@ export default function FileNavigation() {
         New file&hellip;
       </button>
       <FileUploader />
-      {/* TODO -- Google Docs importer when the picker port lands -- ESS-84
       <GoogleDocImporter />
-      */}
     </>
   );
 

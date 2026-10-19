@@ -3,19 +3,45 @@
 // isolate; vite feeds the same keys via .dev.vars locally.
 
 import type { D1Database } from "@cloudflare/workers-types";
-import { Config, ConfigProvider, Effect, Option } from "effect";
+import { Config, ConfigProvider, Context, Effect, Layer, Option } from "effect";
 
 const config = Config.all({
   LOG_LEVEL: Config.option(Config.String("LOG_LEVEL")),
   GOOGLE_CLIENT_ID: Config.option(Config.String("GOOGLE_CLIENT_ID")),
   GOOGLE_CLIENT_SECRET: Config.option(Config.String("GOOGLE_CLIENT_SECRET")),
+  GOOGLE_API_KEY: Config.option(Config.String("GOOGLE_API_KEY")),
+  GOOGLE_APP_ID: Config.option(Config.String("GOOGLE_APP_ID")),
 });
 
 export interface WorkerEnv {
   readonly logLevel: string | undefined;
   readonly googleClientId: string | undefined;
   readonly googleClientSecret: string | undefined;
+  readonly googleApiKey: string | undefined;
+  readonly googleAppId: string | undefined;
   readonly db: D1Database;
+}
+
+/** Google client configuration as a service, for the api tier's token flows. */
+export interface GoogleConfigProps {
+  readonly clientId: string | undefined;
+  readonly clientSecret: string | undefined;
+  readonly apiKey: string | undefined;
+  readonly appId: string | undefined;
+}
+
+export class GoogleConfig extends Context.Service<
+  GoogleConfig,
+  GoogleConfigProps
+>()("@essayist/worker/env/GoogleConfig") {}
+
+export function googleConfigLayer(e: WorkerEnv): Layer.Layer<GoogleConfig> {
+  return Layer.succeed(GoogleConfig, {
+    clientId: e.googleClientId,
+    clientSecret: e.googleClientSecret,
+    apiKey: e.googleApiKey,
+    appId: e.googleAppId,
+  });
 }
 
 let cached: WorkerEnv | undefined;
@@ -55,6 +81,8 @@ export function env(bindings: unknown): WorkerEnv {
     logLevel: Option.getOrUndefined(snapshot.LOG_LEVEL),
     googleClientId: Option.getOrUndefined(snapshot.GOOGLE_CLIENT_ID),
     googleClientSecret: Option.getOrUndefined(snapshot.GOOGLE_CLIENT_SECRET),
+    googleApiKey: Option.getOrUndefined(snapshot.GOOGLE_API_KEY),
+    googleAppId: Option.getOrUndefined(snapshot.GOOGLE_APP_ID),
     db,
   };
   return cached;

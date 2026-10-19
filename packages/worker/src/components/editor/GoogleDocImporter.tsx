@@ -1,14 +1,12 @@
 import { useSignal } from "@preact/signals";
 import { Download } from "lucide-preact";
 import { useEffect, useRef } from "preact/hooks";
+import type { PickerDoc } from "#/client/googlePicker.ts";
 import WaveBars from "#/components/ui/WaveBars.tsx";
-import { getFileTree } from "#/signals/fileTree.ts";
-import { getOpenedFiles } from "#/signals/openedFiles.ts";
+import { showToast } from "#/models/utils/toast.ts";
+import { useEditorModels } from "#/pages/editor/models.ts";
 import { navigationOpened } from "#/signals/sidebar.ts";
-import { showToast } from "#/signals/toast.ts";
-import { getWorkspaces } from "#/signals/workspace.ts";
 import { formatCount } from "#/utils/format.ts";
-import type { PickerDoc } from "#/utils/googlePicker.ts";
 
 interface PickedMessage {
   type: "picked";
@@ -18,6 +16,7 @@ interface PickedMessage {
 export default function GoogleDocImporter() {
   const importing = useSignal(false);
   const wsIdRef = useRef<string | null>(null);
+  const { workspaces, fileTrees } = useEditorModels();
 
   async function runImport(docs: PickerDoc[]) {
     const wsId = wsIdRef.current;
@@ -41,10 +40,10 @@ export default function GoogleDocImporter() {
         type: "info",
         progress: { done: i, total: docs.length },
       };
-      const res = await fetch(`/api/workspaces/${wsId}/import/google-docs`, {
+      const res = await fetch("/api/workspaces/import/google-docs", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ docId: doc.id, name: doc.name }),
+        body: JSON.stringify({ wsId, docId: doc.id, name: doc.name }),
       });
       if (!res.ok) {
         const body = (await res.json().catch(() => null)) as {
@@ -57,8 +56,8 @@ export default function GoogleDocImporter() {
       }
     }
 
-    await getFileTree()?.refresh();
-    if (firstPath) getOpenedFiles()?.open(firstPath);
+    await fileTrees.current.value?.load();
+    if (firstPath) fileTrees.current.value?.select(firstPath);
     if (docs.length === 1) navigationOpened.value = false;
 
     toast.value = {
@@ -87,7 +86,7 @@ export default function GoogleDocImporter() {
 
   function handleImport() {
     if (importing.value) return;
-    wsIdRef.current = getWorkspaces().selectedId.value;
+    wsIdRef.current = workspaces.selectedId.value;
     globalThis.open("/import/google-docs", "_blank");
   }
 

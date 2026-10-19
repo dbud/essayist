@@ -25,7 +25,9 @@
   "devDependencies": {
     "@cloudflare/vite-plugin": "^1.63.2",
     "@cloudflare/workers-types": "catalog:",
+    "@types/gapi": "^0.0.47",
     "@types/google.accounts": "catalog:",
+    "@types/google.picker": "^0.0.52",
     "@types/node": "catalog:",
     "vite": "catalog:",
     "wrangler": "^4.150.0"

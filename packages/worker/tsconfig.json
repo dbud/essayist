@@ -12,7 +12,7 @@
     "skipLibCheck": true,
     "strict": true,
     "target": "es2024",
-    "types": ["node", "vite/client", "google.accounts"]
+    "types": ["node", "vite/client", "google.accounts", "gapi", "google.picker"]
   },
   "exclude": ["src/client"],
   "include": ["src", "vite.config.ts"]

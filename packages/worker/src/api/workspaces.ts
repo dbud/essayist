@@ -74,6 +74,31 @@ const saveFileDraft = HttpApiEndpoint.put(
   },
 );
 
+const ImportPayload = Schema.Struct({
+  wsId: Schema.NonEmptyString,
+  docId: Schema.NonEmptyString,
+  name: Schema.optional(Schema.String),
+});
+
+const ImportResult = Schema.Struct({
+  path: Schema.String,
+  created: Schema.Boolean,
+});
+
+const importGoogleDoc = HttpApiEndpoint.post(
+  "importGoogleDoc",
+  "/workspaces/import/google-docs",
+  {
+    payload: ImportPayload,
+    success: ImportResult,
+    error: [
+      HttpApiError.Forbidden,
+      HttpApiError.Unauthorized,
+      HttpApiError.ServiceUnavailable,
+    ],
+  },
+);
+
 export const workspaceGroup = HttpApiGroup.make("workspaces")
   .add(getWorkspaces)
   .add(selectWorkspace)
@@ -81,4 +106,5 @@ export const workspaceGroup = HttpApiGroup.make("workspaces")
   .add(selectFile)
   .add(getFileContent)
   .add(saveFileDraft)
+  .add(importGoogleDoc)
   .middleware(SessionMiddleware);

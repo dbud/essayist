@@ -12,10 +12,10 @@ import {
 import { layerKvD1 } from "@essayist/core/kv_d1";
 import { Effect, Layer, LogLevel, ManagedRuntime, References } from "effect";
 import * as Reactivity from "effect/reactivity/Reactivity";
-import type { WorkerEnv } from "#/env.ts";
+import { type GoogleConfig, googleConfigLayer, type WorkerEnv } from "#/env.ts";
 
 type WorkerRuntime = ManagedRuntime.ManagedRuntime<
-  ReviewConfig | Workspaces | AuthStore | UserState | Files,
+  ReviewConfig | Workspaces | AuthStore | UserState | Files | GoogleConfig,
   PersistenceError
 >;
 
@@ -28,7 +28,7 @@ function parseLogLevel(raw: string | undefined) {
 }
 
 type RuntimeLayer = Layer.Layer<
-  ReviewConfig | Workspaces | AuthStore | UserState | Files,
+  ReviewConfig | Workspaces | AuthStore | UserState | Files | GoogleConfig,
   PersistenceError
 >;
 
@@ -54,6 +54,7 @@ function cell(e: WorkerEnv): RuntimeCell {
           Files.layerNoDeps,
           Workspaces.layerNoDeps,
           layerAuthD1(client),
+          googleConfigLayer(e),
           jsonLogLayer,
           Layer.succeed(References.MinimumLogLevel, parseLogLevel(e.logLevel)),
         ).pipe(Layer.provide(storage));

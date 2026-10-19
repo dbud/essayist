@@ -1,33 +1,26 @@
 import { useSignal } from "@preact/signals";
 import { useEffect } from "preact/hooks";
-import { openGooglePicker, type PickerDoc } from "#/utils/googlePicker.ts";
+import { openGooglePicker, type PickerDoc } from "#/client/googlePicker.ts";
+import type { GooglePickerData } from "./data.ts";
 
 type Status = "opening" | "cancelled" | "error";
 
-export default function GoogleDocImporterPage() {
-  const status = useSignal<Status>("opening");
-  const message = useSignal("");
+export default function ImportGoogleDocsPage({
+  data,
+}: {
+  data: GooglePickerData;
+}) {
+  const status = useSignal<Status>(data.error !== null ? "error" : "opening");
+  const message = useSignal(data.error ?? "");
 
   useEffect(() => {
+    if (data.error !== null) return;
+    const config = data.config;
+    if (config === null) return;
+
     let cancelled = false;
 
     (async () => {
-      const configRes = await fetch("/api/integrations/google-picker-config");
-      if (!configRes.ok) {
-        const body = (await configRes.json().catch(() => null)) as {
-          error?: string;
-        } | null;
-        status.value = "error";
-        message.value =
-          body?.error ?? `Picker config failed (${configRes.status})`;
-        return;
-      }
-      const config = (await configRes.json()) as {
-        accessToken: string;
-        developerKey: string;
-        appId?: string;
-      };
-
       let docs: PickerDoc[];
       try {
         docs = await openGooglePicker(config);

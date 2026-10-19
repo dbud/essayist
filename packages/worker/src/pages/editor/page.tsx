@@ -1,5 +1,6 @@
 import FileNavigation from "#/components/editor/FileNavigation.tsx";
 import Navigation from "#/components/Navigation.tsx";
+import { Toaster } from "#/components/Toaster.tsx";
 import { useAppState } from "#/state.ts";
 import { useEditorModels } from "./models";
 
@@ -136,5 +137,10 @@ function EditorPage() {
 }
 
 export default function Page() {
-  return <EditorPage />;
+  return (
+    <>
+      <EditorPage />
+      <Toaster />
+    </>
+  );
 }
