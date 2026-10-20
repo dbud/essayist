@@ -1,27 +1,53 @@
 import type { DraftSnapshot, FileSnapshot } from "@essayist/core";
 import { computed, createModel, signal } from "@preact/signals";
+import type { EditorState } from "lexical";
 import createAsyncState from "#/models/utils/asyncState.ts";
 import { getJson, putJson } from "#/models/utils/http.ts";
+import {
+  editorStateToMarkdown,
+  markdownToEditorState,
+} from "#/utils/markdown.ts";
 import type { FileContentData } from "./fileContent.data.ts";
 
 export type { FileContentData };
 
-// TODO -- ESS-84: autosave and version views when the editor and history land
+export interface FileKey {
+  wsId: string;
+  path: string;
+  versionId?: string;
+}
+
+// TODO -- ESS-84: autosave when the editor lands with settings
 export const FileContentModel = createModel(
   (wsId: string, path: string, data?: FileContentData) => {
     const version = signal<FileSnapshot | null>(data?.version ?? null);
     const draft = signal<DraftSnapshot | null>(data?.draft ?? null);
-    const content = signal<string | null>(
-      data?.draft?.content ?? data?.version.content ?? null,
+
+    const initialContent = computed(
+      () => draft.value?.content ?? version.value?.content ?? null,
+    );
+    const initialState = computed(() =>
+      initialContent.value === null
+        ? null
+        : markdownToEditorState(initialContent.value),
+    );
+    const modifiedState = signal<EditorState | null>(null);
+
+    function setModifiedState(state: EditorState): void {
+      modifiedState.value = state;
+    }
+
+    const state = computed(() => modifiedState.value ?? initialState.value);
+
+    const markdown = computed(() =>
+      state.value ? editorStateToMarkdown(state.value) : "",
     );
 
-    const dirty = computed(() => {
-      const text = content.value;
-      return (
-        text !== null &&
-        text !== (draft.value?.content ?? version.value?.content ?? null)
-      );
-    });
+    const dirty = computed(
+      () =>
+        modifiedState.value !== null &&
+        markdown.value !== (initialContent.value ?? ""),
+    );
 
     const [runLoad, { loading, error }] = createAsyncState();
 
@@ -33,7 +59,6 @@ export const FileContentModel = createModel(
       if (data) {
         version.value = data.version;
         draft.value = data.draft;
-        content.value = data.draft?.content ?? data.version.content;
       }
     }
 
@@ -42,13 +67,12 @@ export const FileContentModel = createModel(
     const [runSave, { loading: saving, error: saveError }] = createAsyncState();
 
     async function save(): Promise<void> {
-      const text = content.value;
-      if (text === null || !dirty.value) return;
+      if (!dirty.value) return;
       const result = await runSave(async () =>
         putJson<DraftSnapshot>("/api/workspaces/files/draft", {
           wsId,
           path,
-          content: text,
+          content: markdown.value,
         }),
       );
       if (result) draft.value = result;
@@ -57,7 +81,11 @@ export const FileContentModel = createModel(
     return {
       version,
       draft,
-      content,
+      initialState,
+      modifiedState,
+      setModifiedState,
+      state,
+      markdown,
       dirty,
       save,
       saving,

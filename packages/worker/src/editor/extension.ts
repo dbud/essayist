@@ -23,7 +23,6 @@ import { CaretExtension } from "./caretExtension.ts";
 import { MarksExtension } from "./markExtension.ts";
 import { MarksAtCursorExtension } from "./marksAtCursorExtension.ts";
 import { PastePolicyExtension } from "./paste/pastePolicyExtension.ts";
-import { SidenoteExtension } from "./sidenoteExtension.ts";
 import { ToolbarStateExtension } from "./toolbarStateExtension.ts";
 
 interface EditorDeps {
@@ -43,10 +42,10 @@ export function createEditorExtension(
     resolved,
     markdown,
     selection,
-    sidenotePositions,
-    markNumbers,
-    markBadges,
-    markRects,
+    // sidenotePositions,
+    // markNumbers,
+    // markBadges,
+    // markRects,
     readOnly,
   }: EditorDeps,
 ) {
@@ -75,13 +74,14 @@ export function createEditorExtension(
         resolved,
         markdown,
       }),
-      configExtension(SidenoteExtension, {
-        sidenotePositions,
-        markNumbers,
-        markBadges,
-        markRects,
-        resolved,
-      }),
+      // TODO -- sidenotes return with the wasm marks port -- ESS-84
+      // configExtension(SidenoteExtension, {
+      //   sidenotePositions,
+      //   markNumbers,
+      //   markBadges,
+      //   markRects,
+      //   resolved,
+      // }),
       configExtension(ToolbarStateExtension, { selection }),
       configExtension(MarksAtCursorExtension, { selection }),
       configExtension(CaretExtension, { selection }),

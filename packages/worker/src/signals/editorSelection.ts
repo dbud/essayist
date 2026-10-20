@@ -1,6 +1,6 @@
 import { createModel, signal } from "@preact/signals";
 import type { BlockType } from "#/editor/blockFormat.ts";
-import type { FileKey } from "#/signals/file.ts";
+import type { FileKey } from "#/models/fileContent.ts";
 
 export interface CaretRect {
   left: number;

@@ -33,7 +33,7 @@ export function Document({
           <script type="module" src={clientScriptUrl(client)} />
         )}
       </head>
-      <body>
+      <body class="h-dvh flex flex-col">
         <AppStateProvider value={state ?? {}}>{children}</AppStateProvider>
       </body>
     </html>

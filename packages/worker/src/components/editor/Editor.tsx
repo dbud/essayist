@@ -1,23 +1,20 @@
-import { LexicalBuilder } from "@lexical/extension";
-import { withDOM } from "@lexical/headless/dom";
-import { $generateHtmlFromNodes } from "@lexical/html";
 import { ContentEditable } from "@lexical/react/LexicalContentEditable";
 import { LexicalExtensionComposer } from "@lexical/react/LexicalExtensionComposer";
 import { MarkdownShortcutPlugin } from "@lexical/react/LexicalMarkdownShortcutPlugin";
 import { OnChangePlugin } from "@lexical/react/LexicalOnChangePlugin";
-import { IS_BROWSER } from "fresh/runtime";
 import type { EditorState } from "lexical";
 import { useMemo } from "preact/hooks";
 import ActiveEditorRef from "#/components/editor/ActiveEditorRef.tsx";
 import { createEditorExtension } from "#/editor/extension.ts";
 import { MARK_RANGE_TAG } from "#/editor/markExtension.ts";
+import type { FileContent, FileKey } from "#/models/fileContent.ts";
 import { getEditorSelection } from "#/signals/editorSelection.ts";
-import { type FileKey, getFile } from "#/signals/file.ts";
 import { getMarks } from "#/signals/marks.ts";
 import { viewerFont } from "#/signals/preferences.ts";
 import { getSidenotes } from "#/signals/sidenotes.ts";
 
 interface EditorProps extends FileKey {
+  file: FileContent;
   initialState: EditorState;
   onChange?: (state: EditorState) => void;
   className?: string;
@@ -25,6 +22,7 @@ interface EditorProps extends FileKey {
 
 export default function Editor({
   wsId,
+  file,
   path,
   versionId,
   initialState,
@@ -38,8 +36,9 @@ export default function Editor({
     markBadges,
     markRects,
   } = getSidenotes(wsId, path, versionId);
-  const { markdown, readOnly } = getFile(wsId, path, versionId);
+  const markdown = file.markdown;
   const selection = getEditorSelection(wsId, path, versionId);
+  const readOnly = versionId !== undefined;
 
   const extension = useMemo(
     () => ({
@@ -51,7 +50,7 @@ export default function Editor({
         markNumbers,
         markBadges,
         markRects,
-        readOnly: readOnly.value,
+        readOnly,
       }),
       $initialEditorState: initialState,
     }),
@@ -67,10 +66,9 @@ export default function Editor({
     ],
   );
 
-  // Server-only: rebuild the editor headlessly, commit the initial state
-  // with marks applied, and export its HTML into the SSR payload. Lexical
-  // renders DOM only via reconciliation against a root element, so the
-  // exported HTML is removed client-side once the real editor mounts.
+  // TODO -- the SSR prerender path needs the headless story (ESS-31);
+  // extensions are client only, so the SSR markup is an empty editable.
+  /*
   const prerenderedHtml = useMemo(() => {
     if (IS_BROWSER) return undefined;
     const editor = LexicalBuilder.fromExtensions([extension]).buildEditor();
@@ -80,6 +78,7 @@ export default function Editor({
     editor.dispose();
     return html;
   }, [extension]);
+  */
 
   const contentEditable = useMemo(
     () => (
@@ -89,13 +88,10 @@ export default function Editor({
         spellcheck="false"
         autocorrect="off"
         autocapitalize="off"
-        {...(prerenderedHtml === undefined
-          ? {}
-          : { dangerouslySetInnerHTML: { __html: prerenderedHtml } })}
         class={`prose whitespace-pre-wrap editor-input outline-none max-w-none ${className}`}
         placeholder={
           <span class="absolute left-4 top-16 @[64rem]:left-16 text-ink/40 pointer-events-none prose pl-1">
-            {readOnly.value ? "No content" : "Start writing..."}
+            {readOnly ? "No content" : "Start writing..."}
           </span>
         }
       />

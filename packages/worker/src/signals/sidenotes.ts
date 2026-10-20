@@ -2,8 +2,8 @@ import type { Mark } from "@essayist/core";
 import { computed, createModel, signal } from "@preact/signals";
 import { sortBy } from "@std/collections";
 import type { NodeKey } from "lexical";
+import type { FileKey } from "#/models/fileContent.ts";
 import { getEditorSelection } from "#/signals/editorSelection.ts";
-import type { FileKey } from "#/signals/file.ts";
 import { getMarks } from "#/signals/marks.ts";
 
 // thread_id -> min MarkNode.offsetTop (relative to the editor column).

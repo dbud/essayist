@@ -1,48 +1,47 @@
 import { useRef } from "preact/hooks";
+import { Caret } from "#/components/Caret.tsx";
+import Editor from "#/components/editor/Editor.tsx";
 import FontSelect from "#/components/editor/FontSelect.tsx";
 import Overlay from "#/components/ui/Overlay.tsx";
 import { useKeydown } from "#/hooks/useKeydown.ts";
 import { useEditorModels } from "#/pages/editor/models.ts";
+import { getEditorSelection } from "#/signals/editorSelection.ts";
 import { navigationOpened } from "#/signals/sidebar.ts";
 
-// TODO -- version picker, file stats, marks and the lexical editor land
-// with the version-history and marks models -- ESS-84
+// TODO -- version picker, file stats, marks and sidenotes land with the
+// version-history and wasm marks models -- ESS-84
 /*
-import { Caret } from "#/components/Caret.tsx";
 import { MarkBadges } from "#/components/MarkBadges.tsx";
 import { MarkHighlights } from "#/components/MarkHighlights.tsx";
 import Sidenotes from "#/components/Sidenotes.tsx";
 import { useScrollViewport } from "#/hooks/useScrollViewport.ts";
-import Editor from "#/islands/Editor.tsx";
-import EditorToolbar from "#/islands/EditorToolbar.tsx";
 import FileStats from "#/components/editor/FileStats.tsx";
 import SidenoteControls from "#/islands/SidenoteControls.tsx";
 import VersionPicker from "#/components/editor/VersionPicker.tsx";
-import { activeEditor } from "#/signals/activeEditor.ts";
-import { getEditorSelection } from "#/signals/editorSelection.ts";
-import { type FileKey, getFile } from "#/signals/file.ts";
-import { getFileTree } from "#/signals/fileTree.ts";
-import { getMarks } from "#/signals/marks.ts";
-import { getSidenotes } from "#/signals/sidenotes.ts";
-import { getWorkspaces } from "#/signals/workspace.ts";
 */
+// TODO -- marks and sidenotes hook onto the wasm marks port -- ESS-84;
+// the ref becomes useScrollViewport's
+// import { getMarks } from "#/signals/marks.ts";
+// import { getSidenotes } from "#/signals/sidenotes.ts";
 
 export default function FileViewer() {
-  const { fileTrees } = useEditorModels();
+  const { workspaces, fileTrees } = useEditorModels();
+  const wsId = workspaces.selectedId.value;
   const path = fileTrees.current.value?.selectedPath.value;
-  if (!path) return null;
+  if (!wsId || !path) return null;
   // TODO -- version views join via tree.selectedVersionId -- ESS-84
-  return <FileViewerBody key={path} path={path} />;
+  return <FileViewerBody key={path} wsId={wsId} path={path} />;
 }
 
-function FileViewerBody({ path }: { path: string }) {
+function FileViewerBody({ wsId, path }: { wsId: string; path: string }) {
   const { fileContents } = useEditorModels();
   const file = fileContents.current.value;
-  // TODO -- marks, sidenotes and editor selection hook up with the marks
-  // port; the ref becomes useScrollViewport's -- ESS-84
+  // TODO -- marks and sidenotes hook onto the wasm marks port -- ESS-84;
+  // the ref becomes useScrollViewport's, and getSidenotes/getMarks join
+  // selection alongside.
   // const { resolved } = getMarks(wsId, path, versionId);
   // const sidenotes = getSidenotes(wsId, path, versionId);
-  // const selection = getEditorSelection(wsId, path, versionId);
+  const selection = getEditorSelection(wsId, path);
   // const scrollRef = useScrollViewport(
   //   sidenotes.scrollTop,
   //   sidenotes.viewportHeight,
@@ -67,7 +66,7 @@ function FileViewerBody({ path }: { path: string }) {
     );
   }
 
-  const editorLoading = file.content.value === null;
+  const editorLoading = file.state.value === null;
   // const withSidePane = resolved.value.length > 0;
 
   return (
@@ -106,21 +105,9 @@ function FileViewerBody({ path }: { path: string }) {
       >
         <div class="isolate content-layout bg-paper min-h-full">
           <div class="relative min-w-0 isolate">
-            {/* TODO -- lexical editor (ESS-31); caret, highlights, badges
-            and sidenotes land with the marks models -- ESS-84
-            {state.value && (
-              // Lexical SSR is pending (ESS-31); the editor hydrates from
-              // the SSR-seeded cache instead of rendering its content.
-              <Editor
-                wsId={wsId}
-                path={path}
-                versionId={versionId}
-                initialState={state.value}
-                onChange={setModifiedState}
-                className={`content-main pt-16 pb-32`}
-              />
-            )}
-            <Caret rect={selection.caretRect} />
+            {/* isolate: stacking context for MarkHighlights z-index */}
+            {/* TODO -- highlights, badges and sidenotes land with the wasm
+            marks models -- ESS-84; <Caret/> sits live below
             <MarkHighlights
               rects={sidenotes.markRects.value}
               activeIds={selection.markIds.value}
@@ -128,47 +115,23 @@ function FileViewerBody({ path }: { path: string }) {
             />
             <MarkBadges badges={sidenotes.markBadges.value} />
             */}
-            {file.content.value !== null ? (
-              <div class="content-main pt-16 pb-32">
-                <textarea
-                  class="h-48 w-full border border-black/10 p-5 font-mono text-xs"
-                  value={file.content.value}
-                  onInput={(e) => {
-                    file.content.value = e.currentTarget.value;
-                  }}
-                ></textarea>
-                <div class="mt-2 flex items-center">
-                  <button
-                    class="btn btn--ghost"
-                    type="button"
-                    disabled={file.saving.value || !file.dirty.value}
-                    onClick={() => void file.save()}
-                  >
-                    save draft
-                  </button>
-                  {file.dirty.value ? (
-                    <span class="text-ink/60">unsaved</span>
-                  ) : null}
-                  {file.saving.value ? (
-                    <span class="text-ink/60">saving</span>
-                  ) : null}
-                </div>
-                <pre class="mt-10 whitespace-pre-wrap text-xs leading-snug text-ink/70">
-                  {JSON.stringify(
-                    {
-                      file: path,
-                      version: file.version.value?.version_id ?? null,
-                      draft: file.draft.value?.timestamp ?? null,
-                      dirty: file.dirty.value,
-                    },
-                    null,
-                    2,
-                  )}
-                </pre>
-              </div>
+            {file.state.value ? (
+              <>
+                <Editor
+                  wsId={wsId}
+                  file={file}
+                  path={path}
+                  initialState={file.state.value}
+                  onChange={file.setModifiedState}
+                  className={`content-main pt-16 pb-32`}
+                />
+                <Caret rect={selection.caretRect} />
+              </>
             ) : (
               <div class="content-main pt-16 pb-32">
-                <p class="text-ink/70">{editorLoading ? "loading" : "empty"}</p>
+                <p class="text-ink/70">
+                  {file.loading.value ? "loading" : "empty"}
+                </p>
               </div>
             )}
           </div>
