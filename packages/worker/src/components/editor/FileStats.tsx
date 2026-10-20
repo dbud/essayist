@@ -1,19 +1,21 @@
+import { useModel } from "@preact/signals";
 import { ChevronDown } from "lucide-preact";
 import Dropdown, {
   DropdownItem,
   DropdownMenu,
 } from "#/components/ui/Dropdown.tsx";
 import { CheckboxIcon } from "#/components/ui/icons.tsx";
-import type { FileKey } from "#/signals/file.ts";
-import { getFile } from "#/signals/file.ts";
-import { getFileStats } from "#/signals/fileStats.ts";
+import type { FileContent } from "#/models/fileContent.ts";
+import { FileStatsModel } from "#/models/fileStats.ts";
 import {
   type FileStatSection,
   fileStatsSections,
 } from "#/signals/preferences.ts";
 import { formatCount } from "#/utils/format.ts";
 
-type FileStatsProps = FileKey;
+interface FileStatsProps {
+  file: FileContent;
+}
 
 const STAT_OPTIONS: { value: FileStatSection; label: string }[] = [
   { value: "words", label: "Words" },
@@ -21,12 +23,11 @@ const STAT_OPTIONS: { value: FileStatSection; label: string }[] = [
   { value: "charsWithSpaces", label: "Characters (with spaces)" },
 ];
 
-export default function FileStats({ wsId, path, versionId }: FileStatsProps) {
-  const { state, loading } = getFile(wsId, path, versionId);
-  const stats = getFileStats(wsId, path, versionId);
+export default function FileStats({ file }: FileStatsProps) {
+  const stats = useModel(() => new FileStatsModel(file));
   const enabled = fileStatsSections.value;
 
-  if (loading.value || state.value === null) return null;
+  if (file.state.value === null) return null;
 
   function statValue(section: FileStatSection): string {
     switch (section) {

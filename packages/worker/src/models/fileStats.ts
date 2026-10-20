@@ -1,6 +1,5 @@
 import { computed, createModel } from "@preact/signals";
-import type { FileKey } from "#/signals/file.ts";
-import { getFile } from "#/signals/file.ts";
+import type { FileContent } from "#/models/fileContent.ts";
 import {
   editorStateCharCount,
   editorStateCharCountWithSpaces,
@@ -8,10 +7,7 @@ import {
 } from "#/utils/textStats.ts";
 
 // Per-file stats derived from the editor state of the file.
-export const FileStatsModel = createModel((key: FileKey) => {
-  const { wsId, path, versionId } = key;
-  const file = getFile(wsId, path, versionId);
-
+export const FileStatsModel = createModel((file: FileContent) => {
   const wordCount = computed(() => {
     const state = file.state.value;
     return state ? editorStateWordCount(state) : 0;
@@ -29,12 +25,3 @@ export const FileStatsModel = createModel((key: FileKey) => {
 
   return { wordCount, charCount, charCountWithSpaces };
 });
-
-const cache = new Map<string, InstanceType<typeof FileStatsModel>>();
-
-export function getFileStats(wsId: string, path: string, versionId?: string) {
-  return cache.getOrInsertComputed(
-    `${wsId}:${path}:${versionId ?? ""}`,
-    () => new FileStatsModel({ wsId, path, versionId }),
-  );
-}
