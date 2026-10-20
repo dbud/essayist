@@ -1,4 +1,3 @@
-// TODO -- wire a test runner in the worker -- ESS-84
 import { buildEditorFromExtensions } from "@lexical/extension";
 import { $isMarkNode, MarkNode } from "@lexical/mark";
 import { $convertToMarkdownString, TRANSFORMERS } from "@lexical/markdown";
@@ -17,6 +16,7 @@ import {
   type LexicalEditor,
   type LexicalNode,
 } from "lexical";
+import { test } from "vitest";
 import { $applyMarks } from "./markExtension.ts";
 import { $restoreSelection, $saveSelection } from "./selection.ts";
 import { $collectTextNodeSpans, type TextNodeSpan } from "./textNodeSpans.ts";
@@ -141,7 +141,7 @@ function applyAndCollect(
   return collectMarkFragments(editor);
 }
 
-Deno.test("$applyMarks -- non-overlapping marks wrap separately", () => {
+test("$applyMarks -- non-overlapping marks wrap separately", () => {
   const editor = createEditor();
   setParagraph(editor, "AAAAABBBBBCCCCC");
   // "AAAAA" and "CCCCC", gap in the middle.
@@ -155,7 +155,7 @@ Deno.test("$applyMarks -- non-overlapping marks wrap separately", () => {
   ]);
 });
 
-Deno.test("$applyMarks -- partial overlap produces a shared multi-id fragment", () => {
+test("$applyMarks -- partial overlap produces a shared multi-id fragment", () => {
   const editor = createEditor();
   setParagraph(editor, "AAAAABBBBBCCCCC");
   // a: [0,8) "AAAAABBB", b: [5,10) "BBBBB" -> overlap on "BBB" [5,8).
@@ -170,7 +170,7 @@ Deno.test("$applyMarks -- partial overlap produces a shared multi-id fragment", 
   ]);
 });
 
-Deno.test("$applyMarks -- fully nested mark splits the outer into three fragments", () => {
+test("$applyMarks -- fully nested mark splits the outer into three fragments", () => {
   const editor = createEditor();
   setParagraph(editor, "AAAAABBBBBCCCCC");
   // outer: [0,10) "AAAAABBBBB", inner: [5,10) "BBBBB" (fully inside outer).
@@ -186,7 +186,7 @@ Deno.test("$applyMarks -- fully nested mark splits the outer into three fragment
   assertEquals(fragments.map((f) => f.text).join(""), "AAAAABBBBB");
 });
 
-Deno.test("$applyMarks -- identical spans share one fragment with both ids", () => {
+test("$applyMarks -- identical spans share one fragment with both ids", () => {
   const editor = createEditor();
   setParagraph(editor, "AAAAABBBBBCCCCC");
   const fragments = applyAndCollect(editor, [
@@ -196,7 +196,7 @@ Deno.test("$applyMarks -- identical spans share one fragment with both ids", () 
   assertEquals(fragments, [{ ids: ["a", "b"], text: "AAAAA" }]);
 });
 
-Deno.test("$applyMarks -- multi-paragraph mark yields one fragment per paragraph", () => {
+test("$applyMarks -- multi-paragraph mark yields one fragment per paragraph", () => {
   const editor = createEditor();
   setParagraphs(editor, "Para one.", "Para two.");
   // exported markdown: "Para one.\n\nPara two." -> "Para one." at 0 (len 9),
@@ -210,7 +210,7 @@ Deno.test("$applyMarks -- multi-paragraph mark yields one fragment per paragraph
   ]);
 });
 
-Deno.test("$applyMarks -- overlap across a paragraph boundary", () => {
+test("$applyMarks -- overlap across a paragraph boundary", () => {
   const editor = createEditor();
   setParagraphs(editor, "Para one.", "Para two.");
   // m1 spans both paragraphs [0,20); m2 sits in the first paragraph [0,5).
@@ -227,7 +227,7 @@ Deno.test("$applyMarks -- overlap across a paragraph boundary", () => {
   ]);
 });
 
-Deno.test("$applyMarks -- re-applying unwraps previous marks before wrapping", () => {
+test("$applyMarks -- re-applying unwraps previous marks before wrapping", () => {
   const editor = createEditor();
   setParagraph(editor, "AAAAABBBBBCCCCC");
   applyAndCollect(editor, [{ offset: 0, length: 5, thread_id: "a" }]);
@@ -238,7 +238,7 @@ Deno.test("$applyMarks -- re-applying unwraps previous marks before wrapping", (
   assertEquals(fragments, [{ ids: ["c"], text: "CCCCC" }]);
 });
 
-Deno.test("$restoreSelection -- collapsed caret keeps its toggled format across a re-mark", () => {
+test("$restoreSelection -- collapsed caret keeps its toggled format across a re-mark", () => {
   const editor = createEditor();
   setParagraph(editor, "AAAAABBBBBCCCCC");
 

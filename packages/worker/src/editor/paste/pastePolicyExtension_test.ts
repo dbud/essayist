@@ -1,10 +1,10 @@
-// TODO -- wire a test runner in the worker -- ESS-84
 import { $insertDataTransferForRichText } from "@lexical/clipboard";
 import { buildEditorFromExtensions } from "@lexical/extension";
 import { $convertToMarkdownString, TRANSFORMERS } from "@lexical/markdown";
 import { RichTextExtension } from "@lexical/rich-text";
 import { assertEquals } from "@std/assert";
 import { $getRoot, defineExtension, type LexicalEditor } from "lexical";
+import { test } from "vitest";
 import { PastePolicyExtension } from "./pastePolicyExtension.ts";
 
 const testExtension = defineExtension({
@@ -34,7 +34,7 @@ function fakeDataTransfer(payload: Record<string, string>): DataTransfer {
   } as unknown as DataTransfer;
 }
 
-Deno.test("json paste middleware sanitizes and inserts", () => {
+test("json paste middleware sanitizes and inserts", () => {
   const editor = createEditor();
   const payload = JSON.stringify({
     namespace: "paste-policy-test",
@@ -118,7 +118,7 @@ Deno.test("json paste middleware sanitizes and inserts", () => {
   assertEquals(markdownOf(editor), "**hi**\n\nsub\n\n[**go**](http://x.com)\n");
 });
 
-Deno.test("json payload from a foreign namespace is not claimed", () => {
+test("json payload from a foreign namespace is not claimed", () => {
   const editor = createEditor();
   const payload = JSON.stringify({
     namespace: "some-other-editor",

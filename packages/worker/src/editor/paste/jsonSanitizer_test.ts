@@ -1,6 +1,6 @@
-// TODO -- wire a test runner in the worker -- ESS-84
 import { assertEquals } from "@std/assert";
 import { TEXT_TYPE_TO_FORMAT } from "lexical";
+import { test } from "vitest";
 import { JsonSanitizer } from "./jsonSanitizer.ts";
 import { defaultPastePolicy, type PastePolicy } from "./policy.ts";
 
@@ -64,7 +64,7 @@ function link(url: string, children: Node[]): Node {
   };
 }
 
-Deno.test("unwraps marks and masks disallowed formats", () => {
+test("unwraps marks and masks disallowed formats", () => {
   const result = sanitizer.sanitize([
     {
       ...paragraph([]),
@@ -81,24 +81,24 @@ Deno.test("unwraps marks and masks disallowed formats", () => {
   assertEquals(result, [paragraph([text("hi", bold)])]);
 });
 
-Deno.test("clears inline styles", () => {
+test("clears inline styles", () => {
   const result = sanitizer.sanitize([
     { ...text("plain", bold), style: "color:red" },
   ]);
   assertEquals(result, [text("plain", bold)]);
 });
 
-Deno.test("retypes h4 to a paragraph and drops the tag", () => {
+test("retypes h4 to a paragraph and drops the tag", () => {
   const result = sanitizer.sanitize([heading("h4", [text("sub")])]);
   assertEquals(result, [paragraph([text("sub")])]);
 });
 
-Deno.test("keeps allowed heading tags", () => {
+test("keeps allowed heading tags", () => {
   const result = sanitizer.sanitize([heading("h2", [text("top")])]);
   assertEquals(result, [heading("h2", [text("top")])]);
 });
 
-Deno.test("rewrites links to markdown link text", () => {
+test("rewrites links to markdown link text", () => {
   const result = sanitizer.sanitize([link("http://x.com", [text("go", bold)])]);
   assertEquals(result, [
     { type: "text", text: "[" },
@@ -107,19 +107,19 @@ Deno.test("rewrites links to markdown link text", () => {
   ]);
 });
 
-Deno.test("unwraps links without a url", () => {
+test("unwraps links without a url", () => {
   const result = sanitizer.sanitize([
     { type: "link", version: 1, children: [text("go")] },
   ]);
   assertEquals(result, [text("go")]);
 });
 
-Deno.test("writes bare urls for links without a label", () => {
+test("writes bare urls for links without a label", () => {
   const result = sanitizer.sanitize([link("http://x.com", [])]);
   assertEquals(result, [{ type: "text", text: "http://x.com" }]);
 });
 
-Deno.test("rewrites autolinks like links", () => {
+test("rewrites autolinks like links", () => {
   const result = sanitizer.sanitize([
     {
       type: "autolink",
@@ -140,7 +140,7 @@ Deno.test("rewrites autolinks like links", () => {
   ]);
 });
 
-Deno.test("drops horizontal rules", () => {
+test("drops horizontal rules", () => {
   const result = sanitizer.sanitize([
     { type: "horizontalrule" },
     text("after"),
@@ -148,19 +148,19 @@ Deno.test("drops horizontal rules", () => {
   assertEquals(result, [text("after")]);
 });
 
-Deno.test("passes through linebreaks and tabs", () => {
+test("passes through linebreaks and tabs", () => {
   const result = sanitizer.sanitize([{ type: "linebreak" }, { type: "tab" }]);
   assertEquals(result, [{ type: "linebreak" }, { type: "tab" }]);
 });
 
-Deno.test("hoists unknown containers and drops unknown leaves", () => {
+test("hoists unknown containers and drops unknown leaves", () => {
   const result = sanitizer.sanitize([
     { type: "table", children: [{ type: "img", someField: 1 }, text("cell")] },
   ]);
   assertEquals(result, [text("cell")]);
 });
 
-Deno.test("follows the policy", () => {
+test("follows the policy", () => {
   const policy: PastePolicy = {
     allowedBlocks: new Set(["paragraph"]),
     allowedHeadingTags: new Set(["h1"]),

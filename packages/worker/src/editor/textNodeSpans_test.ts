@@ -1,8 +1,8 @@
-// TODO -- wire a test runner in the worker -- ESS-84
 import { buildEditorFromExtensions } from "@lexical/extension";
 import { $convertFromMarkdownString, TRANSFORMERS } from "@lexical/markdown";
 import { assert, assertEquals } from "@std/assert";
 import { $getRoot, type EditorState, type LexicalEditor } from "lexical";
+import { test } from "vitest";
 import { bootstrapEditorExtension } from "#/editor/extension.ts";
 import {
   $collectTextNodeSpans,
@@ -41,7 +41,7 @@ function buildTextNodeSpans(
   return state.read(() => $collectTextNodeSpans(content));
 }
 
-Deno.test("buildTextNodeSpans -- simple paragraph", () => {
+test("buildTextNodeSpans -- simple paragraph", () => {
   const md = "Hello world";
   const spans = buildTextNodeSpans(importMarkdown(md), md);
 
@@ -54,7 +54,7 @@ Deno.test("buildTextNodeSpans -- simple paragraph", () => {
   assertEquals(range?.focus.offset, 11);
 });
 
-Deno.test("buildTextNodeSpans -- heading syntax chars snap to nearest text", () => {
+test("buildTextNodeSpans -- heading syntax chars snap to nearest text", () => {
   const md = "# My Heading";
   const spans = buildTextNodeSpans(importMarkdown(md), md);
   const heading = spans.find((s) => s.text === "My Heading");
@@ -81,7 +81,7 @@ Deno.test("buildTextNodeSpans -- heading syntax chars snap to nearest text", () 
   assertEquals(pos2.offset, 0);
 });
 
-Deno.test("buildTextNodeSpans -- bold in paragraph produces 3 text nodes", () => {
+test("buildTextNodeSpans -- bold in paragraph produces 3 text nodes", () => {
   const md = "This is **bold** text";
   const spans = buildTextNodeSpans(importMarkdown(md), md);
 
@@ -89,7 +89,7 @@ Deno.test("buildTextNodeSpans -- bold in paragraph produces 3 text nodes", () =>
   assert(spans.find((s) => s.text === "bold"));
 });
 
-Deno.test("buildTextNodeSpans -- two paragraphs", () => {
+test("buildTextNodeSpans -- two paragraphs", () => {
   const md = "First.\n\nSecond.";
   const spans = buildTextNodeSpans(importMarkdown(md), md);
 
@@ -98,7 +98,7 @@ Deno.test("buildTextNodeSpans -- two paragraphs", () => {
   assertEquals(spans[1].text, "Second.");
 });
 
-Deno.test("buildTextNodeSpans -- mixed content all spans valid and sorted", () => {
+test("buildTextNodeSpans -- mixed content all spans valid and sorted", () => {
   const md = `# Title
 
 This is a paragraph with **bold** text.
@@ -129,7 +129,7 @@ code here
   }
 });
 
-Deno.test("findRange -- focus is exclusive (one past last char)", () => {
+test("findRange -- focus is exclusive (one past last char)", () => {
   const md = "ABCDEF";
   const spans = buildTextNodeSpans(importMarkdown(md), md);
 
@@ -141,7 +141,7 @@ Deno.test("findRange -- focus is exclusive (one past last char)", () => {
   assertEquals(range.focus.offset, 5);
 });
 
-Deno.test("findPosition -- past end snaps to caret after last char", () => {
+test("findPosition -- past end snaps to caret after last char", () => {
   const md = "AB";
   const spans = buildTextNodeSpans(importMarkdown(md), md);
 
@@ -160,7 +160,7 @@ Deno.test("findPosition -- past end snaps to caret after last char", () => {
   assertEquals(pos99.offset, 2);
 });
 
-Deno.test("findPosition -- gap between spans snaps to end of preceding span", () => {
+test("findPosition -- gap between spans snaps to end of preceding span", () => {
   const md = "Hello **world**";
   const spans = buildTextNodeSpans(importMarkdown(md), md);
   // Two spans: "Hello " at 0, "world" at 8 (after "**")
@@ -172,7 +172,7 @@ Deno.test("findPosition -- gap between spans snaps to end of preceding span", ()
   assertEquals(pos.offset, 6);
 });
 
-Deno.test("findPosition -- gap between spans snaps forward", () => {
+test("findPosition -- gap between spans snaps forward", () => {
   const md = "Hello **world**";
   const spans = buildTextNodeSpans(importMarkdown(md), md);
   // Two spans: "Hello " at 0, "world" at 8 (after "**")
@@ -189,7 +189,7 @@ Deno.test("findPosition -- gap between spans snaps forward", () => {
 // the node would be dropped from the span list. These cover the pre-escape
 // path and the code-context (verbatim) path.
 
-Deno.test("buildTextNodeSpans -- literal escaped asterisk in prose is found", () => {
+test("buildTextNodeSpans -- literal escaped asterisk in prose is found", () => {
   // md "a\*b" imports as a text node "a*b" (literal *); export re-escapes to
   // "a\*b". A bare indexOf("a*b") would fail and drop the node.
   const md = "a\\*b";
@@ -199,7 +199,7 @@ Deno.test("buildTextNodeSpans -- literal escaped asterisk in prose is found", ()
   assertEquals(spans[0].offset, 0);
 });
 
-Deno.test("buildTextNodeSpans -- multi-char prose with * is not dropped", () => {
+test("buildTextNodeSpans -- multi-char prose with * is not dropped", () => {
   // md "before \* after" imports as a text node "before * after" (literal *);
   // export re-escapes to "before \* after". A bare indexOf("before * after")
   // would fail and drop the node.
@@ -224,7 +224,7 @@ Deno.test("buildTextNodeSpans -- multi-char prose with * is not dropped", () => 
 // walking the escape, not by plain subtraction. These cover the reported bug
 // (content offset 4 in "a\*b" mapping to editor offset 4 instead of 3).
 
-Deno.test("findPosition -- escape span: content offset maps to editor offset via `X` walk", () => {
+test("findPosition -- escape span: content offset maps to editor offset via `X` walk", () => {
   // content "a\*b" (length 4) -- editor text node "a*b" (length 3).
   // content offsets: a=0, \=1, *=2, b=3.
   const md = "a\\*b";
@@ -245,7 +245,7 @@ Deno.test("findPosition -- escape span: content offset maps to editor offset via
   assertEquals(afterB.offset, 3);
 });
 
-Deno.test("findRange -- mark covering content `a*` wraps editor `a*` not `a*b`", () => {
+test("findRange -- mark covering content `a*` wraps editor `a*` not `a*b`", () => {
   // The reported bug: a mark at content [0,3) ("a\*") wrapped editor [0,3)
   // ("a*b", the whole node) because the `\` escape was ignored. The wrap must
   // cover editor [0,2) ("a*").
@@ -257,7 +257,7 @@ Deno.test("findRange -- mark covering content `a*` wraps editor `a*` not `a*b`",
   assertEquals(range.focus.offset, 2);
 });
 
-Deno.test("findPosition -- escape at start of node", () => {
+test("findPosition -- escape at start of node", () => {
   // content "x**y**\*": the literal `*` node has text "*" and its content form
   // is "\*", so span.offset = 6 (the `\`, where the escaped form begins in
   // the export). Content offsets 6 (the `\`) and 7 (the `*`) both map to
@@ -276,7 +276,7 @@ Deno.test("findPosition -- escape at start of node", () => {
   assertEquals(pos.offset, 0);
 });
 
-Deno.test("positionToOffset -- escape span round-trips caret through content space", () => {
+test("positionToOffset -- escape span round-trips caret through content space", () => {
   // For every editor offset in "a*b", positionToOffset -> findPosition must
   // return the same editor offset. The `\*` escape means content offsets are
   // denser than editor offsets, so the inverse must skip the `\`.
@@ -293,7 +293,7 @@ Deno.test("positionToOffset -- escape span round-trips caret through content spa
   }
 });
 
-Deno.test("positionToOffset -- caret before `*` maps to content offset of `*`, not ``", () => {
+test("positionToOffset -- caret before `*` maps to content offset of `*`, not ``", () => {
   // Editor offset 1 (before `*`) is content offset 2 (at `*`), not 1 (at `\`).
   // The `\` is invisible; the caret belongs to the visible char it escapes.
   const md = "a\\*b";
@@ -303,7 +303,7 @@ Deno.test("positionToOffset -- caret before `*` maps to content offset of `*`, n
   assertEquals(content, 2);
 });
 
-Deno.test("buildTextNodeSpans -- literal * after bold matches the \\* form, not the bold marker", () => {
+test("buildTextNodeSpans -- literal * after bold matches the \\* form, not the bold marker", () => {
   // content "x**y**\*" -- the literal "*" (\*) begins at offset 6; the bold
   // close markers are at 4-5. A bare indexOf("*", 4) would land on the bold
   // close (4); the pre-escaped needle "\*" lands on the literal at 6.
@@ -317,7 +317,7 @@ Deno.test("buildTextNodeSpans -- literal * after bold matches the \\* form, not 
   assertEquals(spans[2].offset, 6);
 });
 
-Deno.test("buildTextNodeSpans -- inline code with * stays verbatim (raw)", () => {
+test("buildTextNodeSpans -- inline code with * stays verbatim (raw)", () => {
   // Code is emitted raw (no escaping): content is "`a*b`".
   const md = "`a*b`";
   const spans = buildTextNodeSpans(importMarkdown(md), md);
@@ -326,14 +326,14 @@ Deno.test("buildTextNodeSpans -- inline code with * stays verbatim (raw)", () =>
   assertEquals(spans[0].offset, 1);
 });
 
-Deno.test("buildTextNodeSpans -- block code with * stays verbatim (raw)", () => {
+test("buildTextNodeSpans -- block code with * stays verbatim (raw)", () => {
   const md = "```\na*b\n```";
   const spans = buildTextNodeSpans(importMarkdown(md), md);
   const span = spans.find((s) => s.text === "a*b");
   assert(span, "code-highlight text node should be found, not dropped");
 });
 
-Deno.test("buildTextNodeSpans -- literal backslash in prose", () => {
+test("buildTextNodeSpans -- literal backslash in prose", () => {
   // md "a\\b" (markdown "a\\b") imports as "a\b"; export re-escapes to "a\\b"
   // (a literal backslash is `\\` in the content form). The node is tracked and
   // the `\\` escape is walked so offsets round-trip.
@@ -345,7 +345,7 @@ Deno.test("buildTextNodeSpans -- literal backslash in prose", () => {
   assertEquals(spans[0].offset, 0);
 });
 
-Deno.test("buildTextNodeSpans -- literal underscore / backtick / tilde in prose", () => {
+test("buildTextNodeSpans -- literal underscore / backtick / tilde in prose", () => {
   for (const ch of ["_", "`", "~"]) {
     const md = `a${ch}b`.replace(/[_`~]/g, (c) => `\\${c}`);
     // e.g. "a\_b", "a\`b", "a\~b"

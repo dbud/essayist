@@ -1,4 +1,3 @@
-// TODO -- wire a test runner in the worker -- ESS-84
 import { CodeNode } from "@lexical/code";
 import { buildEditorFromExtensions } from "@lexical/extension";
 import { ListExtension } from "@lexical/list";
@@ -16,6 +15,7 @@ import {
   defineExtension,
   type LexicalEditor,
 } from "lexical";
+import { test } from "vitest";
 import { $getBlockType, $setBlocksType } from "./blockFormat.ts";
 
 const testExtension = defineExtension({
@@ -79,42 +79,42 @@ function blockTypeOf(editor: LexicalEditor): string {
   return result;
 }
 
-Deno.test("$getBlockType -- paragraph", () => {
+test("$getBlockType -- paragraph", () => {
   const editor = createEditor();
   importMarkdown(editor, "hello world\n");
   caretAtStart(editor);
   assertEquals(blockTypeOf(editor), "normal");
 });
 
-Deno.test("$getBlockType -- heading", () => {
+test("$getBlockType -- heading", () => {
   const editor = createEditor();
   importMarkdown(editor, "# Title\n");
   caretAtStart(editor);
   assertEquals(blockTypeOf(editor), "h1");
 });
 
-Deno.test("$getBlockType -- quote", () => {
+test("$getBlockType -- quote", () => {
   const editor = createEditor();
   importMarkdown(editor, "> quoted\n");
   caretAtStart(editor);
   assertEquals(blockTypeOf(editor), "quote");
 });
 
-Deno.test("$getBlockType -- code block", () => {
+test("$getBlockType -- code block", () => {
   const editor = createEditor();
   importMarkdown(editor, "```\nlet x = 1\n```\n");
   caretAtStart(editor);
   assertEquals(blockTypeOf(editor), "code");
 });
 
-Deno.test("$getBlockType -- bullet list", () => {
+test("$getBlockType -- bullet list", () => {
   const editor = createEditor();
   importMarkdown(editor, "- one\n- two\n");
   caretAtStart(editor);
   assertEquals(blockTypeOf(editor), "bullet");
 });
 
-Deno.test("$setBlocksType -- paragraph to heading", () => {
+test("$setBlocksType -- paragraph to heading", () => {
   const editor = createEditor();
   importMarkdown(editor, "hello world\n");
   selectFirstBlockText(editor);
@@ -133,7 +133,7 @@ Deno.test("$setBlocksType -- paragraph to heading", () => {
   assertEquals(tag, "h1");
 });
 
-Deno.test("$setBlocksType -- heading to paragraph (toggle)", () => {
+test("$setBlocksType -- heading to paragraph (toggle)", () => {
   const editor = createEditor();
   importMarkdown(editor, "# Title\n");
   selectFirstBlockText(editor);
@@ -147,7 +147,7 @@ Deno.test("$setBlocksType -- heading to paragraph (toggle)", () => {
   assert(isParagraph);
 });
 
-Deno.test("$setBlocksType -- paragraph to quote round-trips to markdown", () => {
+test("$setBlocksType -- paragraph to quote round-trips to markdown", () => {
   const editor = createEditor();
   importMarkdown(editor, "a line\n");
   selectFirstBlockText(editor);

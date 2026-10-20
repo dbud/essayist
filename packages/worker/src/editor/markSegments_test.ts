@@ -1,22 +1,22 @@
-// TODO -- wire a test runner in the worker -- ESS-84
 import { assertEquals } from "@std/assert";
+import { test } from "vitest";
 import { segmentMarks } from "./markSegments.ts";
 
-Deno.test("segmentMarks -- empty input", () => {
+test("segmentMarks -- empty input", () => {
   assertEquals(segmentMarks([]), []);
 });
 
-Deno.test("segmentMarks -- zero-length spans are dropped", () => {
+test("segmentMarks -- zero-length spans are dropped", () => {
   assertEquals(segmentMarks([{ offset: 5, length: 0, thread_id: "z" }]), []);
 });
 
-Deno.test("segmentMarks -- single mark yields one segment", () => {
+test("segmentMarks -- single mark yields one segment", () => {
   assertEquals(segmentMarks([{ offset: 3, length: 4, thread_id: "a" }]), [
     { offset: 3, length: 4, ids: ["a"] },
   ]);
 });
 
-Deno.test("segmentMarks -- two non-overlapping marks keep a gap", () => {
+test("segmentMarks -- two non-overlapping marks keep a gap", () => {
   const segs = segmentMarks([
     { offset: 0, length: 3, thread_id: "a" },
     { offset: 5, length: 2, thread_id: "b" },
@@ -27,7 +27,7 @@ Deno.test("segmentMarks -- two non-overlapping marks keep a gap", () => {
   ]);
 });
 
-Deno.test("segmentMarks -- adjacent marks (touching, no overlap) stay separate", () => {
+test("segmentMarks -- adjacent marks (touching, no overlap) stay separate", () => {
   const segs = segmentMarks([
     { offset: 0, length: 3, thread_id: "a" },
     { offset: 3, length: 2, thread_id: "b" },
@@ -38,7 +38,7 @@ Deno.test("segmentMarks -- adjacent marks (touching, no overlap) stay separate",
   ]);
 });
 
-Deno.test("segmentMarks -- partial overlap splits into three segments", () => {
+test("segmentMarks -- partial overlap splits into three segments", () => {
   // a: [0,5), b: [3,8) -> overlap [3,5)
   const segs = segmentMarks([
     { offset: 0, length: 5, thread_id: "a" },
@@ -51,7 +51,7 @@ Deno.test("segmentMarks -- partial overlap splits into three segments", () => {
   ]);
 });
 
-Deno.test("segmentMarks -- fully nested mark: outer first in id order", () => {
+test("segmentMarks -- fully nested mark: outer first in id order", () => {
   // outer: [0,10), inner: [3,6)
   const segs = segmentMarks([
     { offset: 0, length: 10, thread_id: "outer" },
@@ -64,7 +64,7 @@ Deno.test("segmentMarks -- fully nested mark: outer first in id order", () => {
   ]);
 });
 
-Deno.test("segmentMarks -- outer listed first regardless of input order", () => {
+test("segmentMarks -- outer listed first regardless of input order", () => {
   const segs = segmentMarks([
     { offset: 3, length: 3, thread_id: "inner" },
     { offset: 0, length: 10, thread_id: "outer" },
@@ -72,7 +72,7 @@ Deno.test("segmentMarks -- outer listed first regardless of input order", () => 
   assertEquals(segs[1].ids, ["outer", "inner"]);
 });
 
-Deno.test("segmentMarks -- two inner marks side by side under one outer", () => {
+test("segmentMarks -- two inner marks side by side under one outer", () => {
   // outer: [0,12), innerA: [2,5), innerB: [7,10)
   const segs = segmentMarks([
     { offset: 0, length: 12, thread_id: "outer" },
@@ -88,7 +88,7 @@ Deno.test("segmentMarks -- two inner marks side by side under one outer", () => 
   ]);
 });
 
-Deno.test("segmentMarks -- three-way overlap merges all three ids", () => {
+test("segmentMarks -- three-way overlap merges all three ids", () => {
   // a: [0,8), b: [3,10), c: [5,7)
   const segs = segmentMarks([
     { offset: 0, length: 8, thread_id: "a" },
@@ -104,7 +104,7 @@ Deno.test("segmentMarks -- three-way overlap merges all three ids", () => {
   ]);
 });
 
-Deno.test("segmentMarks -- identical spans dedupe ids", () => {
+test("segmentMarks -- identical spans dedupe ids", () => {
   // Two marks over the exact same range.
   const segs = segmentMarks([
     { offset: 0, length: 4, thread_id: "a" },

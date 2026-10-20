@@ -1,4 +1,3 @@
-// TODO -- wire a test runner in the worker -- ESS-84
 import { buildEditorFromExtensions } from "@lexical/extension";
 import {
   $createMarkNode,
@@ -18,6 +17,7 @@ import {
   type LexicalEditor,
   type LexicalNode,
 } from "lexical";
+import { test } from "vitest";
 import {
   type EditorSelection,
   EditorSelectionModel,
@@ -97,7 +97,7 @@ function caretIn(
   );
 }
 
-Deno.test("marksAtCursor -- contains the mark id when caret is inside it", () => {
+test("marksAtCursor -- contains the mark id when caret is inside it", () => {
   selection.markIds.value = new Set();
   const editor = createEditor();
   buildMarkedEditor(editor, "t1");
@@ -106,7 +106,7 @@ Deno.test("marksAtCursor -- contains the mark id when caret is inside it", () =>
   assert(selection.markIds.value.has("t1"));
 });
 
-Deno.test("marksAtCursor -- empty when caret is outside any mark", () => {
+test("marksAtCursor -- empty when caret is outside any mark", () => {
   selection.markIds.value = new Set();
   selection.innerMarkId.value = null;
   const editor = createEditor();
@@ -117,7 +117,7 @@ Deno.test("marksAtCursor -- empty when caret is outside any mark", () => {
   assertEquals(selection.innerMarkId.value, null);
 });
 
-Deno.test("marksAtCursor -- innerMarkId is the sole id for a single-id mark", () => {
+test("marksAtCursor -- innerMarkId is the sole id for a single-id mark", () => {
   selection.innerMarkId.value = null;
   const editor = createEditor();
   buildMarkedEditor(editor, "t3");
@@ -126,7 +126,7 @@ Deno.test("marksAtCursor -- innerMarkId is the sole id for a single-id mark", ()
   assertEquals(selection.innerMarkId.value, "t3");
 });
 
-Deno.test("marksAtCursor -- innerMarkId is the last (innermost) id on the segment", () => {
+test("marksAtCursor -- innerMarkId is the last (innermost) id on the segment", () => {
   selection.innerMarkId.value = null;
   const editor = createEditor();
   // ids are stored outer-first, so "inner" is the innermost mark.
@@ -139,7 +139,7 @@ Deno.test("marksAtCursor -- innerMarkId is the last (innermost) id on the segmen
   assert(selection.markIds.value.has("inner"));
 });
 
-Deno.test("marksAtCursor -- innerMarkId is null when caret is outside any mark", () => {
+test("marksAtCursor -- innerMarkId is null when caret is outside any mark", () => {
   selection.innerMarkId.value = "stale";
   const editor = createEditor();
   buildMarkedEditor(editor, "t4");
