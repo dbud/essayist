@@ -1,6 +1,7 @@
 import { useRef } from "preact/hooks";
 import { Caret } from "#/components/Caret.tsx";
 import Editor from "#/components/editor/Editor.tsx";
+import EditorToolbar from "#/components/editor/EditorToolbar.tsx";
 import FontSelect from "#/components/editor/FontSelect.tsx";
 import Overlay from "#/components/ui/Overlay.tsx";
 import { useKeydown } from "#/hooks/useKeydown.ts";
@@ -77,14 +78,9 @@ function FileViewerBody({ wsId, path }: { wsId: string; path: string }) {
           <div class="content-main min-w-0">
             <div class="flex w-fit stack stack--row">
               <FontSelect />
-              {/* TODO -- editor toolbar (ESS-31), file stats, version
-              picker -- ESS-84
-              <EditorToolbar
-                wsId={wsId}
-                path={path}
-                versionId={versionId}
-                disabled={readOnly.value}
-              />
+              <EditorToolbar wsId={wsId} path={path} />
+              {/* TODO -- file stats and version picker wait for the stats
+              and version-history models -- ESS-84
               <FileStats wsId={wsId} path={path} versionId={versionId} />
               <VersionPicker wsId={wsId} path={path} versionId={versionId} />
               */}
