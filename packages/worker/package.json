@@ -47,6 +47,7 @@
     "@types/node": "catalog:",
     "happy-dom": "^20.14.5",
     "vite": "catalog:",
+    "vitest": "catalog:",
     "wrangler": "^4.150.0"
   },
   "imports": {
@@ -63,6 +64,7 @@
     "fmt": "biome check --write .",
     "lint": "biome lint .",
     "preview": "vite preview",
+    "test": "vitest run",
     "typegen": "wrangler types"
   },
   "type": "module",

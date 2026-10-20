@@ -14,7 +14,7 @@
     "check": "pnpm -C packages/core check && pnpm -C packages/worker check && pnpm -C packages/kvctl check",
     "fmt": "pnpm -C packages/core fmt && pnpm -C packages/worker fmt && pnpm -C packages/kvctl fmt",
     "lint": "pnpm -C packages/core lint && pnpm -C packages/worker lint && pnpm -C packages/kvctl lint",
-    "test": "pnpm -C packages/core test"
+    "test": "pnpm -C packages/core test && pnpm -C packages/worker test"
   },
   "version": "0.0.0"
 }
