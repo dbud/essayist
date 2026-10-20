@@ -2,12 +2,12 @@
   "exports": "./mod.ts",
   "imports": {
     "@/": "./src/",
-    "@effect/ai-openrouter": "npm:@effect/ai-openrouter@^4.0.3",
-    "effect": "npm:effect@^4.0.3",
-    "effect/ai/AiError": "npm:effect@^4.0.3/ai/AiError",
-    "effect/http/FetchHttpClient": "npm:effect@^4.0.3/http/FetchHttpClient",
-    "effect/http/HttpClientResponse": "npm:effect@^4.0.3/http/HttpClientResponse",
-    "effect/testing": "npm:effect@^4.0.3/testing"
+    "@effect/ai-openrouter": "npm:@effect/ai-openrouter@^4.0.5",
+    "effect": "npm:effect@^4.0.5",
+    "effect/ai/AiError": "npm:effect@^4.0.5/ai/AiError",
+    "effect/http/FetchHttpClient": "npm:effect@^4.0.5/http/FetchHttpClient",
+    "effect/http/HttpClientResponse": "npm:effect@^4.0.5/http/HttpClientResponse",
+    "effect/testing": "npm:effect@^4.0.5/testing"
   },
   "lint": {
     "rules": {
