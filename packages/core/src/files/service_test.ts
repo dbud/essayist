@@ -145,6 +145,19 @@ test("Files.list -- empty", async () => {
 
 // history
 
+test("Files.getHistory -- missing file fails", async () => {
+  await run(
+    Effect.gen(function* () {
+      const files = yield* Files;
+      const outcome = yield* Effect.result(files.getHistory("missing.txt"));
+      if (Result.isSuccess(outcome)) {
+        throw new Error("a missing file history succeeded");
+      }
+      assertInstanceOf(outcome.failure, FileMissingError);
+    }),
+  );
+});
+
 test("Files.getHistory -- includes all versions including latest", async () => {
   await run(
     Effect.gen(function* () {

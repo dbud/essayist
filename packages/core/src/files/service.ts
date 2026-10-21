@@ -75,7 +75,11 @@ export interface Interface {
   /** Version history of a file, oldest first. */
   getHistory(
     path: string,
-  ): Effect.Effect<FileVersion[], PersistenceError, WorkspaceId>;
+  ): Effect.Effect<
+    FileVersion[],
+    PersistenceError | FileMissingError,
+    WorkspaceId
+  >;
   /**
    * Write the mutable draft head. No version, no marks migration. A draft
    * sits on top of an existing version, so a missing file fails with
@@ -325,13 +329,23 @@ export class Files extends Context.Service<Files, Interface>()(
 
         const getHistory = (
           path: string,
-        ): Effect.Effect<FileVersion[], PersistenceError, WorkspaceId> =>
+        ): Effect.Effect<
+          FileVersion[],
+          PersistenceError | FileMissingError,
+          WorkspaceId
+        > =>
           Effect.gen(function* () {
             const { wsId } = yield* WorkspaceId;
             const entry = yield* persistence.get<FileVersion[]>(
               fileVersionsKey(wsId, path),
             );
-            return sortBy(entry?.value ?? [], (version) => version.timestamp);
+            const versions = entry?.value;
+            if (!versions) {
+              return yield* Effect.fail(
+                new FileMissingError({ path, versionId: null }),
+              );
+            }
+            return sortBy(versions, (version) => version.timestamp);
           });
 
         const writeDraft = (
