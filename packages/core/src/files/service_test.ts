@@ -75,7 +75,7 @@ test("Files.read -- specific version", async () => {
       const files = yield* Files;
       yield* files.write("f.txt", "original");
       yield* files.write("f.txt", "modified");
-      const history = yield* files.getHistory("f.txt");
+      const history = yield* files.getVersions("f.txt");
       assertEquals(history.length, 2);
       const original = yield* files.read("f.txt", history[0].version_id);
       assertEquals(original.content, "original");
@@ -145,11 +145,11 @@ test("Files.list -- empty", async () => {
 
 // history
 
-test("Files.getHistory -- missing file fails", async () => {
+test("Files.getVersions -- missing file fails", async () => {
   await run(
     Effect.gen(function* () {
       const files = yield* Files;
-      const outcome = yield* Effect.result(files.getHistory("missing.txt"));
+      const outcome = yield* Effect.result(files.getVersions("missing.txt"));
       if (Result.isSuccess(outcome)) {
         throw new Error("a missing file history succeeded");
       }
@@ -158,19 +158,19 @@ test("Files.getHistory -- missing file fails", async () => {
   );
 });
 
-test("Files.getHistory -- includes all versions including latest", async () => {
+test("Files.getVersions -- includes all versions including latest", async () => {
   await run(
     Effect.gen(function* () {
       const files = yield* Files;
       yield* files.write("f.txt", "v1");
       yield* files.write("f.txt", "v2");
       yield* files.write("f.txt", "v3");
-      assertEquals((yield* files.getHistory("f.txt")).length, 3);
+      assertEquals((yield* files.getVersions("f.txt")).length, 3);
     }),
   );
 });
 
-test("Files.getHistory -- versions are sorted by timestamp", async () => {
+test("Files.getVersions -- versions are sorted by timestamp", async () => {
   await run(
     Effect.gen(function* () {
       const files = yield* Files;
@@ -178,7 +178,7 @@ test("Files.getHistory -- versions are sorted by timestamp", async () => {
       yield* files.write("f.txt", "v2");
       yield* files.write("f.txt", "v3");
       yield* files.write("f.txt", "v4");
-      const history = yield* files.getHistory("f.txt");
+      const history = yield* files.getVersions("f.txt");
       assertEquals(history.length, 4);
       for (let i = 1; i < history.length; i++) {
         assertEquals(history[i].timestamp >= history[i - 1].timestamp, true);
@@ -187,13 +187,13 @@ test("Files.getHistory -- versions are sorted by timestamp", async () => {
   );
 });
 
-test("Files.getHistory -- includes line count per version", async () => {
+test("Files.getVersions -- includes line count per version", async () => {
   await run(
     Effect.gen(function* () {
       const files = yield* Files;
       yield* files.write("f.txt", "one line");
       yield* files.write("f.txt", "line one\nline two\nline three");
-      const history = yield* files.getHistory("f.txt");
+      const history = yield* files.getVersions("f.txt");
       assertEquals(history[0].lines, 1);
       assertEquals(history[1].lines, 3);
     }),
@@ -212,7 +212,7 @@ test("Files.writeDraft -- stores and reads the draft without creating a version"
       const draft = yield* files.readDraft("f.txt");
       assertEquals(draft?.content, "draft text");
       assertEquals(typeof draft?.timestamp, "number");
-      assertEquals((yield* files.getHistory("f.txt")).length, 1);
+      assertEquals((yield* files.getVersions("f.txt")).length, 1);
       assertEquals((yield* files.read("f.txt")).content, "checkpoint");
     }),
   );
@@ -229,7 +229,7 @@ test("Files.promoteDraft -- creates a version from the draft and clears it", asy
       assertEquals(result?.created, false);
       assertEquals((yield* files.read("f.txt")).content, "draft text");
       assertEquals(yield* files.readDraft("f.txt"), null);
-      assertEquals((yield* files.getHistory("f.txt")).length, 2);
+      assertEquals((yield* files.getVersions("f.txt")).length, 2);
     }),
   );
 });
@@ -278,7 +278,7 @@ test("Files.revert -- restores previous version as new version", async () => {
       const files = yield* Files;
       yield* files.write("f.txt", "original");
       yield* files.write("f.txt", "modified");
-      const history = yield* files.getHistory("f.txt");
+      const history = yield* files.getVersions("f.txt");
       const originalVersionId = history[0].version_id;
       assertEquals(yield* files.revert("f.txt", originalVersionId), true);
       assertEquals((yield* files.read("f.txt")).content, "original");
@@ -292,9 +292,9 @@ test("Files.revert -- creates a new version when reverting", async () => {
       const files = yield* Files;
       yield* files.write("f.txt", "v1");
       yield* files.write("f.txt", "v2");
-      const history = yield* files.getHistory("f.txt");
+      const history = yield* files.getVersions("f.txt");
       yield* files.revert("f.txt", history[0].version_id);
-      assertEquals((yield* files.getHistory("f.txt")).length, 3);
+      assertEquals((yield* files.getVersions("f.txt")).length, 3);
     }),
   );
 });
@@ -317,7 +317,7 @@ test("Files.diff -- between versions", async () => {
       const files = yield* Files;
       yield* files.write("f.txt", "line1\nline2\nline3");
       yield* files.write("f.txt", "line1\nmodified\nline3");
-      const history = yield* files.getHistory("f.txt");
+      const history = yield* files.getVersions("f.txt");
       const { diff } = yield* files.diff(
         "f.txt",
         history[0].version_id,
@@ -335,10 +335,10 @@ test("Files.diff -- identical content produces empty diff", async () => {
       const files = yield* Files;
       yield* files.write("f.txt", "same");
       yield* files.write("f.txt", "different");
-      const history = yield* files.getHistory("f.txt");
+      const history = yield* files.getVersions("f.txt");
       if (history.length >= 2) {
         yield* files.write("f.txt", "same");
-        const newHistory = yield* files.getHistory("f.txt");
+        const newHistory = yield* files.getVersions("f.txt");
         const { diff } = yield* files.diff(
           "f.txt",
           newHistory[0].version_id,
@@ -488,7 +488,7 @@ test("Files -- marks are isolated per workspace scope", async () => {
 
       const a = yield* Effect.provideService(
         Effect.gen(function* () {
-          const versions = yield* files.getHistory("f.txt");
+          const versions = yield* files.getVersions("f.txt");
           return yield* files.getMarks(
             "f.txt",
             versions[versions.length - 1].version_id,
@@ -499,7 +499,7 @@ test("Files -- marks are isolated per workspace scope", async () => {
       );
       const b = yield* Effect.provideService(
         Effect.gen(function* () {
-          const versions = yield* files.getHistory("f.txt");
+          const versions = yield* files.getVersions("f.txt");
           return yield* files.getMarks(
             "f.txt",
             versions[versions.length - 1].version_id,

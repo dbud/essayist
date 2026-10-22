@@ -114,7 +114,7 @@ export function runReviewPass(
   const { path } = options;
   return Effect.gen(function* () {
     const files = yield* Files;
-    const versionId = yield* files.getHistory(path).pipe(
+    const versionId = yield* files.getVersions(path).pipe(
       Effect.catchTag("FileMissingError", () =>
         Effect.fail(new ReviewFileMissingError({ path })),
       ),

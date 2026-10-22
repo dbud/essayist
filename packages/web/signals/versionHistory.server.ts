@@ -16,7 +16,7 @@ export async function versionHistoryLoader({
     versions: await runScoped(
       runtime,
       wsId,
-    )(Files.use((files) => files.getHistory(path))),
+    )(Files.use((files) => files.getVersions(path))),
   };
 }
 

@@ -72,8 +72,11 @@ export interface Interface {
   list(
     prefix?: string,
   ): Effect.Effect<FileEntry[], PersistenceError, WorkspaceId>;
-  /** Version history of a file, oldest first. */
-  getHistory(
+  /**
+   * The versions of a file, oldest first. A missing file fails with
+   * FileMissingError.
+   */
+  getVersions(
     path: string,
   ): Effect.Effect<
     FileVersion[],
@@ -327,7 +330,7 @@ export class Files extends Context.Service<Files, Interface>()(
             return result;
           });
 
-        const getHistory = (
+        const getVersions = (
           path: string,
         ): Effect.Effect<
           FileVersion[],
@@ -491,7 +494,7 @@ export class Files extends Context.Service<Files, Interface>()(
           read,
           write,
           list,
-          getHistory,
+          getVersions,
           writeDraft,
           readDraft,
           promoteDraft,
