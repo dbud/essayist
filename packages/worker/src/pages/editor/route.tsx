@@ -4,6 +4,7 @@ import { env } from "#/env.ts";
 import { categoriesLoader } from "#/models/categories.loader.ts";
 import { fileContentsLoader } from "#/models/fileContents.loader.ts";
 import { fileTreesLoader } from "#/models/fileTrees.loader.ts";
+import { fileVersionsByPathLoader } from "#/models/fileVersionsByPath.loader.ts";
 import { workspacesLoader } from "#/models/workspaces.loader.ts";
 import { runtime } from "#/runtime.ts";
 import createModels, { EditorModelsProvider } from "./models";
@@ -24,11 +25,16 @@ export default new Hono().get("/", async (c) => {
       fileTrees.wsId,
       fileTrees.tree?.selectedPath ?? null,
     );
+    const fileVersions = yield* fileVersionsByPathLoader(
+      fileTrees.wsId,
+      fileTrees.tree?.selectedPath ?? null,
+    );
     const categories = yield* categoriesLoader();
     return {
       workspaces,
       fileTrees,
       fileContents,
+      fileVersions,
       categories,
     };
   });

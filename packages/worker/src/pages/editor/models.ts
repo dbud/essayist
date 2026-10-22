@@ -2,6 +2,7 @@ import { computed } from "@preact/signals";
 import { CategoriesModel } from "#/models/categories.ts";
 import { FileContentsModel } from "#/models/fileContents.ts";
 import { FileTreesModel } from "#/models/fileTrees.ts";
+import { FileVersionsByPathModel } from "#/models/fileVersionsByPath.ts";
 import { createModelContext } from "#/models/utils/context.ts";
 import { WorkspacesModel } from "#/models/workspaces.ts";
 import type { EditorData } from "./data";
@@ -17,11 +18,17 @@ export default function createModels(data: EditorData) {
     selectedPath,
     data.fileContents,
   );
+  const fileVersions = new FileVersionsByPathModel(
+    workspaces.selectedId,
+    selectedPath,
+    data.fileVersions,
+  );
   const categories = new CategoriesModel(data.categories);
   return {
     workspaces,
     fileTrees,
     fileContents,
+    fileVersions,
     categories,
   };
 }

@@ -3,6 +3,7 @@ import { Schema } from "effect";
 import { HttpApiEndpoint, HttpApiError, HttpApiGroup } from "effect/http-api";
 import { FileContentData } from "#/models/fileContent.data.ts";
 import { FileTreeData } from "#/models/fileTree.data.ts";
+import { FileVersionsData } from "#/models/fileVersions.data.ts";
 import { WorkspacesData } from "#/models/workspaces.data.ts";
 import { SessionMiddleware } from "./sessionMiddleware";
 
@@ -48,6 +49,11 @@ const ContentQuery = Schema.Struct({
   path: Schema.NonEmptyString,
 });
 
+const VersionsQuery = Schema.Struct({
+  wsId: Schema.NonEmptyString,
+  path: Schema.NonEmptyString,
+});
+
 const DraftPayload = Schema.Struct({
   wsId: Schema.NonEmptyString,
   path: Schema.NonEmptyString,
@@ -70,6 +76,16 @@ const saveFileDraft = HttpApiEndpoint.put(
   {
     payload: DraftPayload,
     success: DraftSnapshot,
+    error: [HttpApiError.Forbidden, HttpApiError.NotFound],
+  },
+);
+
+const getFileVersions = HttpApiEndpoint.get(
+  "getFileVersions",
+  "/workspaces/files/versions",
+  {
+    query: VersionsQuery,
+    success: FileVersionsData,
     error: [HttpApiError.Forbidden, HttpApiError.NotFound],
   },
 );
@@ -105,6 +121,7 @@ export const workspaceGroup = HttpApiGroup.make("workspaces")
   .add(getFiles)
   .add(selectFile)
   .add(getFileContent)
+  .add(getFileVersions)
   .add(saveFileDraft)
   .add(importGoogleDoc)
   .middleware(SessionMiddleware);

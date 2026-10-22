@@ -4,22 +4,20 @@ import Editor from "#/components/editor/Editor.tsx";
 import EditorToolbar from "#/components/editor/EditorToolbar.tsx";
 import FileStats from "#/components/editor/FileStats.tsx";
 import FontSelect from "#/components/editor/FontSelect.tsx";
+import VersionPicker from "#/components/editor/VersionPicker.tsx";
 import Overlay from "#/components/ui/Overlay.tsx";
 import { useKeydown } from "#/hooks/useKeydown.ts";
 import { useEditorModels } from "#/pages/editor/models.ts";
 import { getEditorSelection } from "#/signals/editorSelection.ts";
 import { navigationOpened } from "#/signals/sidebar.ts";
 
-// TODO -- version picker, file stats, marks and sidenotes land with the
-// version-history and wasm marks models -- ESS-84
+// TODO -- marks and sidenotes land with the wasm marks models -- ESS-84
 /*
 import { MarkBadges } from "#/components/MarkBadges.tsx";
 import { MarkHighlights } from "#/components/MarkHighlights.tsx";
 import Sidenotes from "#/components/Sidenotes.tsx";
 import { useScrollViewport } from "#/hooks/useScrollViewport.ts";
-import FileStats from "#/components/editor/FileStats.tsx";
 import SidenoteControls from "#/islands/SidenoteControls.tsx";
-import VersionPicker from "#/components/editor/VersionPicker.tsx";
 */
 // TODO -- marks and sidenotes hook onto the wasm marks port -- ESS-84;
 // the ref becomes useScrollViewport's
@@ -31,7 +29,6 @@ export default function FileViewer() {
   const wsId = workspaces.selectedId.value;
   const path = fileTrees.current.value?.selectedPath.value;
   if (!wsId || !path) return null;
-  // TODO -- version views join via tree.selectedVersionId -- ESS-84
   return <FileViewerBody key={path} wsId={wsId} path={path} />;
 }
 
@@ -81,10 +78,7 @@ function FileViewerBody({ wsId, path }: { wsId: string; path: string }) {
               <FontSelect />
               <EditorToolbar wsId={wsId} path={path} />
               <FileStats file={file} />
-              {/* TODO -- version picker waits for the version-history
-              model -- ESS-84
-              <VersionPicker wsId={wsId} path={path} versionId={versionId} />
-              */}
+              <VersionPicker file={file} />
             </div>
           </div>
           <div class="content-side flex items-center">

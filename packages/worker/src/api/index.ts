@@ -14,6 +14,7 @@ import { sessionMiddleware, UserSession } from "#/api/sessionMiddleware.ts";
 import type { GoogleConfig } from "#/env.ts";
 import { fileContentLoader } from "#/models/fileContent.loader.ts";
 import { fileTreeLoader } from "#/models/fileTree.loader.ts";
+import { fileVersionsLoader } from "#/models/fileVersions.loader.ts";
 import { workspacesLoader } from "#/models/workspaces.loader.ts";
 import { userGroup } from "./user";
 import { workspaceGroup } from "./workspaces";
@@ -94,6 +95,19 @@ const workspaceHandlers = HttpApiBuilder.group(
           const { wsId, path } = req.query;
           yield* requireAccess(wsId, user.id);
           return yield* fileContentLoader(wsId, path).pipe(
+            Effect.provide(stores),
+            Effect.catchTag("PersistenceError", (err) => Effect.die(err)),
+            Effect.catchTag("FileMissingError", () =>
+              Effect.fail(new HttpApiError.NotFound()),
+            ),
+          );
+        }),
+      getFileVersions: (req) =>
+        Effect.gen(function* () {
+          const { user } = yield* UserSession;
+          const { wsId, path } = req.query;
+          yield* requireAccess(wsId, user.id);
+          return yield* fileVersionsLoader(wsId, path).pipe(
             Effect.provide(stores),
             Effect.catchTag("PersistenceError", (err) => Effect.die(err)),
             Effect.catchTag("FileMissingError", () =>

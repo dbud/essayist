@@ -1,4 +1,4 @@
-import { effect, type ReadonlySignal } from "@preact/signals";
+import { batch, effect, type ReadonlySignal } from "@preact/signals";
 
 export type QueryValue = string | null | undefined;
 export type QueryRecord = Record<string, QueryValue>;
@@ -70,7 +70,7 @@ export function setupUrlQuerySync(
     for (const key of Object.keys(current)) {
       query[key] = params.get(key);
     }
-    onPop(query);
+    batch(() => onPop(query));
   });
 
   return () => {
