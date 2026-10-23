@@ -4,7 +4,6 @@ import type { PageProps } from "fresh";
 import type { State } from "#/define.ts";
 import { env } from "#/env.ts";
 import Toaster from "#/islands/Toaster.tsx";
-import Tooltip from "#/islands/Tooltip.tsx";
 import { FONT_AXIS_KEYS } from "#/signals/fonts.ts";
 
 // apply persisted font axes before first paint
@@ -42,7 +41,6 @@ export default function App({ Component }: PageProps<unknown, State>) {
       <body class="h-dvh flex flex-col">
         <Component />
         <Toaster />
-        <Tooltip />
       </body>
     </html>
   );

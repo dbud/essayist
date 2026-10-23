@@ -2,6 +2,7 @@ import FileNavigation from "#/components/editor/FileNavigation.tsx";
 import FileViewer from "#/components/editor/FileViewer.tsx";
 import Navigation from "#/components/Navigation.tsx";
 import { Toaster } from "#/components/Toaster.tsx";
+import Tooltip from "#/components/Tooltip.tsx";
 import { useAppState } from "#/state.ts";
 
 function EditorPage() {
@@ -23,6 +24,7 @@ export default function Page() {
     <>
       <EditorPage />
       <Toaster />
+      <Tooltip />
     </>
   );
 }

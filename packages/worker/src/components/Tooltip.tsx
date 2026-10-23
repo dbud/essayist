@@ -6,7 +6,9 @@ export default function Tooltip() {
     let el: Element | null = null;
 
     const onOver = (e: PointerEvent) => {
-      const target = (e.target as HTMLElement)?.closest("[data-tooltip]");
+      const origin = e.target;
+      const target =
+        origin instanceof Element ? origin.closest("[data-tooltip]") : null;
       if (target !== el) {
         el = target;
         tooltipText.value = target?.getAttribute("data-tooltip") ?? null;
