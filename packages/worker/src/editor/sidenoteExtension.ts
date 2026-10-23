@@ -4,7 +4,7 @@ import { $isMarkNode, MarkNode } from "@lexical/mark";
 import type { Signal } from "@preact/signals";
 import type { LexicalEditor } from "lexical";
 import { $getRoot } from "lexical";
-import { getCategories } from "#/signals/categories.ts";
+import { getCategories } from "#/models/categories.ts";
 import { sansFont, serifFont } from "#/signals/fonts.ts";
 import { viewerFont } from "#/signals/preferences.ts";
 import type {

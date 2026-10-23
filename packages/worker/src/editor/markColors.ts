@@ -1,5 +1,5 @@
 import type { Mark } from "@essayist/core";
-import { getCategories } from "#/signals/categories.ts";
+import { getCategories } from "#/models/categories.ts";
 
 export const FALLBACK_COLOR = "var(--color-ink)";
 
