@@ -6,6 +6,7 @@ import FileStats from "#/components/editor/FileStats.tsx";
 import FontSelect from "#/components/editor/FontSelect.tsx";
 import VersionPicker from "#/components/editor/VersionPicker.tsx";
 import Overlay from "#/components/ui/Overlay.tsx";
+import { useAutoSave } from "#/hooks/useAutoSave.ts";
 import { useKeydown } from "#/hooks/useKeydown.ts";
 import { useEditorModels } from "#/pages/editor/models.ts";
 import { getEditorSelection } from "#/signals/editorSelection.ts";
@@ -53,6 +54,8 @@ function FileViewerBody({ wsId, path }: { wsId: string; path: string }) {
       void file?.save();
     }
   });
+
+  useAutoSave(file);
 
   if (file === null) {
     return <div class="flex-1 min-h-0 p-4 text-ink/70">no file selected</div>;

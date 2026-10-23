@@ -17,7 +17,6 @@ export interface FileKey {
   versionId?: string;
 }
 
-// TODO -- ESS-84: autosave when the editor lands with settings
 export const FileContentModel = createModel(
   (wsId: string, path: string, data?: FileContentData) => {
     const version = signal<FileSnapshot | null>(data?.version ?? null);
@@ -66,14 +65,16 @@ export const FileContentModel = createModel(
 
     const [runSave, { loading: saving, error: saveError }] = createAsyncState();
 
-    async function save(): Promise<void> {
+    async function save(options?: {
+      readonly keepalive?: boolean;
+    }): Promise<void> {
       if (!dirty.value) return;
       const result = await runSave(async () =>
-        putJson<DraftSnapshot>("/api/workspaces/files/draft", {
-          wsId,
-          path,
-          content: markdown.value,
-        }),
+        putJson<DraftSnapshot>(
+          "/api/workspaces/files/draft",
+          { wsId, path, content: markdown.value },
+          { keepalive: options?.keepalive },
+        ),
       );
       if (result) draft.value = result;
     }

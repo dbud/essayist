@@ -14,6 +14,7 @@ import { useBooting } from "#/hooks/useBooting.ts";
 import { useTick } from "#/hooks/useTick.ts";
 import type { FileContent } from "#/models/fileContent.ts";
 import { useEditorModels } from "#/pages/editor/models.ts";
+import { autoSave } from "#/signals/preferences.ts";
 import { formatDateTime, formatRelativeTime } from "#/utils/format.ts";
 import { META_KEY } from "#/utils/platform.ts";
 
@@ -51,8 +52,9 @@ function SaveStatus({ file }: { file: FileContent }) {
       label = "Save failed";
     } else if (dirty.value) {
       statusKey = "dirty";
-      // TODO -- ESS-84: the file model does not autosave yet
-      label = (
+      label = autoSave.value ? (
+        "Save pending..."
+      ) : (
         <>
           <kbd>{META_KEY}</kbd>
           <kbd>S</kbd> to save changes

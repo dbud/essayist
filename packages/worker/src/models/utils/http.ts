@@ -23,11 +23,18 @@ export async function postJson<T>(path: string, body?: unknown): Promise<T> {
   return (await res.json()) as T;
 }
 
-export async function putJson<T>(path: string, body: unknown): Promise<T> {
+export async function putJson<T>(
+  path: string,
+  body: unknown,
+  options?: {
+    readonly keepalive?: boolean;
+  },
+): Promise<T> {
   const res = await fetch(path, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
+    keepalive: options?.keepalive,
   });
   if (!res.ok) {
     throw new Error(`transport: PUT ${path} failed with ${res.status}`);
