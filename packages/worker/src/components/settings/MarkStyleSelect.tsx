@@ -1,5 +1,5 @@
 import { OptionsRow } from "#/components/ui/forms/OptionsRow.tsx";
-import { type HighlightStyle, highlightStyle } from "#/signals/preferences.ts";
+import { type HighlightStyle, usePreferences } from "#/models/preferences.ts";
 
 const OPTIONS: { value: HighlightStyle; label: string }[] = [
   { value: "band", label: "Band" },
@@ -8,6 +8,7 @@ const OPTIONS: { value: HighlightStyle; label: string }[] = [
 
 /** Mark highlight style radio rows for the settings menu options grid. */
 export default function MarkStyleSelect() {
+  const { highlightStyle } = usePreferences();
   return (
     <OptionsRow
       kind="radio"

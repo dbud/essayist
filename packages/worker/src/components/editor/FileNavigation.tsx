@@ -11,7 +11,7 @@ import WaveBars from "#/components/ui/WaveBars.tsx";
 import { useClickOutside } from "#/hooks/useClickOutside.ts";
 import type { TreeNode } from "#/models/fileTree.ts";
 import { useEditorModels } from "#/pages/editor/models.ts";
-import { navigationOpened } from "#/signals/sidebar.ts";
+import { navigationOpened } from "#/signals/navigation.ts";
 
 interface PathPart {
   segment: string;

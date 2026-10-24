@@ -8,9 +8,9 @@ import ActiveEditorRef from "#/components/editor/ActiveEditorRef.tsx";
 import { createEditorExtension } from "#/editor/extension.ts";
 import { MARK_RANGE_TAG } from "#/editor/markExtension.ts";
 import type { FileContent, FileKey } from "#/models/fileContent.ts";
+import { usePreferences } from "#/models/preferences.ts";
 import { getEditorSelection } from "#/signals/editorSelection.ts";
 import { getMarks } from "#/signals/marks.ts";
-import { viewerFont } from "#/signals/preferences.ts";
 import { getSidenotes } from "#/signals/sidenotes.ts";
 
 interface EditorProps extends FileKey {
@@ -30,6 +30,7 @@ export default function Editor({
   className,
 }: EditorProps) {
   const { resolved } = getMarks(wsId, path, versionId);
+  const { viewerFont } = usePreferences();
   const {
     positions: sidenotePositions,
     numbers: markNumbers,
@@ -100,7 +101,7 @@ export default function Editor({
   );
 
   return (
-    <div class={`relative ${viewerFont}`}>
+    <div class={`relative ${viewerFont.value}`}>
       <LexicalExtensionComposer
         extension={extension}
         contentEditable={contentEditable}

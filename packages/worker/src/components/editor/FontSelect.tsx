@@ -4,7 +4,7 @@ import Dropdown, {
   DropdownMenu,
 } from "#/components/ui/Dropdown.tsx";
 import Swappable from "#/components/ui/Swappable.tsx";
-import { viewerFont } from "#/signals/preferences.ts";
+import { usePreferences } from "#/models/preferences.ts";
 
 const OPTIONS = [
   { value: "font-serif", label: "Serif" },
@@ -13,6 +13,7 @@ const OPTIONS = [
 ] as const;
 
 export default function FontSelect() {
+  const { viewerFont } = usePreferences();
   const current =
     OPTIONS.find((o) => o.value === viewerFont.value) ?? OPTIONS[0];
 

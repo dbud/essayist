@@ -5,7 +5,7 @@ import type { PickerDoc } from "#/client/googlePicker.ts";
 import WaveBars from "#/components/ui/WaveBars.tsx";
 import { showToast } from "#/models/utils/toast.ts";
 import { useEditorModels } from "#/pages/editor/models.ts";
-import { navigationOpened } from "#/signals/sidebar.ts";
+import { navigationOpened } from "#/signals/navigation.ts";
 import { formatCount } from "#/utils/format.ts";
 
 interface PickedMessage {

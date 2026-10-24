@@ -9,7 +9,11 @@ import {
 } from "lucide-preact";
 import Avatar from "#/components/Avatar.tsx";
 import AutoSaveIntervalSelect from "#/components/settings/AutoSaveIntervalSelect.tsx";
-import FontAxisSelect from "#/components/settings/FontAxisSelect.tsx";
+import FontAxisSelect, {
+  type FontAxis,
+  SANS_FONT_OPTIONS,
+  SERIF_FONT_OPTIONS,
+} from "#/components/settings/FontAxisSelect.tsx";
 import MarkStyleSelect from "#/components/settings/MarkStyleSelect.tsx";
 import Dropdown, {
   DropdownItem,
@@ -18,7 +22,6 @@ import Dropdown, {
 import { CheckboxIcon } from "#/components/ui/icons.tsx";
 import Panel from "#/components/ui/Panel.tsx";
 import { usePreferences } from "#/models/preferences.ts";
-import { sansFont, serifFont } from "#/signals/fonts.ts";
 import { autoSave } from "#/signals/preferences.ts";
 
 interface SettingsMenuProps {
@@ -26,7 +29,12 @@ interface SettingsMenuProps {
 }
 
 export default function SettingsMenu({ user }: SettingsMenuProps) {
-  const { debugSidebarOpened } = usePreferences();
+  const { debugSidebarOpened, sansFont, serifFont } = usePreferences();
+  const sansAxis: FontAxis = { signal: sansFont, options: SANS_FONT_OPTIONS };
+  const serifAxis: FontAxis = {
+    signal: serifFont,
+    options: SERIF_FONT_OPTIONS,
+  };
   return (
     <Dropdown
       triggerClass="btn"
@@ -51,12 +59,12 @@ export default function SettingsMenu({ user }: SettingsMenuProps) {
           <li class="flex w-full">
             <div class="form-grid w-full">
               <FontAxisSelect
-                axis={sansFont}
+                axis={sansAxis}
                 name="sans-font"
                 label="Interface font"
               />
               <FontAxisSelect
-                axis={serifFont}
+                axis={serifAxis}
                 name="serif-font"
                 label="Serif font"
               />

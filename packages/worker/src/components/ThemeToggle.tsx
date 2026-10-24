@@ -1,11 +1,12 @@
 import { Moon, Sun } from "lucide-preact";
 import Swappable from "#/components/ui/Swappable.tsx";
-import { theme, toggleTheme } from "#/signals/preferences.ts";
+import { usePreferences } from "#/models/preferences.ts";
 
 /** Two-state theme toggle: three states in the model, two in the UI.
     Shows the resolved scheme; the next press either pins the opposite
     value or reverts to the system default (dropping the override). */
 export default function ThemeToggle() {
+  const { theme, toggleTheme } = usePreferences();
   const dark = theme.value === "dark";
   return (
     <button

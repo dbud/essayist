@@ -1,8 +1,25 @@
-import { OptionsRow } from "#/components/ui/forms/OptionsRow.tsx";
-import type { FontAxis } from "#/signals/fonts.ts";
+import type { Signal } from "@preact/signals";
+import { type Option, OptionsRow } from "#/components/ui/forms/OptionsRow.tsx";
+
+export const SANS_FONT_OPTIONS: Option[] = [
+  { value: "atkinson", label: "Atkinson Hyperlegible" },
+  { value: "gothic", label: "Special Gothic" },
+  { value: "system", label: "System" },
+];
+
+export const SERIF_FONT_OPTIONS: Option[] = [
+  { value: "vollkorn", label: "Vollkorn" },
+  { value: "plex", label: "Plex Serif" },
+  { value: "system", label: "System" },
+];
+
+export interface FontAxis {
+  readonly signal: Signal<string>;
+  readonly options: Option[];
+}
 
 interface FontAxisSelectProps {
-  axis: FontAxis<string>;
+  axis: FontAxis;
   name: string;
   label: string;
 }

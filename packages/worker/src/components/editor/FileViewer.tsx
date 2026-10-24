@@ -10,7 +10,7 @@ import { useAutoSave } from "#/hooks/useAutoSave.ts";
 import { useKeydown } from "#/hooks/useKeydown.ts";
 import { useEditorModels } from "#/pages/editor/models.ts";
 import { getEditorSelection } from "#/signals/editorSelection.ts";
-import { navigationOpened } from "#/signals/sidebar.ts";
+import { navigationOpened } from "#/signals/navigation.ts";
 
 // TODO -- marks and sidenotes land with the wasm marks models -- ESS-84
 /*

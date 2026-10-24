@@ -5,8 +5,6 @@ import type { Signal } from "@preact/signals";
 import type { LexicalEditor } from "lexical";
 import { $getRoot } from "lexical";
 import { getCategories } from "#/models/categories.ts";
-import { sansFont, serifFont } from "#/signals/fonts.ts";
-import { viewerFont } from "#/signals/preferences.ts";
 import type {
   MarkBadge,
   MarkNumbers,
@@ -30,6 +28,8 @@ interface SidenoteConfig {
   markBadges: Signal<MarkBadge[]>;
   markRects: Signal<MarkRect[]>;
   resolved: Signal<Mark[]>;
+  /** The font signals; a change re-measures the marks. */
+  fonts: ReadonlyArray<Signal<string>>;
 }
 
 // Publishes mark positions and ordinal badges. Non-empty marks are tracked
@@ -47,6 +47,7 @@ export const SidenoteExtension = defineExtension({
       markBadges,
       markRects,
       resolved,
+      fonts,
     }: SidenoteConfig,
   ) => {
     return trackNodePositions(editor, {
@@ -54,13 +55,7 @@ export const SidenoteExtension = defineExtension({
       isNode: $isMarkNode,
       getIds: (node) => node.getIDs(),
       output: sidenotePositions,
-      remeasureOn: [
-        markNumbers,
-        getCategories().byLabel,
-        viewerFont,
-        sansFont.signal,
-        serifFont.signal,
-      ],
+      remeasureOn: [markNumbers, getCategories().byLabel, ...fonts],
       // Zero-length marks wrap no text and produce no MarkNode, so measure them
       // from a collapsed Range at their anchor. Resolve the anchor against the
       // fresh committed tree (not a lagging signal) so the position tracks the
