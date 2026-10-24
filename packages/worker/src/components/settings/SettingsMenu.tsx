@@ -23,6 +23,7 @@ import { CheckboxIcon } from "#/components/ui/icons.tsx";
 import Panel from "#/components/ui/Panel.tsx";
 import { usePreferences } from "#/models/preferences.ts";
 import { autoSave } from "#/signals/preferences.ts";
+import { clearPreferencesCookie } from "#/utils/preferencesCookie.ts";
 
 interface SettingsMenuProps {
   user: User;
@@ -111,6 +112,7 @@ export default function SettingsMenu({ user }: SettingsMenuProps) {
           <DropdownItem
             onClick={() => {
               localStorage.clear();
+              clearPreferencesCookie(new URL(location.href));
               location.reload();
               close();
             }}

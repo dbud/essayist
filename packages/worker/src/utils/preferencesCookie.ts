@@ -59,3 +59,11 @@ export function writePreferencesCookie(
   // biome-ignore lint:suspicious:noDocumentCookie -- we target modern browsers
   document.cookie = parts.join("; ");
 }
+
+/** Removes the cookie, so the next request renders the defaults. */
+export function clearPreferencesCookie(url: URL): void {
+  const parts = ["path=/", "max-age=0"];
+  if (url.protocol === "https:") parts.push("secure");
+  // biome-ignore lint:suspicious:noDocumentCookie -- we target modern browsers
+  document.cookie = `${preferencesCookieName(url)}=; ${parts.join("; ")}`;
+}

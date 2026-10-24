@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
 import { expect, test } from "vitest";
 import {
+  clearPreferencesCookie,
   preferencesCookieName,
   readPreferencesCookie,
   writePreferencesCookie,
@@ -32,4 +33,10 @@ test("round trips through the document cookie", () => {
   expect(readPreferencesCookie(document.cookie, url)).toEqual({
     debugSidebarOpened: true,
   });
+});
+
+test("clears the document cookie", () => {
+  writePreferencesCookie({ debugSidebarOpened: true }, url);
+  clearPreferencesCookie(url);
+  expect(readPreferencesCookie(document.cookie, url)).toEqual({});
 });
