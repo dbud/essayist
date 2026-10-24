@@ -12,7 +12,7 @@ export default function MarkdownView({
   return (
     <div
       class={`text-[0.85rem] prose max-w-none ${className}`}
-      // deno-lint-ignore react-no-danger
+      // the html comes from renderMarkdown, which sanitizes it
       dangerouslySetInnerHTML={{
         __html: renderMarkdown(content),
       }}

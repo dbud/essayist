@@ -1,15 +1,14 @@
 import type { Mark } from "@essayist/core";
 import { mapNotNullish } from "@std/collections";
+import Section from "#/components/debug/Section.tsx";
 import { segmentMarks } from "#/editor/markSegments.ts";
-import Section from "#/islands/Section.tsx";
-import { getFile } from "#/signals/file.ts";
-import { getFileTree } from "#/signals/fileTree.ts";
+import { useEditorModels } from "#/pages/editor/models.ts";
 import { getMarks } from "#/signals/marks.ts";
-import { getWorkspaces } from "#/signals/workspace.ts";
 
 export default function ExportPreviewSection() {
-  const wsId = getWorkspaces().selectedId.value;
-  const path = getFileTree()?.selectedPath.value ?? "";
+  const { workspaces, fileTrees } = useEditorModels();
+  const wsId = workspaces.selectedId.value;
+  const path = fileTrees.current.value?.selectedPath.value ?? "";
   if (!wsId || !path) return null;
   return (
     <Section title="Export Preview">
@@ -42,9 +41,10 @@ function visualizeWhitespace(text: string): string {
 }
 
 function MarkdownPreview({ wsId, path }: { wsId: string; path: string }) {
-  const file = getFile(wsId, path);
+  const { fileContents } = useEditorModels();
+  const file = fileContents.current.value;
   const marks = getMarks(wsId, path);
-  const md = file.markdown.value;
+  const md = file?.markdown.value ?? null;
   const resolved = marks.resolved.value;
 
   if (md === null) return null;

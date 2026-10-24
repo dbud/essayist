@@ -1,10 +1,10 @@
 import type { ReviewRun, ReviewRunStatus } from "@essayist/core";
-import { ScrollText } from "lucide-preact";
+// TODO -- the trace view needs a worker route -- ESS-84
+// import { ScrollText } from "lucide-preact";
+import Section from "#/components/debug/Section.tsx";
 import MarkdownView from "#/components/MarkdownView.tsx";
-import Section from "#/islands/Section.tsx";
-import { getFileTree } from "#/signals/fileTree.ts";
+import { useEditorModels } from "#/pages/editor/models.ts";
 import { getReview } from "#/signals/review.ts";
-import { getWorkspaces } from "#/signals/workspace.ts";
 
 function statusBadge(status: ReviewRunStatus) {
   const classes =
@@ -16,7 +16,8 @@ function statusBadge(status: ReviewRunStatus) {
   return <span class={classes}>{status}</span>;
 }
 
-function RunItem({ run, wsId }: { run: ReviewRun; wsId: string }) {
+// TODO -- wsId is unused until the trace view route lands -- ESS-84
+function RunItem({ run, wsId: _wsId }: { run: ReviewRun; wsId: string }) {
   return (
     <div class="text-sm p-2 rounded">
       <div class="flex items-center gap-2 mb-1">
@@ -27,13 +28,15 @@ function RunItem({ run, wsId }: { run: ReviewRun; wsId: string }) {
             <> ({((run.completedAt - run.startedAt) / 1000).toFixed(1)}s)</>
           )}
         </span>
+        {/* TODO -- the trace view needs a worker route -- ESS-84
         <a
           href={`/workspaces/${wsId}/traces/${run.id}`}
-          class="btn btn-ghost btn-xs btn-square ml-auto"
+          class="btn--ghost ml-auto"
           title="View trace"
         >
           <ScrollText size={14} />
         </a>
+        */}
       </div>
       {run.status === "failed" && run.error && (
         <div class="text-ink/80 text-xs">{run.error}</div>
@@ -46,8 +49,9 @@ function RunItem({ run, wsId }: { run: ReviewRun; wsId: string }) {
 }
 
 export default function ReviewHistorySection() {
-  const wsId = getWorkspaces().selectedId.value;
-  const path = getFileTree()?.selectedPath.value ?? "";
+  const { workspaces, fileTrees } = useEditorModels();
+  const wsId = workspaces.selectedId.value;
+  const path = fileTrees.current.value?.selectedPath.value ?? "";
   if (!wsId || !path) return null;
   return <ReviewHistory wsId={wsId} path={path} />;
 }

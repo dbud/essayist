@@ -23,6 +23,7 @@
     "@lexical/rich-text": "^0.52.0",
     "@preact/signals": "^2.11.3",
     "@std/collections": "catalog:",
+    "@std/text": "catalog:",
     "@tailwindcss/typography": "^0.5.20",
     "@tailwindcss/vite": "^4.3.3",
     "date-fns": "^4.4.0",

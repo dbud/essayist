@@ -1,16 +1,15 @@
 import { PanelRightClose } from "lucide-preact";
+import ExportPreviewSection from "#/components/debug/ExportPreviewSection.tsx";
+import LexicalTreeViewSection from "#/components/debug/LexicalTreeViewSection.tsx";
+import MarksSection from "#/components/debug/MarksSection.tsx";
+import ReviewHistorySection from "#/components/debug/ReviewHistorySection.tsx";
 import Sidebar from "#/components/ui/Sidebar.tsx";
-import ExportPreviewSection from "#/islands/ExportPreviewSection.tsx";
-import LexicalTreeViewSection from "#/islands/LexicalTreeViewSection.tsx";
-import MarksSection from "#/islands/MarksSection.tsx";
-import ReviewHistorySection from "#/islands/ReviewHistorySection.tsx";
-// import Section from "#/islands/Section.tsx";
-import { rightSidebarOpened } from "#/signals/sidebar.ts";
+import { debugSidebarOpened } from "#/signals/debugSidebar.ts";
 
 export default function RightSidebar() {
   return (
     <Sidebar
-      open={rightSidebarOpened.value}
+      open={debugSidebarOpened.value}
       class="bg-surface text-ink shadow-md"
     >
       <div class="w-128 flex flex-col h-full stack border-l border border-stroke bg-surface overflow-y-auto">
@@ -20,7 +19,7 @@ export default function RightSidebar() {
             type="button"
             class="btn"
             aria-label="Hide sidebar"
-            onClick={() => (rightSidebarOpened.value = false)}
+            onClick={() => (debugSidebarOpened.value = false)}
           >
             <PanelRightClose size={16} />
           </button>

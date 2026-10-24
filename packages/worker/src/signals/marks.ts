@@ -5,11 +5,12 @@ import { type Signal, signal } from "@preact/signals";
 // stub; the resolved set is empty meanwhile, so marks and sidenotes are
 // simply absent.
 const resolved = signal<Mark[]>([]);
+const loading = signal(false);
 
 export function getMarks(
   _wsId: string,
   _path: string,
   _versionId?: string,
-): { resolved: Signal<Mark[]> } {
-  return { resolved };
+): { resolved: Signal<Mark[]>; loading: Signal<boolean> } {
+  return { resolved, loading };
 }

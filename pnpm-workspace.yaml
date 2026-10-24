@@ -18,6 +18,7 @@ catalog:
   "@std/assert": npm:@jsr/std__assert@^1.0.19
   "@std/collections": npm:@jsr/std__collections@^1.4.0
   "@std/encoding": npm:@jsr/std__encoding@^1.0.11
+  "@std/text": npm:@jsr/std__text@^1.1.0
   "@types/google.accounts": ^0.0.18
   "@types/node": ^26.6.5
   effect: ~4.0.5

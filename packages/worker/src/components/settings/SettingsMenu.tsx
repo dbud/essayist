@@ -17,9 +17,9 @@ import Dropdown, {
 } from "#/components/ui/Dropdown.tsx";
 import { CheckboxIcon } from "#/components/ui/icons.tsx";
 import Panel from "#/components/ui/Panel.tsx";
+import { debugSidebarOpened } from "#/signals/debugSidebar.ts";
 import { sansFont, serifFont } from "#/signals/fonts.ts";
 import { autoSave } from "#/signals/preferences.ts";
-import { rightSidebarOpened } from "#/signals/sidebar.ts";
 
 interface SettingsMenuProps {
   user: User;
@@ -78,16 +78,18 @@ export default function SettingsMenu({ user }: SettingsMenuProps) {
           </li>
           <DropdownItem
             onClick={() => {
-              rightSidebarOpened.value = !rightSidebarOpened.value;
+              debugSidebarOpened.value = !debugSidebarOpened.value;
               close();
             }}
           >
-            {rightSidebarOpened.value ? (
+            {debugSidebarOpened.value ? (
               <PanelRightClose size={14} />
             ) : (
               <PanelRightOpen size={14} />
             )}
-            {rightSidebarOpened.value ? "Hide sidebar" : "Show sidebar"}
+            {debugSidebarOpened.value
+              ? "Hide debug sidebar"
+              : "Show debug sidebar"}
           </DropdownItem>
           {/* TODO -- control panel item when the admin port lands -- ESS-84
           {user.role === "admin" && (

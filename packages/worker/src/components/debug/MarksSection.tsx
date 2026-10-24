@@ -1,13 +1,12 @@
 import type { Mark } from "@essayist/core";
 import type { LexicalEditor } from "lexical";
 import { Crosshair } from "lucide-preact";
+import Section from "#/components/debug/Section.tsx";
 import { SELECT_MARK_COMMAND } from "#/editor/markExtension.ts";
-import Section from "#/islands/Section.tsx";
+import { useEditorModels } from "#/pages/editor/models.ts";
 import { activeEditor } from "#/signals/activeEditor.ts";
 import { getEditorSelection } from "#/signals/editorSelection.ts";
-import { getFileTree } from "#/signals/fileTree.ts";
 import { getMarks } from "#/signals/marks.ts";
-import { getWorkspaces } from "#/signals/workspace.ts";
 
 function MarkDetail({
   mark,
@@ -32,7 +31,7 @@ function MarkDetail({
         </div>
         <button
           type="button"
-          class="btn btn-ghost btn-xs btn-square ml-auto"
+          class="btn--ghost ml-auto"
           title="Go to mark in editor"
           disabled={editor === null}
           onClick={() => {
@@ -58,8 +57,9 @@ function MarkDetail({
 }
 
 export default function MarksSection() {
-  const wsId = getWorkspaces().selectedId.value;
-  const path = getFileTree()?.selectedPath.value ?? "";
+  const { workspaces, fileTrees } = useEditorModels();
+  const wsId = workspaces.selectedId.value;
+  const path = fileTrees.current.value?.selectedPath.value ?? "";
   if (!wsId || !path) return null;
   return <Marks wsId={wsId} path={path} />;
 }
