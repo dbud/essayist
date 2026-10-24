@@ -1,6 +1,11 @@
 import type { MiddlewareHandler } from "hono";
 import type { ComponentChildren } from "preact";
 import { render } from "preact-render-to-string";
+import {
+  type Preferences,
+  PreferencesProvider,
+  preferencesFromCookie,
+} from "#/models/preferences.ts";
 import { clientScriptUrl, styleSheetUrl } from "#/pages/meta.ts";
 import { type AppState, AppStateProvider } from "#/state.ts";
 import { AppStateScript, PageDataScript } from "./seeds";
@@ -10,6 +15,7 @@ export interface DocumentProps {
   readonly client?: string;
   readonly data?: unknown;
   readonly state: AppState;
+  readonly preferences: Preferences;
   readonly children?: ComponentChildren;
 }
 
@@ -18,6 +24,7 @@ export function Document({
   client,
   data,
   state,
+  preferences,
   children,
 }: DocumentProps) {
   return (
@@ -34,7 +41,11 @@ export function Document({
         )}
       </head>
       <body class="h-dvh flex flex-col">
-        <AppStateProvider value={state ?? {}}>{children}</AppStateProvider>
+        <AppStateProvider value={state ?? {}}>
+          <PreferencesProvider value={preferences}>
+            {children}
+          </PreferencesProvider>
+        </AppStateProvider>
       </body>
     </html>
   );
@@ -49,8 +60,12 @@ export const pageRenderer: MiddlewareHandler = async (c, next) => {
       user: c.get("auth-user"),
       sessionId: c.get("auth-session-id"),
     };
+    const preferences = preferencesFromCookie(
+      c.req.header("cookie"),
+      new URL(c.req.url),
+    );
     const node = (
-      <Document {...props} state={state}>
+      <Document {...props} state={state} preferences={preferences}>
         {content}
       </Document>
     );

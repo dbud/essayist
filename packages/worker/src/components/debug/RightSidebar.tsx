@@ -4,9 +4,10 @@ import LexicalTreeViewSection from "#/components/debug/LexicalTreeViewSection.ts
 import MarksSection from "#/components/debug/MarksSection.tsx";
 import ReviewHistorySection from "#/components/debug/ReviewHistorySection.tsx";
 import Sidebar from "#/components/ui/Sidebar.tsx";
-import { debugSidebarOpened } from "#/signals/debugSidebar.ts";
+import { usePreferences } from "#/models/preferences.ts";
 
 export default function RightSidebar() {
+  const { debugSidebarOpened } = usePreferences();
   return (
     <Sidebar
       open={debugSidebarOpened.value}

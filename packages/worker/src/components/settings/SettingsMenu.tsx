@@ -17,7 +17,7 @@ import Dropdown, {
 } from "#/components/ui/Dropdown.tsx";
 import { CheckboxIcon } from "#/components/ui/icons.tsx";
 import Panel from "#/components/ui/Panel.tsx";
-import { debugSidebarOpened } from "#/signals/debugSidebar.ts";
+import { usePreferences } from "#/models/preferences.ts";
 import { sansFont, serifFont } from "#/signals/fonts.ts";
 import { autoSave } from "#/signals/preferences.ts";
 
@@ -26,6 +26,7 @@ interface SettingsMenuProps {
 }
 
 export default function SettingsMenu({ user }: SettingsMenuProps) {
+  const { debugSidebarOpened } = usePreferences();
   return (
     <Dropdown
       triggerClass="btn"
