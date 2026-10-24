@@ -27,8 +27,14 @@ export function Document({
   preferences,
   children,
 }: DocumentProps) {
+  const { themeOverride, sansFont, serifFont } = preferences;
   return (
-    <html lang="en">
+    <html
+      lang="en"
+      data-theme={themeOverride.value}
+      data-sans-font={sansFont.value}
+      data-serif-font={serifFont.value}
+    >
       <head>
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
