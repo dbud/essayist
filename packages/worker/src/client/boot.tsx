@@ -23,6 +23,12 @@ export async function boot<Data>(
 ): Promise<void> {
   if (import.meta.env.DEV) {
     await import("preact/debug");
+    const ms = Number(
+      new URLSearchParams(location.search).get("hydrationDelay"),
+    );
+    if (ms > 0) {
+      await new Promise((resolve) => setTimeout(resolve, ms));
+    }
   }
 
   const data = parseSeed<Data>(PAGE_DATA_SCRIPT_ID);
