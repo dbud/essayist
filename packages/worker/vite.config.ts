@@ -1,7 +1,8 @@
 import { readdirSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { cloudflare } from "@cloudflare/vite-plugin";
 import tailwindcss from "@tailwindcss/vite";
-import { defineConfig } from "vite";
+import { defineConfig, type Plugin } from "vite";
 
 // Client entry files are build inputs by file name; pages without one
 // (login) get no script tag.
@@ -11,8 +12,33 @@ const clientEntries = Object.fromEntries(
     .map((file) => [file.replace(/\.tsx$/, ""), `src/client/pages/${file}`]),
 );
 
+function moduleBindings(
+  environment: string,
+  bindings: Record<string, string>,
+): Plugin {
+  return {
+    name: "essayist:module-bindings",
+    enforce: "pre",
+    resolveId(source) {
+      if (this.environment?.name !== environment) return;
+      const binding = bindings[source];
+      if (binding === undefined) return;
+      return fileURLToPath(new URL(binding, import.meta.url));
+    },
+  };
+}
+
 export default defineConfig({
-  plugins: [tailwindcss(), cloudflare({ viteEnvironment: { name: "worker" } })],
+  plugins: [
+    // Specifiers the client environment re-binds to dependency-free
+    // modules, keeping server-only modules (happy-dom) out of the client
+    // graph.
+    moduleBindings("client", {
+      "#/editor/withDOM.ts": "./src/editor/withDOM.client.ts",
+    }),
+    tailwindcss(),
+    cloudflare({ viteEnvironment: { name: "worker" } }),
+  ],
   environments: {
     worker: { build: { sourcemap: true } },
     client: {
