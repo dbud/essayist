@@ -4,6 +4,7 @@ import { AuthStore, type User, Workspaces } from "@essayist/core";
 import { Context, Effect, Layer } from "effect";
 import * as HttpServerRequest from "effect/http/HttpServerRequest";
 import { HttpApiError, HttpApiMiddleware } from "effect/http-api";
+import { DEV_SESSION_ID, DEV_USER_HEADER } from "#/auth/devUser.ts";
 import { siteSessionCookieName } from "#/auth/session.ts";
 
 export interface UserSessionProps {
@@ -33,6 +34,22 @@ export const sessionMiddleware: Layer.Layer<
 > = Layer.succeed(SessionMiddleware, (httpEffect) =>
   Effect.gen(function* () {
     const request = yield* HttpServerRequest.HttpServerRequest;
+
+    if (import.meta.env.DEV) {
+      const email = request.headers[DEV_USER_HEADER]?.trim();
+      if (email !== undefined) {
+        const devUser = yield* Workspaces.use((store) =>
+          store.getUserByEmail(email),
+        ).pipe(Effect.orDie);
+        if (devUser !== undefined) {
+          return yield* Effect.provideService(httpEffect, UserSession, {
+            user: devUser,
+            sessionId: DEV_SESSION_ID,
+          });
+        }
+      }
+    }
+
     const sessionId =
       request.cookies[siteSessionCookieName(new URL(request.originalUrl))];
     if (sessionId === undefined) {

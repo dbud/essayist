@@ -3,10 +3,10 @@
  * `auth-user` per request.
  */
 
-import type { User } from "@essayist/core";
-import { AuthStore, Workspaces } from "@essayist/core";
+import { AuthStore, type User, Workspaces } from "@essayist/core";
 import type { Context, MiddlewareHandler } from "hono";
 import { generateCookie, getCookie } from "hono/cookie";
+import { DEV_SESSION_ID, resolveDevUser } from "#/auth/devUser.ts";
 import { env } from "#/env.ts";
 import { runtime } from "#/runtime.ts";
 
@@ -68,6 +68,15 @@ function isAuthRoute(path: string): boolean {
 export const resolveSession: MiddlewareHandler = async (c, next) => {
   const path = new URL(c.req.url).pathname;
   if (!isAuthRoute(path)) {
+    if (import.meta.env.DEV) {
+      const devUser = await resolveDevUser(c);
+      if (devUser !== undefined) {
+        c.set("auth-session-id", DEV_SESSION_ID);
+        c.set("auth-user", devUser);
+        await next();
+        return;
+      }
+    }
     const sessionId = readSiteSession(c);
     if (sessionId !== undefined) {
       const session = await runtime(env(c.env)).runPromise(
