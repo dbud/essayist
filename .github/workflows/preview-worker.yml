@@ -2,7 +2,7 @@ name: Worker preview (branch pushes)
 
 on:
   push:
-    branches-ignore: [cloudflare-migration, main]
+    branches-ignore: [cloudflare-migration, main, "dependabot/**"]
   workflow_dispatch:
 
 permissions:
