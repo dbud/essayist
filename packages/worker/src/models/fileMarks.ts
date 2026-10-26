@@ -7,8 +7,8 @@ import type { MarksData } from "./marks.data.ts";
 export type { MarksData };
 
 export const FileMarksModel = createModel(
-  (wsId: string, path: string, versionId: string) => {
-    const marks = signal<readonly Mark[]>([]);
+  (wsId: string, path: string, versionId: string, data?: MarksData) => {
+    const marks = signal<readonly Mark[]>(data?.marks ?? []);
 
     const [runLoad, { loading, error }] = createAsyncState();
 
@@ -20,8 +20,7 @@ export const FileMarksModel = createModel(
       if (data) marks.value = data.marks;
     }
 
-    // Marks have no SSR seed yet; the first client boot fetches them.
-    if (!import.meta.env.SSR) void load();
+    if (data === undefined && !import.meta.env.SSR) void load();
 
     return { marks, load, loading, error };
   },

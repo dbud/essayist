@@ -33,6 +33,7 @@ export default function createModels(data: EditorData) {
     workspaces.selectedId,
     selectedPath,
     selectedVersionId,
+    data.fileMarks,
   );
   const categories = new CategoriesModel(data.categories);
   return {

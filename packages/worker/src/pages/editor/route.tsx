@@ -3,6 +3,7 @@ import { Hono } from "hono";
 import { env } from "#/env.ts";
 import { categoriesLoader } from "#/models/categories.loader.ts";
 import { fileContentsLoader } from "#/models/fileContents.loader.ts";
+import { fileMarksByPathLoader } from "#/models/fileMarksByPath.loader.ts";
 import { fileTreesLoader } from "#/models/fileTrees.loader.ts";
 import { fileVersionsByPathLoader } from "#/models/fileVersionsByPath.loader.ts";
 import { workspacesLoader } from "#/models/workspaces.loader.ts";
@@ -29,12 +30,17 @@ export default new Hono().get("/", async (c) => {
       fileTrees.wsId,
       fileTrees.tree?.selectedPath ?? null,
     );
+    const fileMarks = yield* fileMarksByPathLoader(
+      fileTrees.wsId,
+      fileTrees.tree?.selectedPath ?? null,
+    );
     const categories = yield* categoriesLoader();
     return {
       workspaces,
       fileTrees,
       fileContents,
       fileVersions,
+      fileMarks,
       categories,
     };
   });
