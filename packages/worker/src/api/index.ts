@@ -92,9 +92,9 @@ const workspaceHandlers = HttpApiBuilder.group(
       getFileContent: (req) =>
         Effect.gen(function* () {
           const { user } = yield* UserSession;
-          const { wsId, path } = req.query;
+          const { wsId, path, versionId } = req.query;
           yield* requireAccess(wsId, user.id);
-          return yield* fileContentLoader(wsId, path).pipe(
+          return yield* fileContentLoader(wsId, path, versionId).pipe(
             Effect.provide(stores),
             Effect.catchTag("PersistenceError", (err) => Effect.die(err)),
             Effect.catchTag("FileMissingError", () =>

@@ -1,5 +1,6 @@
 import type { DraftSnapshot, FileSnapshot } from "@essayist/core";
 import { computed, createModel, signal } from "@preact/signals";
+import { assert } from "@std/assert";
 import type { EditorState } from "lexical";
 import createAsyncState from "#/models/utils/asyncState.ts";
 import { getJson, putJson } from "#/models/utils/http.ts";
@@ -18,7 +19,7 @@ export interface FileKey {
 }
 
 export const FileContentModel = createModel(
-  (wsId: string, path: string, data?: FileContentData) => {
+  (wsId: string, path: string, versionId?: string, data?: FileContentData) => {
     const version = signal<FileSnapshot | null>(data?.version ?? null);
     const draft = signal<DraftSnapshot | null>(data?.draft ?? null);
 
@@ -33,6 +34,7 @@ export const FileContentModel = createModel(
     const modifiedState = signal<EditorState | null>(null);
 
     function setModifiedState(state: EditorState): void {
+      assert(versionId === undefined, "cannot edit a version-pinned file");
       modifiedState.value = state;
     }
 
@@ -44,6 +46,7 @@ export const FileContentModel = createModel(
 
     const dirty = computed(
       () =>
+        versionId === undefined &&
         modifiedState.value !== null &&
         markdown.value !== (initialContent.value ?? ""),
     );
@@ -52,6 +55,9 @@ export const FileContentModel = createModel(
 
     async function load(): Promise<void> {
       const params = new URLSearchParams({ wsId, path });
+      if (versionId !== undefined) {
+        params.set("versionId", versionId);
+      }
       const data = await runLoad(async () =>
         getJson<FileContentData>(`/api/workspaces/files/content?${params}`),
       );
@@ -68,6 +74,7 @@ export const FileContentModel = createModel(
     async function save(options?: {
       readonly keepalive?: boolean;
     }): Promise<void> {
+      assert(versionId === undefined, "cannot save a version-pinned file");
       if (!dirty.value) return;
       const result = await runSave(async () =>
         putJson<DraftSnapshot>(

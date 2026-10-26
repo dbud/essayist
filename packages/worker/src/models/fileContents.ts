@@ -14,7 +14,15 @@ export const FileContentsModel = createModel(
     const path = selectedPath.value;
     if (data !== undefined && wsId !== null && path !== null) {
       files.value = new Map([
-        [wsId, new Map([[path, new FileContentModel(wsId, path, data)]])],
+        [
+          wsId,
+          new Map([
+            [
+              path,
+              new FileContentModel(wsId, path, /* versionId */ undefined, data),
+            ],
+          ]),
+        ],
       ]);
     }
 

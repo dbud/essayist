@@ -360,6 +360,9 @@ importers:
       '@preact/signals':
         specifier: ^2.11.3
         version: 2.11.3(preact@11.0.1)
+      '@std/assert':
+        specifier: 'catalog:'
+        version: '@jsr/std__assert@1.0.19'
       '@std/collections':
         specifier: 'catalog:'
         version: '@jsr/std__collections@1.4.0'
@@ -415,9 +418,6 @@ importers:
       '@cloudflare/workers-types':
         specifier: 'catalog:'
         version: 5.20261023.1
-      '@std/assert':
-        specifier: 'catalog:'
-        version: '@jsr/std__assert@1.0.19'
       '@types/gapi':
         specifier: ^0.0.47
         version: 0.0.47

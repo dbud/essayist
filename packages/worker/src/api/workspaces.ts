@@ -48,6 +48,7 @@ const selectFile = HttpApiEndpoint.patch("selectFile", "/workspaces/files", {
 const ContentQuery = Schema.Struct({
   wsId: Schema.NonEmptyString,
   path: Schema.NonEmptyString,
+  versionId: Schema.optional(Schema.String),
 });
 
 const VersionsQuery = Schema.Struct({

@@ -22,6 +22,7 @@
     "@lexical/react": "^0.52.0",
     "@lexical/rich-text": "^0.52.0",
     "@preact/signals": "^2.11.3",
+    "@std/assert": "catalog:",
     "@std/collections": "catalog:",
     "@std/text": "catalog:",
     "@tailwindcss/typography": "^0.5.20",
@@ -42,7 +43,6 @@
   "devDependencies": {
     "@cloudflare/vite-plugin": "^1.65.0",
     "@cloudflare/workers-types": "catalog:",
-    "@std/assert": "catalog:",
     "@types/gapi": "^0.0.47",
     "@types/google.accounts": "catalog:",
     "@types/google.picker": "^0.0.52",
