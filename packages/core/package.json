@@ -6,7 +6,7 @@
     "@std/assert": "catalog:",
     "@std/collections": "catalog:",
     "@std/encoding": "catalog:",
-    "cbor-x": "^1.6.6",
+    "cbor-x": "^1.6.8",
     "effect": "catalog:",
     "fdb-tuple": "^1.0.0"
   },

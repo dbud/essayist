@@ -10,19 +10,19 @@ minimumReleaseAgeExclude:
   - "@effect/ai-openrouter"
   - "@effect/sql-d1"
 catalog:
-  "@biomejs/biome": ^2.5.15
-  "@cloudflare/workers-types": ^5.20261013.1
+  "@biomejs/biome": ^2.6.2
+  "@cloudflare/workers-types": ^5.20261023.1
   "@deno/kv": ^0.14.0
-  "@effect/ai-openrouter": ~4.0.5
-  "@effect/sql-d1": ~4.0.5
+  "@effect/ai-openrouter": ~4.0.6
+  "@effect/sql-d1": ~4.0.6
   "@std/assert": npm:@jsr/std__assert@^1.0.19
   "@std/collections": npm:@jsr/std__collections@^1.4.0
   "@std/encoding": npm:@jsr/std__encoding@^1.0.11
   "@std/text": npm:@jsr/std__text@^1.1.0
   "@types/google.accounts": ^0.0.18
   "@types/node": ^26.6.5
-  effect: ~4.0.5
-  jose: ^6.2.12
+  effect: ~4.0.6
+  jose: ^6.2.13
   typescript: ^7.0.2
-  vite: ^8.3.4
-  vitest: ^5.0.4
+  vite: ^8.3.5
+  vitest: ^5.0.5
