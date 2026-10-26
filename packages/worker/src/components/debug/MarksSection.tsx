@@ -1,19 +1,22 @@
-import type { Mark } from "@essayist/core";
+import type { Category, Mark } from "@essayist/core";
 import type { LexicalEditor } from "lexical";
 import { Crosshair } from "lucide-preact";
 import Section from "#/components/debug/Section.tsx";
 import { SELECT_MARK_COMMAND } from "#/editor/markExtension.ts";
+import type { Categories } from "#/models/categories.ts";
+import type { FileMarks } from "#/models/fileMarks.ts";
 import { useEditorModels } from "#/pages/editor/models.ts";
 import { activeEditor } from "#/signals/activeEditor.ts";
 import { getEditorSelection } from "#/signals/editorSelection.ts";
-import { getMarks } from "#/signals/marks.ts";
 
 function MarkDetail({
   mark,
+  category,
   active,
   editor,
 }: {
   mark: Mark;
+  category: Category | undefined;
   active: boolean;
   editor: LexicalEditor | null;
 }) {
@@ -21,6 +24,12 @@ function MarkDetail({
     <div class="flex flex-col stack">
       <div class="flex stack shadow-md">
         <div class={`cell flex-1 gap-3 ${active ? "is-selected" : ""}`}>
+          {category?.color !== undefined && (
+            <span
+              class="size-3 shrink-0"
+              style={{ backgroundColor: category.color }}
+            />
+          )}
           <span>{mark.label || "Mark"}</span>
           <span
             class={`self-start
@@ -57,29 +66,48 @@ function MarkDetail({
 }
 
 export default function MarksSection() {
-  const { workspaces, fileTrees } = useEditorModels();
+  const { workspaces, fileTrees, marks, categories } = useEditorModels();
   const wsId = workspaces.selectedId.value;
   const path = fileTrees.current.value?.selectedPath.value ?? "";
-  if (!wsId || !path) return null;
-  return <Marks wsId={wsId} path={path} />;
+  const current = marks.current.value;
+  if (!wsId || !path || current === null) return null;
+  return (
+    <Marks
+      wsId={wsId}
+      path={path}
+      fileMarks={current}
+      categories={categories}
+    />
+  );
 }
 
-function Marks({ wsId, path }: { wsId: string; path: string }) {
-  const { resolved, loading } = getMarks(wsId, path);
+function Marks({
+  wsId,
+  path,
+  fileMarks,
+  categories,
+}: {
+  wsId: string;
+  path: string;
+  fileMarks: FileMarks;
+  categories: Categories;
+}) {
   const markIds = getEditorSelection(wsId, path).markIds.value;
+  const byLabel = categories.byLabel.value;
   const editor = activeEditor.value;
 
-  if (loading.value || resolved.value.length === 0) {
+  if (fileMarks.loading.value || fileMarks.marks.value.length === 0) {
     return null;
   }
 
   return (
     <Section title="Marks">
       <div class="flex flex-col stack">
-        {resolved.value.map((mark) => (
+        {fileMarks.marks.value.map((mark) => (
           <MarkDetail
             key={mark.id}
             mark={mark}
+            category={byLabel.get(mark.label ?? "")}
             active={markIds.has(mark.thread_id)}
             editor={editor}
           />

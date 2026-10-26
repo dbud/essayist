@@ -1,6 +1,7 @@
 import { computed } from "@preact/signals";
 import { CategoriesModel } from "#/models/categories.ts";
 import { FileContentsModel } from "#/models/fileContents.ts";
+import { FileMarksByPathModel } from "#/models/fileMarksByPath.ts";
 import { FileTreesModel } from "#/models/fileTrees.ts";
 import { FileVersionsByPathModel } from "#/models/fileVersionsByPath.ts";
 import { createModelContext } from "#/models/utils/context.ts";
@@ -23,12 +24,23 @@ export default function createModels(data: EditorData) {
     selectedPath,
     data.fileVersions,
   );
+  // Marks are re-anchored onto the version of the shown content, so the
+  // mark version is the content's version.
+  const selectedVersionId = computed(
+    () => fileContents.current.value?.version.value?.version_id ?? null,
+  );
+  const marks = new FileMarksByPathModel(
+    workspaces.selectedId,
+    selectedPath,
+    selectedVersionId,
+  );
   const categories = new CategoriesModel(data.categories);
   return {
     workspaces,
     fileTrees,
     fileContents,
     fileVersions,
+    marks,
     categories,
   };
 }
