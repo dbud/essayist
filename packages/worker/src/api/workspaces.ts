@@ -4,6 +4,7 @@ import { HttpApiEndpoint, HttpApiError, HttpApiGroup } from "effect/http-api";
 import { FileContentData } from "#/models/fileContent.data.ts";
 import { FileTreeData } from "#/models/fileTree.data.ts";
 import { FileVersionsData } from "#/models/fileVersions.data.ts";
+import { MarksData } from "#/models/marks.data.ts";
 import { WorkspacesData } from "#/models/workspaces.data.ts";
 import { SessionMiddleware } from "./sessionMiddleware";
 
@@ -90,6 +91,18 @@ const getFileVersions = HttpApiEndpoint.get(
   },
 );
 
+const MarksQuery = Schema.Struct({
+  wsId: Schema.NonEmptyString,
+  path: Schema.NonEmptyString,
+  versionId: Schema.NonEmptyString,
+});
+
+const GetMarks = HttpApiEndpoint.get("getMarks", "/workspaces/files/marks", {
+  query: MarksQuery,
+  success: MarksData,
+  error: [HttpApiError.Forbidden, HttpApiError.NotFound],
+});
+
 const ImportPayload = Schema.Struct({
   wsId: Schema.NonEmptyString,
   docId: Schema.NonEmptyString,
@@ -122,6 +135,7 @@ export const workspaceGroup = HttpApiGroup.make("workspaces")
   .add(selectFile)
   .add(getFileContent)
   .add(getFileVersions)
+  .add(GetMarks)
   .add(saveFileDraft)
   .add(importGoogleDoc)
   .middleware(SessionMiddleware);

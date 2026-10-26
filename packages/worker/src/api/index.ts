@@ -115,6 +115,17 @@ const workspaceHandlers = HttpApiBuilder.group(
             ),
           );
         }),
+      getMarks: (req) =>
+        Effect.gen(function* () {
+          const { user } = yield* UserSession;
+          const { wsId, path, versionId } = req.query;
+          yield* requireAccess(wsId, user.id);
+          const marks = yield* files.getMarks(path, versionId).pipe(
+            Effect.provideService(WorkspaceId, { wsId }),
+            Effect.catchTag("PersistenceError", (err) => Effect.die(err)),
+          );
+          return { marks };
+        }),
       saveFileDraft: (req) =>
         Effect.gen(function* () {
           const { user } = yield* UserSession;

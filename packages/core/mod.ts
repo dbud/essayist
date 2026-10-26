@@ -44,13 +44,13 @@ export { jsonLogger, jsonLogLayer } from "#/log.ts";
 export type { ResolveInput, ResolveOptions } from "#/marks/resolver.ts";
 export { resolveMarks } from "#/marks/resolver.ts";
 export { Marks } from "#/marks/service.ts";
-export type {
+export {
   Mark,
-  MarkOptions,
+  type MarkOptions,
   MarkProvenance,
-  MarkResult,
+  type MarkResult,
   MarkStatus,
-  MigrateMarksResult,
+  type MigrateMarksResult,
 } from "#/marks/types.ts";
 export type { ModelCallRecord } from "#/model/service.ts";
 export { ModelClient } from "#/model/service.ts";
