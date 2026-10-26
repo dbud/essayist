@@ -33,6 +33,6 @@ export function fileContentLoader(
           { wsId },
         )
       : null;
-    return { version, draft, writable };
+    return { version, draft };
   });
 }
