@@ -114,7 +114,7 @@ export class Marks extends Context.Service<Marks, Interface>()(
             before_context: beforeContext,
             after_context: afterContext,
             comment,
-            label,
+            ...(label !== undefined && { label }),
             created_at,
             offset,
             length: selectedText.length,
