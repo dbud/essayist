@@ -33,7 +33,7 @@ interface EditorDeps {
   markNumbers: Signal<MarkNumbers>;
   markBadges: Signal<MarkBadge[]>;
   markRects: Signal<MarkRect[]>;
-  readOnly: boolean;
+  writable: boolean;
 }
 
 export function createEditorExtension(
@@ -46,13 +46,13 @@ export function createEditorExtension(
     // markNumbers,
     // markBadges,
     // markRects,
-    readOnly,
+    writable,
   }: EditorDeps,
 ) {
   return defineExtension({
     name: "[root]",
     namespace: "essayist-editor",
-    editable: !readOnly,
+    editable: writable,
     theme: {
       text: {
         italic: "italic",

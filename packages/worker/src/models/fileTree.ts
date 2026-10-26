@@ -1,4 +1,4 @@
-import { computed, createModel, signal } from "@preact/signals";
+import { batch, computed, createModel, signal } from "@preact/signals";
 import createAsyncState from "#/models/utils/asyncState.ts";
 import { getJson } from "#/models/utils/http.ts";
 import type { FileTreeData } from "./fileTree.data";
@@ -10,6 +10,7 @@ export const FileTreeModel = createModel(
   (wsId: string, data?: FileTreeData) => {
     const files = signal(data?.files ?? []);
     const selectedPath = signal(data?.selectedPath ?? null);
+    const selectedVersionId = signal(data?.selectedVersionId ?? null);
 
     const tree = computed(() => buildFileTree(files.value));
 
@@ -28,11 +29,34 @@ export const FileTreeModel = createModel(
 
     if (data === undefined && !import.meta.env.SSR) void load();
 
-    function select(path: string | null): void {
-      selectedPath.value = path;
+    function select(path: string | null, versionId?: string | null): void {
+      batch(() => {
+        selectedPath.value = path;
+        // A file switch points at its latest version unless an id arrives.
+        selectedVersionId.value =
+          versionId ??
+          (path === null
+            ? null
+            : (files.value.find((file) => file.path === path)
+                ?.latestVersionId ?? null));
+      });
     }
 
-    return { files, selectedPath, select, tree, load, loading, error };
+    function selectVersion(versionId: string | null): void {
+      selectedVersionId.value = versionId;
+    }
+
+    return {
+      files,
+      selectedPath,
+      selectedVersionId,
+      select,
+      selectVersion,
+      tree,
+      load,
+      loading,
+      error,
+    };
   },
 );
 

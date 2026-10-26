@@ -27,7 +27,7 @@ interface FileEntry {
 
 function buildFileEntries(
   nodes: TreeNode[],
-  selectedPath: string,
+  selectedPath: string | null,
 ): FileEntry[] {
   const result: FileEntry[] = [];
   let prevSegments: string[] = [];
@@ -58,8 +58,8 @@ function buildFileEntries(
 
 function BreadcrumbsTrigger() {
   const { workspaces, fileTrees } = useEditorModels();
-  const selectedWorkspace = workspaces.current.value?.name ?? "";
-  const selectedPath = fileTrees.current.value?.selectedPath.value ?? "";
+  const selectedWorkspace = workspaces.current.value?.name ?? null;
+  const selectedPath = fileTrees.current.value?.selectedPath.value ?? null;
 
   const open = (e: TargetedMouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
@@ -93,7 +93,7 @@ function BreadcrumbsTrigger() {
         ) : (
           <button type="button" class="btn max-w-lg" onClick={open}>
             <span class="truncate min-w-0">{selectedWorkspace}</span>
-            {selectedPath && (
+            {selectedPath !== null && (
               <>
                 <Slash size={14} />
                 <span class="truncate min-w-0">{selectedPath}</span>
@@ -116,7 +116,7 @@ export default function FileNavigation() {
 
   const { workspaces, fileTrees } = useEditorModels();
   const files = fileTrees.current.value;
-  const selectedPath = files?.selectedPath.value ?? "";
+  const selectedPath = files?.selectedPath.value ?? null;
   const fileEntries = buildFileEntries(
     files?.tree.value.children ?? [],
     selectedPath,

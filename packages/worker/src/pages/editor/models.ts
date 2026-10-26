@@ -14,20 +14,19 @@ export default function createModels(data: EditorData) {
   const selectedPath = computed(
     () => fileTrees.current.value?.selectedPath.value ?? null,
   );
+  const selectedVersionId = computed(
+    () => fileTrees.current.value?.selectedVersionId.value ?? null,
+  );
   const fileContents = new FileContentsModel(
     workspaces.selectedId,
     selectedPath,
+    selectedVersionId,
     data.fileView?.content,
   );
   const fileVersions = new FileVersionsByPathModel(
     workspaces.selectedId,
     selectedPath,
     data.fileView?.versions,
-  );
-  // Marks are re-anchored onto the version of the shown content, so the
-  // mark version is the content's version.
-  const selectedVersionId = computed(
-    () => fileContents.current.value?.version.value?.version_id ?? null,
   );
   const marks = new FileMarksByPathModel(
     workspaces.selectedId,

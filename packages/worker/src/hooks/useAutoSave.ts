@@ -13,7 +13,7 @@ export function useAutoSave(file: FileContent | null): void {
     const dispose = debouncedEffect(
       file.markdown,
       () => {
-        if (autoSave.value && file.dirty.value) void file.save();
+        if (autoSave.value) void file.save();
       },
       {
         delay: () => autoSaveInterval.value * 1000,

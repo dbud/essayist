@@ -19,12 +19,16 @@ export default new Hono().get("/", async (c) => {
       user.id,
       workspaces.selectedId,
       c.req.query("path"),
+      c.req.query("versionId"),
     );
-    const path = fileTrees.tree?.selectedPath ?? null;
     const fileView =
-      fileTrees.wsId === null || path === null
+      fileTrees.wsId === null || fileTrees.tree?.selectedPath == null
         ? null
-        : yield* fileViewLoader(fileTrees.wsId, path);
+        : yield* fileViewLoader(
+            fileTrees.wsId,
+            fileTrees.tree.selectedPath,
+            fileTrees.tree.selectedVersionId,
+          );
     const categories = yield* categoriesLoader();
     return {
       workspaces,

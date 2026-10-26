@@ -15,13 +15,14 @@ export type { FileContentData };
 export interface FileKey {
   wsId: string;
   path: string;
-  versionId?: string;
+  versionId: string | null;
 }
 
 export const FileContentModel = createModel(
-  (wsId: string, path: string, versionId?: string, data?: FileContentData) => {
+  (wsId: string, path: string, versionId: string, data?: FileContentData) => {
     const version = signal<FileSnapshot | null>(data?.version ?? null);
     const draft = signal<DraftSnapshot | null>(data?.draft ?? null);
+    const writable = signal(data?.writable ?? false);
 
     const initialContent = computed(
       () => draft.value?.content ?? version.value?.content ?? null,
@@ -34,7 +35,7 @@ export const FileContentModel = createModel(
     const modifiedState = signal<EditorState | null>(null);
 
     function setModifiedState(state: EditorState): void {
-      assert(versionId === undefined, "cannot edit a version-pinned file");
+      assert(writable.value, "cannot edit a read-only version view");
       modifiedState.value = state;
     }
 
@@ -46,7 +47,7 @@ export const FileContentModel = createModel(
 
     const dirty = computed(
       () =>
-        versionId === undefined &&
+        writable.value &&
         modifiedState.value !== null &&
         markdown.value !== (initialContent.value ?? ""),
     );
@@ -54,16 +55,14 @@ export const FileContentModel = createModel(
     const [runLoad, { loading, error }] = createAsyncState();
 
     async function load(): Promise<void> {
-      const params = new URLSearchParams({ wsId, path });
-      if (versionId !== undefined) {
-        params.set("versionId", versionId);
-      }
+      const params = new URLSearchParams({ wsId, path, versionId });
       const data = await runLoad(async () =>
         getJson<FileContentData>(`/api/workspaces/files/content?${params}`),
       );
       if (data) {
         version.value = data.version;
         draft.value = data.draft;
+        writable.value = data.writable;
       }
     }
 
@@ -74,8 +73,8 @@ export const FileContentModel = createModel(
     async function save(options?: {
       readonly keepalive?: boolean;
     }): Promise<void> {
-      assert(versionId === undefined, "cannot save a version-pinned file");
       if (!dirty.value) return;
+      assert(writable.value, "cannot save a read-only version view");
       const result = await runSave(async () =>
         putJson<DraftSnapshot>(
           "/api/workspaces/files/draft",
@@ -89,6 +88,7 @@ export const FileContentModel = createModel(
     return {
       version,
       draft,
+      writable,
       initialState,
       modifiedState,
       setModifiedState,

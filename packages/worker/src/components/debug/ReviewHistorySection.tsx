@@ -51,8 +51,8 @@ function RunItem({ run, wsId: _wsId }: { run: ReviewRun; wsId: string }) {
 export default function ReviewHistorySection() {
   const { workspaces, fileTrees } = useEditorModels();
   const wsId = workspaces.selectedId.value;
-  const path = fileTrees.current.value?.selectedPath.value ?? "";
-  if (!wsId || !path) return null;
+  const path = fileTrees.current.value?.selectedPath.value ?? null;
+  if (wsId === null || path === null) return null;
   return <ReviewHistory wsId={wsId} path={path} />;
 }
 

@@ -11,6 +11,7 @@ export function fileTreeLoader(
   userId: string,
   wsId: string,
   fileIntent: string | undefined,
+  versionIntent?: string,
 ): Effect.Effect<FileTreeData, PersistenceError, Files | UserState> {
   return Effect.gen(function* () {
     const files = yield* Effect.provideService(
@@ -28,6 +29,26 @@ export function fileTreeLoader(
       : known(persisted)
         ? persisted
         : (files[0]?.path ?? null);
-    return { files, selectedPath };
+    let selectedVersionId = null;
+    if (selectedPath) {
+      const fallback =
+        files.find((file) => file.path === selectedPath)?.latestVersionId ??
+        null;
+      if (versionIntent === undefined) {
+        selectedVersionId = fallback;
+      } else {
+        const versions = yield* Effect.provideService(
+          Files.use((store) => store.getVersions(selectedPath)),
+          WorkspaceId,
+          { wsId },
+        ).pipe(Effect.catchTag("FileMissingError", (err) => Effect.die(err)));
+        selectedVersionId = versions.some(
+          (version) => version.version_id === versionIntent,
+        )
+          ? versionIntent
+          : fallback;
+      }
+    }
+    return { files, selectedPath, selectedVersionId };
   });
 }

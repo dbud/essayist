@@ -18,14 +18,21 @@ export function fileContentLoader(
       WorkspaceId,
       { wsId },
     );
-    const draft =
-      versionId === undefined
-        ? yield* Effect.provideService(
-            Files.use((store) => store.readDraft(path)),
-            WorkspaceId,
-            { wsId },
-          )
-        : null;
-    return { version, draft };
+    const versions = yield* Effect.provideService(
+      Files.use((store) => store.getVersions(path)),
+      WorkspaceId,
+      { wsId },
+    );
+    // The versions list is append-ordered, so the newest is last.
+    const latestVersionId = versions[versions.length - 1]?.version_id;
+    const writable = versionId === undefined || versionId === latestVersionId;
+    const draft = writable
+      ? yield* Effect.provideService(
+          Files.use((store) => store.readDraft(path)),
+          WorkspaceId,
+          { wsId },
+        )
+      : null;
+    return { version, draft, writable };
   });
 }

@@ -15,14 +15,22 @@ function pop(): void {
   globalThis.dispatchEvent(new Event("popstate"));
 }
 
+/** Round-trips the pop into the record, one known key at a time, the way
+ * the app's own handler decodes only its domain keys. */
+function popInto(record: { value: QueryRecord }) {
+  return (params: URLSearchParams) => {
+    const next: QueryRecord = {};
+    for (const key of Object.keys(record.value)) {
+      next[key] = params.get(key);
+    }
+    record.value = next;
+  };
+}
+
 test("writes the record into the query, replacing on boot", () => {
   resetPath();
   const record = signal<QueryRecord>({ wsId: "a", path: null });
-  const sync = setupUrlQuerySync(
-    record,
-    (query) => (record.value = query),
-    urlTarget(),
-  );
+  const sync = setupUrlQuerySync(record, popInto(record), urlTarget());
   expect(search()).toBe("?wsId=a");
   sync();
 });
@@ -30,11 +38,7 @@ test("writes the record into the query, replacing on boot", () => {
 test("pushes history entries for changes after boot", () => {
   resetPath();
   const record = signal<QueryRecord>({ wsId: "a" });
-  const sync = setupUrlQuerySync(
-    record,
-    (query) => (record.value = query),
-    urlTarget(),
-  );
+  const sync = setupUrlQuerySync(record, popInto(record), urlTarget());
   const entries = history.length;
   record.value = { wsId: "b" };
   expect(search()).toBe("?wsId=b");
@@ -45,11 +49,7 @@ test("pushes history entries for changes after boot", () => {
 test("clears nullish keys and preserves unknown parameters", () => {
   resetPath("/?utm=1&wsId=a");
   const record = signal<QueryRecord>({ wsId: "a", path: null });
-  const sync = setupUrlQuerySync(
-    record,
-    (query) => (record.value = query),
-    urlTarget(),
-  );
+  const sync = setupUrlQuerySync(record, popInto(record), urlTarget());
   // The boot apply is a no-op for a matching query.
   expect(search()).toBe("?utm=1&wsId=a");
   record.value = { wsId: "c", path: "notes.md" };
@@ -62,11 +62,7 @@ test("clears nullish keys and preserves unknown parameters", () => {
 test("applies the query back to the record on pop", () => {
   resetPath();
   const record = signal<QueryRecord>({ wsId: "a", path: null });
-  const sync = setupUrlQuerySync(
-    record,
-    (query) => (record.value = query),
-    urlTarget(),
-  );
+  const sync = setupUrlQuerySync(record, popInto(record), urlTarget());
   history.replaceState(null, "", "/?wsId=b");
   pop();
   expect(record.value.wsId).toBe("b");
@@ -85,11 +81,7 @@ test("applies the query back to the record on pop", () => {
 test("a no-op boot pushes for later changes", () => {
   resetPath("/?wsId=a");
   const record = signal<QueryRecord>({ wsId: "a" });
-  const sync = setupUrlQuerySync(
-    record,
-    (query) => (record.value = query),
-    urlTarget(),
-  );
+  const sync = setupUrlQuerySync(record, popInto(record), urlTarget());
   const entries = history.length;
   record.value = { wsId: "b" };
   expect(search()).toBe("?wsId=b");
@@ -100,11 +92,7 @@ test("a no-op boot pushes for later changes", () => {
 test("keys absent from the record are not owned and stay", () => {
   resetPath("/?wsId=a&path=x.md");
   const record = signal<QueryRecord>({ wsId: "a" });
-  const sync = setupUrlQuerySync(
-    record,
-    (query) => (record.value = query),
-    urlTarget(),
-  );
+  const sync = setupUrlQuerySync(record, popInto(record), urlTarget());
   expect(search()).toBe("?wsId=a&path=x.md");
   sync();
 });

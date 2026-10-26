@@ -189,7 +189,11 @@ export const SidenotesModel = createModel((key: FileKey) => {
 
 const cache = new Map<string, InstanceType<typeof SidenotesModel>>();
 
-export function getSidenotes(wsId: string, path: string, versionId?: string) {
+export function getSidenotes(
+  wsId: string,
+  path: string,
+  versionId: string | null,
+) {
   const key = `${wsId}:${path}:${versionId ?? ""}`;
   return cache.getOrInsertComputed(
     key,

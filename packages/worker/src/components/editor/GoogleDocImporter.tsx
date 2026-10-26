@@ -21,7 +21,7 @@ export default function GoogleDocImporter() {
   async function runImport(docs: PickerDoc[]) {
     const wsId = wsIdRef.current;
     wsIdRef.current = null;
-    if (!wsId) {
+    if (wsId === null) {
       showToast("No workspace selected", "error");
       return;
     }

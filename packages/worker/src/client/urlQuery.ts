@@ -49,7 +49,7 @@ function compose(href: string, record: QueryRecord): string {
  */
 export function setupUrlQuerySync(
   record: ReadonlySignal<QueryRecord>,
-  onPop: (query: QueryRecord) => void,
+  onPop: (params: URLSearchParams) => void,
   target: UrlTarget = browserTarget,
 ): () => void {
   let first = true;
@@ -64,13 +64,8 @@ export function setupUrlQuerySync(
   });
 
   const disposePop = target.onPop(() => {
-    const current = record.peek();
     const params = new URLSearchParams(new URL(target.href).search);
-    const query: QueryRecord = {};
-    for (const key of Object.keys(current)) {
-      query[key] = params.get(key);
-    }
-    batch(() => onPop(query));
+    batch(() => onPop(params));
   });
 
   return () => {

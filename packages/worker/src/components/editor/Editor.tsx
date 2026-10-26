@@ -42,7 +42,7 @@ export default function Editor({
   } = getSidenotes(wsId, path, versionId);
   const markdown = file.markdown;
   const selection = getEditorSelection(wsId, path, versionId);
-  const readOnly = versionId !== undefined;
+  const writable = file.writable.value;
 
   const extension = useMemo(
     () => ({
@@ -54,7 +54,7 @@ export default function Editor({
         markNumbers,
         markBadges,
         markRects,
-        readOnly,
+        writable,
       }),
       $initialEditorState: initialState,
     }),
@@ -67,6 +67,7 @@ export default function Editor({
       markNumbers,
       markBadges,
       markRects,
+      writable,
     ],
   );
 
@@ -96,12 +97,12 @@ export default function Editor({
         class={`prose whitespace-pre-wrap editor-input outline-none max-w-none ${className}`}
         placeholder={
           <span class="absolute left-4 top-16 @[64rem]:left-16 text-ink/40 pointer-events-none prose pl-1">
-            {readOnly ? "No content" : "Start writing..."}
+            {writable ? "Start writing..." : "No content"}
           </span>
         }
       />
     ),
-    [className, readOnly, prerenderedHtml],
+    [className, writable, prerenderedHtml],
   );
 
   return (

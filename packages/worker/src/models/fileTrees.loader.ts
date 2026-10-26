@@ -7,10 +7,13 @@ export function fileTreesLoader(
   userId: string,
   wsId: string | null,
   pathIntent: string | undefined,
+  versionIntent: string | undefined,
 ): Effect.Effect<FileTreesData, PersistenceError, Files | UserState> {
   return Effect.gen(function* () {
     const tree =
-      wsId === null ? null : yield* fileTreeLoader(userId, wsId, pathIntent);
+      wsId === null
+        ? null
+        : yield* fileTreeLoader(userId, wsId, pathIntent, versionIntent);
     return { wsId, tree };
   });
 }

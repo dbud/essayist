@@ -6,20 +6,31 @@ export const FileContentsModel = createModel(
   (
     selectedWorkspaceId: Signal<string | null>,
     selectedPath: Signal<string | null>,
+    selectedVersionId: Signal<string | null>,
     data?: FileContentData,
   ) => {
-    const files = signal(new Map<string, Map<string, FileContent>>());
+    const files = signal(
+      new Map<string, Map<string, Map<string, FileContent>>>(),
+    );
 
     const wsId = selectedWorkspaceId.value;
     const path = selectedPath.value;
-    if (data !== undefined && wsId !== null && path !== null) {
+    const versionId = selectedVersionId.value;
+    if (
+      data !== undefined &&
+      wsId !== null &&
+      path !== null &&
+      versionId !== null
+    ) {
       files.value = new Map([
         [
           wsId,
           new Map([
             [
               path,
-              new FileContentModel(wsId, path, /* versionId */ undefined, data),
+              new Map([
+                [versionId, new FileContentModel(wsId, path, versionId, data)],
+              ]),
             ],
           ]),
         ],
@@ -29,10 +40,15 @@ export const FileContentsModel = createModel(
     const current = computed(() => {
       const wsId = selectedWorkspaceId.value;
       const path = selectedPath.value;
-      if (wsId === null || path === null) return null;
+      const versionId = selectedVersionId.value;
+      if (wsId === null || path === null || versionId === null) return null;
       return files.value
         .getOrInsertComputed(wsId, () => new Map())
-        .getOrInsertComputed(path, () => new FileContentModel(wsId, path));
+        .getOrInsertComputed(path, () => new Map())
+        .getOrInsertComputed(
+          versionId,
+          () => new FileContentModel(wsId, path, versionId),
+        );
     });
 
     return { current };

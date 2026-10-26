@@ -13,11 +13,16 @@ void boot((data: EditorData) => {
   setupUrlQuerySync(
     computed(() => ({
       wsId: models.workspaces.selectedId.value,
-      path: models.fileTrees.current.value?.selectedPath.value ?? null,
+      path: models.fileTrees.current.value?.selectedPath.value,
+      versionId: models.fileTrees.current.value?.selectedVersionId.value,
     })),
-    ({ wsId, path }) => {
+    (params) => {
+      const wsId = params.get("wsId");
       if (wsId) models.workspaces.select(wsId);
-      models.fileTrees.current.value?.select(path ?? null);
+      models.fileTrees.current.value?.select(
+        params.get("path"),
+        params.get("versionId"),
+      );
     },
   );
 

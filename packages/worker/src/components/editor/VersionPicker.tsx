@@ -1,7 +1,5 @@
 import { sortBy } from "@std/collections";
-import { ChevronDown, CircleDashed } from "lucide-preact";
-// TODO -- the pinned version shows a lock -- ESS-84
-// import { LockKeyhole } from "lucide-preact";
+import { ChevronDown, CircleDashed, LockKeyhole } from "lucide-preact";
 import type { ComponentChild } from "preact";
 import Dropdown, {
   DropdownItem,
@@ -20,8 +18,6 @@ import { META_KEY } from "#/utils/platform.ts";
 
 interface VersionPickerProps {
   file: FileContent;
-  // TODO -- the pinned version joins the picker -- ESS-84
-  // versionId: string | null;
 }
 
 function useFileLoading(file: FileContent): boolean {
@@ -91,38 +87,29 @@ function SaveStatus({ file }: { file: FileContent }) {
 
 function VersionChip({
   timestamp,
-  // TODO -- the pinned version shows a lock -- ESS-84
-  // lock,
+  lock,
 }: {
   timestamp: number;
-  // lock?: boolean;
+  lock?: boolean;
 }) {
   return (
     <span class="inline-flex items-start gap-1">
-      {/* TODO -- the pinned version shows a lock -- ESS-84 */}
-      {/* {lock && <LockKeyhole size={14} />} */}
+      {lock && <LockKeyhole size={14} />}
       <span class="leading-none">{formatDateTime(timestamp)}</span>
     </span>
   );
 }
 
 export default function VersionPicker({ file }: VersionPickerProps) {
-  // TODO -- picking a version pins it on the tree -- ESS-84
-  // const { fileTrees, fileVersions } = useEditorModels();
-  const { fileVersions } = useEditorModels();
+  const { fileTrees, fileVersions } = useEditorModels();
+  const versionId = fileTrees.current.value?.selectedVersionId.value ?? null;
   const versions = fileVersions.current.value?.versions.value ?? [];
   const list = sortBy(versions, (version) => version.timestamp, {
     order: "desc",
   });
-  // TODO -- the pinned version is the selected one -- ESS-84
-  // const selected = list.find((version) => version.version_id === versionId);
+  const selected = list.find((version) => version.version_id === versionId);
   const pending = useFileLoading(file);
   const active = file.saving.value || pending;
-
-  // TODO -- picking a version pins it on the tree -- ESS-84
-  // function select(next: string | null) {
-  //   fileTrees.current.value?.selectVersion(next);
-  // }
 
   return (
     <Dropdown
@@ -131,31 +118,30 @@ export default function VersionPicker({ file }: VersionPickerProps) {
       trigger={
         <>
           <WaveBars fill amplitude={active ? 0.5 : 0} class="text-ink" />
-          {/* TODO -- the pinned version shows its timestamp instead of the
-          save status -- ESS-84
-          <Swappable swapKey={versionId ?? "latest"} class="swap-shift self-start">
-            {selected ? (
+          <Swappable
+            swapKey={file.writable.value ? "latest" : "pinned"}
+            class="swap-shift self-start"
+          >
+            {!file.writable.value && selected ? (
               <VersionChip timestamp={selected.timestamp} lock />
             ) : (
               <SaveStatus file={file} />
             )}
           </Swappable>
-          */}
-          <Swappable swapKey="latest" class="swap-shift self-start">
-            <SaveStatus file={file} />
-          </Swappable>
           {!pending && <ChevronDown size={14} class="rotate-on-open" />}
         </>
       }
     >
-      {() => (
+      {(close) => (
         <DropdownMenu class="dropdown-menu--full">
-          {/* TODO -- picking a version pins it -- ESS-84
           <DropdownItem
-            selected={!versionId}
+            selected={file.writable.value}
             onClick={() => {
-              select(null);
-              close();
+              const latest = file.version.value?.version_id ?? null;
+              if (latest !== null) {
+                fileTrees.current.value?.selectVersion(latest);
+                close();
+              }
             }}
           >
             Latest
@@ -165,17 +151,10 @@ export default function VersionPicker({ file }: VersionPickerProps) {
               key={version.version_id}
               selected={version.version_id === versionId}
               onClick={() => {
-                select(version.version_id);
+                fileTrees.current.value?.selectVersion(version.version_id);
                 close();
               }}
             >
-              <VersionChip timestamp={version.timestamp} />
-            </DropdownItem>
-          ))}
-          */}
-          <DropdownItem selected>Latest</DropdownItem>
-          {list.map((version) => (
-            <DropdownItem key={version.version_id}>
               <VersionChip timestamp={version.timestamp} />
             </DropdownItem>
           ))}

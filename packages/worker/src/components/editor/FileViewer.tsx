@@ -28,12 +28,28 @@ import SidenoteControls from "#/islands/SidenoteControls.tsx";
 export default function FileViewer() {
   const { workspaces, fileTrees } = useEditorModels();
   const wsId = workspaces.selectedId.value;
-  const path = fileTrees.current.value?.selectedPath.value;
-  if (!wsId || !path) return null;
-  return <FileViewerBody key={path} wsId={wsId} path={path} />;
+  const path = fileTrees.current.value?.selectedPath.value ?? null;
+  const versionId = fileTrees.current.value?.selectedVersionId.value ?? null;
+  if (wsId === null || path === null) return null;
+  return (
+    <FileViewerBody
+      key={`${path}:${versionId ?? ""}`}
+      wsId={wsId}
+      path={path}
+      versionId={versionId}
+    />
+  );
 }
 
-function FileViewerBody({ wsId, path }: { wsId: string; path: string }) {
+function FileViewerBody({
+  wsId,
+  path,
+  versionId,
+}: {
+  wsId: string;
+  path: string;
+  versionId: string | null;
+}) {
   const { fileContents } = useEditorModels();
   const file = fileContents.current.value;
   // TODO -- marks and sidenotes hook onto the wasm marks port -- ESS-84;
@@ -41,7 +57,7 @@ function FileViewerBody({ wsId, path }: { wsId: string; path: string }) {
   // selection alongside.
   // const { resolved } = getMarks(wsId, path, versionId);
   // const sidenotes = getSidenotes(wsId, path, versionId);
-  const selection = getEditorSelection(wsId, path);
+  const selection = getEditorSelection(wsId, path, versionId);
   // const scrollRef = useScrollViewport(
   //   sidenotes.scrollTop,
   //   sidenotes.viewportHeight,
@@ -79,7 +95,7 @@ function FileViewerBody({ wsId, path }: { wsId: string; path: string }) {
           <div class="content-main min-w-0">
             <div class="flex w-fit stack stack--row">
               <FontSelect />
-              <EditorToolbar wsId={wsId} path={path} />
+              <EditorToolbar wsId={wsId} path={path} versionId={versionId} />
               <FileStats file={file} />
               <VersionPicker file={file} />
             </div>
@@ -115,6 +131,7 @@ function FileViewerBody({ wsId, path }: { wsId: string; path: string }) {
                   wsId={wsId}
                   file={file}
                   path={path}
+                  versionId={versionId}
                   initialState={file.state.value}
                   onChange={file.setModifiedState}
                   className={`content-main pt-16 pb-32`}
