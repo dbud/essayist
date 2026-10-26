@@ -156,18 +156,6 @@ export default function VersionPicker({ file }: VersionPickerProps) {
     >
       {(close) => (
         <DropdownMenu class="dropdown-menu--full">
-          <DropdownItem
-            selected={writable}
-            onClick={() => {
-              const latest = file.version.value?.version_id ?? null;
-              if (latest !== null) {
-                fileTrees.current.value?.selectVersion(latest);
-                close();
-              }
-            }}
-          >
-            Latest
-          </DropdownItem>
           {import.meta.env.DEV && promotable ? (
             <>
               <DropdownItem onClick={() => void promoteDraft(close)}>
