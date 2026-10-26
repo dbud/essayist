@@ -1,3 +1,4 @@
+import { unreachable } from "@std/assert";
 import { createTokenizer, type Token } from "#/text/tokenizer.ts";
 
 export interface DiffHunk {
@@ -142,7 +143,7 @@ function decodeOps(flat: Int32Array): DiffOp[] {
     } else if (type === DEL) {
       ops.push({ type: "delete", oldIdx });
     } else {
-      throw new Error(`decodeOps: unknown op type ${type}`);
+      unreachable(`decodeOps: unknown op type ${type}`);
     }
   }
   return ops;

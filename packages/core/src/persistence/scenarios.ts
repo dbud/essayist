@@ -3,7 +3,7 @@
  * implementation of the service must pass the same scenarios.
  */
 
-import { assertEquals, assertInstanceOf } from "@std/assert";
+import { assert, assertEquals, assertInstanceOf } from "@std/assert";
 import { Effect, Result } from "effect";
 import { ConcurrentModificationError } from "./mod.ts";
 import { Persistence } from "./service.ts";
@@ -174,7 +174,7 @@ const checkMatches = scenario("a matching versionstamp check commits", () =>
     const store = yield* Persistence;
     yield* store.set(["k"], "v1");
     const entry = yield* store.get(["k"]);
-    if (!entry) throw new Error("entry vanished");
+    assert(entry, "entry vanished");
     yield* store.batch([{ type: "set", key: ["k"], value: "v2" }], {
       checks: [{ key: ["k"], versionstamp: entry.versionstamp }],
     });
@@ -187,7 +187,7 @@ const checkStale = scenario("a stale check fails the batch, value intact", () =>
     const store = yield* Persistence;
     yield* store.set(["k"], "v1");
     const stale = (yield* store.get(["k"]))?.versionstamp;
-    if (!stale) throw new Error("entry vanished");
+    assert(stale, "entry vanished");
     yield* store.set(["k"], "v2");
 
     const outcome = yield* Effect.result(
@@ -195,9 +195,7 @@ const checkStale = scenario("a stale check fails the batch, value intact", () =>
         checks: [{ key: ["k"], versionstamp: stale }],
       }),
     );
-    if (Result.isSuccess(outcome)) {
-      throw new Error("a stale check did not conflict");
-    }
+    assert(!Result.isSuccess(outcome), "a stale check did not conflict");
     assertInstanceOf(outcome.failure, ConcurrentModificationError);
     assertEquals((yield* store.get(["k"]))?.value, "v2");
   }),
@@ -216,9 +214,7 @@ const checkAbsent = scenario("a null check requires absence", () =>
         checks: [{ key: ["k"], versionstamp: null }],
       }),
     );
-    if (Result.isSuccess(outcome)) {
-      throw new Error("a null check did not conflict");
-    }
+    assert(!Result.isSuccess(outcome), "a null check did not conflict");
     assertInstanceOf(outcome.failure, ConcurrentModificationError);
     assertEquals((yield* store.get(["k"]))?.value, "v");
   }),

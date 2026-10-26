@@ -1,3 +1,4 @@
+import { assert } from "@std/assert";
 import type {
   Artifact,
   Artifacts,
@@ -21,11 +22,10 @@ export function view<T extends FlowTypes>(
       matching(type).map((artifact) => artifact.data),
     one: <A extends ArtifactType<T>>(type: A): T["artifacts"][A] => {
       const matches = matching(type);
-      if (matches.length !== 1) {
-        throw new Error(
-          `expected exactly one "${String(type)}" artifact, got ${matches.length}`,
-        );
-      }
+      assert(
+        matches.length === 1,
+        `expected exactly one "${String(type)}" artifact, got ${matches.length}`,
+      );
       return matches[0].data;
     },
   };
