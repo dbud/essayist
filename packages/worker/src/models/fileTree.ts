@@ -22,8 +22,11 @@ export const FileTreeModel = createModel(
         getJson<FileTreeData>(`/api/workspaces/files?${params}`),
       );
       if (data) {
-        files.value = data.files;
-        selectedPath.value = data.selectedPath;
+        batch(() => {
+          files.value = data.files;
+          selectedPath.value = data.selectedPath;
+          selectedVersionId.value = data.selectedVersionId;
+        });
       }
     }
 
@@ -42,7 +45,7 @@ export const FileTreeModel = createModel(
       });
     }
 
-    function selectVersion(versionId: string | null): void {
+    function selectVersion(versionId: string): void {
       selectedVersionId.value = versionId;
     }
 

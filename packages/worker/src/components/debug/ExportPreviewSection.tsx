@@ -2,17 +2,23 @@ import type { Mark } from "@essayist/core";
 import { mapNotNullish } from "@std/collections";
 import Section from "#/components/debug/Section.tsx";
 import { segmentMarks } from "#/editor/markSegments.ts";
+import type { FileContent } from "#/models/fileContent.ts";
 import { useEditorModels } from "#/pages/editor/models.ts";
 import { getMarks } from "#/signals/marks.ts";
 
 export default function ExportPreviewSection() {
-  const { workspaces, fileTrees } = useEditorModels();
-  const wsId = workspaces.selectedId.value;
-  const path = fileTrees.current.value?.selectedPath.value ?? "";
-  if (!wsId || !path) return null;
+  const { fileContents, selected } = useEditorModels();
+  const selection = selected.value;
+  if (selection === null || selection.path === null) return null;
+  const file = fileContents.current.value;
+  if (file === null) return null;
   return (
     <Section title="Export Preview">
-      <MarkdownPreview wsId={wsId} path={path} />
+      <MarkdownPreview
+        wsId={selection.wsId}
+        path={selection.path}
+        file={file}
+      />
     </Section>
   );
 }
@@ -40,11 +46,17 @@ function visualizeWhitespace(text: string): string {
     .replace(/\n/g, "\u00AC\n");
 }
 
-function MarkdownPreview({ wsId, path }: { wsId: string; path: string }) {
-  const { fileContents } = useEditorModels();
-  const file = fileContents.current.value;
+function MarkdownPreview({
+  wsId,
+  path,
+  file,
+}: {
+  wsId: string;
+  path: string;
+  file: FileContent;
+}) {
   const marks = getMarks(wsId, path);
-  const md = file?.markdown.value ?? null;
+  const md = file.markdown.value;
   const resolved = marks.resolved.value;
 
   if (md === null) return null;

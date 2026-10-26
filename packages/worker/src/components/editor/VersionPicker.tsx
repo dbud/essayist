@@ -101,13 +101,17 @@ function VersionChip({
 }
 
 export default function VersionPicker({ file }: VersionPickerProps) {
-  const { fileTrees, fileVersions } = useEditorModels();
-  const versionId = fileTrees.current.value?.selectedVersionId.value ?? null;
-  const versions = fileVersions.current.value?.versions.value ?? [];
-  const list = sortBy(versions, (version) => version.timestamp, {
-    order: "desc",
-  });
-  const selected = list.find((version) => version.version_id === versionId);
+  const { fileTrees, selected, fileVersions } = useEditorModels();
+  const versions = fileVersions.current.value;
+  const versionId = selected.value?.versionId ?? null;
+  const list = sortBy(
+    versions?.versions.value ?? [],
+    (version) => version.timestamp,
+    {
+      order: "desc",
+    },
+  );
+  const selectedVersion = versions?.byId(versionId);
   const pending = useFileLoading(file);
   const active = file.saving.value || pending;
 
@@ -122,8 +126,8 @@ export default function VersionPicker({ file }: VersionPickerProps) {
             swapKey={file.writable.value ? "latest" : "pinned"}
             class="swap-shift self-start"
           >
-            {!file.writable.value && selected ? (
-              <VersionChip timestamp={selected.timestamp} lock />
+            {!file.writable.value && selectedVersion ? (
+              <VersionChip timestamp={selectedVersion.timestamp} lock />
             ) : (
               <SaveStatus file={file} />
             )}

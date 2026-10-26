@@ -1,3 +1,4 @@
+import type { FileVersion } from "@essayist/core";
 import { createModel, signal } from "@preact/signals";
 import createAsyncState from "#/models/utils/asyncState.ts";
 import { getJson } from "#/models/utils/http.ts";
@@ -21,7 +22,14 @@ export const FileVersionsModel = createModel(
 
     if (data === undefined && !import.meta.env.SSR) void load();
 
-    return { versions, load, loading, error };
+    function byId(versionId: string | null): FileVersion | null {
+      return versionId === null
+        ? null
+        : (versions.value.find((version) => version.version_id === versionId) ??
+            null);
+    }
+
+    return { versions, byId, load, loading, error };
   },
 );
 

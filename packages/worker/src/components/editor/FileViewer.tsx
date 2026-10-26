@@ -26,17 +26,15 @@ import SidenoteControls from "#/islands/SidenoteControls.tsx";
 // import { getSidenotes } from "#/signals/sidenotes.ts";
 
 export default function FileViewer() {
-  const { workspaces, fileTrees } = useEditorModels();
-  const wsId = workspaces.selectedId.value;
-  const path = fileTrees.current.value?.selectedPath.value ?? null;
-  const versionId = fileTrees.current.value?.selectedVersionId.value ?? null;
-  if (wsId === null || path === null) return null;
+  const { selected } = useEditorModels();
+  const selection = selected.value;
+  if (selection === null || selection.path === null) return null;
   return (
     <FileViewerBody
-      key={`${path}:${versionId ?? ""}`}
-      wsId={wsId}
-      path={path}
-      versionId={versionId}
+      key={`${selection.path}:${selection.versionId}`}
+      wsId={selection.wsId}
+      path={selection.path}
+      versionId={selection.versionId}
     />
   );
 }
@@ -48,7 +46,7 @@ function FileViewerBody({
 }: {
   wsId: string;
   path: string;
-  versionId: string | null;
+  versionId: string;
 }) {
   const { fileContents } = useEditorModels();
   const file = fileContents.current.value;

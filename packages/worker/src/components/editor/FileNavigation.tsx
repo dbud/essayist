@@ -57,9 +57,9 @@ function buildFileEntries(
 }
 
 function BreadcrumbsTrigger() {
-  const { workspaces, fileTrees } = useEditorModels();
+  const { workspaces, selected } = useEditorModels();
   const selectedWorkspace = workspaces.current.value?.name ?? null;
-  const selectedPath = fileTrees.current.value?.selectedPath.value ?? null;
+  const selectedPath = selected.value?.path ?? null;
 
   const open = (e: TargetedMouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
@@ -114,9 +114,9 @@ export default function FileNavigation() {
 
   const ref = useClickOutside(() => (navigationOpened.value = false));
 
-  const { workspaces, fileTrees } = useEditorModels();
+  const { workspaces, fileTrees, selected } = useEditorModels();
   const files = fileTrees.current.value;
-  const selectedPath = files?.selectedPath.value ?? null;
+  const selectedPath = selected.value?.path ?? null;
   const fileEntries = buildFileEntries(
     files?.tree.value.children ?? [],
     selectedPath,

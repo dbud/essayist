@@ -8,18 +8,20 @@ import { setupSelectionPersist } from "./editor/persist.ts";
 
 void boot((data: EditorData) => {
   const models = createModels(data);
-  setupSelectionPersist(models);
+  const { selected, workspaces, fileTrees } = models;
+
+  setupSelectionPersist(selected);
 
   setupUrlQuerySync(
     computed(() => ({
-      wsId: models.workspaces.selectedId.value,
-      path: models.fileTrees.current.value?.selectedPath.value,
-      versionId: models.fileTrees.current.value?.selectedVersionId.value,
+      wsId: selected.value?.wsId ?? null,
+      path: selected.value?.path ?? null,
+      versionId: selected.value?.versionId ?? null,
     })),
     (params) => {
       const wsId = params.get("wsId");
-      if (wsId) models.workspaces.select(wsId);
-      models.fileTrees.current.value?.select(
+      if (wsId) workspaces.select(wsId);
+      fileTrees.current.value?.select(
         params.get("path"),
         params.get("versionId"),
       );

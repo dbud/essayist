@@ -1,27 +1,29 @@
-import { computed, createModel, type Signal, signal } from "@preact/signals";
+import {
+  computed,
+  createModel,
+  type ReadonlySignal,
+  signal,
+} from "@preact/signals";
+import type { FileSelection } from "./fileSelection.ts";
 import type { FileVersionsData } from "./fileVersions.data.ts";
 import { type FileVersions, FileVersionsModel } from "./fileVersions.ts";
 
 export const FileVersionsByPathModel = createModel(
-  (
-    selectedWorkspaceId: Signal<string | null>,
-    selectedPath: Signal<string | null>,
-    data?: FileVersionsData,
-  ) => {
+  (selected: ReadonlySignal<FileSelection | null>, data?: FileVersionsData) => {
     const versions = signal(new Map<string, Map<string, FileVersions>>());
 
-    const wsId = selectedWorkspaceId.value;
-    const path = selectedPath.value;
-    if (data !== undefined && wsId !== null && path !== null) {
+    const selection = selected.value;
+    if (data !== undefined && selection?.path) {
+      const { wsId, path } = selection;
       versions.value = new Map([
         [wsId, new Map([[path, new FileVersionsModel(wsId, path, data)]])],
       ]);
     }
 
     const current = computed(() => {
-      const wsId = selectedWorkspaceId.value;
-      const path = selectedPath.value;
-      if (wsId === null || path === null) return null;
+      const selection = selected.value;
+      if (selection === null || selection.path === null) return null;
+      const { wsId, path } = selection;
       return versions.value
         .getOrInsertComputed(wsId, () => new Map())
         .getOrInsertComputed(path, () => new FileVersionsModel(wsId, path));

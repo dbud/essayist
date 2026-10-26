@@ -1,10 +1,11 @@
-import { effect } from "@preact/signals";
+import { effect, type ReadonlySignal } from "@preact/signals";
+import type { FileSelection } from "#/models/fileSelection.ts";
 import { patchJson } from "#/models/utils/http.ts";
-import type { EditorModels } from "#/pages/editor/models.ts";
 
 let timer: ReturnType<typeof setTimeout> | undefined;
 let pendingWsId: string | null = null;
 let pendingPath: { wsId: string; path: string } | null = null;
+let lastWsId: string | null = null;
 
 const DEBOUNCE_MS = 500;
 
@@ -30,23 +31,19 @@ function schedule(): void {
 
 // The pagehide flush uses keepalive so pending writes survive page
 // unload.
-export function setupSelectionPersist({
-  workspaces,
-  fileTrees,
-}: EditorModels): void {
+export function setupSelectionPersist(
+  selected: ReadonlySignal<FileSelection | null>,
+): void {
   effect(() => {
-    const wsId = workspaces.selectedId.value;
-    if (!wsId) return;
-    pendingWsId = wsId;
-    schedule();
-  });
-
-  effect(() => {
-    const wsId = workspaces.selectedId.value;
-    if (!wsId) return;
-    const path = fileTrees.current.value?.selectedPath.value;
-    if (!path) return;
-    pendingPath = { wsId, path };
+    const selection = selected.value;
+    if (selection === null) return;
+    if (selection.wsId !== lastWsId) {
+      lastWsId = selection.wsId;
+      pendingWsId = selection.wsId;
+    }
+    if (selection.path !== null) {
+      pendingPath = { wsId: selection.wsId, path: selection.path };
+    }
     schedule();
   });
 

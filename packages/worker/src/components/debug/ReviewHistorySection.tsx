@@ -49,11 +49,10 @@ function RunItem({ run, wsId: _wsId }: { run: ReviewRun; wsId: string }) {
 }
 
 export default function ReviewHistorySection() {
-  const { workspaces, fileTrees } = useEditorModels();
-  const wsId = workspaces.selectedId.value;
-  const path = fileTrees.current.value?.selectedPath.value ?? null;
-  if (wsId === null || path === null) return null;
-  return <ReviewHistory wsId={wsId} path={path} />;
+  const { selected } = useEditorModels();
+  const selection = selected.value;
+  if (selection === null || selection.path === null) return null;
+  return <ReviewHistory wsId={selection.wsId} path={selection.path} />;
 }
 
 function ReviewHistory({ wsId, path }: { wsId: string; path: string }) {

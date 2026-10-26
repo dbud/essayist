@@ -66,17 +66,17 @@ function MarkDetail({
 }
 
 export default function MarksSection() {
-  const { workspaces, fileTrees, marks, categories } = useEditorModels();
-  const wsId = workspaces.selectedId.value;
-  const path = fileTrees.current.value?.selectedPath.value ?? null;
-  const versionId = fileTrees.current.value?.selectedVersionId.value ?? null;
+  const { selected, marks, categories } = useEditorModels();
+  const selection = selected.value;
   const current = marks.current.value;
-  if (wsId === null || path === null || current === null) return null;
+  if (selection === null || selection.path === null || current === null) {
+    return null;
+  }
   return (
     <Marks
-      wsId={wsId}
-      path={path}
-      versionId={versionId}
+      wsId={selection.wsId}
+      path={selection.path}
+      versionId={selection.versionId}
       fileMarks={current}
       categories={categories}
     />
@@ -92,7 +92,7 @@ function Marks({
 }: {
   wsId: string;
   path: string;
-  versionId: string | null;
+  versionId: string;
   fileMarks: FileMarks;
   categories: Categories;
 }) {
