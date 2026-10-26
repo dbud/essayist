@@ -273,7 +273,7 @@ importers:
   packages/kvctl:
     dependencies:
       '@cliffy/command':
-        specifier: jsr:@cliffy/command@^1.3.1
+        specifier: npm:@jsr/cliffy__command@^1.3.1
         version: '@jsr/cliffy__command@1.3.1'
       '@effect/sql-d1':
         specifier: 'catalog:'
