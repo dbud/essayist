@@ -3,18 +3,8 @@ import type { FileTrees } from "./fileTrees.ts";
 import type { Workspaces } from "./workspaces.ts";
 
 export type FileSelection =
-  | {
-      wsId: string;
-      path: null;
-      versionId: null;
-      writable: false;
-    }
-  | {
-      wsId: string;
-      path: string;
-      versionId: string;
-      writable: boolean;
-    };
+  | { wsId: string; path: null; versionId: null }
+  | { wsId: string; path: string; versionId: string };
 
 export function createFileSelection(
   workspaces: Workspaces,
@@ -27,11 +17,8 @@ export function createFileSelection(
     const path = fileTree.selectedPath.value;
     const versionId = fileTree.selectedVersionId.value;
     if (path === null || versionId === null) {
-      return { wsId, path: null, versionId: null, writable: false as const };
+      return { wsId, path: null, versionId: null };
     }
-    const latestVersionId = fileTree.files.value.find(
-      (file) => file.path === path,
-    )?.latestVersionId;
-    return { wsId, path, versionId, writable: latestVersionId === versionId };
+    return { wsId, path, versionId };
   });
 }

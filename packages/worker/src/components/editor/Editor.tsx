@@ -12,7 +12,6 @@ import { MARK_RANGE_TAG } from "#/editor/markExtension.ts";
 import { withDOM } from "#/editor/withDOM.ts";
 import type { FileContent, FileKey } from "#/models/fileContent.ts";
 import { usePreferences } from "#/models/preferences.ts";
-import { useEditorModels } from "#/pages/editor/models.ts";
 import { getEditorSelection } from "#/signals/editorSelection.ts";
 import { getMarks } from "#/signals/marks.ts";
 import { getSidenotes } from "#/signals/sidenotes.ts";
@@ -43,8 +42,7 @@ export default function Editor({
   } = getSidenotes(wsId, path, versionId);
   const markdown = file.markdown;
   const selection = getEditorSelection(wsId, path, versionId);
-  const { selected } = useEditorModels();
-  const writable = selected.value?.writable ?? false;
+  const writable = file.version.value?.isHead ?? false;
 
   const extension = useMemo(
     () => ({
