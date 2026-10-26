@@ -15,14 +15,15 @@ export function fileViewLoader(
   versionId: string | null,
 ): Effect.Effect<FileViewData, PersistenceError | FileMissingError, Files> {
   return Effect.gen(function* () {
-    // TODO -- the versions list loads twice: the content loader's writable
-    // test plus this read; dedup onto one -- ESS-84
+    const versions = yield* fileVersionsLoader(wsId, path);
+    const withDraft =
+      versionId === null || versionId === versions.latestVersionId;
     const content = yield* fileContentLoader(
       wsId,
       path,
       versionId ?? undefined,
+      withDraft,
     );
-    const versions = yield* fileVersionsLoader(wsId, path);
     const marks = yield* Effect.provideService(
       Files.use((store) => store.getMarks(path, content.version.version_id)),
       WorkspaceId,

@@ -94,7 +94,12 @@ const workspaceHandlers = HttpApiBuilder.group(
           const { user } = yield* UserSession;
           const { wsId, path, versionId } = req.query;
           yield* requireAccess(wsId, user.id);
-          return yield* fileContentLoader(wsId, path, versionId).pipe(
+          return yield* Effect.gen(function* () {
+            const { latestVersionId } = yield* fileVersionsLoader(wsId, path);
+            const withDraft =
+              versionId === undefined || versionId === latestVersionId;
+            return yield* fileContentLoader(wsId, path, versionId, withDraft);
+          }).pipe(
             Effect.provide(stores),
             Effect.catchTag("PersistenceError", (err) => Effect.die(err)),
             Effect.catchTag("FileMissingError", () =>
