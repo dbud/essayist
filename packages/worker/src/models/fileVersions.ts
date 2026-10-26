@@ -8,7 +8,7 @@ export type { FileVersionsData };
 
 export const FileVersionsModel = createModel(
   (wsId: string, path: string, data?: FileVersionsData) => {
-    const versions = signal<readonly FileVersion[]>(data?.list ?? []);
+    const versions = signal<readonly FileVersion[]>(data ?? []);
 
     const [runLoad, { loading, error }] = createAsyncState();
 
@@ -17,7 +17,7 @@ export const FileVersionsModel = createModel(
       const data = await runLoad(async () =>
         getJson<FileVersionsData>(`/api/workspaces/files/versions?${params}`),
       );
-      if (data) versions.value = data.list;
+      if (data) versions.value = data;
     }
 
     if (data === undefined && !import.meta.env.SSR) void load();

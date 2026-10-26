@@ -15,15 +15,12 @@ export function fileViewLoader(
   versionId: string | null,
 ): Effect.Effect<FileViewData, PersistenceError | FileMissingError, Files> {
   return Effect.gen(function* () {
-    const versions = yield* fileVersionsLoader(wsId, path);
-    const withDraft =
-      versionId === null || versionId === versions.latestVersionId;
     const content = yield* fileContentLoader(
       wsId,
       path,
       versionId ?? undefined,
-      withDraft,
     );
+    const versions = yield* fileVersionsLoader(wsId, path);
     const marks = yield* Effect.provideService(
       Files.use((store) => store.getMarks(path, content.version.version_id)),
       WorkspaceId,

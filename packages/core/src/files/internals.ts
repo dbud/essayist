@@ -102,24 +102,7 @@ export function makeInternals(
         chunkCount,
         firstChunk,
       });
-      return { version_id, content, ...rest };
-    });
-
-  /** The version row; fails when the version is missing. */
-  const getVersion = (
-    wsId: string,
-    path: string,
-    versionId: string,
-  ): Effect.Effect<FileVersion, PersistenceError | FileMissingError> =>
-    Effect.gen(function* () {
-      const entry = yield* persistence.get<FileVersion[]>(
-        fileVersionsKey(wsId, path),
-      );
-      const version = entry?.value.find((v) => v.version_id === versionId);
-      if (!version) {
-        return yield* Effect.fail(new FileMissingError({ path, versionId }));
-      }
-      return version;
+      return { version_id, content, ...rest, isHead: true };
     });
 
   /** The content of a version; fails when the manifest is missing. */
@@ -154,11 +137,21 @@ export function makeInternals(
   ): Effect.Effect<FileSnapshot, PersistenceError | FileMissingError> =>
     Effect.gen(function* () {
       if (!versionId) return yield* getFile(wsId, path);
-      const [version, content] = yield* Effect.all([
-        getVersion(wsId, path, versionId),
+      const [entry, content] = yield* Effect.all([
+        persistence.get<FileVersion[]>(fileVersionsKey(wsId, path)),
         getVersionContent(wsId, path, versionId),
       ]);
-      return { ...version, content };
+      const versions = entry?.value;
+      const version = versions?.find((v) => v.version_id === versionId);
+      if (!version) {
+        return yield* Effect.fail(new FileMissingError({ path, versionId }));
+      }
+      return {
+        ...version,
+        content,
+        // The versions list is append-ordered, so the newest is last.
+        isHead: versions?.at(-1)?.version_id === versionId,
+      };
     });
 
   const getMarksList = (
@@ -213,7 +206,6 @@ export function makeInternals(
     reassembleContent,
     getFile,
     getSnapshot,
-    getVersion,
     getVersionContent,
     getMarksList,
     migrationOp,

@@ -28,6 +28,7 @@ export const FileSnapshot = Schema.Struct({
   timestamp: Schema.Number,
   lines: Schema.Number,
   content: Schema.String,
+  isHead: Schema.Boolean,
 });
 export type FileSnapshot = Schema.Schema.Type<typeof FileSnapshot>;
 
