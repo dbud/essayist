@@ -1,3 +1,4 @@
+import { assert } from "@std/assert";
 import type { ComponentChild } from "preact";
 import { hydrate } from "preact";
 import { APP_STATE_SCRIPT_ID, PAGE_DATA_SCRIPT_ID } from "#/app/seeds.tsx";
@@ -10,9 +11,7 @@ import { type AppState, AppStateProvider } from "#/state.ts";
 function parseSeed<T>(id: string, fallback?: T): T {
   const text = document.getElementById(id)?.textContent;
   if (text === undefined) {
-    if (fallback === undefined) {
-      throw new Error(`boot: #${id} missing from the document`);
-    }
+    assert(fallback !== undefined, `boot: #${id} missing from the document`);
     return fallback;
   }
   return JSON.parse(text) as T;

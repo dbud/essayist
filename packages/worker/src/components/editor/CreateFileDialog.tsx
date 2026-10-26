@@ -29,7 +29,6 @@ export default function CreateFileDialog({
     try {
       // TODO -- create-file api -- ESS-84
       // const files = getFileTree();
-      // if (!files) throw new Error("No workspace selected");
       // await files.createFile(trimmed);
       // getOpenedFiles()?.open(trimmed);
       path.value = "";

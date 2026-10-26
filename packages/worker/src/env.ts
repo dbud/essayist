@@ -3,6 +3,7 @@
 // isolate; vite feeds the same keys via .dev.vars locally.
 
 import type { D1Database } from "@cloudflare/workers-types";
+import { assert } from "@std/assert";
 import { Config, ConfigProvider, Context, Effect, Layer, Option } from "effect";
 
 const config = Config.all({
@@ -50,7 +51,7 @@ let cached: WorkerEnv | undefined;
 // is the account's database.
 function dbBinding(bindings: unknown): D1Database {
   const db = (bindings as { DB?: unknown }).DB;
-  if (db === undefined) throw new Error("the D1 binding DB is missing");
+  assert(db !== undefined, "the D1 binding DB is missing");
   return db as D1Database;
 }
 

@@ -1,3 +1,4 @@
+import { assert } from "@std/assert";
 import type { ComponentChildren } from "preact";
 import { createContext, h } from "preact";
 import { useContext } from "preact/hooks";
@@ -14,9 +15,7 @@ export function createModelContext<M>(name: string) {
 
   function use(): M {
     const value = useContext(context);
-    if (!value) {
-      throw new Error(`${name} is only available inside ${name}Provider`);
-    }
+    assert(value, `${name} is only available inside ${name}Provider`);
     return value;
   }
 
