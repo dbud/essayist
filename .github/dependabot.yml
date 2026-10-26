@@ -1,19 +1,24 @@
 version: 2
 updates:
-  # Deno workspace: root, packages/web, packages/core
-  - package-ecosystem: "deno"
+  - package-ecosystem: "npm"
     directory: "/"
+    # TODO -- target main once migration is over
+    target-branch: "cloudflare-migration"
     schedule:
       interval: "weekly"
     groups:
-      minor-and-patch:
-        update-types:
-          - "minor"
-          - "patch"
       lexical:
         patterns:
           - "lexical"
           - "@lexical/*"
+      effect:
+        patterns:
+          - "effect"
+          - "@effect/*"
+      minor-and-patch:
+        update-types:
+          - "minor"
+          - "patch"
 
   - package-ecosystem: "cargo"
     directory: "/crates/wasm"
