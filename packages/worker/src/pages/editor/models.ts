@@ -17,12 +17,12 @@ export default function createModels(data: EditorData) {
   const fileContents = new FileContentsModel(
     workspaces.selectedId,
     selectedPath,
-    data.fileContents,
+    data.fileView?.content,
   );
   const fileVersions = new FileVersionsByPathModel(
     workspaces.selectedId,
     selectedPath,
-    data.fileVersions,
+    data.fileView?.versions,
   );
   // Marks are re-anchored onto the version of the shown content, so the
   // mark version is the content's version.
@@ -33,7 +33,7 @@ export default function createModels(data: EditorData) {
     workspaces.selectedId,
     selectedPath,
     selectedVersionId,
-    data.fileMarks,
+    data.fileView?.marks,
   );
   const categories = new CategoriesModel(data.categories);
   return {

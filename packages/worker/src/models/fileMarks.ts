@@ -8,7 +8,7 @@ export type { MarksData };
 
 export const FileMarksModel = createModel(
   (wsId: string, path: string, versionId: string, data?: MarksData) => {
-    const marks = signal<readonly Mark[]>(data?.marks ?? []);
+    const marks = signal<readonly Mark[]>(data ?? []);
 
     const [runLoad, { loading, error }] = createAsyncState();
 
@@ -17,7 +17,7 @@ export const FileMarksModel = createModel(
       const data = await runLoad(async () =>
         getJson<MarksData>(`/api/workspaces/files/marks?${params}`),
       );
-      if (data) marks.value = data.marks;
+      if (data) marks.value = data;
     }
 
     if (data === undefined && !import.meta.env.SSR) void load();

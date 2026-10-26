@@ -124,7 +124,7 @@ const workspaceHandlers = HttpApiBuilder.group(
             Effect.provideService(WorkspaceId, { wsId }),
             Effect.catchTag("PersistenceError", (err) => Effect.die(err)),
           );
-          return { marks };
+          return marks;
         }),
       saveFileDraft: (req) =>
         Effect.gen(function* () {

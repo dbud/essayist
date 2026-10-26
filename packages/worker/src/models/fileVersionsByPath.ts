@@ -1,18 +1,21 @@
 import { computed, createModel, type Signal, signal } from "@preact/signals";
+import type { FileVersionsData } from "./fileVersions.data.ts";
 import { type FileVersions, FileVersionsModel } from "./fileVersions.ts";
-import type { FileVersionsByPathData } from "./fileVersionsByPath.data.ts";
 
 export const FileVersionsByPathModel = createModel(
   (
     selectedWorkspaceId: Signal<string | null>,
     selectedPath: Signal<string | null>,
-    data: FileVersionsByPathData,
+    data?: FileVersionsData,
   ) => {
     const versions = signal(new Map<string, Map<string, FileVersions>>());
 
-    if (data.wsId !== null && data.path !== null && data.versions !== null) {
-      const file = new FileVersionsModel(data.wsId, data.path, data.versions);
-      versions.value = new Map([[data.wsId, new Map([[data.path, file]])]]);
+    const wsId = selectedWorkspaceId.value;
+    const path = selectedPath.value;
+    if (data !== undefined && wsId !== null && path !== null) {
+      versions.value = new Map([
+        [wsId, new Map([[path, new FileVersionsModel(wsId, path, data)]])],
+      ]);
     }
 
     const current = computed(() => {
