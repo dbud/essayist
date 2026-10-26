@@ -1,9 +1,8 @@
-import type { DraftSnapshot, FileSnapshot } from "@essayist/core";
+import type { DraftSnapshot, FileSnapshot, FileVersion } from "@essayist/core";
 import { computed, createModel, signal } from "@preact/signals";
-import { assert } from "@std/assert";
 import type { EditorState } from "lexical";
 import createAsyncState from "#/models/utils/asyncState.ts";
-import { getJson, putJson } from "#/models/utils/http.ts";
+import { getJson, postJson, putJson } from "#/models/utils/http.ts";
 import {
   editorStateToMarkdown,
   markdownToEditorState,
@@ -22,7 +21,6 @@ export const FileContentModel = createModel(
   (wsId: string, path: string, versionId: string, data?: FileContentData) => {
     const version = signal<FileSnapshot | null>(data?.version ?? null);
     const draft = signal<DraftSnapshot | null>(data?.draft ?? null);
-    const writable = signal(data?.writable ?? false);
 
     const initialContent = computed(
       () => draft.value?.content ?? version.value?.content ?? null,
@@ -35,7 +33,6 @@ export const FileContentModel = createModel(
     const modifiedState = signal<EditorState | null>(null);
 
     function setModifiedState(state: EditorState): void {
-      assert(writable.value, "cannot edit a read-only version view");
       modifiedState.value = state;
     }
 
@@ -47,7 +44,6 @@ export const FileContentModel = createModel(
 
     const dirty = computed(
       () =>
-        writable.value &&
         modifiedState.value !== null &&
         markdown.value !== (initialContent.value ?? ""),
     );
@@ -62,7 +58,6 @@ export const FileContentModel = createModel(
       if (data) {
         version.value = data.version;
         draft.value = data.draft;
-        writable.value = data.writable;
       }
     }
 
@@ -74,7 +69,6 @@ export const FileContentModel = createModel(
       readonly keepalive?: boolean;
     }): Promise<void> {
       if (!dirty.value) return;
-      assert(writable.value, "cannot save a read-only version view");
       const result = await runSave(async () =>
         putJson<DraftSnapshot>(
           "/api/workspaces/files/draft",
@@ -85,10 +79,16 @@ export const FileContentModel = createModel(
       if (result) draft.value = result;
     }
 
+    async function promote(): Promise<FileVersion> {
+      return postJson<FileVersion>("/api/workspaces/files/promote", {
+        wsId,
+        path,
+      });
+    }
+
     return {
       version,
       draft,
-      writable,
       initialState,
       modifiedState,
       setModifiedState,
@@ -96,6 +96,7 @@ export const FileContentModel = createModel(
       markdown,
       dirty,
       save,
+      promote,
       saving,
       saveError,
       load,

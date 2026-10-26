@@ -142,6 +142,26 @@ const workspaceHandlers = HttpApiBuilder.group(
             ),
           );
         }),
+      promoteFileDraft: (req) =>
+        Effect.gen(function* () {
+          const { user } = yield* UserSession;
+          const { wsId, path } = req.payload;
+          yield* requireAccess(wsId, user.id);
+          const result = yield* files.promoteDraft(path).pipe(
+            Effect.provideService(WorkspaceId, { wsId }),
+            Effect.catchTag("PersistenceError", (err) => Effect.die(err)),
+            Effect.catchTag("ConcurrentModificationError", (err) =>
+              Effect.die(err),
+            ),
+            Effect.catchTag("FileMissingError", () =>
+              Effect.fail(new HttpApiError.NotFound()),
+            ),
+          );
+          if (result === null) {
+            return yield* Effect.fail(new HttpApiError.NotFound());
+          }
+          return result;
+        }),
       importGoogleDoc: (req) =>
         Effect.gen(function* () {
           const { user, sessionId } = yield* UserSession;

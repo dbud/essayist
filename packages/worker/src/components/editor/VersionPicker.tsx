@@ -11,6 +11,7 @@ import WaveBars from "#/components/ui/WaveBars.tsx";
 import { useBooting } from "#/hooks/useBooting.ts";
 import { useTick } from "#/hooks/useTick.ts";
 import type { FileContent } from "#/models/fileContent.ts";
+import { showToast } from "#/models/utils/toast.ts";
 import { useEditorModels } from "#/pages/editor/models.ts";
 import { autoSave } from "#/signals/preferences.ts";
 import { formatDateTime, formatRelativeTime } from "#/utils/format.ts";
@@ -103,7 +104,8 @@ function VersionChip({
 export default function VersionPicker({ file }: VersionPickerProps) {
   const { fileTrees, selected, fileVersions } = useEditorModels();
   const versions = fileVersions.current.value;
-  const versionId = selected.value?.versionId ?? null;
+  const selection = selected.value;
+  const versionId = selection?.versionId ?? null;
   const list = sortBy(
     versions?.versions.value ?? [],
     (version) => version.timestamp,
@@ -115,6 +117,21 @@ export default function VersionPicker({ file }: VersionPickerProps) {
   const pending = useFileLoading(file);
   const active = file.saving.value || pending;
 
+  const promotable =
+    selection?.writable && (file.draft.value !== null || file.dirty.value);
+
+  async function promoteDraft(close: () => void): Promise<void> {
+    close();
+    try {
+      await file.save();
+      await file.promote();
+      void fileTrees.current.value?.load();
+      void versions?.load();
+    } catch {
+      showToast("Promote failed", "error");
+    }
+  }
+
   return (
     <Dropdown
       // TODO -- the version history tooltip needs a rework
@@ -123,10 +140,10 @@ export default function VersionPicker({ file }: VersionPickerProps) {
         <>
           <WaveBars fill amplitude={active ? 0.5 : 0} class="text-ink" />
           <Swappable
-            swapKey={file.writable.value ? "latest" : "pinned"}
+            swapKey={selection?.writable ? "latest" : "pinned"}
             class="swap-shift self-start"
           >
-            {!file.writable.value && selectedVersion ? (
+            {!selection?.writable && selectedVersion ? (
               <VersionChip timestamp={selectedVersion.timestamp} lock />
             ) : (
               <SaveStatus file={file} />
@@ -139,7 +156,7 @@ export default function VersionPicker({ file }: VersionPickerProps) {
       {(close) => (
         <DropdownMenu class="dropdown-menu--full">
           <DropdownItem
-            selected={file.writable.value}
+            selected={selection?.writable}
             onClick={() => {
               const latest = file.version.value?.version_id ?? null;
               if (latest !== null) {
@@ -150,6 +167,14 @@ export default function VersionPicker({ file }: VersionPickerProps) {
           >
             Latest
           </DropdownItem>
+          {import.meta.env.DEV && promotable ? (
+            <>
+              <DropdownItem onClick={() => void promoteDraft(close)}>
+                Promote draft
+              </DropdownItem>
+              <div class="separator" />
+            </>
+          ) : null}
           {list.map((version) => (
             <DropdownItem
               key={version.version_id}

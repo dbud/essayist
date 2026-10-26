@@ -1,4 +1,4 @@
-import { DraftSnapshot } from "@essayist/core";
+import { DraftSnapshot, FileVersion } from "@essayist/core";
 import { Schema } from "effect";
 import { HttpApiEndpoint, HttpApiError, HttpApiGroup } from "effect/http-api";
 import { FileContentData } from "#/models/fileContent.data.ts";
@@ -82,6 +82,21 @@ const saveFileDraft = HttpApiEndpoint.put(
   },
 );
 
+const PromotePayload = Schema.Struct({
+  wsId: Schema.NonEmptyString,
+  path: Schema.NonEmptyString,
+});
+
+const promoteFileDraft = HttpApiEndpoint.post(
+  "promoteFileDraft",
+  "/workspaces/files/promote",
+  {
+    payload: PromotePayload,
+    success: FileVersion,
+    error: [HttpApiError.Forbidden, HttpApiError.NotFound],
+  },
+);
+
 const getFileVersions = HttpApiEndpoint.get(
   "getFileVersions",
   "/workspaces/files/versions",
@@ -138,5 +153,6 @@ export const workspaceGroup = HttpApiGroup.make("workspaces")
   .add(getFileVersions)
   .add(GetMarks)
   .add(saveFileDraft)
+  .add(promoteFileDraft)
   .add(importGoogleDoc)
   .middleware(SessionMiddleware);
