@@ -20,7 +20,7 @@ const handlers = Effect.runSync(
               Layer.provide(runtimeLayer(e)),
               Layer.provide(HttpServer.layerServices),
             ),
-            { disableLogger: true, memoMap: runtime(e).memoMap },
+            { memoMap: runtime(e).memoMap },
           ).handler,
       ),
   }),
