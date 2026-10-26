@@ -18,6 +18,7 @@ export interface WriteResult extends FileVersion {
 export const FileEntry = Schema.Struct({
   path: Schema.String,
   lines: Schema.Number,
+  latestVersionId: Schema.String,
 });
 export type FileEntry = Schema.Schema.Type<typeof FileEntry>;
 

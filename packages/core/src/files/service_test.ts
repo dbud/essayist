@@ -107,13 +107,13 @@ test("Files.list -- all files", async () => {
   await run(
     Effect.gen(function* () {
       const files = yield* Files;
-      yield* files.write("a.txt", "line1");
-      yield* files.write("b.txt", "line1\nline2");
-      yield* files.write("c.md", "x\ny\nz");
+      const a = yield* files.write("a.txt", "line1");
+      const b = yield* files.write("b.txt", "line1\nline2");
+      const c = yield* files.write("c.md", "x\ny\nz");
       assertEquals(yield* files.list(), [
-        { path: "a.txt", lines: 1 },
-        { path: "b.txt", lines: 2 },
-        { path: "c.md", lines: 3 },
+        { path: "a.txt", lines: 1, latestVersionId: a.version_id },
+        { path: "b.txt", lines: 2, latestVersionId: b.version_id },
+        { path: "c.md", lines: 3, latestVersionId: c.version_id },
       ]);
     }),
   );
@@ -123,12 +123,12 @@ test("Files.list -- with prefix", async () => {
   await run(
     Effect.gen(function* () {
       const files = yield* Files;
-      yield* files.write("notes/a.txt", "x");
-      yield* files.write("notes/b.txt", "y");
+      const a = yield* files.write("notes/a.txt", "x");
+      const b = yield* files.write("notes/b.txt", "y");
       yield* files.write("other/c.txt", "z");
       assertEquals(yield* files.list("notes/"), [
-        { path: "notes/a.txt", lines: 1 },
-        { path: "notes/b.txt", lines: 1 },
+        { path: "notes/a.txt", lines: 1, latestVersionId: a.version_id },
+        { path: "notes/b.txt", lines: 1, latestVersionId: b.version_id },
       ]);
     }),
   );

@@ -324,7 +324,13 @@ export class Files extends Context.Service<Files, Interface>()(
               const path = String(entry.key[entry.key.length - 1]);
               if (prefix !== undefined && !path.startsWith(prefix)) continue;
               const latest = entry.value;
-              if (latest) result.push({ path, lines: latest.lines });
+              if (latest) {
+                result.push({
+                  path,
+                  lines: latest.lines,
+                  latestVersionId: latest.version_id,
+                });
+              }
             }
             result.sort((a, b) => a.path.localeCompare(b.path));
             return result;
