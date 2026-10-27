@@ -2,9 +2,25 @@ import { computed, type ReadonlySignal } from "@preact/signals";
 import type { FileTrees } from "./fileTrees.ts";
 import type { Workspaces } from "./workspaces.ts";
 
+/**
+ * A file open at a concrete version: the key for every per-view model,
+ * signal cache and component props. Per-view caches use the string form.
+ */
+export interface FileKey {
+  wsId: string;
+  path: string;
+  versionId: string;
+}
+
+export namespace FileKey {
+  export function cacheKey(key: FileKey): string {
+    return `${key.wsId}:${key.path}:${key.versionId}`;
+  }
+}
+
 export type FileSelection =
   | { wsId: string; path: null; versionId: null }
-  | { wsId: string; path: string; versionId: string };
+  | FileKey;
 
 export function createFileSelection(
   workspaces: Workspaces,

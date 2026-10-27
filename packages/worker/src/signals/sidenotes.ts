@@ -2,7 +2,7 @@ import type { Mark } from "@essayist/core";
 import { computed, createModel, signal } from "@preact/signals";
 import { sortBy } from "@std/collections";
 import type { NodeKey } from "lexical";
-import type { FileKey } from "#/models/fileContent.ts";
+import { FileKey } from "#/models/fileSelection.ts";
 import { getEditorSelection } from "#/signals/editorSelection.ts";
 import { getMarks } from "#/signals/marks.ts";
 
@@ -76,7 +76,6 @@ const SIDENOTE_GAP = 8;
  * `heights`.
  */
 export const SidenotesModel = createModel((key: FileKey) => {
-  const { wsId, path, versionId } = key;
   const positions = signal<SidenotePositions>(new Map());
   const heights = signal<SidenoteHeights>(new Map());
   const markBadges = signal<MarkBadge[]>([]);
@@ -85,8 +84,8 @@ export const SidenotesModel = createModel((key: FileKey) => {
   const scrollTop = signal(0);
   const viewportHeight = signal(0);
 
-  const { resolved } = getMarks(wsId, path, versionId);
-  const { markIds: activeMarkIds } = getEditorSelection(wsId, path, versionId);
+  const { resolved } = getMarks(key);
+  const { markIds: activeMarkIds } = getEditorSelection(key);
 
   // 1-based ordinal per thread id, in document order. Shared by the editor
   // (data-number badges) and the sidenote column so the numbers always match.
@@ -189,10 +188,9 @@ export const SidenotesModel = createModel((key: FileKey) => {
 
 const cache = new Map<string, InstanceType<typeof SidenotesModel>>();
 
-export function getSidenotes(wsId: string, path: string, versionId: string) {
-  const key = `${wsId}:${path}:${versionId}`;
+export function getSidenotes(key: FileKey) {
   return cache.getOrInsertComputed(
-    key,
-    () => new SidenotesModel({ wsId, path, versionId }),
+    FileKey.cacheKey(key),
+    () => new SidenotesModel(key),
   );
 }

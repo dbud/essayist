@@ -5,6 +5,7 @@ import Section from "#/components/debug/Section.tsx";
 import { SELECT_MARK_COMMAND } from "#/editor/markExtension.ts";
 import type { Categories } from "#/models/categories.ts";
 import type { FileMarks } from "#/models/fileMarks.ts";
+import type { FileKey } from "#/models/fileSelection.ts";
 import { useEditorModels } from "#/pages/editor/models.ts";
 import { activeEditor } from "#/signals/activeEditor.ts";
 import { getEditorSelection } from "#/signals/editorSelection.ts";
@@ -83,20 +84,13 @@ export default function MarksSection() {
   );
 }
 
-function Marks({
-  wsId,
-  path,
-  versionId,
-  fileMarks,
-  categories,
-}: {
-  wsId: string;
-  path: string;
-  versionId: string;
+interface MarksProps extends FileKey {
   fileMarks: FileMarks;
   categories: Categories;
-}) {
-  const markIds = getEditorSelection(wsId, path, versionId).markIds.value;
+}
+
+function Marks({ wsId, path, versionId, fileMarks, categories }: MarksProps) {
+  const markIds = getEditorSelection({ wsId, path, versionId }).markIds.value;
   const byLabel = categories.byLabel.value;
   const editor = activeEditor.value;
 

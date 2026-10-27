@@ -5,44 +5,27 @@ import {
   signal,
 } from "@preact/signals";
 import { type FileMarks, FileMarksModel } from "./fileMarks.ts";
-import type { FileSelection } from "./fileSelection.ts";
+import { FileKey, type FileSelection } from "./fileSelection.ts";
 import type { MarksData } from "./marks.data.ts";
 
 export const FileMarksByPathModel = createModel(
   (selected: ReadonlySignal<FileSelection | null>, data?: MarksData) => {
-    const byVersion = signal(
-      new Map<string, Map<string, Map<string, FileMarks>>>(),
-    );
+    const marks = signal(new Map<string, FileMarks>());
 
     const selection = selected.value;
-    if (data !== undefined && selection?.path) {
-      const { wsId, path, versionId } = selection;
-      byVersion.value = new Map([
-        [
-          wsId,
-          new Map([
-            [
-              path,
-              new Map([
-                [versionId, new FileMarksModel(wsId, path, versionId, data)],
-              ]),
-            ],
-          ]),
-        ],
+    if (data !== undefined && selection !== null && selection.path !== null) {
+      marks.value = new Map([
+        [FileKey.cacheKey(selection), new FileMarksModel(selection, data)],
       ]);
     }
 
     const current = computed(() => {
       const selection = selected.value;
       if (selection === null || selection.path === null) return null;
-      const { wsId, path, versionId } = selection;
-      return byVersion.value
-        .getOrInsertComputed(wsId, () => new Map())
-        .getOrInsertComputed(path, () => new Map())
-        .getOrInsertComputed(
-          versionId,
-          () => new FileMarksModel(wsId, path, versionId),
-        );
+      return marks.value.getOrInsertComputed(
+        FileKey.cacheKey(selection),
+        () => new FileMarksModel(selection),
+      );
     });
 
     return { current };

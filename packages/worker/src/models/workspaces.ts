@@ -3,8 +3,6 @@ import createAsyncState from "#/models/utils/asyncState.ts";
 import { getJson } from "#/models/utils/http.ts";
 import type { WorkspacesData } from "./workspaces.data";
 
-export type { WorkspacesData };
-
 export const WorkspacesModel = createModel((data: WorkspacesData) => {
   const list = signal(data.workspaces);
   const selectedId = signal(data.selectedId);

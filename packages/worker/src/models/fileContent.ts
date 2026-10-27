@@ -8,17 +8,10 @@ import {
   markdownToEditorState,
 } from "#/utils/markdown.ts";
 import type { FileContentData } from "./fileContent.data.ts";
-
-export type { FileContentData };
-
-export interface FileKey {
-  wsId: string;
-  path: string;
-  versionId: string;
-}
+import type { FileKey } from "./fileSelection.ts";
 
 export const FileContentModel = createModel(
-  (wsId: string, path: string, versionId: string, data?: FileContentData) => {
+  ({ wsId, path, versionId }: FileKey, data?: FileContentData) => {
     const version = signal<FileSnapshot | null>(data?.version ?? null);
     const draft = signal<DraftSnapshot | null>(data?.draft ?? null);
 

@@ -2,12 +2,11 @@ import type { Mark } from "@essayist/core";
 import { createModel, signal } from "@preact/signals";
 import createAsyncState from "#/models/utils/asyncState.ts";
 import { getJson } from "#/models/utils/http.ts";
+import type { FileKey } from "./fileSelection.ts";
 import type { MarksData } from "./marks.data.ts";
 
-export type { MarksData };
-
 export const FileMarksModel = createModel(
-  (wsId: string, path: string, versionId: string, data?: MarksData) => {
+  ({ wsId, path, versionId }: FileKey, data?: MarksData) => {
     const marks = signal<readonly Mark[]>(data ?? []);
 
     const [runLoad, { loading, error }] = createAsyncState();

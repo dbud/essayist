@@ -8,7 +8,7 @@ import type { LucideIcon } from "lucide-preact";
 import { Bold, Code, Italic, Strikethrough } from "lucide-preact";
 import BlockTypeSelect from "#/components/BlockTypeSelect.tsx";
 import { $setBlocksType, type BlockType } from "#/editor/blockFormat.ts";
-import type { FileKey } from "#/models/fileContent.ts";
+import type { FileKey } from "#/models/fileSelection.ts";
 import { activeEditor } from "#/signals/activeEditor.ts";
 import { getEditorSelection } from "#/signals/editorSelection.ts";
 
@@ -38,7 +38,7 @@ export default function EditorToolbar({
   disabled,
 }: EditorToolbarProps) {
   const editor = activeEditor.value;
-  const sel = getEditorSelection(wsId, path, versionId);
+  const sel = getEditorSelection({ wsId, path, versionId });
 
   const format = (fmt: FormatType) => {
     if (!editor) return;

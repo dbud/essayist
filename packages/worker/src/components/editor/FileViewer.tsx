@@ -8,6 +8,7 @@ import VersionPicker from "#/components/editor/VersionPicker.tsx";
 import Overlay from "#/components/ui/Overlay.tsx";
 import { useAutoSave } from "#/hooks/useAutoSave.ts";
 import { useKeydown } from "#/hooks/useKeydown.ts";
+import type { FileKey } from "#/models/fileSelection.ts";
 import { useEditorModels } from "#/pages/editor/models.ts";
 import { getEditorSelection } from "#/signals/editorSelection.ts";
 import { navigationOpened } from "#/signals/navigation.ts";
@@ -39,15 +40,7 @@ export default function FileViewer() {
   );
 }
 
-function FileViewerBody({
-  wsId,
-  path,
-  versionId,
-}: {
-  wsId: string;
-  path: string;
-  versionId: string;
-}) {
+function FileViewerBody({ wsId, path, versionId }: FileKey) {
   const { fileContents, writable } = useEditorModels();
   const file = fileContents.current.value;
   // TODO -- marks and sidenotes hook onto the wasm marks port -- ESS-84;
@@ -55,7 +48,7 @@ function FileViewerBody({
   // selection alongside.
   // const { resolved } = getMarks(wsId, path, versionId);
   // const sidenotes = getSidenotes(wsId, path, versionId);
-  const selection = getEditorSelection(wsId, path, versionId);
+  const selection = getEditorSelection({ wsId, path, versionId });
   // const scrollRef = useScrollViewport(
   //   sidenotes.scrollTop,
   //   sidenotes.viewportHeight,

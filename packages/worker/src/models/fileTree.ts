@@ -3,8 +3,6 @@ import createAsyncState from "#/models/utils/asyncState.ts";
 import { getJson } from "#/models/utils/http.ts";
 import type { FileTreeData } from "./fileTree.data";
 
-export type { FileTreeData };
-
 // TODO -- createFile and uploadFiles when the files api lands
 export const FileTreeModel = createModel(
   (wsId: string, data?: FileTreeData) => {

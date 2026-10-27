@@ -10,7 +10,8 @@ import ActiveEditorRef from "#/components/editor/ActiveEditorRef.tsx";
 import { createEditorExtension } from "#/editor/extension.ts";
 import { MARK_RANGE_TAG } from "#/editor/markExtension.ts";
 import { withDOM } from "#/editor/withDOM.ts";
-import type { FileContent, FileKey } from "#/models/fileContent.ts";
+import type { FileContent } from "#/models/fileContent.ts";
+import type { FileKey } from "#/models/fileSelection.ts";
 import { usePreferences } from "#/models/preferences.ts";
 import { useEditorModels } from "#/pages/editor/models.ts";
 import { getEditorSelection } from "#/signals/editorSelection.ts";
@@ -33,16 +34,16 @@ export default function Editor({
   onChange,
   className,
 }: EditorProps) {
-  const { resolved } = getMarks(wsId, path, versionId);
+  const { resolved } = getMarks({ wsId, path, versionId });
   const { viewerFont } = usePreferences();
   const {
     positions: sidenotePositions,
     numbers: markNumbers,
     markBadges,
     markRects,
-  } = getSidenotes(wsId, path, versionId);
+  } = getSidenotes({ wsId, path, versionId });
   const markdown = file.markdown;
-  const selection = getEditorSelection(wsId, path, versionId);
+  const selection = getEditorSelection({ wsId, path, versionId });
   const { writable } = useEditorModels();
 
   const extension = useMemo(

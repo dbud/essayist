@@ -1,6 +1,6 @@
 import { createModel, signal } from "@preact/signals";
 import type { BlockType } from "#/editor/blockFormat.ts";
-import type { FileKey } from "#/models/fileContent.ts";
+import { FileKey } from "#/models/fileSelection.ts";
 
 export interface CaretRect {
   left: number;
@@ -47,14 +47,9 @@ export const defaultEditorSelection: EditorSelection = new EditorSelectionModel(
 
 const cache = new Map<string, EditorSelection>();
 
-export function getEditorSelection(
-  wsId: string,
-  path: string,
-  versionId: string,
-): EditorSelection {
-  const key = `${wsId}:${path}:${versionId}`;
+export function getEditorSelection(key: FileKey): EditorSelection {
   return cache.getOrInsertComputed(
-    key,
-    () => new EditorSelectionModel({ wsId, path, versionId }),
+    FileKey.cacheKey(key),
+    () => new EditorSelectionModel(key),
   );
 }

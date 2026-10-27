@@ -4,8 +4,6 @@ import createAsyncState from "#/models/utils/asyncState.ts";
 import { getJson } from "#/models/utils/http.ts";
 import type { FileVersionsData } from "./fileVersions.data.ts";
 
-export type { FileVersionsData };
-
 export const FileVersionsModel = createModel(
   (wsId: string, path: string, data?: FileVersionsData) => {
     const versions = signal<readonly FileVersion[]>(data ?? []);
