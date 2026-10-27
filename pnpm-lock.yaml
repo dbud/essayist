@@ -168,8 +168,8 @@ catalogs:
       specifier: ^2.6.2
       version: 2.6.2
     '@cloudflare/workers-types':
-      specifier: ^5.20261023.1
-      version: 5.20261023.1
+      specifier: ^5.20261024.1
+      version: 5.20261024.1
     '@deno/kv':
       specifier: ^0.14.0
       version: 0.14.0
@@ -265,7 +265,7 @@ importers:
     devDependencies:
       '@cloudflare/workers-types':
         specifier: 'catalog:'
-        version: 5.20261023.1
+        version: 5.20261024.1
       '@types/node':
         specifier: 'catalog:'
         version: 26.6.5
@@ -287,7 +287,7 @@ importers:
     devDependencies:
       '@cloudflare/workers-types':
         specifier: 'catalog:'
-        version: 5.20261023.1
+        version: 5.20261024.1
       '@types/node':
         specifier: 'catalog:'
         version: 26.6.5
@@ -359,7 +359,7 @@ importers:
         version: 0.52.0(typescript@7.0.2)
       '@preact/signals':
         specifier: ^2.11.3
-        version: 2.11.3(preact@11.0.1)
+        version: 2.11.3(preact@11.0.2)
       '@std/assert':
         specifier: 'catalog:'
         version: '@jsr/std__assert@1.0.19'
@@ -398,26 +398,26 @@ importers:
         version: 0.52.0(typescript@7.0.2)
       lucide-preact:
         specifier: ^1.61.0
-        version: 1.61.0(preact@11.0.1)
+        version: 1.61.0(preact@11.0.2)
       marked:
         specifier: ^18.0.14
         version: 18.1.1
       preact:
-        specifier: ^11.0.1
-        version: 11.0.1(preact-render-to-string@6.8.1)
+        specifier: ^11.0.2
+        version: 11.0.2(preact-render-to-string@6.8.1)
       preact-render-to-string:
         specifier: ^6.8.1
-        version: 6.8.1(preact@11.0.1)
+        version: 6.8.1(preact@11.0.2)
       tailwindcss:
         specifier: ^4.3.3
         version: 4.3.3
     devDependencies:
       '@cloudflare/vite-plugin':
         specifier: ^1.65.0
-        version: 1.65.0(@types/node@26.6.5)(vite@8.3.5(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0))(workerd@1.20261019.1)(wrangler@4.152.0(@cloudflare/workers-types@5.20261023.1)(@types/node@26.6.5))
+        version: 1.65.0(@types/node@26.6.5)(vite@8.3.5(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0))(workerd@1.20261019.1)(wrangler@4.152.0(@cloudflare/workers-types@5.20261024.1)(@types/node@26.6.5))
       '@cloudflare/workers-types':
         specifier: 'catalog:'
-        version: 5.20261023.1
+        version: 5.20261024.1
       '@types/gapi':
         specifier: ^0.0.47
         version: 0.0.47
@@ -438,7 +438,7 @@ importers:
         version: 5.0.5(@types/node@26.6.5)(happy-dom@21.0.4)(vite@8.3.5(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0))
       wrangler:
         specifier: ^4.152.0
-        version: 4.152.0(@cloudflare/workers-types@5.20261023.1)(@types/node@26.6.5)
+        version: 4.152.0(@cloudflare/workers-types@5.20261024.1)(@types/node@26.6.5)
 
 packages:
 
@@ -590,8 +590,8 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@cloudflare/workers-types@5.20261023.1':
-    resolution: {integrity: sha512-jRaMsWUF/08dd0dWnX3zPGPOjakkkA2JPnK5vLsCQFmYC40kbMPZ02fvOPO8kqjqgljoMZrKsRiXpR1u1Lp0Qg==}
+  '@cloudflare/workers-types@5.20261024.1':
+    resolution: {integrity: sha512-sNhbgBsuVvmumSurgCcIrXShqACPfRt/XlYFstBeANu5BHEJhXW+e7PmHxDNYRXxKYZV57toUfkLwFp8/0SZKA==}
 
   '@cspotcode/source-map-support@0.8.1':
     resolution: {integrity: sha512-IchNf6dN4tHoMFIn/7OE8LWZ19Y6q/67Bmf6vnGREv8RSbBVb9LPJxEcnwrcwX6ixSvaiGoomAUvu4YSxXrVgw==}
@@ -2008,8 +2008,8 @@ packages:
     peerDependencies:
       preact: '>=10 || >= 11.0.0-0'
 
-  preact@11.0.1:
-    resolution: {integrity: sha512-TNNwEq++jYNHy747LziCjPRVgEwnLSOIOAw/oYcjI3Tdnubx2EXtt76I0an8PATvUWtx/DX1kFIg1eFN+O/fkw==}
+  preact@11.0.2:
+    resolution: {integrity: sha512-ofG+Lqznbt13JKDjdWPLTo5ONBqcNgidqnLRzJBG6PZjzGXOLRd5y9r448+HUofTyDbgKWVrPhHP0IgcxEZslQ==}
     peerDependencies:
       preact-render-to-string: '>=6.7.0'
     peerDependenciesMeta:
@@ -2319,13 +2319,13 @@ snapshots:
     optionalDependencies:
       workerd: 1.20261019.1
 
-  '@cloudflare/vite-plugin@1.65.0(@types/node@26.6.5)(vite@8.3.5(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0))(workerd@1.20261019.1)(wrangler@4.152.0(@cloudflare/workers-types@5.20261023.1)(@types/node@26.6.5))':
+  '@cloudflare/vite-plugin@1.65.0(@types/node@26.6.5)(vite@8.3.5(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0))(workerd@1.20261019.1)(wrangler@4.152.0(@cloudflare/workers-types@5.20261024.1)(@types/node@26.6.5))':
     dependencies:
       '@cloudflare/unenv-preset': 2.16.2(unenv@2.0.0-rc.24)(workerd@1.20261019.1)
       miniflare: 5.20261019.2-beta(@types/node@26.6.5)
       unenv: 2.0.0-rc.24
       vite: 8.3.5(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)
-      wrangler: 4.152.0(@cloudflare/workers-types@5.20261023.1)(@types/node@26.6.5)
+      wrangler: 4.152.0(@cloudflare/workers-types@5.20261024.1)(@types/node@26.6.5)
       ws: 8.22.0
     transitivePeerDependencies:
       - '@types/node'
@@ -2348,7 +2348,7 @@ snapshots:
   '@cloudflare/workerd-windows-64@1.20261019.1':
     optional: true
 
-  '@cloudflare/workers-types@5.20261023.1': {}
+  '@cloudflare/workers-types@5.20261024.1': {}
 
   '@cspotcode/source-map-support@0.8.1':
     dependencies:
@@ -2383,7 +2383,7 @@ snapshots:
 
   '@effect/sql-d1@4.0.6(effect@4.0.6)':
     dependencies:
-      '@cloudflare/workers-types': 5.20261023.1
+      '@cloudflare/workers-types': 5.20261024.1
       effect: 4.0.6
 
   '@emnapi/runtime@1.11.3':
@@ -2970,10 +2970,10 @@ snapshots:
 
   '@preact/signals-core@1.14.4': {}
 
-  '@preact/signals@2.11.3(preact@11.0.1)':
+  '@preact/signals@2.11.3(preact@11.0.2)':
     dependencies:
       '@preact/signals-core': 1.14.4
-      preact: 11.0.1(preact-render-to-string@6.8.1)
+      preact: 11.0.2(preact-render-to-string@6.8.1)
 
   '@rolldown/binding-android-arm-eabi@1.2.15':
     optional: true
@@ -3438,9 +3438,9 @@ snapshots:
       lightningcss-win32-arm64-msvc: 1.33.0
       lightningcss-win32-x64-msvc: 1.33.0
 
-  lucide-preact@1.61.0(preact@11.0.1):
+  lucide-preact@1.61.0(preact@11.0.2):
     dependencies:
-      preact: 11.0.1(preact-render-to-string@6.8.1)
+      preact: 11.0.2(preact-render-to-string@6.8.1)
 
   magic-string@0.30.21:
     dependencies:
@@ -3493,13 +3493,13 @@ snapshots:
       picocolors: 1.1.1
       source-map-js: 1.2.2
 
-  preact-render-to-string@6.8.1(preact@11.0.1):
+  preact-render-to-string@6.8.1(preact@11.0.2):
     dependencies:
-      preact: 11.0.1(preact-render-to-string@6.8.1)
+      preact: 11.0.2(preact-render-to-string@6.8.1)
 
-  preact@11.0.1(preact-render-to-string@6.8.1):
+  preact@11.0.2(preact-render-to-string@6.8.1):
     optionalDependencies:
-      preact-render-to-string: 6.8.1(preact@11.0.1)
+      preact-render-to-string: 6.8.1(preact@11.0.2)
 
   react-dom@19.3.1(react@19.3.1):
     dependencies:
@@ -3694,7 +3694,7 @@ snapshots:
       '@cloudflare/workerd-linux-arm64': 1.20261019.1
       '@cloudflare/workerd-windows-64': 1.20261019.1
 
-  wrangler@4.152.0(@cloudflare/workers-types@5.20261023.1)(@types/node@26.6.5):
+  wrangler@4.152.0(@cloudflare/workers-types@5.20261024.1)(@types/node@26.6.5):
     dependencies:
       '@cloudflare/kv-asset-handler': 0.5.0
       '@cloudflare/unenv-preset': 2.16.2(unenv@2.0.0-rc.24)(workerd@1.20261019.1)
@@ -3705,7 +3705,7 @@ snapshots:
       unenv: 2.0.0-rc.24
       workerd: 1.20261019.1
     optionalDependencies:
-      '@cloudflare/workers-types': 5.20261023.1
+      '@cloudflare/workers-types': 5.20261024.1
       fsevents: 2.3.3
     transitivePeerDependencies:
       - '@types/node'
