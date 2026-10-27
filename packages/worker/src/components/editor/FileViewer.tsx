@@ -48,7 +48,7 @@ function FileViewerBody({
   path: string;
   versionId: string;
 }) {
-  const { fileContents } = useEditorModels();
+  const { fileContents, writable } = useEditorModels();
   const file = fileContents.current.value;
   // TODO -- marks and sidenotes hook onto the wasm marks port -- ESS-84;
   // the ref becomes useScrollViewport's, and getSidenotes/getMarks join
@@ -93,7 +93,12 @@ function FileViewerBody({
           <div class="content-main min-w-0">
             <div class="flex w-fit stack stack--row">
               <FontSelect />
-              <EditorToolbar wsId={wsId} path={path} versionId={versionId} />
+              <EditorToolbar
+                wsId={wsId}
+                path={path}
+                versionId={versionId}
+                disabled={!writable.value}
+              />
               <FileStats file={file} />
               <VersionPicker file={file} />
             </div>
