@@ -11,7 +11,7 @@ minimumReleaseAgeExclude:
   - "@effect/sql-d1"
 catalog:
   "@biomejs/biome": ^2.6.2
-  "@cloudflare/workers-types": ^5.20261023.1
+  "@cloudflare/workers-types": ^5.20261024.1
   "@deno/kv": ^0.14.0
   "@effect/ai-openrouter": ~4.0.6
   "@effect/sql-d1": ~4.0.6
