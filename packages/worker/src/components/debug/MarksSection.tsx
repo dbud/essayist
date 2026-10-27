@@ -41,7 +41,7 @@ function MarkDetail({
         </div>
         <button
           type="button"
-          class="btn--ghost ml-auto"
+          class="btn ml-auto"
           title="Go to mark in editor"
           disabled={editor === null}
           onClick={() => {

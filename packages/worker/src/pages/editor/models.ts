@@ -5,6 +5,7 @@ import { createFileSelection } from "#/models/fileSelection.ts";
 import { FileTreesModel } from "#/models/fileTrees.ts";
 import { FileVersionsByPathModel } from "#/models/fileVersionsByPath.ts";
 import { createFileWritability } from "#/models/fileWritability.ts";
+import { createResolvedMarks } from "#/models/resolvedMarks.ts";
 import { createModelContext } from "#/models/utils/context.ts";
 import { WorkspacesModel } from "#/models/workspaces.ts";
 import type { EditorData } from "./data";
@@ -21,6 +22,7 @@ export default function createModels(data: EditorData) {
   const marks = new FileMarksByPathModel(selected, data.fileView?.marks);
   const categories = new CategoriesModel(data.categories);
   const writable = createFileWritability(selected, fileVersions);
+  const resolvedMarks = createResolvedMarks(fileContents, marks);
   return {
     workspaces,
     fileTrees,
@@ -29,6 +31,7 @@ export default function createModels(data: EditorData) {
     fileContents,
     fileVersions,
     marks,
+    resolvedMarks,
     categories,
   };
 }

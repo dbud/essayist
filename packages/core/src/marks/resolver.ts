@@ -14,7 +14,7 @@ export const DEFAULT_SEARCH_RADIUS_MULTIPLIER = 2;
 export const DEFAULT_MIN_SEARCH_RADIUS = 60;
 
 export interface ResolveInput {
-  marks: Mark[];
+  marks: readonly Mark[];
   oldContent: string;
   newContent: string;
 }

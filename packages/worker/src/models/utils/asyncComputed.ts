@@ -20,8 +20,11 @@ import { deepComputed } from "./deepComputed.ts";
  * raise (e.g. a shared worker was terminated by another caller) gives up and
  * clears `stale` itself, so the UI does not get stuck "resolving".
  *
- * The creation-time run is initialization: `stale` stays false for it, so the
- * initial value is treated as settled.
+ * The creation-time run is initialization: `stale` stays false for it, so
+ * the initial value is treated as settled.
+ *
+ * `skip` holds the initial value and skips tracking; the server uses it so
+ * signal effects never schedule timers.
  */
 export interface AsyncComputed<T> {
   value: ReadonlySignal<T>;
@@ -35,10 +38,14 @@ export function asyncComputed<D, T>(
     debounce?: number;
     initial: T;
     schedule?: (fn: () => void, ms: number) => () => void;
+    skip?: boolean;
   },
 ): AsyncComputed<T> {
   const out = signal<T>(opts.initial);
   const stale = signal(false);
+  if (opts.skip === true) {
+    return { value: deepComputed(() => out.value), stale };
+  }
   const schedule =
     opts.schedule ??
     ((fn: () => void, ms: number) => {

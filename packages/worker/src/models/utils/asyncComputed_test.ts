@@ -1,5 +1,6 @@
 import { computed, signal } from "@preact/signals";
 import { assertEquals } from "@std/assert";
+import { test } from "vitest";
 import { asyncComputed } from "./asyncComputed.ts";
 
 const tick = () => new Promise<void>((r) => queueMicrotask(r));
@@ -34,7 +35,7 @@ function manualTimers() {
   return { schedule, pending, fire, drain };
 }
 
-Deno.test("asyncComputed -- initial value is available synchronously", () => {
+test("asyncComputed -- initial value is available synchronously", () => {
   const s = signal(1);
   const c = asyncComputed(
     () => s.value,
@@ -47,7 +48,7 @@ Deno.test("asyncComputed -- initial value is available synchronously", () => {
   assertEquals(c.value.value, -1);
 });
 
-Deno.test("asyncComputed -- first compute populates value", async () => {
+test("asyncComputed -- first compute populates value", async () => {
   const s = signal(1);
   const timers = manualTimers();
   const c = asyncComputed(
@@ -64,7 +65,7 @@ Deno.test("asyncComputed -- first compute populates value", async () => {
   assertEquals(c.value.value, 10);
 });
 
-Deno.test("asyncComputed -- compute is debounced, not per change", async () => {
+test("asyncComputed -- compute is debounced, not per change", async () => {
   const s = signal(0);
   let runs = 0;
   const timers = manualTimers();
@@ -96,7 +97,7 @@ Deno.test("asyncComputed -- compute is debounced, not per change", async () => {
   assertEquals(c.value.value, 3);
 });
 
-Deno.test("asyncComputed -- holds last value and sets stale while pending", async () => {
+test("asyncComputed -- holds last value and sets stale while pending", async () => {
   const s = signal("a");
   const timers = manualTimers();
   const c = asyncComputed(
@@ -123,7 +124,7 @@ Deno.test("asyncComputed -- holds last value and sets stale while pending", asyn
   assertEquals(c.stale.value, false);
 });
 
-Deno.test("asyncComputed -- drops stale responses", async () => {
+test("asyncComputed -- drops stale responses", async () => {
   const s = signal(0);
   const timers = manualTimers();
   const c = asyncComputed(
@@ -148,7 +149,7 @@ Deno.test("asyncComputed -- drops stale responses", async () => {
   assertEquals(c.value.value, 2); // not the stale "0"
 });
 
-Deno.test("asyncComputed -- aborts in-flight compute when superseded", async () => {
+test("asyncComputed -- aborts in-flight compute when superseded", async () => {
   const s = signal(0);
   const aborted: number[] = [];
   const timers = manualTimers();
@@ -185,7 +186,7 @@ Deno.test("asyncComputed -- aborts in-flight compute when superseded", async () 
   assertEquals(c.stale.value, false);
 });
 
-Deno.test("asyncComputed -- downstream deep-equality suppression", async () => {
+test("asyncComputed -- downstream deep-equality suppression", async () => {
   const s = signal([1, 2]);
   const timers = manualTimers();
   const c = asyncComputed(

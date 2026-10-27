@@ -3,9 +3,7 @@ import { mapNotNullish } from "@std/collections";
 import Section from "#/components/debug/Section.tsx";
 import { segmentMarks } from "#/editor/markSegments.ts";
 import type { FileContent } from "#/models/fileContent.ts";
-import type { FileKey } from "#/models/fileSelection.ts";
 import { useEditorModels } from "#/pages/editor/models.ts";
-import { getMarks } from "#/signals/marks.ts";
 
 export default function ExportPreviewSection() {
   const { fileContents, selected } = useEditorModels();
@@ -15,12 +13,7 @@ export default function ExportPreviewSection() {
   if (file === null) return null;
   return (
     <Section title="Export Preview">
-      <MarkdownPreview
-        wsId={selection.wsId}
-        path={selection.path}
-        versionId={selection.versionId}
-        file={file}
-      />
+      <MarkdownPreview file={file} />
     </Section>
   );
 }
@@ -48,15 +41,10 @@ function visualizeWhitespace(text: string): string {
     .replace(/\n/g, "\u00AC\n");
 }
 
-function MarkdownPreview({
-  wsId,
-  path,
-  versionId,
-  file,
-}: FileKey & { file: FileContent }) {
-  const marks = getMarks({ wsId, path, versionId });
+function MarkdownPreview({ file }: { file: FileContent }) {
+  const { resolvedMarks } = useEditorModels();
+  const resolved = resolvedMarks.resolved.value;
   const md = file.markdown.value;
-  const resolved = marks.resolved.value;
 
   if (md === null) return null;
 

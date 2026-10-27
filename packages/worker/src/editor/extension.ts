@@ -9,7 +9,7 @@ import { LinkExtension } from "@lexical/link";
 import { ListExtension } from "@lexical/list";
 import { MarkExtension } from "@lexical/mark";
 import { RichTextExtension } from "@lexical/rich-text";
-import type { Signal } from "@preact/signals";
+import type { ReadonlySignal, Signal } from "@preact/signals";
 import { configExtension, defineExtension } from "lexical";
 import { PartialUpdateExtension } from "#/editor/partialUpdateExtension.ts";
 import type { EditorSelection } from "#/signals/editorSelection.ts";
@@ -26,7 +26,7 @@ import { PastePolicyExtension } from "./paste/pastePolicyExtension.ts";
 import { ToolbarStateExtension } from "./toolbarStateExtension.ts";
 
 interface EditorDeps {
-  resolved: Signal<Mark[]>;
+  resolved: ReadonlySignal<readonly Mark[]>;
   markdown: Signal<string>;
   selection: EditorSelection;
   sidenotePositions: Signal<SidenotePositions>;

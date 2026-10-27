@@ -15,7 +15,6 @@ import type { FileKey } from "#/models/fileSelection.ts";
 import { usePreferences } from "#/models/preferences.ts";
 import { useEditorModels } from "#/pages/editor/models.ts";
 import { getEditorSelection } from "#/signals/editorSelection.ts";
-import { getMarks } from "#/signals/marks.ts";
 import { getSidenotes } from "#/signals/sidenotes.ts";
 
 interface EditorProps extends FileKey {
@@ -34,7 +33,6 @@ export default function Editor({
   onChange,
   className,
 }: EditorProps) {
-  const { resolved } = getMarks({ wsId, path, versionId });
   const { viewerFont } = usePreferences();
   const {
     positions: sidenotePositions,
@@ -44,7 +42,8 @@ export default function Editor({
   } = getSidenotes({ wsId, path, versionId });
   const markdown = file.markdown;
   const selection = getEditorSelection({ wsId, path, versionId });
-  const { writable } = useEditorModels();
+  const { writable, resolvedMarks } = useEditorModels();
+  const resolved = resolvedMarks.resolved;
 
   const extension = useMemo(
     () => ({
