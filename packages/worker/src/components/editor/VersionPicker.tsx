@@ -102,7 +102,7 @@ function VersionChip({
 }
 
 export default function VersionPicker({ file }: VersionPickerProps) {
-  const { fileTrees, selected, fileVersions } = useEditorModels();
+  const { fileTrees, selected, fileVersions, writable } = useEditorModels();
   const versions = fileVersions.current.value;
   const selection = selected.value;
   const versionId = selection?.versionId ?? null;
@@ -117,9 +117,8 @@ export default function VersionPicker({ file }: VersionPickerProps) {
   const pending = useFileLoading(file);
   const active = file.saving.value || pending;
 
-  const writable = file.version.value?.isHead ?? false;
   const promotable =
-    writable && (file.draft.value !== null || file.dirty.value);
+    writable.value && (file.draft.value !== null || file.dirty.value);
 
   async function promoteDraft(close: () => void): Promise<void> {
     close();
@@ -141,10 +140,10 @@ export default function VersionPicker({ file }: VersionPickerProps) {
         <>
           <WaveBars fill amplitude={active ? 0.5 : 0} class="text-ink" />
           <Swappable
-            swapKey={writable ? "latest" : "pinned"}
+            swapKey={writable.value ? "latest" : "pinned"}
             class="swap-shift self-start"
           >
-            {!writable && selectedVersion ? (
+            {!writable.value && selectedVersion ? (
               <VersionChip timestamp={selectedVersion.timestamp} lock />
             ) : (
               <SaveStatus file={file} />

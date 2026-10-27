@@ -12,6 +12,7 @@ import { MARK_RANGE_TAG } from "#/editor/markExtension.ts";
 import { withDOM } from "#/editor/withDOM.ts";
 import type { FileContent, FileKey } from "#/models/fileContent.ts";
 import { usePreferences } from "#/models/preferences.ts";
+import { useEditorModels } from "#/pages/editor/models.ts";
 import { getEditorSelection } from "#/signals/editorSelection.ts";
 import { getMarks } from "#/signals/marks.ts";
 import { getSidenotes } from "#/signals/sidenotes.ts";
@@ -42,7 +43,7 @@ export default function Editor({
   } = getSidenotes(wsId, path, versionId);
   const markdown = file.markdown;
   const selection = getEditorSelection(wsId, path, versionId);
-  const writable = file.version.value?.isHead ?? false;
+  const { writable } = useEditorModels();
 
   const extension = useMemo(
     () => ({
@@ -54,7 +55,7 @@ export default function Editor({
         markNumbers,
         markBadges,
         markRects,
-        writable,
+        writable: writable.value,
       }),
       $initialEditorState: initialState,
     }),
@@ -67,7 +68,7 @@ export default function Editor({
       markNumbers,
       markBadges,
       markRects,
-      writable,
+      writable.value,
     ],
   );
 
@@ -97,12 +98,12 @@ export default function Editor({
         class={`prose whitespace-pre-wrap editor-input outline-none max-w-none ${className}`}
         placeholder={
           <span class="absolute left-4 top-16 @[64rem]:left-16 text-ink/40 pointer-events-none prose pl-1">
-            {writable ? "Start writing..." : "No content"}
+            {writable.value ? "Start writing..." : "No content"}
           </span>
         }
       />
     ),
-    [className, writable, prerenderedHtml],
+    [className, writable.value, prerenderedHtml],
   );
 
   return (
