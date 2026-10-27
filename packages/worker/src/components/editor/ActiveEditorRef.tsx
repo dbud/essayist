@@ -1,14 +1,17 @@
-import { EditorRefPlugin } from "@lexical/react/LexicalEditorRefPlugin";
-import type { LexicalEditor } from "lexical";
+import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import { useEffect } from "preact/hooks";
 import { activeEditor } from "#/signals/activeEditor.ts";
 
 export default function ActiveEditorRef() {
-  useEffect(() => () => (activeEditor.value = null), []);
+  const [editor] = useLexicalComposerContext();
 
-  return (
-    <EditorRefPlugin
-      editorRef={(editor: LexicalEditor) => (activeEditor.value = editor)}
-    />
-  );
+  useEffect(() => {
+    activeEditor.value = editor;
+    return () => {
+      // An unmount after a newer editor registered must leave it alone.
+      if (activeEditor.value === editor) activeEditor.value = null;
+    };
+  }, [editor]);
+
+  return null;
 }
