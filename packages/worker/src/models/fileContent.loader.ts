@@ -18,13 +18,11 @@ export function fileContentLoader(
       WorkspaceId,
       { wsId },
     );
-    const draft = version.isHead
-      ? yield* Effect.provideService(
-          Files.use((store) => store.readDraft(path)),
-          WorkspaceId,
-          { wsId },
-        )
-      : null;
+    const draft = yield* Effect.provideService(
+      Files.use((store) => store.readDraft(path, version.version_id)),
+      WorkspaceId,
+      { wsId },
+    );
     return { version, draft };
   });
 }

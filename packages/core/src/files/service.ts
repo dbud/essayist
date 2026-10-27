@@ -96,9 +96,14 @@ export interface Interface {
     PersistenceError | ConcurrentModificationError | FileMissingError,
     WorkspaceId
   >;
-  /** Read the draft head, or null when no draft exists. */
+  /**
+   * Read the draft, or null when no draft exists. With atVersionId, also
+   * null when that version is not the latest: the draft belongs to the
+   * latest version.
+   */
   readDraft(
     path: string,
+    atVersionId?: string,
   ): Effect.Effect<DraftSnapshot | null, PersistenceError, WorkspaceId>;
   /** Promote the draft to a version and clear it. */
   promoteDraft(
@@ -412,9 +417,16 @@ export class Files extends Context.Service<Files, Interface>()(
 
         const readDraft = (
           path: string,
+          atVersionId?: string,
         ): Effect.Effect<DraftSnapshot | null, PersistenceError, WorkspaceId> =>
           Effect.gen(function* () {
             const { wsId } = yield* WorkspaceId;
+            if (atVersionId !== undefined) {
+              const latest = yield* persistence.get<StoredSnapshot>(
+                latestKey(wsId, path),
+              );
+              if (latest?.value.version_id !== atVersionId) return null;
+            }
             const meta = yield* persistence.get<{ timestamp: number }>(
               draftKey(wsId, path),
             );

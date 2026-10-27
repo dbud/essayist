@@ -218,6 +218,24 @@ test("Files.writeDraft -- stores and reads the draft without creating a version"
   );
 });
 
+test("Files.readDraft -- null when the version is not the latest", async () => {
+  await run(
+    Effect.gen(function* () {
+      const files = yield* Files;
+      yield* files.write("f.txt", "original");
+      yield* files.write("f.txt", "modified");
+      yield* files.writeDraft("f.txt", "draft text");
+      const history = yield* files.getVersions("f.txt");
+      const head = yield* files.readDraft("f.txt", history[1].version_id);
+      assertEquals(head?.content, "draft text");
+      assertEquals(
+        yield* files.readDraft("f.txt", history[0].version_id),
+        null,
+      );
+    }),
+  );
+});
+
 test("Files.promoteDraft -- creates a version from the draft and clears it", async () => {
   await run(
     Effect.gen(function* () {
