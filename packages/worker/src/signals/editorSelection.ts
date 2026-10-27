@@ -42,7 +42,7 @@ export type EditorSelection = InstanceType<typeof EditorSelectionModel>;
 
 /** Sink used as the default config for extensions when no model is injected. */
 export const defaultEditorSelection: EditorSelection = new EditorSelectionModel(
-  { wsId: "", path: "", versionId: null },
+  { wsId: "", path: "", versionId: "" },
 );
 
 const cache = new Map<string, EditorSelection>();
@@ -50,9 +50,9 @@ const cache = new Map<string, EditorSelection>();
 export function getEditorSelection(
   wsId: string,
   path: string,
-  versionId: string | null = null,
+  versionId: string,
 ): EditorSelection {
-  const key = `${wsId}:${path}:${versionId ?? ""}`;
+  const key = `${wsId}:${path}:${versionId}`;
   return cache.getOrInsertComputed(
     key,
     () => new EditorSelectionModel({ wsId, path, versionId }),

@@ -10,7 +10,7 @@ const loading = signal(false);
 export function getMarks(
   _wsId: string,
   _path: string,
-  _versionId?: string | null,
+  _versionId: string,
 ): { resolved: Signal<Mark[]>; loading: Signal<boolean> } {
   return { resolved, loading };
 }

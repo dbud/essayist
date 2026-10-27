@@ -27,7 +27,7 @@ import { MarksAtCursorExtension } from "./marksAtCursorExtension.ts";
 const selection: EditorSelection = new EditorSelectionModel({
   wsId: "",
   path: "",
-  versionId: null,
+  versionId: "",
 });
 
 const testExtension = defineExtension({

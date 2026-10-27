@@ -17,6 +17,7 @@ export default function ExportPreviewSection() {
       <MarkdownPreview
         wsId={selection.wsId}
         path={selection.path}
+        versionId={selection.versionId}
         file={file}
       />
     </Section>
@@ -49,13 +50,15 @@ function visualizeWhitespace(text: string): string {
 function MarkdownPreview({
   wsId,
   path,
+  versionId,
   file,
 }: {
   wsId: string;
   path: string;
+  versionId: string;
   file: FileContent;
 }) {
-  const marks = getMarks(wsId, path);
+  const marks = getMarks(wsId, path, versionId);
   const md = file.markdown.value;
   const resolved = marks.resolved.value;
 

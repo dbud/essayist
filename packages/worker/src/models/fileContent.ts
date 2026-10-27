@@ -14,7 +14,7 @@ export type { FileContentData };
 export interface FileKey {
   wsId: string;
   path: string;
-  versionId: string | null;
+  versionId: string;
 }
 
 export const FileContentModel = createModel(
