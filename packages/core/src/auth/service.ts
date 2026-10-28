@@ -26,6 +26,8 @@ export interface Interface {
   setRefreshToken(userId: string, refreshToken: string): Effect.Effect<void, PersistenceError>;
   /** Read the user-level refresh token, or `undefined`. */
   getRefreshToken(userId: string): Effect.Effect<string | undefined, PersistenceError>;
+  /** Delete the user-level refresh token, e.g. after a revoked grant. */
+  deleteRefreshToken(userId: string): Effect.Effect<void, PersistenceError>;
 }
 
 /** Auth session storage as an Effect service. */

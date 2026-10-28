@@ -15,6 +15,16 @@ export class TokenRefreshError extends Schema.TaggedError<TokenRefreshError>()(
   }
 }
 
+/** Google reports the grant as permanently dead (400 invalid_grant). */
+export class GrantRevokedError extends Schema.TaggedError<GrantRevokedError>()(
+  "GrantRevokedError",
+  { cause: Schema.Defect() },
+) {
+  override get message() {
+    return "the Google refresh grant was revoked or expired";
+  }
+}
+
 // Refresh just before the real expiry; the buffer covers a slow network.
 const REFRESH_BUFFER_MS = 60_000;
 
@@ -27,11 +37,20 @@ const TokenResponse = Schema.Struct({
   refresh_token: Schema.optional(Schema.NonEmptyString),
 });
 
+// Thrown inside tryPromise; the catch inspects it to re-tag revoked grants.
+class EndpointRejection extends Error {
+  readonly revoked: boolean;
+  constructor(status: number, body: string) {
+    super(`token refresh failed: ${status} ${body}`);
+    this.revoked = body.includes("invalid_grant");
+  }
+}
+
 function refreshRequest(
   clientId: string,
   clientSecret: string,
   refreshToken: string,
-): Effect.Effect<typeof TokenResponse.Type, TokenRefreshError> {
+): Effect.Effect<typeof TokenResponse.Type, TokenRefreshError | GrantRevokedError> {
   return Effect.tryPromise({
     try: async () => {
       const body = new URLSearchParams({
@@ -46,12 +65,14 @@ function refreshRequest(
         body,
       });
       if (!response.ok) {
-        const text = await response.text().catch(() => "");
-        throw new Error(`token refresh failed: ${response.status} ${text}`);
+        throw new EndpointRejection(response.status, await response.text().catch(() => ""));
       }
       return Schema.decodeSync(TokenResponse)(await response.json());
     },
-    catch: (cause) => new TokenRefreshError({ cause }),
+    catch: (cause) =>
+      cause instanceof EndpointRejection && cause.revoked
+        ? new GrantRevokedError({ cause })
+        : new TokenRefreshError({ cause }),
   }).pipe(
     Effect.tapError((err) =>
       Effect.logError("google token refresh rejected", { cause: String(err.cause) }),
@@ -62,7 +83,9 @@ function refreshRequest(
 /**
  * A fresh access token for the session: the cached one while it is
  * still valid, otherwise a refresh via Google. `undefined` when the
- * session has no tokens (created before the Drive scope existed).
+ * session has no tokens (created before the Drive scope existed) or
+ * nothing valid can be produced (revoked grant, no stored refresh
+ * token).
  */
 export const getValidAccessToken = (
   sessionId: string,
@@ -86,10 +109,27 @@ export const getValidAccessToken = (
       yield* Effect.logWarning("google token refresh skipped: no refresh token stored", {
         sessionId: session.id,
       });
-      // Cannot refresh; let Google reject the stale token.
-      return tokens.accessToken;
+      // The stored token is expired or inside the refresh buffer.
+      return undefined;
     }
-    const fresh = yield* refreshRequest(clientId, clientSecret, refreshToken);
+    const fresh = yield* refreshRequest(clientId, clientSecret, refreshToken).pipe(
+      Effect.catchTags({
+        GrantRevokedError: () =>
+          Effect.gen(function* () {
+            // The grant is permanently revoked: drop the dead stored tokens.
+            yield* auth.updateSessionTokens(sessionId, session.userId, {
+              ...tokens,
+              refreshToken: undefined,
+            });
+            yield* auth.deleteRefreshToken(session.userId);
+            yield* Effect.logWarning("google refresh token revoked; cleared stored tokens", {
+              sessionId: session.id,
+            });
+            return undefined;
+          }),
+      }),
+    );
+    if (fresh === undefined) return undefined;
     const nextRefreshToken = fresh.refresh_token ?? refreshToken;
     const refreshed: SessionTokens = {
       accessToken: fresh.access_token,
@@ -113,14 +153,15 @@ function expiresAtValid(tokens: SessionTokens, now: number): boolean {
 
 /**
  * Fresh session tokens via the user-level refresh token; `undefined`
- * without one, or when the grant is rejected (revoked). On failure the
- * sign-in still succeeds, just without Google API access.
+ * without one or when Google rejects the grant. A rejected refresh
+ * still signs the user in, without Google API access; a revoked grant
+ * also loses the stored token.
  */
 export const refreshTokensForUser = (
   userId: string,
   clientId: string,
   clientSecret: string,
-): Effect.Effect<SessionTokens | undefined, PersistenceError, AuthStore> =>
+): Effect.Effect<SessionTokens | undefined, PersistenceError | TokenRefreshError, AuthStore> =>
   Effect.gen(function* () {
     const auth = yield* AuthStore;
     const refreshToken = yield* auth.getRefreshToken(userId);
@@ -134,7 +175,14 @@ export const refreshTokensForUser = (
           "google token refresh rejected at one-tap sign-in; continuing without Google API access",
         ),
       ),
-      Effect.catchTag("TokenRefreshError", () => Effect.succeed(undefined)),
+      Effect.catchTags({
+        TokenRefreshError: () => Effect.succeed(undefined),
+        GrantRevokedError: () =>
+          Effect.gen(function* () {
+            yield* auth.deleteRefreshToken(userId);
+            return undefined;
+          }),
+      }),
     );
     if (fresh === undefined) return undefined;
 

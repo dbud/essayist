@@ -152,6 +152,10 @@ test("delete session and refresh token upsert", async () => {
       expect(yield* t.auth.getRefreshToken("user-1")).toBe("rt-old");
       yield* t.auth.setRefreshToken("user-1", "rt-new");
       expect(yield* t.auth.getRefreshToken("user-1")).toBe("rt-new");
+      yield* t.auth.deleteRefreshToken("user-1");
+      expect(yield* t.auth.getRefreshToken("user-1")).toBeUndefined();
+      // deleting a token twice is fine
+      yield* t.auth.deleteRefreshToken("user-1");
 
       yield* t.auth.createSession("s1", "user-1");
       yield* t.auth.deleteSession("s1");

@@ -127,6 +127,11 @@ export function layerAuthD1(client: D1Client.D1Client): Layer.Layer<AuthStore, P
     execute: (id) => client`DELETE FROM auth_session WHERE id = ${id}`,
   });
 
+  const deleteRefreshTokenRow = SqlSchema.void({
+    Request: Schema.String,
+    execute: (userId) => client`DELETE FROM auth_refresh_token WHERE user_id = ${userId}`,
+  });
+
   const createSession = (
     id: string,
     userId: string,
@@ -197,6 +202,9 @@ export function layerAuthD1(client: D1Client.D1Client): Layer.Layer<AuthStore, P
   const getRefreshToken = (userId: string): Effect.Effect<string | undefined, PersistenceError> =>
     Effect.mapError(Effect.map(findRefreshToken(userId), Option.getOrUndefined), backendFault);
 
+  const deleteRefreshToken = (userId: string): Effect.Effect<void, PersistenceError> =>
+    Effect.mapError(deleteRefreshTokenRow(userId), backendFault);
+
   return Layer.unwrap(
     Effect.gen(function* () {
       yield* Effect.mapError(ensureSchema(), backendFault);
@@ -209,6 +217,7 @@ export function layerAuthD1(client: D1Client.D1Client): Layer.Layer<AuthStore, P
           deleteSession,
           setRefreshToken,
           getRefreshToken,
+          deleteRefreshToken,
         }),
       );
     }),
