@@ -3,7 +3,7 @@ import { type Signal, useSignal } from "@preact/signals";
 import Dialog from "#/components/ui/Dialog.tsx";
 import WaveBars from "#/components/ui/WaveBars.tsx";
 
-// TODO -- create-file api and opened-file tracking -- ESS-84
+// TODO -- create-file api and opened-file tracking -- ESS-93
 // import { getFileTree } from "#/signals/fileTree.ts";
 // import { getOpenedFiles } from "#/signals/openedFiles.ts";
 
@@ -25,7 +25,7 @@ export default function CreateFileDialog({ open, onCreated }: CreateFileDialogPr
     submitting.value = true;
     error.value = null;
     try {
-      // TODO -- create-file api -- ESS-84
+      // TODO -- create-file api -- ESS-93
       // const files = getFileTree();
       // await files.createFile(trimmed);
       // getOpenedFiles()?.open(trimmed);

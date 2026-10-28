@@ -1,4 +1,4 @@
-/** Inert until the worker's files api carries the upload verbs -- ESS-84.
+/** Inert until the worker's files api carries the upload verbs -- ESS-93.
  * The original implementation follows in one block comment for the rewire. */
 
 export default function FileUploader() {

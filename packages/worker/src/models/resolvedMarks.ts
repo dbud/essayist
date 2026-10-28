@@ -11,7 +11,7 @@ const RESOLVE_DEBOUNCE_MS = 60;
 
 /**
  * Map version-bound marks onto the live editor text with the JS core
- * resolver; the wasm port is ESS-84. A resolved mark keeps the id of its
+ * resolver; the wasm port is ESS-90. A resolved mark keeps the id of its
  * input, so a pass produces the same ids as the persisted set.
  */
 export function reanchorMarks(

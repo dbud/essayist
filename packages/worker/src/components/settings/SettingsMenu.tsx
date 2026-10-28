@@ -89,7 +89,7 @@ export default function SettingsMenu({ user }: SettingsMenuProps) {
             )}
             {debugSidebarOpened.value ? "Hide debug sidebar" : "Show debug sidebar"}
           </DropdownItem>
-          {/* TODO -- control panel item when the admin port lands -- ESS-84
+          {/* TODO -- control panel item when the admin port lands -- ESS-96
           {user.role === "admin" && (
             <DropdownItem href="/admin" onClick={close}>
               <SlidersVertical size={14} />

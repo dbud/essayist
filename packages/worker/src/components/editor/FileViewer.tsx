@@ -80,7 +80,7 @@ function FileViewerBody({ wsId, path, versionId }: FileKey) {
             </div>
           </div>
           <div class="content-side flex items-center">
-            {/* TODO -- SidenoteControls lands with the review runner -- ESS-84 */}
+            {/* TODO -- SidenoteControls lands with the review runner -- ESS-94 */}
           </div>
         </div>
       </div>

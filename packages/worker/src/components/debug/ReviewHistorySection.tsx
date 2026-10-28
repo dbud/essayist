@@ -1,6 +1,6 @@
 import type { ReviewRun, ReviewRunStatus } from "@essayist/core";
 
-// TODO -- the trace view needs a worker route -- ESS-84
+// TODO -- the trace view needs a worker route -- ESS-95
 // import { ScrollText } from "lucide-preact";
 import Section from "#/components/debug/Section.tsx";
 import MarkdownView from "#/components/MarkdownView.tsx";
@@ -17,7 +17,7 @@ function statusBadge(status: ReviewRunStatus) {
   return <span class={classes}>{status}</span>;
 }
 
-// TODO -- wsId is unused until the trace view route lands -- ESS-84
+// TODO -- wsId is unused until the trace view route lands -- ESS-95
 function RunItem({ run, wsId: _wsId }: { run: ReviewRun; wsId: string }) {
   return (
     <div class="text-sm p-2 rounded">
@@ -27,7 +27,7 @@ function RunItem({ run, wsId: _wsId }: { run: ReviewRun; wsId: string }) {
           {new Date(run.startedAt).toLocaleString()}
           {run.completedAt && <> ({((run.completedAt - run.startedAt) / 1000).toFixed(1)}s)</>}
         </span>
-        {/* TODO -- the trace view needs a worker route -- ESS-84
+        {/* TODO -- the trace view needs a worker route -- ESS-95
         <a
           href={`/workspaces/${wsId}/traces/${run.id}`}
           class="btn--ghost ml-auto"

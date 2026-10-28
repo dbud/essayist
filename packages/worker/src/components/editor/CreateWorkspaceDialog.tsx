@@ -3,7 +3,7 @@ import { type Signal, useSignal } from "@preact/signals";
 import Dialog from "#/components/ui/Dialog.tsx";
 import WaveBars from "#/components/ui/WaveBars.tsx";
 
-// TODO -- create-workspace api -- ESS-84
+// TODO -- create-workspace api -- ESS-93
 // import { getWorkspaces } from "#/signals/workspace.ts";
 
 interface CreateWorkspaceDialogProps {
@@ -22,7 +22,7 @@ export default function CreateWorkspaceDialog({ open }: CreateWorkspaceDialogPro
     submitting.value = true;
     error.value = null;
     try {
-      // TODO -- create-project api -- ESS-84
+      // TODO -- create-project api -- ESS-93
       // await getWorkspaces().create(trimmed);
       name.value = "";
       open.value = false;
