@@ -16,6 +16,7 @@
     "husky": "^9.1.7",
     "oxfmt": "catalog:",
     "oxlint": "catalog:",
+    "oxlint-tsgolint": "^7.0.2005",
     "typescript": "catalog:",
     "typescript-lsp": "npm:typescript@6.0.3",
     "vitest": "catalog:"

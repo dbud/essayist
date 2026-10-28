@@ -4,6 +4,9 @@
     "correctness": "error"
   },
   "ignorePatterns": ["patches/**", "packages/web/**", "**/deno.jsonc"],
+  "options": {
+    "typeAware": true
+  },
   "rules": {
     "eslint/no-unused-vars": [
       "error",
@@ -14,6 +17,7 @@
       }
     ],
     "typescript/no-non-null-assertion": "error",
+    "typescript/unbound-method": "off",
     "unicorn/no-document-cookie": "error"
   }
 }
