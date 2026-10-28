@@ -103,8 +103,8 @@ export const requireUser: MiddlewareHandler = async (c, next) => {
   const url = new URL(c.req.url);
   if (!isAuthRoute(url.pathname)) {
     if (c.get("auth-user") === undefined) {
-      const next = `${url.pathname}${url.search}`;
-      return c.redirect(`/login?next=${encodeURIComponent(next)}`, 303);
+      const redirectTo = `${url.pathname}${url.search}`;
+      return c.redirect(`/login?next=${encodeURIComponent(redirectTo)}`, 303);
     }
   }
   await next();

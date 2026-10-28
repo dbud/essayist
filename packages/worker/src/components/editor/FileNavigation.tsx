@@ -30,8 +30,8 @@ function buildFileEntries(nodes: TreeNode[], selectedPath: string | null): FileE
   const result: FileEntry[] = [];
   let prevSegments: string[] = [];
 
-  function walk(nodes: TreeNode[], segments: string[]) {
-    for (const { name, path, isFile, children } of nodes) {
+  function walk(subtree: TreeNode[], segments: string[]) {
+    for (const { name, path, isFile, children } of subtree) {
       if (isFile) {
         const parts: PathPart[] = segments.map((segment, i) => ({
           segment,
@@ -164,23 +164,23 @@ export default function FileNavigation() {
   );
 
   const workspacesList = workspaces.list.value.map(({ id, name }) => {
-    const selected = id === workspaces.selectedId.value;
+    const isSelected = id === workspaces.selectedId.value;
     return (
       <div class="relative flex" key={id}>
         <button
           type="button"
-          class={`btn min-w-48 ${selected ? "is-selected" : ""}`}
+          class={`btn min-w-48 ${isSelected ? "is-selected" : ""}`}
           onClick={() => workspaces.select(id)}
         >
           {name}
-          {selected && <ArrowDownRight size={14} class="absolute right-1" />}
+          {isSelected && <ArrowDownRight size={14} class="absolute right-1" />}
           <WaveBars
             fill
-            amplitude={selected && files?.loading.value ? 0.5 : 0}
+            amplitude={isSelected && files?.loading.value ? 0.5 : 0}
             class="text-surface"
           />
         </button>
-        {selected && filesList}
+        {isSelected && filesList}
       </div>
     );
   });

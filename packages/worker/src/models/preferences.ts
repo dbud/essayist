@@ -8,7 +8,7 @@ export type HighlightStyle = "band" | "wavy";
 export type SansFont = "atkinson" | "gothic" | "system";
 export type SerifFont = "vollkorn" | "plex" | "system";
 
-const THEME_VALUES: readonly Theme[] = ["light", "dark"];
+const THEME_VALUES: ReadonlySet<Theme> = new Set<Theme>(["light", "dark"]);
 const HIGHLIGHT_STYLE_VALUES: readonly HighlightStyle[] = ["band", "wavy"];
 const SANS_FONT_VALUES: readonly SansFont[] = ["atkinson", "gothic", "system"];
 const SERIF_FONT_VALUES: readonly SerifFont[] = ["vollkorn", "plex", "system"];
@@ -46,7 +46,7 @@ function readOneOf<V extends string>(raw: unknown, values: readonly V[], fallbac
 
 function readTheme(raw: unknown): Theme | null {
   if (typeof raw !== "string") return null;
-  return THEME_VALUES.includes(raw as Theme) ? (raw as Theme) : null;
+  return THEME_VALUES.has(raw as Theme) ? (raw as Theme) : null;
 }
 
 /** The cookie payload is user-editable, so every value is validated. */

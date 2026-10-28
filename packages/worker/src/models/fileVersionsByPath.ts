@@ -8,12 +8,14 @@ export const FileVersionsByPathModel = createModel(
   (selected: ReadonlySignal<FileSelection | null>, data?: FileVersionsData) => {
     const versions = signal(new Map<string, Map<string, FileVersions>>());
 
-    const selection = selected.value;
-    if (data !== undefined && selection?.path) {
-      const { wsId, path } = selection;
-      versions.value = new Map([
-        [wsId, new Map([[path, new FileVersionsModel(wsId, path, data)]])],
-      ]);
+    {
+      const selection = selected.value;
+      if (data !== undefined && selection?.path) {
+        const { wsId, path } = selection;
+        versions.value = new Map([
+          [wsId, new Map([[path, new FileVersionsModel(wsId, path, data)]])],
+        ]);
+      }
     }
 
     const current = computed(() => {

@@ -22,7 +22,7 @@ export function computeMarkBadges(
   if (fragments.length === 0) return [];
 
   // Sort to document order so "next fragment in the same block" is defined.
-  const ordered = [...fragments].sort(byDocumentPosition);
+  const ordered = fragments.toSorted(byDocumentPosition);
 
   // Pair each fragment with its block key, read from the live tree.
   const labeled = editor.getEditorState().read(() =>

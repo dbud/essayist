@@ -32,7 +32,7 @@ export async function openGooglePicker(config: PickerConfig): Promise<PickerDoc[
       .setDeveloperKey(config.developerKey)
       .setCallback((data) => {
         const action = data[google.picker.Response.ACTION];
-        if (action === google.picker.Action.PICKED) {
+        if (action === (google.picker.Action.PICKED as string)) {
           const docs = data[google.picker.Response.DOCUMENTS] ?? [];
           resolve(
             docs.map((d) => ({
@@ -40,7 +40,7 @@ export async function openGooglePicker(config: PickerConfig): Promise<PickerDoc[
               name: d[google.picker.Document.NAME] ?? "",
             })),
           );
-        } else if (action === google.picker.Action.CANCEL) {
+        } else if (action === (google.picker.Action.CANCEL as string)) {
           resolve([]);
         }
       });

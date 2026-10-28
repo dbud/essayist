@@ -108,7 +108,7 @@ function buildSegments(markdown: string, marks: Mark[]): TextSegment[] {
   const points = marks
     .filter((m) => m.length === 0)
     .map((m) => ({ offset: m.offset, length: 0, marks: [m] }));
-  const anchored = [...intervals, ...points].sort((a, b) => a.offset - b.offset);
+  const anchored = [...intervals, ...points].toSorted((a, b) => a.offset - b.offset);
 
   const segments: TextSegment[] = [];
   let cursor = 0;

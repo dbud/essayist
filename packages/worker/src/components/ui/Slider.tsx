@@ -45,7 +45,7 @@ export default function Slider({
     : Math.min(lastIndex, Math.max(0, Math.round((value - min) / step)));
   const fmt = (v: number) => (format ? format(v) : String(v));
   const text = fmt(value);
-  const widestLabel = maxBy((list ?? [min, max]).map(fmt), (label) => label.length);
+  const widestLabel = maxBy((list ?? [min, max]).map(fmt), (formatted) => formatted.length);
 
   return (
     <label class={`flex w-full gap-2 cursor-pointer${className ? ` ${className}` : ""}`}>

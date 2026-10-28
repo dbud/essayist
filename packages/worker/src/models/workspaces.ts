@@ -19,9 +19,9 @@ export const WorkspacesModel = createModel((data: WorkspacesData) => {
 
   async function refresh(): Promise<void> {
     await runRefresh(async () => {
-      const data = await getJson<WorkspacesData>("/api/workspaces");
-      list.value = data.workspaces;
-      selectedId.value = data.selectedId;
+      const fresh = await getJson<WorkspacesData>("/api/workspaces");
+      list.value = fresh.workspaces;
+      selectedId.value = fresh.selectedId;
     });
   }
 

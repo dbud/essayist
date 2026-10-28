@@ -14,10 +14,10 @@ export const FileVersionsModel = createModel(
 
     async function load(): Promise<void> {
       const params = new URLSearchParams({ wsId, path });
-      const data = await runLoad(async () =>
+      const fresh = await runLoad(async () =>
         getJson<FileVersionsData>(`/api/workspaces/files/versions?${params}`),
       );
-      if (data) versions.value = data;
+      if (fresh) versions.value = fresh;
     }
 
     if (data === undefined && !import.meta.env.SSR) void load();

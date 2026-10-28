@@ -157,10 +157,10 @@ test("asyncComputed -- aborts in-flight compute when superseded", async () => {
 
   const c = asyncComputed(
     () => s.value,
-    (n, signal) =>
+    (n, abort) =>
       new Promise<number>((resolve, reject) => {
         const cancel = timers.schedule(() => resolve(n), 15);
-        signal.addEventListener(
+        abort.addEventListener(
           "abort",
           () => {
             cancel();

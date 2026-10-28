@@ -36,12 +36,12 @@ export const FileContentModel = createModel(
 
     async function load(): Promise<void> {
       const params = new URLSearchParams({ wsId, path, versionId });
-      const data = await runLoad(async () =>
+      const fresh = await runLoad(async () =>
         getJson<FileContentData>(`/api/workspaces/files/content?${params}`),
       );
-      if (data) {
-        version.value = data.version;
-        draft.value = data.draft;
+      if (fresh) {
+        version.value = fresh.version;
+        draft.value = fresh.draft;
       }
     }
 

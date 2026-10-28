@@ -17,14 +17,14 @@ export const FileTreeModel = createModel((wsId: string, data?: FileTreeData) => 
 
   async function load(): Promise<void> {
     const params = new URLSearchParams({ wsId });
-    const data = await runLoad(async () =>
+    const fresh = await runLoad(async () =>
       getJson<FileTreeData>(`/api/workspaces/files?${params}`),
     );
-    if (data) {
+    if (fresh) {
       batch(() => {
-        files.value = data.files;
-        selectedPath.value = data.selectedPath;
-        selectedVersionId.value = data.selectedVersionId;
+        files.value = fresh.files;
+        selectedPath.value = fresh.selectedPath;
+        selectedVersionId.value = fresh.selectedVersionId;
       });
     }
   }

@@ -144,7 +144,7 @@ export function $applyMarks(
       seg,
       range: findRange(spans, { offset: seg.offset, length: seg.length }),
     }))
-    .reverse();
+    .toReversed();
 
   for (const { seg, range } of resolved) {
     const selection = $createSelection(range);

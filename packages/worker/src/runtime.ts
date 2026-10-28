@@ -41,8 +41,8 @@ const cells = new Map<WorkerEnv, RuntimeCell>();
 // One cell per env snapshot. env() memoizes the snapshot per isolate, so
 // a cell builds once per isolate: its layer, its runtime, and the D1
 // client inside the layer.
-function cell(e: WorkerEnv): RuntimeCell {
-  return cells.getOrInsertComputed(e, (e) => {
+function cell(env: WorkerEnv): RuntimeCell {
+  return cells.getOrInsertComputed(env, (e) => {
     const layer: RuntimeLayer = Layer.unwrap(
       Effect.gen(function* () {
         const client = yield* D1Client.make({ db: e.db });

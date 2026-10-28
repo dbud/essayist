@@ -15,10 +15,10 @@ export const FileMarksModel = createModel(
 
     async function load(): Promise<void> {
       const params = new URLSearchParams({ wsId, path, versionId });
-      const data = await runLoad(async () =>
+      const fresh = await runLoad(async () =>
         getJson<MarksData>(`/api/workspaces/files/marks?${params}`),
       );
-      if (data) marks.value = data;
+      if (fresh) marks.value = fresh;
     }
 
     if (data === undefined && !import.meta.env.SSR) void load();

@@ -8,9 +8,13 @@ export const FileContentsModel = createModel(
   (selected: ReadonlySignal<FileSelection | null>, data?: FileContentData) => {
     const files = signal(new Map<string, FileContent>());
 
-    const selection = selected.value;
-    if (data !== undefined && selection !== null && selection.path !== null) {
-      files.value = new Map([[FileKey.cacheKey(selection), new FileContentModel(selection, data)]]);
+    {
+      const selection = selected.value;
+      if (data !== undefined && selection !== null && selection.path !== null) {
+        files.value = new Map([
+          [FileKey.cacheKey(selection), new FileContentModel(selection, data)],
+        ]);
+      }
     }
 
     const current = computed(() => {

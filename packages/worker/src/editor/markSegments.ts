@@ -43,7 +43,7 @@ export function segmentMarks(marks: ReadonlyArray<MarkSpan>): MarkSegment[] {
       : b.length - a.length || (a.thread_id < b.thread_id ? -1 : a.thread_id > b.thread_id ? 1 : 0),
   );
 
-  const points = Array.from(boundaries).sort((a, b) => a - b);
+  const points = Array.from(boundaries).toSorted((a, b) => a - b);
 
   const segments: MarkSegment[] = [];
   for (let i = 0; i + 1 < points.length; i++) {

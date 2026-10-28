@@ -12,11 +12,11 @@ const sanitizer = new JsonSanitizer(defaultPastePolicy);
 type Node = Record<string, unknown>;
 
 // Fixture builders, matching what exportJSON writes (version included).
-function text(text: string, format = 0): Node {
+function text(content: string, format = 0): Node {
   return {
     type: "text",
     version: 1,
-    text,
+    text: content,
     format,
     style: "",
     detail: 0,
