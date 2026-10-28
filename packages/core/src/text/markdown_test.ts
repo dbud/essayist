@@ -8,6 +8,7 @@ test("joinBlocks -- drops empty blocks and flattens one level", () => {
 });
 
 test("joinBlocks -- undelivered conditionals produce no blocks", () => {
+  // oxlint-disable-next-line eslint/no-constant-binary-expression -- fixture by design
   assertEquals(joinBlocks("a", true && "b", false && "c"), "a\n\nb");
 });
 

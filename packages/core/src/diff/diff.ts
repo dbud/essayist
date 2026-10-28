@@ -331,12 +331,12 @@ function buildHunks(
 
     if (oldStart === Infinity) {
       oldStart = oldEnd =
-        // biome-ignore lint:style:noNonNullAssertion
+        // oxlint-disable-next-line typescript/no-non-null-assertion
         changeStart > 0 ? oldTokens[ops[changeStart - 1].oldIdx!].endOffset : 0;
     }
     if (newStart === Infinity) {
       newStart = newEnd =
-        // biome-ignore lint:style:noNonNullAssertion
+        // oxlint-disable-next-line typescript/no-non-null-assertion
         changeStart > 0 ? newTokens[ops[changeStart - 1].newIdx!].endOffset : 0;
     }
 

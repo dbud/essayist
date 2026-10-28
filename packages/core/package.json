@@ -14,9 +14,9 @@
     "./kv_deno": "./src/persistence/kv_deno.ts"
   },
   "scripts": {
-    "check": "biome check --error-on-warnings . && tsc --noEmit",
-    "fmt": "biome check --write .",
-    "lint": "biome lint .",
+    "check": "oxfmt --check . && oxlint --deny-warnings . && tsc --noEmit",
+    "fmt": "oxfmt .",
+    "lint": "oxlint .",
     "test": "vitest run"
   },
   "dependencies": {

@@ -181,6 +181,7 @@ export class TokenizedText {
 
     for (let i = windowStart; i + plen <= windowEnd; i++) {
       let isExact = true;
+      // oxlint-disable-next-line unicorn/no-new-array -- preallocated, filled by index below
       const wTexts = new Array<string>(plen);
       for (let k = 0; k < plen; k++) {
         const w = this.#tokens[i + k].text;
