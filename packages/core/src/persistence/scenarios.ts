@@ -100,7 +100,7 @@ const listEverything = scenario("an empty prefix returns everything", () =>
     const { entries } = yield* store.list([]);
     const values = entries.map((e) => e.value) as number[];
     assertEquals(
-      sortBy(values, (a, b) => a - b),
+      sortBy(values, (value) => value),
       [1, 2],
     );
   }),
