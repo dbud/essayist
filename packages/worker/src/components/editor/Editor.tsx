@@ -16,7 +16,6 @@ import type { FileKey } from "#/models/fileSelection.ts";
 import { usePreferences } from "#/models/preferences.ts";
 import { useEditorModels } from "#/pages/editor/models.ts";
 import { getEditorSelection } from "#/signals/editorSelection.ts";
-import { getSidenotes } from "#/signals/sidenotes.ts";
 
 interface EditorProps extends FileKey {
   file: FileContent;
@@ -35,16 +34,16 @@ export default function Editor({
   className,
 }: EditorProps) {
   const { viewerFont } = usePreferences();
+  const { writable, resolvedMarks, categories, sidenotes } = useEditorModels();
+  const markdown = file.markdown;
+  const selection = getEditorSelection({ wsId, path, versionId });
+  const resolved = resolvedMarks.resolved;
   const {
     positions: sidenotePositions,
     numbers: markNumbers,
     markBadges,
     markRects,
-  } = getSidenotes({ wsId, path, versionId });
-  const markdown = file.markdown;
-  const selection = getEditorSelection({ wsId, path, versionId });
-  const { writable, resolvedMarks } = useEditorModels();
-  const resolved = resolvedMarks.resolved;
+  } = sidenotes.current.value;
 
   const extension = useMemo(
     () => ({
@@ -56,6 +55,8 @@ export default function Editor({
         markNumbers,
         markBadges,
         markRects,
+        categories,
+        fonts: [viewerFont],
         writable: writable.value,
       }),
       $initialEditorState: initialState,
@@ -63,12 +64,15 @@ export default function Editor({
     [
       path,
       versionId,
-      resolved,
-      markdown,
-      selection,
+      sidenotePositions,
       markNumbers,
       markBadges,
       markRects,
+      resolved,
+      markdown,
+      selection,
+      categories,
+      viewerFont,
       writable.value,
     ],
   );

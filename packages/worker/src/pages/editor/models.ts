@@ -6,6 +6,7 @@ import { FileTreesModel } from "#/models/fileTrees.ts";
 import { FileVersionsByPathModel } from "#/models/fileVersionsByPath.ts";
 import { createFileWritability } from "#/models/fileWritability.ts";
 import { createResolvedMarks } from "#/models/resolvedMarks.ts";
+import { SidenotesByPathModel } from "#/models/sidenotesByPath.ts";
 import { createModelContext } from "#/models/utils/context.ts";
 import { WorkspacesModel } from "#/models/workspaces.ts";
 
@@ -21,6 +22,7 @@ export default function createModels(data: EditorData) {
   const categories = new CategoriesModel(data.categories);
   const writable = createFileWritability(selected, fileVersions);
   const resolvedMarks = createResolvedMarks(fileContents, marks);
+  const sidenotes = new SidenotesByPathModel(selected, resolvedMarks, categories);
   return {
     workspaces,
     fileTrees,
@@ -30,6 +32,7 @@ export default function createModels(data: EditorData) {
     fileVersions,
     marks,
     resolvedMarks,
+    sidenotes,
     categories,
   };
 }

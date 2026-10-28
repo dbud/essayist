@@ -1,7 +1,7 @@
 import { assertEquals } from "@std/assert";
 import { test } from "vitest";
 
-import type { MarkNumbers } from "#/signals/sidenotes.ts";
+import type { MarkNumbers } from "#/models/sidenotes.ts";
 
 import { visibleBadgeNumbers } from "./markBadges.ts";
 

@@ -1,4 +1,4 @@
-import type { MarkBadge } from "#/signals/sidenotes.ts";
+import type { MarkBadge } from "#/models/sidenotes.ts";
 
 // Ordinal badges as an overlay (pointer-events: none) over the editor, in the
 // coordinate space of the editor column. Kept out of the contentEditable so they

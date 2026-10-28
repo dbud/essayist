@@ -3,7 +3,7 @@ import { $isListItemNode } from "@lexical/list";
 import { $isHeadingNode, $isQuoteNode } from "@lexical/rich-text";
 import { $getNodeByKey, $isParagraphNode, type LexicalEditor, type LexicalNode } from "lexical";
 
-import type { MarkBadge, MarkNumbers } from "#/signals/sidenotes.ts";
+import type { MarkBadge, MarkNumbers } from "#/models/sidenotes.ts";
 
 import { contentEndRect, hasRect, type MeasureContext } from "./domMeasure.ts";
 import type { TrackedFragment } from "./trackNodePositions.ts";

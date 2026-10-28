@@ -1,11 +1,13 @@
 import type { Mark } from "@essayist/core";
-import { computed, createModel, signal } from "@preact/signals";
+import { type Signal, computed, createModel, signal } from "@preact/signals";
 import { sortBy } from "@std/collections";
 import type { NodeKey } from "lexical";
 
+import { colorForMark } from "#/editor/markColors.ts";
+import type { Categories } from "#/models/categories.ts";
 import { FileKey } from "#/models/fileSelection.ts";
+import type { ResolvedMarks } from "#/models/resolvedMarks.ts";
 import { getEditorSelection } from "#/signals/editorSelection.ts";
-import { getMarks } from "#/signals/marks.ts";
 
 // thread_id -> min MarkNode.offsetTop (relative to the editor column).
 export type SidenotePositions = Map<string, number>;
@@ -42,6 +44,7 @@ export interface SidenoteEntry {
   number: number;
   markTop: number; // raw mark position, before stacking
   active: boolean;
+  color: string; // category color or fallback (markColors.ts)
 }
 
 interface SidenoteViewBase {
@@ -65,6 +68,13 @@ export interface GhostSidenoteView extends SidenoteViewBase {
 // Vertical gap (px) between stacked sidenotes.
 const SIDENOTE_GAP = 8;
 
+interface SidenotesDeps {
+  resolvedMarks: ResolvedMarks;
+  categories: Categories;
+  scrollTop: Signal<number>;
+  viewportHeight: Signal<number>;
+}
+
 /**
  * Sidenote presentation for a file. Owns the measured positions (written by
  * the editor extension via trackNodePositions) and heights (written by the
@@ -76,16 +86,14 @@ const SIDENOTE_GAP = 8;
  * `entries` is independent of `heights`; `layout` is the only reader of
  * `heights`.
  */
-export const SidenotesModel = createModel((key: FileKey) => {
+export const SidenotesModel = createModel((key: FileKey, deps: SidenotesDeps) => {
+  const { resolvedMarks, categories, scrollTop, viewportHeight } = deps;
   const positions = signal<SidenotePositions>(new Map());
   const heights = signal<SidenoteHeights>(new Map());
   const markBadges = signal<MarkBadge[]>([]);
   const markRects = signal<MarkRect[]>([]);
-  // Scroll container viewport, written by `useScrollViewport` in FileViewer.
-  const scrollTop = signal(0);
-  const viewportHeight = signal(0);
 
-  const { resolved } = getMarks(key);
+  const { resolved } = resolvedMarks;
   const { markIds: activeMarkIds } = getEditorSelection(key);
 
   // 1-based ordinal per thread id, in document order. Shared by the editor
@@ -111,6 +119,7 @@ export const SidenotesModel = createModel((key: FileKey) => {
         markTop,
         number: numbers.value.get(mark.thread_id) ?? 0,
         active: activeMarkIds.value.has(mark.thread_id),
+        color: colorForMark(mark, categories),
       });
     }
     return out.toSorted((a, b) => a.markTop - b.markTop || a.mark.offset - b.mark.offset);
@@ -178,13 +187,7 @@ export const SidenotesModel = createModel((key: FileKey) => {
     bottomGhost,
     markBadges,
     markRects,
-    scrollTop,
-    viewportHeight,
   };
 });
 
-const cache = new Map<string, InstanceType<typeof SidenotesModel>>();
-
-export function getSidenotes(key: FileKey) {
-  return cache.getOrInsertComputed(FileKey.cacheKey(key), () => new SidenotesModel(key));
-}
+export type Sidenotes = InstanceType<typeof SidenotesModel>;

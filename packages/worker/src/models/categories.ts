@@ -1,6 +1,5 @@
 import type { Category } from "@essayist/core";
 import { computed, createModel, signal } from "@preact/signals";
-import { unimplemented } from "@std/assert";
 
 import type { CategoriesData } from "./categories.data";
 
@@ -11,7 +10,3 @@ export const CategoriesModel = createModel((data: CategoriesData) => {
 });
 
 export type Categories = InstanceType<typeof CategoriesModel>;
-
-export function getCategories(): Categories {
-  unimplemented("the categories are not wired into the editor yet");
-}

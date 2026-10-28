@@ -10,13 +10,15 @@ import type { ReadonlySignal, Signal } from "@preact/signals";
 import { configExtension, defineExtension } from "lexical";
 
 import { PartialUpdateExtension } from "#/editor/partialUpdateExtension.ts";
+import type { Categories } from "#/models/categories.ts";
+import type { MarkBadge, MarkNumbers, MarkRect, SidenotePositions } from "#/models/sidenotes.ts";
 import type { EditorSelection } from "#/signals/editorSelection.ts";
-import type { MarkBadge, MarkNumbers, MarkRect, SidenotePositions } from "#/signals/sidenotes.ts";
 
 import { CaretExtension } from "./caretExtension.ts";
 import { MarksExtension } from "./markExtension.ts";
 import { MarksAtCursorExtension } from "./marksAtCursorExtension.ts";
 import { PastePolicyExtension } from "./paste/pastePolicyExtension.ts";
+import { SidenoteExtension } from "./sidenoteExtension.ts";
 import { ToolbarStateExtension } from "./toolbarStateExtension.ts";
 
 interface EditorDeps {
@@ -27,6 +29,8 @@ interface EditorDeps {
   markNumbers: Signal<MarkNumbers>;
   markBadges: Signal<MarkBadge[]>;
   markRects: Signal<MarkRect[]>;
+  categories: Categories;
+  fonts: ReadonlyArray<Signal<string>>;
   writable: boolean;
 }
 
@@ -36,10 +40,12 @@ export function createEditorExtension(
     resolved,
     markdown,
     selection,
-    // sidenotePositions,
-    // markNumbers,
-    // markBadges,
-    // markRects,
+    sidenotePositions,
+    markNumbers,
+    markBadges,
+    markRects,
+    categories,
+    fonts,
     writable,
   }: EditorDeps,
 ) {
@@ -68,14 +74,15 @@ export function createEditorExtension(
         resolved,
         markdown,
       }),
-      // TODO -- sidenotes return with the wasm marks port -- ESS-84
-      // configExtension(SidenoteExtension, {
-      //   sidenotePositions,
-      //   markNumbers,
-      //   markBadges,
-      //   markRects,
-      //   resolved,
-      // }),
+      configExtension(SidenoteExtension, {
+        sidenotePositions,
+        markNumbers,
+        markBadges,
+        markRects,
+        resolved,
+        categories,
+        fonts,
+      }),
       configExtension(ToolbarStateExtension, { selection }),
       configExtension(MarksAtCursorExtension, { selection }),
       configExtension(CaretExtension, { selection }),

@@ -4,7 +4,7 @@ import { MoveDown, MoveUp } from "lucide-preact";
 import { SELECT_MARK_COMMAND } from "#/editor/markExtension.ts";
 import { useMediaQuery } from "#/hooks/useMediaQuery.ts";
 import type { ScrollContainerRef } from "#/hooks/useScrollViewport.ts";
-import type { GhostSidenoteView } from "#/signals/sidenotes.ts";
+import type { GhostSidenoteView } from "#/models/sidenotes.ts";
 
 interface GhostSidenoteProps {
   view: GhostSidenoteView;

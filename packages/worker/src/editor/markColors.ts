@@ -1,11 +1,11 @@
 import type { Mark } from "@essayist/core";
 
-import { getCategories } from "#/models/categories.ts";
+import type { Categories } from "#/models/categories.ts";
 
 export const FALLBACK_COLOR = "var(--color-ink)";
 
-export function colorForMark(mark: Mark): string {
-  const category = getCategories().byLabel.value.get(mark.label ?? "");
+export function colorForMark(mark: Mark, categories: Categories): string {
+  const category = categories.byLabel.value.get(mark.label ?? "");
   return category?.color ?? FALLBACK_COLOR;
 }
 
@@ -20,9 +20,13 @@ export interface MarkBand {
  * order (outer/earliest mark first -> band 0). A missing mark (transient) has
  * no label, so it falls back to ink.
  */
-export function assignBands(marks: ReadonlyMap<string, Mark>, ids: readonly string[]): MarkBand[] {
+export function assignBands(
+  marks: ReadonlyMap<string, Mark>,
+  ids: readonly string[],
+  categories: Categories,
+): MarkBand[] {
   return ids.map((id, order) => {
     const mark = marks.get(id);
-    return { id, color: mark ? colorForMark(mark) : FALLBACK_COLOR, order };
+    return { id, color: mark ? colorForMark(mark, categories) : FALLBACK_COLOR, order };
   });
 }

@@ -1,35 +1,30 @@
+import { type Signal } from "@preact/signals";
 import type { LexicalEditor } from "lexical";
-import GhostSidenote from "#/components/GhostSidenote.tsx";
-import Sidenote from "#/components/Sidenote.tsx";
+
+import GhostSidenote from "#/components/editor/GhostSidenote.tsx";
+import Sidenote from "#/components/editor/Sidenote.tsx";
 import { useElementHeights } from "#/hooks/useElementHeights.ts";
 import type { ScrollContainerRef } from "#/hooks/useScrollViewport.ts";
-import type { FileKey } from "#/signals/file.ts";
-import type { SidenoteView } from "#/signals/sidenotes.ts";
-import { getSidenotes } from "#/signals/sidenotes.ts";
+import type { SidenoteView, Sidenotes } from "#/models/sidenotes.ts";
 
 const clamp = (x: number) => Math.min(1, Math.max(0, x));
 
-interface SidenotesProps extends FileKey {
+interface SidenotesProps {
+  sidenotes: Sidenotes;
+  scrollTop: Signal<number>;
+  viewportHeight: Signal<number>;
   editor: LexicalEditor | null;
   scrollContainerRef: ScrollContainerRef;
 }
 
 export default function Sidenotes({
-  wsId,
-  path,
-  versionId,
+  sidenotes,
+  scrollTop,
+  viewportHeight,
   editor,
   scrollContainerRef,
 }: SidenotesProps) {
-  const {
-    heights,
-    entries,
-    scrollTop,
-    viewportLayout,
-    topGhost,
-    bottomGhost,
-    viewportHeight,
-  } = getSidenotes(wsId, path, versionId);
+  const { heights, entries, viewportLayout, topGhost, bottomGhost } = sidenotes;
   // Measure rendered sidenote heights for stacking. Re-measure when the
   // entries change and on marks-column width changes. `entries` is independent
   // of `heights`, so this can't cycle with its own output. Sidenotes stay
@@ -48,8 +43,7 @@ export default function Sidenotes({
   const isHidden = (v: SidenoteView) =>
     !heights.value.has(v.entry.mark.thread_id) ||
     (viewportHeight.value > 0 &&
-      (v.top < scrollTop.value ||
-        v.top + v.height > scrollTop.value + viewportHeight.value));
+      (v.top < scrollTop.value || v.top + v.height > scrollTop.value + viewportHeight.value));
 
   // Ghost boxes in content coordinates; absent ghosts fall outside the
   // panel derivation via infinities.
@@ -74,10 +68,7 @@ export default function Sidenotes({
   const visible = viewportLayout.value.filter((v) => !isHidden(v));
   const first = visible.at(0);
   const last = visible.at(-1);
-  const panelTop = Math.min(
-    first ? first.top : Number.POSITIVE_INFINITY,
-    bottomGhostTop,
-  );
+  const panelTop = Math.min(first ? first.top : Number.POSITIVE_INFINITY, bottomGhostTop);
   const panelBottom = Math.max(
     last ? last.top + last.height : Number.NEGATIVE_INFINITY,
     topGhostBottom,
@@ -92,20 +83,12 @@ export default function Sidenotes({
   // Partial occlusion of each ghost (0..1): drives the fade of the ghost
   // and the panel shadow intensity.
   const topOcclusion =
-    topGhost.value && hasPanel
-      ? clamp((topGhostBottom - panelTop) / topGhostHeight)
-      : 0;
+    topGhost.value && hasPanel ? clamp((topGhostBottom - panelTop) / topGhostHeight) : 0;
   const bottomOcclusion =
-    bottomGhost.value && hasPanel
-      ? clamp((panelBottom - bottomGhostTop) / bottomGhostHeight)
-      : 0;
+    bottomGhost.value && hasPanel ? clamp((panelBottom - bottomGhostTop) / bottomGhostHeight) : 0;
 
   return (
-    <div
-      class="relative h-full"
-      ref={innerRef}
-      style={{ "--vp-h": `${viewportHeight.value}px` }}
-    >
+    <div class="relative h-full" ref={innerRef} style={{ "--vp-h": `${viewportHeight.value}px` }}>
       {/* Ghost slots render first, so real sidenotes paint over them. */}
       {bottomGhost.value && (
         <GhostSidenote
@@ -114,6 +97,7 @@ export default function Sidenotes({
           editor={editor}
           scrollContainerRef={scrollContainerRef}
           occlusion={bottomOcclusion}
+          color={bottomGhost.value.entry.color}
         />
       )}
       {topGhost.value && (
@@ -123,6 +107,7 @@ export default function Sidenotes({
           editor={editor}
           scrollContainerRef={scrollContainerRef}
           occlusion={topOcclusion}
+          color={topGhost.value.entry.color}
         />
       )}
       {hasPanel && (
@@ -139,7 +124,7 @@ export default function Sidenotes({
         />
       )}
       {viewportLayout.value.map((v) => (
-        <Sidenote key={v.key} view={v} editor={editor} hidden={isHidden(v)} />
+        <Sidenote key={v.key} view={v} editor={editor} hidden={isHidden(v)} color={v.entry.color} />
       ))}
     </div>
   );
