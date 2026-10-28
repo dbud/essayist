@@ -1,17 +1,13 @@
 import { useModel } from "@preact/signals";
-import { unreachable } from "@std/assert";
+import { assertExists, unreachable } from "@std/assert";
 import { ChevronDown } from "lucide-preact";
 
 import Dropdown, { DropdownItem, DropdownMenu } from "#/components/ui/Dropdown.tsx";
 import { CheckboxIcon } from "#/components/ui/icons.tsx";
-import type { FileContent } from "#/models/fileContent.ts";
 import { FileStatsModel } from "#/models/fileStats.ts";
+import { useEditorModels } from "#/pages/editor/models.ts";
 import { type FileStatSection, fileStatsSections } from "#/signals/preferences.ts";
 import { formatCount } from "#/utils/format.ts";
-
-interface FileStatsProps {
-  file: FileContent;
-}
 
 const STAT_OPTIONS: { value: FileStatSection; label: string }[] = [
   { value: "words", label: "Words" },
@@ -19,7 +15,9 @@ const STAT_OPTIONS: { value: FileStatSection; label: string }[] = [
   { value: "charsWithSpaces", label: "Characters (with spaces)" },
 ];
 
-export default function FileStats({ file }: FileStatsProps) {
+export default function FileStats() {
+  const file = useEditorModels().fileContents.current.value;
+  assertExists(file, "FileViewerBody mounts FileStats only with a file");
   const stats = useModel(() => new FileStatsModel(file));
   const enabled = fileStatsSections.value;
 

@@ -4,6 +4,7 @@ import { ContentEditable } from "@lexical/react/LexicalContentEditable";
 import { LexicalExtensionComposer } from "@lexical/react/LexicalExtensionComposer";
 import { MarkdownShortcutPlugin } from "@lexical/react/LexicalMarkdownShortcutPlugin";
 import { OnChangePlugin } from "@lexical/react/LexicalOnChangePlugin";
+import { assertExists } from "@std/assert";
 import type { EditorState } from "lexical";
 import { useMemo } from "preact/hooks";
 
@@ -11,14 +12,12 @@ import ActiveEditorRef from "#/components/editor/ActiveEditorRef.tsx";
 import { createEditorExtension } from "#/editor/extension.ts";
 import { MARK_RANGE_TAG } from "#/editor/markExtension.ts";
 import { withDOM } from "#/editor/withDOM.ts";
-import type { FileContent } from "#/models/fileContent.ts";
 import type { FileKey } from "#/models/fileSelection.ts";
 import { usePreferences } from "#/models/preferences.ts";
 import { useEditorModels } from "#/pages/editor/models.ts";
 import { getEditorSelection } from "#/signals/editorSelection.ts";
 
 interface EditorProps extends FileKey {
-  file: FileContent;
   initialState: EditorState;
   onChange?: (state: EditorState) => void;
   className?: string;
@@ -26,7 +25,6 @@ interface EditorProps extends FileKey {
 
 export default function Editor({
   wsId,
-  file,
   path,
   versionId,
   initialState,
@@ -34,7 +32,9 @@ export default function Editor({
   className,
 }: EditorProps) {
   const { viewerFont } = usePreferences();
-  const { writable, resolvedMarks, categories, sidenotes } = useEditorModels();
+  const { writable, resolvedMarks, categories, sidenotes, fileContents } = useEditorModels();
+  const file = fileContents.current.value;
+  assertExists(file, "FileViewerBody mounts Editor only with a file");
   const markdown = file.markdown;
   const selection = getEditorSelection({ wsId, path, versionId });
   const resolved = resolvedMarks.resolved;

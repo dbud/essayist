@@ -75,8 +75,8 @@ function FileViewerBody({ wsId, path, versionId }: FileKey) {
                 versionId={versionId}
                 disabled={!writable.value}
               />
-              <FileStats file={file} />
-              <VersionPicker file={file} />
+              <FileStats />
+              <VersionPicker />
             </div>
           </div>
           <div class="content-side flex items-center">
@@ -99,7 +99,6 @@ function FileViewerBody({ wsId, path, versionId }: FileKey) {
               <>
                 <Editor
                   wsId={wsId}
-                  file={file}
                   path={path}
                   versionId={versionId}
                   initialState={file.state.value}

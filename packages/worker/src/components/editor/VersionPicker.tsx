@@ -1,3 +1,4 @@
+import { assertExists } from "@std/assert";
 import { sortBy } from "@std/collections";
 import { ChevronDown, CircleDashed, LockKeyhole } from "lucide-preact";
 import type { ComponentChild } from "preact";
@@ -8,25 +9,24 @@ import Swappable from "#/components/ui/Swappable.tsx";
 import WaveBars from "#/components/ui/WaveBars.tsx";
 import { useBooting } from "#/hooks/useBooting.ts";
 import { useTick } from "#/hooks/useTick.ts";
-import type { FileContent } from "#/models/fileContent.ts";
 import { showToast } from "#/models/utils/toast.ts";
 import { useEditorModels } from "#/pages/editor/models.ts";
 import { autoSave } from "#/signals/preferences.ts";
 import { formatDateTime, formatRelativeTime } from "#/utils/format.ts";
 import { META_KEY } from "#/utils/platform.ts";
 
-interface VersionPickerProps {
-  file: FileContent;
-}
-
-function useFileLoading(file: FileContent): boolean {
+function useFileLoading(): boolean {
   const booting = useBooting();
+  const file = useEditorModels().fileContents.current.value;
+  assertExists(file, "FileViewerBody mounts VersionPicker only with a file");
   return file.loading.value || file.state.value === null || booting.value;
 }
 
-function SaveStatus({ file }: { file: FileContent }) {
+function SaveStatus() {
   useTick(30_000);
-  const pending = useFileLoading(file);
+  const pending = useFileLoading();
+  const file = useEditorModels().fileContents.current.value;
+  assertExists(file, "VersionPicker renders SaveStatus only with a file");
   const { saving, saveError, dirty, draft, version } = file;
 
   const savedAt = pending ? undefined : (draft.value?.timestamp ?? version.value?.timestamp);
@@ -84,8 +84,10 @@ function VersionChip({ timestamp, lock }: { timestamp: number; lock?: boolean })
   );
 }
 
-export default function VersionPicker({ file }: VersionPickerProps) {
-  const { fileTrees, selected, fileVersions, writable } = useEditorModels();
+export default function VersionPicker() {
+  const { fileContents, fileTrees, selected, fileVersions, writable } = useEditorModels();
+  const file = fileContents.current.value;
+  assertExists(file, "FileViewerBody mounts VersionPicker only with a file");
   const versions = fileVersions.current.value;
   const selection = selected.value;
   const versionId = selection?.versionId ?? null;
@@ -93,13 +95,14 @@ export default function VersionPicker({ file }: VersionPickerProps) {
     order: "desc",
   });
   const selectedVersion = versions?.byId(versionId);
-  const pending = useFileLoading(file);
+  const pending = useFileLoading();
   const active = file.saving.value || pending;
 
   const promotable = writable.value && (file.draft.value !== null || file.dirty.value);
 
   async function promoteDraft(close: () => void): Promise<void> {
     close();
+    assertExists(file, "the promoted file exists");
     try {
       await file.save();
       await file.promote();
@@ -121,7 +124,7 @@ export default function VersionPicker({ file }: VersionPickerProps) {
             {!writable.value && selectedVersion ? (
               <VersionChip timestamp={selectedVersion.timestamp} lock />
             ) : (
-              <SaveStatus file={file} />
+              <SaveStatus />
             )}
           </Swappable>
           {!pending && <ChevronDown size={14} class="rotate-on-open" />}
