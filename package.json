@@ -1,16 +1,8 @@
 {
-  "devDependencies": {
-    "@biomejs/biome": "catalog:",
-    "@types/node": "catalog:",
-    "oxfmt": "catalog:",
-    "oxlint": "catalog:",
-    "typescript": "catalog:",
-    "typescript-lsp": "npm:typescript@6.0.3",
-    "vitest": "catalog:"
-  },
   "name": "essayist",
-  "packageManager": "pnpm@12.11.2",
+  "version": "0.0.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "build": "pnpm -C packages/worker build",
     "check": "pnpm -r run check",
@@ -18,6 +10,13 @@
     "lint": "pnpm -r run lint",
     "test": "vitest run"
   },
-  "type": "module",
-  "version": "0.0.0"
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "oxfmt": "catalog:",
+    "oxlint": "catalog:",
+    "typescript": "catalog:",
+    "typescript-lsp": "npm:typescript@6.0.3",
+    "vitest": "catalog:"
+  },
+  "packageManager": "pnpm@12.11.2"
 }
