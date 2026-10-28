@@ -6,12 +6,7 @@
  * https://developers.google.com/identity/gsi/web/guides/verify-google-id-token
  */
 
-import {
-  createRemoteJWKSet,
-  type JWTHeaderParameters,
-  type JWTPayload,
-  jwtVerify,
-} from "jose";
+import { createRemoteJWKSet, type JWTHeaderParameters, type JWTPayload, jwtVerify } from "jose";
 
 const JWKS_URL = "https://www.googleapis.com/oauth2/v3/certs";
 // Allow for client/server clock drift around exp/nbf.
@@ -82,13 +77,8 @@ export async function verifyGoogleIdToken(
   return {
     sub,
     email,
-    name:
-      typeof payload.name === "string" && payload.name !== ""
-        ? payload.name
-        : undefined,
+    name: typeof payload.name === "string" && payload.name !== "" ? payload.name : undefined,
     picture:
-      typeof payload.picture === "string" && payload.picture !== ""
-        ? payload.picture
-        : undefined,
+      typeof payload.picture === "string" && payload.picture !== "" ? payload.picture : undefined,
   };
 }

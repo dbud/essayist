@@ -1,5 +1,6 @@
 import { assertEquals } from "@std/assert";
 import { test } from "vitest";
+
 import { segmentMarks } from "./markSegments.ts";
 
 test("segmentMarks -- empty input", () => {

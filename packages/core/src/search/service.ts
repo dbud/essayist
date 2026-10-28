@@ -4,14 +4,10 @@
  */
 
 import { Context, Effect, Layer } from "effect";
+
 import { Files } from "#/files/service.ts";
 import type { PersistenceError } from "#/persistence/mod.ts";
-import {
-  compilePattern,
-  DEFAULT_CONTEXT_LINES,
-  escapeRegex,
-  matchLines,
-} from "#/search/match.ts";
+import { compilePattern, DEFAULT_CONTEXT_LINES, escapeRegex, matchLines } from "#/search/match.ts";
 import type { GrepMatch, GrepOptions, GrepResult } from "#/search/types.ts";
 import type { WorkspaceId } from "#/workspace/WorkspaceId.ts";
 
@@ -31,9 +27,7 @@ export interface Interface {
   ): Effect.Effect<GrepResult, PersistenceError, WorkspaceId>;
 }
 
-export class Search extends Context.Service<Search, Interface>()(
-  "@essayist/core/search/Search",
-) {
+export class Search extends Context.Service<Search, Interface>()("@essayist/core/search/Search") {
   /** Requires the {@linkcode Files} service; compose with Files.layerNoDeps
    * and Persistence.layerKv at the composition root. The workspace scope
    * comes from the WorkspaceId tag at call time. */
@@ -47,11 +41,7 @@ export class Search extends Context.Service<Search, Interface>()(
         options?: GrepOptions,
       ): Effect.Effect<GrepResult, PersistenceError, WorkspaceId> =>
         Effect.gen(function* () {
-          const {
-            path,
-            caseSensitive = false,
-            maxResults = 50,
-          } = options ?? {};
+          const { path, caseSensitive = false, maxResults = 50 } = options ?? {};
           const regex = compilePattern(pattern, caseSensitive);
           const matches: GrepMatch[] = [];
           const fileList = yield* files.list(path);
@@ -60,16 +50,10 @@ export class Search extends Context.Service<Search, Interface>()(
 
             const latest = yield* files
               .read(file.path)
-              .pipe(
-                Effect.catchTag("FileMissingError", () => Effect.succeed(null)),
-              );
+              .pipe(Effect.catchTag("FileMissingError", () => Effect.succeed(null)));
             if (latest === null || latest.content === "") continue;
 
-            for (const match of matchLines(
-              latest.content,
-              regex,
-              DEFAULT_CONTEXT_LINES,
-            )) {
+            for (const match of matchLines(latest.content, regex, DEFAULT_CONTEXT_LINES)) {
               if (matches.length >= maxResults) break;
               matches.push({ path: file.path, ...match });
             }

@@ -1,5 +1,6 @@
 // @vitest-environment happy-dom
 import { expect, test } from "vitest";
+
 import {
   clearPreferencesCookie,
   preferencesCookieName,
@@ -23,9 +24,7 @@ test("reads an empty payload when the cookie is absent or malformed", () => {
   expect(readPreferencesCookie(null, url)).toEqual({});
   expect(readPreferencesCookie("other=1", url)).toEqual({});
   expect(readPreferencesCookie(`${name}=not-json`, url)).toEqual({});
-  expect(
-    readPreferencesCookie(`${name}=${encodeURIComponent("[1]")}`, url),
-  ).toEqual({});
+  expect(readPreferencesCookie(`${name}=${encodeURIComponent("[1]")}`, url)).toEqual({});
 });
 
 test("round trips through the document cookie", () => {

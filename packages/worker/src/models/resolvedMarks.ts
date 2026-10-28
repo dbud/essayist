@@ -1,5 +1,6 @@
 import { type Mark, resolveMarks } from "@essayist/core";
 import { computed, type ReadonlySignal } from "@preact/signals";
+
 import type { FileContents } from "./fileContents.ts";
 import type { FileMarksByPath } from "./fileMarksByPath.ts";
 import { asyncComputed } from "./utils/asyncComputed.ts";

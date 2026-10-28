@@ -12,6 +12,7 @@
  */
 
 import type { Key } from "#/persistence/mod.ts";
+
 import type { ContentManifest } from "./chunked_content.ts";
 import type { FileVersion } from "./types.ts";
 
@@ -30,19 +31,10 @@ const MARKS = "marks";
 /** Reserved version id for the mutable draft head. Not in the versions list. */
 export const DRAFT_VERSION_ID = "draft";
 
-export const latestKey = (wsId: string, path: string): Key => [
-  WORKSPACES,
-  wsId,
-  FILE_LATEST,
-  path,
-];
+export const latestKey = (wsId: string, path: string): Key => [WORKSPACES, wsId, FILE_LATEST, path];
 
 /** The scan prefix for every file's latest row in one workspace. */
-export const latestPrefixKey = (wsId: string): Key => [
-  WORKSPACES,
-  wsId,
-  FILE_LATEST,
-];
+export const latestPrefixKey = (wsId: string): Key => [WORKSPACES, wsId, FILE_LATEST];
 
 export const fileVersionsKey = (wsId: string, path: string): Key => [
   WORKSPACES,
@@ -51,36 +43,28 @@ export const fileVersionsKey = (wsId: string, path: string): Key => [
   path,
 ];
 
-export const contentManifestKey = (
-  wsId: string,
-  path: string,
-  versionId: string,
-): Key => [WORKSPACES, wsId, FILE_CONTENT, path, versionId, FILE_MANIFEST];
+export const contentManifestKey = (wsId: string, path: string, versionId: string): Key => [
+  WORKSPACES,
+  wsId,
+  FILE_CONTENT,
+  path,
+  versionId,
+  FILE_MANIFEST,
+];
 
 export const contentChunkKey = (
   wsId: string,
   path: string,
   versionId: string,
   index: number,
-): Key => [
+): Key => [WORKSPACES, wsId, FILE_CONTENT, path, versionId, FILE_CHUNK, String(index)];
+
+export const draftKey = (wsId: string, path: string): Key => [WORKSPACES, wsId, FILE_DRAFT, path];
+
+export const marksKey = (wsId: string, path: string, versionId: string): Key => [
   WORKSPACES,
   wsId,
-  FILE_CONTENT,
+  MARKS,
   path,
   versionId,
-  FILE_CHUNK,
-  String(index),
 ];
-
-export const draftKey = (wsId: string, path: string): Key => [
-  WORKSPACES,
-  wsId,
-  FILE_DRAFT,
-  path,
-];
-
-export const marksKey = (
-  wsId: string,
-  path: string,
-  versionId: string,
-): Key => [WORKSPACES, wsId, MARKS, path, versionId];

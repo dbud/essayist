@@ -1,20 +1,12 @@
 import { assert } from "@std/assert";
-import type {
-  Artifact,
-  Artifacts,
-  ArtifactType,
-  FlowTypes,
-} from "#/flow/types.ts";
+
+import type { Artifact, Artifacts, ArtifactType, FlowTypes } from "#/flow/types.ts";
 
 /** The input view handed to a node. Type-scoped reads trust artifact
  * data to match the vocabulary's declared data types. */
-export function view<T extends FlowTypes>(
-  inputs: readonly Artifact<T>[],
-): Artifacts<T> {
+export function view<T extends FlowTypes>(inputs: readonly Artifact<T>[]): Artifacts<T> {
   const matching = <A extends ArtifactType<T>>(type: A): Artifact<T, A>[] =>
-    inputs.filter(
-      (artifact): artifact is Artifact<T, A> => artifact.type === type,
-    );
+    inputs.filter((artifact): artifact is Artifact<T, A> => artifact.type === type);
   return {
     all: inputs,
     allOf: matching,

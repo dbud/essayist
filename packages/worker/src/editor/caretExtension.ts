@@ -11,7 +11,9 @@ import {
   mergeRegister,
   SELECTION_CHANGE_COMMAND,
 } from "lexical";
+
 import { defaultEditorSelection } from "#/signals/editorSelection.ts";
+
 import {
   adjacentElementRect,
   charRectAt,
@@ -38,10 +40,7 @@ import type { SelectionExtensionConfig } from "./toolbarStateExtension.ts";
 export const CaretExtension = defineExtension({
   name: "caret",
   config: { selection: defaultEditorSelection },
-  afterRegistration: (
-    editor: LexicalEditor,
-    { selection }: SelectionExtensionConfig,
-  ) => {
+  afterRegistration: (editor: LexicalEditor, { selection }: SelectionExtensionConfig) => {
     let lastOffset = -1;
     // "end" = end of the previous line; "start" = start of the next line.
     let affinity: "end" | "start" = "end";
@@ -89,13 +88,8 @@ export const CaretExtension = defineExtension({
             // A same-offset arrow at the boundary flips the side: right/down
             // toward the start of the next line, left/up toward the end of the
             // toward the end of the previous line.
-            affinity =
-              pending === "right" || pending === "down" ? "start" : "end";
-          } else if (
-            textOffset !== lastOffset &&
-            pending !== "down" &&
-            pending !== "up"
-          ) {
+            affinity = pending === "right" || pending === "down" ? "start" : "end";
+          } else if (textOffset !== lastOffset && pending !== "down" && pending !== "up") {
             // Horizontal move sets the side by direction; a vertical move
             // keeps the side (you stay on the same edge of the line).
             affinity = textOffset > lastOffset ? "end" : "start";

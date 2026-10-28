@@ -80,11 +80,7 @@ export class TokenizedText {
    * wrong copy. `charRadius` defaults to `Infinity`, scanning the whole text.
    * Returns the match offset, or null if there is none in range.
    */
-  findExactNear(
-    pattern: string,
-    near: number,
-    withinChars: number = Infinity,
-  ): number | null {
+  findExactNear(pattern: string, near: number, withinChars: number = Infinity): number | null {
     const start = Math.max(0, near - withinChars);
     const end = Math.min(this.#text.length, near + withinChars);
     if (end - start < pattern.length) return null;
@@ -134,10 +130,7 @@ export class TokenizedText {
 
     const centerTokenIndex = this.#nearestTokenIndex(near);
     const windowStart = Math.max(0, centerTokenIndex - withinTokens);
-    const windowEnd = Math.min(
-      this.#tokens.length,
-      centerTokenIndex + withinTokens + 1,
-    );
+    const windowEnd = Math.min(this.#tokens.length, centerTokenIndex + withinTokens + 1);
     if (windowEnd - windowStart < plen) return null;
 
     // Distance (in token indices) from the gap-facing edge of the window
@@ -155,11 +148,7 @@ export class TokenizedText {
       return Math.abs(boundaryIdx - centerTokenIndex);
     };
 
-    const buildMatch = (
-      i: number,
-      len: number,
-      score: number,
-    ): TokenFuzzyMatch => {
+    const buildMatch = (i: number, len: number, score: number): TokenFuzzyMatch => {
       return {
         startOffset: this.#tokens[i].offset,
         nextOffset: this.#tokens[i + len]?.offset ?? this.length,
@@ -272,9 +261,6 @@ export class TokenizedText {
     const windowStart = Math.max(0, idx - radiusTokens);
     const windowEnd = Math.min(this.#tokens.length, idx + radiusTokens + 1);
     if (windowEnd <= windowStart) return [0, this.#text.length];
-    return [
-      this.#tokens[windowStart].offset,
-      this.#tokens[windowEnd - 1].endOffset,
-    ];
+    return [this.#tokens[windowStart].offset, this.#tokens[windowEnd - 1].endOffset];
   }
 }

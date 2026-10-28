@@ -40,8 +40,7 @@ export function segmentMarks(marks: ReadonlyArray<MarkSpan>): MarkSegment[] {
   spans.sort((a, b) =>
     a.offset !== b.offset
       ? a.offset - b.offset
-      : b.length - a.length ||
-        (a.thread_id < b.thread_id ? -1 : a.thread_id > b.thread_id ? 1 : 0),
+      : b.length - a.length || (a.thread_id < b.thread_id ? -1 : a.thread_id > b.thread_id ? 1 : 0),
   );
 
   const points = Array.from(boundaries).sort((a, b) => a - b);

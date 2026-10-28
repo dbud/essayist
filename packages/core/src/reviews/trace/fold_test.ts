@@ -1,7 +1,9 @@
 import { assertEquals } from "@std/assert";
 import { test } from "vitest";
+
 import type { FlowEvent } from "#/flow/types.ts";
 import type { ReviewTypes } from "#/reviews/graph.ts";
+
 import { foldCompleted } from "./fold.ts";
 import type { TraceEvent } from "./types.ts";
 
@@ -26,9 +28,7 @@ test("foldCompleted -- reads completed nodes with what they committed", () => {
     }),
   ]);
 
-  assertEquals(folded.get("content"), [
-    { type: "content", data: "essay", producedBy: "content" },
-  ]);
+  assertEquals(folded.get("content"), [{ type: "content", data: "essay", producedBy: "content" }]);
 });
 
 test("foldCompleted -- treats a node that committed nothing as completed", () => {
@@ -115,9 +115,7 @@ test("foldCompleted -- a later node_end for a node wins", () => {
     }),
   ]);
 
-  assertEquals(folded.get("propose"), [
-    { type: "summary", data: "second", producedBy: "propose" },
-  ]);
+  assertEquals(folded.get("propose"), [{ type: "summary", data: "second", producedBy: "propose" }]);
 });
 
 test("foldCompleted -- reads an empty trace as nothing completed", () => {

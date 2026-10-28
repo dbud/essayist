@@ -1,4 +1,5 @@
 import { Moon, Sun } from "lucide-preact";
+
 import Swappable from "#/components/ui/Swappable.tsx";
 import { useBooting } from "#/hooks/useBooting.ts";
 import { usePreferences } from "#/models/preferences.ts";
@@ -11,9 +12,7 @@ export default function ThemeToggle() {
   const booting = useBooting();
   // The server cannot know the system scheme: it renders the pinned theme, or
   // light when there is none. The first client render has to match it.
-  const dark = booting.value
-    ? themeOverride.value === "dark"
-    : theme.value === "dark";
+  const dark = booting.value ? themeOverride.value === "dark" : theme.value === "dark";
   return (
     <button
       type="button"

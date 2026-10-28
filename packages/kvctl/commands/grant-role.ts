@@ -1,5 +1,6 @@
 import { Command, EnumType } from "@cliffy/command";
 import { USER_ROLES, Workspaces } from "@essayist/core";
+
 import type { KvctlGlobals } from "#/globals.ts";
 import { withStore } from "#/kv.ts";
 
@@ -15,9 +16,7 @@ export const grantRole = new Command<KvctlGlobals>()
         Workspaces.use((store) => store.getUserByEmail(emailOrId)),
       );
       if (!user && /^[0-9a-f-]{36}$/i.test(emailOrId)) {
-        user = await runtime.runPromise(
-          Workspaces.use((store) => store.getUser(emailOrId)),
-        );
+        user = await runtime.runPromise(Workspaces.use((store) => store.getUser(emailOrId)));
       }
       if (!user) {
         console.error(`no user matching "${emailOrId}"`);

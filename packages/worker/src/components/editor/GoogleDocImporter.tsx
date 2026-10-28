@@ -1,6 +1,7 @@
 import { useSignal } from "@preact/signals";
 import { Download } from "lucide-preact";
 import { useEffect, useRef } from "preact/hooks";
+
 import type { PickerDoc } from "#/client/googlePicker.ts";
 import WaveBars from "#/components/ui/WaveBars.tsx";
 import { showToast } from "#/models/utils/toast.ts";
@@ -26,9 +27,7 @@ export default function GoogleDocImporter() {
       return;
     }
     importing.value = true;
-    const toast = showToast(
-      `Importing ${formatCount(docs.length, "document")}…`,
-    );
+    const toast = showToast(`Importing ${formatCount(docs.length, "document")}…`);
     const errors: string[] = [];
     let firstPath: string | null = null;
 

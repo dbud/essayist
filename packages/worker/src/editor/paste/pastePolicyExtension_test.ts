@@ -5,6 +5,7 @@ import { RichTextExtension } from "@lexical/rich-text";
 import { assertEquals } from "@std/assert";
 import { $getRoot, defineExtension, type LexicalEditor } from "lexical";
 import { test } from "vitest";
+
 import { PastePolicyExtension } from "./pastePolicyExtension.ts";
 
 const testExtension = defineExtension({

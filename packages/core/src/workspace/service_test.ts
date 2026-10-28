@@ -1,13 +1,11 @@
 import { assertEquals, assertInstanceOf } from "@std/assert";
 import { Effect, Result } from "effect";
 import { test } from "vitest";
+
 import { testLayer } from "#/persistence/testing/kv.ts";
+
 import { Workspaces } from "./service.ts";
-import {
-  LastOwnerError,
-  UserEmailTakenError,
-  type WorkspaceMember,
-} from "./types.ts";
+import { LastOwnerError, UserEmailTakenError, type WorkspaceMember } from "./types.ts";
 
 test("Workspaces -- create + get user", async () => {
   const program = Effect.gen(function* () {
@@ -22,14 +20,9 @@ test("Workspaces -- create + get user", async () => {
     assertEquals(user.picture, "https://example.com/a.png");
 
     assertEquals((yield* store.getUser(user.id))?.email, "alice@example.com");
-    assertEquals(
-      (yield* store.getUserByEmail("alice@example.com"))?.id,
-      user.id,
-    );
+    assertEquals((yield* store.getUserByEmail("alice@example.com"))?.id, user.id);
   });
-  await Effect.runPromise(
-    Effect.provide(program, testLayer(Workspaces.layerNoDeps)),
-  );
+  await Effect.runPromise(Effect.provide(program, testLayer(Workspaces.layerNoDeps)));
 });
 
 test("Workspaces -- updateUser patches profile fields", async () => {
@@ -43,9 +36,7 @@ test("Workspaces -- updateUser patches profile fields", async () => {
     assertEquals(updated?.name, "Alice");
     assertEquals((yield* store.getUser(created.id))?.name, "Alice");
   });
-  await Effect.runPromise(
-    Effect.provide(program, testLayer(Workspaces.layerNoDeps)),
-  );
+  await Effect.runPromise(Effect.provide(program, testLayer(Workspaces.layerNoDeps)));
 });
 
 test("Workspaces -- updateUser returns undefined for an unknown id", async () => {
@@ -53,9 +44,7 @@ test("Workspaces -- updateUser returns undefined for an unknown id", async () =>
     const store = yield* Workspaces;
     assertEquals(yield* store.updateUser("nope", { name: "x" }), undefined);
   });
-  await Effect.runPromise(
-    Effect.provide(program, testLayer(Workspaces.layerNoDeps)),
-  );
+  await Effect.runPromise(Effect.provide(program, testLayer(Workspaces.layerNoDeps)));
 });
 
 test("Workspaces -- setUserRole grants admin", async () => {
@@ -69,9 +58,7 @@ test("Workspaces -- setUserRole grants admin", async () => {
     if (updated) assertEquals(store.isAdmin(updated), true);
     assertEquals((yield* store.getUser(created.id))?.role, "admin");
   });
-  await Effect.runPromise(
-    Effect.provide(program, testLayer(Workspaces.layerNoDeps)),
-  );
+  await Effect.runPromise(Effect.provide(program, testLayer(Workspaces.layerNoDeps)));
 });
 
 test("Workspaces -- setUserRole returns undefined for an unknown id", async () => {
@@ -79,9 +66,7 @@ test("Workspaces -- setUserRole returns undefined for an unknown id", async () =
     const store = yield* Workspaces;
     assertEquals(yield* store.setUserRole("nope", "admin"), undefined);
   });
-  await Effect.runPromise(
-    Effect.provide(program, testLayer(Workspaces.layerNoDeps)),
-  );
+  await Effect.runPromise(Effect.provide(program, testLayer(Workspaces.layerNoDeps)));
 });
 
 test("Workspaces -- a missing user reads as undefined", async () => {
@@ -90,26 +75,20 @@ test("Workspaces -- a missing user reads as undefined", async () => {
     assertEquals(yield* store.getUser("nope"), undefined);
     assertEquals(yield* store.getUserByEmail("nobody@example.com"), undefined);
   });
-  await Effect.runPromise(
-    Effect.provide(program, testLayer(Workspaces.layerNoDeps)),
-  );
+  await Effect.runPromise(Effect.provide(program, testLayer(Workspaces.layerNoDeps)));
 });
 
 test("Workspaces -- a duplicate email is rejected", async () => {
   const program = Effect.gen(function* () {
     const store = yield* Workspaces;
     yield* store.createUser({ email: "bob@example.com" });
-    const outcome = yield* Effect.result(
-      store.createUser({ email: "bob@example.com" }),
-    );
+    const outcome = yield* Effect.result(store.createUser({ email: "bob@example.com" }));
     if (Result.isSuccess(outcome)) {
       throw new Error("a duplicate email was accepted");
     }
     assertInstanceOf(outcome.failure, UserEmailTakenError);
   });
-  await Effect.runPromise(
-    Effect.provide(program, testLayer(Workspaces.layerNoDeps)),
-  );
+  await Effect.runPromise(Effect.provide(program, testLayer(Workspaces.layerNoDeps)));
 });
 
 // workspaces
@@ -125,9 +104,7 @@ test("Workspaces -- createWorkspace adds the owner membership", async () => {
     const membership = yield* store.getMembership(ws.id, owner.id);
     assertEquals(membership?.role, "owner");
   });
-  await Effect.runPromise(
-    Effect.provide(program, testLayer(Workspaces.layerNoDeps)),
-  );
+  await Effect.runPromise(Effect.provide(program, testLayer(Workspaces.layerNoDeps)));
 });
 
 test("Workspaces -- listWorkspacesForUser returns memberships", async () => {
@@ -144,9 +121,7 @@ test("Workspaces -- listWorkspacesForUser returns memberships", async () => {
     assertEquals(forAlice.map((w) => w.id).sort(), [ws1.id, ws2.id].sort());
     assertEquals((yield* store.listWorkspacesForUser(bob.id)).length, 1);
   });
-  await Effect.runPromise(
-    Effect.provide(program, testLayer(Workspaces.layerNoDeps)),
-  );
+  await Effect.runPromise(Effect.provide(program, testLayer(Workspaces.layerNoDeps)));
 });
 
 test("Workspaces -- a missing workspace reads as undefined", async () => {
@@ -154,9 +129,7 @@ test("Workspaces -- a missing workspace reads as undefined", async () => {
     const store = yield* Workspaces;
     assertEquals(yield* store.getWorkspace("missing"), undefined);
   });
-  await Effect.runPromise(
-    Effect.provide(program, testLayer(Workspaces.layerNoDeps)),
-  );
+  await Effect.runPromise(Effect.provide(program, testLayer(Workspaces.layerNoDeps)));
 });
 
 // members
@@ -173,9 +146,7 @@ test("Workspaces -- addMember + getMembers", async () => {
     assertEquals(members.length, 2);
     assertEquals(members.find((m) => m.userId === editor.id)?.role, "editor");
   });
-  await Effect.runPromise(
-    Effect.provide(program, testLayer(Workspaces.layerNoDeps)),
-  );
+  await Effect.runPromise(Effect.provide(program, testLayer(Workspaces.layerNoDeps)));
 });
 
 test("Workspaces -- addMember upserts the role", async () => {
@@ -191,9 +162,7 @@ test("Workspaces -- addMember upserts the role", async () => {
     assertEquals((yield* store.getMembership(ws.id, user.id))?.role, "owner");
     assertEquals((yield* store.getMembers(ws.id)).length, 2);
   });
-  await Effect.runPromise(
-    Effect.provide(program, testLayer(Workspaces.layerNoDeps)),
-  );
+  await Effect.runPromise(Effect.provide(program, testLayer(Workspaces.layerNoDeps)));
 });
 
 test("Workspaces -- removeMember", async () => {
@@ -208,9 +177,7 @@ test("Workspaces -- removeMember", async () => {
     assertEquals(yield* store.getMembership(ws.id, user.id), undefined);
     assertEquals(yield* store.removeMember(ws.id, user.id), false);
   });
-  await Effect.runPromise(
-    Effect.provide(program, testLayer(Workspaces.layerNoDeps)),
-  );
+  await Effect.runPromise(Effect.provide(program, testLayer(Workspaces.layerNoDeps)));
 });
 
 // access checks
@@ -237,9 +204,7 @@ test("Workspaces -- hasAccess", async () => {
     assertEquals(yield* store.hasAccess(ws.id, owner.id, "owner"), true);
     assertEquals(yield* store.hasAccess(ws.id, editor.id, "owner"), false);
   });
-  await Effect.runPromise(
-    Effect.provide(program, testLayer(Workspaces.layerNoDeps)),
-  );
+  await Effect.runPromise(Effect.provide(program, testLayer(Workspaces.layerNoDeps)));
 });
 
 // last-owner guard
@@ -257,9 +222,7 @@ test("Workspaces -- the last owner cannot be removed", async () => {
     // Owner is still a member.
     assertEquals((yield* store.getMembership(ws.id, owner.id))?.role, "owner");
   });
-  await Effect.runPromise(
-    Effect.provide(program, testLayer(Workspaces.layerNoDeps)),
-  );
+  await Effect.runPromise(Effect.provide(program, testLayer(Workspaces.layerNoDeps)));
 });
 
 test("Workspaces -- the last owner cannot be demoted via addMember", async () => {
@@ -268,18 +231,14 @@ test("Workspaces -- the last owner cannot be demoted via addMember", async () =>
     const owner = yield* store.createUser({ email: "owner@example.com" });
     const ws = yield* store.createWorkspace("WS", owner.id);
 
-    const outcome = yield* Effect.result(
-      store.addMember(ws.id, owner.id, "editor"),
-    );
+    const outcome = yield* Effect.result(store.addMember(ws.id, owner.id, "editor"));
     if (Result.isSuccess(outcome)) {
       throw new Error("the last owner was demoted");
     }
     assertInstanceOf(outcome.failure, LastOwnerError);
     assertEquals((yield* store.getMembership(ws.id, owner.id))?.role, "owner");
   });
-  await Effect.runPromise(
-    Effect.provide(program, testLayer(Workspaces.layerNoDeps)),
-  );
+  await Effect.runPromise(Effect.provide(program, testLayer(Workspaces.layerNoDeps)));
 });
 
 test("Workspaces -- an owner can be removed when another owner exists", async () => {
@@ -294,7 +253,5 @@ test("Workspaces -- an owner can be removed when another owner exists", async ()
     assertEquals(yield* store.getMembership(ws.id, a.id), undefined);
     assertEquals((yield* store.getMembership(ws.id, b.id))?.role, "owner");
   });
-  await Effect.runPromise(
-    Effect.provide(program, testLayer(Workspaces.layerNoDeps)),
-  );
+  await Effect.runPromise(Effect.provide(program, testLayer(Workspaces.layerNoDeps)));
 });

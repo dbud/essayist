@@ -7,6 +7,7 @@ import {
   RotateCcw,
   Settings2,
 } from "lucide-preact";
+
 import Avatar from "#/components/Avatar.tsx";
 import AutoSaveIntervalSelect from "#/components/settings/AutoSaveIntervalSelect.tsx";
 import FontAxisSelect, {
@@ -15,10 +16,7 @@ import FontAxisSelect, {
   SERIF_FONT_OPTIONS,
 } from "#/components/settings/FontAxisSelect.tsx";
 import MarkStyleSelect from "#/components/settings/MarkStyleSelect.tsx";
-import Dropdown, {
-  DropdownItem,
-  DropdownMenu,
-} from "#/components/ui/Dropdown.tsx";
+import Dropdown, { DropdownItem, DropdownMenu } from "#/components/ui/Dropdown.tsx";
 import { CheckboxIcon } from "#/components/ui/icons.tsx";
 import Panel from "#/components/ui/Panel.tsx";
 import { usePreferences } from "#/models/preferences.ts";
@@ -59,16 +57,8 @@ export default function SettingsMenu({ user }: SettingsMenuProps) {
           </li>
           <li class="flex w-full">
             <div class="form-grid w-full">
-              <FontAxisSelect
-                axis={sansAxis}
-                name="sans-font"
-                label="Interface font"
-              />
-              <FontAxisSelect
-                axis={serifAxis}
-                name="serif-font"
-                label="Serif font"
-              />
+              <FontAxisSelect axis={sansAxis} name="sans-font" label="Interface font" />
+              <FontAxisSelect axis={serifAxis} name="serif-font" label="Serif font" />
               <MarkStyleSelect />
             </div>
           </li>
@@ -97,9 +87,7 @@ export default function SettingsMenu({ user }: SettingsMenuProps) {
             ) : (
               <PanelRightOpen size={14} />
             )}
-            {debugSidebarOpened.value
-              ? "Hide debug sidebar"
-              : "Show debug sidebar"}
+            {debugSidebarOpened.value ? "Hide debug sidebar" : "Show debug sidebar"}
           </DropdownItem>
           {/* TODO -- control panel item when the admin port lands -- ESS-84
           {user.role === "admin" && (

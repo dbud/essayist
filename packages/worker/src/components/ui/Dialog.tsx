@@ -1,6 +1,7 @@
 import { type Signal, useSignal } from "@preact/signals";
 import type { ComponentChildren } from "preact";
 import { useEffect, useRef } from "preact/hooks";
+
 import Panel from "#/components/ui/Panel.tsx";
 
 interface DialogProps {

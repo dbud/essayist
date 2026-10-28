@@ -1,5 +1,6 @@
 import { assertEquals } from "@std/assert";
 import { test } from "vitest";
+
 import type { ResolvedReviewPass, ReviewUnit } from "#/config/types.ts";
 import type { ForwardSpec } from "#/flow/helpers.ts";
 import { buildReviewGraph } from "#/reviews/adapter.ts";
@@ -21,9 +22,7 @@ const APPLY_PAYLOAD = {
 
 const COLLECT_PAYLOAD: ForwardSpec<ReviewTypes> = { types: ["mark.placed"] };
 
-function unitFixture(
-  partial: Partial<ReviewUnit> & Pick<ReviewUnit, "id">,
-): ReviewUnit {
+function unitFixture(partial: Partial<ReviewUnit> & Pick<ReviewUnit, "id">): ReviewUnit {
   return { promptKey: "dir", ...partial };
 }
 
@@ -75,22 +74,13 @@ test("buildReviewGraph -- decomposes a pass into nodes", () => {
       ["mechanics.propose", "mark.propose", ["analyze", "content"]],
       ["mechanics.apply", "mark.apply", ["mechanics.propose"]],
       ["mechanics.repair1.gate", "mark.repair.gate", ["mechanics.apply"]],
-      [
-        "mechanics.repair1.propose",
-        "mark.propose.repair",
-        ["mechanics.repair1.gate", "content"],
-      ],
+      ["mechanics.repair1.propose", "mark.propose.repair", ["mechanics.repair1.gate", "content"]],
       ["mechanics.repair1.apply", "mark.apply", ["mechanics.repair1.propose"]],
-      [
-        "mechanics.collect",
-        "mark.collect",
-        ["mechanics.apply", "mechanics.repair1.apply"],
-      ],
+      ["mechanics.collect", "mark.collect", ["mechanics.apply", "mechanics.repair1.apply"]],
       ["summary", "synthesize", ["analyze", "content"]],
     ],
   );
-  const payloadOf = (id: string) =>
-    graph.nodes.find((node) => node.id === id)?.payload;
+  const payloadOf = (id: string) => graph.nodes.find((node) => node.id === id)?.payload;
   assertEquals(payloadOf("analyze"), pass.units[0]);
   assertEquals(payloadOf("mechanics.apply"), APPLY_PAYLOAD);
   assertEquals(payloadOf("mechanics.collect"), COLLECT_PAYLOAD);
@@ -115,31 +105,15 @@ test("buildReviewGraph -- unrolls two repair rounds in a chain", () => {
       ["mechanics.propose", "mark.propose", ["content"]],
       ["mechanics.apply", "mark.apply", ["mechanics.propose"]],
       ["mechanics.repair1.gate", "mark.repair.gate", ["mechanics.apply"]],
-      [
-        "mechanics.repair1.propose",
-        "mark.propose.repair",
-        ["mechanics.repair1.gate", "content"],
-      ],
+      ["mechanics.repair1.propose", "mark.propose.repair", ["mechanics.repair1.gate", "content"]],
       ["mechanics.repair1.apply", "mark.apply", ["mechanics.repair1.propose"]],
-      [
-        "mechanics.repair2.gate",
-        "mark.repair.gate",
-        ["mechanics.repair1.apply"],
-      ],
-      [
-        "mechanics.repair2.propose",
-        "mark.propose.repair",
-        ["mechanics.repair2.gate", "content"],
-      ],
+      ["mechanics.repair2.gate", "mark.repair.gate", ["mechanics.repair1.apply"]],
+      ["mechanics.repair2.propose", "mark.propose.repair", ["mechanics.repair2.gate", "content"]],
       ["mechanics.repair2.apply", "mark.apply", ["mechanics.repair2.propose"]],
       [
         "mechanics.collect",
         "mark.collect",
-        [
-          "mechanics.apply",
-          "mechanics.repair1.apply",
-          "mechanics.repair2.apply",
-        ],
+        ["mechanics.apply", "mechanics.repair1.apply", "mechanics.repair2.apply"],
       ],
     ],
   );

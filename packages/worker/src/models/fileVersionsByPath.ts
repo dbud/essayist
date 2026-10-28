@@ -1,9 +1,5 @@
-import {
-  computed,
-  createModel,
-  type ReadonlySignal,
-  signal,
-} from "@preact/signals";
+import { computed, createModel, type ReadonlySignal, signal } from "@preact/signals";
+
 import type { FileSelection } from "./fileSelection.ts";
 import type { FileVersionsData } from "./fileVersions.data.ts";
 import { type FileVersions, FileVersionsModel } from "./fileVersions.ts";

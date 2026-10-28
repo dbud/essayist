@@ -1,24 +1,18 @@
 import { assertEquals } from "@std/assert";
 import { Effect, Layer } from "effect";
 import { test } from "vitest";
-import {
-  ChunkedValues,
-  type MissingChunksError,
-} from "#/persistence/chunked_values.ts";
-import type {
-  ConcurrentModificationError,
-  PersistenceError,
-} from "#/persistence/mod.ts";
+
+import { ChunkedValues, type MissingChunksError } from "#/persistence/chunked_values.ts";
+import type { ConcurrentModificationError, PersistenceError } from "#/persistence/mod.ts";
 import { testLayer } from "#/persistence/testing/kv.ts";
 import { WorkspaceId } from "#/workspace/WorkspaceId.ts";
+
 import { TraceEvents } from "./service.ts";
 import type { TraceEvent } from "./types.ts";
 
 type E = PersistenceError | ConcurrentModificationError | MissingChunksError;
 
-const run = <A>(
-  program: Effect.Effect<A, E, TraceEvents | WorkspaceId>,
-): Promise<A> =>
+const run = <A>(program: Effect.Effect<A, E, TraceEvents | WorkspaceId>): Promise<A> =>
   Effect.runPromise(
     Effect.provide(
       Effect.provideService(program, WorkspaceId, { wsId: "ws" }),

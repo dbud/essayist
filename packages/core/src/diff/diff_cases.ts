@@ -81,10 +81,7 @@ export function runDiffCases(label: string, compute: Compute): void {
   });
 
   test(name("two separate changes"), () => {
-    const result = compute(
-      "Alpha Beta Gamma Delta",
-      "Alpha Modified Gamma Altered",
-    );
+    const result = compute("Alpha Beta Gamma Delta", "Alpha Modified Gamma Altered");
     assertEquals(result.length, 2);
     assertObjectMatch(result[0], {
       type: "replace",
@@ -276,10 +273,7 @@ The third paragraph is about publishing.`,
   });
 
   test(name("two changes have correct offsets"), () => {
-    const result = compute(
-      "Alpha Beta Gamma Delta",
-      "Alpha Modified Gamma Altered",
-    );
+    const result = compute("Alpha Beta Gamma Delta", "Alpha Modified Gamma Altered");
     assertEquals(result, [
       {
         type: "replace",

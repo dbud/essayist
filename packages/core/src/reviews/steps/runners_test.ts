@@ -2,17 +2,12 @@ import { openKv } from "@deno/kv";
 import { assertEquals } from "@std/assert";
 import { Effect, Layer } from "effect";
 import { test } from "vitest";
+
 import type { ResolvedReviewUnit } from "#/config/types.ts";
 import { Files } from "#/files/service.ts";
 import type { PassWhenSpec } from "#/flow/helpers.ts";
 import { FlowRunner } from "#/flow/runner.ts";
-import type {
-  Artifact,
-  Artifacts,
-  FlowEvent,
-  FlowGraph,
-  FlowRunResult,
-} from "#/flow/types.ts";
+import type { Artifact, Artifacts, FlowEvent, FlowGraph, FlowRunResult } from "#/flow/types.ts";
 import { Marks } from "#/marks/service.ts";
 import type { Mark } from "#/marks/types.ts";
 import { createFakeClient } from "#/model/fake_client.ts";
@@ -50,10 +45,7 @@ const GATE_PAYLOAD: PassWhenSpec<ReviewTypes> = {
 
 function customs(events: FlowEvent[]): [string, string][] {
   return events
-    .filter(
-      (event): event is Extract<FlowEvent, { type: "custom" }> =>
-        event.type === "custom",
-    )
+    .filter((event): event is Extract<FlowEvent, { type: "custom" }> => event.type === "custom")
     .map((event) => [event.nodeId, (event.event as ReviewNodeEvent).type]);
 }
 
@@ -62,10 +54,7 @@ function artifactsOf<A extends keyof ReviewTypes["artifacts"]>(
   type: A,
 ): ReviewTypes["artifacts"][A][] {
   return result.artifacts
-    .filter(
-      (artifact): artifact is Artifact<ReviewTypes, A> =>
-        artifact.type === type,
-    )
+    .filter((artifact): artifact is Artifact<ReviewTypes, A> => artifact.type === type)
     .map((artifact) => artifact.data);
 }
 
@@ -73,10 +62,7 @@ function artifactsOf<A extends keyof ReviewTypes["artifacts"]>(
 async function setup(content: string) {
   const kv = await openKv();
   const env = Layer.provide(
-    Layer.mergeAll(
-      Files.layerNoDeps,
-      Layer.provide(Marks.layerNoDeps, Files.layerNoDeps),
-    ),
+    Layer.mergeAll(Files.layerNoDeps, Layer.provide(Marks.layerNoDeps, Files.layerNoDeps)),
     kvLayer(kv),
   );
   const versionId = await Effect.runPromise(
@@ -117,10 +103,7 @@ const run = (
   graph: FlowGraph<ReviewTypes>,
 ): Promise<FlowRunResult<ReviewTypes>> =>
   Effect.runPromise(
-    Effect.provide(
-      Effect.provideService(flow.run(graph), WorkspaceId, { wsId: "ws" }),
-      env,
-    ),
+    Effect.provide(Effect.provideService(flow.run(graph), WorkspaceId, { wsId: "ws" }), env),
   );
 
 test("review runners -- analyze, propose, apply, and synthesize in a flow", async () => {
@@ -287,9 +270,7 @@ test("review runners -- repair propose stays idle without failures", async () =>
     result.nodeRuns.find((run) => run.nodeId === "m.repair1.propose")?.status,
     "completed",
   );
-  const proposals = result.artifacts.filter(
-    (artifact) => artifact.type === "mark.proposals",
-  );
+  const proposals = result.artifacts.filter((artifact) => artifact.type === "mark.proposals");
   assertEquals(proposals.length, 1);
   assertEquals(proposals[0].producedBy, "m.propose");
   const marks = await readMarks(env, versionId);

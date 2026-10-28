@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
 import { signal } from "@preact/signals";
 import { expect, test } from "vitest";
+
 import { type QueryRecord, setupUrlQuerySync, urlTarget } from "./urlQuery.ts";
 
 function search(): string {

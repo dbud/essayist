@@ -1,4 +1,5 @@
 import { useEffect } from "preact/hooks";
+
 import { tooltipText, tooltipX, tooltipY } from "#/signals/tooltip.ts";
 
 export default function Tooltip() {
@@ -7,8 +8,7 @@ export default function Tooltip() {
 
     const onOver = (e: PointerEvent) => {
       const origin = e.target;
-      const target =
-        origin instanceof Element ? origin.closest("[data-tooltip]") : null;
+      const target = origin instanceof Element ? origin.closest("[data-tooltip]") : null;
       if (target !== el) {
         el = target;
         tooltipText.value = target?.getAttribute("data-tooltip") ?? null;
@@ -32,10 +32,7 @@ export default function Tooltip() {
   if (!tooltipText.value) return null;
 
   return (
-    <div
-      class="tooltip z-tooltip"
-      style={{ left: tooltipX.value, top: tooltipY.value }}
-    >
+    <div class="tooltip z-tooltip" style={{ left: tooltipX.value, top: tooltipY.value }}>
       {tooltipText.value}
     </div>
   );

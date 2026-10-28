@@ -1,4 +1,24 @@
 {
+  "name": "@essayist/core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "imports": {
+    "#/*": "./src/*"
+  },
+  "exports": {
+    ".": "./mod.ts",
+    "./kv_d1": "./src/persistence/kv_d1.ts",
+    "./kv_d1_rest": "./src/persistence/kv_d1_rest.ts",
+    "./kv_d1_sqlite": "./src/persistence/kv_d1_sqlite.ts",
+    "./kv_deno": "./src/persistence/kv_deno.ts"
+  },
+  "scripts": {
+    "check": "biome check --error-on-warnings . && tsc --noEmit",
+    "fmt": "biome check --write .",
+    "lint": "biome lint .",
+    "test": "vitest run"
+  },
   "dependencies": {
     "@deno/kv": "catalog:",
     "@effect/ai-openrouter": "catalog:",
@@ -13,25 +33,5 @@
   "devDependencies": {
     "@cloudflare/workers-types": "catalog:",
     "@types/node": "catalog:"
-  },
-  "exports": {
-    ".": "./mod.ts",
-    "./kv_d1": "./src/persistence/kv_d1.ts",
-    "./kv_d1_rest": "./src/persistence/kv_d1_rest.ts",
-    "./kv_d1_sqlite": "./src/persistence/kv_d1_sqlite.ts",
-    "./kv_deno": "./src/persistence/kv_deno.ts"
-  },
-  "imports": {
-    "#/*": "./src/*"
-  },
-  "name": "@essayist/core",
-  "private": true,
-  "scripts": {
-    "check": "biome check --error-on-warnings . && tsc --noEmit",
-    "fmt": "biome check --write .",
-    "lint": "biome lint .",
-    "test": "vitest run"
-  },
-  "type": "module",
-  "version": "0.1.0"
+  }
 }

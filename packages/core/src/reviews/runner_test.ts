@@ -2,6 +2,7 @@ import { type Kv, openKv } from "@deno/kv";
 import { assert, assertEquals, assertRejects } from "@std/assert";
 import { type Context, Effect, Layer } from "effect";
 import { test } from "vitest";
+
 import type { ResolvedReviewPass, ReviewUnit } from "#/config/types.ts";
 import { Files } from "#/files/service.ts";
 import type { NodeRun } from "#/flow/types.ts";
@@ -25,9 +26,7 @@ import type { TraceEvent } from "#/reviews/trace/types.ts";
 import type { ReviewRun } from "#/reviews/types.ts";
 import { WorkspaceId } from "#/workspace/WorkspaceId.ts";
 
-function unitFixture(
-  partial: Partial<ReviewUnit> & Pick<ReviewUnit, "id">,
-): ReviewUnit {
+function unitFixture(partial: Partial<ReviewUnit> & Pick<ReviewUnit, "id">): ReviewUnit {
   return { promptKey: "dir", ...partial };
 }
 
@@ -70,10 +69,7 @@ interface Setup {
 }
 
 function setup(): Promise<Setup>;
-function setup(file: {
-  path: string;
-  content: string;
-}): Promise<Setup & { versionId: string }>;
+function setup(file: { path: string; content: string }): Promise<Setup & { versionId: string }>;
 async function setup(file?: {
   path: string;
   content: string;
@@ -112,9 +108,7 @@ async function setup(file?: {
 /** Run a small program against the test's shared KV store: the body gets
  * the services, as they come out of the shared env. */
 function viaRuns<A>(
-  env: Layer.Layer<
-    Marks | ModelClient | Persistence | ReviewRuns | TraceEvents | Files
-  >,
+  env: Layer.Layer<Marks | ModelClient | Persistence | ReviewRuns | TraceEvents | Files>,
   body: (deps: {
     runs: Context.Service.Shape<typeof ReviewRuns>;
     traces: Context.Service.Shape<typeof TraceEvents>;
@@ -193,9 +187,7 @@ function nodeEnd(trace: TraceEvent[], nodeId: string): NodeRun | undefined {
 
 function appliedEvents(trace: TraceEvent[]) {
   return trace.flatMap((event) =>
-    event.type === "custom" && event.event.type === "applied"
-      ? [event.event]
-      : [],
+    event.type === "custom" && event.event.type === "applied" ? [event.event] : [],
   );
 }
 
@@ -233,9 +225,7 @@ test("runReviewPass -- completes a pass with marks, summary, and a per-node trac
   assertEquals(run.status, "completed");
   assertEquals(run.summary, "Solid draft.");
 
-  const marks = await viaRuns(env, (deps) =>
-    deps.files.getMarks("essay.txt", versionId),
-  );
+  const marks = await viaRuns(env, (deps) => deps.files.getMarks("essay.txt", versionId));
   assertEquals(marks[0].selected_text, "brave");
   assertEquals(marks[0].meta, {
     runId: run.id,
@@ -245,21 +235,8 @@ test("runReviewPass -- completes a pass with marks, summary, and a per-node trac
   const trace = (await viaRuns(env, (deps) => deps.traces.get(run.id))) ?? [];
   assertEquals(byNode(trace), {
     content: ["node_start", "node_end"],
-    analyze: [
-      "node_start",
-      "prompt",
-      "model_call",
-      "reasoning",
-      "output",
-      "node_end",
-    ],
-    "mechanics.propose": [
-      "node_start",
-      "prompt",
-      "model_call",
-      "output",
-      "node_end",
-    ],
+    analyze: ["node_start", "prompt", "model_call", "reasoning", "output", "node_end"],
+    "mechanics.propose": ["node_start", "prompt", "model_call", "output", "node_end"],
     "mechanics.apply": ["node_start", "applied", "node_end"],
     "mechanics.collect": ["node_start", "node_end"],
     "mechanics.repair1.gate": ["node_start", "node_end"],
@@ -308,23 +285,11 @@ test("runReviewPass -- a repair round re-quotes the failed spans", async () => {
   const trace = (await viaRuns(env, (deps) => deps.traces.get(run.id))) ?? [];
   assertEquals(byNode(trace), {
     content: ["node_start", "node_end"],
-    "mechanics.propose": [
-      "node_start",
-      "prompt",
-      "model_call",
-      "output",
-      "node_end",
-    ],
+    "mechanics.propose": ["node_start", "prompt", "model_call", "output", "node_end"],
     "mechanics.apply": ["node_start", "applied", "node_end"],
     "mechanics.collect": ["node_start", "node_end"],
     "mechanics.repair1.gate": ["node_start", "node_end"],
-    "mechanics.repair1.propose": [
-      "node_start",
-      "prompt",
-      "model_call",
-      "output",
-      "node_end",
-    ],
+    "mechanics.repair1.propose": ["node_start", "prompt", "model_call", "output", "node_end"],
     "mechanics.repair1.apply": ["node_start", "applied", "node_end"],
     summary: ["node_start", "prompt", "model_call", "output", "node_end"],
   });
@@ -333,9 +298,7 @@ test("runReviewPass -- a repair round re-quotes the failed spans", async () => {
   assertEquals(applied[1].attempts[0].marked, true);
   // The repair prompt quotes the failed span and its surroundings.
   assertEquals(inputs[1].includes('Attempted span: "ghost span"'), true);
-  const marks = await viaRuns(env, (deps) =>
-    deps.files.getMarks("essay.txt", versionId),
-  );
+  const marks = await viaRuns(env, (deps) => deps.files.getMarks("essay.txt", versionId));
   assertEquals(marks[0].selected_text, "hello");
 });
 
@@ -374,9 +337,7 @@ test("runReviewPass -- a zero budget keeps failed marks with no repair nodes", a
   ]);
   const applied = appliedEvents(trace);
   assertEquals(applied[0].attempts[0].marked, false);
-  const marks = await viaRuns(env, (deps) =>
-    deps.files.getMarks("essay.txt", versionId),
-  );
+  const marks = await viaRuns(env, (deps) => deps.files.getMarks("essay.txt", versionId));
   assertEquals(marks, []);
 });
 
@@ -409,10 +370,7 @@ test("runReviewPass -- a resumed pass skips completed nodes and shows each once"
     content: "hello brave world",
   });
   // First attempt: analyze succeeds, then the unit below it fails on bad JSON.
-  const first = createFakeClient([
-    { text: ANALYSIS_ROUND },
-    { text: "not json" },
-  ]);
+  const first = createFakeClient([{ text: ANALYSIS_ROUND }, { text: "not json" }]);
   const env = Layer.merge(baseEnv, ModelClient.layerOf(first.client));
 
   const run = await runPass(env, {
@@ -429,8 +387,7 @@ test("runReviewPass -- a resumed pass skips completed nodes and shows each once"
   });
 
   assertEquals(run.status, "failed");
-  const interrupted =
-    (await viaRuns(env, (deps) => deps.traces.get(run.id))) ?? [];
+  const interrupted = (await viaRuns(env, (deps) => deps.traces.get(run.id))) ?? [];
   // analyze completed, so its artifacts are recoverable from the trace.
   assertEquals(nodeEnd(interrupted, "analyze")?.status, "completed");
 
@@ -470,9 +427,7 @@ test("runReviewPass -- a resumed pass skips completed nodes and shows each once"
   assertEquals(analyzeEvents.filter((type) => type === "node_start").length, 1);
   assertEquals(analyzeEvents.filter((type) => type === "node_end").length, 1);
   // The first attempt's mark never reached the VFS, so the retry's does.
-  const marks = await viaRuns(env, (deps) =>
-    deps.files.getMarks("essay.txt", versionId),
-  );
+  const marks = await viaRuns(env, (deps) => deps.files.getMarks("essay.txt", versionId));
   assertEquals(marks[0]?.selected_text, "brave");
 });
 
@@ -593,10 +548,7 @@ test("runReviewPass -- heartbeats the lease while running, then releases it", as
     { text: ANALYSIS_ROUND },
     { text: '{"summary":"Solid draft."}' },
   ]);
-  const env = Layer.merge(
-    countingReviews(kv, count),
-    ModelClient.layerOf(client),
-  );
+  const env = Layer.merge(countingReviews(kv, count), ModelClient.layerOf(client));
 
   const run = await runPass(env, {
     pass: passFixture([

@@ -1,7 +1,9 @@
 import { assertEquals } from "@std/assert";
 import { Effect } from "effect";
 import { test } from "vitest";
+
 import { testLayer } from "#/persistence/testing/kv.ts";
+
 import { UserState } from "./service.ts";
 
 test("UserState -- selected workspace round-trips", async () => {
@@ -13,9 +15,7 @@ test("UserState -- selected workspace round-trips", async () => {
     yield* store.setSelectedWorkspace("u1", "ws2");
     assertEquals(yield* store.getSelectedWorkspace("u1"), "ws2");
   });
-  await Effect.runPromise(
-    Effect.provide(program, testLayer(UserState.layerNoDeps)),
-  );
+  await Effect.runPromise(Effect.provide(program, testLayer(UserState.layerNoDeps)));
 });
 
 test("UserState -- selected file round-trips, scoped per workspace", async () => {
@@ -29,9 +29,7 @@ test("UserState -- selected file round-trips, scoped per workspace", async () =>
     yield* store.setSelectedFile("u1", "ws1", "essays/c.md");
     assertEquals(yield* store.getSelectedFile("u1", "ws1"), "essays/c.md");
   });
-  await Effect.runPromise(
-    Effect.provide(program, testLayer(UserState.layerNoDeps)),
-  );
+  await Effect.runPromise(Effect.provide(program, testLayer(UserState.layerNoDeps)));
 });
 
 test("UserState -- users are isolated", async () => {
@@ -42,7 +40,5 @@ test("UserState -- users are isolated", async () => {
     assertEquals(yield* store.getSelectedWorkspace("u2"), undefined);
     assertEquals(yield* store.getSelectedFile("u2", "ws1"), undefined);
   });
-  await Effect.runPromise(
-    Effect.provide(program, testLayer(UserState.layerNoDeps)),
-  );
+  await Effect.runPromise(Effect.provide(program, testLayer(UserState.layerNoDeps)));
 });

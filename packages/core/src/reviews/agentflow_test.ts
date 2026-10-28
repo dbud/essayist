@@ -1,5 +1,6 @@
 import { assertEquals } from "@std/assert";
 import { test } from "vitest";
+
 import type { ResolvedReviewPass, ReviewUnit } from "#/config/types.ts";
 import { buildReviewGraph } from "#/reviews/adapter.ts";
 import { agentflowDefinition } from "#/reviews/agentflow.ts";
@@ -11,9 +12,7 @@ const PROMPTS = {
   categories: "",
 };
 
-function unitFixture(
-  partial: Partial<ReviewUnit> & Pick<ReviewUnit, "id">,
-): ReviewUnit {
+function unitFixture(partial: Partial<ReviewUnit> & Pick<ReviewUnit, "id">): ReviewUnit {
   return { promptKey: "dir", ...partial };
 }
 

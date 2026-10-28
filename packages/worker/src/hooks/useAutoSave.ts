@@ -1,4 +1,5 @@
 import { useEffect } from "preact/hooks";
+
 import type { FileContent } from "#/models/fileContent.ts";
 import { autoSave, autoSaveInterval } from "#/signals/preferences.ts";
 import { debouncedEffect } from "#/utils/debouncedEffect.ts";

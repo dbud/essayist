@@ -44,10 +44,10 @@ export interface DiffResult {
 }
 
 /** A read targeted a path or version that does not exist. */
-export class FileMissingError extends Schema.TaggedError<FileMissingError>()(
-  "FileMissingError",
-  { path: Schema.String, versionId: Schema.NullOr(Schema.String) },
-) {
+export class FileMissingError extends Schema.TaggedError<FileMissingError>()("FileMissingError", {
+  path: Schema.String,
+  versionId: Schema.NullOr(Schema.String),
+}) {
   override get message() {
     return this.versionId === null
       ? `File ${this.path} does not exist`

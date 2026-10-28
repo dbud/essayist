@@ -12,6 +12,7 @@
 
 import type { Kv, KvEntryMaybe } from "@deno/kv";
 import { Effect, Layer } from "effect";
+
 import {
   type BatchOptions,
   ConcurrentModificationError,
@@ -52,9 +53,7 @@ export function kvLayer(kv: Kv): Layer.Layer<Persistence> {
         }
       },
       catch: (cause) =>
-        cause instanceof ConcurrentModificationError
-          ? cause
-          : backendFault(cause),
+        cause instanceof ConcurrentModificationError ? cause : backendFault(cause),
     });
 
   return Layer.effect(
@@ -126,10 +125,7 @@ export function kvLayer(kv: Kv): Layer.Layer<Persistence> {
               }
               return {
                 entries,
-                cursor:
-                  next === "" || !limit || entries.length < limit
-                    ? undefined
-                    : next,
+                cursor: next === "" || !limit || entries.length < limit ? undefined : next,
               };
             },
             catch: backendFault,

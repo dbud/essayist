@@ -1,4 +1,5 @@
 import { type Signal, useSignal } from "@preact/signals";
+
 import Dialog from "#/components/ui/Dialog.tsx";
 import WaveBars from "#/components/ui/WaveBars.tsx";
 
@@ -9,9 +10,7 @@ interface CreateWorkspaceDialogProps {
   open: Signal<boolean>;
 }
 
-export default function CreateWorkspaceDialog({
-  open,
-}: CreateWorkspaceDialogProps) {
+export default function CreateWorkspaceDialog({ open }: CreateWorkspaceDialogProps) {
   const name = useSignal("");
   const error = useSignal<string | null>(null);
   const submitting = useSignal(false);
@@ -28,8 +27,7 @@ export default function CreateWorkspaceDialog({
       name.value = "";
       open.value = false;
     } catch (err) {
-      error.value =
-        err instanceof Error ? err.message : "Failed to create project";
+      error.value = err instanceof Error ? err.message : "Failed to create project";
     } finally {
       submitting.value = false;
     }

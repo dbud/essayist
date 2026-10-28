@@ -1,6 +1,8 @@
 import { render } from "preact-render-to-string";
 import { expect, test } from "vitest";
+
 import { preferencesFromCookie } from "#/models/preferences.ts";
+
 import { Document } from "./render.tsx";
 
 const url = new URL("http://localhost:5173/");

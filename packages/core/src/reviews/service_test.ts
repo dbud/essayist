@@ -2,19 +2,16 @@ import { assertEquals } from "@std/assert";
 import { Clock, Duration, Effect } from "effect";
 import { TestClock } from "effect/testing";
 import { test } from "vitest";
-import type {
-  ConcurrentModificationError,
-  PersistenceError,
-} from "#/persistence/mod.ts";
+
+import type { ConcurrentModificationError, PersistenceError } from "#/persistence/mod.ts";
 import { testLayer } from "#/persistence/testing/kv.ts";
 import { WorkspaceId } from "#/workspace/WorkspaceId.ts";
+
 import { ReviewRuns } from "./service.ts";
 
 type E = PersistenceError | ConcurrentModificationError;
 
-const run = <A>(
-  program: Effect.Effect<A, E, ReviewRuns | WorkspaceId>,
-): Promise<A> =>
+const run = <A>(program: Effect.Effect<A, E, ReviewRuns | WorkspaceId>): Promise<A> =>
   Effect.runPromise(
     Effect.provide(
       Effect.provideService(program, WorkspaceId, { wsId: "ws" }),
@@ -23,9 +20,8 @@ const run = <A>(
   );
 
 /** Like run, with the program clock under the test clock. */
-const runOnClock = <A>(
-  program: Effect.Effect<A, E, ReviewRuns | WorkspaceId>,
-): Promise<A> => run(Effect.provide(program, TestClock.layer()));
+const runOnClock = <A>(program: Effect.Effect<A, E, ReviewRuns | WorkspaceId>): Promise<A> =>
+  run(Effect.provide(program, TestClock.layer()));
 
 test("ReviewRuns.createRun + getRun", async () => {
   await run(

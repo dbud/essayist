@@ -8,6 +8,7 @@ import {
   mergeRegister,
   type NodeKey,
 } from "lexical";
+
 import { getMeasureContext, hasRect, textPointRect } from "./domMeasure.ts";
 import { createRafScheduler, registerRootObserver } from "./editorDom.ts";
 import { registerNodeKeyTracker } from "./nodeKeyTracker.ts";
@@ -118,9 +119,7 @@ export function trackNodePositions<T extends LexicalNode>(
   // re-measure when any font finishes loading
   if (typeof document !== "undefined") {
     document.fonts.addEventListener("loadingdone", scheduleMeasure);
-    disposers.push(() =>
-      document.fonts.removeEventListener("loadingdone", scheduleMeasure),
-    );
+    disposers.push(() => document.fonts.removeEventListener("loadingdone", scheduleMeasure));
   }
   for (const s of remeasureOn ?? []) {
     disposers.push(

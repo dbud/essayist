@@ -5,9 +5,7 @@ export interface MeasureContext {
   doc: Document;
 }
 
-export function getMeasureContext(
-  root: HTMLElement | null,
-): MeasureContext | null {
+export function getMeasureContext(root: HTMLElement | null): MeasureContext | null {
   if (root === null) return null;
   const container = root.offsetParent as HTMLElement | null;
   if (container === null) return null;
@@ -34,11 +32,7 @@ export function contentEndRect(el: HTMLElement, doc: Document): DOMRect | null {
 }
 
 // Box of the character at `index` in `text`, or null if out of range / no box.
-export function charRectAt(
-  text: Text,
-  index: number,
-  doc: Document,
-): DOMRect | null {
+export function charRectAt(text: Text, index: number, doc: Document): DOMRect | null {
   if (index < 0 || index >= text.length) return null;
   const range = doc.createRange();
   range.setStart(text, index);
@@ -105,11 +99,7 @@ export function elementRectFallback(node: Node, doc: Document): DOMRect | null {
 // Rect of the element child adjacent to a caret with no neighbouring text -- the
 // single line it occupies. The element fallback would otherwise return the
 // whole containing block.
-export function adjacentElementRect(
-  node: Node,
-  offset: number,
-  doc: Document,
-): DOMRect | null {
+export function adjacentElementRect(node: Node, offset: number, doc: Document): DOMRect | null {
   if (node.nodeType !== doc.ELEMENT_NODE) return null;
   const children = (node as Element).childNodes;
   const candidates = [
@@ -127,11 +117,7 @@ export function adjacentElementRect(
 
 // Collapsed range at `offset` in `el`'s first text child, or `el`'s own rect if
 // it has none, so a zero-length mark still anchors at the paragraph.
-export function textPointRect(
-  el: HTMLElement,
-  offset: number,
-  doc: Document,
-): DOMRect {
+export function textPointRect(el: HTMLElement, offset: number, doc: Document): DOMRect {
   const textNode = el.firstChild;
   if (textNode === null || textNode.nodeType !== doc.TEXT_NODE) {
     return el.getBoundingClientRect();

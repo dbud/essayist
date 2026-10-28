@@ -6,13 +6,8 @@
 
 import { assertEquals } from "@std/assert";
 import { test } from "vitest";
-import {
-  decodeValue,
-  encodeValue,
-  keyRange,
-  packKey,
-  unpackKey,
-} from "./kv_d1_codec.ts";
+
+import { decodeValue, encodeValue, keyRange, packKey, unpackKey } from "./kv_d1_codec.ts";
 import type { Key } from "./mod.ts";
 
 const KEYS: Key[] = [

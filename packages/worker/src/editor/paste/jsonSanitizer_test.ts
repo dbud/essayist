@@ -1,6 +1,7 @@
 import { assertEquals } from "@std/assert";
 import { TEXT_TYPE_TO_FORMAT } from "lexical";
 import { test } from "vitest";
+
 import { JsonSanitizer } from "./jsonSanitizer.ts";
 import { defaultPastePolicy, type PastePolicy } from "./policy.ts";
 
@@ -82,9 +83,7 @@ test("unwraps marks and masks disallowed formats", () => {
 });
 
 test("clears inline styles", () => {
-  const result = sanitizer.sanitize([
-    { ...text("plain", bold), style: "color:red" },
-  ]);
+  const result = sanitizer.sanitize([{ ...text("plain", bold), style: "color:red" }]);
   assertEquals(result, [text("plain", bold)]);
 });
 
@@ -108,9 +107,7 @@ test("rewrites links to markdown link text", () => {
 });
 
 test("unwraps links without a url", () => {
-  const result = sanitizer.sanitize([
-    { type: "link", version: 1, children: [text("go")] },
-  ]);
+  const result = sanitizer.sanitize([{ type: "link", version: 1, children: [text("go")] }]);
   assertEquals(result, [text("go")]);
 });
 
@@ -141,10 +138,7 @@ test("rewrites autolinks like links", () => {
 });
 
 test("drops horizontal rules", () => {
-  const result = sanitizer.sanitize([
-    { type: "horizontalrule" },
-    text("after"),
-  ]);
+  const result = sanitizer.sanitize([{ type: "horizontalrule" }, text("after")]);
   assertEquals(result, [text("after")]);
 });
 

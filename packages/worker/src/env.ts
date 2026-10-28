@@ -31,10 +31,9 @@ export interface GoogleConfigProps {
   readonly appId: string | undefined;
 }
 
-export class GoogleConfig extends Context.Service<
-  GoogleConfig,
-  GoogleConfigProps
->()("@essayist/worker/env/GoogleConfig") {}
+export class GoogleConfig extends Context.Service<GoogleConfig, GoogleConfigProps>()(
+  "@essayist/worker/env/GoogleConfig",
+) {}
 
 export function googleConfigLayer(e: WorkerEnv): Layer.Layer<GoogleConfig> {
   return Layer.succeed(GoogleConfig, {
@@ -61,10 +60,7 @@ export function env(bindings: unknown): WorkerEnv {
   const db = dbBinding(bindings);
   const snapshot = Effect.runSync(
     config.pipe(
-      Effect.provideService(
-        ConfigProvider.ConfigProvider,
-        ConfigProvider.fromUnknown(bindings),
-      ),
+      Effect.provideService(ConfigProvider.ConfigProvider, ConfigProvider.fromUnknown(bindings)),
     ),
   );
 

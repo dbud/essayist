@@ -1,5 +1,6 @@
 import { CategoriesModel } from "#/models/categories.ts";
 import { createModelContext } from "#/models/utils/context.ts";
+
 import type { HomePageData } from "./data";
 
 export default function createModels(data: HomePageData) {

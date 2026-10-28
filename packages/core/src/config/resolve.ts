@@ -4,8 +4,10 @@
  */
 
 import { Effect, Schema } from "effect";
+
 import type { PersistenceError } from "#/persistence/mod.ts";
 import { renderCategories } from "#/reviews/steps/input.ts";
+
 import { ReviewConfig } from "./service.ts";
 import { renderTemplate } from "./template.ts";
 import type {
@@ -54,9 +56,7 @@ export const resolveActiveReviewPass: Effect.Effect<
 
   const pass = yield* config.getReviewPass(activeId);
   if (!pass) {
-    return yield* Effect.fail(
-      new ConfigMissingError({ what: `review pass "${activeId}"` }),
-    );
+    return yield* Effect.fail(new ConfigMissingError({ what: `review pass "${activeId}"` }));
   }
   return yield* resolveReviewPass(pass);
 });
@@ -73,22 +73,14 @@ export const resolveReviewPass = (
   Effect.gen(function* () {
     yield* assertUnitOrder(pass);
     const vars = pass.variables ?? {};
-    const system = yield* renderPrompt(
-      `pass "${pass.id}"`,
-      pass.systemPromptKey,
-      vars,
-    );
+    const system = yield* renderPrompt(`pass "${pass.id}"`, pass.systemPromptKey, vars);
     const units = yield* Effect.all(
-      pass.units.map((unit) =>
-        resolveUnit(pass.id, pass.modelPoolId, unit, system, vars),
-      ),
+      pass.units.map((unit) => resolveUnit(pass.id, pass.modelPoolId, unit, system, vars)),
     );
     return { pass, units };
   });
 
-const assertUnitOrder = (
-  pass: ReviewPass,
-): Effect.Effect<void, ConfigInvalidError> =>
+const assertUnitOrder = (pass: ReviewPass): Effect.Effect<void, ConfigInvalidError> =>
   Effect.gen(function* () {
     const seen = new Set<string>();
     for (const unit of pass.units) {
@@ -137,11 +129,7 @@ const resolveUnit = (
       );
     }
     const [directive, instructions, pool, attempt] = yield* Effect.all([
-      renderPrompt(
-        `unit "${unit.id}" in pass "${passId}"`,
-        unit.promptKey,
-        vars,
-      ),
+      renderPrompt(`unit "${unit.id}" in pass "${passId}"`, unit.promptKey, vars),
       resolveUnitInstructions(passId, unit, vars),
       resolveUnitPool(passPoolId, unit),
       resolveUnitAttempt(passId, unit),
@@ -169,11 +157,7 @@ const resolveUnitInstructions = (
 ): Effect.Effect<string, ResolveError, ReviewConfig> =>
   unit.instructionsPromptKey === undefined
     ? Effect.succeed("")
-    : renderPrompt(
-        `unit "${unit.id}" in pass "${passId}"`,
-        unit.instructionsPromptKey,
-        vars,
-      );
+    : renderPrompt(`unit "${unit.id}" in pass "${passId}"`, unit.instructionsPromptKey, vars);
 
 const renderPrompt = (
   where: string,
@@ -184,9 +168,7 @@ const renderPrompt = (
     const config = yield* ReviewConfig;
     const prompt = yield* config.getPrompt(key);
     if (!prompt) {
-      return yield* Effect.fail(
-        new ConfigMissingError({ what: `prompt "${key}" for ${where}` }),
-      );
+      return yield* Effect.fail(new ConfigMissingError({ what: `prompt "${key}" for ${where}` }));
     }
     return renderTemplate(prompt.body, vars);
   });
@@ -200,9 +182,7 @@ const resolveUnitPool = (
     const poolId = unit.modelPoolId ?? passPoolId;
     const pool = yield* config.getModelPool(poolId);
     if (!pool) {
-      return yield* Effect.fail(
-        new ConfigMissingError({ what: `model pool "${poolId}"` }),
-      );
+      return yield* Effect.fail(new ConfigMissingError({ what: `model pool "${poolId}"` }));
     }
     if (pool.models.length === 0) {
       return yield* Effect.fail(
@@ -234,9 +214,7 @@ const resolveUnitAttempt = (
       );
     }
     const config = yield* ReviewConfig;
-    const [categories, missing] = yield* config.getCategories(
-      attempt.allowedCategoryIds,
-    );
+    const [categories, missing] = yield* config.getCategories(attempt.allowedCategoryIds);
     if (missing.length > 0) {
       return yield* Effect.fail(
         new ConfigMissingError({

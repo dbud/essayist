@@ -1,5 +1,7 @@
 import { inspect } from "node:util";
+
 import { Hono } from "hono";
+
 import { pageRenderer } from "#/app/render.tsx";
 import { oauthRoutes } from "#/auth/routes.ts";
 import { requireUser, resolveSession } from "#/auth/session.ts";

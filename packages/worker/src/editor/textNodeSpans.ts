@@ -59,10 +59,7 @@ export function $collectTextNodeSpans(content: string): TextNodeSpan[] {
     const text = tn.getTextContent();
     if (text.length === 0) continue;
 
-    const needle =
-      inCode || !HAS_ESCAPE.test(text)
-        ? text
-        : text.replace(ESCAPE_SET, "\\$1");
+    const needle = inCode || !HAS_ESCAPE.test(text) ? text : text.replace(ESCAPE_SET, "\\$1");
 
     const idx = content.indexOf(needle, searchFrom);
     if (idx === -1) continue; // dropped (graceful, as before)
@@ -85,10 +82,7 @@ export function $collectTextNodeSpans(content: string): TextNodeSpan[] {
  * spans (markdown syntax like `#`, `>`, `**`) snaps to the nearest valid text
  * position: end of the preceding span or start of the next.
  */
-export function findPosition(
-  spans: TextNodeSpan[],
-  offset: number,
-): NodePosition | null {
+export function findPosition(spans: TextNodeSpan[], offset: number): NodePosition | null {
   if (spans.length === 0) return null;
 
   let lo = 0;
@@ -150,16 +144,10 @@ export function positionToOffset(
  * Converts a content offset range to a NodeRange.
  * Returns null only if there are no spans at all.
  */
-export function findRange(
-  spans: TextNodeSpan[],
-  { offset, length }: Span,
-): NodeRange {
+export function findRange(spans: TextNodeSpan[], { offset, length }: Span): NodeRange {
   // findPosition never returns null when spans is non-empty
   const anchor = findPosition(spans, offset);
-  assert(
-    anchor,
-    `span anchor @${offset} should resolve against spans ${JSON.stringify(spans)}`,
-  );
+  assert(anchor, `span anchor @${offset} should resolve against spans ${JSON.stringify(spans)}`);
 
   const focus = length === 0 ? anchor : findPosition(spans, offset + length);
   assert(

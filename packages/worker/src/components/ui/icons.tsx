@@ -45,9 +45,7 @@ export function RadioIcon({ selected, size = 24 }: ChoiceIconProps) {
       aria-hidden="true"
     >
       <circle cx="12" cy="12" r="10" />
-      {selected && (
-        <circle cx="12" cy="12" r="6" fill="currentColor" stroke="none" />
-      )}
+      {selected && <circle cx="12" cy="12" r="6" fill="currentColor" stroke="none" />}
     </svg>
   );
 }
@@ -77,13 +75,7 @@ export function CheckboxIcon({ selected, size = 24 }: ChoiceIconProps) {
       aria-hidden="true"
       style={{ "--knob-travel": `${KNOB_TRAVEL}px` }}
     >
-      <rect
-        x={STROKE / 2}
-        y={STROKE / 2}
-        width={TRACK_W}
-        height={TRACK_H}
-        rx={TRACK_R2}
-      />
+      <rect x={STROKE / 2} y={STROKE / 2} width={TRACK_W} height={TRACK_H} rx={TRACK_R2} />
       <circle
         class="checkbox-knob"
         cx={TRACK_R2 + STROKE / 2}

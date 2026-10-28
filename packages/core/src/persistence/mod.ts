@@ -34,9 +34,7 @@ export interface ListResult<T = unknown> {
 }
 
 /** A write applied atomically within one batch call. */
-export type WriteOp =
-  | { type: "set"; key: Key; value: unknown }
-  | { type: "delete"; key: Key };
+export type WriteOp = { type: "set"; key: Key; value: unknown } | { type: "delete"; key: Key };
 
 /** Options for a batch write. */
 export interface BatchOptions {

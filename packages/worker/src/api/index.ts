@@ -1,14 +1,9 @@
 // The api tier; endpoint paths are root-relative and the /api prefix is
 // applied once at assembly.
-import {
-  type AuthStore,
-  Files,
-  UserState,
-  WorkspaceId,
-  Workspaces,
-} from "@essayist/core";
+import { type AuthStore, Files, UserState, WorkspaceId, Workspaces } from "@essayist/core";
 import { Effect, Layer } from "effect";
 import { HttpApi, HttpApiBuilder, HttpApiError } from "effect/http-api";
+
 import { importGoogleDocFile } from "#/api/googleDocs.ts";
 import { sessionMiddleware, UserSession } from "#/api/sessionMiddleware.ts";
 import type { GoogleConfig } from "#/env.ts";
@@ -16,13 +11,11 @@ import { fileContentLoader } from "#/models/fileContent.loader.ts";
 import { fileTreeLoader } from "#/models/fileTree.loader.ts";
 import { fileVersionsLoader } from "#/models/fileVersions.loader.ts";
 import { workspacesLoader } from "#/models/workspaces.loader.ts";
+
 import { userGroup } from "./user";
 import { workspaceGroup } from "./workspaces";
 
-const api = HttpApi.make("api")
-  .add(userGroup)
-  .add(workspaceGroup)
-  .prefix("/api");
+const api = HttpApi.make("api").add(userGroup).add(workspaceGroup).prefix("/api");
 
 const userHandlers = HttpApiBuilder.group(
   api,
@@ -47,9 +40,7 @@ const workspaceHandlers = HttpApiBuilder.group(
 
     const requireAccess = (wsId: string, userId: string) =>
       Effect.gen(function* () {
-        const allowed = yield* Effect.orDie(
-          workspacesStore.hasAccess(wsId, userId),
-        );
+        const allowed = yield* Effect.orDie(workspacesStore.hasAccess(wsId, userId));
         if (!allowed) {
           return yield* Effect.fail(new HttpApiError.Forbidden());
         }
@@ -60,9 +51,7 @@ const workspaceHandlers = HttpApiBuilder.group(
         Effect.gen(function* () {
           const { user } = yield* UserSession;
           return yield* Effect.orDie(
-            workspacesLoader(user.id, req.query.wsId).pipe(
-              Effect.provide(stores),
-            ),
+            workspacesLoader(user.id, req.query.wsId).pipe(Effect.provide(stores)),
           );
         }),
       selectWorkspace: (req) =>
@@ -77,9 +66,7 @@ const workspaceHandlers = HttpApiBuilder.group(
           const { user } = yield* UserSession;
           yield* requireAccess(req.query.wsId, user.id);
           return yield* Effect.orDie(
-            fileTreeLoader(user.id, req.query.wsId, req.query.path).pipe(
-              Effect.provide(stores),
-            ),
+            fileTreeLoader(user.id, req.query.wsId, req.query.path).pipe(Effect.provide(stores)),
           );
         }),
       selectFile: (req) =>
@@ -97,9 +84,7 @@ const workspaceHandlers = HttpApiBuilder.group(
           return yield* fileContentLoader(wsId, path, versionId).pipe(
             Effect.provide(stores),
             Effect.catchTag("PersistenceError", (err) => Effect.die(err)),
-            Effect.catchTag("FileMissingError", () =>
-              Effect.fail(new HttpApiError.NotFound()),
-            ),
+            Effect.catchTag("FileMissingError", () => Effect.fail(new HttpApiError.NotFound())),
           );
         }),
       getFileVersions: (req) =>
@@ -110,9 +95,7 @@ const workspaceHandlers = HttpApiBuilder.group(
           return yield* fileVersionsLoader(wsId, path).pipe(
             Effect.provide(stores),
             Effect.catchTag("PersistenceError", (err) => Effect.die(err)),
-            Effect.catchTag("FileMissingError", () =>
-              Effect.fail(new HttpApiError.NotFound()),
-            ),
+            Effect.catchTag("FileMissingError", () => Effect.fail(new HttpApiError.NotFound())),
           );
         }),
       getMarks: (req) =>
@@ -134,12 +117,8 @@ const workspaceHandlers = HttpApiBuilder.group(
           return yield* files.writeDraft(path, content).pipe(
             Effect.provideService(WorkspaceId, { wsId }),
             Effect.catchTag("PersistenceError", (err) => Effect.die(err)),
-            Effect.catchTag("ConcurrentModificationError", (err) =>
-              Effect.die(err),
-            ),
-            Effect.catchTag("FileMissingError", () =>
-              Effect.fail(new HttpApiError.NotFound()),
-            ),
+            Effect.catchTag("ConcurrentModificationError", (err) => Effect.die(err)),
+            Effect.catchTag("FileMissingError", () => Effect.fail(new HttpApiError.NotFound())),
           );
         }),
       promoteFileDraft: (req) =>
@@ -150,12 +129,8 @@ const workspaceHandlers = HttpApiBuilder.group(
           const result = yield* files.promoteDraft(path).pipe(
             Effect.provideService(WorkspaceId, { wsId }),
             Effect.catchTag("PersistenceError", (err) => Effect.die(err)),
-            Effect.catchTag("ConcurrentModificationError", (err) =>
-              Effect.die(err),
-            ),
-            Effect.catchTag("FileMissingError", () =>
-              Effect.fail(new HttpApiError.NotFound()),
-            ),
+            Effect.catchTag("ConcurrentModificationError", (err) => Effect.die(err)),
+            Effect.catchTag("FileMissingError", () => Effect.fail(new HttpApiError.NotFound())),
           );
           if (result === null) {
             return yield* Effect.fail(new HttpApiError.NotFound());

@@ -1,65 +1,64 @@
 import { batch, computed, createModel, signal } from "@preact/signals";
+
 import createAsyncState from "#/models/utils/asyncState.ts";
 import { getJson } from "#/models/utils/http.ts";
+
 import type { FileTreeData } from "./fileTree.data";
 
 // TODO -- createFile and uploadFiles when the files api lands
-export const FileTreeModel = createModel(
-  (wsId: string, data?: FileTreeData) => {
-    const files = signal(data?.files ?? []);
-    const selectedPath = signal(data?.selectedPath ?? null);
-    const selectedVersionId = signal(data?.selectedVersionId ?? null);
+export const FileTreeModel = createModel((wsId: string, data?: FileTreeData) => {
+  const files = signal(data?.files ?? []);
+  const selectedPath = signal(data?.selectedPath ?? null);
+  const selectedVersionId = signal(data?.selectedVersionId ?? null);
 
-    const tree = computed(() => buildFileTree(files.value));
+  const tree = computed(() => buildFileTree(files.value));
 
-    const [runLoad, { loading, error }] = createAsyncState();
+  const [runLoad, { loading, error }] = createAsyncState();
 
-    async function load(): Promise<void> {
-      const params = new URLSearchParams({ wsId });
-      const data = await runLoad(async () =>
-        getJson<FileTreeData>(`/api/workspaces/files?${params}`),
-      );
-      if (data) {
-        batch(() => {
-          files.value = data.files;
-          selectedPath.value = data.selectedPath;
-          selectedVersionId.value = data.selectedVersionId;
-        });
-      }
-    }
-
-    if (data === undefined && !import.meta.env.SSR) void load();
-
-    function select(path: string | null, versionId?: string | null): void {
+  async function load(): Promise<void> {
+    const params = new URLSearchParams({ wsId });
+    const data = await runLoad(async () =>
+      getJson<FileTreeData>(`/api/workspaces/files?${params}`),
+    );
+    if (data) {
       batch(() => {
-        selectedPath.value = path;
-        // A file switch points at its latest version unless an id arrives.
-        selectedVersionId.value =
-          versionId ??
-          (path === null
-            ? null
-            : (files.value.find((file) => file.path === path)
-                ?.latestVersionId ?? null));
+        files.value = data.files;
+        selectedPath.value = data.selectedPath;
+        selectedVersionId.value = data.selectedVersionId;
       });
     }
+  }
 
-    function selectVersion(versionId: string): void {
-      selectedVersionId.value = versionId;
-    }
+  if (data === undefined && !import.meta.env.SSR) void load();
 
-    return {
-      files,
-      selectedPath,
-      selectedVersionId,
-      select,
-      selectVersion,
-      tree,
-      load,
-      loading,
-      error,
-    };
-  },
-);
+  function select(path: string | null, versionId?: string | null): void {
+    batch(() => {
+      selectedPath.value = path;
+      // A file switch points at its latest version unless an id arrives.
+      selectedVersionId.value =
+        versionId ??
+        (path === null
+          ? null
+          : (files.value.find((file) => file.path === path)?.latestVersionId ?? null));
+    });
+  }
+
+  function selectVersion(versionId: string): void {
+    selectedVersionId.value = versionId;
+  }
+
+  return {
+    files,
+    selectedPath,
+    selectedVersionId,
+    select,
+    selectVersion,
+    tree,
+    load,
+    loading,
+    error,
+  };
+});
 
 export type FileTree = InstanceType<typeof FileTreeModel>;
 

@@ -1,4 +1,5 @@
 import { computed, createModel, type Signal, signal } from "@preact/signals";
+
 import { FileTreeModel } from "./fileTree.ts";
 import type { FileTreesData } from "./fileTrees.data.ts";
 

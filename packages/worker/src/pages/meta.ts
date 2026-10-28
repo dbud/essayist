@@ -3,13 +3,9 @@
 // serves source paths; the build emits to assets/.
 
 export function clientScriptUrl(page: string): string {
-  return import.meta.env.DEV
-    ? `/src/client/pages/${page}.tsx`
-    : `/assets/${page}.js`;
+  return import.meta.env.DEV ? `/src/client/pages/${page}.tsx` : `/assets/${page}.js`;
 }
 
 export function styleSheetUrl(): string {
-  return import.meta.env.DEV
-    ? "/src/client/styles/styles.css"
-    : "/assets/styles.css";
+  return import.meta.env.DEV ? "/src/client/styles/styles.css" : "/assets/styles.css";
 }

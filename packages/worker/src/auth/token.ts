@@ -2,11 +2,7 @@
  * Google token refresh for auth sessions.
  */
 
-import {
-  AuthStore,
-  type PersistenceError,
-  type SessionTokens,
-} from "@essayist/core";
+import { AuthStore, type PersistenceError, type SessionTokens } from "@essayist/core";
 import { Clock, Effect, Schema } from "effect";
 
 /** Google's token endpoint rejected a refresh. */
@@ -68,11 +64,7 @@ export const getValidAccessToken = (
   sessionId: string,
   clientId: string,
   clientSecret: string,
-): Effect.Effect<
-  string | undefined,
-  PersistenceError | TokenRefreshError,
-  AuthStore
-> =>
+): Effect.Effect<string | undefined, PersistenceError | TokenRefreshError, AuthStore> =>
   Effect.gen(function* () {
     const auth = yield* AuthStore;
     const session = yield* auth.getSession(sessionId);
@@ -85,8 +77,7 @@ export const getValidAccessToken = (
     // The session-level refresh token first, the user-level store as
     // the fallback: Google returns a refresh token only on the first
     // authorization.
-    const refreshToken =
-      tokens.refreshToken ?? (yield* auth.getRefreshToken(session.userId));
+    const refreshToken = tokens.refreshToken ?? (yield* auth.getRefreshToken(session.userId));
     if (refreshToken === undefined) {
       // Cannot refresh; let Google reject the stale token.
       return tokens.accessToken;
@@ -125,11 +116,7 @@ export const refreshTokensForUser = (
     if (refreshToken === undefined) return undefined;
 
     const now = yield* Clock.currentTimeMillis;
-    const fresh = yield* refreshRequest(
-      clientId,
-      clientSecret,
-      refreshToken,
-    ).pipe(
+    const fresh = yield* refreshRequest(clientId, clientSecret, refreshToken).pipe(
       // A rejected grant still signs the user in, without Google API access.
       Effect.catchTag("TokenRefreshError", () => Effect.succeed(undefined)),
     );

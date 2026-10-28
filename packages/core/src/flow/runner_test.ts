@@ -1,6 +1,7 @@
 import { assert, assertEquals, assertRejects } from "@std/assert";
 import { Effect } from "effect";
 import { test } from "vitest";
+
 import type { FlowRunOptions } from "./runner.ts";
 import { FlowRunner } from "./runner.ts";
 import type {
@@ -74,8 +75,7 @@ const run = (
   flow: FlowRunner<TestTypes>,
   graph: FlowGraph<TestTypes>,
   options?: FlowRunOptions<TestTypes>,
-): Promise<FlowRunResult<TestTypes>> =>
-  Effect.runPromise(flow.run(graph, options));
+): Promise<FlowRunResult<TestTypes>> => Effect.runPromise(flow.run(graph, options));
 
 test("FlowRunner -- emit returns undefined, so callers cannot leak a value", async () => {
   const flow = new FlowRunner<TestTypes>({ runners: emitRunners });
@@ -192,9 +192,7 @@ test("FlowRunner -- delivers a custom event while the node still runs", async ()
   });
 
   await run(flow, {
-    nodes: [
-      { id: "p", kind: "produce", dependsOn: [], payload: { token: "t" } },
-    ],
+    nodes: [{ id: "p", kind: "produce", dependsOn: [], payload: { token: "t" } }],
   });
 
   assert(deliveredDuringRun);
@@ -227,9 +225,7 @@ test("FlowRunner -- keeps custom events in emission order", async () => {
   });
 
   await run(flow, {
-    nodes: [
-      { id: "p", kind: "produce", dependsOn: [], payload: { token: "t" } },
-    ],
+    nodes: [{ id: "p", kind: "produce", dependsOn: [], payload: { token: "t" } }],
   });
 
   assertEquals(seen, ["one", "two", "three"]);
@@ -373,9 +369,7 @@ test("FlowRunner -- skips nodes downstream of a failure", async () => {
       ["e", "skipped"],
     ],
   );
-  const skipped = result.nodeRuns.find(
-    (run): run is SkippedNodeRun => run.status === "skipped",
-  );
+  const skipped = result.nodeRuns.find((run): run is SkippedNodeRun => run.status === "skipped");
   assertEquals(skipped?.nodeId, "c");
   assertEquals(skipped?.reason, 'dependency "b" failed: boom');
 });
@@ -487,22 +481,16 @@ test("FlowRunner -- a resumed node does not re-run and seeds its artifacts", asy
   const result = await run(
     flow,
     {
-      nodes: [
-        { id: "a", kind: "source", dependsOn: [], payload: { text: "x" } },
-      ],
+      nodes: [{ id: "a", kind: "source", dependsOn: [], payload: { text: "x" } }],
     },
     {
-      completed: new Map([
-        ["a", [{ type: "content", data: "earlier", producedBy: "a" }]],
-      ]),
+      completed: new Map([["a", [{ type: "content", data: "earlier", producedBy: "a" }]]]),
     },
   );
 
   assertEquals(ran, false);
   assertEquals(result.status, "completed");
-  assertEquals(result.artifacts, [
-    { type: "content", data: "earlier", producedBy: "a" },
-  ]);
+  assertEquals(result.artifacts, [{ type: "content", data: "earlier", producedBy: "a" }]);
   assertEquals(events, []);
   assertEquals(result.nodeRuns, []);
 });
@@ -533,9 +521,7 @@ test("FlowRunner -- a resumed node feeds its dependents", async () => {
       ],
     },
     {
-      completed: new Map([
-        ["a", [{ type: "content", data: "earlier", producedBy: "a" }]],
-      ]),
+      completed: new Map([["a", [{ type: "content", data: "earlier", producedBy: "a" }]]]),
     },
   );
 
@@ -562,9 +548,7 @@ test("FlowRunner -- a resumed node is not reported as skipped", async () => {
       ],
     },
     {
-      completed: new Map([
-        ["a", [{ type: "content", data: "earlier", producedBy: "a" }]],
-      ]),
+      completed: new Map([["a", [{ type: "content", data: "earlier", producedBy: "a" }]]]),
     },
   );
 
@@ -581,16 +565,11 @@ test("FlowRunner -- ignores a completed entry the graph no longer has", async ()
   const result = await run(
     flow,
     {
-      nodes: [
-        { id: "a", kind: "source", dependsOn: [], payload: { text: "x" } },
-      ],
+      nodes: [{ id: "a", kind: "source", dependsOn: [], payload: { text: "x" } }],
     },
     {
       completed: new Map([
-        [
-          "retired",
-          [{ type: "content", data: "stale", producedBy: "retired" }],
-        ],
+        ["retired", [{ type: "content", data: "stale", producedBy: "retired" }]],
       ]),
     },
   );
@@ -601,9 +580,7 @@ test("FlowRunner -- ignores a completed entry the graph no longer has", async ()
     ["a"],
   );
   // The retired node's artifact must not reach the result either.
-  assertEquals(result.artifacts, [
-    { type: "content", data: "x", producedBy: "a" },
-  ]);
+  assertEquals(result.artifacts, [{ type: "content", data: "x", producedBy: "a" }]);
 });
 
 test("FlowRunner -- completes an empty graph", async () => {
@@ -623,17 +600,14 @@ test("FlowRunner -- records what a completed node committed on node_end", async 
   });
 
   await run(flow, {
-    nodes: [
-      { id: "a", kind: "source", dependsOn: [], payload: { text: "alpha" } },
-    ],
+    nodes: [{ id: "a", kind: "source", dependsOn: [], payload: { text: "alpha" } }],
   });
 
   const end = events.find((event) => event.type === "node_end");
   assertEquals(end?.run.status, "completed");
-  assertEquals(
-    end?.run.status === "completed" ? end.run.artifacts : undefined,
-    [{ type: "content", data: "alpha", producedBy: "a" }],
-  );
+  assertEquals(end?.run.status === "completed" ? end.run.artifacts : undefined, [
+    { type: "content", data: "alpha", producedBy: "a" },
+  ]);
 });
 
 test("FlowRunner -- a node that produces nothing records an empty artifact list", async () => {
@@ -655,10 +629,7 @@ test("FlowRunner -- a node that produces nothing records an empty artifact list"
   });
 
   const end = events.find((event) => event.type === "node_end");
-  assertEquals(
-    end?.run.status === "completed" ? end.run.artifacts : undefined,
-    [],
-  );
+  assertEquals(end?.run.status === "completed" ? end.run.artifacts : undefined, []);
 });
 
 test("FlowRunner -- a failed node records no artifacts", async () => {

@@ -12,6 +12,7 @@ import {
 import { layerKvD1 } from "@essayist/core/kv_d1";
 import { Effect, Layer, LogLevel, ManagedRuntime, References } from "effect";
 import * as Reactivity from "effect/reactivity/Reactivity";
+
 import { type GoogleConfig, googleConfigLayer, type WorkerEnv } from "#/env.ts";
 
 type WorkerRuntime = ManagedRuntime.ManagedRuntime<
@@ -21,9 +22,7 @@ type WorkerRuntime = ManagedRuntime.ManagedRuntime<
 
 function parseLogLevel(raw: string | undefined) {
   const wanted = (raw ?? "info").toLowerCase();
-  const level = LogLevel.values.find(
-    (candidate) => candidate.toLowerCase() === wanted,
-  );
+  const level = LogLevel.values.find((candidate) => candidate.toLowerCase() === wanted);
   return level ?? "Info";
 }
 

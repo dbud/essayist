@@ -1,5 +1,6 @@
 import { Command } from "@cliffy/command";
 import { pluralize } from "@essayist/core";
+
 import type { KvctlGlobals } from "#/globals.ts";
 import { listAll, withStore } from "#/kv.ts";
 import { pprint } from "#/utils/pprint.ts";

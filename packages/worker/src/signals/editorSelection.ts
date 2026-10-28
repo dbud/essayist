@@ -1,4 +1,5 @@
 import { createModel, signal } from "@preact/signals";
+
 import type { BlockType } from "#/editor/blockFormat.ts";
 import { FileKey } from "#/models/fileSelection.ts";
 
@@ -41,15 +42,14 @@ export const EditorSelectionModel = createModel((_key: FileKey) => {
 export type EditorSelection = InstanceType<typeof EditorSelectionModel>;
 
 /** Sink used as the default config for extensions when no model is injected. */
-export const defaultEditorSelection: EditorSelection = new EditorSelectionModel(
-  { wsId: "", path: "", versionId: "" },
-);
+export const defaultEditorSelection: EditorSelection = new EditorSelectionModel({
+  wsId: "",
+  path: "",
+  versionId: "",
+});
 
 const cache = new Map<string, EditorSelection>();
 
 export function getEditorSelection(key: FileKey): EditorSelection {
-  return cache.getOrInsertComputed(
-    FileKey.cacheKey(key),
-    () => new EditorSelectionModel(key),
-  );
+  return cache.getOrInsertComputed(FileKey.cacheKey(key), () => new EditorSelectionModel(key));
 }

@@ -1,5 +1,6 @@
 import { computeDiff, type DiffHunk } from "#/diff/diff.ts";
 import { randomId } from "#/ids.ts";
+
 import { trimContextSeparators, wordEdges } from "./context.ts";
 import { TokenizedText, wordTokens } from "./tokenized.ts";
 import type { Mark } from "./types.ts";
@@ -99,14 +100,12 @@ function mapOffset(mark: Mark, hunks: DiffHunk[]): [boolean, number, number] {
         // Mark boundary is at or inside the hunk -- go fuzzy.
         const oldSpan = hunk.oldEnd - hunk.oldStart;
         const ratio = oldSpan > 0 ? (markStart - hunk.oldStart) / oldSpan : 0;
-        const estimatedOffset =
-          hunk.newStart + Math.round(ratio * (hunk.newEnd - hunk.newStart));
+        const estimatedOffset = hunk.newStart + Math.round(ratio * (hunk.newEnd - hunk.newStart));
         return [false, estimatedOffset, 0];
       }
       // Hunk is inside the mark -- offset stays, length adjusts by the
       // net length change of the hunk itself.
-      lengthDelta +=
-        hunk.newEnd - hunk.newStart - (hunk.oldEnd - hunk.oldStart);
+      lengthDelta += hunk.newEnd - hunk.newStart - (hunk.oldEnd - hunk.oldStart);
       continue;
     }
     // Hunk is before the mark -- accumulate its net length change.
@@ -149,10 +148,7 @@ function fuzzyResolveMark(
     wordTokens(mark.before_context).length +
     wordTokens(mark.selected_text).length +
     wordTokens(mark.after_context).length;
-  const radiusTokens = Math.max(
-    minSearchRadius,
-    searchRadiusMultiplier * markWords,
-  );
+  const radiusTokens = Math.max(minSearchRadius, searchRadiusMultiplier * markWords);
 
   // Phase 1: find the selected text exactly near the expected offset.
   const selectedOffset = tt.findExactInTokenWindow(mark.selected_text, {
@@ -197,11 +193,7 @@ function fuzzyResolveMark(
     return { startOffset: match.startOffset, nextOffset: match.nextOffset };
   }
 
-  const beforeResult = matchContext(
-    mark.before_context,
-    expectedNewOffset,
-    "before",
-  );
+  const beforeResult = matchContext(mark.before_context, expectedNewOffset, "before");
   const afterResult = matchContext(
     mark.after_context,
     // Anchor the after-context search at the end of the before match, else
@@ -219,10 +211,7 @@ function fuzzyResolveMark(
       ...mark,
       id: newId(),
       status: "stale",
-      offset:
-        beforeResult?.nextOffset ??
-        afterResult?.startOffset ??
-        expectedNewOffset,
+      offset: beforeResult?.nextOffset ?? afterResult?.startOffset ?? expectedNewOffset,
       length: 0,
     };
   }

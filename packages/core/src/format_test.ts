@@ -1,5 +1,6 @@
 import { assertEquals } from "@std/assert";
 import { test } from "vitest";
+
 import { pluralize } from "./format.ts";
 
 test("pluralize -- singular for 1, plural otherwise", () => {

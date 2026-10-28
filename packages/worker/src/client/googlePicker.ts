@@ -15,17 +15,13 @@ function loadGapi(): Promise<void> {
   return loadScript(GAPI_SRC, () => typeof gapi !== "undefined");
 }
 
-export async function openGooglePicker(
-  config: PickerConfig,
-): Promise<PickerDoc[]> {
+export async function openGooglePicker(config: PickerConfig): Promise<PickerDoc[]> {
   await loadGapi();
   await new Promise<void>((resolve) => gapi.load("picker", resolve));
 
   return new Promise((resolve) => {
     const docsView = (viewId: google.picker.ViewId) =>
-      new google.picker.DocsView(viewId).setMode(
-        google.picker.DocsViewMode.LIST,
-      );
+      new google.picker.DocsView(viewId).setMode(google.picker.DocsViewMode.LIST);
     const builder = new google.picker.PickerBuilder()
       .addView(docsView(google.picker.ViewId.DOCUMENTS))
       .addView(docsView(google.picker.ViewId.PDFS))

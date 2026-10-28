@@ -9,6 +9,7 @@
 
 import type { AuthStore } from "@essayist/core";
 import { Effect, Schema } from "effect";
+
 import { getValidAccessToken } from "#/auth/token.ts";
 import { GoogleConfig } from "#/env.ts";
 
@@ -48,9 +49,7 @@ export const pickerConfig = (
       );
     }
     if (sessionId === undefined) {
-      return yield* Effect.fail(
-        new PickerConfigError({ reason: "No session" }),
-      );
+      return yield* Effect.fail(new PickerConfigError({ reason: "No session" }));
     }
     const accessToken = yield* getValidAccessToken(
       sessionId,

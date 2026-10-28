@@ -1,10 +1,8 @@
 import { sortBy } from "@std/collections";
 import { ChevronDown, CircleDashed, LockKeyhole } from "lucide-preact";
 import type { ComponentChild } from "preact";
-import Dropdown, {
-  DropdownItem,
-  DropdownMenu,
-} from "#/components/ui/Dropdown.tsx";
+
+import Dropdown, { DropdownItem, DropdownMenu } from "#/components/ui/Dropdown.tsx";
 import { CircleCheckIcon } from "#/components/ui/icons.tsx";
 import Swappable from "#/components/ui/Swappable.tsx";
 import WaveBars from "#/components/ui/WaveBars.tsx";
@@ -31,16 +29,13 @@ function SaveStatus({ file }: { file: FileContent }) {
   const pending = useFileLoading(file);
   const { saving, saveError, dirty, draft, version } = file;
 
-  const savedAt = pending
-    ? undefined
-    : (draft.value?.timestamp ?? version.value?.timestamp);
+  const savedAt = pending ? undefined : (draft.value?.timestamp ?? version.value?.timestamp);
 
   let label: ComponentChild | null = null;
   let statusKey = "";
   if (!pending) {
     statusKey = "saved";
-    label =
-      savedAt === undefined ? "Saved" : `Saved ${formatRelativeTime(savedAt)}`;
+    label = savedAt === undefined ? "Saved" : `Saved ${formatRelativeTime(savedAt)}`;
     if (saving.value) {
       statusKey = "saving";
       label = "Saving...";
@@ -65,17 +60,11 @@ function SaveStatus({ file }: { file: FileContent }) {
   return (
     <span class="inline-flex items-start gap-1">
       {!pending && (
-        <Swappable
-          swapKey={saved ? "check" : "dashed"}
-          class="swap-rotate shrink-0"
-        >
+        <Swappable swapKey={saved ? "check" : "dashed"} class="swap-rotate shrink-0">
           {saved ? (
             <CircleCheckIcon size={14} class="text-ink" />
           ) : (
-            <CircleDashed
-              size={14}
-              class="text-accent animate-[spin_3s_linear_infinite]"
-            />
+            <CircleDashed size={14} class="text-accent animate-[spin_3s_linear_infinite]" />
           )}
         </Swappable>
       )}
@@ -86,13 +75,7 @@ function SaveStatus({ file }: { file: FileContent }) {
   );
 }
 
-function VersionChip({
-  timestamp,
-  lock,
-}: {
-  timestamp: number;
-  lock?: boolean;
-}) {
+function VersionChip({ timestamp, lock }: { timestamp: number; lock?: boolean }) {
   return (
     <span class="inline-flex items-start gap-1">
       {lock && <LockKeyhole size={14} />}
@@ -106,19 +89,14 @@ export default function VersionPicker({ file }: VersionPickerProps) {
   const versions = fileVersions.current.value;
   const selection = selected.value;
   const versionId = selection?.versionId ?? null;
-  const list = sortBy(
-    versions?.versions.value ?? [],
-    (version) => version.timestamp,
-    {
-      order: "desc",
-    },
-  );
+  const list = sortBy(versions?.versions.value ?? [], (version) => version.timestamp, {
+    order: "desc",
+  });
   const selectedVersion = versions?.byId(versionId);
   const pending = useFileLoading(file);
   const active = file.saving.value || pending;
 
-  const promotable =
-    writable.value && (file.draft.value !== null || file.dirty.value);
+  const promotable = writable.value && (file.draft.value !== null || file.dirty.value);
 
   async function promoteDraft(close: () => void): Promise<void> {
     close();
@@ -139,10 +117,7 @@ export default function VersionPicker({ file }: VersionPickerProps) {
       trigger={
         <>
           <WaveBars fill amplitude={active ? 0.5 : 0} class="text-ink" />
-          <Swappable
-            swapKey={writable.value ? "latest" : "pinned"}
-            class="swap-shift self-start"
-          >
+          <Swappable swapKey={writable.value ? "latest" : "pinned"} class="swap-shift self-start">
             {!writable.value && selectedVersion ? (
               <VersionChip timestamp={selectedVersion.timestamp} lock />
             ) : (
@@ -157,9 +132,7 @@ export default function VersionPicker({ file }: VersionPickerProps) {
         <DropdownMenu class="dropdown-menu--full">
           {import.meta.env.DEV && promotable ? (
             <>
-              <DropdownItem onClick={() => void promoteDraft(close)}>
-                Promote draft
-              </DropdownItem>
+              <DropdownItem onClick={() => void promoteDraft(close)}>Promote draft</DropdownItem>
               <div class="separator" />
             </>
           ) : null}

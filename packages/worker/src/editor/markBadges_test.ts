@@ -1,6 +1,8 @@
 import { assertEquals } from "@std/assert";
 import { test } from "vitest";
+
 import type { MarkNumbers } from "#/signals/sidenotes.ts";
+
 import { visibleBadgeNumbers } from "./markBadges.ts";
 
 const numbers = (entries: [string, number][]): MarkNumbers => new Map(entries);

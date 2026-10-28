@@ -9,10 +9,10 @@ const DRIVE_FILES = "https://www.googleapis.com/drive/v3/files";
 
 /** The export endpoint returned non-2xx. The status maps callers to
  * specific client responses (401/403 = re-authenticate). */
-export class GoogleDriveError extends Schema.TaggedError<GoogleDriveError>()(
-  "GoogleDriveError",
-  { status: Schema.Number, body: Schema.String },
-) {
+export class GoogleDriveError extends Schema.TaggedError<GoogleDriveError>()("GoogleDriveError", {
+  status: Schema.Number,
+  body: Schema.String,
+}) {
   override get message() {
     return `the Google Doc export failed (${this.status})`;
   }

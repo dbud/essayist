@@ -9,14 +9,7 @@ export interface PastePolicy {
 }
 
 export const defaultPastePolicy: PastePolicy = {
-  allowedBlocks: new Set([
-    "paragraph",
-    "heading",
-    "quote",
-    "code",
-    "list",
-    "listitem",
-  ]),
+  allowedBlocks: new Set(["paragraph", "heading", "quote", "code", "list", "listitem"]),
   allowedHeadingTags: new Set(["h1", "h2", "h3"]),
   allowedFormats: bold | italic | strikethrough | code,
 };

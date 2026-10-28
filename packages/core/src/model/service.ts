@@ -10,18 +10,10 @@ import {
   layer as openRouterClientLayer,
   type Service,
 } from "@effect/ai-openrouter/OpenRouterClient";
-import {
-  Cause,
-  Clock,
-  Context,
-  Effect,
-  Layer,
-  Redacted,
-  Result,
-  Schema,
-} from "effect";
+import { Cause, Clock, Context, Effect, Layer, Redacted, Result, Schema } from "effect";
 import { AiError, InvalidOutputError } from "effect/ai/AiError";
 import * as FetchHttpClient from "effect/http/FetchHttpClient";
+
 import { generateInstructions, stripMarkdownFences } from "#/schema.ts";
 import { joinBlocks } from "#/text/markdown.ts";
 
@@ -78,10 +70,9 @@ export class StructuredParseError extends Schema.TaggedError<StructuredParseErro
 }
 
 /** A call's round retries ran out, or the provider faulted. */
-export class ModelCallError extends Schema.TaggedError<ModelCallError>()(
-  "ModelCallError",
-  { cause: Schema.Defect() },
-) {
+export class ModelCallError extends Schema.TaggedError<ModelCallError>()("ModelCallError", {
+  cause: Schema.Defect(),
+}) {
   override get message() {
     return "the model call failed";
   }
@@ -152,9 +143,7 @@ function buildImpl(client: Service) {
     Effect.gen(function* () {
       const prompt = `${input}\n\n${generateInstructions(schema, options)}`;
 
-      const post = (
-        prompt: string,
-      ): Effect.Effect<Settled, AiError | Cause.TimeoutError> =>
+      const post = (prompt: string): Effect.Effect<Settled, AiError | Cause.TimeoutError> =>
         Effect.gen(function* () {
           const startedAt = yield* Clock.currentTimeMillis;
           const [body] = yield* client
@@ -192,9 +181,7 @@ function buildImpl(client: Service) {
         });
 
       /** Re-issues the round while a later attempt could clear the failure. */
-      const attempted = (
-        prompt: string,
-      ): Effect.Effect<Settled, ModelCallError> =>
+      const attempted = (prompt: string): Effect.Effect<Settled, ModelCallError> =>
         Effect.gen(function* () {
           for (let attempt = 1; ; attempt++) {
             yield* Effect.logInfo("structured call dispatched", {
@@ -206,22 +193,17 @@ function buildImpl(client: Service) {
               yield* Effect.logInfo("structured call settled", { models });
               return outcome.success;
             }
-            if (
-              !isTransient(outcome.failure) ||
-              attempt >= MAX_ROUND_ATTEMPTS
-            ) {
-              return yield* Effect.fail(
-                new ModelCallError({ cause: outcome.failure }),
-              );
+            if (!isTransient(outcome.failure) || attempt >= MAX_ROUND_ATTEMPTS) {
+              return yield* Effect.fail(new ModelCallError({ cause: outcome.failure }));
             }
             const error = describeError(outcome.failure);
             if (options?.onRetry) {
               yield* options.onRetry({ attempt, error });
             }
-            yield* Effect.logWarning(
-              "structured call failed transiently, retrying",
-              { attempt, error },
-            );
+            yield* Effect.logWarning("structured call failed transiently, retrying", {
+              attempt,
+              error,
+            });
             yield* Effect.sleep(attempt * ROUND_RETRY_DELAY_MS);
           }
         });
@@ -282,9 +264,7 @@ function parseStructured<T extends Schema.ConstraintDecoder<unknown>>(
   try {
     json = JSON.parse(stripMarkdownFences(text));
   } catch (cause) {
-    return Result.fail(
-      cause instanceof Error ? cause : new Error(String(cause)),
-    );
+    return Result.fail(cause instanceof Error ? cause : new Error(String(cause)));
   }
   return Schema.decodeUnknownResult(schema)(json);
 }

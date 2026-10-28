@@ -1,4 +1,5 @@
 import type { ReadonlySignal } from "@preact/signals";
+
 import type { CaretRect } from "#/signals/editorSelection.ts";
 
 export function Caret({ rect }: { rect: ReadonlySignal<CaretRect | null> }) {

@@ -43,9 +43,7 @@ export function listOf(
   items: readonly string[],
   options?: ListOptions,
 ): string | undefined {
-  return items.length > 0
-    ? joinBlocks([section(header), renderItems(items, options)])
-    : undefined;
+  return items.length > 0 ? joinBlocks([section(header), renderItems(items, options)]) : undefined;
 }
 
 function renderItems(items: readonly string[], options?: ListOptions): string {

@@ -2,6 +2,7 @@ import type { Kv } from "@deno/kv";
 import { assertEquals, assertInstanceOf } from "@std/assert";
 import { Effect, Result } from "effect";
 import { test } from "vitest";
+
 import { kvLayer } from "./kv_layer.ts";
 import { ConcurrentModificationError } from "./mod.ts";
 import { Persistence, PersistenceError } from "./service.ts";
@@ -29,9 +30,7 @@ test("kvLayer -- a rejecting backend maps faults into PersistenceError", async (
     assertEquals(read.failure.message, "the persistence backend failed");
     assertEquals(String(read.failure.cause), "Error: kv down");
 
-    const write = yield* Effect.result(
-      store.batch([{ type: "set", key: ["a"], value: 1 }]),
-    );
+    const write = yield* Effect.result(store.batch([{ type: "set", key: ["a"], value: 1 }]));
     if (Result.isSuccess(write)) {
       throw new Error("a rejected commit did not conflict");
     }

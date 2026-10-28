@@ -1,6 +1,7 @@
 import type { Category, Mark } from "@essayist/core";
 import type { LexicalEditor } from "lexical";
 import { Crosshair } from "lucide-preact";
+
 import Section from "#/components/debug/Section.tsx";
 import { SELECT_MARK_COMMAND } from "#/editor/markExtension.ts";
 import type { Categories } from "#/models/categories.ts";
@@ -26,10 +27,7 @@ function MarkDetail({
       <div class="flex stack shadow-md">
         <div class={`cell flex-1 gap-3 ${active ? "is-selected" : ""}`}>
           {category?.color !== undefined && (
-            <span
-              class="size-3 shrink-0"
-              style={{ backgroundColor: category.color }}
-            />
+            <span class="size-3 shrink-0" style={{ backgroundColor: category.color }} />
           )}
           <span>{mark.label || "Mark"}</span>
           <span
@@ -45,8 +43,7 @@ function MarkDetail({
           title="Go to mark in editor"
           disabled={editor === null}
           onClick={() => {
-            if (editor)
-              editor.dispatchCommand(SELECT_MARK_COMMAND, mark.thread_id);
+            if (editor) editor.dispatchCommand(SELECT_MARK_COMMAND, mark.thread_id);
           }}
         >
           <Crosshair size={14} />

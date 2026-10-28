@@ -62,9 +62,7 @@ export function agentflowDefinition(graph: FlowGraph<ReviewTypes>): string {
   }
 
   const hop = (dep: string): string =>
-    nodeById.get(dep)?.kind === "mark.repair.gate"
-      ? " -- failed marks -->"
-      : " -->";
+    nodeById.get(dep)?.kind === "mark.repair.gate" ? " -- failed marks -->" : " -->";
 
   if (sources.length > 0) {
     lines.push("", "global");

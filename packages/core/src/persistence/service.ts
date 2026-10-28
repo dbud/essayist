@@ -4,6 +4,7 @@
  */
 
 import { Context, type Effect, Schema } from "effect";
+
 import type {
   BatchOptions,
   ConcurrentModificationError,
@@ -16,10 +17,9 @@ import type {
 } from "./mod.ts";
 
 /** A backend fault: the underlying adapter failed. */
-export class PersistenceError extends Schema.TaggedError<PersistenceError>()(
-  "PersistenceError",
-  { cause: Schema.Defect() },
-) {
+export class PersistenceError extends Schema.TaggedError<PersistenceError>()("PersistenceError", {
+  cause: Schema.Defect(),
+}) {
   override get message() {
     return "the persistence backend failed";
   }
@@ -52,9 +52,7 @@ export interface Interface {
     value: unknown,
   ): Effect.Effect<void, PersistenceError | ConcurrentModificationError>;
   /** Single-key delete, a convenience over batch. */
-  delete(
-    key: Key,
-  ): Effect.Effect<void, PersistenceError | ConcurrentModificationError>;
+  delete(key: Key): Effect.Effect<void, PersistenceError | ConcurrentModificationError>;
 }
 
 /** Key/value persistence with tuple keys, as an Effect service. */

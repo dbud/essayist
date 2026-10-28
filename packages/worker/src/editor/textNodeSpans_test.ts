@@ -3,7 +3,9 @@ import { $convertFromMarkdownString, TRANSFORMERS } from "@lexical/markdown";
 import { assert, assertEquals } from "@std/assert";
 import { $getRoot, type EditorState, type LexicalEditor } from "lexical";
 import { test } from "vitest";
+
 import { bootstrapEditorExtension } from "#/editor/extension.ts";
+
 import {
   $collectTextNodeSpans,
   findPosition,
@@ -34,10 +36,7 @@ function importMarkdown(md: string): EditorState {
 
 // Committed-state counterpart to `$collectTextNodeSpans` for tests outside an
 // update. Takes the already-exported markdown.
-function buildTextNodeSpans(
-  state: EditorState,
-  content: string,
-): TextNodeSpan[] {
+function buildTextNodeSpans(state: EditorState, content: string): TextNodeSpan[] {
   return state.read(() => $collectTextNodeSpans(content));
 }
 

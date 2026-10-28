@@ -1,5 +1,6 @@
 import type { Files, PersistenceError, UserState } from "@essayist/core";
 import { Effect } from "effect";
+
 import { fileTreeLoader } from "./fileTree.loader.ts";
 import type { FileTreesData } from "./fileTrees.data.ts";
 
@@ -11,9 +12,7 @@ export function fileTreesLoader(
 ): Effect.Effect<FileTreesData, PersistenceError, Files | UserState> {
   return Effect.gen(function* () {
     const tree =
-      wsId === null
-        ? null
-        : yield* fileTreeLoader(userId, wsId, pathIntent, versionIntent);
+      wsId === null ? null : yield* fileTreeLoader(userId, wsId, pathIntent, versionIntent);
     return { wsId, tree };
   });
 }

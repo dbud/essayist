@@ -1,5 +1,6 @@
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import { useEffect } from "preact/hooks";
+
 import { activeEditor } from "#/signals/activeEditor.ts";
 
 export default function ActiveEditorRef() {

@@ -25,10 +25,7 @@ export interface ChunkedContent {
 }
 
 /** Split into UTF-8 byte chunks of at most `maxBytes`, never inside a multi-byte sequence. Empty input returns `[]`. */
-export function splitContent(
-  content: string,
-  maxBytes: number = CHUNK_SIZE,
-): Uint8Array[] {
+export function splitContent(content: string, maxBytes: number = CHUNK_SIZE): Uint8Array[] {
   const bytes = new TextEncoder().encode(content);
   const chunks: Uint8Array[] = [];
   let i = 0;
@@ -57,10 +54,7 @@ export function joinChunks(chunks: Uint8Array[]): string {
 }
 
 /** Reassemble content from a manifest and its fetched extra chunks. */
-export function reassemble(
-  manifest: ContentManifest,
-  extraChunks: Uint8Array[],
-): string {
+export function reassemble(manifest: ContentManifest, extraChunks: Uint8Array[]): string {
   if (manifest.chunkCount === 1) {
     return new TextDecoder().decode(manifest.firstChunk);
   }
@@ -72,10 +66,7 @@ export function reassemble(
  * as separate keys. Atomic: the manifest and extra chunks come from the same
  * split, so they can't diverge.
  */
-export function chunkContent(
-  content: string,
-  maxBytes: number = CHUNK_SIZE,
-): ChunkedContent {
+export function chunkContent(content: string, maxBytes: number = CHUNK_SIZE): ChunkedContent {
   const chunks = splitContent(content, maxBytes);
   return {
     manifest: {

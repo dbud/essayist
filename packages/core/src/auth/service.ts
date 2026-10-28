@@ -1,5 +1,7 @@
 import { Context, type Effect } from "effect";
+
 import type { PersistenceError } from "#/persistence/service.ts";
+
 import type { Session, SessionTokens } from "./types.ts";
 
 export interface Interface {
@@ -21,14 +23,9 @@ export interface Interface {
   /** Remove a session (sign-out). */
   deleteSession(id: string): Effect.Effect<void, PersistenceError>;
   /** Store the user-level refresh token, surviving across sessions. */
-  setRefreshToken(
-    userId: string,
-    refreshToken: string,
-  ): Effect.Effect<void, PersistenceError>;
+  setRefreshToken(userId: string, refreshToken: string): Effect.Effect<void, PersistenceError>;
   /** Read the user-level refresh token, or `undefined`. */
-  getRefreshToken(
-    userId: string,
-  ): Effect.Effect<string | undefined, PersistenceError>;
+  getRefreshToken(userId: string): Effect.Effect<string | undefined, PersistenceError>;
 }
 
 /** Auth session storage as an Effect service. */

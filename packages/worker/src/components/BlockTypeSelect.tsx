@@ -10,10 +10,8 @@ import {
   Quote,
 } from "lucide-preact";
 import type { ComponentChild } from "preact";
-import Dropdown, {
-  DropdownItem,
-  DropdownMenu,
-} from "#/components/ui/Dropdown.tsx";
+
+import Dropdown, { DropdownItem, DropdownMenu } from "#/components/ui/Dropdown.tsx";
 import Swappable from "#/components/ui/Swappable.tsx";
 import type { BlockType } from "#/editor/blockFormat.ts";
 
@@ -40,11 +38,7 @@ interface BlockTypeSelectProps {
   disabled?: boolean;
 }
 
-export default function BlockTypeSelect({
-  block,
-  onChange,
-  disabled,
-}: BlockTypeSelectProps) {
+export default function BlockTypeSelect({ block, onChange, disabled }: BlockTypeSelectProps) {
   const current = OPTIONS.find((o) => o.value === block) ?? OPTIONS[0];
 
   return (

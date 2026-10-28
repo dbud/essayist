@@ -6,7 +6,6 @@
 
 import { Context } from "effect";
 
-export class WorkspaceId extends Context.Service<
-  WorkspaceId,
-  { wsId: string }
->()("@essayist/core/workspace/WorkspaceId") {}
+export class WorkspaceId extends Context.Service<WorkspaceId, { wsId: string }>()(
+  "@essayist/core/workspace/WorkspaceId",
+) {}

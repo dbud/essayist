@@ -6,6 +6,7 @@
  */
 
 import { type Context, Effect } from "effect";
+
 import { type Internals, retryConcurrency } from "#/files/internals.ts";
 import type { Mark, MigrateMarksResult } from "#/marks/types.ts";
 import type {
@@ -14,6 +15,7 @@ import type {
   PersistenceError,
 } from "#/persistence/mod.ts";
 import { WorkspaceId } from "#/workspace/WorkspaceId.ts";
+
 import { latestKey, marksKey, type StoredSnapshot } from "./keys.ts";
 import type { FileMissingError } from "./types.ts";
 
@@ -33,21 +35,16 @@ export function makeMarkLists(
   /** Append one mark to its version's list, checked against the list. */
   const saveMark = (
     mark: Mark,
-  ): Effect.Effect<
-    void,
-    PersistenceError | ConcurrentModificationError,
-    WorkspaceId
-  > =>
+  ): Effect.Effect<void, PersistenceError | ConcurrentModificationError, WorkspaceId> =>
     retryConcurrency(
       Effect.gen(function* () {
         const { wsId } = yield* WorkspaceId;
         const key = marksKey(wsId, mark.path, mark.version_id);
         const entry = yield* persistence.get<Mark[]>(key);
         const marks = entry?.value ?? [];
-        yield* persistence.batch(
-          [{ type: "set", key, value: [...marks, mark] }],
-          { checks: [{ key, versionstamp: entry?.versionstamp ?? null }] },
-        );
+        yield* persistence.batch([{ type: "set", key, value: [...marks, mark] }], {
+          checks: [{ key, versionstamp: entry?.versionstamp ?? null }],
+        });
       }),
     );
 
@@ -55,11 +52,7 @@ export function makeMarkLists(
     path: string,
     versionId: string,
     markId: string,
-  ): Effect.Effect<
-    boolean,
-    PersistenceError | ConcurrentModificationError,
-    WorkspaceId
-  > =>
+  ): Effect.Effect<boolean, PersistenceError | ConcurrentModificationError, WorkspaceId> =>
     retryConcurrency(
       Effect.gen(function* () {
         const { wsId } = yield* WorkspaceId;
@@ -87,9 +80,7 @@ export function makeMarkLists(
       Effect.gen(function* () {
         const { wsId } = yield* WorkspaceId;
         const empty: MigrateMarksResult = { migrated: 0, stale: 0 };
-        const latestEntry = yield* persistence.get<StoredSnapshot>(
-          latestKey(wsId, path),
-        );
+        const latestEntry = yield* persistence.get<StoredSnapshot>(latestKey(wsId, path));
         if (!latestEntry) return empty;
         const targetVersionId = latestEntry.value.version_id;
         if (targetVersionId === fromVersionId) return empty;
@@ -97,15 +88,10 @@ export function makeMarkLists(
         const targetKey = marksKey(wsId, path, targetVersionId);
         const targetEntry = yield* persistence.get<Mark[]>(targetKey);
         const targetMarks = targetEntry?.value ?? [];
-        const targetContent = yield* internals.reassembleContent(
-          wsId,
-          path,
-          targetVersionId,
-          {
-            chunkCount: latestEntry.value.chunkCount,
-            firstChunk: latestEntry.value.firstChunk,
-          },
-        );
+        const targetContent = yield* internals.reassembleContent(wsId, path, targetVersionId, {
+          chunkCount: latestEntry.value.chunkCount,
+          firstChunk: latestEntry.value.firstChunk,
+        });
 
         const resolved = yield* internals.migrationOp(
           wsId,

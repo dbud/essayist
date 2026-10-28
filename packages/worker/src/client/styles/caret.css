@@ -19,11 +19,7 @@
   left: var(--caret-left);
   top: calc(var(--caret-top) - var(--caret-extend-top));
   width: var(--caret-thickness);
-  height: calc(
-    var(--caret-line-height) +
-    var(--caret-extend-top) +
-    var(--caret-extend-bottom)
-  );
+  height: calc(var(--caret-line-height) + var(--caret-extend-top) + var(--caret-extend-bottom));
   background-color: var(--caret-color);
   transform: translateX(calc(var(--caret-thickness) / -2));
   animation: caret-blink var(--caret-blink-period) ease-in-out infinite;

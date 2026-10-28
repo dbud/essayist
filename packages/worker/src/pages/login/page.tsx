@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "preact/hooks";
+
 import { loadGsi } from "#/client/googleGsi.ts";
 
 /** The login page: the native "Sign in with Google" button plus the One
@@ -63,9 +64,7 @@ export default function Page({
       {googleClientId === undefined ? (
         <p>Google sign-in is not configured</p>
       ) : gsiFailed ? (
-        <a href={`/oauth/google?next=${encodeURIComponent(next)}`}>
-          Continue with Google
-        </a>
+        <a href={`/oauth/google?next=${encodeURIComponent(next)}`}>Continue with Google</a>
       ) : (
         <div ref={buttonRef} />
       )}

@@ -5,9 +5,7 @@
 }
 
 @utility alert {
-  filter: drop-shadow(
-    3px 3px 5px color-mix(in oklch, var(--color-ink), transparent 70%)
-  );
+  filter: drop-shadow(3px 3px 5px color-mix(in oklch, var(--color-ink), transparent 70%));
 }
 
 @utility alert-inner {
@@ -15,13 +13,7 @@
   @apply flex flex-col leading-none min-h-15;
   font-size: 0.8rem;
   background-color: var(--alert-color, var(--color-surface));
-  clip-path: polygon(
-    var(--alert-notch) 0,
-    100% 0,
-    100% 100%,
-    0 100%,
-    0 var(--alert-notch)
-  );
+  clip-path: polygon(var(--alert-notch) 0, 100% 0, 100% 100%, 0 100%, 0 var(--alert-notch));
   transition: background-color var(--toast-duration) ease-out;
 
   & .btn--ghost:hover {

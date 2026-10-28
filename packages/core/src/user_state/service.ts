@@ -4,6 +4,7 @@
  */
 
 import { Context, Effect, Layer } from "effect";
+
 import {
   type ConcurrentModificationError,
   Persistence,
@@ -29,9 +30,7 @@ interface SelectedFile {
 
 export interface Interface {
   /** The user's most recent workspace selection. */
-  getSelectedWorkspace(
-    userId: string,
-  ): Effect.Effect<string | undefined, PersistenceError>;
+  getSelectedWorkspace(userId: string): Effect.Effect<string | undefined, PersistenceError>;
   /** Pin the user's most recent workspace selection. */
   setSelectedWorkspace(
     userId: string,
@@ -55,38 +54,37 @@ export class UserState extends Context.Service<UserState, Interface>()(
 ) {
   /** Requires the {@linkcode Persistence} service; compose with
    * Persistence.layerKv at the composition root. */
-  static readonly layerNoDeps: Layer.Layer<UserState, never, Persistence> =
-    Layer.effect(
-      UserState,
-      Effect.gen(function* () {
-        const persistence = yield* Persistence;
+  static readonly layerNoDeps: Layer.Layer<UserState, never, Persistence> = Layer.effect(
+    UserState,
+    Effect.gen(function* () {
+      const persistence = yield* Persistence;
 
-        const getSelectedWorkspace = (userId: string) =>
-          persistence
-            .get<SelectedWorkspace>([USER_STATE, userId, WORKSPACE])
-            .pipe(Effect.map((entry) => entry?.value.wsId));
+      const getSelectedWorkspace = (userId: string) =>
+        persistence
+          .get<SelectedWorkspace>([USER_STATE, userId, WORKSPACE])
+          .pipe(Effect.map((entry) => entry?.value.wsId));
 
-        const setSelectedWorkspace = (userId: string, wsId: string) =>
-          persistence.set([USER_STATE, userId, WORKSPACE], {
-            wsId,
-          } satisfies SelectedWorkspace);
+      const setSelectedWorkspace = (userId: string, wsId: string) =>
+        persistence.set([USER_STATE, userId, WORKSPACE], {
+          wsId,
+        } satisfies SelectedWorkspace);
 
-        const getSelectedFile = (userId: string, wsId: string) =>
-          persistence
-            .get<SelectedFile>([USER_STATE, userId, FILE, wsId])
-            .pipe(Effect.map((entry) => entry?.value.path));
+      const getSelectedFile = (userId: string, wsId: string) =>
+        persistence
+          .get<SelectedFile>([USER_STATE, userId, FILE, wsId])
+          .pipe(Effect.map((entry) => entry?.value.path));
 
-        const setSelectedFile = (userId: string, wsId: string, path: string) =>
-          persistence.set([USER_STATE, userId, FILE, wsId], {
-            path,
-          } satisfies SelectedFile);
+      const setSelectedFile = (userId: string, wsId: string, path: string) =>
+        persistence.set([USER_STATE, userId, FILE, wsId], {
+          path,
+        } satisfies SelectedFile);
 
-        return UserState.of({
-          getSelectedWorkspace,
-          setSelectedWorkspace,
-          getSelectedFile,
-          setSelectedFile,
-        });
-      }),
-    );
+      return UserState.of({
+        getSelectedWorkspace,
+        setSelectedWorkspace,
+        getSelectedFile,
+        setSelectedFile,
+      });
+    }),
+  );
 }

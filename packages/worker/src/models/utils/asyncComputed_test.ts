@@ -1,6 +1,7 @@
 import { computed, signal } from "@preact/signals";
 import { assertEquals } from "@std/assert";
 import { test } from "vitest";
+
 import { asyncComputed } from "./asyncComputed.ts";
 
 const tick = () => new Promise<void>((r) => queueMicrotask(r));

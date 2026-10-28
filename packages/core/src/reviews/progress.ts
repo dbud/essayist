@@ -2,12 +2,7 @@ import type { FlowEvent, NodeKind } from "#/flow/types.ts";
 import type { ReviewTypes } from "#/reviews/graph.ts";
 
 /** Coarse activity label for a running review. */
-export type ReviewPhase =
-  | "working"
-  | "analyzing"
-  | "marking"
-  | "repairing"
-  | "summarizing";
+export type ReviewPhase = "working" | "analyzing" | "marking" | "repairing" | "summarizing";
 
 /**
  * Text-free progress snapshot for product UI. Never carries model content:
@@ -56,9 +51,7 @@ export class ReviewProgressTracker {
         break;
       case "custom":
         if (event.event.type !== "applied") return;
-        this.#notes += event.event.attempts.filter(
-          (attempt) => attempt.marked,
-        ).length;
+        this.#notes += event.event.attempts.filter((attempt) => attempt.marked).length;
         break;
       default:
         return;

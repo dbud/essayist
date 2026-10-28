@@ -1,6 +1,7 @@
 import { Command } from "@cliffy/command";
 import { type TraceEvent, TraceEvents, WorkspaceId } from "@essayist/core";
 import { Effect } from "effect";
+
 import type { KvctlGlobals } from "#/globals.ts";
 import { withStore } from "#/kv.ts";
 import { pprint } from "#/utils/pprint.ts";

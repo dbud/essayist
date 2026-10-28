@@ -3,12 +3,8 @@ import { assert, assertEquals } from "@std/assert";
 import { Duration, Effect, Fiber, Result, Schema } from "effect";
 import { TestClock } from "effect/testing";
 import { test } from "vitest";
-import {
-  authAiError,
-  createFakeClient,
-  type FakeRound,
-  networkAiError,
-} from "./fake_client.ts";
+
+import { authAiError, createFakeClient, type FakeRound, networkAiError } from "./fake_client.ts";
 import {
   ModelCallError,
   type ModelCallRecord,
@@ -111,24 +107,15 @@ test("ModelClient.callModelStructured -- an invalid reply triggers the re-ask", 
 });
 
 test("ModelClient.callModelStructured -- a second parse failure fails typed", async () => {
-  const { client } = createFakeClient([
-    { text: "wrong once" },
-    { text: "wrong twice" },
-  ]);
+  const { client } = createFakeClient([{ text: "wrong once" }, { text: "wrong twice" }]);
 
   const outcome = await Effect.runPromise(
-    provideWith(
-      Effect.result(structured(Schema.Struct({ ok: Schema.Boolean }))),
-      client,
-    ),
+    provideWith(Effect.result(structured(Schema.Struct({ ok: Schema.Boolean }))), client),
   );
 
   assert(Result.isFailure(outcome), "the double parse failure must fail");
   if (Result.isFailure(outcome)) {
-    assert(
-      outcome.failure instanceof StructuredParseError,
-      "the parse failure type",
-    );
+    assert(outcome.failure instanceof StructuredParseError, "the parse failure type");
   }
 });
 
@@ -183,10 +170,7 @@ test("ModelClient.callModelStructured -- a transient failure gives up after thre
   const outcome = await Effect.runPromise(
     Effect.gen(function* () {
       const fiber = yield* Effect.forkChild(
-        provideWith(
-          Effect.result(structured(Schema.Struct({ ok: Schema.Boolean }))),
-          client,
-        ),
+        provideWith(Effect.result(structured(Schema.Struct({ ok: Schema.Boolean }))), client),
       );
       yield* Effect.yieldNow;
       // The first attempt has dispatched and failed; the retry sleeps one
@@ -223,10 +207,7 @@ test("ModelClient.callModelStructured -- a deterministic failure is not retried"
   ]);
 
   await Effect.runPromise(
-    provideWith(
-      Effect.result(structured(Schema.Struct({ ok: Schema.Boolean }))),
-      client,
-    ),
+    provideWith(Effect.result(structured(Schema.Struct({ ok: Schema.Boolean }))), client),
   );
 
   assertEquals(inputs.length, 1);

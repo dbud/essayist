@@ -1,6 +1,7 @@
 import { useSignal } from "@preact/signals";
 import { ArrowDownRight, ChevronDown, Plus, Slash } from "lucide-preact";
 import type { TargetedMouseEvent } from "preact";
+
 import CreateFileDialog from "#/components/editor/CreateFileDialog.tsx";
 import CreateWorkspaceDialog from "#/components/editor/CreateWorkspaceDialog.tsx";
 import FileUploader from "#/components/editor/FileUploader.tsx";
@@ -25,10 +26,7 @@ interface FileEntry {
   selected: boolean;
 }
 
-function buildFileEntries(
-  nodes: TreeNode[],
-  selectedPath: string | null,
-): FileEntry[] {
+function buildFileEntries(nodes: TreeNode[], selectedPath: string | null): FileEntry[] {
   const result: FileEntry[] = [];
   let prevSegments: string[] = [];
 
@@ -68,13 +66,7 @@ function BreadcrumbsTrigger() {
 
   return (
     <Swappable
-      swapKey={
-        workspaces.loading.value
-          ? "loading"
-          : navigationOpened.value
-            ? "open"
-            : "closed"
-      }
+      swapKey={workspaces.loading.value ? "loading" : navigationOpened.value ? "open" : "closed"}
       class="swap-slide leading-none relative z-dropdown"
     >
       <div class="flex stack stack--row">
@@ -82,11 +74,7 @@ function BreadcrumbsTrigger() {
           <WaveBars class="h-10 text-ink/70 bg-surface" />
         ) : navigationOpened.value ? (
           <div class="cell cell--ink w-48 relative">
-            <WaveBars
-              fill
-              amplitude={workspaces.loading.value ? 1 : 0}
-              class="text-surface"
-            />
+            <WaveBars fill amplitude={workspaces.loading.value ? 1 : 0} class="text-surface" />
             <ArrowDownRight size={14} />
             Projects
           </div>
@@ -117,10 +105,7 @@ export default function FileNavigation() {
   const { workspaces, fileTrees, selected } = useEditorModels();
   const files = fileTrees.current.value;
   const selectedPath = selected.value?.path ?? null;
-  const fileEntries = buildFileEntries(
-    files?.tree.value.children ?? [],
-    selectedPath,
-  );
+  const fileEntries = buildFileEntries(files?.tree.value.children ?? [], selectedPath);
 
   const createFile = (
     <>
@@ -144,30 +129,28 @@ export default function FileNavigation() {
       open={filesPanelOpen.value}
     >
       <div class="flex flex-col stack" data-stagger-children>
-        {fileEntries.map(
-          ({ path, parts, selected: fileSelected, name: fileName }) => (
-            <button
-              key={path}
-              type="button"
-              class={`group btn ${fileSelected ? "is-selected" : ""}`}
-              onClick={() => {
-                files?.select(path);
-                navigationOpened.value = false;
-              }}
-            >
-              {parts.map((p, i) => (
-                <span
-                  key={i}
-                  class={`transition-opacity ${p.redundant ? "opacity-50 group-hover:opacity-100" : ""}`}
-                >
-                  {p.segment}
-                  <span class="pl-1">/</span>
-                </span>
-              ))}
-              <span class="break-all min-w-0">{fileName}</span>
-            </button>
-          ),
-        )}
+        {fileEntries.map(({ path, parts, selected: fileSelected, name: fileName }) => (
+          <button
+            key={path}
+            type="button"
+            class={`group btn ${fileSelected ? "is-selected" : ""}`}
+            onClick={() => {
+              files?.select(path);
+              navigationOpened.value = false;
+            }}
+          >
+            {parts.map((p, i) => (
+              <span
+                key={i}
+                class={`transition-opacity ${p.redundant ? "opacity-50 group-hover:opacity-100" : ""}`}
+              >
+                {p.segment}
+                <span class="pl-1">/</span>
+              </span>
+            ))}
+            <span class="break-all min-w-0">{fileName}</span>
+          </button>
+        ))}
         {(files?.files.value.length ?? 0) > 0 && <div class="separator" />}
         {createFile}
       </div>
@@ -175,11 +158,7 @@ export default function FileNavigation() {
   );
 
   const createWorkspace = (
-    <button
-      type="button"
-      class="btn"
-      onClick={() => (createWorkspaceDialogOpen.value = true)}
-    >
+    <button type="button" class="btn" onClick={() => (createWorkspaceDialogOpen.value = true)}>
       <Plus size={14} /> New project&hellip;
     </button>
   );

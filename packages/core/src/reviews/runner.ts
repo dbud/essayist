@@ -8,16 +8,8 @@
  * 60-second interval) keeps a live run claimed without event pacing.
  */
 
-import {
-  type Cause,
-  Clock,
-  type Context,
-  Effect,
-  Fiber,
-  Queue,
-  Result,
-  Schema,
-} from "effect";
+import { type Cause, Clock, type Context, Effect, Fiber, Queue, Result, Schema } from "effect";
+
 import type { ResolvedReviewPass } from "#/config/types.ts";
 import { Files } from "#/files/service.ts";
 import { FlowRunner } from "#/flow/runner.ts";
@@ -27,16 +19,9 @@ import { Ids } from "#/ids.ts";
 import type { Marks } from "#/marks/service.ts";
 import type { ModelClient } from "#/model/service.ts";
 import type { MissingChunksError } from "#/persistence/chunked_values.ts";
-import type {
-  ConcurrentModificationError,
-  PersistenceError,
-} from "#/persistence/mod.ts";
+import type { ConcurrentModificationError, PersistenceError } from "#/persistence/mod.ts";
 import { buildReviewGraph } from "#/reviews/adapter.ts";
-import {
-  type ReviewServices,
-  type ReviewTypes,
-  reviewRunners,
-} from "#/reviews/graph.ts";
+import { type ReviewServices, type ReviewTypes, reviewRunners } from "#/reviews/graph.ts";
 import type { ReviewProgress } from "#/reviews/progress.ts";
 import { ReviewProgressTracker } from "#/reviews/progress.ts";
 import { ReviewRuns } from "#/reviews/service.ts";
@@ -56,13 +41,7 @@ export interface RunReviewPassOptions {
 }
 
 /** Services the review pass runs on: the steps pull them from context. */
-type RunnerServices =
-  | ReviewRuns
-  | TraceEvents
-  | WorkspaceId
-  | Files
-  | Marks
-  | ModelClient;
+type RunnerServices = ReviewRuns | TraceEvents | WorkspaceId | Files | Marks | ModelClient;
 
 // Heartbeats go out every interval. The interval must stay far under the
 // staleness window, or a live run can be stolen.
@@ -115,9 +94,7 @@ export function runReviewPass(
   return Effect.gen(function* () {
     const files = yield* Files;
     const versionId = yield* files.getVersions(path).pipe(
-      Effect.catchTag("FileMissingError", () =>
-        Effect.fail(new ReviewFileMissingError({ path })),
-      ),
+      Effect.catchTag("FileMissingError", () => Effect.fail(new ReviewFileMissingError({ path }))),
       Effect.map((history) => history.at(-1)?.version_id),
     );
     if (!versionId) {
@@ -171,10 +148,9 @@ function start(
       reviewPassId: pass.pass.id,
       versionId,
     });
-    return yield* Effect.annotateLogs(
-      execute(options, run, versionId, 0, undefined),
-      { runId: run.id },
-    );
+    return yield* Effect.annotateLogs(execute(options, run, versionId, 0, undefined), {
+      runId: run.id,
+    });
   });
 }
 
@@ -183,11 +159,7 @@ function start(
 function claim(
   runs: Context.Service.Shape<typeof ReviewRuns>,
   runId: string,
-): Effect.Effect<
-  string,
-  ReviewLeaseTakenError | PersistenceError,
-  WorkspaceId
-> {
+): Effect.Effect<string, ReviewLeaseTakenError | PersistenceError, WorkspaceId> {
   return Effect.gen(function* () {
     const ids = yield* Ids;
     const owner = ids.next();
@@ -249,12 +221,8 @@ function execute(
     const { onProgress, pass, path } = options;
     const completed = priorTrace ? foldCompleted(priorTrace) : undefined;
     const graph = buildReviewGraph(pass, run.id, { path, versionId });
-    const kindOf = new Map(
-      graph.nodes.map((node) => [node.id, node.kind] as const),
-    );
-    const tracker = onProgress
-      ? new ReviewProgressTracker(onProgress, kindOf)
-      : undefined;
+    const kindOf = new Map(graph.nodes.map((node) => [node.id, node.kind] as const));
+    const tracker = onProgress ? new ReviewProgressTracker(onProgress, kindOf) : undefined;
 
     // Events are logged and seq-stamped where they happen; a writer fiber
     // appends them through a queue, off the emission path.
@@ -283,9 +251,7 @@ function execute(
     });
 
     // Prove life right away, then stay proven on the interval.
-    const fiber = yield* Effect.forkChild(
-      heartbeatLoop(runs, wsId, run.id, owner),
-    );
+    const fiber = yield* Effect.forkChild(heartbeatLoop(runs, wsId, run.id, owner));
     const writerFiber = yield* Effect.forkChild(writer);
 
     // The native steps read their services from context.

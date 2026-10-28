@@ -1,4 +1,5 @@
 import { useRef } from "preact/hooks";
+
 import { Caret } from "#/components/Caret.tsx";
 import Editor from "#/components/editor/Editor.tsx";
 import EditorToolbar from "#/components/editor/EditorToolbar.tsx";
@@ -105,10 +106,7 @@ function FileViewerBody({ wsId, path, versionId }: FileKey) {
           </div>
         </div>
       </div>
-      <div
-        class="relative flex-1 min-h-0 overflow-y-auto bg-paper striped/2"
-        ref={scrollRef}
-      >
+      <div class="relative flex-1 min-h-0 overflow-y-auto bg-paper striped/2" ref={scrollRef}>
         <div class="isolate content-layout bg-paper min-h-full">
           <div class="relative min-w-0 isolate">
             {/* isolate: stacking context for MarkHighlights z-index */}
@@ -136,9 +134,7 @@ function FileViewerBody({ wsId, path, versionId }: FileKey) {
               </>
             ) : (
               <div class="content-main pt-16 pb-32">
-                <p class="text-ink/70">
-                  {file.loading.value ? "loading" : "empty"}
-                </p>
+                <p class="text-ink/70">{file.loading.value ? "loading" : "empty"}</p>
               </div>
             )}
           </div>

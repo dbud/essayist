@@ -1,9 +1,5 @@
-import {
-  effect,
-  type ReadonlySignal,
-  type Signal,
-  signal,
-} from "@preact/signals";
+import { effect, type ReadonlySignal, type Signal, signal } from "@preact/signals";
+
 import { deepComputed } from "./deepComputed.ts";
 
 /**

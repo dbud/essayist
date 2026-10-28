@@ -1,5 +1,6 @@
 import { distinct, sortBy } from "@std/collections";
 import { Cause, Clock, Deferred, Effect, Exit, Result } from "effect";
+
 import type {
   Artifact,
   CompletedNodeRun,
@@ -56,10 +57,7 @@ export class FlowRunner<T extends FlowTypes, R = never> {
 
   constructor(options: FlowRunnerOptions<T, R>) {
     // The registry key is the node kind, so the cast is sound.
-    const registry = options.runners as unknown as Record<
-      string,
-      NodeRunner<T, NodeKind<T>, R>
-    >;
+    const registry = options.runners as unknown as Record<string, NodeRunner<T, NodeKind<T>, R>>;
     for (const [kind, runner] of Object.entries(registry)) {
       this.#runners.set(kind, runner);
     }
@@ -107,9 +105,7 @@ export class FlowRunner<T extends FlowTypes, R = never> {
           entry.launched = true;
           const waker = yield* Deferred.make<string>();
           pending.set(entry.node.id, waker);
-          const inputs = entry.consumes.flatMap(
-            (dep) => committed.get(dep) ?? [],
-          );
+          const inputs = entry.consumes.flatMap((dep) => committed.get(dep) ?? []);
           // Mutations stay on the engine's single thread, on the node's fiber
           // in completion order: record, commit, then wake the scheduler.
           yield* Effect.forkChild(
@@ -140,9 +136,7 @@ export class FlowRunner<T extends FlowTypes, R = never> {
         pending.delete(doneId);
       }
 
-      for (const entry of wired
-        .values()
-        .filter((candidate) => !candidate.launched)) {
+      for (const entry of wired.values().filter((candidate) => !candidate.launched)) {
         const run: SkippedNodeRun = {
           nodeId: entry.node.id,
           status: "skipped",
@@ -152,11 +146,8 @@ export class FlowRunner<T extends FlowTypes, R = never> {
         yield* this.#emit({ type: "node_end", nodeId: entry.node.id, run });
       }
 
-      const position = new Map(
-        wired.keys().map((nodeId, index) => [nodeId, index] as const),
-      );
-      const status: FlowRunResult<T>["status"] =
-        errors.size === 0 ? "completed" : "failed";
+      const position = new Map(wired.keys().map((nodeId, index) => [nodeId, index] as const));
+      const status: FlowRunResult<T>["status"] = errors.size === 0 ? "completed" : "failed";
       return {
         status,
         errors: [...errors.values()],
@@ -235,9 +226,7 @@ function wire<T extends FlowTypes, R>(
 
   for (const node of graph.nodes) {
     if (wired.has(node.id)) {
-      return Result.fail(
-        new FlowGraphError({ reason: `duplicate node id "${node.id}"` }),
-      );
+      return Result.fail(new FlowGraphError({ reason: `duplicate node id "${node.id}"` }));
     }
     if (!runners.has(node.kind)) {
       return Result.fail(
@@ -293,9 +282,7 @@ function wire<T extends FlowTypes, R>(
     .map((entry) => entry.node.id)
     .toArray();
   if (stuck.length > 0) {
-    return Result.fail(
-      new FlowGraphError({ reason: `cycle detected: ${stuck.join(", ")}` }),
-    );
+    return Result.fail(new FlowGraphError({ reason: `cycle detected: ${stuck.join(", ")}` }));
   }
   return Result.succeed(wired);
 }

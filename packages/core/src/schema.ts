@@ -77,10 +77,7 @@ function describeType(ast: Ast): string {
 }
 
 function isNullable(ast: Ast): boolean {
-  return (
-    SchemaAST.isNull(ast) ||
-    (SchemaAST.isUnion(ast) && ast.types.some(SchemaAST.isNull))
-  );
+  return SchemaAST.isNull(ast) || (SchemaAST.isUnion(ast) && ast.types.some(SchemaAST.isNull));
 }
 
 /** The literal prefix and scalar type of a field whose whole type is
@@ -129,11 +126,7 @@ function nestedFieldsOf(ast: Ast, indent: string): string[] {
   return object ? describeProperties(object, `${indent}  `) : [];
 }
 
-function describeField(
-  sig: SchemaAST.PropertySignature,
-  ast: Ast,
-  indent: string,
-): string[] {
+function describeField(sig: SchemaAST.PropertySignature, ast: Ast, indent: string): string[] {
   const annotations = annotationsOf(ast);
   const parts = literalParts(ast) ?? [describeType(ast)];
   if (ast.context?.isOptional === true) parts.push("optional");
@@ -145,37 +138,24 @@ function describeField(
   // The description reads after the type, separated by a marker that cannot
   // appear in prose, so a sentence never runs into a type.
   const type = parts.join(", ");
-  const described = annotations.description
-    ? `${type} -- ${annotations.description}`
-    : type;
-  return [
-    `${indent}- ${sig.name as string}: ${described}`,
-    ...nestedFieldsOf(ast, indent),
-  ];
+  const described = annotations.description ? `${type} -- ${annotations.description}` : type;
+  return [`${indent}- ${sig.name as string}: ${described}`, ...nestedFieldsOf(ast, indent)];
 }
 
 /** One `- field: type` line per property, recursing into nested objects. */
 function describeProperties(object: SchemaAST.Objects, indent = ""): string[] {
-  return object.propertySignatures.flatMap((sig) =>
-    describeField(sig, sig.type, indent),
-  );
+  return object.propertySignatures.flatMap((sig) => describeField(sig, sig.type, indent));
 }
 
 function formatValue(value: Schema.Json | SchemaAST.LiteralValue): string {
-  if (
-    typeof value === "bigint" ||
-    typeof value === "number" ||
-    typeof value === "boolean"
-  ) {
+  if (typeof value === "bigint" || typeof value === "number" || typeof value === "boolean") {
     return String(value);
   }
   return JSON.stringify(value);
 }
 
 /** The whole-value example, or one built from annotated fields. */
-function buildExample(
-  object: SchemaAST.Objects,
-): Schema.JsonObject | undefined {
+function buildExample(object: SchemaAST.Objects): Schema.JsonObject | undefined {
   const root = annotationsOf(object).examples?.[0];
   if (Schema.is(Schema.JsonObject)(root)) return root;
   const example: Record<string, Schema.Json> = {};
@@ -185,9 +165,7 @@ function buildExample(
       example[sig.name as string] = value;
     }
   }
-  return Object.keys(example).length > 0
-    ? (example as Schema.JsonObject)
-    : undefined;
+  return Object.keys(example).length > 0 ? (example as Schema.JsonObject) : undefined;
 }
 
 export function generateInstructions<T extends Schema.Constraint>(

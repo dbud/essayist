@@ -17,6 +17,7 @@ import {
   type LexicalNode,
 } from "lexical";
 import { test } from "vitest";
+
 import { $applyMarks } from "./markExtension.ts";
 import { $restoreSelection, $saveSelection } from "./selection.ts";
 import { $collectTextNodeSpans, type TextNodeSpan } from "./textNodeSpans.ts";
@@ -201,9 +202,7 @@ test("$applyMarks -- multi-paragraph mark yields one fragment per paragraph", ()
   setParagraphs(editor, "Para one.", "Para two.");
   // exported markdown: "Para one.\n\nPara two." -> "Para one." at 0 (len 9),
   // "Para two." at 11 (len 9). Mark covers [0,20): both paragraphs.
-  const fragments = applyAndCollect(editor, [
-    { offset: 0, length: 20, thread_id: "m" },
-  ]);
+  const fragments = applyAndCollect(editor, [{ offset: 0, length: 20, thread_id: "m" }]);
   assertEquals(fragments, [
     { ids: ["m"], text: "Para one." },
     { ids: ["m"], text: "Para two." },
@@ -232,9 +231,7 @@ test("$applyMarks -- re-applying unwraps previous marks before wrapping", () => 
   setParagraph(editor, "AAAAABBBBBCCCCC");
   applyAndCollect(editor, [{ offset: 0, length: 5, thread_id: "a" }]);
   // Apply again with a different mark set; the old "a" fragment must be gone.
-  const fragments = applyAndCollect(editor, [
-    { offset: 10, length: 5, thread_id: "c" },
-  ]);
+  const fragments = applyAndCollect(editor, [{ offset: 10, length: 5, thread_id: "c" }]);
   assertEquals(fragments, [{ ids: ["c"], text: "CCCCC" }]);
 });
 

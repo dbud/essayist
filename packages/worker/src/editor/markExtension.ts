@@ -7,12 +7,7 @@ import {
   $wrapSelectionInMarkNode,
   MarkNode,
 } from "@lexical/mark";
-import {
-  effect,
-  type ReadonlySignal,
-  type Signal,
-  untracked,
-} from "@preact/signals";
+import { effect, type ReadonlySignal, type Signal, untracked } from "@preact/signals";
 import { assert } from "@std/assert/assert";
 import {
   $getNodeByKey,
@@ -25,18 +20,11 @@ import {
   mergeRegister,
   type NodeKey,
 } from "lexical";
+
 import { type MarkSpan, segmentMarks } from "./markSegments.ts";
 import { registerNodeKeyTracker } from "./nodeKeyTracker.ts";
-import {
-  $createSelection,
-  $restoreSelection,
-  $saveSelection,
-} from "./selection.ts";
-import {
-  $collectTextNodeSpans,
-  findRange,
-  type TextNodeSpan,
-} from "./textNodeSpans.ts";
+import { $createSelection, $restoreSelection, $saveSelection } from "./selection.ts";
+import { $collectTextNodeSpans, findRange, type TextNodeSpan } from "./textNodeSpans.ts";
 
 export const MARK_RANGE_TAG = "mark-range";
 
@@ -81,11 +69,7 @@ export const MarksExtension = defineExtension({
           editor.update(() => {
             for (const key of nodeKeys) {
               const node = $getNodeByKey(key);
-              if (
-                node !== null &&
-                $isMarkNode(node) &&
-                node.getIDs().includes(threadId)
-              ) {
+              if (node !== null && $isMarkNode(node) && node.getIDs().includes(threadId)) {
                 node.selectStart();
                 break;
               }
@@ -143,10 +127,7 @@ export function $applyMarks(
 ): void {
   for (const key of nodeKeys) {
     const node = $getNodeByKey(key);
-    assert(
-      $isMarkNode(node),
-      `stale mark key ${key}: ${node === null ? "null" : node.getType()}`,
-    );
+    assert($isMarkNode(node), `stale mark key ${key}: ${node === null ? "null" : node.getType()}`);
     $unwrapMarkNode(node);
   }
 
@@ -171,8 +152,6 @@ export function $applyMarks(
     // id argument); ignore that and close over the full id-set of the segment
     // so a shared interval becomes a single MarkNode carrying the id of every
     // covering mark.
-    $wrapSelectionInMarkNode(selection, false, seg.ids[0], () =>
-      $createMarkNode(seg.ids),
-    );
+    $wrapSelectionInMarkNode(selection, false, seg.ids[0], () => $createMarkNode(seg.ids));
   }
 }

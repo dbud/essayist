@@ -12,13 +12,8 @@
 import type * as D1Client from "@effect/sql-d1/D1Client";
 import { Effect, Layer, Option, Result, Schema } from "effect";
 import { SqlSchema } from "effect/sql";
-import {
-  decodeValue,
-  encodeValue,
-  keyRange,
-  packKey,
-  unpackKey,
-} from "./kv_d1_codec.ts";
+
+import { decodeValue, encodeValue, keyRange, packKey, unpackKey } from "./kv_d1_codec.ts";
 import {
   type BatchOptions,
   ConcurrentModificationError,
@@ -58,10 +53,7 @@ const backendFault = (cause: unknown) => new PersistenceError({ cause });
 /** A versionstamp check for one key, as absence or an exact stamp. It
  * carries its own parens: `and` only wraps two or more clauses, and a bare
  * `NOT <clause> = 0` would bind the wrong way. */
-const guardClause = (
-  client: D1Client.D1Client,
-  check: { key: Key; versionstamp: string | null },
-) =>
+const guardClause = (client: D1Client.D1Client, check: { key: Key; versionstamp: string | null }) =>
   check.versionstamp === null
     ? client`((SELECT count(*) FROM kv WHERE key = ${packKey(check.key)}) = 0)`
     : client`((SELECT version FROM kv WHERE key = ${packKey(
@@ -71,10 +63,7 @@ const guardClause = (
 /** The statement that opens a checked batch: nothing inserts when every
  * check holds, and a NOT NULL violation on kv.key fails and rolls back
  * the whole batch when any check no longer holds. */
-const assertionFor = (
-  client: D1Client.D1Client,
-  checks: NonNullable<BatchOptions["checks"]>,
-) =>
+const assertionFor = (client: D1Client.D1Client, checks: NonNullable<BatchOptions["checks"]>) =>
   client`INSERT INTO kv (key, value, version) SELECT NULL, NULL, NULL WHERE NOT ${client.and(
     checks.map((check) => guardClause(client, check)),
   )}`;
@@ -161,15 +150,10 @@ export function layerKvD1(client: D1Client.D1Client): Layer.Layer<Persistence> {
         ...(range.end === undefined ? [] : [client`key < ${range.end}`]),
         ...(cursor === undefined
           ? []
-          : [
-              reverse === true
-                ? client`key < ${cursor}`
-                : client`key > ${cursor}`,
-            ]),
+          : [reverse === true ? client`key < ${cursor}` : client`key > ${cursor}`]),
       ];
       // One extra row proves whether a next page exists.
-      const page =
-        limit === undefined ? client.literal("") : client`LIMIT ${limit + 1}`;
+      const page = limit === undefined ? client.literal("") : client`LIMIT ${limit + 1}`;
       const selectPage = SqlSchema.findAll({
         Request: Schema.Void,
         Result: RowSchema,
@@ -209,9 +193,7 @@ export function layerKvD1(client: D1Client.D1Client): Layer.Layer<Persistence> {
       const sets = ops.flatMap((op) =>
         op.type === "set" ? [{ key: [...op.key], value: op.value }] : [],
       );
-      const deletes = ops.flatMap((op) =>
-        op.type === "delete" ? [[...op.key]] : [],
-      );
+      const deletes = ops.flatMap((op) => (op.type === "delete" ? [[...op.key]] : []));
       if (checks.length + sets.length + deletes.length === 0) return;
       const statements = [
         ...(checks.length === 0 ? [] : [assertionFor(client, checks)]),
@@ -226,18 +208,13 @@ export function layerKvD1(client: D1Client.D1Client): Layer.Layer<Persistence> {
       }
       // The batch rolled back whole; re-read the checked keys to tell a
       // concurrent modification from a backend fault.
-      const state = yield* Effect.result(
-        verifyRows(checks.map((check) => packKey(check.key))),
-      );
+      const state = yield* Effect.result(verifyRows(checks.map((check) => packKey(check.key))));
       const failing = Result.isSuccess(state)
         ? checks.find((check) => {
-            const found = state.success.find(
-              (row) => row.key === packKey(check.key),
-            );
+            const found = state.success.find((row) => row.key === packKey(check.key));
             return check.versionstamp === null
               ? found !== undefined
-              : found === undefined ||
-                  found.version !== Number(check.versionstamp);
+              : found === undefined || found.version !== Number(check.versionstamp);
           })
         : undefined;
       return yield* Effect.fail(

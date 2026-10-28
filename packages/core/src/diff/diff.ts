@@ -1,4 +1,5 @@
 import { unreachable } from "@std/assert";
+
 import { createTokenizer, type Token } from "#/text/tokenizer.ts";
 
 export interface DiffHunk {
@@ -23,10 +24,7 @@ const tokenize = createTokenizer(DIFF_TOKEN_REGEX);
 // `jsMyers` (default) and a faster Rust implementation injected via `setMyers`.
 // `diff.ts` never imports the Rust crate, so the browser bundle only pulls in
 // the wasm glue when it's explicitly enabled.
-export type MyersFn = (
-  oldTokenIds: Int32Array,
-  newTokenIds: Int32Array,
-) => Int32Array;
+export type MyersFn = (oldTokenIds: Int32Array, newTokenIds: Int32Array) => Int32Array;
 
 let myersFn: MyersFn = jsMyers;
 
@@ -41,11 +39,7 @@ export function computeDiff(oldText: string, newText: string): DiffHunk[] {
 }
 
 /** Compute a token-level diff with an explicit Myers fn. */
-export function computeDiffWith(
-  oldText: string,
-  newText: string,
-  fn: MyersFn,
-): DiffHunk[] {
+export function computeDiffWith(oldText: string, newText: string, fn: MyersFn): DiffHunk[] {
   if (oldText === "" && newText === "") return [];
   if (oldText === "") {
     return [
@@ -169,13 +163,7 @@ export function jsMyers(a: Int32Array, b: Int32Array): Int32Array {
   return Int32Array.from(ops);
 }
 
-function diffRec(
-  a: Int32Array,
-  b: Int32Array,
-  aOff: number,
-  bOff: number,
-  ops: number[],
-): void {
+function diffRec(a: Int32Array, b: Int32Array, aOff: number, bOff: number, ops: number[]): void {
   const n = a.length;
   const m = b.length;
   if (n === 0) {
@@ -226,10 +214,7 @@ function diffRec(
 /** Find a middle snake: a matched run `(x,y) -> (u,v)` on an optimal edit
  * path, with `a[x..u] == b[y..v]`. Forward search from `(0,0)`, reverse from
  * `(n,m)`, increasing `d` until they overlap. */
-function findMiddleSnake(
-  a: Int32Array,
-  b: Int32Array,
-): [number, number, number, number] {
+function findMiddleSnake(a: Int32Array, b: Int32Array): [number, number, number, number] {
   const n = a.length;
   const m = b.length;
   const delta = n - m;
@@ -271,8 +256,7 @@ function findMiddleSnake(
     // Reverse: extend furthest-back x on each diagonal from (n,m).
     for (let k = delta + d; k >= delta - d; k -= 2) {
       const xIn =
-        k === delta + d ||
-        (k !== delta - d && vr[off + k - 1] < vr[off + k + 1])
+        k === delta + d || (k !== delta - d && vr[off + k - 1] < vr[off + k + 1])
           ? vr[off + k - 1]
           : vr[off + k + 1] - 1;
       let x = xIn;

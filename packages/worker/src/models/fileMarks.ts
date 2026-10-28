@@ -1,7 +1,9 @@
 import type { Mark } from "@essayist/core";
 import { createModel, signal } from "@preact/signals";
+
 import createAsyncState from "#/models/utils/asyncState.ts";
 import { getJson } from "#/models/utils/http.ts";
+
 import type { FileKey } from "./fileSelection.ts";
 import type { MarksData } from "./marks.data.ts";
 

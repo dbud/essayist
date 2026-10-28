@@ -27,15 +27,8 @@ export function readPreferencesCookie(
     if (eq < 0) continue;
     if (part.slice(0, eq).trim() !== name) continue;
     try {
-      const parsed: unknown = JSON.parse(
-        decodeURIComponent(part.slice(eq + 1)),
-      );
-      if (
-        typeof parsed !== "object" ||
-        parsed === null ||
-        Array.isArray(parsed)
-      )
-        return {};
+      const parsed: unknown = JSON.parse(decodeURIComponent(part.slice(eq + 1)));
+      if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) return {};
       return parsed as Record<string, unknown>;
     } catch {
       return {};
@@ -45,10 +38,7 @@ export function readPreferencesCookie(
 }
 
 /** Writes the payload, replacing the one that was there. */
-export function writePreferencesCookie(
-  values: Record<string, unknown>,
-  url: URL,
-): void {
+export function writePreferencesCookie(values: Record<string, unknown>, url: URL): void {
   const parts = [
     `${preferencesCookieName(url)}=${encodeURIComponent(JSON.stringify(values))}`,
     "path=/",

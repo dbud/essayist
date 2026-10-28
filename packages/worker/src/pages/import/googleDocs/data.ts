@@ -1,4 +1,5 @@
 import { Schema } from "effect";
+
 import { PickerConfig } from "#/auth/pickerConfig.ts";
 
 export const GooglePickerData = Schema.Struct({

@@ -8,10 +8,7 @@
  * and version counters share no string metacharacters.
  */
 
-import type {
-  D1Database,
-  D1PreparedStatement,
-} from "@cloudflare/workers-types";
+import type { D1Database, D1PreparedStatement } from "@cloudflare/workers-types";
 
 export interface D1RestConfig {
   readonly accountId: string;
@@ -46,9 +43,7 @@ export function d1RestDatabase(config: D1RestConfig): D1Database {
       result?: HttpResult[];
     };
     if (payload.success !== true || payload.result === undefined) {
-      const detail = (payload.errors ?? [])
-        .map((error) => error.message)
-        .join("; ");
+      const detail = (payload.errors ?? []).map((error) => error.message).join("; ");
       throw new Error(`D1 REST query failed: ${detail}`);
     }
     return payload.result;

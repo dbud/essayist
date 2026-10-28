@@ -6,6 +6,7 @@ import { MarkdownShortcutPlugin } from "@lexical/react/LexicalMarkdownShortcutPl
 import { OnChangePlugin } from "@lexical/react/LexicalOnChangePlugin";
 import type { EditorState } from "lexical";
 import { useMemo } from "preact/hooks";
+
 import ActiveEditorRef from "#/components/editor/ActiveEditorRef.tsx";
 import { createEditorExtension } from "#/editor/extension.ts";
 import { MARK_RANGE_TAG } from "#/editor/markExtension.ts";
@@ -91,9 +92,7 @@ export default function Editor({
         autocorrect="off"
         autocapitalize="off"
         dangerouslySetInnerHTML={
-          prerenderedHtml === undefined
-            ? undefined
-            : { __html: prerenderedHtml }
+          prerenderedHtml === undefined ? undefined : { __html: prerenderedHtml }
         }
         class={`prose whitespace-pre-wrap editor-input outline-none max-w-none ${className}`}
         placeholder={
@@ -108,10 +107,7 @@ export default function Editor({
 
   return (
     <div class={`relative ${viewerFont.value}`}>
-      <LexicalExtensionComposer
-        extension={extension}
-        contentEditable={contentEditable}
-      >
+      <LexicalExtensionComposer extension={extension} contentEditable={contentEditable}>
         {onChange && (
           <OnChangePlugin
             onChange={(state, _, tags) => {

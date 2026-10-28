@@ -4,22 +4,15 @@ import { $isMarkNode, MarkNode } from "@lexical/mark";
 import type { Signal } from "@preact/signals";
 import type { LexicalEditor } from "lexical";
 import { $getRoot } from "lexical";
+
 import { getCategories } from "#/models/categories.ts";
-import type {
-  MarkBadge,
-  MarkNumbers,
-  MarkRect,
-  SidenotePositions,
-} from "#/signals/sidenotes.ts";
+import type { MarkBadge, MarkNumbers, MarkRect, SidenotePositions } from "#/signals/sidenotes.ts";
 import { editorStateToMarkdown } from "#/utils/markdown.ts";
+
 import { getMeasureContext } from "./domMeasure.ts";
 import { computeMarkBadges } from "./markBadges.ts";
 import { assignBands } from "./markColors.ts";
-import {
-  $collectTextNodeSpans,
-  findPosition,
-  type TextNodeSpan,
-} from "./textNodeSpans.ts";
+import { $collectTextNodeSpans, findPosition, type TextNodeSpan } from "./textNodeSpans.ts";
 import { trackNodePositions } from "./trackNodePositions.ts";
 
 interface SidenoteConfig {
@@ -41,14 +34,7 @@ export const SidenoteExtension = defineExtension({
   name: "sidenote",
   afterRegistration: (
     editor: LexicalEditor,
-    {
-      sidenotePositions,
-      markNumbers,
-      markBadges,
-      markRects,
-      resolved,
-      fonts,
-    }: SidenoteConfig,
+    { sidenotePositions, markNumbers, markBadges, markRects, resolved, fonts }: SidenoteConfig,
   ) => {
     return trackNodePositions(editor, {
       nodeClass: MarkNode,
@@ -71,8 +57,7 @@ export const SidenoteExtension = defineExtension({
         state.read(() => {
           spans = $collectTextNodeSpans(content);
           if (spans.length === 0)
-            fallbackKey =
-              $getRoot().getFirstChild()?.getKey() ?? $getRoot().getKey();
+            fallbackKey = $getRoot().getFirstChild()?.getKey() ?? $getRoot().getKey();
         });
         return marks
           .filter((m) => m.length === 0)

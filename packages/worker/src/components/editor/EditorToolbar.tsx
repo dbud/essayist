@@ -6,6 +6,7 @@ import {
 import { FORMAT_TEXT_COMMAND } from "lexical";
 import type { LucideIcon } from "lucide-preact";
 import { Bold, Code, Italic, Strikethrough } from "lucide-preact";
+
 import BlockTypeSelect from "#/components/BlockTypeSelect.tsx";
 import { $setBlocksType, type BlockType } from "#/editor/blockFormat.ts";
 import type { FileKey } from "#/models/fileSelection.ts";
@@ -31,12 +32,7 @@ interface EditorToolbarProps extends FileKey {
   disabled?: boolean;
 }
 
-export default function EditorToolbar({
-  wsId,
-  path,
-  versionId,
-  disabled,
-}: EditorToolbarProps) {
+export default function EditorToolbar({ wsId, path, versionId, disabled }: EditorToolbarProps) {
   const editor = activeEditor.value;
   const sel = getEditorSelection({ wsId, path, versionId });
 
@@ -58,10 +54,7 @@ export default function EditorToolbar({
       return;
     }
     // Leaving a list for "normal": Lexical's list command unwraps the items.
-    if (
-      type === "normal" &&
-      (sel.block.value === "bullet" || sel.block.value === "number")
-    ) {
+    if (type === "normal" && (sel.block.value === "bullet" || sel.block.value === "number")) {
       editor.dispatchCommand(REMOVE_LIST_COMMAND, undefined);
       return;
     }
@@ -72,11 +65,7 @@ export default function EditorToolbar({
 
   return (
     <div class="flex stack">
-      <BlockTypeSelect
-        block={sel.block.value}
-        onChange={setBlock}
-        disabled={disabled}
-      />
+      <BlockTypeSelect block={sel.block.value} onChange={setBlock} disabled={disabled} />
       {INLINE_BUTTONS.map(({ fmt, tooltip, icon: Icon }) => (
         <button
           type="button"

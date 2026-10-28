@@ -1,5 +1,7 @@
 import { Effect } from "effect";
+
 import type { ReviewNodeEvent } from "#/reviews/graph.ts";
+
 import type { TraceEvent } from "./types.ts";
 
 /**
@@ -34,10 +36,7 @@ export function logTraceEvent(event: TraceEvent): Effect.Effect<void> {
   }
 }
 
-function logCustom(
-  nodeId: string,
-  event: ReviewNodeEvent,
-): Effect.Effect<void> {
+function logCustom(nodeId: string, event: ReviewNodeEvent): Effect.Effect<void> {
   switch (event.type) {
     case "model_call": {
       const { model, durationMs } = event.call;

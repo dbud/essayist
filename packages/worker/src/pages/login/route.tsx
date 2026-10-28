@@ -1,6 +1,8 @@
 import { Hono } from "hono";
+
 import { safeNext } from "#/auth/nextUrl.ts";
 import { env } from "#/env.ts";
+
 import Page from "./page";
 
 export default new Hono().get("/", (c) => {
