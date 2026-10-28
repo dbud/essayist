@@ -206,7 +206,7 @@ test("asyncComputed -- downstream deep-equality suppression", async () => {
     downstreamRuns++;
     return c.value.value;
   });
-  downstream.value; // prime
+  void downstream.value; // prime
   assertEquals(downstreamRuns, 1);
 
   s.value = [1, 2]; // deeply equal -> no refire

@@ -60,7 +60,8 @@ export function setupUrlQuerySync(
     const current = target.href;
     const next = compose(current, record.value);
     if (next === current) return;
-    replace ? target.replace(next) : target.push(next);
+    if (replace) target.replace(next);
+    else target.push(next);
   });
 
   const disposePop = target.onPop(() => {

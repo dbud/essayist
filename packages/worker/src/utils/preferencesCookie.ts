@@ -46,7 +46,7 @@ export function writePreferencesCookie(values: Record<string, unknown>, url: URL
     "samesite=lax",
   ];
   if (url.protocol === "https:") parts.push("secure");
-  // biome-ignore lint:suspicious:noDocumentCookie -- we target modern browsers
+  // oxlint-disable-next-line unicorn/no-document-cookie -- we target modern browsers
   document.cookie = parts.join("; ");
 }
 
@@ -54,6 +54,6 @@ export function writePreferencesCookie(values: Record<string, unknown>, url: URL
 export function clearPreferencesCookie(url: URL): void {
   const parts = ["path=/", "max-age=0"];
   if (url.protocol === "https:") parts.push("secure");
-  // biome-ignore lint:suspicious:noDocumentCookie -- we target modern browsers
+  // oxlint-disable-next-line unicorn/no-document-cookie -- we target modern browsers
   document.cookie = `${preferencesCookieName(url)}=; ${parts.join("; ")}`;
 }

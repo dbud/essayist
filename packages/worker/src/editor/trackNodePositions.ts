@@ -124,7 +124,7 @@ export function trackNodePositions<T extends LexicalNode>(
   for (const s of remeasureOn ?? []) {
     disposers.push(
       effect(() => {
-        s.value;
+        void s.value;
         scheduleMeasure();
       }),
     );

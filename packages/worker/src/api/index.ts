@@ -20,6 +20,7 @@ const api = HttpApi.make("api").add(userGroup).add(workspaceGroup).prefix("/api"
 const userHandlers = HttpApiBuilder.group(
   api,
   "user",
+  // oxlint-disable-next-line eslint/require-yield -- only registers handlers, nothing to yield
   Effect.fn(function* (handlers) {
     return handlers.handleAll({
       getUser: () => Effect.map(UserSession, ({ user }) => user),
