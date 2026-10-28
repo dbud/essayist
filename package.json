@@ -2,6 +2,8 @@
   "devDependencies": {
     "@biomejs/biome": "catalog:",
     "@types/node": "catalog:",
+    "oxfmt": "catalog:",
+    "oxlint": "catalog:",
     "typescript": "catalog:",
     "typescript-lsp": "npm:typescript@6.0.3",
     "vitest": "catalog:"
