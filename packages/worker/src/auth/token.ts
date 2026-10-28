@@ -52,7 +52,11 @@ function refreshRequest(
       return Schema.decodeSync(TokenResponse)(await response.json());
     },
     catch: (cause) => new TokenRefreshError({ cause }),
-  });
+  }).pipe(
+    Effect.tapError((err) =>
+      Effect.logError("google token refresh rejected", { cause: String(err.cause) }),
+    ),
+  );
 }
 
 /**
@@ -79,6 +83,9 @@ export const getValidAccessToken = (
     // authorization.
     const refreshToken = tokens.refreshToken ?? (yield* auth.getRefreshToken(session.userId));
     if (refreshToken === undefined) {
+      yield* Effect.logWarning("google token refresh skipped: no refresh token stored", {
+        sessionId: session.id,
+      });
       // Cannot refresh; let Google reject the stale token.
       return tokens.accessToken;
     }
@@ -93,6 +100,10 @@ export const getValidAccessToken = (
     };
     yield* auth.updateSessionTokens(sessionId, session.userId, refreshed);
     yield* auth.setRefreshToken(session.userId, nextRefreshToken);
+    yield* Effect.logInfo("google access token refreshed", {
+      sessionId: session.id,
+      expiresIn: fresh.expires_in,
+    });
     return refreshed.accessToken;
   });
 
@@ -118,6 +129,11 @@ export const refreshTokensForUser = (
     const now = yield* Clock.currentTimeMillis;
     const fresh = yield* refreshRequest(clientId, clientSecret, refreshToken).pipe(
       // A rejected grant still signs the user in, without Google API access.
+      Effect.tapError(() =>
+        Effect.logWarning(
+          "google token refresh rejected at one-tap sign-in; continuing without Google API access",
+        ),
+      ),
       Effect.catchTag("TokenRefreshError", () => Effect.succeed(undefined)),
     );
     if (fresh === undefined) return undefined;
