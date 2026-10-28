@@ -1,5 +1,4 @@
 import { useSignal } from "@preact/signals";
-import { IS_BROWSER } from "fresh/runtime";
 import { useEffect } from "preact/hooks";
 
 /**
@@ -11,7 +10,7 @@ export function useMediaQuery(query: string) {
   const matches = useSignal(false);
 
   useEffect(() => {
-    if (!IS_BROWSER) return;
+    if (import.meta.env.SSR) return;
     const mql = globalThis.matchMedia(query);
     matches.value = mql.matches;
 

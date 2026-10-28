@@ -1,6 +1,6 @@
 import type { LexicalEditor } from "lexical";
 import { MoveDown, MoveUp } from "lucide-preact";
-import { colorForMark } from "#/editor/markColors.ts";
+
 import { SELECT_MARK_COMMAND } from "#/editor/markExtension.ts";
 import { useMediaQuery } from "#/hooks/useMediaQuery.ts";
 import type { ScrollContainerRef } from "#/hooks/useScrollViewport.ts";
@@ -11,6 +11,7 @@ interface GhostSidenoteProps {
   editor: LexicalEditor | null;
   scrollContainerRef: ScrollContainerRef;
   occlusion: number;
+  color: string;
 }
 
 export default function GhostSidenote({
@@ -18,11 +19,11 @@ export default function GhostSidenote({
   editor,
   scrollContainerRef,
   occlusion,
+  color,
 }: GhostSidenoteProps) {
   const { entry, ghost, trueTop } = view;
   const { mark, number } = entry;
   const Icon = ghost === "bottom" ? MoveDown : MoveUp;
-  const color = colorForMark(mark);
   const reducedMotion = useMediaQuery("(prefers-reduced-motion: reduce)");
   return (
     // Full-height slot with a flow origin at the column top so the sticky

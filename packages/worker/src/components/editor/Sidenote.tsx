@@ -1,5 +1,5 @@
 import type { LexicalEditor } from "lexical";
-import { colorForMark } from "#/editor/markColors.ts";
+
 import { SELECT_MARK_COMMAND } from "#/editor/markExtension.ts";
 import type { SidenoteView } from "#/signals/sidenotes.ts";
 
@@ -7,24 +7,20 @@ interface SidenoteProps {
   view: SidenoteView;
   editor: LexicalEditor | null;
   hidden: boolean;
+  color: string;
 }
 
-export default function Sidenote({ view, editor, hidden }: SidenoteProps) {
+export default function Sidenote({ view, editor, hidden, color }: SidenoteProps) {
   const { entry, top } = view;
   const { mark, number, active } = entry;
-  const color = colorForMark(mark);
   return (
     <button
       type="button"
       data-thread-id={mark.thread_id}
-      class={`sidenote ${active ? "is-active" : ""} ${
-        hidden ? "invisible" : ""
-      }`}
+      class={`sidenote ${active ? "is-active" : ""} ${hidden ? "invisible" : ""}`}
       style={{ "--mark-color": color, top }}
       title="Jump to mark in editor"
-      onClick={() =>
-        editor?.dispatchCommand(SELECT_MARK_COMMAND, mark.thread_id)
-      }
+      onClick={() => editor?.dispatchCommand(SELECT_MARK_COMMAND, mark.thread_id)}
     >
       <div class="flex items-start gap-2">
         <span class="sidenote-number">{number}</span>

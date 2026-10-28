@@ -35,11 +35,7 @@ function wavePath(x0: number, y0: number, w: number, amp: number): string {
   return d;
 }
 
-export function WavyRenderer({
-  rects,
-  activeIds,
-  innerId,
-}: HighlightRendererProps) {
+export function WavyRenderer({ rects, activeIds, innerId }: HighlightRendererProps) {
   return (
     <svg aria-hidden="true" class="mark-wavy">
       {rects.map(({ id, color, left, width, top, height, order }, i) => {
