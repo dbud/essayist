@@ -1,20 +1,14 @@
 import { Command } from "@cliffy/command";
-import {
-  demoFiles,
-  Files,
-  seedDemoFiles,
-  WorkspaceId,
-  Workspaces,
-} from "@essayist/core";
+import { demoFiles, Files, seedDemoFiles, WorkspaceId, Workspaces } from "@essayist/core";
 import { Effect } from "effect";
+
 import type { KvctlGlobals } from "#/globals.ts";
 import { withStore } from "#/kv.ts";
 
 const scoped = <A, E, R>(
   effect: Effect.Effect<A, E, R | WorkspaceId>,
   wsId: string,
-): Effect.Effect<A, E, R> =>
-  Effect.provideService(effect, WorkspaceId, { wsId });
+): Effect.Effect<A, E, R> => Effect.provideService(effect, WorkspaceId, { wsId });
 
 // A per-workspace companion file: its name and content derive from the
 // workspace, so content on screen identifies the workspace it came from.
@@ -57,30 +51,22 @@ export const seedDemo = new Command<KvctlGlobals>()
       );
       if (!user) {
         const created = await runtime.runPromise(
-          Effect.orDie(
-            Workspaces.use((store) => store.createUser({ email, name })),
-          ),
+          Effect.orDie(Workspaces.use((store) => store.createUser({ email, name }))),
         );
         user =
           (await runtime.runPromise(
-            Effect.orDie(
-              Workspaces.use((store) => store.setUserRole(created.id, "admin")),
-            ),
+            Effect.orDie(Workspaces.use((store) => store.setUserRole(created.id, "admin"))),
           )) ?? created;
       }
 
       // Create or reuse the workspace by name.
       const workspaces = await runtime.runPromise(
-        Effect.orDie(
-          Workspaces.use((store) => store.listWorkspacesForUser(user.id)),
-        ),
+        Effect.orDie(Workspaces.use((store) => store.listWorkspacesForUser(user.id))),
       );
       let workspace = workspaces.find((w) => w.name === wsName);
       if (!workspace) {
         workspace = await runtime.runPromise(
-          Effect.orDie(
-            Workspaces.use((store) => store.createWorkspace(wsName, user.id)),
-          ),
+          Effect.orDie(Workspaces.use((store) => store.createWorkspace(wsName, user.id))),
         );
       }
 
@@ -96,9 +82,7 @@ export const seedDemo = new Command<KvctlGlobals>()
       );
       const essayFresh = !files.some((file) => file.path in demoFiles);
       if (essayFresh) {
-        await runtime.runPromise(
-          Effect.orDie(scoped(seedDemoFiles(), workspace.id)),
-        );
+        await runtime.runPromise(Effect.orDie(scoped(seedDemoFiles(), workspace.id)));
       }
       const notes = notesPath(wsName);
       const notesFresh = !files.some((file) => file.path === notes);
@@ -113,10 +97,9 @@ export const seedDemo = new Command<KvctlGlobals>()
         );
       }
 
-      const seeded = [
-        essayFresh ? "essay and marks" : null,
-        notesFresh ? notes : null,
-      ].filter((s) => s !== null);
+      const seeded = [essayFresh ? "essay and marks" : null, notesFresh ? notes : null].filter(
+        (s) => s !== null,
+      );
       console.log(
         `seeded demo: user '${user.id}' (${user.email}), workspace '${workspace.id}' (${workspace.name})${seeded.length ? `, ${seeded.join(", ")}` : ""}`,
       );

@@ -1,10 +1,6 @@
-import {
-  Files,
-  type PersistenceError,
-  UserState,
-  WorkspaceId,
-} from "@essayist/core";
+import { Files, type PersistenceError, UserState, WorkspaceId } from "@essayist/core";
 import { Effect } from "effect";
+
 import type { FileTreeData } from "#/models/fileTree.data.ts";
 
 export function fileTreeLoader(
@@ -19,9 +15,7 @@ export function fileTreeLoader(
       WorkspaceId,
       { wsId },
     );
-    const persisted = yield* UserState.use((store) =>
-      store.getSelectedFile(userId, wsId),
-    );
+    const persisted = yield* UserState.use((store) => store.getSelectedFile(userId, wsId));
     const known = (p: string | null | undefined): p is string =>
       !!p && files.some((file) => file.path === p);
     const selectedPath = known(fileIntent)
@@ -31,9 +25,7 @@ export function fileTreeLoader(
         : (files[0]?.path ?? null);
     let selectedVersionId = null;
     if (selectedPath) {
-      const fallback =
-        files.find((file) => file.path === selectedPath)?.latestVersionId ??
-        null;
+      const fallback = files.find((file) => file.path === selectedPath)?.latestVersionId ?? null;
       if (versionIntent === undefined) {
         selectedVersionId = fallback;
       } else {
@@ -42,9 +34,7 @@ export function fileTreeLoader(
           WorkspaceId,
           { wsId },
         ).pipe(Effect.catchTag("FileMissingError", (err) => Effect.die(err)));
-        selectedVersionId = versions.some(
-          (version) => version.version_id === versionIntent,
-        )
+        selectedVersionId = versions.some((version) => version.version_id === versionIntent)
           ? versionIntent
           : fallback;
       }

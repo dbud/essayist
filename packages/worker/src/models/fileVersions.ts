@@ -1,7 +1,9 @@
 import type { FileVersion } from "@essayist/core";
 import { createModel, signal } from "@preact/signals";
+
 import createAsyncState from "#/models/utils/asyncState.ts";
 import { getJson } from "#/models/utils/http.ts";
+
 import type { FileVersionsData } from "./fileVersions.data.ts";
 
 export const FileVersionsModel = createModel(
@@ -12,10 +14,10 @@ export const FileVersionsModel = createModel(
 
     async function load(): Promise<void> {
       const params = new URLSearchParams({ wsId, path });
-      const data = await runLoad(async () =>
+      const fresh = await runLoad(async () =>
         getJson<FileVersionsData>(`/api/workspaces/files/versions?${params}`),
       );
-      if (data) versions.value = data;
+      if (fresh) versions.value = fresh;
     }
 
     if (data === undefined && !import.meta.env.SSR) void load();
@@ -23,8 +25,7 @@ export const FileVersionsModel = createModel(
     function byId(versionId: string | null): FileVersion | null {
       return versionId === null
         ? null
-        : (versions.value.find((version) => version.version_id === versionId) ??
-            null);
+        : (versions.value.find((version) => version.version_id === versionId) ?? null);
     }
 
     return { versions, byId, load, loading, error };

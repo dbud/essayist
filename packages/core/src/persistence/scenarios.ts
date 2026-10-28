@@ -4,7 +4,9 @@
  */
 
 import { assert, assertEquals, assertInstanceOf } from "@std/assert";
+import { sortBy } from "@std/collections";
 import { Effect, Result } from "effect";
+
 import { ConcurrentModificationError } from "./mod.ts";
 import { Persistence } from "./service.ts";
 
@@ -67,29 +69,27 @@ const getMany = scenario("getMany reads multiple keys", () =>
   }),
 );
 
-const listSorted = scenario(
-  "list sorts under a prefix, other prefixes out",
-  () =>
-    Effect.gen(function* () {
-      const store = yield* Persistence;
-      yield* store.set(["file:latest", "c"], 3);
-      yield* store.set(["file:latest", "a"], 1);
-      yield* store.set(["file:latest", "b"], 2);
-      yield* store.set(["mark", "1"], "z");
-      const { entries } = yield* store.list<number>(["file:latest"]);
-      assertEquals(
-        entries.map((e) => e.key),
-        [
-          ["file:latest", "a"],
-          ["file:latest", "b"],
-          ["file:latest", "c"],
-        ],
-      );
-      assertEquals(
-        entries.map((e) => e.value),
-        [1, 2, 3],
-      );
-    }),
+const listSorted = scenario("list sorts under a prefix, other prefixes out", () =>
+  Effect.gen(function* () {
+    const store = yield* Persistence;
+    yield* store.set(["file:latest", "c"], 3);
+    yield* store.set(["file:latest", "a"], 1);
+    yield* store.set(["file:latest", "b"], 2);
+    yield* store.set(["mark", "1"], "z");
+    const { entries } = yield* store.list<number>(["file:latest"]);
+    assertEquals(
+      entries.map((e) => e.key),
+      [
+        ["file:latest", "a"],
+        ["file:latest", "b"],
+        ["file:latest", "c"],
+      ],
+    );
+    assertEquals(
+      entries.map((e) => e.value),
+      [1, 2, 3],
+    );
+  }),
 );
 
 const listEverything = scenario("an empty prefix returns everything", () =>
@@ -98,7 +98,11 @@ const listEverything = scenario("an empty prefix returns everything", () =>
     yield* store.set(["a"], 1);
     yield* store.set(["b"], 2);
     const { entries } = yield* store.list([]);
-    assertEquals(entries.map((e) => e.value).sort(), [1, 2]);
+    const values = entries.map((e) => e.value) as number[];
+    assertEquals(
+      sortBy(values, (value) => value),
+      [1, 2],
+    );
   }),
 );
 

@@ -1,6 +1,7 @@
 import type { Mark } from "@essayist/core";
 import { assertEquals } from "@std/assert";
 import { test } from "vitest";
+
 import { reanchorMarks } from "./resolvedMarks.ts";
 
 const base: Mark = {

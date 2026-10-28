@@ -2,8 +2,8 @@
 
 Essayist is a monorepo. `packages/core` (Effect services) and
 `packages/worker` (Hono on Workers, Vite + TypeScript 7) form a pnpm
-workspace; shared dev tooling (Biome, TypeScript, vitest) lives at the
-workspace root. `packages/web` (the Fresh app still serving Deno Deploy),
+workspace; shared dev tooling (oxlint, oxfmt, TypeScript, vitest) lives at
+the workspace root. `packages/web` (the Fresh app still serving Deno Deploy),
 `packages/kvctl`, and `crates/wasm` are a dormant deno workspace kept for
 CI until their migration steps land; see the Linear project "Cloudflare
 migration" (ESS-77 through ESS-90) for phase planning.
@@ -13,26 +13,43 @@ migration" (ESS-77 through ESS-90) for phase planning.
 Commands run from the repo root:
 
 ```
-pnpm check          # Biome check + tsc --noEmit for core and worker
-pnpm fmt            # Biome check --write for core and worker
-pnpm lint           # Biome lint for core and worker
-pnpm test           # core's full test suite (vitest)
+pnpm check          # oxfmt --check, oxlint, then tsc in each package
+pnpm fmt            # oxfmt across the repo
+pnpm lint           # oxlint across the repo
+pnpm test           # vitest across the workspace (core and worker)
 pnpm build          # vite build of the worker package
 ```
 
 Per-package form: `pnpm -C packages/core <script>` and
 `pnpm -C packages/worker <script>`. Scripts on core: check, fmt, lint, test.
+Scripts on kvctl: check, fmt, kvctl, lint.
 Scripts on worker: build, check, deploy, dev, preview, typegen, fmt, lint.
 
 pnpm-workspace.yaml lists `packages/*`, carries the catalog (shared version
-ranges for effect, @deno/kv, typescript, biome, vitest, vite) and the
+ranges for effect, @deno/kv, typescript, oxlint, oxfmt, vitest, vite) and
+the
 pnpm build-script allowances the worker package needs. There is a single
 root pnpm-lock.yaml.
 
-Biome is the single formatter and linter for JS/TS/JSON/CSS; the config is
-the root `biome.json`, discovered by walking up from each package. `pnpm
-fmt` runs `biome check --write`, which also applies organize-imports and
-other safe assists (matching what the old deno task did).
+oxlint and oxfmt are the single linter and formatter; the configs are
+the root `.oxlintrc.json` and `.oxfmtrc.json`, discovered by walking up
+from each package. `pnpm fmt` runs `oxfmt .`, which also sorts imports
+and package.json fields. `pnpm check` starts with `oxfmt --check .`
+(formatting must be clean) and `oxlint --deny-warnings .` (any finding
+fails). Inline suppressions read
+`// oxlint-disable-next-line <rule> -- <reason>`. The dormant deno tier
+stays outside the oxc gate: `packages/web`, the deno manifests, and
+`patches` sit in the configs' ignore patterns; drop those entries when
+the tier retires.
+
+Benchmarks are `*.bench.ts` files next to the sources (see
+`packages/core/src/marks/tokenized.bench.ts`); run with
+`pnpm -C packages/core exec vitest bench`. The regular `pnpm test`
+ignores them.
+
+Mechanical reformat commits are listed in the root
+`.git-blame-ignore-revs`; git reads that file per clone:
+`git config blame.ignoreRevsFile .git-blame-ignore-revs`.
 
 Type checking is `tsc --noEmit` (TypeScript 7) in each package; the
 workspace root's binaries are on PATH for member scripts. core's tsconfig

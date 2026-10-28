@@ -3,6 +3,7 @@ import { assert, assertEquals, assertInstanceOf } from "@std/assert";
 import { assertObjectMatch } from "@std/assert/object-match";
 import { Effect, Layer, Result } from "effect";
 import { test } from "vitest";
+
 import type { Mark } from "#/marks/types.ts";
 import { kvLayer } from "#/persistence/kv_layer.ts";
 import {
@@ -12,14 +13,13 @@ import {
 } from "#/persistence/mod.ts";
 import { testLayer } from "#/persistence/testing/kv.ts";
 import { WorkspaceId } from "#/workspace/WorkspaceId.ts";
+
 import { Files } from "./service.ts";
 import { FileMissingError } from "./types.ts";
 
 type E = PersistenceError | ConcurrentModificationError | FileMissingError;
 
-const run = <A>(
-  program: Effect.Effect<A, E, Files | WorkspaceId>,
-): Promise<A> =>
+const run = <A>(program: Effect.Effect<A, E, Files | WorkspaceId>): Promise<A> =>
   Effect.runPromise(
     Effect.provide(
       Effect.provideService(program, WorkspaceId, { wsId: "default" }),
@@ -90,9 +90,7 @@ test("Files.read -- unknown version fails", async () => {
     Effect.gen(function* () {
       const files = yield* Files;
       yield* files.write("f.txt", "original");
-      const outcome = yield* Effect.result(
-        files.read("f.txt", "no_such_version"),
-      );
+      const outcome = yield* Effect.result(files.read("f.txt", "no_such_version"));
       if (Result.isSuccess(outcome)) {
         throw new Error("an unknown version read succeeded");
       }
@@ -228,10 +226,7 @@ test("Files.readDraft -- null when the version is not the latest", async () => {
       const history = yield* files.getVersions("f.txt");
       const head = yield* files.readDraft("f.txt", history[1].version_id);
       assertEquals(head?.content, "draft text");
-      assertEquals(
-        yield* files.readDraft("f.txt", history[0].version_id),
-        null,
-      );
+      assertEquals(yield* files.readDraft("f.txt", history[0].version_id), null);
     }),
   );
 });
@@ -336,11 +331,7 @@ test("Files.diff -- between versions", async () => {
       yield* files.write("f.txt", "line1\nline2\nline3");
       yield* files.write("f.txt", "line1\nmodified\nline3");
       const history = yield* files.getVersions("f.txt");
-      const { diff } = yield* files.diff(
-        "f.txt",
-        history[0].version_id,
-        history[1].version_id,
-      );
+      const { diff } = yield* files.diff("f.txt", history[0].version_id, history[1].version_id);
       assertEquals(diff.includes("-line2"), true);
       assertEquals(diff.includes("+modified"), true);
     }),
@@ -385,9 +376,7 @@ test("Files -- large document roundtrips", async () => {
 // marks storage (marks synthesized with saveMark; placement lands with the
 // Marks service)
 
-function createMark(
-  overrides: Partial<Mark> & { selected_text: string },
-): Mark {
+function createMark(overrides: Partial<Mark> & { selected_text: string }): Mark {
   const {
     id = `mark_${Math.random().toString(36).slice(2)}`,
     thread_id = `thread_${Math.random().toString(36).slice(2)}`,
@@ -437,12 +426,8 @@ test("Files.getMarks -- returns all marks for a version in save order", async ()
     Effect.gen(function* () {
       const files = yield* Files;
       const v1 = (yield* files.write("f.txt", "hello world")).version_id;
-      yield* files.saveMark(
-        createMark({ version_id: v1, selected_text: "hello" }),
-      );
-      yield* files.saveMark(
-        createMark({ version_id: v1, selected_text: "world", offset: 6 }),
-      );
+      yield* files.saveMark(createMark({ version_id: v1, selected_text: "hello" }));
+      yield* files.saveMark(createMark({ version_id: v1, selected_text: "world", offset: 6 }));
 
       const marks = yield* files.getMarks("f.txt", v1);
       assertEquals(marks.length, 2);
@@ -482,8 +467,7 @@ test("Files -- marks are isolated per workspace scope", async () => {
       const files = yield* Files;
       const inA = Effect.provideService(
         Effect.gen(function* () {
-          const v = (yield* files.write("f.txt", "the quick brown fox"))
-            .version_id;
+          const v = (yield* files.write("f.txt", "the quick brown fox")).version_id;
           yield* files.saveMark(
             createMark({
               version_id: v,
@@ -498,19 +482,14 @@ test("Files -- marks are isolated per workspace scope", async () => {
         { wsId: "ws-a" },
       );
       yield* inA;
-      yield* Effect.provideService(
-        files.write("f.txt", "the quick brown fox"),
-        WorkspaceId,
-        { wsId: "ws-b" },
-      );
+      yield* Effect.provideService(files.write("f.txt", "the quick brown fox"), WorkspaceId, {
+        wsId: "ws-b",
+      });
 
       const a = yield* Effect.provideService(
         Effect.gen(function* () {
           const versions = yield* files.getVersions("f.txt");
-          return yield* files.getMarks(
-            "f.txt",
-            versions[versions.length - 1].version_id,
-          );
+          return yield* files.getMarks("f.txt", versions[versions.length - 1].version_id);
         }),
         WorkspaceId,
         { wsId: "ws-a" },
@@ -518,10 +497,7 @@ test("Files -- marks are isolated per workspace scope", async () => {
       const b = yield* Effect.provideService(
         Effect.gen(function* () {
           const versions = yield* files.getVersions("f.txt");
-          return yield* files.getMarks(
-            "f.txt",
-            versions[versions.length - 1].version_id,
-          );
+          return yield* files.getMarks("f.txt", versions[versions.length - 1].version_id);
         }),
         WorkspaceId,
         { wsId: "ws-b" },
@@ -537,11 +513,8 @@ test("Files.write -- migrates marks to the new version when text unchanged", asy
     Effect.gen(function* () {
       const files = yield* Files;
       const v1 = (yield* files.write("f.txt", "hello world")).version_id;
-      yield* files.saveMark(
-        createMark({ version_id: v1, selected_text: "hello", offset: 0 }),
-      );
-      const v2 = (yield* files.write("f.txt", "hello beautiful world"))
-        .version_id;
+      yield* files.saveMark(createMark({ version_id: v1, selected_text: "hello", offset: 0 }));
+      const v2 = (yield* files.write("f.txt", "hello beautiful world")).version_id;
 
       const marks = yield* files.getMarks("f.txt", v2);
       assertEquals(marks.length, 1);
@@ -559,11 +532,8 @@ test("Files.write -- migrates marks with shifted offset", async () => {
     Effect.gen(function* () {
       const files = yield* Files;
       const v1 = (yield* files.write("f.txt", "hello world")).version_id;
-      yield* files.saveMark(
-        createMark({ version_id: v1, selected_text: "world", offset: 6 }),
-      );
-      const v2 = (yield* files.write("f.txt", "hello beautiful world"))
-        .version_id;
+      yield* files.saveMark(createMark({ version_id: v1, selected_text: "world", offset: 6 }));
+      const v2 = (yield* files.write("f.txt", "hello beautiful world")).version_id;
 
       const marks = yield* files.getMarks("f.txt", v2);
       assertEquals(marks.length, 1);
@@ -577,9 +547,7 @@ test("Files.write -- marks become stale when text is deleted", async () => {
     Effect.gen(function* () {
       const files = yield* Files;
       const v1 = (yield* files.write("f.txt", "hello world")).version_id;
-      yield* files.saveMark(
-        createMark({ version_id: v1, selected_text: "world", offset: 6 }),
-      );
+      yield* files.saveMark(createMark({ version_id: v1, selected_text: "world", offset: 6 }));
       const v2 = (yield* files.write("f.txt", "hello")).version_id;
 
       const marks = yield* files.getMarks("f.txt", v2);
@@ -594,9 +562,7 @@ test("Files.write -- stale marks survive subsequent writes", async () => {
     Effect.gen(function* () {
       const files = yield* Files;
       const v1 = (yield* files.write("f.txt", "hello world")).version_id;
-      yield* files.saveMark(
-        createMark({ version_id: v1, selected_text: "world", offset: 6 }),
-      );
+      yield* files.saveMark(createMark({ version_id: v1, selected_text: "world", offset: 6 }));
       const v2 = (yield* files.write("f.txt", "hello")).version_id;
       assertEquals((yield* files.getMarks("f.txt", v2))[0].status, "stale");
 
@@ -642,15 +608,11 @@ test("Files.migrateMarks -- re-anchors marks added to an old version", async () 
     Effect.gen(function* () {
       const files = yield* Files;
       const v1 = (yield* files.write("f.txt", "hello world")).version_id;
-      yield* files.saveMark(
-        createMark({ version_id: v1, selected_text: "hello", offset: 0 }),
-      );
+      yield* files.saveMark(createMark({ version_id: v1, selected_text: "hello", offset: 0 }));
       yield* files.write("f.txt", "hello beautiful world");
 
       // Added to v1 after the write, so the write migration missed it.
-      yield* files.saveMark(
-        createMark({ version_id: v1, selected_text: "world", offset: 6 }),
-      );
+      yield* files.saveMark(createMark({ version_id: v1, selected_text: "world", offset: 6 }));
 
       const result = yield* files.migrateMarks("f.txt", v1);
       const latest = yield* files.read("f.txt");
@@ -671,9 +633,7 @@ test("Files.migrateMarks -- skips marks already on the latest", async () => {
     Effect.gen(function* () {
       const files = yield* Files;
       const v1 = (yield* files.write("f.txt", "hello world")).version_id;
-      yield* files.saveMark(
-        createMark({ version_id: v1, selected_text: "hello", offset: 0 }),
-      );
+      yield* files.saveMark(createMark({ version_id: v1, selected_text: "hello", offset: 0 }));
       yield* files.write("f.txt", "hello there");
 
       const result = yield* files.migrateMarks("f.txt", v1);
@@ -690,9 +650,7 @@ test("Files.migrateMarks -- no-op when source version is latest", async () => {
     Effect.gen(function* () {
       const files = yield* Files;
       const v1 = (yield* files.write("f.txt", "hello world")).version_id;
-      yield* files.saveMark(
-        createMark({ version_id: v1, selected_text: "hello", offset: 0 }),
-      );
+      yield* files.saveMark(createMark({ version_id: v1, selected_text: "hello", offset: 0 }));
 
       const result = yield* files.migrateMarks("f.txt", v1);
       assertEquals(result, { migrated: 0, stale: 0 });
@@ -707,9 +665,7 @@ test("Files.migrateMarks -- resolves shifted text", async () => {
       const files = yield* Files;
       const v1 = (yield* files.write("f.txt", "alpha beta")).version_id;
       yield* files.write("f.txt", "alpha gamma beta");
-      yield* files.saveMark(
-        createMark({ version_id: v1, selected_text: "beta", offset: 6 }),
-      );
+      yield* files.saveMark(createMark({ version_id: v1, selected_text: "beta", offset: 6 }));
 
       const result = yield* files.migrateMarks("f.txt", v1);
       const latest = yield* files.read("f.txt");
@@ -731,9 +687,7 @@ test("Files.migrateMarks -- marks go stale when text is gone", async () => {
       const files = yield* Files;
       const v1 = (yield* files.write("f.txt", "hello world")).version_id;
       yield* files.write("f.txt", "completely different");
-      yield* files.saveMark(
-        createMark({ version_id: v1, selected_text: "world", offset: 6 }),
-      );
+      yield* files.saveMark(createMark({ version_id: v1, selected_text: "world", offset: 6 }));
 
       const result = yield* files.migrateMarks("f.txt", v1);
       const latest = yield* files.read("f.txt");
@@ -761,10 +715,7 @@ test("Files.migrateMarks -- returns zeros for unknown version", async () => {
 test("Files -- small file inlines content in the latest key (no chunk keys)", async () => {
   const kv = await openKv();
   try {
-    const env = Layer.merge(
-      kvLayer(kv),
-      Layer.provide(Files.layerNoDeps, kvLayer(kv)),
-    );
+    const env = Layer.merge(kvLayer(kv), Layer.provide(Files.layerNoDeps, kvLayer(kv)));
     const { entries } = await Effect.runPromise(
       Effect.provide(
         Effect.provideService(
@@ -780,16 +731,12 @@ test("Files -- small file inlines content in the latest key (no chunk keys)", as
         env,
       ),
     );
-    const manifestKeys = entries.filter(
-      (e) => e.key[e.key.length - 1] === "file:manifest",
-    );
-    const chunkKeys = entries.filter(
-      (e) => e.key[e.key.length - 2] === "file:chunk",
-    );
+    const manifestKeys = entries.filter((e) => e.key[e.key.length - 1] === "file:manifest");
+    const chunkKeys = entries.filter((e) => e.key[e.key.length - 2] === "file:chunk");
     assertEquals(manifestKeys.length, 1);
     assertEquals(chunkKeys.length, 0, "small file must not write chunk keys");
   } finally {
-    await kv.close();
+    kv.close();
   }
 });
 
@@ -797,10 +744,7 @@ test("Files -- large write inlines first chunk, rest as chunk keys", async () =>
   const content = largeContent();
   const kv = await openKv();
   try {
-    const env = Layer.merge(
-      kvLayer(kv),
-      Layer.provide(Files.layerNoDeps, kvLayer(kv)),
-    );
+    const env = Layer.merge(kvLayer(kv), Layer.provide(Files.layerNoDeps, kvLayer(kv)));
     const { entries } = await Effect.runPromise(
       Effect.provide(
         Effect.provideService(
@@ -816,17 +760,11 @@ test("Files -- large write inlines first chunk, rest as chunk keys", async () =>
         env,
       ),
     );
-    const manifestKeys = entries.filter(
-      (e) => e.key[e.key.length - 1] === "file:manifest",
-    );
-    const chunkKeys = entries.filter(
-      (e) => e.key[e.key.length - 2] === "file:chunk",
-    );
+    const manifestKeys = entries.filter((e) => e.key[e.key.length - 1] === "file:manifest");
+    const chunkKeys = entries.filter((e) => e.key[e.key.length - 2] === "file:chunk");
     assertEquals(manifestKeys.length, 1);
     // Chunk 0 is inlined in the manifest; chunk keys start at index 1.
-    const indices = chunkKeys
-      .map((e) => Number(e.key[e.key.length - 1]))
-      .sort((a, b) => a - b);
+    const indices = chunkKeys.map((e) => Number(e.key[e.key.length - 1])).toSorted((a, b) => a - b);
     assertEquals(indices[0], 1);
     assert(chunkKeys.length > 1, "should produce multiple chunk keys");
     for (const e of chunkKeys) {
@@ -834,6 +772,6 @@ test("Files -- large write inlines first chunk, rest as chunk keys", async () =>
       assert(v.length <= 60 * 1024, "chunk must respect CHUNK_SIZE");
     }
   } finally {
-    await kv.close();
+    kv.close();
   }
 });

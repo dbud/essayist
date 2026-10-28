@@ -7,7 +7,9 @@
 import type * as D1Client from "@effect/sql-d1/D1Client";
 import { Clock, Effect, Layer, Option, Schema, SchemaGetter } from "effect";
 import { SqlSchema } from "effect/sql";
+
 import { PersistenceError } from "#/persistence/service.ts";
+
 import { AuthStore } from "./service.ts";
 import { Session, SessionTokens } from "./types.ts";
 
@@ -47,18 +49,14 @@ const RefreshTokenRow = Schema.Struct({
 
 const RefreshTokenFromRow = RefreshTokenRow.pipe(
   Schema.decodeTo(Schema.NonEmptyString, {
-    decode: SchemaGetter.transform(
-      (row: typeof RefreshTokenRow.Type) => row.refreshToken,
-    ),
+    decode: SchemaGetter.transform((row: typeof RefreshTokenRow.Type) => row.refreshToken),
     encode: SchemaGetter.forbiddenEncoding,
   }),
 );
 
 const backendFault = (cause: unknown) => new PersistenceError({ cause });
 
-export function layerAuthD1(
-  client: D1Client.D1Client,
-): Layer.Layer<AuthStore, PersistenceError> {
+export function layerAuthD1(client: D1Client.D1Client): Layer.Layer<AuthStore, PersistenceError> {
   // TODO -- this DDL batch runs on every isolate spin-up; consider a
   // schema version check to skip it when the schema already exists
   // (ESS-92)
@@ -104,8 +102,7 @@ export function layerAuthD1(
 
   const insertSession = SqlSchema.void({
     Request: SessionRow,
-    execute: (session) =>
-      client`INSERT INTO auth_session ${client.insert([session])}`,
+    execute: (session) => client`INSERT INTO auth_session ${client.insert([session])}`,
   });
 
   const updateSessionRow = SqlSchema.void({
@@ -152,9 +149,7 @@ export function layerAuthD1(
   // the token refresh flow needs tokens. A tokens-free read variant
   // would lighten the hot path. (ESS-92)
 
-  const getSession = (
-    id: string,
-  ): Effect.Effect<Session | undefined, PersistenceError> =>
+  const getSession = (id: string): Effect.Effect<Session | undefined, PersistenceError> =>
     Effect.mapError(
       Effect.flatMap(Clock.currentTimeMillis, (now) =>
         Effect.map(findSessionRow({ id: id, now: now }), (option) =>
@@ -199,13 +194,8 @@ export function layerAuthD1(
       backendFault,
     );
 
-  const getRefreshToken = (
-    userId: string,
-  ): Effect.Effect<string | undefined, PersistenceError> =>
-    Effect.mapError(
-      Effect.map(findRefreshToken(userId), Option.getOrUndefined),
-      backendFault,
-    );
+  const getRefreshToken = (userId: string): Effect.Effect<string | undefined, PersistenceError> =>
+    Effect.mapError(Effect.map(findRefreshToken(userId), Option.getOrUndefined), backendFault);
 
   return Layer.unwrap(
     Effect.gen(function* () {

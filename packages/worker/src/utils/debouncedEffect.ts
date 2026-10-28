@@ -16,7 +16,7 @@ export function debouncedEffect(
 ): () => void {
   let timer: ReturnType<typeof setTimeout> | undefined;
   const dispose = effect(() => {
-    source.value;
+    void source.value;
     clearTimeout(timer);
     timer = setTimeout(action, options.delay());
   });

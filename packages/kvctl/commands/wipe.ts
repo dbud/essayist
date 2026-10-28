@@ -1,6 +1,7 @@
 import { Command } from "@cliffy/command";
 import { type Key, Persistence, type WriteOp } from "@essayist/core";
 import { Effect } from "effect";
+
 import type { KvctlGlobals } from "#/globals.ts";
 import { listAll, withStore } from "#/kv.ts";
 
@@ -20,9 +21,7 @@ export const wipe = new Command<KvctlGlobals>()
       await runtime.runPromise(
         Effect.gen(function* () {
           const store = yield* Persistence;
-          yield* store.batch(
-            keys.map((key): WriteOp => ({ type: "delete", key })),
-          );
+          yield* store.batch(keys.map((key): WriteOp => ({ type: "delete", key })));
         }),
       );
       console.log(`deleted ${keys.length} keys`);

@@ -1,6 +1,7 @@
 import { useSignal } from "@preact/signals";
 import { Download } from "lucide-preact";
 import { useEffect, useRef } from "preact/hooks";
+
 import type { PickerDoc } from "#/client/googlePicker.ts";
 import WaveBars from "#/components/ui/WaveBars.tsx";
 import { showToast } from "#/models/utils/toast.ts";
@@ -26,9 +27,7 @@ export default function GoogleDocImporter() {
       return;
     }
     importing.value = true;
-    const toast = showToast(
-      `Importing ${formatCount(docs.length, "document")}…`,
-    );
+    const toast = showToast(`Importing ${formatCount(docs.length, "document")}…`);
     const errors: string[] = [];
     let firstPath: string | null = null;
 
@@ -78,7 +77,7 @@ export default function GoogleDocImporter() {
       if (e.origin !== globalThis.location.origin) return;
       const data = e.data as PickedMessage | undefined;
       if (data?.type !== "picked" || !Array.isArray(data.docs)) return;
-      runImport(data.docs);
+      void runImport(data.docs);
     }
     globalThis.addEventListener("message", onMessage);
     return () => globalThis.removeEventListener("message", onMessage);

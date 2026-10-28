@@ -1,15 +1,15 @@
 import { assertEquals } from "@std/assert";
 import { test } from "vitest";
+
 import type { FlowEvent, NodeKind } from "#/flow/types.ts";
 import type { ReviewTypes } from "#/reviews/graph.ts";
+
 import type { TraceEvent } from "./types.ts";
 import { groupTraceNodes } from "./view.ts";
 
 /** Stamps seq and a wall clock so folds see realistic trace entries. */
 function trace(events: FlowEvent<ReviewTypes>[]): TraceEvent[] {
-  return events.map(
-    (event, seq) => ({ ...event, seq, at: 100 + seq }) as TraceEvent,
-  );
+  return events.map((event, seq) => ({ ...event, seq, at: 100 + seq }));
 }
 
 test("groupTraceNodes -- groups custom events under their node", () => {
@@ -238,9 +238,7 @@ test("groupTraceNodes -- a skipped node opens its own section", () => {
 });
 
 test("groupTraceNodes -- attaches kind when a map is supplied", () => {
-  const kindOf = new Map<string, NodeKind<ReviewTypes>>([
-    ["analyze", "analyze"],
-  ]);
+  const kindOf = new Map<string, NodeKind<ReviewTypes>>([["analyze", "analyze"]]);
   const { nodes } = groupTraceNodes(
     trace([
       { type: "node_start", nodeId: "analyze" },

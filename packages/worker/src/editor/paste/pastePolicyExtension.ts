@@ -6,6 +6,7 @@ import {
 } from "@lexical/clipboard";
 import { $generateNodesFromDOM } from "@lexical/html";
 import { $getEditor, configExtension, defineExtension } from "lexical";
+
 import { HtmlSanitizer } from "./htmlSanitizer.ts";
 import { JsonSanitizer } from "./jsonSanitizer.ts";
 import { defaultPastePolicy, type PastePolicy } from "./policy.ts";
@@ -23,19 +24,14 @@ function createJsonImporter(policy: PastePolicy): ImportMimeTypeFunction {
     if (
       typeof payload !== "object" ||
       payload === null ||
-      (payload as { namespace?: unknown }).namespace !==
-        editor._config.namespace
+      (payload as { namespace?: unknown }).namespace !== editor._config.namespace
     ) {
       return $next();
     }
     const { nodes } = payload as { nodes?: unknown };
     if (!Array.isArray(nodes)) return $next();
     const sanitized = sanitizer.sanitize(nodes);
-    $insertGeneratedNodes(
-      editor,
-      $generateNodesFromSerializedNodes(sanitized),
-      selection,
-    );
+    $insertGeneratedNodes(editor, $generateNodesFromSerializedNodes(sanitized), selection);
     return true;
   };
 }
@@ -61,9 +57,7 @@ export const PastePolicyExtension = defineExtension({
   dependencies: [
     configExtension(ClipboardImportExtension, {
       $importMimeType: {
-        "application/x-lexical-editor": [
-          createJsonImporter(defaultPastePolicy),
-        ],
+        "application/x-lexical-editor": [createJsonImporter(defaultPastePolicy)],
         "text/html": [createHtmlImporter(defaultPastePolicy)],
       },
     }),

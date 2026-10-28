@@ -3,21 +3,13 @@ import type { Category, ResolvedPrompts } from "#/config/types.ts";
 import type { Artifact, Artifacts, ArtifactType } from "#/flow/types.ts";
 import type { ReviewTypes } from "#/reviews/graph.ts";
 import type { MarkAttempt } from "#/reviews/types.ts";
-import {
-  bulletList,
-  joinBlocks,
-  joinLines,
-  listOf,
-  section,
-} from "#/text/markdown.ts";
+import { bulletList, joinBlocks, joinLines, listOf, section } from "#/text/markdown.ts";
+
 import type { Analysis } from "./analyze.ts";
 import type { MarkProposal } from "./mark.ts";
 
 /** Renders a prompt for a model call: delegates to renderTemplate. */
-export function renderPrompt(
-  body: string,
-  variables?: Record<string, string>,
-): string {
+export function renderPrompt(body: string, variables?: Record<string, string>): string {
   return renderTemplate(body, variables);
 }
 
@@ -25,17 +17,13 @@ export function renderPrompt(
  * The unit's allowed mark labels, with descriptions, as a prompt section;
  * undefined for units that place no marks.
  */
-export function renderCategories(
-  categories: readonly Category[],
-): string | undefined {
+export function renderCategories(categories: readonly Category[]): string | undefined {
   if (categories.length === 0) return undefined;
   return joinBlocks(
     section("Allowed labels"),
     bulletList(
       categories.map((category) =>
-        category.description
-          ? `${category.label}: ${category.description}`
-          : category.label,
+        category.description ? `${category.label}: ${category.description}` : category.label,
       ),
     ),
   );
@@ -52,9 +40,7 @@ const ARTIFACT_RENDERERS = {
   "mark.failed": renderFailedMarks,
   summary: renderSummary,
 } satisfies {
-  [A in ArtifactType<ReviewTypes>]: (
-    data: ReviewTypes["artifacts"][A],
-  ) => string;
+  [A in ArtifactType<ReviewTypes>]: (data: ReviewTypes["artifacts"][A]) => string;
 };
 
 function renderArtifact(artifact: Artifact<ReviewTypes>): string {
@@ -92,8 +78,7 @@ function renderAnalysis(analysis: Analysis): string {
       listOf(
         "Outline:",
         analysis.outline.map(
-          (entry) =>
-            `lines ${entry.first_line}-${entry.last_line}: ${entry.gist}`,
+          (entry) => `lines ${entry.first_line}-${entry.last_line}: ${entry.gist}`,
         ),
       ),
       listOf("Strengths:", analysis.strengths),
@@ -127,10 +112,7 @@ function renderAttemptList(
 /** Build the input of a model call: the unit's prompts followed by the
  * rendered dependency artifacts in dependsOn order. The adapter wires the
  * essay last, so it anchors the prompt. */
-export function composeCallInput(
-  prompts: ResolvedPrompts,
-  inputs: Artifacts<ReviewTypes>,
-): string {
+export function composeCallInput(prompts: ResolvedPrompts, inputs: Artifacts<ReviewTypes>): string {
   return joinBlocks(
     prompts.system,
     prompts.instructions,
@@ -171,10 +153,7 @@ function failedAttemptBody(attempt: MarkAttempt, essay: string): string {
   const lines = essay.split("\n");
   const hint = attempt.line_hint;
   const from = Math.max(1, (hint ?? 1) - REPAIR_CONTEXT_LINES);
-  const to = Math.min(
-    lines.length,
-    (hint ?? lines.length) + REPAIR_CONTEXT_LINES,
-  );
+  const to = Math.min(lines.length, (hint ?? lines.length) + REPAIR_CONTEXT_LINES);
   return joinLines(
     `Attempted span: "${attempt.selected_text}"`,
     `Comment: ${attempt.comment}`,

@@ -52,11 +52,7 @@
     background-color: color-mix(in oklch, var(--color-paper) 100%, transparent);
 
     &.is-active {
-      background-color: color-mix(
-        in oklch,
-        var(--mark-color) var(--mark-active-pct),
-        transparent
-      );
+      background-color: color-mix(in oklch, var(--mark-color) var(--mark-active-pct), transparent);
     }
     &.is-ghost {
       @apply pointer-events-auto sticky top-0 w-full;
@@ -114,22 +110,14 @@
     margin-inline: var(--panel-bleed);
 
     &.is-covered-top {
-      --panel-shadow-alpha-up: calc(
-        var(--occlusion-top, 0) *
-        var(--panel-shadow-strength)
-      );
-      --panel-shadow-up: 0 calc(-1 * var(--panel-shadow-offset))
-        var(--panel-shadow-blur) calc(-1 * var(--panel-shadow-offset))
-        rgb(0 0 0 / var(--panel-shadow-alpha-up));
+      --panel-shadow-alpha-up: calc(var(--occlusion-top, 0) * var(--panel-shadow-strength));
+      --panel-shadow-up: 0 calc(-1 * var(--panel-shadow-offset)) var(--panel-shadow-blur)
+        calc(-1 * var(--panel-shadow-offset)) rgb(0 0 0 / var(--panel-shadow-alpha-up));
     }
     &.is-covered-bottom {
-      --panel-shadow-alpha-down: calc(
-        var(--occlusion-bottom, 0) *
-        var(--panel-shadow-strength)
-      );
+      --panel-shadow-alpha-down: calc(var(--occlusion-bottom, 0) * var(--panel-shadow-strength));
       --panel-shadow-down: 0 var(--panel-shadow-offset) var(--panel-shadow-blur)
-        calc(-1 * var(--panel-shadow-offset))
-        rgb(0 0 0 / var(--panel-shadow-alpha-down));
+        calc(-1 * var(--panel-shadow-offset)) rgb(0 0 0 / var(--panel-shadow-alpha-down));
     }
   }
   .sidenote-number {

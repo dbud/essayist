@@ -1,16 +1,12 @@
 import { useModel } from "@preact/signals";
+import { unreachable } from "@std/assert";
 import { ChevronDown } from "lucide-preact";
-import Dropdown, {
-  DropdownItem,
-  DropdownMenu,
-} from "#/components/ui/Dropdown.tsx";
+
+import Dropdown, { DropdownItem, DropdownMenu } from "#/components/ui/Dropdown.tsx";
 import { CheckboxIcon } from "#/components/ui/icons.tsx";
 import type { FileContent } from "#/models/fileContent.ts";
 import { FileStatsModel } from "#/models/fileStats.ts";
-import {
-  type FileStatSection,
-  fileStatsSections,
-} from "#/signals/preferences.ts";
+import { type FileStatSection, fileStatsSections } from "#/signals/preferences.ts";
 import { formatCount } from "#/utils/format.ts";
 
 interface FileStatsProps {
@@ -36,11 +32,9 @@ export default function FileStats({ file }: FileStatsProps) {
       case "chars":
         return formatCount(stats.charCount.value, "char");
       case "charsWithSpaces":
-        return formatCount(
-          stats.charCountWithSpaces.value,
-          "char w/ space",
-          "chars w/ spaces",
-        );
+        return formatCount(stats.charCountWithSpaces.value, "char w/ space", "chars w/ spaces");
+      default:
+        unreachable("statValue: unknown stat section");
     }
   }
 
@@ -75,10 +69,7 @@ export default function FileStats({ file }: FileStatsProps) {
       {() => (
         <DropdownMenu>
           {STAT_OPTIONS.map((opt) => (
-            <DropdownItem
-              key={opt.value}
-              onClick={() => toggleSection(opt.value)}
-            >
+            <DropdownItem key={opt.value} onClick={() => toggleSection(opt.value)}>
               <CheckboxIcon selected={enabled.includes(opt.value)} size={15} />
               {opt.label}
             </DropdownItem>

@@ -8,6 +8,7 @@ import {
   type BaseSelection,
   type RangeSelection,
 } from "lexical";
+
 import {
   $collectTextNodeSpans,
   findPosition,
@@ -95,10 +96,7 @@ export function $saveSelection(spans: TextNodeSpan[]): SavedSelection {
  * would drop a collapsed caret's toggled format (italic, bold, code) on every
  * re-mark.
  */
-export function $restoreSelection(
-  saved: SavedSelection,
-  content?: string,
-): void {
+export function $restoreSelection(saved: SavedSelection, content?: string): void {
   const clone = saved.selection;
   if (saved.anchor !== null && saved.focus !== null) {
     const md = content ?? $convertToMarkdownString(TRANSFORMERS, $getRoot());

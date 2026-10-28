@@ -1,23 +1,19 @@
 import { assertEquals } from "@std/assert";
 import { test } from "vitest";
+
 import { bulletList, joinBlocks, joinLines, listOf } from "./markdown.ts";
 
 test("joinBlocks -- drops empty blocks and flattens one level", () => {
-  assertEquals(
-    joinBlocks("a", "", undefined, false, ["b", "c"], [], "d"),
-    "a\n\nb\n\nc\n\nd",
-  );
+  assertEquals(joinBlocks("a", "", undefined, false, ["b", "c"], [], "d"), "a\n\nb\n\nc\n\nd");
 });
 
 test("joinBlocks -- undelivered conditionals produce no blocks", () => {
+  // oxlint-disable-next-line eslint/no-constant-binary-expression -- fixture by design
   assertEquals(joinBlocks("a", true && "b", false && "c"), "a\n\nb");
 });
 
 test("joinLines -- keeps blank separator lines", () => {
-  assertEquals(
-    joinLines("a", "", "b", undefined, false, ["c", "d"]),
-    "a\n\nb\nc\nd",
-  );
+  assertEquals(joinLines("a", "", "b", undefined, false, ["c", "d"]), "a\n\nb\nc\nd");
 });
 
 test("bulletList -- one bullet per item", () => {
@@ -25,10 +21,7 @@ test("bulletList -- one bullet per item", () => {
 });
 
 test("listOf -- bulleted items under the header, undefined when empty", () => {
-  assertEquals(
-    listOf("Strengths:", ["one", "two"]),
-    "## Strengths:\n\n- one\n- two",
-  );
+  assertEquals(listOf("Strengths:", ["one", "two"]), "## Strengths:\n\n- one\n- two");
   assertEquals(listOf("Strengths:", []), undefined);
 });
 

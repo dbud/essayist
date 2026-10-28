@@ -4,13 +4,11 @@
 // under the caller's WorkspaceId scope.
 
 import { Effect } from "effect";
+
 import { Files } from "#/files/service.ts";
 import type { FileMissingError } from "#/files/types.ts";
 import { Marks } from "#/marks/service.ts";
-import type {
-  ConcurrentModificationError,
-  PersistenceError,
-} from "#/persistence/mod.ts";
+import type { ConcurrentModificationError, PersistenceError } from "#/persistence/mod.ts";
 import type { WorkspaceId } from "#/workspace/WorkspaceId.ts";
 
 /** The demo essay content, keyed by workspace path. Paragraphs are

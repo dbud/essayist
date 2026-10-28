@@ -1,12 +1,12 @@
 import { assertEquals } from "@std/assert";
 import { assertObjectMatch } from "@std/assert/object-match";
 import { test } from "vitest";
+
 import type { Mark } from "#/marks/types.ts";
+
 import { type ResolveOptions, resolveMarks } from "./resolver.ts";
 
-function createMark(
-  overrides: Partial<Mark> & { selected_text: string },
-): Mark {
+function createMark(overrides: Partial<Mark> & { selected_text: string }): Mark {
   const {
     id = `mark_${Math.random().toString(36).slice(2)}`,
     thread_id,
@@ -46,10 +46,7 @@ function resolve(
   newContent: string,
   options?: ResolveOptions,
 ): Mark[] {
-  return resolveMarks(
-    { marks, oldContent, newContent },
-    options as Parameters<typeof resolveMarks>[1],
-  );
+  return resolveMarks({ marks, oldContent, newContent }, options);
 }
 
 // Arithmetic mapping (unchanged region)
@@ -64,8 +61,7 @@ test("resolveMarks -- pure insertion inside mark region (no division by zero)", 
     The mark expands to include the inserted text.
   */
   const oldContent = "It has been used as a typing test since the late 1800s.";
-  const newContent =
-    "It has been used as a typing test since the aaaaaa late 1800s.";
+  const newContent = "It has been used as a typing test since the aaaaaa late 1800s.";
   const insertionLen = "aaaaaa ".length;
   const markStart = oldContent.indexOf("since the late");
   const marks = [
@@ -84,10 +80,7 @@ test("resolveMarks -- pure insertion inside mark region (no division by zero)", 
     status: "resolved",
     offset: markStart,
     length: "since the late".length + insertionLen,
-    selected_text: newContent.slice(
-      markStart,
-      markStart + "since the late".length + insertionLen,
-    ),
+    selected_text: newContent.slice(markStart, markStart + "since the late".length + insertionLen),
   });
 });
 
@@ -254,8 +247,7 @@ test("resolveMarks -- sentence completely rewritten, both contexts intact", () =
              after_context " patience and dedication" matches identically
              gap = "an art that demands" -> resolved
   */
-  const oldContent =
-    "Writing is a craft that requires patience and dedication.";
+  const oldContent = "Writing is a craft that requires patience and dedication.";
   const newContent = "Writing is an art that demands patience and dedication.";
   const marks = [
     createMark({
@@ -299,11 +291,8 @@ test("resolveMarks -- paragraph rewritten, context fuzzy-matches at boundary", (
   const marks = [
     createMark({
       selected_text: "The entire paragraph needs complete revision.",
-      offset: oldContent.indexOf(
-        "The entire paragraph needs complete revision.",
-      ),
-      before_context:
-        "The conclusion of the previous section was clear and well supported. ",
+      offset: oldContent.indexOf("The entire paragraph needs complete revision."),
+      before_context: "The conclusion of the previous section was clear and well supported. ",
       after_context: " The next section begins with an introduction.",
     }),
   ];
@@ -315,8 +304,7 @@ test("resolveMarks -- paragraph rewritten, context fuzzy-matches at boundary", (
     status: "resolved",
     offset: 73,
     length: 59,
-    selected_text:
-      "The entire paragraph was completely rewritten from scratch.",
+    selected_text: "The entire paragraph was completely rewritten from scratch.",
   });
 });
 
@@ -367,8 +355,7 @@ test("resolveMarks -- long context with small edit near boundary", () => {
     A small change at the far end of a long context string still yields high similarity.
   */
   const preamble = "This is a long preamble that provides context. ".repeat(4);
-  const postamble =
-    " This is a long postamble that provides trailing context. ".repeat(4);
+  const postamble = " This is a long postamble that provides trailing context. ".repeat(4);
   const oldContent = `${preamble}The marked text.${postamble}`;
   const newContent = `${preamble}Completely rewritten.${postamble}`;
 
@@ -407,8 +394,7 @@ test("resolveMarks -- only before_context matches, stale zero-length at end of m
     -> only one context matches -> stale, zero-length at end of before_context match
   */
   const oldContent = "The quick brown fox jumps over the lazy dog.";
-  const newContent =
-    "The quick brown cat leaps over something entirely different.";
+  const newContent = "The quick brown cat leaps over something entirely different.";
   const marks = [
     createMark({
       selected_text: "fox",
@@ -445,8 +431,7 @@ test("resolveMarks -- only after_context matches, stale zero-length at start of 
   */
   const oldContent =
     "The opening sentence was changed completely. The quick brown fox jumps over the lazy dog.";
-  const newContent =
-    "Totally new opening here. A fast gray cat leaps over the lazy dog.";
+  const newContent = "Totally new opening here. A fast gray cat leaps over the lazy dog.";
   const marks = [
     createMark({
       selected_text: "The quick brown fox",
@@ -627,10 +612,8 @@ test("resolveMarks -- Phase 3 finds moved text when contexts become adjacent", (
   const after = " after ";
   const filler = "filler. ";
 
-  const oldContent =
-    filler + filler + before + selected + after + filler + filler;
-  const newContent =
-    selected + filler + filler + filler + before + after + filler;
+  const oldContent = filler + filler + before + selected + after + filler + filler;
+  const newContent = selected + filler + filler + filler + before + after + filler;
 
   const marks = [
     createMark({
@@ -1036,10 +1019,8 @@ test("resolveMarks -- paragraph reflow (newline to space) in context stays resol
     joined into a space. Token matching is blind to whitespace shape,
     so the context still anchors.
   */
-  const oldContent =
-    "First paragraph ends here.\n\nSecond paragraph has the MARKED word in it.";
-  const newContent =
-    "First paragraph ends here. Second paragraph has the REWRITTEN word in it.";
+  const oldContent = "First paragraph ends here.\n\nSecond paragraph has the MARKED word in it.";
+  const newContent = "First paragraph ends here. Second paragraph has the REWRITTEN word in it.";
   const marks = [
     createMark({
       selected_text: "MARKED",

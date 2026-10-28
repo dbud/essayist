@@ -1,5 +1,6 @@
 import { assertEquals, assertStrictEquals } from "@std/assert";
 import { test } from "vitest";
+
 import { unifiedDiff } from "./unified_diff.ts";
 
 test("unifiedDiff -- identical strings produce empty diff", () => {
@@ -36,10 +37,8 @@ test("unifiedDiff -- deleted lines", () => {
 });
 
 test("unifiedDiff -- multiple hunks", () => {
-  const oldText =
-    "a\nb\nc\nd\ne\nf\ng\nh\ni\nj\nk\nl\nm\nB\no\np\nq\nr\ns\nt\nu\nv\nw\nx\ny\nz";
-  const newText =
-    "a\nB\nc\nd\ne\nf\ng\nh\ni\nj\nk\nl\nm\nn\no\np\nq\nr\ns\nt\nu\nv\nw\nx\ny\nz";
+  const oldText = "a\nb\nc\nd\ne\nf\ng\nh\ni\nj\nk\nl\nm\nB\no\np\nq\nr\ns\nt\nu\nv\nw\nx\ny\nz";
+  const newText = "a\nB\nc\nd\ne\nf\ng\nh\ni\nj\nk\nl\nm\nn\no\np\nq\nr\ns\nt\nu\nv\nw\nx\ny\nz";
   const result = unifiedDiff(oldText, newText);
   assertEquals(
     result,

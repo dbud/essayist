@@ -2,6 +2,7 @@ import { openKv } from "@deno/kv";
 import { assert, assertEquals, assertExists } from "@std/assert";
 import { type Context, Effect, Layer, Result } from "effect";
 import { test } from "vitest";
+
 import { unframeChunk } from "./chunked.ts";
 import { ChunkedValues, MissingChunksError } from "./chunked_values.ts";
 import { kvLayer } from "./kv_layer.ts";
@@ -23,10 +24,7 @@ const readWithStore = async <A>(
 ): Promise<A> => {
   const kv = await openKv();
   try {
-    const env = Layer.merge(
-      kvLayer(kv),
-      Layer.provide(ChunkedValues.layerNoDeps, kvLayer(kv)),
-    );
+    const env = Layer.merge(kvLayer(kv), Layer.provide(ChunkedValues.layerNoDeps, kvLayer(kv)));
     return await Effect.runPromise(
       Effect.provide(
         Effect.gen(function* () {
@@ -38,7 +36,7 @@ const readWithStore = async <A>(
       ),
     );
   } finally {
-    await kv.close();
+    kv.close();
   }
 };
 

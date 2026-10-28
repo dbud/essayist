@@ -9,6 +9,7 @@
 // the vite dev server's D1 state. Run the script with --help for usage.
 
 import { Command } from "@cliffy/command";
+
 import { explore } from "#/commands/explore.ts";
 import { grantRole } from "#/commands/grant-role.ts";
 import { listUsers } from "#/commands/list-users.ts";
@@ -25,11 +26,9 @@ await new Command()
     "Override the D1 database id; defaults to CLOUDFLARE_D1_DATABASE_ID from .env.",
     { global: true },
   )
-  .option(
-    "--local",
-    "Use the vite dev server's D1 state instead of the remote database.",
-    { global: true },
-  )
+  .option("--local", "Use the vite dev server's D1 state instead of the remote database.", {
+    global: true,
+  })
   .command("wipe", wipe)
   .command("explore", explore)
   .command("trace", trace)

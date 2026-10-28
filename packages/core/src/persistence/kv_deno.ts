@@ -4,6 +4,7 @@
 
 import type { Kv } from "@deno/kv";
 import { Effect, type Layer } from "effect";
+
 import { layerKvHandle } from "./kv_layer.ts";
 import { PersistenceError } from "./mod.ts";
 import type { Persistence } from "./service.ts";
@@ -11,9 +12,7 @@ import type { Persistence } from "./service.ts";
 /** A layer that opens its own connection, closing it when the runtime
  * disposes. Omit `path` for the platform KV; pass a file path for a local
  * store, or `:memory:` for an ephemeral one (tests). */
-export function layerKv(
-  path?: string,
-): Layer.Layer<Persistence, PersistenceError> {
+export function layerKv(path?: string): Layer.Layer<Persistence, PersistenceError> {
   return layerKvHandle(
     Effect.tryPromise({
       try: async () => (await Deno.openKv(path)) as unknown as Kv,

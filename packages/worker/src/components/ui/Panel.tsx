@@ -1,4 +1,5 @@
 import type { ComponentChildren } from "preact";
+
 import { useClickOutside } from "#/hooks/useClickOutside.ts";
 import { usePaneClip } from "#/hooks/usePaneClip.ts";
 
@@ -20,18 +21,11 @@ export default function Panel({
   onSettled,
   children,
 }: PanelProps) {
-  const { clipRef, onTransitionEnd } = usePaneClip(
-    open,
-    "grid-template-rows",
-    onSettled,
-  );
+  const { clipRef, onTransitionEnd } = usePaneClip(open, "grid-template-rows", onSettled);
   const outsideRef = useClickOutside(onClickOutside);
   const state = open ? "is-open" : "is-closed";
   return (
-    <div
-      class={`pane pane--panel ${state} ${className}`}
-      onTransitionEnd={onTransitionEnd}
-    >
+    <div class={`pane pane--panel ${state} ${className}`} onTransitionEnd={onTransitionEnd}>
       <div class="pane-clip" ref={clipRef}>
         <div ref={outsideRef}>{children}</div>
       </div>

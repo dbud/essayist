@@ -10,10 +10,9 @@ import {
   mergeRegister,
   SELECTION_CHANGE_COMMAND,
 } from "lexical";
-import {
-  defaultEditorSelection,
-  type EditorSelection,
-} from "#/signals/editorSelection.ts";
+
+import { defaultEditorSelection, type EditorSelection } from "#/signals/editorSelection.ts";
+
 import { $getBlockType } from "./blockFormat.ts";
 
 export interface SelectionExtensionConfig {
@@ -23,10 +22,7 @@ export interface SelectionExtensionConfig {
 export const ToolbarStateExtension = defineExtension({
   name: "toolbar-state",
   config: { selection: defaultEditorSelection },
-  afterRegistration: (
-    editor: LexicalEditor,
-    { selection }: SelectionExtensionConfig,
-  ) => {
+  afterRegistration: (editor: LexicalEditor, { selection }: SelectionExtensionConfig) => {
     const read = (editorState: EditorState) => {
       editorState.read(() => {
         const sel = $getSelection();
@@ -45,8 +41,7 @@ export const ToolbarStateExtension = defineExtension({
         selection.italic.value = sel.hasFormat("italic");
         selection.strikethrough.value = sel.hasFormat("strikethrough");
         selection.code.value = sel.hasFormat("code");
-        selection.inCodeBlock.value =
-          $findMatchingParent(anchor, $isCodeNode) !== null;
+        selection.inCodeBlock.value = $findMatchingParent(anchor, $isCodeNode) !== null;
       });
     };
 

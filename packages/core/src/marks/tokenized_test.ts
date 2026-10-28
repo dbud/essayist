@@ -2,6 +2,7 @@ import { assertEquals } from "@std/assert/equals";
 import { assertExists } from "@std/assert/exists";
 import { assertObjectMatch } from "@std/assert/object-match";
 import { test } from "vitest";
+
 import { TokenizedText, tokenDiceSimilarity, wordTokens } from "./tokenized.ts";
 
 // TokenizedText.findExactNear -- exact match nearest to a point
@@ -69,20 +70,14 @@ test("TokenizedText.findExactNear -- charRadius bounds the search", () => {
 
 test("TokenizedText.findExactInTokenWindow -- match within the window", () => {
   const tt = new TokenizedText("alpha beta gamma delta");
-  assertEquals(
-    tt.findExactInTokenWindow("beta", { near: 6, withinTokens: 1 }),
-    6,
-  );
+  assertEquals(tt.findExactInTokenWindow("beta", { near: 6, withinTokens: 1 }), 6);
 });
 
 test("TokenizedText.findExactInTokenWindow -- outside the window returns null", () => {
   // "hello" sits at offset 0, but the window around near=10 (in "world")
   // covers only the "world" token, so "hello" is out of range.
   const tt = new TokenizedText("hello world");
-  assertEquals(
-    tt.findExactInTokenWindow("hello", { near: 10, withinTokens: 0 }),
-    null,
-  );
+  assertEquals(tt.findExactInTokenWindow("hello", { near: 10, withinTokens: 0 }), null);
 });
 
 // wordTokens -- splits on non-alphanumeric, keeps offsets

@@ -1,10 +1,4 @@
-import {
-  $getNodeByKey,
-  $getRoot,
-  type EditorState,
-  type LexicalNode,
-  type NodeKey,
-} from "lexical";
+import { $getNodeByKey, $getRoot, type EditorState, type LexicalNode, type NodeKey } from "lexical";
 
 /**
  * An associative binary operation with an identity element. Associativity
@@ -38,18 +32,14 @@ export class BlockFold<T> {
   readonly #compute: (block: LexicalNode) => T;
   readonly #cache = new WeakMap<EditorState, CachedFold<T>>();
 
-  constructor(spec: {
-    monoid: Monoid<T>;
-    compute: (block: LexicalNode) => T;
-  }) {
+  constructor(spec: { monoid: Monoid<T>; compute: (block: LexicalNode) => T }) {
     this.#monoid = spec.monoid;
     this.#compute = spec.compute;
   }
 
   /** Aggregate over all top-level blocks, full-folding when cold. */
   read(state: EditorState): T {
-    return this.#cache.getOrInsertComputed(state, (s) => this.#fullFold(s))
-      .aggregate;
+    return this.#cache.getOrInsertComputed(state, (s) => this.#fullFold(s)).aggregate;
   }
 
   /**

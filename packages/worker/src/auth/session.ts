@@ -6,6 +6,7 @@
 import { AuthStore, type User, Workspaces } from "@essayist/core";
 import type { Context, MiddlewareHandler } from "hono";
 import { generateCookie, getCookie } from "hono/cookie";
+
 import { DEV_SESSION_ID, resolveDevUser } from "#/auth/devUser.ts";
 import { env } from "#/env.ts";
 import { runtime } from "#/runtime.ts";
@@ -102,8 +103,8 @@ export const requireUser: MiddlewareHandler = async (c, next) => {
   const url = new URL(c.req.url);
   if (!isAuthRoute(url.pathname)) {
     if (c.get("auth-user") === undefined) {
-      const next = `${url.pathname}${url.search}`;
-      return c.redirect(`/login?next=${encodeURIComponent(next)}`, 303);
+      const redirectTo = `${url.pathname}${url.search}`;
+      return c.redirect(`/login?next=${encodeURIComponent(redirectTo)}`, 303);
     }
   }
   await next();

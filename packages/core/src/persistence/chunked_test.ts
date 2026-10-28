@@ -2,6 +2,7 @@ import { type Kv, openKv } from "@deno/kv";
 import { assertEquals, assertLessOrEqual } from "@std/assert";
 import { type Context, Effect } from "effect";
 import { test } from "vitest";
+
 import {
   assembleList,
   CHUNK_PAYLOAD_BYTES,
@@ -14,14 +15,12 @@ import { kvLayer } from "./kv_layer.ts";
 import type { Entry, Key } from "./mod.ts";
 import { Persistence } from "./mod.ts";
 
-const bytes = (n: number, fill = 65): Uint8Array =>
-  new Uint8Array(n).fill(fill);
+const bytes = (n: number, fill = 65): Uint8Array => new Uint8Array(n).fill(fill);
 
 const text = (value: Uint8Array): string => new TextDecoder().decode(value);
 
 /** Values keyed by their own key, for order-independent assertions. */
-const byKey = (entries: Entry[]) =>
-  new Map(assembleList(entries).map((v) => [String(v.key), v]));
+const byKey = (entries: Entry[]) => new Map(assembleList(entries).map((v) => [String(v.key), v]));
 
 /** Write a planned set of chunks under a base key. */
 const writePlan = (
@@ -38,9 +37,7 @@ const writePlan = (
 /** Run a body against a Persistence instance on a fresh store. */
 const store = <A>(
   kv: Kv,
-  body: (
-    persistence: Context.Service.Shape<typeof Persistence>,
-  ) => Effect.Effect<A, unknown, never>,
+  body: (persistence: Context.Service.Shape<typeof Persistence>) => Effect.Effect<A, unknown>,
 ): Promise<A> =>
   Effect.runPromise(
     Effect.provide(
@@ -115,11 +112,7 @@ test("assembleList -- a scan reassembles interleaved heads and chunks", async ()
   const values = await store(kv, (persistence) =>
     Effect.gen(function* () {
       yield* writePlan(persistence, ["t", "000001"], bytes(4_000, 0x41));
-      yield* writePlan(
-        persistence,
-        ["t", "000002"],
-        bytes(CHUNK_PAYLOAD_BYTES * 2 + 9, 0x42),
-      );
+      yield* writePlan(persistence, ["t", "000002"], bytes(CHUNK_PAYLOAD_BYTES * 2 + 9, 0x42));
       yield* writePlan(persistence, ["t", "000003"], bytes(2_000, 0x43));
       const { entries } = yield* persistence.list<Key>(["t"]);
       return byKey(entries);
@@ -131,10 +124,7 @@ test("assembleList -- a scan reassembles interleaved heads and chunks", async ()
     text(values.get("t,000002")?.payload ?? new Uint8Array()),
     text(bytes(CHUNK_PAYLOAD_BYTES * 2 + 9, 0x42)),
   );
-  assertEquals(
-    text(values.get("t,000003")?.payload ?? new Uint8Array()),
-    text(bytes(2_000, 0x43)),
-  );
+  assertEquals(text(values.get("t,000003")?.payload ?? new Uint8Array()), text(bytes(2_000, 0x43)));
 });
 
 test("assembleList -- a value this layer did not write keeps its own bytes", async () => {
@@ -150,10 +140,7 @@ test("assembleList -- a value this layer did not write keeps its own bytes", asy
 
   assertEquals(values.get("t,000001")?.raw, { version_id: "abc" });
   assertEquals(values.get("t,000001")?.payload, undefined);
-  assertEquals(
-    text(values.get("t,000002")?.payload ?? new Uint8Array()),
-    text(bytes(3_000, 0x46)),
-  );
+  assertEquals(text(values.get("t,000002")?.payload ?? new Uint8Array()), text(bytes(3_000, 0x46)));
 });
 
 test("assembleList -- chunks are joined in index order, whatever the input order", () => {

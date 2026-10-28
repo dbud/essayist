@@ -6,13 +6,8 @@
 
 import { assertEquals } from "@std/assert";
 import { test } from "vitest";
-import {
-  decodeValue,
-  encodeValue,
-  keyRange,
-  packKey,
-  unpackKey,
-} from "./kv_d1_codec.ts";
+
+import { decodeValue, encodeValue, keyRange, packKey, unpackKey } from "./kv_d1_codec.ts";
 import type { Key } from "./mod.ts";
 
 const KEYS: Key[] = [
@@ -55,7 +50,7 @@ test("byte order of the stored text equals tuple order", () => {
     ordered[4],
   ];
   assertEquals(
-    shuffled.map((key) => packKey(key)).sort(),
+    shuffled.map((key) => packKey(key)).toSorted(),
     ordered.map((key) => packKey(key)),
   );
 });

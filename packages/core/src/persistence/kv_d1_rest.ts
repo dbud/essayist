@@ -8,10 +8,7 @@
  * and version counters share no string metacharacters.
  */
 
-import type {
-  D1Database,
-  D1PreparedStatement,
-} from "@cloudflare/workers-types";
+import type { D1Database, D1PreparedStatement } from "@cloudflare/workers-types";
 
 export interface D1RestConfig {
   readonly accountId: string;
@@ -46,9 +43,7 @@ export function d1RestDatabase(config: D1RestConfig): D1Database {
       result?: HttpResult[];
     };
     if (payload.success !== true || payload.result === undefined) {
-      const detail = (payload.errors ?? [])
-        .map((error) => error.message)
-        .join("; ");
+      const detail = (payload.errors ?? []).map((error) => error.message).join("; ");
       throw new Error(`D1 REST query failed: ${detail}`);
     }
     return payload.result;
@@ -62,11 +57,10 @@ export function d1RestDatabase(config: D1RestConfig): D1Database {
       if (param === undefined) {
         throw new Error("a SQL placeholder has no param");
       }
-      return param === null
-        ? "NULL"
-        : typeof param === "number"
-          ? String(param)
-          : `'${String(param)}'`;
+      if (param === null) return "NULL";
+      if (typeof param === "number") return String(param);
+      if (typeof param === "string") return `'${param}'`;
+      throw new Error(`unsupported SQL param type: ${typeof param}`);
     });
   };
 

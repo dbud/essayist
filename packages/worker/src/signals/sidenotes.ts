@@ -2,6 +2,7 @@ import type { Mark } from "@essayist/core";
 import { computed, createModel, signal } from "@preact/signals";
 import { sortBy } from "@std/collections";
 import type { NodeKey } from "lexical";
+
 import { FileKey } from "#/models/fileSelection.ts";
 import { getEditorSelection } from "#/signals/editorSelection.ts";
 import { getMarks } from "#/signals/marks.ts";
@@ -112,9 +113,7 @@ export const SidenotesModel = createModel((key: FileKey) => {
         active: activeMarkIds.value.has(mark.thread_id),
       });
     }
-    return out.sort(
-      (a, b) => a.markTop - b.markTop || a.mark.offset - b.mark.offset,
-    );
+    return out.toSorted((a, b) => a.markTop - b.markTop || a.mark.offset - b.mark.offset);
   });
 
   // Stacked tops so sidenotes never overlap: walk in mark order, pushing each
@@ -145,9 +144,7 @@ export const SidenotesModel = createModel((key: FileKey) => {
   // at exact edge alignment the regular sidenote wins and no ghost is
   // mounted), with a measured height. Ghosts render beneath real
   // sidenotes, whose backgrounds occlude them where they overlap.
-  const edgeGhost = (
-    direction: "top" | "bottom",
-  ): GhostSidenoteView | undefined => {
+  const edgeGhost = (direction: "top" | "bottom"): GhostSidenoteView | undefined => {
     const vh = viewportHeight.value;
     if (vh <= 0) return undefined;
     const vTop = scrollTop.value;
@@ -189,8 +186,5 @@ export const SidenotesModel = createModel((key: FileKey) => {
 const cache = new Map<string, InstanceType<typeof SidenotesModel>>();
 
 export function getSidenotes(key: FileKey) {
-  return cache.getOrInsertComputed(
-    FileKey.cacheKey(key),
-    () => new SidenotesModel(key),
-  );
+  return cache.getOrInsertComputed(FileKey.cacheKey(key), () => new SidenotesModel(key));
 }

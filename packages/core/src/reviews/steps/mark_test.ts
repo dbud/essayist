@@ -1,33 +1,23 @@
 import { assertEquals } from "@std/assert";
 import { Effect, Layer, Result, Schema } from "effect";
 import { test } from "vitest";
+
 import { Files } from "#/files/service.ts";
 import { Marks } from "#/marks/service.ts";
 import { testLayer } from "#/persistence/testing/kv.ts";
 import { WorkspaceId } from "#/workspace/WorkspaceId.ts";
-import {
-  applyProposedMarks,
-  type MarkProposal,
-  ProposedMarksSchema,
-} from "./mark.ts";
+
+import { applyProposedMarks, type MarkProposal, ProposedMarksSchema } from "./mark.ts";
 
 const PROVENANCE = { runId: "run-1", unitId: "mechanics" };
 
 const env = testLayer(
-  Layer.mergeAll(
-    Files.layerNoDeps,
-    Layer.provide(Marks.layerNoDeps, Files.layerNoDeps),
-  ),
+  Layer.mergeAll(Files.layerNoDeps, Layer.provide(Marks.layerNoDeps, Files.layerNoDeps)),
 );
 
-const run = <A>(
-  program: Effect.Effect<A, unknown, Marks | Files | WorkspaceId>,
-): Promise<A> =>
+const run = <A>(program: Effect.Effect<A, unknown, Marks | Files | WorkspaceId>): Promise<A> =>
   Effect.runPromise(
-    Effect.provide(
-      Effect.provideService(program, WorkspaceId, { wsId: "default" }),
-      env,
-    ),
+    Effect.provide(Effect.provideService(program, WorkspaceId, { wsId: "default" }), env),
   );
 
 test("applyProposedMarks -- places marks on the pinned version", async () => {
@@ -101,10 +91,7 @@ test("applyProposedMarks -- rejects labels outside the allowed set", async () =>
       );
 
       assertEquals(attempts[0].marked, false);
-      assertEquals(
-        attempts[0].error,
-        'label "tone" is not allowed; use one of: grammar',
-      );
+      assertEquals(attempts[0].error, 'label "tone" is not allowed; use one of: grammar');
     }),
   );
 });

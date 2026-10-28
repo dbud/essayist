@@ -1,5 +1,6 @@
 import type { Mark } from "@essayist/core";
 import { mapNotNullish } from "@std/collections";
+
 import Section from "#/components/debug/Section.tsx";
 import { segmentMarks } from "#/editor/markSegments.ts";
 import type { FileContent } from "#/models/fileContent.ts";
@@ -35,10 +36,7 @@ const AMBER_BY_COUNT: Record<number, string> = {
 };
 
 function visualizeWhitespace(text: string): string {
-  return text
-    .replace(/ /g, "\u00B7")
-    .replace(/\t/g, "\u2192")
-    .replace(/\n/g, "\u00AC\n");
+  return text.replace(/ /g, "\u00B7").replace(/\t/g, "\u2192").replace(/\n/g, "\u00AC\n");
 }
 
 function MarkdownPreview({ file }: { file: FileContent }) {
@@ -99,8 +97,7 @@ function buildSegments(markdown: string, marks: Mark[]): TextSegment[] {
   if (marks.length === 0) return [{ text: markdown, marks: [] }];
 
   const byThread = new Map(marks.map((m) => [m.thread_id, m]));
-  const resolve = (ids: readonly string[]): Mark[] =>
-    mapNotNullish(ids, (id) => byThread.get(id));
+  const resolve = (ids: readonly string[]): Mark[] => mapNotNullish(ids, (id) => byThread.get(id));
 
   // Non-zero marks -> non-overlapping intervals via segmentMarks; zero-length
   // marks -> point intervals at their offset. Merge by offset and walk with a
@@ -111,9 +108,7 @@ function buildSegments(markdown: string, marks: Mark[]): TextSegment[] {
   const points = marks
     .filter((m) => m.length === 0)
     .map((m) => ({ offset: m.offset, length: 0, marks: [m] }));
-  const anchored = [...intervals, ...points].sort(
-    (a, b) => a.offset - b.offset,
-  );
+  const anchored = [...intervals, ...points].toSorted((a, b) => a.offset - b.offset);
 
   const segments: TextSegment[] = [];
   let cursor = 0;

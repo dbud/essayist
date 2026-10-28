@@ -1,5 +1,8 @@
+import { unreachable } from "@std/assert";
 import { Effect } from "effect";
+
 import type { ReviewNodeEvent } from "#/reviews/graph.ts";
+
 import type { TraceEvent } from "./types.ts";
 
 /**
@@ -31,13 +34,12 @@ export function logTraceEvent(event: TraceEvent): Effect.Effect<void> {
       }
     case "custom":
       return logCustom(event.nodeId, event.event);
+    default:
+      unreachable("logTraceEvent: unknown trace event type");
   }
 }
 
-function logCustom(
-  nodeId: string,
-  event: ReviewNodeEvent,
-): Effect.Effect<void> {
+function logCustom(nodeId: string, event: ReviewNodeEvent): Effect.Effect<void> {
   switch (event.type) {
     case "model_call": {
       const { model, durationMs } = event.call;
@@ -84,5 +86,7 @@ function logCustom(
         node: nodeId,
         attempts: event.attempts.length,
       });
+    default:
+      unreachable("logCustom: unknown node event type");
   }
 }

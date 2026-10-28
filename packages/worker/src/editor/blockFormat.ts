@@ -17,15 +17,7 @@ import {
   type LexicalNode,
 } from "lexical";
 
-export type BlockType =
-  | "normal"
-  | "h1"
-  | "h2"
-  | "h3"
-  | "quote"
-  | "code"
-  | "bullet"
-  | "number";
+export type BlockType = "normal" | "h1" | "h2" | "h3" | "quote" | "code" | "bullet" | "number";
 
 /**
  * The block type at the selection anchor. Reads the current selection, so it
@@ -61,9 +53,7 @@ export function $getBlockType(): BlockType {
  * selection to `type`. List conversion is handled by Lexical's list commands,
  * not here. Runs in a $-context.
  */
-export function $setBlocksType(
-  type: "normal" | "h1" | "h2" | "h3" | "quote" | "code",
-): void {
+export function $setBlocksType(type: "normal" | "h1" | "h2" | "h3" | "quote" | "code"): void {
   const selection = $getSelection();
   if (!$isRangeSelection(selection)) return;
 
@@ -96,12 +86,7 @@ export function $setBlocksType(
 function $contentBlockOf(node: LexicalNode): ElementNode | null {
   let n: LexicalNode | null = node;
   while (n !== null) {
-    if (
-      $isParagraphNode(n) ||
-      $isHeadingNode(n) ||
-      $isQuoteNode(n) ||
-      $isCodeNode(n)
-    ) {
+    if ($isParagraphNode(n) || $isHeadingNode(n) || $isQuoteNode(n) || $isCodeNode(n)) {
       return $isElementNode(n) ? n : null;
     }
     n = n.getParent();

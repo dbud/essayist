@@ -1,5 +1,6 @@
 import type { User } from "@essayist/core";
 import type { ComponentChildren } from "preact";
+
 import EssayistLogo from "#/components/logo/EssayistLogo.tsx";
 import SettingsMenu from "#/components/settings/SettingsMenu.tsx";
 import ThemeToggle from "#/components/ThemeToggle.tsx";

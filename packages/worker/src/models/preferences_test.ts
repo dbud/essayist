@@ -1,4 +1,5 @@
 import { expect, test } from "vitest";
+
 import { preferencesFromCookie } from "./preferences.ts";
 
 const url = new URL("http://localhost:5173/");

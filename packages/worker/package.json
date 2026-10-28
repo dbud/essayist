@@ -1,4 +1,23 @@
 {
+  "name": "@essayist/worker",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "imports": {
+    "#/*": "./src/*"
+  },
+  "scripts": {
+    "build": "vite build",
+    "check": "tsc --noEmit && tsc --noEmit -p src/client",
+    "deploy": "vite build && wrangler deploy",
+    "deploy-preview": "vite build && wrangler versions upload",
+    "dev": "vite dev",
+    "fmt": "oxfmt .",
+    "lint": "oxlint .",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "typegen": "wrangler types"
+  },
   "dependencies": {
     "@effect/ai-openrouter": "catalog:",
     "@effect/sql-d1": "catalog:",
@@ -50,24 +69,5 @@
     "vite": "catalog:",
     "vitest": "catalog:",
     "wrangler": "^4.152.0"
-  },
-  "imports": {
-    "#/*": "./src/*"
-  },
-  "name": "@essayist/worker",
-  "private": true,
-  "scripts": {
-    "build": "vite build",
-    "check": "biome check --error-on-warnings . && tsc --noEmit && tsc --noEmit -p src/client",
-    "deploy": "vite build && wrangler deploy",
-    "deploy-preview": "vite build && wrangler versions upload",
-    "dev": "vite dev",
-    "fmt": "biome check --write .",
-    "lint": "biome lint .",
-    "preview": "vite preview",
-    "test": "vitest run",
-    "typegen": "wrangler types"
-  },
-  "type": "module",
-  "version": "0.0.0"
+  }
 }

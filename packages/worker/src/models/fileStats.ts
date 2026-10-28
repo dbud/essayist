@@ -1,4 +1,5 @@
 import { computed, createModel } from "@preact/signals";
+
 import type { FileContent } from "#/models/fileContent.ts";
 import {
   editorStateCharCount,

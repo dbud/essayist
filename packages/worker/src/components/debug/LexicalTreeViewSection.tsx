@@ -1,4 +1,5 @@
 import { TreeView } from "@lexical/react/LexicalTreeView";
+
 import Section from "#/components/debug/Section.tsx";
 import { activeEditor } from "#/signals/activeEditor.ts";
 

@@ -1,10 +1,7 @@
 import type { SerializedLinkNode } from "@lexical/link";
 import type { SerializedHeadingNode } from "@lexical/rich-text";
-import type {
-  ElementFormatType,
-  SerializedElementNode,
-  SerializedTextNode,
-} from "lexical";
+import type { ElementFormatType, SerializedElementNode, SerializedTextNode } from "lexical";
+
 import type { PastePolicy } from "./policy.ts";
 
 // The payload shape for the fields the sanitizer reads, composed from
@@ -97,10 +94,6 @@ export class JsonSanitizer {
     if (!url) return this.#children(record);
     const children = this.#children(record);
     if (children.length === 0) return [{ type: "text", text: url }];
-    return [
-      { type: "text", text: "[" },
-      ...children,
-      { type: "text", text: `](${url})` },
-    ];
+    return [{ type: "text", text: "[" }, ...children, { type: "text", text: `](${url})` }];
   }
 }

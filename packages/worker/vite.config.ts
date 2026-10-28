@@ -1,5 +1,6 @@
 import { readdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
+
 import { cloudflare } from "@cloudflare/vite-plugin";
 import tailwindcss from "@tailwindcss/vite";
 import { defineConfig, type Plugin } from "vite";
@@ -12,10 +13,7 @@ const clientEntries = Object.fromEntries(
     .map((file) => [file.replace(/\.tsx$/, ""), `src/client/pages/${file}`]),
 );
 
-function moduleBindings(
-  environment: string,
-  bindings: Record<string, string>,
-): Plugin {
+function moduleBindings(environment: string, bindings: Record<string, string>): Plugin {
   return {
     name: "essayist:module-bindings",
     enforce: "pre",

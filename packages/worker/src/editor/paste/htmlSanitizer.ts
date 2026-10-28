@@ -1,6 +1,7 @@
 import { filterEntries } from "@std/collections";
 import DOMPurify from "dompurify";
 import { TEXT_TYPE_TO_FORMAT } from "lexical";
+
 import type { PastePolicy } from "./policy.ts";
 
 const BLOCK_HTML_TAGS = {
@@ -42,14 +43,11 @@ export class HtmlSanitizer {
     );
     const formats = filterEntries(
       FORMAT_HTML_TAGS,
-      ([format]) =>
-        (this.#policy.allowedFormats & TEXT_TYPE_TO_FORMAT[format]) !== 0,
+      ([format]) => (this.#policy.allowedFormats & TEXT_TYPE_TO_FORMAT[format]) !== 0,
     );
     return [
       "br",
-      ...(this.#policy.allowedBlocks.has("heading")
-        ? [...this.#policy.allowedHeadingTags]
-        : []),
+      ...(this.#policy.allowedBlocks.has("heading") ? [...this.#policy.allowedHeadingTags] : []),
       ...Object.values(blocks).flat(),
       ...Object.values(formats).flat(),
     ];
@@ -76,10 +74,6 @@ export function transformPastedHtml(body: ParentNode, doc: Document): void {
       el.replaceWith(doc.createTextNode(href));
       continue;
     }
-    el.replaceWith(
-      doc.createTextNode("["),
-      ...el.childNodes,
-      doc.createTextNode(`](${href})`),
-    );
+    el.replaceWith(doc.createTextNode("["), ...el.childNodes, doc.createTextNode(`](${href})`));
   }
 }

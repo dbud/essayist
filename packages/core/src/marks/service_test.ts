@@ -1,29 +1,23 @@
 import { assertEquals, assertObjectMatch } from "@std/assert";
 import { Effect, Layer } from "effect";
 import { test } from "vitest";
+
 import { Files } from "#/files/service.ts";
 import type { FileMissingError } from "#/files/types.ts";
-import type {
-  ConcurrentModificationError,
-  PersistenceError,
-} from "#/persistence/mod.ts";
+import type { ConcurrentModificationError, PersistenceError } from "#/persistence/mod.ts";
 import { testLayer } from "#/persistence/testing/kv.ts";
 import { WorkspaceId } from "#/workspace/WorkspaceId.ts";
+
 import { Marks } from "./service.ts";
 
 type E = PersistenceError | ConcurrentModificationError | FileMissingError;
 
-const run = <A>(
-  program: Effect.Effect<A, E, Files | Marks | WorkspaceId>,
-): Promise<A> =>
+const run = <A>(program: Effect.Effect<A, E, Files | Marks | WorkspaceId>): Promise<A> =>
   Effect.runPromise(
     Effect.provide(
       Effect.provideService(program, WorkspaceId, { wsId: "default" }),
       testLayer(
-        Layer.merge(
-          Layer.provide(Marks.layerNoDeps, Files.layerNoDeps),
-          Files.layerNoDeps,
-        ),
+        Layer.merge(Layer.provide(Marks.layerNoDeps, Files.layerNoDeps), Files.layerNoDeps),
       ),
     ),
   );
@@ -42,17 +36,10 @@ function createFile(path: string, content: string) {
 test("Marks.mark -- places a mark on selected text", async () => {
   await run(
     Effect.gen(function* () {
-      yield* createFile(
-        "essay.txt",
-        "The quick brown fox jumps over the lazy dog.",
-      );
+      yield* createFile("essay.txt", "The quick brown fox jumps over the lazy dog.");
       const marks = yield* Marks;
 
-      const result = yield* marks.mark(
-        "essay.txt",
-        "quick brown",
-        "nice phrase",
-      );
+      const result = yield* marks.mark("essay.txt", "quick brown", "nice phrase");
 
       assertEquals(result.marked, true);
       assertEquals(typeof result.mark_id, "string");
@@ -103,10 +90,7 @@ test("Marks.mark -- returns marked false for missing file", async () => {
 test("Marks.mark -- uses lineHint to disambiguate duplicates", async () => {
   await run(
     Effect.gen(function* () {
-      const { files, versionId } = yield* createFile(
-        "f.txt",
-        "The cat sat on\nthe cat mat.",
-      );
+      const { files, versionId } = yield* createFile("f.txt", "The cat sat on\nthe cat mat.");
       const marks = yield* Marks;
 
       const result = yield* marks.mark("f.txt", "cat", "second cat", {
@@ -124,10 +108,7 @@ test("Marks.mark -- uses lineHint to disambiguate duplicates", async () => {
 test("Marks.mark -- lineHint 1 targets first line", async () => {
   await run(
     Effect.gen(function* () {
-      const { files, versionId } = yield* createFile(
-        "f.txt",
-        "alpha beta\ngamma delta",
-      );
+      const { files, versionId } = yield* createFile("f.txt", "alpha beta\ngamma delta");
       const marks = yield* Marks;
 
       yield* marks.mark("f.txt", "alpha", "on line 1", { lineHint: 1 });
@@ -157,10 +138,7 @@ test("Marks.mark -- lineHint beyond last line clamps to end", async () => {
 test("Marks.mark -- lineHint with no newlines", async () => {
   await run(
     Effect.gen(function* () {
-      const { files, versionId } = yield* createFile(
-        "f.txt",
-        "single line content",
-      );
+      const { files, versionId } = yield* createFile("f.txt", "single line content");
       const marks = yield* Marks;
 
       yield* marks.mark("f.txt", "line", "no newlines", { lineHint: 1 });
@@ -217,10 +195,7 @@ test("Marks.mark -- context snapped to word boundaries", async () => {
   // char window. Trailing punctuation after a word is not included.
   await run(
     Effect.gen(function* () {
-      const { files, versionId } = yield* createFile(
-        "f.txt",
-        "One. Two. MARK Three. Four.",
-      );
+      const { files, versionId } = yield* createFile("f.txt", "One. Two. MARK Three. Four.");
       const marks = yield* Marks;
 
       yield* marks.mark("f.txt", "MARK", "snap", { contextSpan: 5 });
@@ -258,10 +233,7 @@ test("Marks.mark -- uses custom contextSpan", async () => {
   // window (distinct from the contextSpan: 5 case above).
   await run(
     Effect.gen(function* () {
-      const { files, versionId } = yield* createFile(
-        "f.txt",
-        "One. Two. MARK Three. Four.",
-      );
+      const { files, versionId } = yield* createFile("f.txt", "One. Two. MARK Three. Four.");
       const marks = yield* Marks;
 
       yield* marks.mark("f.txt", "MARK", "custom span", { contextSpan: 8 });
@@ -315,10 +287,7 @@ test("Marks.mark -- stores provenance when provided", async () => {
 test("Marks.mark -- versionId marks the given version, not latest", async () => {
   await run(
     Effect.gen(function* () {
-      const { files, versionId: v1 } = yield* createFile(
-        "f.txt",
-        "hello world",
-      );
+      const { files, versionId: v1 } = yield* createFile("f.txt", "hello world");
       yield* files.write("f.txt", "goodbye world");
       const marks = yield* Marks;
 
@@ -341,10 +310,7 @@ test("Marks.mark -- versionId marks the given version, not latest", async () => 
 test("Marks.mark -- versionId resolves text against that version's content", async () => {
   await run(
     Effect.gen(function* () {
-      const { files, versionId: v1 } = yield* createFile(
-        "f.txt",
-        "old draft text",
-      );
+      const { files, versionId: v1 } = yield* createFile("f.txt", "old draft text");
       yield* files.write("f.txt", "new draft text");
       const marks = yield* Marks;
 
@@ -354,11 +320,7 @@ test("Marks.mark -- versionId resolves text against that version's content", asy
       });
       assertEquals(oldResult.marked, true);
 
-      const latestResult = yield* marks.mark(
-        "f.txt",
-        "old draft",
-        "from latest",
-      );
+      const latestResult = yield* marks.mark("f.txt", "old draft", "from latest");
       assertEquals(latestResult.marked, false);
     }),
   );
@@ -374,15 +336,10 @@ test("Marks.mark -- versionId uses lineHint against that version", async () => {
       yield* files.write("f.txt", "completely different");
       const marks = yield* Marks;
 
-      const result = yield* marks.mark(
-        "f.txt",
-        "version line",
-        "line 2 of v1",
-        {
-          versionId: v1,
-          lineHint: 2,
-        },
-      );
+      const result = yield* marks.mark("f.txt", "version line", "line 2 of v1", {
+        versionId: v1,
+        lineHint: 2,
+      });
 
       assertEquals(result.marked, true);
       const stored = yield* files.getMarks("f.txt", v1);
@@ -395,10 +352,7 @@ test("Marks.mark -- versionId uses lineHint against that version", async () => {
 test("Marks.mark -- versionId captures context from that version", async () => {
   await run(
     Effect.gen(function* () {
-      const { files, versionId: v1 } = yield* createFile(
-        "f.txt",
-        "alpha TARGET omega",
-      );
+      const { files, versionId: v1 } = yield* createFile("f.txt", "alpha TARGET omega");
       yield* files.write("f.txt", "TARGET");
       const marks = yield* Marks;
 

@@ -1,9 +1,5 @@
-import {
-  effect,
-  type ReadonlySignal,
-  type Signal,
-  signal,
-} from "@preact/signals";
+import { effect, type ReadonlySignal, type Signal, signal } from "@preact/signals";
+
 import { deepComputed } from "./deepComputed.ts";
 
 /**
@@ -62,19 +58,19 @@ export function asyncComputed<D, T>(
     // Supersede any in-flight compute so it can stop early.
     current?.abort();
     current = new AbortController();
-    const { signal } = current;
-    compute(d, signal)
+    const { signal: abortSignal } = current;
+    compute(d, abortSignal)
       .then((result) => {
-        // `!signal.aborted` also drops a run that settled during a debounce
+        // `!abortSignal.aborted` also drops a run that settled during a debounce
         // window after its inputs already changed.
-        if (runSeq === seq && !signal.aborted) {
+        if (runSeq === seq && !abortSignal.aborted) {
           out.value = result;
           stale.value = false;
         }
       })
       .catch((err) => {
         // Own abort (newer run / input change): silent; the newer run clears stale.
-        if (signal.aborted) return;
+        if (abortSignal.aborted) return;
         // External cancellation with no newer run pending: give up, keep last value.
         if (isAbortError(err) && runSeq === seq) {
           stale.value = false;

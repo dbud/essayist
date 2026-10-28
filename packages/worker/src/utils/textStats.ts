@@ -1,4 +1,5 @@
 import type { EditorState } from "lexical";
+
 import { BlockFold, type Monoid } from "./incrementalBlocks.ts";
 
 // Words are alphanumeric runs, optionally joined by single hyphens, so

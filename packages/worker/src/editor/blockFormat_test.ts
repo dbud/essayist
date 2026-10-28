@@ -16,6 +16,7 @@ import {
   type LexicalEditor,
 } from "lexical";
 import { test } from "vitest";
+
 import { $getBlockType, $setBlocksType } from "./blockFormat.ts";
 
 const testExtension = defineExtension({
@@ -50,9 +51,7 @@ function caretAtStart(editor: LexicalEditor): void {
       if (node === null) return;
       if ($isTextNode(node)) {
         node.select(0, 0);
-      } else if (
-        typeof (node as { selectStart?: unknown }).selectStart === "function"
-      ) {
+      } else if (typeof (node as { selectStart?: unknown }).selectStart === "function") {
         (node as unknown as { selectStart: () => void }).selectStart();
       }
     },

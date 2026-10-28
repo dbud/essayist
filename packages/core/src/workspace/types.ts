@@ -62,10 +62,9 @@ export class UserEmailTakenError extends Schema.TaggedError<UserEmailTakenError>
  * An operation would leave a workspace with no owner
  * (removing or demoting the last owner).
  */
-export class LastOwnerError extends Schema.TaggedError<LastOwnerError>()(
-  "LastOwnerError",
-  { wsId: Schema.String },
-) {
+export class LastOwnerError extends Schema.TaggedError<LastOwnerError>()("LastOwnerError", {
+  wsId: Schema.String,
+}) {
   override get message() {
     return `Cannot remove the last owner of workspace ${this.wsId}`;
   }

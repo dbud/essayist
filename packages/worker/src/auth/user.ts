@@ -14,11 +14,7 @@ import { Effect } from "effect";
 
 export const resolveGoogleUser = (
   info: UserInput,
-): Effect.Effect<
-  User,
-  PersistenceError | ConcurrentModificationError,
-  Workspaces
-> =>
+): Effect.Effect<User, PersistenceError | ConcurrentModificationError, Workspaces> =>
   Effect.gen(function* () {
     const user =
       (yield* Workspaces.use((store) => store.getUserByEmail(info.email))) ??

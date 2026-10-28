@@ -1,10 +1,6 @@
-import {
-  type FileMissingError,
-  Files,
-  type PersistenceError,
-  WorkspaceId,
-} from "@essayist/core";
+import { type FileMissingError, Files, type PersistenceError, WorkspaceId } from "@essayist/core";
 import { Effect } from "effect";
+
 import type { FileVersionsData } from "./fileVersions.data.ts";
 
 export function fileVersionsLoader(

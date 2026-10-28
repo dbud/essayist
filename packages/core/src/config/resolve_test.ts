@@ -1,16 +1,11 @@
 import { assert, assertEquals, assertInstanceOf } from "@std/assert";
 import { Effect, Result } from "effect";
 import { test } from "vitest";
-import type {
-  ConcurrentModificationError,
-  PersistenceError,
-} from "#/persistence/mod.ts";
+
+import type { ConcurrentModificationError, PersistenceError } from "#/persistence/mod.ts";
 import { testLayer } from "#/persistence/testing/kv.ts";
-import {
-  ConfigInvalidError,
-  ConfigMissingError,
-  resolveActiveReviewPass,
-} from "./resolve.ts";
+
+import { ConfigInvalidError, ConfigMissingError, resolveActiveReviewPass } from "./resolve.ts";
 import { ReviewConfig } from "./service.ts";
 import type { ResolvedReviewPass } from "./types.ts";
 
@@ -19,10 +14,7 @@ import type { ResolvedReviewPass } from "./types.ts";
 function run(
   seed: (
     config: ReviewConfig["Service"],
-  ) => Effect.Effect<
-    void,
-    PersistenceError | ConcurrentModificationError
-  > = () => Effect.void,
+  ) => Effect.Effect<void, PersistenceError | ConcurrentModificationError> = () => Effect.void,
 ) {
   return Effect.gen(function* () {
     const config = yield* ReviewConfig;
@@ -48,10 +40,7 @@ function assertFailsWith(
   }
 }
 
-const FREE_MODELS = [
-  "poolside/laguna-s-2.1:free",
-  "nvidia/nemotron-3.5-lightning:free",
-];
+const FREE_MODELS = ["poolside/laguna-s-2.1:free", "nvidia/nemotron-3.5-lightning:free"];
 
 function seedFullConfig(config: ReviewConfig["Service"]) {
   return Effect.gen(function* () {
@@ -156,10 +145,7 @@ test("resolveActiveReviewPass -- resolves the active pass unit by unit", async (
     assertEquals(analyze.id, "analyze");
     assertEquals(analyze.pool.models, FREE_MODELS);
     assertEquals(analyze.prompts.system, "You are an editor.");
-    assertEquals(
-      analyze.prompts.directive,
-      "Describe the piece as an editor would read it.",
-    );
+    assertEquals(analyze.prompts.directive, "Describe the piece as an editor would read it.");
     assertEquals(analyze.prompts.instructions, "");
     assertEquals(analyze.attempt, undefined);
     assertEquals(analyze.summary, undefined);
@@ -174,10 +160,7 @@ test("resolveActiveReviewPass -- resolves the active pass unit by unit", async (
       ],
       repairRounds: 1,
     });
-    assertEquals(
-      mechanics.prompts.instructions,
-      "Quote exact spans with {{file}} context.",
-    );
+    assertEquals(mechanics.prompts.instructions, "Quote exact spans with {{file}} context.");
 
     assertEquals(argument.pool.models, ["openai/gpt-5.2"]);
     assertEquals(argument.attempt, {
@@ -196,9 +179,7 @@ test("resolveActiveReviewPass -- resolves the active pass unit by unit", async (
     assertEquals(synthesize.summary, true);
     assertEquals(synthesize.attempt, undefined);
   });
-  await Effect.runPromise(
-    Effect.provide(program, testLayer(ReviewConfig.layerNoDeps)),
-  );
+  await Effect.runPromise(Effect.provide(program, testLayer(ReviewConfig.layerNoDeps)));
 });
 
 test("resolveActiveReviewPass -- undefined when no pin", async () => {
@@ -209,9 +190,7 @@ test("resolveActiveReviewPass -- undefined when no pin", async () => {
     }
     assertEquals(outcome.success, undefined);
   });
-  await Effect.runPromise(
-    Effect.provide(program, testLayer(ReviewConfig.layerNoDeps)),
-  );
+  await Effect.runPromise(Effect.provide(program, testLayer(ReviewConfig.layerNoDeps)));
 });
 
 // missing entities
@@ -221,9 +200,7 @@ test("resolveActiveReviewPass -- fails on a missing review pass", async () => {
     const outcome = yield* run((config) => config.setActiveReviewPass("nope"));
     assertFailsWith(outcome, ConfigMissingError, 'review pass "nope"');
   });
-  await Effect.runPromise(
-    Effect.provide(program, testLayer(ReviewConfig.layerNoDeps)),
-  );
+  await Effect.runPromise(Effect.provide(program, testLayer(ReviewConfig.layerNoDeps)));
 });
 
 test("resolveActiveReviewPass -- fails on a missing unit pool", async () => {
@@ -250,9 +227,7 @@ test("resolveActiveReviewPass -- fails on a missing unit pool", async () => {
     );
     assertFailsWith(outcome, ConfigMissingError, 'model pool "missing-pool"');
   });
-  await Effect.runPromise(
-    Effect.provide(program, testLayer(ReviewConfig.layerNoDeps)),
-  );
+  await Effect.runPromise(Effect.provide(program, testLayer(ReviewConfig.layerNoDeps)));
 });
 
 test("resolveActiveReviewPass -- fails on an empty unit pool", async () => {
@@ -278,15 +253,9 @@ test("resolveActiveReviewPass -- fails on an empty unit pool", async () => {
         yield* config.setActiveReviewPass("r");
       }),
     );
-    assertFailsWith(
-      outcome,
-      ConfigMissingError,
-      'model pool "empty" has no models',
-    );
+    assertFailsWith(outcome, ConfigMissingError, 'model pool "empty" has no models');
   });
-  await Effect.runPromise(
-    Effect.provide(program, testLayer(ReviewConfig.layerNoDeps)),
-  );
+  await Effect.runPromise(Effect.provide(program, testLayer(ReviewConfig.layerNoDeps)));
 });
 
 test("resolveActiveReviewPass -- fails on a missing unit prompt", async () => {
@@ -316,15 +285,9 @@ test("resolveActiveReviewPass -- fails on a missing unit prompt", async () => {
         yield* config.setActiveReviewPass("r");
       }),
     );
-    assertFailsWith(
-      outcome,
-      ConfigMissingError,
-      'prompt "missing.prompt" for unit "mark"',
-    );
+    assertFailsWith(outcome, ConfigMissingError, 'prompt "missing.prompt" for unit "mark"');
   });
-  await Effect.runPromise(
-    Effect.provide(program, testLayer(ReviewConfig.layerNoDeps)),
-  );
+  await Effect.runPromise(Effect.provide(program, testLayer(ReviewConfig.layerNoDeps)));
 });
 
 test("resolveActiveReviewPass -- fails on a missing pass system prompt", async () => {
@@ -353,15 +316,9 @@ test("resolveActiveReviewPass -- fails on a missing pass system prompt", async (
         yield* config.setActiveReviewPass("r");
       }),
     );
-    assertFailsWith(
-      outcome,
-      ConfigMissingError,
-      'prompt "missing.system" for pass "r"',
-    );
+    assertFailsWith(outcome, ConfigMissingError, 'prompt "missing.system" for pass "r"');
   });
-  await Effect.runPromise(
-    Effect.provide(program, testLayer(ReviewConfig.layerNoDeps)),
-  );
+  await Effect.runPromise(Effect.provide(program, testLayer(ReviewConfig.layerNoDeps)));
 });
 
 test("resolveActiveReviewPass -- fails on missing referenced categories", async () => {
@@ -394,9 +351,7 @@ test("resolveActiveReviewPass -- fails on missing referenced categories", async 
     );
     assertFailsWith(outcome, ConfigMissingError, '"gone", "also-gone"');
   });
-  await Effect.runPromise(
-    Effect.provide(program, testLayer(ReviewConfig.layerNoDeps)),
-  );
+  await Effect.runPromise(Effect.provide(program, testLayer(ReviewConfig.layerNoDeps)));
 });
 
 // invalid passes
@@ -433,9 +388,7 @@ test("resolveActiveReviewPass -- fails on attempt units without categories", asy
       'attempt unit "mark" in pass "r" has no allowed categories',
     );
   });
-  await Effect.runPromise(
-    Effect.provide(program, testLayer(ReviewConfig.layerNoDeps)),
-  );
+  await Effect.runPromise(Effect.provide(program, testLayer(ReviewConfig.layerNoDeps)));
 });
 
 test("resolveActiveReviewPass -- fails on duplicate unit ids", async () => {
@@ -470,15 +423,9 @@ test("resolveActiveReviewPass -- fails on duplicate unit ids", async () => {
         yield* config.setActiveReviewPass("r");
       }),
     );
-    assertFailsWith(
-      outcome,
-      ConfigInvalidError,
-      'unit id "mark" is used more than once',
-    );
+    assertFailsWith(outcome, ConfigInvalidError, 'unit id "mark" is used more than once');
   });
-  await Effect.runPromise(
-    Effect.provide(program, testLayer(ReviewConfig.layerNoDeps)),
-  );
+  await Effect.runPromise(Effect.provide(program, testLayer(ReviewConfig.layerNoDeps)));
 });
 
 test("resolveActiveReviewPass -- fails on dotted unit ids", async () => {
@@ -503,9 +450,7 @@ test("resolveActiveReviewPass -- fails on dotted unit ids", async () => {
     );
     assertFailsWith(outcome, ConfigInvalidError, 'must not contain "."');
   });
-  await Effect.runPromise(
-    Effect.provide(program, testLayer(ReviewConfig.layerNoDeps)),
-  );
+  await Effect.runPromise(Effect.provide(program, testLayer(ReviewConfig.layerNoDeps)));
 });
 
 test("resolveActiveReviewPass -- fails on forward unit inputs", async () => {
@@ -531,15 +476,9 @@ test("resolveActiveReviewPass -- fails on forward unit inputs", async () => {
         yield* config.setActiveReviewPass("r");
       }),
     );
-    assertFailsWith(
-      outcome,
-      ConfigInvalidError,
-      'references unknown or later unit "second"',
-    );
+    assertFailsWith(outcome, ConfigInvalidError, 'references unknown or later unit "second"');
   });
-  await Effect.runPromise(
-    Effect.provide(program, testLayer(ReviewConfig.layerNoDeps)),
-  );
+  await Effect.runPromise(Effect.provide(program, testLayer(ReviewConfig.layerNoDeps)));
 });
 
 test("resolveActiveReviewPass -- fails on unknown unit inputs", async () => {
@@ -562,15 +501,9 @@ test("resolveActiveReviewPass -- fails on unknown unit inputs", async () => {
         yield* config.setActiveReviewPass("r");
       }),
     );
-    assertFailsWith(
-      outcome,
-      ConfigInvalidError,
-      'references unknown or later unit "ghost"',
-    );
+    assertFailsWith(outcome, ConfigInvalidError, 'references unknown or later unit "ghost"');
   });
-  await Effect.runPromise(
-    Effect.provide(program, testLayer(ReviewConfig.layerNoDeps)),
-  );
+  await Effect.runPromise(Effect.provide(program, testLayer(ReviewConfig.layerNoDeps)));
 });
 
 test("resolveActiveReviewPass -- fails on attempt and summary together", async () => {
@@ -607,7 +540,5 @@ test("resolveActiveReviewPass -- fails on attempt and summary together", async (
       'unit "both" in pass "r" sets both attempt and summary',
     );
   });
-  await Effect.runPromise(
-    Effect.provide(program, testLayer(ReviewConfig.layerNoDeps)),
-  );
+  await Effect.runPromise(Effect.provide(program, testLayer(ReviewConfig.layerNoDeps)));
 });

@@ -1,4 +1,5 @@
 import type { ComponentChildren } from "preact";
+
 import { CheckboxIcon, RadioIcon } from "#/components/ui/icons.tsx";
 
 export interface Option {
@@ -100,24 +101,11 @@ interface OptionsRowProps {
 }
 
 /** Label + radio/checkbox option group row. */
-export function OptionsRow({
-  kind,
-  name,
-  label,
-  options,
-  values,
-  onToggle,
-}: OptionsRowProps) {
+export function OptionsRow({ kind, name, label, options, values, onToggle }: OptionsRowProps) {
   return (
     <>
       {label && <span class="cell--data">{label}</span>}
-      <OptionList
-        kind={kind}
-        name={name}
-        options={options}
-        values={values}
-        onToggle={onToggle}
-      />
+      <OptionList kind={kind} name={name} options={options} values={values} onToggle={onToggle} />
     </>
   );
 }

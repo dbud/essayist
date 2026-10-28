@@ -6,10 +6,7 @@ import { useContext } from "preact/hooks";
 export function createModelContext<M>(name: string) {
   const context = createContext<M | null>(null);
 
-  function Provider(props: {
-    readonly value: M;
-    readonly children?: ComponentChildren;
-  }) {
+  function Provider(props: { readonly value: M; readonly children?: ComponentChildren }) {
     return h(context.Provider, props);
   }
 

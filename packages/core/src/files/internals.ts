@@ -4,6 +4,7 @@
  */
 
 import { type Context, Effect } from "effect";
+
 import { type ContentManifest, reassemble } from "#/files/chunked_content.ts";
 import { resolveMarks } from "#/marks/resolver.ts";
 import type { Mark } from "#/marks/types.ts";
@@ -15,6 +16,7 @@ import {
   type PersistenceError,
   type WriteOp,
 } from "#/persistence/mod.ts";
+
 import {
   contentChunkKey,
   contentManifestKey,
@@ -36,17 +38,13 @@ const MAX_ATTEMPTS = 10;
  * attempt re-runs until the guard matches. Mirrors the legacy class's
  * 10-attempt retry with no delay between attempts.
  */
-export const retryConcurrency = <A, E, R>(
-  effect: Effect.Effect<A, E, R>,
-): Effect.Effect<A, E, R> =>
+export const retryConcurrency = <A, E, R>(effect: Effect.Effect<A, E, R>): Effect.Effect<A, E, R> =>
   Effect.retry(effect, {
     times: MAX_ATTEMPTS - 1,
     while: (error) => error instanceof ConcurrentModificationError,
   });
 
-export function makeInternals(
-  persistence: Context.Service.Shape<typeof Persistence>,
-) {
+export function makeInternals(persistence: Context.Service.Shape<typeof Persistence>) {
   /** Fetch many keys, batching around the getMany round-trip limit. */
   const getManyBatched = <T>(
     keys: Key[],
@@ -89,13 +87,9 @@ export function makeInternals(
     path: string,
   ): Effect.Effect<FileSnapshot, PersistenceError | FileMissingError> =>
     Effect.gen(function* () {
-      const entry = yield* persistence.get<StoredSnapshot>(
-        latestKey(wsId, path),
-      );
+      const entry = yield* persistence.get<StoredSnapshot>(latestKey(wsId, path));
       if (!entry) {
-        return yield* Effect.fail(
-          new FileMissingError({ path, versionId: null }),
-        );
+        return yield* Effect.fail(new FileMissingError({ path, versionId: null }));
       }
       const { version_id, chunkCount, firstChunk, ...rest } = entry.value;
       const content = yield* reassembleContent(wsId, path, version_id, {
@@ -112,9 +106,7 @@ export function makeInternals(
     versionId: string,
   ): Effect.Effect<FileVersion, PersistenceError | FileMissingError> =>
     Effect.gen(function* () {
-      const entry = yield* persistence.get<FileVersion[]>(
-        fileVersionsKey(wsId, path),
-      );
+      const entry = yield* persistence.get<FileVersion[]>(fileVersionsKey(wsId, path));
       const version = entry?.value.find((v) => v.version_id === versionId);
       if (!version) {
         return yield* Effect.fail(new FileMissingError({ path, versionId }));
@@ -135,12 +127,7 @@ export function makeInternals(
       if (!manifestEntry) {
         return yield* Effect.fail(new FileMissingError({ path, versionId }));
       }
-      return yield* reassembleContent(
-        wsId,
-        path,
-        versionId,
-        manifestEntry.value,
-      );
+      return yield* reassembleContent(wsId, path, versionId, manifestEntry.value);
     });
 
   /**
@@ -167,9 +154,7 @@ export function makeInternals(
     versionId: string,
   ): Effect.Effect<Mark[], PersistenceError> =>
     Effect.gen(function* () {
-      const entry = yield* persistence.get<Mark[]>(
-        marksKey(wsId, path, versionId),
-      );
+      const entry = yield* persistence.get<Mark[]>(marksKey(wsId, path, versionId));
       return entry?.value ?? [];
     });
 

@@ -21,6 +21,6 @@ export function withDOM<T>(f: (window: GlobalWindow) => T): T {
     g.MutationObserver = prevMutationObserver;
     g.DOMParser = prevDOMParser;
     g.getComputedStyle = prevGetComputedStyle;
-    win.happyDOM.close();
+    void win.happyDOM.close();
   }
 }

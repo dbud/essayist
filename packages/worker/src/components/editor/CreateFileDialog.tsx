@@ -1,4 +1,5 @@
 import { type Signal, useSignal } from "@preact/signals";
+
 import Dialog from "#/components/ui/Dialog.tsx";
 import WaveBars from "#/components/ui/WaveBars.tsx";
 
@@ -12,10 +13,7 @@ interface CreateFileDialogProps {
 }
 
 /** Dialog for creating a new file in the current workspace. */
-export default function CreateFileDialog({
-  open,
-  onCreated,
-}: CreateFileDialogProps) {
+export default function CreateFileDialog({ open, onCreated }: CreateFileDialogProps) {
   const path = useSignal("");
   const error = useSignal<string | null>(null);
   const submitting = useSignal(false);
@@ -35,8 +33,7 @@ export default function CreateFileDialog({
       open.value = false;
       onCreated?.();
     } catch (err) {
-      error.value =
-        err instanceof Error ? err.message : "Failed to create file";
+      error.value = err instanceof Error ? err.message : "Failed to create file";
     } finally {
       submitting.value = false;
     }

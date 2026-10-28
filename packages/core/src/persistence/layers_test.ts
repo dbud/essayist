@@ -6,6 +6,7 @@
 
 import { Effect } from "effect";
 import { test } from "vitest";
+
 import { SCENARIOS } from "./scenarios.ts";
 import { layerKvMemory } from "./testing/kv.ts";
 

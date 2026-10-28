@@ -15,17 +15,13 @@ function loadGapi(): Promise<void> {
   return loadScript(GAPI_SRC, () => typeof gapi !== "undefined");
 }
 
-export async function openGooglePicker(
-  config: PickerConfig,
-): Promise<PickerDoc[]> {
+export async function openGooglePicker(config: PickerConfig): Promise<PickerDoc[]> {
   await loadGapi();
   await new Promise<void>((resolve) => gapi.load("picker", resolve));
 
   return new Promise((resolve) => {
     const docsView = (viewId: google.picker.ViewId) =>
-      new google.picker.DocsView(viewId).setMode(
-        google.picker.DocsViewMode.LIST,
-      );
+      new google.picker.DocsView(viewId).setMode(google.picker.DocsViewMode.LIST);
     const builder = new google.picker.PickerBuilder()
       .addView(docsView(google.picker.ViewId.DOCUMENTS))
       .addView(docsView(google.picker.ViewId.PDFS))
@@ -36,7 +32,7 @@ export async function openGooglePicker(
       .setDeveloperKey(config.developerKey)
       .setCallback((data) => {
         const action = data[google.picker.Response.ACTION];
-        if (action === google.picker.Action.PICKED) {
+        if (action === (google.picker.Action.PICKED as string)) {
           const docs = data[google.picker.Response.DOCUMENTS] ?? [];
           resolve(
             docs.map((d) => ({
@@ -44,7 +40,7 @@ export async function openGooglePicker(
               name: d[google.picker.Document.NAME] ?? "",
             })),
           );
-        } else if (action === google.picker.Action.CANCEL) {
+        } else if (action === (google.picker.Action.CANCEL as string)) {
           resolve([]);
         }
       });

@@ -1,9 +1,6 @@
 import type { Mark } from "@essayist/core";
 import { CodeExtension } from "@lexical/code";
-import {
-  AutoFocusExtension,
-  HorizontalRuleExtension,
-} from "@lexical/extension";
+import { AutoFocusExtension, HorizontalRuleExtension } from "@lexical/extension";
 import { HistoryExtension } from "@lexical/history";
 import { LinkExtension } from "@lexical/link";
 import { ListExtension } from "@lexical/list";
@@ -11,14 +8,11 @@ import { MarkExtension } from "@lexical/mark";
 import { RichTextExtension } from "@lexical/rich-text";
 import type { ReadonlySignal, Signal } from "@preact/signals";
 import { configExtension, defineExtension } from "lexical";
+
 import { PartialUpdateExtension } from "#/editor/partialUpdateExtension.ts";
 import type { EditorSelection } from "#/signals/editorSelection.ts";
-import type {
-  MarkBadge,
-  MarkNumbers,
-  MarkRect,
-  SidenotePositions,
-} from "#/signals/sidenotes.ts";
+import type { MarkBadge, MarkNumbers, MarkRect, SidenotePositions } from "#/signals/sidenotes.ts";
+
 import { CaretExtension } from "./caretExtension.ts";
 import { MarksExtension } from "./markExtension.ts";
 import { MarksAtCursorExtension } from "./marksAtCursorExtension.ts";

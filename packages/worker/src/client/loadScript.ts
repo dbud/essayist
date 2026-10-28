@@ -16,9 +16,7 @@ export function loadScript(src: string, isReady: () => boolean): Promise<void> {
       resolve();
       return;
     }
-    let script = document.querySelector<HTMLScriptElement>(
-      `script[src="${src}"]`,
-    );
+    let script = document.querySelector<HTMLScriptElement>(`script[src="${src}"]`);
     if (!script) {
       script = document.createElement("script");
       script.src = src;

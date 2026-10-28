@@ -1,6 +1,7 @@
 import { assertEquals } from "@std/assert";
 import { Schema } from "effect";
 import { test } from "vitest";
+
 import { generateInstructions, stripMarkdownFences } from "./schema.ts";
 
 const HEADER =
@@ -261,9 +262,7 @@ test("generateInstructions recurses through nested arrays of objects", () => {
     groups: Schema.Array(
       Schema.Struct({
         title: Schema.String,
-        items: Schema.Array(
-          Schema.Struct({ id: Schema.String, qty: Schema.Number }),
-        ),
+        items: Schema.Array(Schema.Struct({ id: Schema.String, qty: Schema.Number })),
       }),
     ),
   });
@@ -376,17 +375,11 @@ test("generateInstructions handles number fields", () => {
 });
 
 test("stripMarkdownFences removes json code fences", () => {
-  assertEquals(
-    stripMarkdownFences('```json\n{"key": "value"}\n```'),
-    '{"key": "value"}',
-  );
+  assertEquals(stripMarkdownFences('```json\n{"key": "value"}\n```'), '{"key": "value"}');
 });
 
 test("stripMarkdownFences removes plain code fences", () => {
-  assertEquals(
-    stripMarkdownFences('```\n{"key": "value"}\n```'),
-    '{"key": "value"}',
-  );
+  assertEquals(stripMarkdownFences('```\n{"key": "value"}\n```'), '{"key": "value"}');
 });
 
 test("stripMarkdownFences handles text without fences", () => {
@@ -394,8 +387,5 @@ test("stripMarkdownFences handles text without fences", () => {
 });
 
 test("stripMarkdownFences trims whitespace around fences", () => {
-  assertEquals(
-    stripMarkdownFences('  ```json\n{"key": "value"}\n```  '),
-    '{"key": "value"}',
-  );
+  assertEquals(stripMarkdownFences('  ```json\n{"key": "value"}\n```  '), '{"key": "value"}');
 });

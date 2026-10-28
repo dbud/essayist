@@ -3,7 +3,7 @@
 
 import { inspect } from "node:util";
 
-export function pprint<T>(value: T): void {
+export function pprint(value: unknown): void {
   const body = process.stdout.isTTY
     ? inspect(value, {
         colors: process.env.NO_COLOR === undefined,

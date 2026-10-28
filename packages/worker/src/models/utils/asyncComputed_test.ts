@@ -1,6 +1,7 @@
 import { computed, signal } from "@preact/signals";
 import { assertEquals } from "@std/assert";
 import { test } from "vitest";
+
 import { asyncComputed } from "./asyncComputed.ts";
 
 const tick = () => new Promise<void>((r) => queueMicrotask(r));
@@ -156,10 +157,10 @@ test("asyncComputed -- aborts in-flight compute when superseded", async () => {
 
   const c = asyncComputed(
     () => s.value,
-    (n, signal) =>
+    (n, abort) =>
       new Promise<number>((resolve, reject) => {
         const cancel = timers.schedule(() => resolve(n), 15);
-        signal.addEventListener(
+        abort.addEventListener(
           "abort",
           () => {
             cancel();
@@ -205,7 +206,7 @@ test("asyncComputed -- downstream deep-equality suppression", async () => {
     downstreamRuns++;
     return c.value.value;
   });
-  downstream.value; // prime
+  void downstream.value; // prime
   assertEquals(downstreamRuns, 1);
 
   s.value = [1, 2]; // deeply equal -> no refire

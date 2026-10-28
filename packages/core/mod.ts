@@ -54,10 +54,7 @@ export {
 } from "#/marks/types.ts";
 export type { ModelCallRecord } from "#/model/service.ts";
 export { ModelClient } from "#/model/service.ts";
-export {
-  ChunkedValues,
-  MissingChunksError,
-} from "#/persistence/chunked_values.ts";
+export { ChunkedValues, MissingChunksError } from "#/persistence/chunked_values.ts";
 export {
   type BatchOptions,
   ConcurrentModificationError,
@@ -77,19 +74,10 @@ export { ReviewProgressTracker } from "#/reviews/progress.ts";
 export type { RunReviewPassOptions } from "#/reviews/runner.ts";
 export { runReviewPass } from "#/reviews/runner.ts";
 export { ReviewRuns } from "#/reviews/service.ts";
-export type {
-  TraceEvent,
-  TraceNodeView,
-  TraceTotals,
-  TraceView,
-} from "#/reviews/trace/mod.ts";
+export type { TraceEvent, TraceNodeView, TraceTotals, TraceView } from "#/reviews/trace/mod.ts";
 export { groupTraceNodes } from "#/reviews/trace/mod.ts";
 export { TraceEvents } from "#/reviews/trace/service.ts";
-export type {
-  MarkAttempt,
-  ReviewRun,
-  ReviewRunStatus,
-} from "#/reviews/types.ts";
+export type { MarkAttempt, ReviewRun, ReviewRunStatus } from "#/reviews/types.ts";
 export { Search } from "#/search/service.ts";
 export type { GrepMatch, GrepOptions, GrepResult } from "#/search/types.ts";
 export { UserState } from "#/user_state/service.ts";

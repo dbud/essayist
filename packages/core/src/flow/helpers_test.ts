@@ -1,16 +1,11 @@
 import { assertEquals } from "@std/assert";
 import { Effect } from "effect";
 import { test } from "vitest";
+
 import type { ForwardSpec, PassWhenSpec } from "./helpers.ts";
 import { forward, passWhen } from "./helpers.ts";
 import { FlowRunner } from "./runner.ts";
-import type {
-  FlowGraph,
-  FlowRunResult,
-  FlowTypes,
-  NodeRunner,
-  NodeRunners,
-} from "./types.ts";
+import type { FlowGraph, FlowRunResult, FlowTypes, NodeRunner, NodeRunners } from "./types.ts";
 
 interface HelperTypes extends FlowTypes {
   nodes: {
@@ -27,10 +22,7 @@ interface HelperTypes extends FlowTypes {
 
 const source: NodeRunner<HelperTypes, "source"> = {
   execute({ text }, { artifact }) {
-    return Effect.succeed([
-      artifact("text", text),
-      artifact("token", text.toUpperCase()),
-    ]);
+    return Effect.succeed([artifact("text", text), artifact("token", text.toUpperCase())]);
   },
 };
 

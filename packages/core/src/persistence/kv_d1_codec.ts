@@ -8,14 +8,10 @@
  * values and Uint8Array chunks intact. Both transports only see TEXT.
  */
 
-import {
-  decodeBase64,
-  decodeHex,
-  encodeBase64,
-  encodeHex,
-} from "@std/encoding";
+import { decodeBase64, decodeHex, encodeBase64, encodeHex } from "@std/encoding";
 import * as cbor from "cbor-x";
 import { pack, unpack } from "fdb-tuple";
+
 import type { Key } from "./mod.ts";
 
 /** The packed bytes of a tuple key. */
@@ -59,6 +55,7 @@ export function encodeValue(value: unknown): string {
   return encodeBase64(cbor.encode(value));
 }
 
+// oxlint-disable-next-line typescript/no-unnecessary-type-parameters -- callers pass the value type; kv_d1 chains it
 export function decodeValue<T = unknown>(text: string): T {
   return cbor.decode(decodeBase64(text)) as T;
 }

@@ -57,28 +57,18 @@ export function authAiError(description: string): AiError {
 
 function usageBody(usage: FakeRound["usage"]): ChatResult["usage"] {
   if (usage === undefined) return undefined;
-  const promptDetails:
-    | NonNullable<ChatResult["usage"]>["prompt_tokens_details"]
-    | undefined =
-    usage.cachedTokens === undefined
-      ? undefined
-      : { cached_tokens: usage.cachedTokens };
+  const promptDetails: NonNullable<ChatResult["usage"]>["prompt_tokens_details"] | undefined =
+    usage.cachedTokens === undefined ? undefined : { cached_tokens: usage.cachedTokens };
   const completionDetails:
     | NonNullable<ChatResult["usage"]>["completion_tokens_details"]
     | undefined =
-    usage.reasoningTokens === undefined
-      ? undefined
-      : { reasoning_tokens: usage.reasoningTokens };
+    usage.reasoningTokens === undefined ? undefined : { reasoning_tokens: usage.reasoningTokens };
   return {
     prompt_tokens: usage.inputTokens,
     completion_tokens: usage.outputTokens,
     total_tokens: usage.inputTokens + usage.outputTokens,
-    ...(promptDetails !== undefined
-      ? { prompt_tokens_details: promptDetails }
-      : {}),
-    ...(completionDetails !== undefined
-      ? { completion_tokens_details: completionDetails }
-      : {}),
+    ...(promptDetails !== undefined ? { prompt_tokens_details: promptDetails } : {}),
+    ...(completionDetails !== undefined ? { completion_tokens_details: completionDetails } : {}),
     ...(usage.cost !== undefined ? { cost: usage.cost } : {}),
   };
 }
@@ -95,9 +85,7 @@ function chatResult(round: FakeRound): ChatResult {
         message: {
           role: "assistant",
           content: round.text,
-          ...(round.reasoning !== undefined
-            ? { reasoning: round.reasoning }
-            : {}),
+          ...(round.reasoning !== undefined ? { reasoning: round.reasoning } : {}),
         },
         finish_reason: "stop",
       },

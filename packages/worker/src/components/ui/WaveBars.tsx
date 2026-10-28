@@ -85,9 +85,7 @@ export default function WaveBars({
 
   // anchor the wave at the bottom-right of the nearest positioned ancestor
   return (
-    <div
-      class={`absolute inset-0 flex items-end justify-end overflow-hidden ${className}`}
-    >
+    <div class={`absolute inset-0 flex items-end justify-end overflow-hidden ${className}`}>
       {svg}
     </div>
   );

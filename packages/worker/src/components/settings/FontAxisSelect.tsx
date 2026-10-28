@@ -1,4 +1,5 @@
 import type { Signal } from "@preact/signals";
+
 import { type Option, OptionsRow } from "#/components/ui/forms/OptionsRow.tsx";
 
 export const SANS_FONT_OPTIONS: Option[] = [
@@ -24,11 +25,7 @@ interface FontAxisSelectProps {
   label: string;
 }
 
-export default function FontAxisSelect({
-  axis,
-  name,
-  label,
-}: FontAxisSelectProps) {
+export default function FontAxisSelect({ axis, name, label }: FontAxisSelectProps) {
   return (
     <OptionsRow
       kind="radio"

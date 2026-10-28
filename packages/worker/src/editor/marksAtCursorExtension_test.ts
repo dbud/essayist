@@ -1,10 +1,5 @@
 import { buildEditorFromExtensions } from "@lexical/extension";
-import {
-  $createMarkNode,
-  $isMarkNode,
-  $wrapSelectionInMarkNode,
-  MarkNode,
-} from "@lexical/mark";
+import { $createMarkNode, $isMarkNode, $wrapSelectionInMarkNode, MarkNode } from "@lexical/mark";
 import { RichTextExtension } from "@lexical/rich-text";
 import { assert, assertEquals } from "@std/assert";
 import {
@@ -18,10 +13,9 @@ import {
   type LexicalNode,
 } from "lexical";
 import { test } from "vitest";
-import {
-  type EditorSelection,
-  EditorSelectionModel,
-} from "#/signals/editorSelection.ts";
+
+import { type EditorSelection, EditorSelectionModel } from "#/signals/editorSelection.ts";
+
 import { MarksAtCursorExtension } from "./marksAtCursorExtension.ts";
 
 const selection: EditorSelection = new EditorSelectionModel({
@@ -33,10 +27,7 @@ const selection: EditorSelection = new EditorSelectionModel({
 const testExtension = defineExtension({
   name: "marks-at-cursor-test",
   nodes: () => [MarkNode],
-  dependencies: [
-    RichTextExtension,
-    configExtension(MarksAtCursorExtension, { selection }),
-  ],
+  dependencies: [RichTextExtension, configExtension(MarksAtCursorExtension, { selection })],
 });
 
 function createEditor(): LexicalEditor {
@@ -85,10 +76,7 @@ function buildMultiIdMark(editor: LexicalEditor, ids: string[]): void {
  * (offset 1, so it's strictly interior, not a boundary that Lexical might
  * associate with a neighbouring node).
  */
-function caretIn(
-  editor: LexicalEditor,
-  predicate: (n: LexicalNode) => boolean,
-): void {
+function caretIn(editor: LexicalEditor, predicate: (n: LexicalNode) => boolean): void {
   editor.update(
     () => {
       const node = $getRoot().getAllTextNodes().find(predicate);

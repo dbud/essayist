@@ -1,4 +1,5 @@
 import type { Mark } from "@essayist/core";
+
 import { getCategories } from "#/models/categories.ts";
 
 export const FALLBACK_COLOR = "var(--color-ink)";
@@ -19,10 +20,7 @@ export interface MarkBand {
  * order (outer/earliest mark first -> band 0). A missing mark (transient) has
  * no label, so it falls back to ink.
  */
-export function assignBands(
-  marks: ReadonlyMap<string, Mark>,
-  ids: readonly string[],
-): MarkBand[] {
+export function assignBands(marks: ReadonlyMap<string, Mark>, ids: readonly string[]): MarkBand[] {
   return ids.map((id, order) => {
     const mark = marks.get(id);
     return { id, color: mark ? colorForMark(mark) : FALLBACK_COLOR, order };

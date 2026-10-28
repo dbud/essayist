@@ -1,5 +1,6 @@
 import { type PersistenceError, UserState, Workspaces } from "@essayist/core";
 import { Effect } from "effect";
+
 import type { WorkspacesData } from "./workspaces.data.ts";
 
 export function workspacesLoader(
@@ -7,12 +8,8 @@ export function workspacesLoader(
   wsIntent: string | undefined,
 ): Effect.Effect<WorkspacesData, PersistenceError, Workspaces | UserState> {
   return Effect.gen(function* () {
-    const workspaces = yield* Workspaces.use((store) =>
-      store.listWorkspacesForUser(userId),
-    );
-    const persistedWs = yield* UserState.use((store) =>
-      store.getSelectedWorkspace(userId),
-    );
+    const workspaces = yield* Workspaces.use((store) => store.listWorkspacesForUser(userId));
+    const persistedWs = yield* UserState.use((store) => store.getSelectedWorkspace(userId));
     const selectedId =
       workspaces.find((workspace) => workspace.id === wsIntent)?.id ??
       workspaces.find((workspace) => workspace.id === persistedWs)?.id ??

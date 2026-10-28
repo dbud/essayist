@@ -1,8 +1,6 @@
 import { ChevronDown } from "lucide-preact";
-import Dropdown, {
-  DropdownItem,
-  DropdownMenu,
-} from "#/components/ui/Dropdown.tsx";
+
+import Dropdown, { DropdownItem, DropdownMenu } from "#/components/ui/Dropdown.tsx";
 import Swappable from "#/components/ui/Swappable.tsx";
 import { usePreferences } from "#/models/preferences.ts";
 
@@ -14,8 +12,7 @@ const OPTIONS = [
 
 export default function FontSelect() {
   const { viewerFont } = usePreferences();
-  const current =
-    OPTIONS.find((o) => o.value === viewerFont.value) ?? OPTIONS[0];
+  const current = OPTIONS.find((o) => o.value === viewerFont.value) ?? OPTIONS[0];
 
   return (
     <Dropdown

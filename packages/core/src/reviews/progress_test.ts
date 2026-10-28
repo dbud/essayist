@@ -1,7 +1,9 @@
 import { assertEquals } from "@std/assert";
 import { test } from "vitest";
+
 import type { FlowEvent, NodeKind } from "#/flow/types.ts";
 import type { ReviewTypes } from "#/reviews/graph.ts";
+
 import type { ReviewProgress } from "./progress.ts";
 import { ReviewProgressTracker } from "./progress.ts";
 
@@ -17,7 +19,7 @@ const KIND_OF = new Map<string, NodeKind<ReviewTypes>>([
 
 test("ReviewProgressTracker -- emits initial state on construction", () => {
   const events: ReviewProgress[] = [];
-  new ReviewProgressTracker((p) => events.push(p), KIND_OF);
+  const _tracker = new ReviewProgressTracker((p) => events.push(p), KIND_OF);
 
   assertEquals(events, [{ phase: "working", notes: 0 }]);
 });

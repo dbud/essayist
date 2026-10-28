@@ -1,4 +1,5 @@
 import type { ReviewRun, ReviewRunStatus } from "@essayist/core";
+
 // TODO -- the trace view needs a worker route -- ESS-84
 // import { ScrollText } from "lucide-preact";
 import Section from "#/components/debug/Section.tsx";
@@ -24,9 +25,7 @@ function RunItem({ run, wsId: _wsId }: { run: ReviewRun; wsId: string }) {
         {statusBadge(run.status)}
         <span class="text-xs text-ink/60">
           {new Date(run.startedAt).toLocaleString()}
-          {run.completedAt && (
-            <> ({((run.completedAt - run.startedAt) / 1000).toFixed(1)}s)</>
-          )}
+          {run.completedAt && <> ({((run.completedAt - run.startedAt) / 1000).toFixed(1)}s)</>}
         </span>
         {/* TODO -- the trace view needs a worker route -- ESS-84
         <a
@@ -38,9 +37,7 @@ function RunItem({ run, wsId: _wsId }: { run: ReviewRun; wsId: string }) {
         </a>
         */}
       </div>
-      {run.status === "failed" && run.error && (
-        <div class="text-ink/80 text-xs">{run.error}</div>
-      )}
+      {run.status === "failed" && run.error && <div class="text-ink/80 text-xs">{run.error}</div>}
       {run.status === "completed" && run.summary && (
         <MarkdownView content={run.summary} class="text-xs" />
       )}

@@ -11,10 +11,8 @@ import { googleAuth } from "@hono/oauth-providers/google";
 import { Clock, Effect } from "effect";
 import { Hono } from "hono";
 import { getCookie, setCookie } from "hono/cookie";
-import {
-  type GoogleIdTokenClaims,
-  verifyGoogleIdToken,
-} from "#/auth/googleIdToken.ts";
+
+import { type GoogleIdTokenClaims, verifyGoogleIdToken } from "#/auth/googleIdToken.ts";
 import { safeNext } from "#/auth/nextUrl.ts";
 import {
   expiredCookie,
@@ -29,22 +27,15 @@ import { runtime } from "#/runtime.ts";
 
 // `drive.file` grants access only to files the user explicitly picks in
 // the app, never their whole Drive.
-const SCOPES = [
-  "openid",
-  "email",
-  "profile",
-  "https://www.googleapis.com/auth/drive.file",
-];
+const SCOPES = ["openid", "email", "profile", "https://www.googleapis.com/auth/drive.file"];
 
 // The @hono middleware passes no parameters to the callback, so a
 // short-lived cookie carries the post-sign-in redirect target.
 const NEXT_COOKIE = "oauth-next";
 const NEXT_COOKIE_MAX_AGE = 600;
 
-const notConfigured = (
-  client_id: string | undefined,
-  client_secret: string | undefined,
-): boolean => client_id === undefined || client_secret === undefined;
+const notConfigured = (client_id: string | undefined, client_secret: string | undefined): boolean =>
+  client_id === undefined || client_secret === undefined;
 
 export const oauthRoutes = new Hono()
   .get("/signout", async (c) => {
@@ -56,10 +47,7 @@ export const oauthRoutes = new Hono()
     }
     const response = c.redirect("/login?signedout=1", 303);
     const url = new URL(c.req.url);
-    response.headers.append(
-      "Set-Cookie",
-      expiredCookie(url, siteSessionCookieName(url)),
-    );
+    response.headers.append("Set-Cookie", expiredCookie(url, siteSessionCookieName(url)));
     return response;
   })
   .use("/google", (c, next) => {
@@ -128,14 +116,8 @@ export const oauthRoutes = new Hono()
     );
 
     const response = c.redirect(next, 303);
-    response.headers.append(
-      "Set-Cookie",
-      siteSessionCookie(new URL(c.req.url), sessionId),
-    );
-    response.headers.append(
-      "Set-Cookie",
-      expiredCookie(new URL(c.req.url), NEXT_COOKIE),
-    );
+    response.headers.append("Set-Cookie", siteSessionCookie(new URL(c.req.url), sessionId));
+    response.headers.append("Set-Cookie", expiredCookie(new URL(c.req.url), NEXT_COOKIE));
     return response;
   })
   .post("/onetap", async (c) => {
@@ -178,21 +160,14 @@ export const oauthRoutes = new Hono()
           name: claims.name,
           picture: claims.picture,
         });
-        const tokens = yield* refreshTokensForUser(
-          user.id,
-          googleClientId,
-          googleClientSecret,
-        );
+        const tokens = yield* refreshTokensForUser(user.id, googleClientId, googleClientSecret);
         const id = nextId();
         yield* AuthStore.use((auth) => auth.createSession(id, user.id, tokens));
         return id;
       }),
     );
 
-    const response = c.redirect(
-      safeNext(typeof next === "string" ? next : null),
-      303,
-    );
+    const response = c.redirect(safeNext(typeof next === "string" ? next : null), 303);
     const url = new URL(c.req.url);
     response.headers.append("Set-Cookie", siteSessionCookie(url, sessionId));
     return response;

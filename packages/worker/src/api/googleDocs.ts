@@ -5,14 +5,10 @@
  * error shapes so group handlers stay thin.
  */
 
-import {
-  type AuthStore,
-  Files,
-  WorkspaceId,
-  type WriteResult,
-} from "@essayist/core";
+import { type AuthStore, Files, WorkspaceId, type WriteResult } from "@essayist/core";
 import { Effect } from "effect";
 import { HttpApiError } from "effect/http-api";
+
 import { getValidAccessToken } from "#/auth/token.ts";
 import { GoogleConfig } from "#/env.ts";
 import { exportDocAsMarkdown, sanitizeDocTitle } from "#/utils/googleDrive.ts";

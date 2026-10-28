@@ -19,11 +19,7 @@
 }
 
 @utility badge {
-  --badge-bg: color-mix(
-    in oklch,
-    var(--color-surface),
-    var(--color-opposite) 5%
-  );
+  --badge-bg: color-mix(in oklch, var(--color-surface), var(--color-opposite) 5%);
   --badge-fg: var(--color-ink);
   @apply inline-flex items-center justify-center whitespace-nowrap font-medium px-1 py-0 slant text-[0.7rem] leading-none;
   --slant-inset-y: 0.25rem;

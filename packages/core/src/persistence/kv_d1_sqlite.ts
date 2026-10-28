@@ -6,6 +6,7 @@
  */
 
 import type { DatabaseSync } from "node:sqlite";
+
 import type { D1Database } from "@cloudflare/workers-types";
 
 type MaybeResult<T> = {

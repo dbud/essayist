@@ -2,6 +2,7 @@
 
 import { openKv } from "@deno/kv";
 import { Effect, Layer } from "effect";
+
 import { jsonLogLayer } from "#/log.ts";
 import { layerKvHandle } from "#/persistence/kv_layer.ts";
 import { type Persistence, PersistenceError } from "#/persistence/mod.ts";

@@ -16,31 +16,22 @@
   --input-icon-inset: 0.25rem;
   --input-icon-size: 0.85rem;
   --input-icon-gap: 0.3rem;
-  --input-pad-left: calc(
-    var(--input-icon-inset) +
-    var(--input-icon-size) +
-    var(--input-icon-gap)
-  );
+  --input-pad-left: calc(var(--input-icon-inset) + var(--input-icon-size) + var(--input-icon-gap));
   @apply cell w-full select-text outline-none;
   padding-left: var(--input-pad-left);
   padding-bottom: calc(var(--input-height) - var(--input-pad-top) - 1em);
   background-color: var(--color-surface);
   background-image:
     var(--input-icon),
-    linear-gradient(
-      to right,
-      var(--input-underline-color),
-      var(--input-underline-color)
-    );
+    linear-gradient(to right, var(--input-underline-color), var(--input-underline-color));
   background-repeat: no-repeat;
   background-position:
-    var(--input-icon-inset)
-    calc(var(--input-pad-top) + (1em - var(--input-icon-size)) / 2),
+    var(--input-icon-inset) calc(var(--input-pad-top) + (1em - var(--input-icon-size)) / 2),
     var(--input-pad-left) calc(100% - var(--input-underline-lift));
   background-size:
     var(--input-icon-size) var(--input-icon-size),
     calc(100% - var(--input-pad-left) - var(--input-underline-inset))
-    var(--input-underline-thickness);
+      var(--input-underline-thickness);
   transition: --input-underline-color var(--input-underline-duration) ease-out;
   &:focus {
     --input-underline-color: var(--color-accent);

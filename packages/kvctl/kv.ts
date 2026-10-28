@@ -6,6 +6,7 @@ import { readdirSync } from "node:fs";
 import { basename, join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { fileURLToPath } from "node:url";
+
 import type { D1Database } from "@cloudflare/workers-types";
 import * as D1 from "@effect/sql-d1/D1Client";
 import {
@@ -25,17 +26,12 @@ import { type D1RestConfig, d1RestDatabase } from "@essayist/core/kv_d1_rest";
 import { d1SqliteShim } from "@essayist/core/kv_d1_sqlite";
 import { Config, Effect, Layer, ManagedRuntime } from "effect";
 import * as Reactivity from "effect/reactivity/Reactivity";
+
 import type { KvctlGlobals } from "#/globals.ts";
 
 /** The services kvctl commands reach through the runtime. */
 export type KvRuntime = ManagedRuntime.ManagedRuntime<
-  | Workspaces
-  | ReviewConfig
-  | TraceEvents
-  | ChunkedValues
-  | Persistence
-  | Files
-  | Marks,
+  Workspaces | ReviewConfig | TraceEvents | ChunkedValues | Persistence | Files | Marks,
   PersistenceError
 >;
 
@@ -44,9 +40,7 @@ interface StoreCtx {
 }
 
 // The vite dev server's D1 lives under the worker package's wrangler state.
-const D1_STATE = fileURLToPath(
-  new URL("../worker/.wrangler/state/v3/d1", import.meta.url),
-);
+const D1_STATE = fileURLToPath(new URL("../worker/.wrangler/state/v3/d1", import.meta.url));
 
 function localDatabase(): D1Database {
   const files = readdirSync(D1_STATE, { recursive: true })
@@ -55,14 +49,10 @@ function localDatabase(): D1Database {
     // miniflare's bookkeeping database; its content db sits next to it.
     .filter((path) => basename(path) !== "metadata.sqlite");
   if (files.length === 0) {
-    throw new Error(
-      "no local D1 state; start the vite dev server once, then retry",
-    );
+    throw new Error("no local D1 state; start the vite dev server once, then retry");
   }
   if (files.length > 1) {
-    throw new Error(
-      `several local D1 state files; not sure which:\n  ${files.join("\n  ")}`,
-    );
+    throw new Error(`several local D1 state files; not sure which:\n  ${files.join("\n  ")}`);
   }
   const db = new DatabaseSync(join(D1_STATE, files[0]));
   db.exec(KV_D1_SCHEMA);
@@ -103,13 +93,7 @@ function database(globals: KvctlGlobals): D1Database {
 export function storeLayer(
   db: D1Database,
 ): Layer.Layer<
-  | Workspaces
-  | ReviewConfig
-  | TraceEvents
-  | ChunkedValues
-  | Persistence
-  | Files
-  | Marks
+  Workspaces | ReviewConfig | TraceEvents | ChunkedValues | Persistence | Files | Marks
 > {
   const d1 = Layer.unwrap(Effect.map(D1.make({ db }), layerKvD1)).pipe(
     Layer.provide(Reactivity.layer),
@@ -141,10 +125,7 @@ export async function withStore<T>(
 }
 
 /** Yield every entry under a prefix, paging through cursors. */
-export async function* listAll<T>(
-  runtime: KvRuntime,
-  prefix: Key,
-): AsyncGenerator<Entry<T>> {
+export async function* listAll<T>(runtime: KvRuntime, prefix: Key): AsyncGenerator<Entry<T>> {
   let cursor: string | undefined;
   do {
     const page = await runtime.runPromise(

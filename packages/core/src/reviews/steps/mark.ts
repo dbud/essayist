@@ -1,23 +1,21 @@
 import { partition } from "@std/collections";
 import { Effect, Schema } from "effect";
+
 import type { NodeRunner } from "#/flow/types.ts";
 import { Marks } from "#/marks/service.ts";
 import type { MarkProvenance } from "#/marks/types.ts";
 import type { ModelClient } from "#/model/service.ts";
-import type {
-  ConcurrentModificationError,
-  PersistenceError,
-} from "#/persistence/mod.ts";
+import type { ConcurrentModificationError, PersistenceError } from "#/persistence/mod.ts";
 import { callStructured } from "#/reviews/call.ts";
 import type { ReviewTypes } from "#/reviews/graph.ts";
 import type { MarkAttempt } from "#/reviews/types.ts";
 import type { WorkspaceId } from "#/workspace/WorkspaceId.ts";
+
 import { composeCallInput, composeRepairInput } from "./input.ts";
 
 export const MarkProposalSchema = Schema.Struct({
   selected_text: Schema.String.annotate({
-    description:
-      "The exact text span to mark, copied verbatim from the source text.",
+    description: "The exact text span to mark, copied verbatim from the source text.",
     examples: ["the second sentence of paragraph three, exactly as written"],
   }),
   comment: Schema.String.annotate({
@@ -29,8 +27,7 @@ export const MarkProposalSchema = Schema.Struct({
   }),
   line_hint: Schema.optionalKey(
     Schema.Int.annotate({
-      description:
-        "Line number of the span, when the text appears more than once.",
+      description: "Line number of the span, when the text appears more than once.",
     }),
   ),
 });
@@ -82,17 +79,12 @@ export function applyProposedMarks(
         });
         continue;
       }
-      const result = yield* marks.mark(
-        pin.path,
-        proposal.selected_text,
-        proposal.comment,
-        {
-          label: proposal.label,
-          lineHint: proposal.line_hint,
-          provenance,
-          versionId: pin.versionId,
-        },
-      );
+      const result = yield* marks.mark(pin.path, proposal.selected_text, proposal.comment, {
+        label: proposal.label,
+        lineHint: proposal.line_hint,
+        provenance,
+        versionId: pin.versionId,
+      });
       attempts.push({
         ...proposal,
         ...result,
@@ -103,15 +95,8 @@ export function applyProposedMarks(
   });
 }
 
-export const markApplyRunner: NodeRunner<
-  ReviewTypes,
-  "mark.apply",
-  Marks | WorkspaceId
-> = {
-  execute: (
-    { path, versionId, allowedLabels, provenance },
-    { inputs, artifact, emit },
-  ) =>
+export const markApplyRunner: NodeRunner<ReviewTypes, "mark.apply", Marks | WorkspaceId> = {
+  execute: ({ path, versionId, allowedLabels, provenance }, { inputs, artifact, emit }) =>
     Effect.gen(function* () {
       const attempts = yield* applyProposedMarks(
         inputs.of("mark.proposals").flat(),
@@ -128,11 +113,7 @@ export const markApplyRunner: NodeRunner<
     }),
 };
 
-export const markProposeRunner: NodeRunner<
-  ReviewTypes,
-  "mark.propose",
-  ModelClient
-> = {
+export const markProposeRunner: NodeRunner<ReviewTypes, "mark.propose", ModelClient> = {
   execute: ({ prompts, pool }, { inputs, artifact, emit }) =>
     Effect.gen(function* () {
       const result = yield* callStructured({
@@ -148,11 +129,7 @@ export const markProposeRunner: NodeRunner<
 
 /** Re-proposes corrected marks for the failed attempts delivered through
  * its gate. */
-export const markRepairRunner: NodeRunner<
-  ReviewTypes,
-  "mark.propose.repair",
-  ModelClient
-> = {
+export const markRepairRunner: NodeRunner<ReviewTypes, "mark.propose.repair", ModelClient> = {
   execute: ({ prompts, pool }, { inputs, artifact, emit }) =>
     Effect.gen(function* () {
       const failed = inputs.of("mark.failed").flat();

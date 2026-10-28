@@ -38,24 +38,17 @@ export default function Slider({
   class: className,
 }: SliderProps) {
   const list = values && values.length > 0 ? values : null;
-  const count = list
-    ? list.length
-    : Math.max(1, Math.floor((max - min) / step) + 1);
+  const count = list ? list.length : Math.max(1, Math.floor((max - min) / step) + 1);
   const lastIndex = count - 1;
   const index = list
     ? nearestIndex(list, value)
     : Math.min(lastIndex, Math.max(0, Math.round((value - min) / step)));
   const fmt = (v: number) => (format ? format(v) : String(v));
   const text = fmt(value);
-  const widestLabel = maxBy(
-    (list ?? [min, max]).map(fmt),
-    (label) => label.length,
-  );
+  const widestLabel = maxBy((list ?? [min, max]).map(fmt), (formatted) => formatted.length);
 
   return (
-    <label
-      class={`flex w-full gap-2 cursor-pointer${className ? ` ${className}` : ""}`}
-    >
+    <label class={`flex w-full gap-2 cursor-pointer${className ? ` ${className}` : ""}`}>
       <span>{label}</span>
       <input
         class="slider min-w-0 flex-1"

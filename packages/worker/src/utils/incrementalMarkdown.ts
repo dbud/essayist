@@ -6,6 +6,7 @@ import {
   type ElementNode,
   type LexicalNode,
 } from "lexical";
+
 import { BlockFold, type Monoid } from "./incrementalBlocks.ts";
 
 const EMPTY_LINE = /^\s{0,3}$/;
@@ -16,9 +17,7 @@ function $isEmptyParagraph(node: LexicalNode | null | undefined): boolean {
   const first = node.getFirstChild();
   return (
     first == null ||
-    (node.getChildrenSize() === 1 &&
-      $isTextNode(first) &&
-      EMPTY_LINE.test(first.getTextContent()))
+    (node.getChildrenSize() === 1 && $isTextNode(first) && EMPTY_LINE.test(first.getTextContent()))
   );
 }
 

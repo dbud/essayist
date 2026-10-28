@@ -1,5 +1,6 @@
 import { useSignal } from "@preact/signals";
 import type { ComponentChildren } from "preact";
+
 import { useClickOutside } from "#/hooks/useClickOutside.ts";
 
 interface DropdownProps {
@@ -23,10 +24,7 @@ export default function Dropdown({
   const ref = useClickOutside(open.value ? close : undefined);
 
   return (
-    <div
-      class={`inline-flex relative ${open.value ? "is-open" : ""}`}
-      ref={ref}
-    >
+    <div class={`inline-flex relative ${open.value ? "is-open" : ""}`} ref={ref}>
       <button
         type="button"
         class={`${triggerClass} ${open.value ? "dropdown-open" : ""}`}
@@ -52,10 +50,7 @@ export function DropdownMenu({
 }) {
   const align = end ? "dropdown-menu--end" : "";
   return (
-    <ul
-      class={`dropdown-menu ${align} ${className ?? ""}`}
-      data-stagger-children
-    >
+    <ul class={`dropdown-menu ${align} ${className ?? ""}`} data-stagger-children>
       {children}
     </ul>
   );
@@ -68,12 +63,7 @@ interface DropdownItemProps {
   children: ComponentChildren;
 }
 
-export function DropdownItem({
-  selected,
-  onClick,
-  href,
-  children,
-}: DropdownItemProps) {
+export function DropdownItem({ selected, onClick, href, children }: DropdownItemProps) {
   const cls = `dropdown-item ${selected ? "is-selected" : ""}`;
   return (
     <li>

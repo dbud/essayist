@@ -4,13 +4,9 @@ interface EssayistLogoProps {
   class?: string;
 }
 
-export default function EssayistLogo({
-  class: className = "",
-}: EssayistLogoProps) {
+export default function EssayistLogo({ class: className = "" }: EssayistLogoProps) {
   return (
-    <div
-      class={`logo-e flex select-none justify-center bg-ink scheme-light ${className}`}
-    >
+    <div class={`logo-e flex select-none justify-center bg-ink scheme-light ${className}`}>
       <svg
         class="text-surface mt-[calc(20%+1px)] aspect-square w-3/5"
         viewBox="0 0 24 24"

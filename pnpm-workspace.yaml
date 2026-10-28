@@ -10,7 +10,6 @@ minimumReleaseAgeExclude:
   - "@effect/ai-openrouter"
   - "@effect/sql-d1"
 catalog:
-  "@biomejs/biome": ^2.6.2
   "@cloudflare/workers-types": ^5.20261024.1
   "@deno/kv": ^0.14.0
   "@effect/ai-openrouter": ~4.0.6
@@ -23,6 +22,8 @@ catalog:
   "@types/node": ^26.6.5
   effect: ~4.0.6
   jose: ^6.2.13
+  oxfmt: ^0.75.0
+  oxlint: ^1.90.0
   typescript: ^7.0.2
   vite: ^8.3.5
   vitest: ^5.0.5

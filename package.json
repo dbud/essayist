@@ -1,21 +1,25 @@
 {
+  "name": "essayist",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "pnpm -C packages/worker build",
+    "check": "oxfmt --check . && oxlint --deny-warnings . && pnpm -r run check",
+    "fmt": "oxfmt .",
+    "lint": "oxlint .",
+    "prepare": "husky",
+    "test": "vitest run"
+  },
   "devDependencies": {
-    "@biomejs/biome": "catalog:",
     "@types/node": "catalog:",
+    "husky": "^9.1.7",
+    "oxfmt": "catalog:",
+    "oxlint": "catalog:",
+    "oxlint-tsgolint": "^7.0.2005",
     "typescript": "catalog:",
     "typescript-lsp": "npm:typescript@6.0.3",
     "vitest": "catalog:"
   },
-  "name": "essayist",
-  "packageManager": "pnpm@12.11.2",
-  "private": true,
-  "scripts": {
-    "build": "pnpm -C packages/worker build",
-    "check": "pnpm -r run check",
-    "fmt": "pnpm -r run fmt",
-    "lint": "pnpm -r run lint",
-    "test": "vitest run"
-  },
-  "type": "module",
-  "version": "0.0.0"
+  "packageManager": "pnpm@12.11.2"
 }

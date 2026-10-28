@@ -1,5 +1,6 @@
 import type { NodeKind } from "#/flow/types.ts";
 import type { ReviewNodeEvent, ReviewTypes } from "#/reviews/graph.ts";
+
 import type { TraceEvent } from "./types.ts";
 
 /** The events and lifecycle of a single node. */
@@ -69,8 +70,7 @@ export function groupTraceNodes(
         break;
       }
       case "node_end": {
-        const target =
-          byId.get(event.nodeId) ?? section(event.nodeId, event.at);
+        const target = byId.get(event.nodeId) ?? section(event.nodeId, event.at);
         applyRun(target, event.run);
         if (open === target) open = undefined;
         break;

@@ -1,6 +1,7 @@
 import type { MiddlewareHandler } from "hono";
 import type { ComponentChildren } from "preact";
 import { render } from "preact-render-to-string";
+
 import {
   type Preferences,
   PreferencesProvider,
@@ -8,6 +9,7 @@ import {
 } from "#/models/preferences.ts";
 import { clientScriptUrl, styleSheetUrl } from "#/pages/meta.ts";
 import { type AppState, AppStateProvider } from "#/state.ts";
+
 import { AppStateScript, PageDataScript } from "./seeds";
 
 export interface DocumentProps {
@@ -19,14 +21,7 @@ export interface DocumentProps {
   readonly children?: ComponentChildren;
 }
 
-export function Document({
-  title,
-  client,
-  data,
-  state,
-  preferences,
-  children,
-}: DocumentProps) {
+export function Document({ title, client, data, state, preferences, children }: DocumentProps) {
   const { themeOverride, sansFont, serifFont } = preferences;
   return (
     <html
@@ -42,15 +37,11 @@ export function Document({
         <link rel="stylesheet" href={styleSheetUrl()} />
         {data !== undefined && <PageDataScript data={data} />}
         <AppStateScript state={state} />
-        {client !== undefined && (
-          <script type="module" src={clientScriptUrl(client)} />
-        )}
+        {client !== undefined && <script type="module" src={clientScriptUrl(client)} />}
       </head>
       <body class="h-dvh flex flex-col">
         <AppStateProvider value={state ?? {}}>
-          <PreferencesProvider value={preferences}>
-            {children}
-          </PreferencesProvider>
+          <PreferencesProvider value={preferences}>{children}</PreferencesProvider>
         </AppStateProvider>
       </body>
     </html>
@@ -66,10 +57,7 @@ export const pageRenderer: MiddlewareHandler = async (c, next) => {
       user: c.get("auth-user"),
       sessionId: c.get("auth-session-id"),
     };
-    const preferences = preferencesFromCookie(
-      c.req.header("cookie"),
-      new URL(c.req.url),
-    );
+    const preferences = preferencesFromCookie(c.req.header("cookie"), new URL(c.req.url));
     const node = (
       <Document {...props} state={state} preferences={preferences}>
         {content}

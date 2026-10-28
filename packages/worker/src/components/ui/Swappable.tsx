@@ -46,10 +46,7 @@ export default function Swappable({
           {out.children}
         </span>
       )}
-      <span
-        key={`in-${swapKey ?? ""}`}
-        class={out !== null ? "swappable-in" : ""}
-      >
+      <span key={`in-${swapKey ?? ""}`} class={out !== null ? "swappable-in" : ""}>
         {children}
       </span>
     </span>

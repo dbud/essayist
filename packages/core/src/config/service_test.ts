@@ -1,7 +1,9 @@
 import { assertEquals } from "@std/assert";
 import { Effect } from "effect";
 import { test } from "vitest";
+
 import { testLayer } from "#/persistence/testing/kv.ts";
+
 import { ReviewConfig } from "./service.ts";
 
 test("ReviewConfig -- CRUD round-trips", async () => {
@@ -34,9 +36,7 @@ test("ReviewConfig -- CRUD round-trips", async () => {
     yield* store.deleteReviewPass("r");
     assertEquals(yield* store.getReviewPass("r"), undefined);
   });
-  await Effect.runPromise(
-    Effect.provide(program, testLayer(ReviewConfig.layerNoDeps)),
-  );
+  await Effect.runPromise(Effect.provide(program, testLayer(ReviewConfig.layerNoDeps)));
 });
 
 test("ReviewConfig -- getCategories splits found and missing ids", async () => {
@@ -53,9 +53,7 @@ test("ReviewConfig -- getCategories splits found and missing ids", async () => {
     ]);
     assertEquals(missing, ["ghost"]);
   });
-  await Effect.runPromise(
-    Effect.provide(program, testLayer(ReviewConfig.layerNoDeps)),
-  );
+  await Effect.runPromise(Effect.provide(program, testLayer(ReviewConfig.layerNoDeps)));
 });
 
 test("ReviewConfig -- active pin set and clear", async () => {
@@ -75,9 +73,7 @@ test("ReviewConfig -- active pin set and clear", async () => {
     yield* store.clearActiveReviewPass();
     assertEquals(yield* store.getActiveReviewPassId(), undefined);
   });
-  await Effect.runPromise(
-    Effect.provide(program, testLayer(ReviewConfig.layerNoDeps)),
-  );
+  await Effect.runPromise(Effect.provide(program, testLayer(ReviewConfig.layerNoDeps)));
 });
 
 test("ReviewConfig -- list helpers", async () => {
@@ -99,7 +95,5 @@ test("ReviewConfig -- list helpers", async () => {
     assertEquals((yield* store.listCategories()).length, 1);
     assertEquals((yield* store.listReviewPasses()).length, 1);
   });
-  await Effect.runPromise(
-    Effect.provide(program, testLayer(ReviewConfig.layerNoDeps)),
-  );
+  await Effect.runPromise(Effect.provide(program, testLayer(ReviewConfig.layerNoDeps)));
 });

@@ -1,4 +1,5 @@
 import { computed, type ReadonlySignal } from "@preact/signals";
+
 import type { FileTrees } from "./fileTrees.ts";
 import type { Workspaces } from "./workspaces.ts";
 
@@ -18,9 +19,7 @@ export namespace FileKey {
   }
 }
 
-export type FileSelection =
-  | { wsId: string; path: null; versionId: null }
-  | FileKey;
+export type FileSelection = { wsId: string; path: null; versionId: null } | FileKey;
 
 export function createFileSelection(
   workspaces: Workspaces,

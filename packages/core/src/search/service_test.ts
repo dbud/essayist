@@ -1,29 +1,23 @@
 import { assertEquals } from "@std/assert";
 import { Effect, Layer } from "effect";
 import { test } from "vitest";
+
 import { Files } from "#/files/service.ts";
 import type { FileMissingError } from "#/files/types.ts";
-import type {
-  ConcurrentModificationError,
-  PersistenceError,
-} from "#/persistence/mod.ts";
+import type { ConcurrentModificationError, PersistenceError } from "#/persistence/mod.ts";
 import { testLayer } from "#/persistence/testing/kv.ts";
 import { WorkspaceId } from "#/workspace/WorkspaceId.ts";
+
 import { Search } from "./service.ts";
 
 type E = PersistenceError | ConcurrentModificationError | FileMissingError;
 
-const run = <A>(
-  program: Effect.Effect<A, E, Files | Search | WorkspaceId>,
-): Promise<A> =>
+const run = <A>(program: Effect.Effect<A, E, Files | Search | WorkspaceId>): Promise<A> =>
   Effect.runPromise(
     Effect.provide(
       Effect.provideService(program, WorkspaceId, { wsId: "default" }),
       testLayer(
-        Layer.merge(
-          Layer.provide(Search.layerNoDeps, Files.layerNoDeps),
-          Files.layerNoDeps,
-        ),
+        Layer.merge(Layer.provide(Search.layerNoDeps, Files.layerNoDeps), Files.layerNoDeps),
       ),
     ),
   );

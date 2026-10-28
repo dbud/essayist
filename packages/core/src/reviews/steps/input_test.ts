@@ -1,8 +1,10 @@
 import { assertEquals } from "@std/assert";
 import { test } from "vitest";
+
 import type { ResolvedPrompts } from "#/config/types.ts";
 import type { Artifact, Artifacts, ArtifactType } from "#/flow/types.ts";
 import type { ReviewTypes } from "#/reviews/graph.ts";
+
 import { composeCallInput, composeRepairInput } from "./input.ts";
 
 const PROMPTS: ResolvedPrompts = {
@@ -12,14 +14,9 @@ const PROMPTS: ResolvedPrompts = {
   categories: "",
 };
 
-function inputsOf(
-  ...artifacts: Artifact<ReviewTypes>[]
-): Artifacts<ReviewTypes> {
+function inputsOf(...artifacts: Artifact<ReviewTypes>[]): Artifacts<ReviewTypes> {
   const matching = <A extends ArtifactType<ReviewTypes>>(type: A) =>
-    artifacts.filter(
-      (artifact): artifact is Artifact<ReviewTypes, A> =>
-        artifact.type === type,
-    );
+    artifacts.filter((artifact): artifact is Artifact<ReviewTypes, A> => artifact.type === type);
   return {
     all: artifacts,
     allOf: matching,
@@ -27,9 +24,7 @@ function inputsOf(
     one: (type) => {
       const matches = matching(type);
       if (matches.length !== 1) {
-        throw new Error(
-          `expected exactly one "${type}" artifact, got ${matches.length}`,
-        );
+        throw new Error(`expected exactly one "${type}" artifact, got ${matches.length}`);
       }
       return matches[0].data;
     },
@@ -39,9 +34,7 @@ function inputsOf(
 const ANALYSIS = {
   thesis: "Drafts are raw material.",
   claims: [],
-  outline: [
-    { first_line: 3, last_line: 11, gist: "Sets up drafts as raw material." },
-  ],
+  outline: [{ first_line: 3, last_line: 11, gist: "Sets up drafts as raw material." }],
   strengths: [],
   risks: [],
 };
@@ -52,10 +45,7 @@ test("composeCallInput -- renders an outline section as a line range", () => {
     inputsOf({ type: "analysis", data: ANALYSIS, producedBy: "analyze" }),
   );
 
-  assertEquals(
-    input.includes("lines 3-11: Sets up drafts as raw material."),
-    true,
-  );
+  assertEquals(input.includes("lines 3-11: Sets up drafts as raw material."), true);
 });
 
 test("composeCallInput -- prompts first, artifacts in order, essay last", () => {
@@ -74,10 +64,7 @@ test("composeCallInput -- prompts first, artifacts in order, essay last", () => 
   assertEquals(input.startsWith("You are an editor."), true);
   assertEquals(input.includes("## Analysis"), true);
   assertEquals(input.includes("Thesis: Drafts are raw material."), true);
-  assertEquals(
-    input.indexOf("## Analysis") < input.indexOf("## Essay (numbered lines)"),
-    true,
-  );
+  assertEquals(input.indexOf("## Analysis") < input.indexOf("## Essay (numbered lines)"), true);
   assertEquals(input.endsWith("     1: hello brave world"), true);
 });
 
@@ -99,10 +86,7 @@ test("composeCallInput -- renders every artifact in dependsOn order", () => {
     ),
   );
 
-  assertEquals(
-    input.indexOf("Thesis: first") < input.indexOf("Thesis: second"),
-    true,
-  );
+  assertEquals(input.indexOf("Thesis: first") < input.indexOf("Thesis: second"), true);
 });
 
 test("composeRepairInput -- windows content around the hinted line", () => {

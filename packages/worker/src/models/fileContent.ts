@@ -1,12 +1,11 @@
 import type { DraftSnapshot, FileSnapshot, FileVersion } from "@essayist/core";
 import { computed, createModel, signal } from "@preact/signals";
 import type { EditorState } from "lexical";
+
 import createAsyncState from "#/models/utils/asyncState.ts";
 import { getJson, postJson, putJson } from "#/models/utils/http.ts";
-import {
-  editorStateToMarkdown,
-  markdownToEditorState,
-} from "#/utils/markdown.ts";
+import { editorStateToMarkdown, markdownToEditorState } from "#/utils/markdown.ts";
+
 import type { FileContentData } from "./fileContent.data.ts";
 import type { FileKey } from "./fileSelection.ts";
 
@@ -15,13 +14,9 @@ export const FileContentModel = createModel(
     const version = signal<FileSnapshot | null>(data?.version ?? null);
     const draft = signal<DraftSnapshot | null>(data?.draft ?? null);
 
-    const initialContent = computed(
-      () => draft.value?.content ?? version.value?.content ?? null,
-    );
+    const initialContent = computed(() => draft.value?.content ?? version.value?.content ?? null);
     const initialState = computed(() =>
-      initialContent.value === null
-        ? null
-        : markdownToEditorState(initialContent.value),
+      initialContent.value === null ? null : markdownToEditorState(initialContent.value),
     );
     const modifiedState = signal<EditorState | null>(null);
 
@@ -31,26 +26,22 @@ export const FileContentModel = createModel(
 
     const state = computed(() => modifiedState.value ?? initialState.value);
 
-    const markdown = computed(() =>
-      state.value ? editorStateToMarkdown(state.value) : "",
-    );
+    const markdown = computed(() => (state.value ? editorStateToMarkdown(state.value) : ""));
 
     const dirty = computed(
-      () =>
-        modifiedState.value !== null &&
-        markdown.value !== (initialContent.value ?? ""),
+      () => modifiedState.value !== null && markdown.value !== (initialContent.value ?? ""),
     );
 
     const [runLoad, { loading, error }] = createAsyncState();
 
     async function load(): Promise<void> {
       const params = new URLSearchParams({ wsId, path, versionId });
-      const data = await runLoad(async () =>
+      const fresh = await runLoad(async () =>
         getJson<FileContentData>(`/api/workspaces/files/content?${params}`),
       );
-      if (data) {
-        version.value = data.version;
-        draft.value = data.draft;
+      if (fresh) {
+        version.value = fresh.version;
+        draft.value = fresh.draft;
       }
     }
 
@@ -58,9 +49,7 @@ export const FileContentModel = createModel(
 
     const [runSave, { loading: saving, error: saveError }] = createAsyncState();
 
-    async function save(options?: {
-      readonly keepalive?: boolean;
-    }): Promise<void> {
+    async function save(options?: { readonly keepalive?: boolean }): Promise<void> {
       if (!dirty.value) return;
       const result = await runSave(async () =>
         putJson<DraftSnapshot>(

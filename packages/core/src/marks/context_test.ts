@@ -1,5 +1,6 @@
 import { assertEquals } from "@std/assert";
 import { test } from "vitest";
+
 import { trimContextSeparators, wordEdges } from "./context.ts";
 
 // wordEdges -- whether each edge of a text is a word character

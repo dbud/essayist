@@ -3,6 +3,7 @@
 // instances.
 import { Cache, Cause, Effect, Layer } from "effect";
 import { HttpRouter, HttpServer } from "effect/http";
+
 import { layerApi } from "#/api/index.ts";
 import type { WorkerEnv } from "#/env.ts";
 import { runtime, runtimeLayer } from "#/runtime.ts";
@@ -16,10 +17,7 @@ const handlers = Effect.runSync(
       Effect.sync(
         () =>
           HttpRouter.toWebHandler(
-            layerApi.pipe(
-              Layer.provide(runtimeLayer(e)),
-              Layer.provide(HttpServer.layerServices),
-            ),
+            layerApi.pipe(Layer.provide(runtimeLayer(e)), Layer.provide(HttpServer.layerServices)),
             { memoMap: runtime(e).memoMap },
           ).handler,
       ),

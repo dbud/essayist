@@ -1,11 +1,7 @@
 import type { Signal } from "@preact/signals";
 import { CircleCheckBig, Info, TriangleAlert, X } from "lucide-preact";
-import {
-  dismissToast,
-  removeToast,
-  type Toast,
-  toasts,
-} from "#/models/utils/toast.ts";
+
+import { dismissToast, removeToast, type Toast, toasts } from "#/models/utils/toast.ts";
 
 const ICONS = {
   info: Info,
@@ -21,8 +17,7 @@ function ToastView({ toast }: { toast: Signal<Toast> }) {
     error: "alert--error",
   }[type];
   const Icon = ICONS[type];
-  const pct =
-    progress && progress.total > 0 ? (progress.done / progress.total) * 100 : 0;
+  const pct = progress && progress.total > 0 ? (progress.done / progress.total) * 100 : 0;
   return (
     <div class={`alert ${alertClass}`} role="alert">
       <div

@@ -6,11 +6,14 @@
  */
 
 import { DatabaseSync } from "node:sqlite";
+
 import * as D1Client from "@effect/sql-d1/D1Client";
 import { Clock, Effect } from "effect";
 import * as Reactivity from "effect/reactivity/Reactivity";
 import { expect, test } from "vitest";
+
 import { d1SqliteShim } from "#/persistence/kv_d1_sqlite.ts";
+
 import { layerAuthD1 } from "./auth_d1.ts";
 import { AuthStore, type Interface } from "./service.ts";
 import type { SessionTokens } from "./types.ts";
@@ -123,9 +126,9 @@ test("update rewrites tokens and slides the TTL", async () => {
       yield* t.auth.updateSessionTokens("s1", "user-1", refreshed);
       const session = yield* t.auth.getSession("s1");
       expect(session?.tokens).toEqual(refreshed);
-      const row = t.db
-        .prepare("SELECT expires_at FROM auth_session WHERE id = 's1'")
-        .get() as { expires_at: number };
+      const row = t.db.prepare("SELECT expires_at FROM auth_session WHERE id = 's1'").get() as {
+        expires_at: number;
+      };
       expect(row.expires_at).toBe(BASE_TIME + 3_600_000 + 90 * DAY_MS);
     }),
   );

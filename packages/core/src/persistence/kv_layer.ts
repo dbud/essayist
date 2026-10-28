@@ -12,6 +12,7 @@
 
 import type { Kv, KvEntryMaybe } from "@deno/kv";
 import { Effect, Layer } from "effect";
+
 import {
   type BatchOptions,
   ConcurrentModificationError,
@@ -52,15 +53,14 @@ export function kvLayer(kv: Kv): Layer.Layer<Persistence> {
         }
       },
       catch: (cause) =>
-        cause instanceof ConcurrentModificationError
-          ? cause
-          : backendFault(cause),
+        cause instanceof ConcurrentModificationError ? cause : backendFault(cause),
     });
 
   return Layer.effect(
     Persistence,
     Effect.sync(() =>
       Persistence.of({
+        // oxlint-disable-next-line typescript/no-unnecessary-type-parameters -- implements the generic Persistence interface
         get: <T = unknown>(key: Key, options?: ReadOptions) =>
           Effect.tryPromise({
             try: async () => {
@@ -77,6 +77,7 @@ export function kvLayer(kv: Kv): Layer.Layer<Persistence> {
             },
             catch: backendFault,
           }),
+        // oxlint-disable-next-line typescript/no-unnecessary-type-parameters -- implements the generic Persistence interface
         getMany: <T = unknown>(keys: Key[], options?: ReadOptions) =>
           Effect.tryPromise({
             try: async () => {
@@ -126,10 +127,7 @@ export function kvLayer(kv: Kv): Layer.Layer<Persistence> {
               }
               return {
                 entries,
-                cursor:
-                  next === "" || !limit || entries.length < limit
-                    ? undefined
-                    : next,
+                cursor: next === "" || !limit || entries.length < limit ? undefined : next,
               };
             },
             catch: backendFault,

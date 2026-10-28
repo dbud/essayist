@@ -2,6 +2,7 @@
 // middleware, the first consumer of that middleware.
 import { Schema } from "effect";
 import { HttpApiEndpoint, HttpApiGroup } from "effect/http-api";
+
 import { SessionMiddleware } from "./sessionMiddleware";
 
 const UserResponse = Schema.Struct({
@@ -15,6 +16,4 @@ const getUser = HttpApiEndpoint.get("getUser", "/user", {
   success: UserResponse,
 });
 
-export const userGroup = HttpApiGroup.make("user")
-  .add(getUser)
-  .middleware(SessionMiddleware);
+export const userGroup = HttpApiGroup.make("user").add(getUser).middleware(SessionMiddleware);

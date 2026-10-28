@@ -3,16 +3,14 @@
 import { assertEquals } from "@std/assert";
 import { Window } from "happy-dom";
 import { test } from "vitest";
+
 import { transformPastedHtml } from "./htmlSanitizer.ts";
 
 function transform(html: string): string {
   const win = new Window();
   const dom = new win.DOMParser().parseFromString(html, "text/html");
   // happy-dom types do not structurally satisfy the DOM interfaces
-  transformPastedHtml(
-    dom.body as unknown as ParentNode,
-    dom as unknown as Document,
-  );
+  transformPastedHtml(dom.body as unknown as ParentNode, dom as unknown as Document);
   return dom.body.innerHTML;
 }
 
@@ -31,10 +29,7 @@ test("rewrites anchors to markdown link text", () => {
 });
 
 test("keeps anchor children in the markdown link text", () => {
-  assertEquals(
-    transform('<a href="http://x.com"><em>go</em></a>'),
-    "[<em>go</em>](http://x.com)",
-  );
+  assertEquals(transform('<a href="http://x.com"><em>go</em></a>'), "[<em>go</em>](http://x.com)");
 });
 
 test("unwraps anchors without href", () => {
@@ -42,15 +37,9 @@ test("unwraps anchors without href", () => {
 });
 
 test("writes bare urls for label-less anchors", () => {
-  assertEquals(
-    transform('<p><a href="http://x.com"><img src="i"></a></p>'),
-    "<p>http://x.com</p>",
-  );
+  assertEquals(transform('<p><a href="http://x.com"><img src="i"></a></p>'), "<p>http://x.com</p>");
 });
 
 test("leaves mark and u for the dompurify allowlist", () => {
-  assertEquals(
-    transform("<p><mark>m</mark><u>u</u></p>"),
-    "<p><mark>m</mark><u>u</u></p>",
-  );
+  assertEquals(transform("<p><mark>m</mark><u>u</u></p>"), "<p><mark>m</mark><u>u</u></p>");
 });

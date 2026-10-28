@@ -3,6 +3,7 @@
 // Requires `deno task wasm:build` first (the glue imports `@essayist/wasm`).
 
 import { assertEquals } from "@std/assert";
+
 import { computeDiffWith, jsMyers } from "./diff.ts";
 import { runDiffCases } from "./diff_cases.ts";
 import { myers } from "./diff_wasm_glue.ts";
@@ -11,9 +12,7 @@ import { myers } from "./diff_wasm_glue.ts";
 // default); here we run them through `computeDiffWith(..., myers)` (WASM core).
 // The two cores are byte-identical, so the shared cases have a single set of
 // expectations, and together the two files cover both paths.
-runDiffCases("computeDiffWith", (oldText, newText) =>
-  computeDiffWith(oldText, newText, myers),
-);
+runDiffCases("computeDiffWith", (oldText, newText) => computeDiffWith(oldText, newText, myers));
 
 // Direct convergence guard: the JS and WASM cores must emit the exact same
 // flat op Int32Array for the same int-id inputs, including repeated-token
@@ -23,9 +22,7 @@ function assertCoresAgree(a: Int32Array, b: Int32Array): void {
   assertEquals(
     Array.from(jsMyers(a, b)),
     Array.from(myers(a, b)),
-    `cores disagree\n a = ${JSON.stringify(Array.from(a))}\n b = ${JSON.stringify(
-      Array.from(b),
-    )}`,
+    `cores disagree\n a = ${JSON.stringify(Array.from(a))}\n b = ${JSON.stringify(Array.from(b))}`,
   );
 }
 
@@ -38,10 +35,7 @@ Deno.test("myers cores -- JS and WASM agree on fixed cases", () => {
   assertCoresAgree(new Int32Array([1, 2]), new Int32Array([1, 2, 3]));
   assertCoresAgree(new Int32Array([3, 1, 2]), new Int32Array([1, 2]));
   // Repeated tokens (ambiguous LCS) -- the regime where tie-breaks matter.
-  assertCoresAgree(
-    new Int32Array([1, 2, 1, 3, 2]),
-    new Int32Array([1, 3, 1, 2]),
-  );
+  assertCoresAgree(new Int32Array([1, 2, 1, 3, 2]), new Int32Array([1, 3, 1, 2]));
   assertCoresAgree(new Int32Array([1, 1, 1, 1]), new Int32Array([1, 1]));
 });
 

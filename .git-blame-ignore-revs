@@ -1,0 +1,4 @@
+# Mechanical reformat commits; leave out of git blame runs.
+
+# style: reformat with oxfmt (biome-to-oxfmt tooling migration)
+9211dc93f6051ae0f40c982cde642d077a1dcf70

@@ -69,11 +69,7 @@ export function trimContextSeparators(
   if (raw.length === 0) return { text: "", leading: 0 };
 
   const leading = countLeadingSeparators(raw, trimLeadingPunctuation);
-  const trailing = countTrailingSeparators(
-    raw,
-    leading,
-    trimTrailingPunctuation,
-  );
+  const trailing = countTrailingSeparators(raw, leading, trimTrailingPunctuation);
 
   return { text: raw.slice(leading, raw.length - trailing), leading };
 }
