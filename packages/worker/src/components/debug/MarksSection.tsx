@@ -4,9 +4,6 @@ import { Crosshair } from "lucide-preact";
 
 import Section from "#/components/debug/Section.tsx";
 import { SELECT_MARK_COMMAND } from "#/editor/markExtension.ts";
-import type { Categories } from "#/models/categories.ts";
-import type { FileMarks } from "#/models/fileMarks.ts";
-import type { FileKey } from "#/models/fileSelection.ts";
 import { useEditorModels } from "#/pages/editor/models.ts";
 import { activeEditor } from "#/signals/activeEditor.ts";
 import { getEditorSelection } from "#/signals/editorSelection.ts";
@@ -70,35 +67,18 @@ export default function MarksSection() {
   if (selection === null || selection.path === null || current === null) {
     return null;
   }
-  return (
-    <Marks
-      wsId={selection.wsId}
-      path={selection.path}
-      versionId={selection.versionId}
-      fileMarks={current}
-      categories={categories}
-    />
-  );
-}
-
-interface MarksProps extends FileKey {
-  fileMarks: FileMarks;
-  categories: Categories;
-}
-
-function Marks({ wsId, path, versionId, fileMarks, categories }: MarksProps) {
-  const markIds = getEditorSelection({ wsId, path, versionId }).markIds.value;
   const byLabel = categories.byLabel.value;
+  const markIds = getEditorSelection(selection).markIds.value;
   const editor = activeEditor.value;
 
-  if (fileMarks.loading.value || fileMarks.marks.value.length === 0) {
+  if (current.loading.value || current.marks.value.length === 0) {
     return null;
   }
 
   return (
     <Section title="Marks">
       <div class="flex flex-col stack">
-        {fileMarks.marks.value.map((mark) => (
+        {current.marks.value.map((mark) => (
           <MarkDetail
             key={mark.id}
             mark={mark}

@@ -1,9 +1,9 @@
 import type { Mark } from "@essayist/core";
+import { assertExists } from "@std/assert";
 import { mapNotNullish } from "@std/collections";
 
 import Section from "#/components/debug/Section.tsx";
 import { segmentMarks } from "#/editor/markSegments.ts";
-import type { FileContent } from "#/models/fileContent.ts";
 import { useEditorModels } from "#/pages/editor/models.ts";
 
 export default function ExportPreviewSection() {
@@ -14,7 +14,7 @@ export default function ExportPreviewSection() {
   if (file === null) return null;
   return (
     <Section title="Export Preview">
-      <MarkdownPreview file={file} />
+      <MarkdownPreview />
     </Section>
   );
 }
@@ -39,8 +39,10 @@ function visualizeWhitespace(text: string): string {
   return text.replace(/ /g, "\u00B7").replace(/\t/g, "\u2192").replace(/\n/g, "\u00AC\n");
 }
 
-function MarkdownPreview({ file }: { file: FileContent }) {
-  const { resolvedMarks } = useEditorModels();
+function MarkdownPreview() {
+  const { fileContents, resolvedMarks } = useEditorModels();
+  const file = fileContents.current.value;
+  assertExists(file, "ExportPreviewSection guards the file before this renders");
   const resolved = resolvedMarks.resolved.value;
   const md = file.markdown.value;
 
