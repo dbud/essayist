@@ -1,4 +1,5 @@
 import { useModel } from "@preact/signals";
+import { unreachable } from "@std/assert";
 import { ChevronDown } from "lucide-preact";
 
 import Dropdown, { DropdownItem, DropdownMenu } from "#/components/ui/Dropdown.tsx";
@@ -32,6 +33,8 @@ export default function FileStats({ file }: FileStatsProps) {
         return formatCount(stats.charCount.value, "char");
       case "charsWithSpaces":
         return formatCount(stats.charCountWithSpaces.value, "char w/ space", "chars w/ spaces");
+      default:
+        unreachable("statValue: unknown stat section");
     }
   }
 
