@@ -8,7 +8,7 @@
   },
   "scripts": {
     "build": "vite build",
-    "check": "oxfmt --check . && oxlint --deny-warnings . && tsc --noEmit && tsc --noEmit -p src/client",
+    "check": "tsc --noEmit && tsc --noEmit -p src/client",
     "deploy": "vite build && wrangler deploy",
     "deploy-preview": "vite build && wrangler versions upload",
     "dev": "vite dev",

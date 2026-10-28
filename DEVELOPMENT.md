@@ -13,9 +13,9 @@ migration" (ESS-77 through ESS-90) for phase planning.
 Commands run from the repo root:
 
 ```
-pnpm check          # oxfmt --check, oxlint, tsc for core, kvctl, and worker
-pnpm fmt            # oxfmt for core, kvctl, and worker
-pnpm lint           # oxlint for core, kvctl, and worker
+pnpm check          # oxfmt --check, oxlint, then tsc in each package
+pnpm fmt            # oxfmt across the repo
+pnpm lint           # oxlint across the repo
 pnpm test           # vitest across the workspace (core and worker)
 pnpm build          # vite build of the worker package
 ```
@@ -37,7 +37,10 @@ from each package. `pnpm fmt` runs `oxfmt .`, which also sorts imports
 and package.json fields. `pnpm check` starts with `oxfmt --check .`
 (formatting must be clean) and `oxlint --deny-warnings .` (any finding
 fails). Inline suppressions read
-`// oxlint-disable-next-line <rule> -- <reason>`.
+`// oxlint-disable-next-line <rule> -- <reason>`. The dormant deno tier
+stays outside the oxc gate: `packages/web`, the deno manifests, and
+`patches` sit in the configs' ignore patterns; drop those entries when
+the tier retires.
 
 Benchmarks are `*.bench.ts` files next to the sources (see
 `packages/core/src/marks/tokenized.bench.ts`); run with

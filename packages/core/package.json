@@ -14,7 +14,7 @@
     "./kv_deno": "./src/persistence/kv_deno.ts"
   },
   "scripts": {
-    "check": "oxfmt --check . && oxlint --deny-warnings . && tsc --noEmit",
+    "check": "tsc --noEmit",
     "fmt": "oxfmt .",
     "lint": "oxlint .",
     "test": "vitest run"
