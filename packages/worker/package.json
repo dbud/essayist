@@ -50,7 +50,7 @@
     "dompurify": "^3.4.16",
     "effect": "catalog:",
     "happy-dom": "^21.0.4",
-    "hono": "^4.13.13",
+    "hono": "^4.13.14",
     "jose": "catalog:",
     "lexical": "^0.52.0",
     "lucide-preact": "^1.61.0",
