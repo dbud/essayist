@@ -53,7 +53,7 @@ function summarise(event: TraceEvent): string {
       case "model_call":
         return `${inner.call.model} ${inner.call.durationMs}ms`;
       case "output":
-        return `keys=${Object.keys((inner.output ?? {}) as object).join(",")}`;
+        return `keys=${Object.keys(inner.output ?? {}).join(",")}`;
       case "prompt":
       case "reasoning":
         return `len=${inner.text.length}`;
