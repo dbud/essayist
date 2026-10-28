@@ -77,7 +77,7 @@ export default function GoogleDocImporter() {
       if (e.origin !== globalThis.location.origin) return;
       const data = e.data as PickedMessage | undefined;
       if (data?.type !== "picked" || !Array.isArray(data.docs)) return;
-      runImport(data.docs);
+      void runImport(data.docs);
     }
     globalThis.addEventListener("message", onMessage);
     return () => globalThis.removeEventListener("message", onMessage);

@@ -18,7 +18,7 @@ export default function ImportGoogleDocsPage({ data }: { data: GooglePickerData 
 
     let cancelled = false;
 
-    (async () => {
+    void (async () => {
       let docs: PickerDoc[];
       try {
         docs = await openGooglePicker(config);
