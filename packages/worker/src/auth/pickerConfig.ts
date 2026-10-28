@@ -20,10 +20,10 @@ export const PickerConfig = Schema.Struct({
 });
 export type PickerConfig = Schema.Schema.Type<typeof PickerConfig>;
 
-/** The picker session cannot be resolved. */
+/** The picker session cannot be resolved; `signInFixable` says whether the sign-in flow can repair it. */
 export class PickerConfigError extends Schema.TaggedError<PickerConfigError>()(
   "PickerConfigError",
-  { reason: Schema.String },
+  { reason: Schema.String, signInFixable: Schema.Boolean },
 ) {
   override get message() {
     return this.reason;
@@ -40,16 +40,19 @@ export const pickerConfig = (
       return yield* Effect.fail(
         new PickerConfigError({
           reason: "Google Picker not configured (set GOOGLE_API_KEY)",
+          signInFixable: false,
         }),
       );
     }
     if (config.clientId === undefined || config.clientSecret === undefined) {
       return yield* Effect.fail(
-        new PickerConfigError({ reason: "Google sign-in is not configured" }),
+        new PickerConfigError({ reason: "Google sign-in is not configured", signInFixable: false }),
       );
     }
     if (sessionId === undefined) {
-      return yield* Effect.fail(new PickerConfigError({ reason: "No session" }));
+      return yield* Effect.fail(
+        new PickerConfigError({ reason: "No session", signInFixable: true }),
+      );
     }
     const accessToken = yield* getValidAccessToken(
       sessionId,
@@ -61,6 +64,7 @@ export const pickerConfig = (
         Effect.fail(
           new PickerConfigError({
             reason: "Google token refresh failed; please sign in again",
+            signInFixable: true,
           }),
         ),
       ),
@@ -69,6 +73,7 @@ export const pickerConfig = (
       return yield* Effect.fail(
         new PickerConfigError({
           reason: "No Google tokens on session; re-sign-in",
+          signInFixable: true,
         }),
       );
     }

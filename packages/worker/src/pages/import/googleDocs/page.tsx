@@ -2,14 +2,17 @@ import { useSignal } from "@preact/signals";
 import { useEffect } from "preact/hooks";
 
 import { openGooglePicker, type PickerDoc } from "#/client/googlePicker.ts";
+import GoogleSigninLink from "#/components/GoogleSigninLink.tsx";
 
 import type { GooglePickerData } from "./data.ts";
 
-type Status = "opening" | "cancelled" | "error";
+type Status = "opening" | "cancelled" | "needsAccess" | "error";
 
 export default function ImportGoogleDocsPage({ data }: { data: GooglePickerData }) {
-  const status = useSignal<Status>(data.error !== null ? "error" : "opening");
-  const message = useSignal(data.error ?? "");
+  const status = useSignal<Status>(
+    data.error === null ? "opening" : data.error.signInFixable ? "needsAccess" : "error",
+  );
+  const message = useSignal(data.error !== null ? data.error.text : "");
 
   useEffect(() => {
     if (data.error !== null) return;
@@ -51,13 +54,27 @@ export default function ImportGoogleDocsPage({ data }: { data: GooglePickerData 
   }, []);
 
   return (
-    <div class="flex flex-col items-center justify-center gap-4 p-8 text-center">
-      <h1 class="text-lg font-thin">Import from Google Docs</h1>
-      {status.value === "opening" && <p class="text-sm text-ink/70">Opening Google Picker…</p>}
-      {status.value === "cancelled" && (
-        <p class="text-sm text-ink/70">Cancelled — you can close this tab.</p>
-      )}
-      {status.value === "error" && <p class="text-sm text-red-500">{message.value}</p>}
+    <div class="flex-1 min-h-0 flex flex-col @container">
+      <div class="content-layout min-h-full">
+        <div class="content-main py-5 flex flex-col gap-5">
+          <h1 class="text-lg">Import from Google Docs</h1>
+
+          {status.value === "opening" && <p class="text-ink/70">Opening Google Picker…</p>}
+          {status.value === "cancelled" && (
+            <p class="text-ink/70">Cancelled. You can close this tab.</p>
+          )}
+          {status.value === "needsAccess" && (
+            <div class="max-w-prose flex flex-col gap-1">
+              <p>We need permission to pick files from your Google Drive.</p>
+              <p>Only the files you select are ever read.</p>
+              <div class="mt-5">
+                <GoogleSigninLink next="/import/google-docs" />
+              </div>
+            </div>
+          )}
+          {status.value === "error" && <p class="text-sm text-red-500">{message.value}</p>}
+        </div>
+      </div>
     </div>
   );
 }

@@ -14,7 +14,10 @@ export default new Hono().get("/", async (c) => {
     pickerConfig(c.get("auth-session-id")).pipe(
       Effect.map((config) => ({ error: null, config })),
       Effect.catchTag("PickerConfigError", (err) =>
-        Effect.succeed({ error: err.reason, config: null }),
+        Effect.succeed({
+          error: { text: err.reason, signInFixable: err.signInFixable },
+          config: null,
+        }),
       ),
     ),
   );
