@@ -1,30 +1,22 @@
-import { type Signal } from "@preact/signals";
-import type { LexicalEditor } from "lexical";
-
 import GhostSidenote from "#/components/editor/GhostSidenote.tsx";
 import Sidenote from "#/components/editor/Sidenote.tsx";
 import { useElementHeights } from "#/hooks/useElementHeights.ts";
 import type { ScrollContainerRef } from "#/hooks/useScrollViewport.ts";
-import type { SidenoteView, Sidenotes } from "#/models/sidenotes.ts";
+import type { SidenoteView } from "#/models/sidenotes.ts";
+import { useEditorModels } from "#/pages/editor/models.ts";
+import { activeEditor } from "#/signals/activeEditor.ts";
 
 const clamp = (x: number) => Math.min(1, Math.max(0, x));
 
 interface SidenotesProps {
-  sidenotes: Sidenotes;
-  scrollTop: Signal<number>;
-  viewportHeight: Signal<number>;
-  editor: LexicalEditor | null;
   scrollContainerRef: ScrollContainerRef;
 }
 
-export default function Sidenotes({
-  sidenotes,
-  scrollTop,
-  viewportHeight,
-  editor,
-  scrollContainerRef,
-}: SidenotesProps) {
-  const { heights, entries, viewportLayout, topGhost, bottomGhost } = sidenotes;
+export default function Sidenotes({ scrollContainerRef }: SidenotesProps) {
+  const { sidenotes } = useEditorModels();
+  const editor = activeEditor.value;
+  const { scrollTop, viewportHeight } = sidenotes;
+  const { heights, entries, viewportLayout, topGhost, bottomGhost } = sidenotes.current.value;
   // Measure rendered sidenote heights for stacking. Re-measure when the
   // entries change and on marks-column width changes. `entries` is independent
   // of `heights`, so this can't cycle with its own output. Sidenotes stay

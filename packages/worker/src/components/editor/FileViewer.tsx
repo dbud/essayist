@@ -1,31 +1,20 @@
-import { useRef } from "preact/hooks";
-
 import { Caret } from "#/components/Caret.tsx";
 import Editor from "#/components/editor/Editor.tsx";
 import EditorToolbar from "#/components/editor/EditorToolbar.tsx";
 import FileStats from "#/components/editor/FileStats.tsx";
 import FontSelect from "#/components/editor/FontSelect.tsx";
+import { MarkBadges } from "#/components/editor/MarkBadges.tsx";
+import { MarkHighlights } from "#/components/editor/MarkHighlights.tsx";
+import Sidenotes from "#/components/editor/Sidenotes.tsx";
 import VersionPicker from "#/components/editor/VersionPicker.tsx";
 import Overlay from "#/components/ui/Overlay.tsx";
 import { useAutoSave } from "#/hooks/useAutoSave.ts";
 import { useKeydown } from "#/hooks/useKeydown.ts";
+import { useScrollViewport } from "#/hooks/useScrollViewport.ts";
 import type { FileKey } from "#/models/fileSelection.ts";
 import { useEditorModels } from "#/pages/editor/models.ts";
 import { getEditorSelection } from "#/signals/editorSelection.ts";
 import { navigationOpened } from "#/signals/navigation.ts";
-
-// TODO -- marks and sidenotes land with the wasm marks models -- ESS-84
-/*
-import { MarkBadges } from "#/components/MarkBadges.tsx";
-import { MarkHighlights } from "#/components/MarkHighlights.tsx";
-import Sidenotes from "#/components/Sidenotes.tsx";
-import { useScrollViewport } from "#/hooks/useScrollViewport.ts";
-import SidenoteControls from "#/islands/SidenoteControls.tsx";
-*/
-// TODO -- marks and sidenotes hook onto the wasm marks port -- ESS-84;
-// the ref becomes useScrollViewport's
-// import { getMarks } from "#/signals/marks.ts";
-// import { getSidenotes } from "#/signals/sidenotes.ts";
 
 export default function FileViewer() {
   const { selected } = useEditorModels();
@@ -42,19 +31,12 @@ export default function FileViewer() {
 }
 
 function FileViewerBody({ wsId, path, versionId }: FileKey) {
-  const { fileContents, writable } = useEditorModels();
+  const { fileContents, writable, resolvedMarks, sidenotes } = useEditorModels();
   const file = fileContents.current.value;
-  // TODO -- marks and sidenotes hook onto the wasm marks port -- ESS-84;
-  // the ref becomes useScrollViewport's, and getSidenotes/getMarks join
-  // selection alongside.
-  // const { resolved } = getMarks(wsId, path, versionId);
-  // const sidenotes = getSidenotes(wsId, path, versionId);
   const selection = getEditorSelection({ wsId, path, versionId });
-  // const scrollRef = useScrollViewport(
-  //   sidenotes.scrollTop,
-  //   sidenotes.viewportHeight,
-  // );
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const side = sidenotes.current.value;
+  const { markRects, markBadges } = side;
+  const scrollRef = useScrollViewport(sidenotes.scrollTop, sidenotes.viewportHeight);
 
   useKeydown((e) => {
     if ((e.metaKey || e.ctrlKey) && e.key === "s") {
@@ -77,7 +59,7 @@ function FileViewerBody({ wsId, path, versionId }: FileKey) {
   }
 
   const editorLoading = file.state.value === null;
-  // const withSidePane = resolved.value.length > 0;
+  const withSidePane = resolvedMarks.resolved.value.length > 0;
 
   return (
     <div class="relative isolate flex-1 min-h-0 flex flex-col stack @container">
@@ -98,27 +80,21 @@ function FileViewerBody({ wsId, path, versionId }: FileKey) {
             </div>
           </div>
           <div class="content-side flex items-center">
-            {/* TODO -- sidenote controls with the marks port -- ESS-84
-            {!editorLoading && (
-              <SidenoteControls wsId={wsId} path={path} versionId={versionId} />
-            )}
-            */}
+            {/* TODO -- SidenoteControls lands with the review runner -- ESS-84 */}
           </div>
         </div>
       </div>
       <div class="relative flex-1 min-h-0 overflow-y-auto bg-paper striped/2" ref={scrollRef}>
-        <div class="isolate content-layout bg-paper min-h-full">
+        <div
+          class={`isolate content-layout bg-paper min-h-full${
+            withSidePane ? " content-layout--side" : ""
+          }`}
+        >
           <div class="relative min-w-0 isolate">
-            {/* isolate: stacking context for MarkHighlights z-index */}
-            {/* TODO -- highlights, badges and sidenotes land with the wasm
-            marks models -- ESS-84; <Caret/> sits live below
-            <MarkHighlights
-              rects={sidenotes.markRects.value}
-              activeIds={selection.markIds.value}
-              innerId={selection.innerMarkId.value}
-            />
-            <MarkBadges badges={sidenotes.markBadges.value} />
-            */}
+            {/* isolate: stacking context for MarkHighlights z-index; the
+            overlay divs come after the editor so wavy strokes and badges
+            paint over the native selection, while the negative-z band layer
+            stays behind the text */}
             {file.state.value ? (
               <>
                 <Editor
@@ -130,6 +106,12 @@ function FileViewerBody({ wsId, path, versionId }: FileKey) {
                   onChange={file.setModifiedState}
                   className={`content-main pt-16 pb-32`}
                 />
+                <MarkHighlights
+                  rects={markRects.value}
+                  activeIds={selection.markIds.value}
+                  innerId={selection.innerMarkId.value}
+                />
+                <MarkBadges badges={markBadges.value} />
                 <Caret rect={selection.caretRect} />
               </>
             ) : (
@@ -139,15 +121,7 @@ function FileViewerBody({ wsId, path, versionId }: FileKey) {
             )}
           </div>
           <div class="content-side">
-            {/* TODO -- ESS-84
-            <Sidenotes
-              wsId={wsId}
-              path={path}
-              versionId={versionId}
-              editor={activeEditor.value}
-              scrollContainerRef={scrollRef}
-            />
-            */}
+            <Sidenotes scrollContainerRef={scrollRef} />
           </div>
         </div>
         <Overlay when={editorLoading} local capture />

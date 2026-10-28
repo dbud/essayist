@@ -117,7 +117,7 @@ export function trackNodePositions<T extends LexicalNode>(
     editor.registerUpdateListener(scheduleMeasure),
   ];
   // re-measure when any font finishes loading
-  if (typeof document !== "undefined") {
+  if (typeof document !== "undefined" && document.fonts) {
     document.fonts.addEventListener("loadingdone", scheduleMeasure);
     disposers.push(() => document.fonts.removeEventListener("loadingdone", scheduleMeasure));
   }
