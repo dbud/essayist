@@ -8,10 +8,12 @@
     "check": "pnpm -r run check",
     "fmt": "pnpm -r run fmt",
     "lint": "pnpm -r run lint",
+    "prepare": "husky",
     "test": "vitest run"
   },
   "devDependencies": {
     "@types/node": "catalog:",
+    "husky": "^9.1.7",
     "oxfmt": "catalog:",
     "oxlint": "catalog:",
     "typescript": "catalog:",
