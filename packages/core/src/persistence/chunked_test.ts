@@ -37,9 +37,7 @@ const writePlan = (
 /** Run a body against a Persistence instance on a fresh store. */
 const store = <A>(
   kv: Kv,
-  body: (
-    persistence: Context.Service.Shape<typeof Persistence>,
-  ) => Effect.Effect<A, unknown, never>,
+  body: (persistence: Context.Service.Shape<typeof Persistence>) => Effect.Effect<A, unknown>,
 ): Promise<A> =>
   Effect.runPromise(
     Effect.provide(
