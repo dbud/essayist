@@ -736,7 +736,7 @@ test("Files -- small file inlines content in the latest key (no chunk keys)", as
     assertEquals(manifestKeys.length, 1);
     assertEquals(chunkKeys.length, 0, "small file must not write chunk keys");
   } finally {
-    await kv.close();
+    kv.close();
   }
 });
 
@@ -772,6 +772,6 @@ test("Files -- large write inlines first chunk, rest as chunk keys", async () =>
       assert(v.length <= 60 * 1024, "chunk must respect CHUNK_SIZE");
     }
   } finally {
-    await kv.close();
+    kv.close();
   }
 });

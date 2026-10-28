@@ -57,11 +57,10 @@ export function d1RestDatabase(config: D1RestConfig): D1Database {
       if (param === undefined) {
         throw new Error("a SQL placeholder has no param");
       }
-      return param === null
-        ? "NULL"
-        : typeof param === "number"
-          ? String(param)
-          : `'${String(param)}'`;
+      if (param === null) return "NULL";
+      if (typeof param === "number") return String(param);
+      if (typeof param === "string") return `'${param}'`;
+      throw new Error(`unsupported SQL param type: ${typeof param}`);
     });
   };
 

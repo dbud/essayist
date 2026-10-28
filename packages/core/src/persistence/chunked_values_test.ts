@@ -36,7 +36,7 @@ const readWithStore = async <A>(
       ),
     );
   } finally {
-    await kv.close();
+    kv.close();
   }
 };
 

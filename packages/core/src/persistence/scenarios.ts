@@ -4,6 +4,7 @@
  */
 
 import { assert, assertEquals, assertInstanceOf } from "@std/assert";
+import { sortBy } from "@std/collections";
 import { Effect, Result } from "effect";
 
 import { ConcurrentModificationError } from "./mod.ts";
@@ -97,7 +98,11 @@ const listEverything = scenario("an empty prefix returns everything", () =>
     yield* store.set(["a"], 1);
     yield* store.set(["b"], 2);
     const { entries } = yield* store.list([]);
-    assertEquals(entries.map((e) => e.value).sort(), [1, 2]);
+    const values = entries.map((e) => e.value) as number[];
+    assertEquals(
+      sortBy(values, (a, b) => a - b),
+      [1, 2],
+    );
   }),
 );
 
