@@ -71,7 +71,7 @@ const emitRunners: NodeRunners<TestTypes> = {
   },
 };
 
-const run = (
+const runFlow = (
   flow: FlowRunner<TestTypes>,
   graph: FlowGraph<TestTypes>,
   options?: FlowRunOptions<TestTypes>,
@@ -80,7 +80,7 @@ const run = (
 test("FlowRunner -- emit returns undefined, so callers cannot leak a value", async () => {
   const flow = new FlowRunner<TestTypes>({ runners: emitRunners });
 
-  await run(flow, {
+  await runFlow(flow, {
     nodes: [
       { id: "s", kind: "source", dependsOn: [], payload: { text: "x" } },
       { id: "p", kind: "produce", dependsOn: ["s"], payload: { token: "t" } },
@@ -98,7 +98,7 @@ test("FlowRunner -- commits artifacts along a chain", async () => {
     onEvent: (event) => Effect.sync(() => events.push(event)),
   });
 
-  const result = await run(flow, {
+  const result = await runFlow(flow, {
     nodes: [
       { id: "a", kind: "source", dependsOn: [], payload: { text: "alpha" } },
       { id: "b", kind: "produce", dependsOn: ["a"], payload: { token: "tok" } },
@@ -142,7 +142,7 @@ test("FlowRunner -- unions same-type artifacts in dependsOn order", async () => 
     },
   });
 
-  const result = await run(flow, {
+  const result = await runFlow(flow, {
     nodes: [
       { id: "a", kind: "source", dependsOn: [], payload: { text: "alpha" } },
       {
@@ -191,7 +191,7 @@ test("FlowRunner -- delivers a custom event while the node still runs", async ()
       }),
   });
 
-  await run(flow, {
+  await runFlow(flow, {
     nodes: [{ id: "p", kind: "produce", dependsOn: [], payload: { token: "t" } }],
   });
 
@@ -224,7 +224,7 @@ test("FlowRunner -- keeps custom events in emission order", async () => {
       }),
   });
 
-  await run(flow, {
+  await runFlow(flow, {
     nodes: [{ id: "p", kind: "produce", dependsOn: [], payload: { token: "t" } }],
   });
 
@@ -253,7 +253,7 @@ test("FlowRunner -- emits a failing node's events too", async () => {
       }),
   });
 
-  const result = await run(flow, {
+  const result = await runFlow(flow, {
     nodes: [{ id: "b", kind: "boom", dependsOn: [], payload: undefined }],
   });
 
@@ -267,7 +267,7 @@ test("FlowRunner -- a listener defect is dropped, not failed into the run", asyn
     onEvent: () => Effect.die(new Error("listener fault")),
   });
 
-  const result = await run(flow, {
+  const result = await runFlow(flow, {
     nodes: [{ id: "a", kind: "source", dependsOn: [], payload: { text: "x" } }],
   });
 
@@ -279,7 +279,7 @@ test("FlowRunner -- rejects broken graphs before running", async () => {
 
   await assertRejects(
     () =>
-      run(flow, {
+      runFlow(flow, {
         nodes: [
           { id: "a", kind: "source", dependsOn: [], payload: { text: "x" } },
           { id: "a", kind: "produce", dependsOn: [], payload: { token: "t" } },
@@ -291,7 +291,7 @@ test("FlowRunner -- rejects broken graphs before running", async () => {
 
   await assertRejects(
     () =>
-      run(flow, {
+      runFlow(flow, {
         nodes: [
           { id: "a", kind: "source", dependsOn: [], payload: { text: "x" } },
           {
@@ -308,7 +308,7 @@ test("FlowRunner -- rejects broken graphs before running", async () => {
 
   await assertRejects(
     () =>
-      run(flow, {
+      runFlow(flow, {
         nodes: [
           {
             id: "a",
@@ -332,7 +332,7 @@ test("FlowRunner -- rejects broken graphs before running", async () => {
 test("FlowRunner -- skips nodes downstream of a failure", async () => {
   const flow = new FlowRunner<TestTypes>({ runners });
 
-  const result = await run(flow, {
+  const result = await runFlow(flow, {
     nodes: [
       { id: "a", kind: "source", dependsOn: [], payload: { text: "alpha" } },
       { id: "b", kind: "boom", dependsOn: ["a"] },
@@ -388,7 +388,7 @@ test("FlowRunner -- keeps independent branches running after a failure", async (
   };
   const flow = new FlowRunner<TestTypes>({ runners: delayed });
 
-  const result = await run(flow, {
+  const result = await runFlow(flow, {
     nodes: [
       { id: "a", kind: "source", dependsOn: [], payload: { text: "alpha" } },
       { id: "b", kind: "boom", dependsOn: ["a"] },
@@ -414,7 +414,7 @@ test("FlowRunner -- keeps independent branches running after a failure", async (
 test("FlowRunner -- accumulates failures from concurrent nodes", async () => {
   const flow = new FlowRunner<TestTypes>({ runners });
 
-  const result = await run(flow, {
+  const result = await runFlow(flow, {
     nodes: [
       { id: "a", kind: "source", dependsOn: [], payload: { text: "alpha" } },
       { id: "b", kind: "boom", dependsOn: ["a"] },
@@ -448,7 +448,7 @@ test("FlowRunner -- respects maxConcurrency", async () => {
     maxConcurrency: 1,
   });
 
-  const result = await run(flow, {
+  const result = await runFlow(flow, {
     nodes: [
       { id: "a", kind: "source", dependsOn: [], payload: { text: "alpha" } },
       { id: "p1", kind: "produce", dependsOn: ["a"], payload: { token: "t" } },
@@ -478,7 +478,7 @@ test("FlowRunner -- a resumed node does not re-run and seeds its artifacts", asy
     onEvent: (event) => Effect.sync(() => events.push(event)),
   });
 
-  const result = await run(
+  const result = await runFlow(
     flow,
     {
       nodes: [{ id: "a", kind: "source", dependsOn: [], payload: { text: "x" } }],
@@ -511,7 +511,7 @@ test("FlowRunner -- a resumed node feeds its dependents", async () => {
     },
   });
 
-  const result = await run(
+  const result = await runFlow(
     flow,
     {
       nodes: [
@@ -539,7 +539,7 @@ test("FlowRunner -- a resumed node feeds its dependents", async () => {
 test("FlowRunner -- a resumed node is not reported as skipped", async () => {
   const flow = new FlowRunner<TestTypes>({ runners });
 
-  const result = await run(
+  const result = await runFlow(
     flow,
     {
       nodes: [
@@ -562,7 +562,7 @@ test("FlowRunner -- a resumed node is not reported as skipped", async () => {
 test("FlowRunner -- ignores a completed entry the graph no longer has", async () => {
   const flow = new FlowRunner<TestTypes>({ runners });
 
-  const result = await run(
+  const result = await runFlow(
     flow,
     {
       nodes: [{ id: "a", kind: "source", dependsOn: [], payload: { text: "x" } }],
@@ -585,7 +585,7 @@ test("FlowRunner -- ignores a completed entry the graph no longer has", async ()
 
 test("FlowRunner -- completes an empty graph", async () => {
   const flow = new FlowRunner<TestTypes>({ runners });
-  const result = await run(flow, { nodes: [] });
+  const result = await runFlow(flow, { nodes: [] });
 
   assertEquals(result.status, "completed");
   assertEquals(result.nodeRuns, []);
@@ -599,7 +599,7 @@ test("FlowRunner -- records what a completed node committed on node_end", async 
     onEvent: (event) => Effect.sync(() => events.push(event)),
   });
 
-  await run(flow, {
+  await runFlow(flow, {
     nodes: [{ id: "a", kind: "source", dependsOn: [], payload: { text: "alpha" } }],
   });
 
@@ -624,7 +624,7 @@ test("FlowRunner -- a node that produces nothing records an empty artifact list"
     onEvent: (event) => Effect.sync(() => events.push(event)),
   });
 
-  await run(flow, {
+  await runFlow(flow, {
     nodes: [{ id: "s", kind: "sink", dependsOn: [], payload: undefined }],
   });
 
@@ -639,7 +639,7 @@ test("FlowRunner -- a failed node records no artifacts", async () => {
     onEvent: (event) => Effect.sync(() => events.push(event)),
   });
 
-  await run(flow, {
+  await runFlow(flow, {
     nodes: [{ id: "b", kind: "boom", dependsOn: [], payload: undefined }],
   });
 

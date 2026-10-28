@@ -81,7 +81,7 @@ export class FlowRunner<T extends FlowTypes, R = never> {
       const nodeRuns: NodeRun<T>[] = [];
       /** Completed on each node's fiber once its outcome is recorded;
        * the scheduler wakes on the node id. */
-      const pending = new Map<string, Deferred.Deferred<string, never>>();
+      const pending = new Map<string, Deferred.Deferred<string>>();
       const errors = new Map<string, string>();
 
       const commit = (entry: WiredNode<T>, produced: Artifact<T>[]): void => {

@@ -764,7 +764,7 @@ test("Files -- large write inlines first chunk, rest as chunk keys", async () =>
     const chunkKeys = entries.filter((e) => e.key[e.key.length - 2] === "file:chunk");
     assertEquals(manifestKeys.length, 1);
     // Chunk 0 is inlined in the manifest; chunk keys start at index 1.
-    const indices = chunkKeys.map((e) => Number(e.key[e.key.length - 1])).sort((a, b) => a - b);
+    const indices = chunkKeys.map((e) => Number(e.key[e.key.length - 1])).toSorted((a, b) => a - b);
     assertEquals(indices[0], 1);
     assert(chunkKeys.length > 1, "should produce multiple chunk keys");
     for (const e of chunkKeys) {

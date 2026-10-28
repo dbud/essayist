@@ -50,7 +50,7 @@ test("byte order of the stored text equals tuple order", () => {
     ordered[4],
   ];
   assertEquals(
-    shuffled.map((key) => packKey(key)).sort(),
+    shuffled.map((key) => packKey(key)).toSorted(),
     ordered.map((key) => packKey(key)),
   );
 });

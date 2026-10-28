@@ -97,7 +97,7 @@ const readMarks = (
     ),
   );
 
-const run = (
+const runFlow = (
   env: Layer.Layer<ModelClient | Files | Marks>,
   flow: FlowRunner<ReviewTypes, ReviewServices>,
   graph: FlowGraph<ReviewTypes>,
@@ -163,7 +163,7 @@ test("review runners -- analyze, propose, apply, and synthesize in a flow", asyn
     ],
   };
 
-  const result = await run(env, flow, graph);
+  const result = await runFlow(env, flow, graph);
 
   assertEquals(result.errors, []);
   assertEquals(result.status, "completed");
@@ -211,7 +211,7 @@ test("review runners -- repair propose stays idle without failures", async () =>
   const provenance = { runId: "r", unitId: "m" };
   const flow = new FlowRunner<ReviewTypes, ReviewServices>({ runners });
 
-  const result = await run(env, flow, {
+  const result = await runFlow(env, flow, {
     nodes: [
       {
         id: "content",
@@ -260,7 +260,7 @@ test("review runners -- repair propose stays idle without failures", async () =>
         },
       },
     ],
-  } as FlowGraph<ReviewTypes>);
+  });
 
   assertEquals(result.status, "completed");
   // The gate forwarded nothing, so the repair propose never called the
@@ -295,7 +295,7 @@ test("review runners -- a repair round re-quotes failed spans", async () => {
   const provenance = { runId: "r", unitId: "m" };
   const flow = new FlowRunner<ReviewTypes, ReviewServices>({ runners });
 
-  const result = await run(env, flow, {
+  const result = await runFlow(env, flow, {
     nodes: [
       {
         id: "content",
@@ -344,7 +344,7 @@ test("review runners -- a repair round re-quotes failed spans", async () => {
         },
       },
     ],
-  } as FlowGraph<ReviewTypes>);
+  });
 
   assertEquals(result.status, "completed");
   assertEquals(

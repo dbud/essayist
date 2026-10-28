@@ -143,13 +143,13 @@ function buildImpl(client: Service) {
     Effect.gen(function* () {
       const prompt = `${input}\n\n${generateInstructions(schema, options)}`;
 
-      const post = (prompt: string): Effect.Effect<Settled, AiError | Cause.TimeoutError> =>
+      const post = (requestText: string): Effect.Effect<Settled, AiError | Cause.TimeoutError> =>
         Effect.gen(function* () {
           const startedAt = yield* Clock.currentTimeMillis;
           const [body] = yield* client
             .createChatCompletion({
               models,
-              messages: [{ role: "user", content: prompt }],
+              messages: [{ role: "user", content: requestText }],
             })
             .pipe(Effect.timeout(ROUND_TIMEOUT_MS));
           const finishedAt = yield* Clock.currentTimeMillis;
@@ -181,14 +181,14 @@ function buildImpl(client: Service) {
         });
 
       /** Re-issues the round while a later attempt could clear the failure. */
-      const attempted = (prompt: string): Effect.Effect<Settled, ModelCallError> =>
+      const attempted = (requestText: string): Effect.Effect<Settled, ModelCallError> =>
         Effect.gen(function* () {
           for (let attempt = 1; ; attempt++) {
             yield* Effect.logInfo("structured call dispatched", {
               attempt,
               models,
             });
-            const outcome = yield* Effect.result(post(prompt));
+            const outcome = yield* Effect.result(post(requestText));
             if (Result.isSuccess(outcome)) {
               yield* Effect.logInfo("structured call settled", { models });
               return outcome.success;

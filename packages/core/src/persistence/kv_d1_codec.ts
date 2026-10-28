@@ -55,6 +55,7 @@ export function encodeValue(value: unknown): string {
   return encodeBase64(cbor.encode(value));
 }
 
+// oxlint-disable-next-line typescript/no-unnecessary-type-parameters -- callers pass the value type; kv_d1 chains it
 export function decodeValue<T = unknown>(text: string): T {
   return cbor.decode(decodeBase64(text)) as T;
 }

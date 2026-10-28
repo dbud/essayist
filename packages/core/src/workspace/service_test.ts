@@ -118,7 +118,7 @@ test("Workspaces -- listWorkspacesForUser returns memberships", async () => {
     yield* store.createWorkspace("Bobs", bob.id);
 
     const forAlice = yield* store.listWorkspacesForUser(alice.id);
-    assertEquals(forAlice.map((w) => w.id).sort(), [ws1.id, ws2.id].sort());
+    assertEquals(forAlice.map((w) => w.id).toSorted(), [ws1.id, ws2.id].toSorted());
     assertEquals((yield* store.listWorkspacesForUser(bob.id)).length, 1);
   });
   await Effect.runPromise(Effect.provide(program, testLayer(Workspaces.layerNoDeps)));

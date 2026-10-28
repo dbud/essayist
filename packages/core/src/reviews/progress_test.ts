@@ -19,7 +19,7 @@ const KIND_OF = new Map<string, NodeKind<ReviewTypes>>([
 
 test("ReviewProgressTracker -- emits initial state on construction", () => {
   const events: ReviewProgress[] = [];
-  new ReviewProgressTracker((p) => events.push(p), KIND_OF);
+  const _tracker = new ReviewProgressTracker((p) => events.push(p), KIND_OF);
 
   assertEquals(events, [{ phase: "working", notes: 0 }]);
 });

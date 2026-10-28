@@ -9,7 +9,7 @@ import { groupTraceNodes } from "./view.ts";
 
 /** Stamps seq and a wall clock so folds see realistic trace entries. */
 function trace(events: FlowEvent<ReviewTypes>[]): TraceEvent[] {
-  return events.map((event, seq) => ({ ...event, seq, at: 100 + seq }) as TraceEvent);
+  return events.map((event, seq) => ({ ...event, seq, at: 100 + seq }));
 }
 
 test("groupTraceNodes -- groups custom events under their node", () => {

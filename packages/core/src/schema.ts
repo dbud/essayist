@@ -18,7 +18,7 @@ function annotationsOf(ast: Ast): Annotations {
     ast.checks !== undefined && ast.checks.length > 0
       ? ast.checks[ast.checks.length - 1].annotations
       : ast.annotations;
-  return (resolved ?? {}) as Annotations;
+  return resolved ?? {};
 }
 
 /** A check marking whole numbers, the way `Schema.Int` carries one. The id
@@ -165,11 +165,11 @@ function buildExample(object: SchemaAST.Objects): Schema.JsonObject | undefined 
       example[sig.name as string] = value;
     }
   }
-  return Object.keys(example).length > 0 ? (example as Schema.JsonObject) : undefined;
+  return Object.keys(example).length > 0 ? example : undefined;
 }
 
-export function generateInstructions<T extends Schema.Constraint>(
-  schema: T,
+export function generateInstructions(
+  schema: Schema.Constraint,
   options?: { includeExample?: boolean },
 ): string {
   const ast = schema.ast;

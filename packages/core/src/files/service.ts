@@ -286,7 +286,7 @@ export class Files extends Context.Service<Files, Interface>()("@essayist/core/f
           const { entries } = yield* persistence.list<StoredSnapshot>(latestPrefixKey(wsId));
           const result: FileEntry[] = [];
           for (const entry of entries) {
-            const path = String(entry.key[entry.key.length - 1]);
+            const path = entry.key[entry.key.length - 1];
             if (prefix !== undefined && !path.startsWith(prefix)) continue;
             const latest = entry.value;
             if (latest) {

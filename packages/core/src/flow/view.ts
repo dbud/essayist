@@ -16,7 +16,7 @@ export function view<T extends FlowTypes>(inputs: readonly Artifact<T>[]): Artif
       const matches = matching(type);
       assert(
         matches.length === 1,
-        `expected exactly one "${String(type)}" artifact, got ${matches.length}`,
+        `expected exactly one "${type}" artifact, got ${matches.length}`,
       );
       return matches[0].data;
     },

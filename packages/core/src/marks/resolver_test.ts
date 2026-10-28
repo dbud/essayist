@@ -46,10 +46,7 @@ function resolve(
   newContent: string,
   options?: ResolveOptions,
 ): Mark[] {
-  return resolveMarks(
-    { marks, oldContent, newContent },
-    options as Parameters<typeof resolveMarks>[1],
-  );
+  return resolveMarks({ marks, oldContent, newContent }, options);
 }
 
 // Arithmetic mapping (unchanged region)

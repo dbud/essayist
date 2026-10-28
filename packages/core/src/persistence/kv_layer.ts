@@ -60,6 +60,7 @@ export function kvLayer(kv: Kv): Layer.Layer<Persistence> {
     Persistence,
     Effect.sync(() =>
       Persistence.of({
+        // oxlint-disable-next-line typescript/no-unnecessary-type-parameters -- implements the generic Persistence interface
         get: <T = unknown>(key: Key, options?: ReadOptions) =>
           Effect.tryPromise({
             try: async () => {
@@ -76,6 +77,7 @@ export function kvLayer(kv: Kv): Layer.Layer<Persistence> {
             },
             catch: backendFault,
           }),
+        // oxlint-disable-next-line typescript/no-unnecessary-type-parameters -- implements the generic Persistence interface
         getMany: <T = unknown>(keys: Key[], options?: ReadOptions) =>
           Effect.tryPromise({
             try: async () => {

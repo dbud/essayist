@@ -215,7 +215,7 @@ export class Workspaces extends Context.Service<Workspaces, Interface>()(
       const listWorkspacesForUser = (userId: string) =>
         Effect.gen(function* () {
           const { entries } = yield* persistence.list([MEMBERS_BY_USER, userId]);
-          const wsIds = entries.map((e) => String(e.key[2]));
+          const wsIds = entries.map((e) => e.key[2]);
           const results = yield* persistence.getMany<Workspace>(
             wsIds.map((id) => [WORKSPACES, id]),
           );

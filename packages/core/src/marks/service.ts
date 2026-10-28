@@ -87,7 +87,7 @@ export class Marks extends Context.Service<Marks, Interface>()("@essayist/core/m
 
           const ids = yield* Ids;
           const created_at = yield* Clock.currentTimeMillis;
-          const mark: Mark = {
+          const created: Mark = {
             id: ids.next(),
             thread_id: threadId ?? ids.next(),
             path,
@@ -103,11 +103,11 @@ export class Marks extends Context.Service<Marks, Interface>()("@essayist/core/m
             status: "resolved",
             ...(provenance && { meta: provenance }),
           };
-          yield* files.saveMark(mark);
+          yield* files.saveMark(created);
 
           return {
-            mark_id: mark.id,
-            thread_id: mark.thread_id,
+            mark_id: created.id,
+            thread_id: created.thread_id,
             marked: true,
           };
         });
