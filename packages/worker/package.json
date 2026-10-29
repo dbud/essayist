@@ -57,7 +57,7 @@
     "jose": "catalog:",
     "lexical": "^0.52.0",
     "lucide-preact": "^1.61.0",
-    "marked": "^18.0.14",
+    "marked": "^18.1.2",
     "preact": "^11.0.2",
     "preact-render-to-string": "^6.8.1",
     "tailwindcss": "^4.3.3"
@@ -73,6 +73,6 @@
     "@types/node": "catalog:",
     "vite": "catalog:",
     "vitest": "catalog:",
-    "wrangler": "^4.152.0"
+    "wrangler": "^4.153.0"
   }
 }
