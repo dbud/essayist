@@ -6,7 +6,8 @@
   "scripts": {
     "build": "pnpm -C packages/worker build",
     "check": "oxfmt --check . && oxlint --deny-warnings . && pnpm -r run check",
-    "fmt": "oxfmt .",
+    "fmt": "oxfmt . && pnpm fmt:comments",
+    "fmt:comments": "scripts/fmt-comments.sh",
     "lint": "oxlint .",
     "prepare": "husky",
     "test": "vitest run"

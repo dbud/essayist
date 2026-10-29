@@ -34,7 +34,15 @@ root pnpm-lock.yaml.
 oxlint and oxfmt are the single linter and formatter; the configs are
 the root `.oxlintrc.json` and `.oxfmtrc.json`, discovered by walking up
 from each package. `pnpm fmt` runs `oxfmt .`, which also sorts imports
-and package.json fields. `pnpm check` starts with `oxfmt --check .`
+and package.json fields, then reflows comments in our source files
+(`pnpm fmt:comments`, parfit at width 100) when the `parfit` binary is
+installed; machines without it skip that step. oxfmt leaves comment
+content alone, and `pnpm check` never runs parfit, so a missing tool
+cannot fail CI. Sweep commits from a reflow pass belong in
+`.git-blame-ignore-revs`. Comment blocks that must keep their column
+alignment, such as KV key layout tables, carry a `parfit-ignore`
+comment line directly above them; parfit then passes the whole block
+through verbatim. `pnpm check` starts with `oxfmt --check .`
 (formatting must be clean) and `oxlint --deny-warnings .` (any finding
 fails). Inline suppressions read
 `// oxlint-disable-next-line <rule> -- <reason>`. The dormant deno tier
