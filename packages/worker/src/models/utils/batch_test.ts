@@ -2,6 +2,8 @@ import { expect, test } from "vitest";
 
 import { BatchAuthError, batchFailureMessage, formatBatchResult, runBatch } from "./batch.ts";
 
+const tick = () => new Promise<void>((resolve) => setTimeout(resolve, 1));
+
 test("runBatch counts settles and per-item failures", async () => {
   const progress: Array<[number, number]> = [];
   const result = await runBatch(
@@ -9,7 +11,7 @@ test("runBatch counts settles and per-item failures", async () => {
     async (item) => {
       if (item === "b") throw new Error("b: failed (409)");
     },
-    (done, total) => progress.push([done, total]),
+    { onProgress: (done, total) => progress.push([done, total]) },
   );
   expect(result).toEqual({
     total: 3,
@@ -25,12 +27,65 @@ test("runBatch counts settles and per-item failures", async () => {
   ]);
 });
 
-test("runBatch rethrows auth errors with the partial counts", async () => {
-  const err = await runBatch(["a", "b"], async (item) => {
-    if (item === "b") throw new BatchAuthError();
-  }).catch((caught) => caught);
+test("runBatch counts rewrites through the task receipt", async () => {
+  const result = await runBatch(["a", "b"], async (item) => {
+    if (item === "b") return { updated: true };
+  });
+  expect(result.ok).toBe(2);
+  expect(result.updated).toBe(1);
+});
+
+test("runBatch bounds the in-flight tasks to the concurrency limit", async () => {
+  let inFlight = 0;
+  let maxInFlight = 0;
+  const result = await runBatch(
+    [1, 2, 3, 4, 5],
+    async () => {
+      inFlight++;
+      maxInFlight = Math.max(maxInFlight, inFlight);
+      await tick();
+      inFlight--;
+    },
+    { concurrency: 2 },
+  );
+  expect(result.ok).toBe(5);
+  expect(maxInFlight).toBe(2);
+});
+
+test("runBatch dispatches items in order for a sequential flow", async () => {
+  const started: string[] = [];
+  await runBatch(
+    ["a", "b", "c"],
+    async () => {
+      await tick();
+    },
+    {
+      concurrency: 1,
+      onStart: (item, index) => started.push(`${index}:${item}`),
+    },
+  );
+  expect(started).toEqual(["0:a", "1:b", "2:c"]);
+});
+
+test("runBatch stops dispatching after an auth failure", async () => {
+  const attempted: number[] = [];
+  const err = await runBatch(
+    [1, 2, 3, 4, 5],
+    async (item) => {
+      attempted.push(item);
+      if (item === 2) throw new BatchAuthError();
+      await tick();
+    },
+    { concurrency: 2 },
+  ).catch((caught) => caught);
   expect(err).toBeInstanceOf(BatchAuthError);
-  expect(err.result).toEqual({ total: 2, ok: 1, updated: 0, failed: [], skipped: [] });
+  expect(attempted).toEqual([1, 2]);
+  expect(err.result).toEqual({ total: 5, ok: 1, updated: 0, failed: [], skipped: [] });
+});
+
+test("runBatch reports upfront skips", async () => {
+  const result = await runBatch(["a", "b"], async () => {}, { skipped: ["binary.md"] });
+  expect(result.skipped).toEqual(["binary.md"]);
 });
 
 test("formatBatchResult reports each failure source", () => {

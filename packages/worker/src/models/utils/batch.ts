@@ -2,7 +2,6 @@
 
 import { formatCount, pluralize } from "#/utils/format.ts";
 
-/** Counts of a batch flow, mutated while it runs. */
 export interface BatchResult {
   total: number;
   ok: number;
@@ -18,10 +17,7 @@ export function startBatch(total: number): BatchResult {
   return { total, ok: 0, updated: 0, failed: [], skipped: [] };
 }
 
-/**
- * Thrown on a 401 from the api; `result` holds the counts reached so far. Attach a clone when the
- * batch keeps running afterwards.
- */
+/** Thrown on a 401 from the api; `result` holds the counts reached so far. */
 export class BatchAuthError extends Error {
   result?: BatchResult;
 
@@ -32,36 +28,58 @@ export class BatchAuthError extends Error {
   }
 }
 
-/**
- * Run a task over every item in parallel and count the results. A thrown message becomes the failed
- * entry, so the task names its item in the message. Auth failures throw once, after the batch
- * settles, with the final counts.
- */
+/** Returned by a task after its item rewrote an existing file. */
+export interface BatchReceipt {
+  readonly updated?: boolean;
+}
+
+export interface RunBatchOptions<T> {
+  /** Parallel workers; defaults to all items at once. */
+  readonly concurrency?: number;
+  /** Items excluded before the batch, reported on the result. */
+  readonly skipped?: readonly string[];
+  readonly onStart?: (item: T, index: number) => void;
+  readonly onProgress?: (done: number, total: number) => void;
+}
+
+/** Run a task over the items with a concurrency limit. A thrown message becomes a `failed`
+ * entry; a thrown BatchAuthError stops starting further items and rethrows after the in-flight
+ * tasks settle. */
 export async function runBatch<T>(
   items: readonly T[],
-  task: (item: T) => Promise<void>,
-  onProgress?: (done: number, total: number) => void,
+  task: (item: T) => Promise<void | BatchReceipt>,
+  options?: RunBatchOptions<T>,
 ): Promise<BatchResult> {
   const batch = startBatch(items.length);
+  if (options?.skipped) batch.skipped.push(...options.skipped);
   let done = 0;
+  let next = 0;
   let authFailed = false;
-  await Promise.allSettled(
-    items.map(async (item) => {
-      try {
-        await task(item);
-        batch.ok++;
-      } catch (err) {
-        if (err instanceof BatchAuthError) {
-          authFailed = true;
-        } else {
-          batch.failed.push(err instanceof Error ? err.message : String(err));
+  const limit = Math.min(Math.max(options?.concurrency ?? items.length, 1), items.length);
+  const workers = Array.from({ length: limit }, () =>
+    (async () => {
+      while (next < items.length && !authFailed) {
+        const index = next++;
+        const item = items[index];
+        options?.onStart?.(item, index);
+        try {
+          const receipt = await task(item);
+          batch.ok++;
+          if (receipt?.updated) batch.updated++;
+        } catch (err) {
+          if (err instanceof BatchAuthError) {
+            authFailed = true;
+          } else {
+            batch.failed.push(err instanceof Error ? err.message : String(err));
+          }
+        } finally {
+          done++;
+          options?.onProgress?.(done, batch.total);
         }
-      } finally {
-        done++;
-        onProgress?.(done, batch.total);
       }
-    }),
+    })(),
   );
+  await Promise.all(workers);
   if (authFailed) throw new BatchAuthError(structuredClone(batch));
   return batch;
 }
