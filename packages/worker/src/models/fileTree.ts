@@ -54,12 +54,8 @@ export const FileTreeModel = createModel((wsId: string, data?: FileTreeData) => 
 
   function startPending(name: string): void {
     const stem = pendingStem(name);
-    let candidate = `${stem}.md`;
-    let suffix = 2;
     const taken = new Set(files.value.map((file) => file.path));
-    while (taken.has(candidate)) {
-      candidate = `${stem}-${suffix++}.md`;
-    }
+    const candidate = freePath(`${stem}.md`, taken);
     batch(() => {
       files.value = [
         ...files.value,
@@ -119,22 +115,30 @@ export const FileTreeModel = createModel((wsId: string, data?: FileTreeData) => 
     },
   ): Promise<BatchResult> {
     let firstPath: string | null = null;
+    // Same-name items in one drop keep their contents: the first keeps the plain path (an existing
+    // file gets a new version on top), later ones move to a fresh path.
+    const assigned = new Set<string>();
+    const scheduled = items.map((item) => {
+      const path = freePath(item.path, assigned);
+      assigned.add(path);
+      return { item, path };
+    });
     const result = await runBatch(
-      items,
-      async (item) => {
+      scheduled,
+      async ({ item, path }) => {
         const res = await requestJson("PUT", "/api/workspaces/files/upsert", {
           wsId,
-          path: item.path,
+          path,
           content: item.content,
         });
         if (res.status === 401) {
           throw new BatchAuthError();
         }
         if (!res.ok) {
-          throw new Error(`${item.path}: ${res.message ?? `failed (${res.status})`}`);
+          throw new Error(`${path}: ${res.message ?? `failed (${res.status})`}`);
         }
         if (firstPath === null) {
-          firstPath = item.path;
+          firstPath = path;
         }
       },
       { concurrency: 4, ...options },
@@ -219,4 +223,17 @@ function sortTree(node: TreeNode) {
 function pendingStem(name: string): string {
   const slug = toKebabCase(name);
   return slug === "" ? "untitled" : slug;
+}
+
+/** The first unused path, suffixing the stem with -2, -3, ... before the extension. */
+function freePath(path: string, taken: Set<string>): string {
+  if (!taken.has(path)) return path;
+  const slash = path.lastIndexOf("/");
+  const dot = path.lastIndexOf(".");
+  const hasExtension = dot > slash;
+  const stem = hasExtension ? path.slice(0, dot) : path;
+  const ext = hasExtension ? path.slice(dot) : "";
+  let n = 2;
+  while (taken.has(`${stem}-${n}${ext}`)) n += 1;
+  return `${stem}-${n}${ext}`;
 }
