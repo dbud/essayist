@@ -1,21 +1,27 @@
-export type ReviewRunStatus = "running" | "completed" | "failed";
+import { Schema } from "effect";
 
-import type { Lease } from "#/persistence/mod.ts";
+import { Lease } from "#/persistence/mod.ts";
 
-/** A review pass run over a file in a workspace. */
-export interface ReviewRun extends Lease {
-  id: string;
-  wsId: string;
-  path: string;
-  reviewPassId: string;
-  versionId?: string;
-  status: ReviewRunStatus;
-  startedAt: number;
-  completedAt?: number;
-  error?: string;
-  /** Final summary text, from the summary artifact when present. */
-  summary?: string;
-}
+export const ReviewRunStatus = Schema.Literals(["running", "completed", "failed"]);
+export type ReviewRunStatus = Schema.Schema.Type<typeof ReviewRunStatus>;
+
+/** A review pass run over a file in a workspace. The lease fields ride along while a driver claims
+ * the run and are stripped once it settles. */
+export const ReviewRun = Schema.Struct({
+  ...Lease.fields,
+  id: Schema.String,
+  wsId: Schema.String,
+  path: Schema.String,
+  reviewPassId: Schema.String,
+  versionId: Schema.optionalKey(Schema.String),
+  status: ReviewRunStatus,
+  startedAt: Schema.Number,
+  completedAt: Schema.optionalKey(Schema.Number),
+  error: Schema.optionalKey(Schema.String),
+  summary: Schema.optionalKey(Schema.String),
+});
+
+export type ReviewRun = Schema.Schema.Type<typeof ReviewRun>;
 
 /** A proposed mark and its application result. */
 export interface MarkAttempt {

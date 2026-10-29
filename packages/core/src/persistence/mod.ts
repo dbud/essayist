@@ -58,13 +58,19 @@ export class ConcurrentModificationError extends Schema.TaggedError<ConcurrentMo
   }
 }
 
-/** Fields a record carries to be leasable by one owner at a time. */
-export interface Lease {
-  /** Id of the driver currently advancing this record. */
-  leaseOwner?: string;
-  /** When the owner last proved it was alive. */
-  heartbeatAt?: number;
-}
+/** The lease fields a record carries to be claimable by one owner at a time. */
+export const Lease = Schema.Struct({
+  leaseOwner: Schema.optionalKey(
+    Schema.String.annotate({
+      description: "Id of the driver currently advancing this record.",
+    }),
+  ),
+  heartbeatAt: Schema.optionalKey(
+    Schema.Number.annotate({ description: "When the owner last proved it was alive." }),
+  ),
+});
+
+export type Lease = Schema.Schema.Type<typeof Lease>;
 
 /** A record with {@link Lease} fields on it. */
 export type Leased<T> = T & Lease;
