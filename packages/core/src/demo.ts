@@ -1,7 +1,6 @@
-// The demo essay content and its seed: one copy, shared by web's boot
-// seed and workspace-create endpoint, and by kvctl's seed-demo
-// command. Seeding is an Effect against the files and marks services
-// under the caller's WorkspaceId scope.
+// The demo essay content and its seed: one copy, shared by web's boot seed and workspace-create
+// endpoint, and by kvctl's seed-demo command. Seeding is an Effect against the files and marks
+// services under the caller's WorkspaceId scope.
 
 import { Effect } from "effect";
 
@@ -12,8 +11,7 @@ import type { ConcurrentModificationError, PersistenceError } from "#/persistenc
 import type { WorkspaceId } from "#/workspace/WorkspaceId.ts";
 
 /** The demo essay content, keyed by workspace path. Paragraphs are
- * single lines so mark selections can match exact substrings without
- * whitespace ambiguity. */
+ * single lines so mark selections can match exact substrings without whitespace ambiguity. */
 export const demoFiles: Record<string, string> = {
   "essay.md": `# On Drafts
 
@@ -49,9 +47,8 @@ An ending has to be earned twice -- once by the argument, and once by the reader
 };
 
 /** Write the demo essay and seed marks exercising every label; the
- * workspace scope comes from the caller. Idempotence (skip when the
- * essay already exists) is the caller's job, since a write appends a
- * new version and marks would duplicate. */
+ * workspace scope comes from the caller. Idempotence (skip when the essay already exists) is the
+ * caller's job, since a write appends a new version and marks would duplicate. */
 export function seedDemoFiles(): Effect.Effect<
   void,
   PersistenceError | ConcurrentModificationError | FileMissingError,
@@ -71,9 +68,8 @@ export function seedDemoFiles(): Effect.Effect<
       { label: "thesis" },
     );
 
-    // Long mark spanning two paragraphs; fully contains the evidence mark
-    // below, exercising nested/overlapping mark rendering and band
-    // stacking.
+    // Long mark spanning two paragraphs; fully contains the evidence mark below, exercising
+    // nested/overlapping mark rendering and band stacking.
     yield* marks.mark(
       "essay.md",
       `The useful fiction about first drafts is that they are private. Nobody reads them, so they can be honest. A first draft can admit that a section does not work yet, or lean on a stock phrase while it waits for the right one. That freedom is temporary -- revision is the process of paying for it -- but while it lasts, it lets a writer find out what the piece is actually about.

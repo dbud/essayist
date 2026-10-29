@@ -10,10 +10,9 @@ export interface CaretRect {
 }
 
 /**
- * Per-file editor-selection state, written by the editor extensions
- * (`ToolbarStateExtension` for block/format flags, `MarksAtCursorExtension`
- * for mark ids) and read by toolbar/sidebar components. Cached per
- * (workspace, path, version) so the same path in different workspaces and
+ * Per-file editor-selection state, written by the editor extensions (`ToolbarStateExtension`
+ * for block/format flags, `MarksAtCursorExtension` for mark ids) and read by toolbar/sidebar
+ * components. Cached per (workspace, path, version) so the same path in different workspaces and
  * views keeps separate toolbar state.
  */
 export const EditorSelectionModel = createModel((_key: FileKey) => {

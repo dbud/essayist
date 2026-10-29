@@ -48,9 +48,8 @@ export function Document({ title, client, data, state, preferences, children }: 
   );
 }
 
-// The app state seeds from the middleware-resolved context, so pages read
-// it via useAppState. New request-scoped context (workspace, file) extends
-// here.
+// The app state seeds from the middleware-resolved context, so pages read it via useAppState. New
+// request-scoped context (workspace, file) extends here.
 export const pageRenderer: MiddlewareHandler = async (c, next) => {
   c.setRenderer((content, props) => {
     const state = {

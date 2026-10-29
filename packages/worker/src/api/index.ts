@@ -1,5 +1,4 @@
-// The api tier; endpoint paths are root-relative and the /api prefix is
-// applied once at assembly.
+// The api tier; endpoint paths are root-relative and the /api prefix is applied once at assembly.
 import { type AuthStore, Files, UserState, WorkspaceId, Workspaces } from "@essayist/core";
 import { Effect, Layer } from "effect";
 import { HttpApi, HttpApiBuilder, HttpApiError } from "effect/http-api";

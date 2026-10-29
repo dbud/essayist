@@ -1,6 +1,6 @@
 /**
- * A fake OpenRouterClient for model client tests: canned rounds replay in
- * order, capturing the prompt of every request.
+ * A fake OpenRouterClient for model client tests: canned rounds replay in order, capturing the
+ * prompt of every request.
  */
 
 import type { Generated } from "@effect/ai-openrouter";

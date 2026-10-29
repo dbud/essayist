@@ -54,8 +54,8 @@ function buildMarkedEditor(editor: LexicalEditor, id: string): void {
   );
 }
 
-// Build "hello world" with "hello" wrapped in a single MarkNode carrying
-// `ids` (outer-first), so the innermost selection can be exercised.
+// Build "hello world" with "hello" wrapped in a single MarkNode carrying `ids` (outer-first), so
+// the innermost selection can be exercised.
 function buildMultiIdMark(editor: LexicalEditor, ids: string[]): void {
   editor.update(
     () => {
@@ -72,9 +72,8 @@ function buildMultiIdMark(editor: LexicalEditor, ids: string[]): void {
 }
 
 /**
- * Places a collapsed caret inside the first text node matching `predicate`
- * (offset 1, so it's strictly interior, not a boundary that Lexical might
- * associate with a neighbouring node).
+ * Places a collapsed caret inside the first text node matching `predicate` (offset 1, so it's
+ * strictly interior, not a boundary that Lexical might associate with a neighbouring node).
  */
 function caretIn(editor: LexicalEditor, predicate: (n: LexicalNode) => boolean): void {
   editor.update(

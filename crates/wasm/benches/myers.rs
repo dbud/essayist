@@ -2,10 +2,9 @@
 //!
 //! Run: `cargo bench` (or `cargo bench --bench myers`).
 //!
-//! Workloads span the regime we care about: large-D disjoint (the worst case
-//! for time), a medium scattered-D case, and the realistic small-D case for
-//! contrast. `myers_ops` is the linear-space (O((N+M)D) time, O(N+M) memory)
-//! implementation.
+//! Workloads span the regime we care about: large-D disjoint (the worst case for time), a medium
+//! scattered-D case, and the realistic small-D case for contrast. `myers_ops` is the linear-space
+//! (O((N+M)D) time, O(N+M) memory) implementation.
 
 use std::hint::black_box;
 

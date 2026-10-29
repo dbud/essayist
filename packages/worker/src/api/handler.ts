@@ -1,6 +1,5 @@
-// One handler per env snapshot, built on first use like the runtime; the
-// layer shares the runtime's memo map, so both tiers run the same service
-// instances.
+// One handler per env snapshot, built on first use like the runtime; the layer shares the runtime's
+// memo map, so both tiers run the same service instances.
 import { Cache, Cause, Effect, Layer } from "effect";
 import { HttpRouter, HttpServer } from "effect/http";
 

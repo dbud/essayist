@@ -1,7 +1,6 @@
 /**
- * The model client as an Effect service: schema-validated structured calls
- * (a repair round, transient retries) over an OpenRouter chat completion
- * client.
+ * The model client as an Effect service: schema-validated structured calls (a repair round,
+ * transient retries) over an OpenRouter chat completion client.
  */
 
 import type { Generated } from "@effect/ai-openrouter";
@@ -80,10 +79,9 @@ export class ModelCallError extends Schema.TaggedError<ModelCallError>()("ModelC
 
 export interface Interface {
   /**
-   * Ask for schema-validated JSON: the parsed output directly, with the
-   * prompt, model calls, reasoning, repairs, and retries delivered through
-   * the callbacks. Invalid output triggers a re-ask; a second failure
-   * fails with {@linkcode StructuredParseError}.
+   * Ask for schema-validated JSON: the parsed output directly, with the prompt, model calls,
+   * reasoning, repairs, and retries delivered through the callbacks. Invalid output triggers a re-
+   * ask; a second failure fails with {@linkcode StructuredParseError}.
    */
   callModelStructured<T extends Schema.ConstraintDecoder<unknown>>(
     input: string,

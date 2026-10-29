@@ -109,8 +109,8 @@ test("TraceEvents -- an oversized event comes back whole", async () => {
 });
 
 test("TraceEvents -- escape-heavy content comes back whole", async () => {
-  // Newlines and quotes expand when serialized, so a chunk budget taken on
-  // raw bytes would be too generous.
+  // Newlines and quotes expand when serialized, so a chunk budget taken on raw bytes would be too
+  // generous.
   await run(
     Effect.gen(function* () {
       const traces = yield* TraceEvents;

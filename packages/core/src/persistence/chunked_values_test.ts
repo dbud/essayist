@@ -133,8 +133,7 @@ test("ChunkedValues -- a value with a chunk missing is reported", async () => {
   const outcome = await readWithStore(({ values, persistence }) =>
     Effect.gen(function* () {
       yield* values.put(["n", "gap"], note("x".repeat(200_000)));
-      // Drop a tail chunk, leaving the head claiming chunks that are not
-      // there.
+      // Drop a tail chunk, leaving the head claiming chunks that are not there.
       const { entries } = yield* persistence.list<Uint8Array>(["n"]);
       const tail = entries.at(-1);
       assertExists(tail);

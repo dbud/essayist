@@ -1,6 +1,6 @@
 /**
- * The persistence service: tuple keys, atomic batch writes, and
- * versionstamp-based optimistic concurrency, as Effects.
+ * The persistence service: tuple keys, atomic batch writes, and versionstamp-based optimistic
+ * concurrency, as Effects.
  */
 
 import { Context, type Effect, Schema } from "effect";

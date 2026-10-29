@@ -373,8 +373,7 @@ test("Files -- large document roundtrips", async () => {
   );
 });
 
-// marks storage (marks synthesized with saveMark; placement lands with the
-// Marks service)
+// marks storage (marks synthesized with saveMark; placement lands with the Marks service)
 
 function createMark(overrides: Partial<Mark> & { selected_text: string }): Mark {
   const {
@@ -579,8 +578,8 @@ test("Files.revert -- migrates marks through write", async () => {
     Effect.gen(function* () {
       const files = yield* Files;
       const v1 = (yield* files.write("f.txt", "hello world")).version_id;
-      // Contexts like the mark tool captures them; the resolver re-anchors
-      // through matched contexts when the selected text moved or returned.
+      // Contexts like the mark tool captures them; the resolver re-anchors through matched contexts
+      // when the selected text moved or returned.
       yield* files.saveMark(
         createMark({
           version_id: v1,

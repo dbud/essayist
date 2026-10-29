@@ -624,9 +624,8 @@ test("resolveMarks -- Phase 3 finds moved text when contexts become adjacent", (
     }),
   ];
 
-  // With a small search radius, Phase 1 can't reach selected_text at
-  // offset 0. Phase 2 finds before/after adjacent -> empty gap -> fall
-  // through. Phase 3 finds selected_text at offset 0.
+  // With a small search radius, Phase 1 can't reach selected_text at offset 0. Phase 2 finds
+  // before/after adjacent -> empty gap -> fall through. Phase 3 finds selected_text at offset 0.
   const result = resolve(marks, oldContent, newContent, {
     minSearchRadius: 2,
     searchRadiusMultiplier: 1,
@@ -772,15 +771,13 @@ test("resolveMarks -- deletion and insertion inside full-content mark", () => {
   });
 });
 
-// Corner cases (previously mishandled)//
-// These cover edge cases the resolver used to get wrong. Each fix is
-// described inline.
+// Corner cases (previously mishandled)// These cover edge cases the resolver used to get wrong.
+// Each fix is described inline.
 
-// Bug 1: mapOffset double-counts the accumulated shift when several
-// separated hunks come before the mark. `offsetDelta += hunk.newEnd -
-// hunk.oldEnd` re-adds the prior hunks' shift that is already baked
-// into `hunk.newEnd`. The correct delta is the net length change of the
-// hunk itself: `(newEnd - newStart) - (oldEnd - oldStart)`.
+// Bug 1: mapOffset double-counts the accumulated shift when several separated hunks come before the
+// mark. `offsetDelta += hunk.newEnd - hunk.oldEnd` re-adds the prior hunks' shift that is already
+// baked into `hunk.newEnd`. The correct delta is the net length change of the hunk itself: `(newEnd
+// - newStart) - (oldEnd - oldStart)`.
 test("resolveMarks -- multiple separated hunks before mark apply only their own net delta", () => {
   /*
       old: "A B C MARK"
@@ -806,10 +803,9 @@ test("resolveMarks -- multiple separated hunks before mark apply only their own 
   });
 });
 
-// Bug 2: a mark whose start coincides with the start of a hunk (e.g. a
-// whole-document mark with an edit at offset 0) is NOT treated as
-// "strictly inside" -- `markStart < hunk.oldStart` is strict -- so it
-// falls through to fuzzy matching, which shrinks and shifts the mark.
+// Bug 2: a mark whose start coincides with the start of a hunk (e.g. a whole-document mark with an
+// edit at offset 0) is NOT treated as "strictly inside" -- `markStart < hunk.oldStart` is strict --
+// so it falls through to fuzzy matching, which shrinks and shifts the mark.
 test("resolveMarks -- whole-content mark with edit at start boundary stays resolved", () => {
   /*
       old: "Hello world."
@@ -839,9 +835,8 @@ test("resolveMarks -- whole-content mark with edit at start boundary stays resol
   });
 });
 
-// Bug 3: same boundary issue at the END of a whole-content mark.
-// `markEnd > hunk.oldEnd` is strict, so an edit whose hunk ends exactly
-// at markEnd goes fuzzy and the mark shrinks.
+// Bug 3: same boundary issue at the END of a whole-content mark. `markEnd > hunk.oldEnd` is strict,
+// so an edit whose hunk ends exactly at markEnd goes fuzzy and the mark shrinks.
 test("resolveMarks -- whole-content mark with edit at end boundary stays resolved", () => {
   /*
       old: "Hello world foo"
@@ -871,10 +866,9 @@ test("resolveMarks -- whole-content mark with edit at end boundary stays resolve
   });
 });
 
-// Bug 4: the word-token diff drops leading whitespace (the tokenizer
-// `\S+\s*` only captures trailing whitespace per token). Inserting
-// whitespace at the very start of the document produces NO hunks, so
-// marks keep their old offsets and selected_text drifts.
+// Bug 4: the word-token diff drops leading whitespace (the tokenizer `\S+\s*` only captures
+// trailing whitespace per token). Inserting whitespace at the very start of the document produces
+// NO hunks, so marks keep their old offsets and selected_text drifts.
 test("resolveMarks -- leading-whitespace insertion migrates mark offsets", () => {
   /*
       old: "Hello world"
@@ -897,10 +891,9 @@ test("resolveMarks -- leading-whitespace insertion migrates mark offsets", () =>
   });
 });
 
-// Bug 5: in fuzzyResolveMark, Phase 1's exact-match step used
-// `text.indexOf(pattern, start)`, which returns the LEFTMOST occurrence
-// in the search window -- not the occurrence nearest `expectedNewOffset`. With
-// repeated text the mark could latch onto the wrong copy.
+// Bug 5: in fuzzyResolveMark, Phase 1's exact-match step used `text.indexOf(pattern, start)`,
+// which returns the LEFTMOST occurrence in the search window -- not the occurrence nearest
+// `expectedNewOffset`. With repeated text the mark could latch onto the wrong copy.
 test("resolveMarks -- Phase 1 exact match picks nearest occurrence among duplicates", () => {
   /*
       old: "word   word"
@@ -926,11 +919,10 @@ test("resolveMarks -- Phase 1 exact match picks nearest occurrence among duplica
   });
 });
 
-// Bug 6: when Phase 1 fails and both before/after contexts match but
-// in reversed order (after_context appears BEFORE before_context in
-// the new text), `beforeEnd = beforeResult.nextOffset` ends up GREATER
-// than `afterStart = afterResult.startOffset`. The code still resolves
-// (to a zero-length, out-of-bounds mark) instead of going stale.
+// Bug 6: when Phase 1 fails and both before/after contexts match but in reversed
+// order (after_context appears BEFORE before_context in the new text), `beforeEnd =
+// beforeResult.nextOffset` ends up GREATER than `afterStart = afterResult.startOffset`. The code
+// still resolves (to a zero-length, out-of-bounds mark) instead of going stale.
 test("resolveMarks -- reversed contexts produce a stale mark", () => {
   /*
       old: "BEFORE XXX AFTER"

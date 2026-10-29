@@ -25,11 +25,10 @@ interface SidenoteConfig {
   fonts: ReadonlyArray<Signal<string>>;
 }
 
-// Publishes mark positions and ordinal badges. Non-empty marks are tracked
-// as MarkNode fragments (offsetTop); zero-length marks produce no MarkNode and
-// are measured from a collapsed Range at their anchor. Badges are overlay
-// positions (not ::after on the mark) so they don't interfere with caret/
-// deletion at the mark boundary.
+// Publishes mark positions and ordinal badges. Non-empty marks are tracked as MarkNode fragments
+// (offsetTop); zero-length marks produce no MarkNode and are measured from a collapsed Range at
+// their anchor. Badges are overlay positions (not ::after on the mark) so they don't interfere with
+// caret/ deletion at the mark boundary.
 export const SidenoteExtension = defineExtension({
   name: "sidenote",
   afterRegistration: (
@@ -50,11 +49,10 @@ export const SidenoteExtension = defineExtension({
       getIds: (node) => node.getIDs(),
       output: sidenotePositions,
       remeasureOn: [markNumbers, categories.byLabel, ...fonts],
-      // Zero-length marks wrap no text and produce no MarkNode, so measure them
-      // from a collapsed Range at their anchor. Resolve the anchor against the
-      // fresh committed tree (not a lagging signal) so the position tracks the
-      // live editor; short-circuit when there are no zero-length marks to skip
-      // the span collection. Runs in the rAF-deferred `measure()` callback.
+      // Zero-length marks wrap no text and produce no MarkNode, so measure them from a collapsed
+      // Range at their anchor. Resolve the anchor against the fresh committed tree (not a lagging
+      // signal) so the position tracks the live editor; short-circuit when there are no zero-length
+      // marks to skip the span collection. Runs in the rAF-deferred `measure()` callback.
       points: () => {
         const marks = resolved.value;
         if (!marks.some((m) => m.length === 0)) return [];
@@ -91,9 +89,9 @@ export const SidenoteExtension = defineExtension({
 
         const rects: MarkRect[] = [];
         for (const { el, ids } of fragments) {
-          // Banded highlights: a rect per visual line per covering id (in
-          // segment order: outer/earliest mark on top). Each rect carries the
-          // full line box plus `order`/`bandCount`; the renderer splits it.
+          // Banded highlights: a rect per visual line per covering id (in segment
+          // order: outer/earliest mark on top). Each rect carries the full line box plus
+          // `order`/`bandCount`; the renderer splits it.
           const byThread = new Map(
             // TODO -- move to model?
             resolved.value.map((m) => [m.thread_id, m] as const),

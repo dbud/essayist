@@ -2,9 +2,8 @@ import { expect, test } from "vitest";
 
 import { TokenizedText, tokenDiceSimilarity, wordTokens } from "./tokenized.ts";
 
-// Benchmarks the wTexts allocation inside the window pass of
-// TokenizedText.findFuzzyInTokenWindow. Run with: vitest bench
-// src/marks/tokenized.bench.ts (ignored by the regular test run).
+// Benchmarks the wTexts allocation inside the window pass of TokenizedText.findFuzzyInTokenWindow.
+// Run with: vitest bench src/marks/tokenized.bench.ts (ignored by the regular test run).
 
 const WORDS = [
   "the",
@@ -36,9 +35,9 @@ const windowEnd = 400;
 // Local bindings: imported bindings are module-runner getters.
 const dice = tokenDiceSimilarity;
 
-// Both variants mirror the window loop in findFuzzyInTokenWindow exactly: the
-// same inner gather-and-compare pass, dice on every non-exact window. sink
-// accumulates and is read after the runs so the engines cannot drop the work.
+// Both variants mirror the window loop in findFuzzyInTokenWindow exactly: the same inner gather-
+// and-compare pass, dice on every non-exact window. sink accumulates and is read after the runs so
+// the engines cannot drop the work.
 function scorePreallocated(): number {
   let sink = 0;
   for (let i = windowStart; i + 4 <= windowEnd; i++) {

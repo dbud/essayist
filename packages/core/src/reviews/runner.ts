@@ -1,11 +1,10 @@
 /**
- * The review pass driver as an Effect program: the run lifecycle (claim,
- * heartbeat, complete, fail) goes through the ReviewRuns service, and the
- * flow engine runs inside it.
+ * The review pass driver as an Effect program: the run lifecycle (claim, heartbeat, complete, fail)
+ * goes through the ReviewRuns service, and the flow engine runs inside it.
  *
- * Heartbeats run interval-only: one loop fiber sleeps the interval between
- * beats, so beats never overlap and the staleness window (15 minutes vs a
- * 60-second interval) keeps a live run claimed without event pacing.
+ * Heartbeats run interval-only: one loop fiber sleeps the interval between beats, so beats never
+ * overlap and the staleness window (15 minutes vs a 60-second interval) keeps a live run claimed
+ * without event pacing.
  */
 
 import { type Cause, Clock, type Context, Effect, Fiber, Queue, Result, Schema } from "effect";
@@ -43,8 +42,8 @@ export interface RunReviewPassOptions {
 /** Services the review pass runs on: the steps pull them from context. */
 type RunnerServices = ReviewRuns | TraceEvents | WorkspaceId | Files | Marks | ModelClient;
 
-// Heartbeats go out every interval. The interval must stay far under the
-// staleness window, or a live run can be stolen.
+// Heartbeats go out every interval. The interval must stay far under the staleness window, or a
+// live run can be stolen.
 const HEARTBEAT_MS = 60_000;
 const HEARTBEAT_STALE_MS = 15 * 60_000;
 
@@ -184,8 +183,8 @@ function heartbeatLoop(
   return Effect.gen(function* () {
     let warnedLeaseLost = false;
     while (true) {
-      // One beat per iteration, in flight only: the write is uninterruptible
-      // so the unwind below never races it.
+      // One beat per iteration, in flight only: the write is uninterruptible so the unwind below
+      // never races it.
       const held = yield* Effect.result(
         Effect.uninterruptible(
           Effect.provideService(runs.heartbeatRun(runId, owner), WorkspaceId, {
@@ -224,8 +223,8 @@ function execute(
     const kindOf = new Map(graph.nodes.map((node) => [node.id, node.kind] as const));
     const tracker = onProgress ? new ReviewProgressTracker(onProgress, kindOf) : undefined;
 
-    // Events are logged and seq-stamped where they happen; a writer fiber
-    // appends them through a queue, off the emission path.
+    // Events are logged and seq-stamped where they happen; a writer fiber appends them through a
+    // queue, off the emission path.
     const queue = yield* Queue.unbounded<TraceEvent, Cause.Done>();
     const record = (event: FlowEvent<ReviewTypes>): Effect.Effect<void> =>
       Effect.gen(function* () {
@@ -264,9 +263,9 @@ function execute(
       .run(graph, { completed })
       .pipe(Effect.provideService(WorkspaceId, { wsId }));
     const flowOutcome = yield* Effect.result(flowRun);
-    // The heartbeat stops before the terminal write. No more events arrive,
-    // so the writer drains the queue and finishes; joining it stores the
-    // whole trace before the run settles, and re-raises a storage fault.
+    // The heartbeat stops before the terminal write. No more events arrive, so the writer drains
+    // the queue and finishes; joining it stores the whole trace before the run settles, and re-
+    // raises a storage fault.
     yield* Fiber.interrupt(fiber);
     yield* Queue.end(queue);
     yield* Fiber.join(writerFiber);
@@ -282,10 +281,9 @@ function execute(
       return yield* fail(runs, run, result.errors.join("; "));
     }
 
-    // A pass with no summary unit commits none, and `one` throws.
-    // TODO -- once a pass can carry several summary units, add a node
-    // taking those `summary` artifacts and producing one `writeup`
-    // artifact, so the run yields a single value here.
+    // A pass with no summary unit commits none, and `one` throws. TODO -- once a pass can carry
+    // several summary units, add a node taking those `summary` artifacts and producing one
+    // `writeup` artifact, so the run yields a single value here.
     const tail = yield* Effect.result(
       Effect.gen(function* () {
         const summary = yield* Effect.try({

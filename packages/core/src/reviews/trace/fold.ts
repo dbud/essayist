@@ -6,8 +6,8 @@ import type { TraceEvent } from "./types.ts";
 /**
  * The resume state of a run: nodes that completed, with what they committed.
  *
- * A later `node_end` for the same node wins, so a node re-run in a resumed
- * attempt reports its newest artifacts.
+ * A later `node_end` for the same node wins, so a node re-run in a resumed attempt reports its
+ * newest artifacts.
  */
 export function foldCompleted(trace: readonly TraceEvent[]): Map<string, Artifact<ReviewTypes>[]> {
   const completed = new Map<string, Artifact<ReviewTypes>[]>();

@@ -5,8 +5,8 @@ import type { ReviewTypes } from "#/reviews/graph.ts";
 export type ReviewPhase = "working" | "analyzing" | "marking" | "repairing" | "summarizing";
 
 /**
- * Text-free progress snapshot for product UI. Never carries model content:
- * inputs, outputs, and usage are dropped at derivation.
+ * Text-free progress snapshot for product UI. Never carries model content: inputs, outputs, and
+ * usage are dropped at derivation.
  */
 export interface ReviewProgress {
   phase: ReviewPhase;
@@ -25,9 +25,8 @@ const KIND_PHASE: Record<NodeKind<ReviewTypes>, ReviewPhase> = {
 };
 
 /**
- * Maps trace events onto ReviewProgress snapshots, emitting on change.
- * The kind of a node id comes from the run's graph; unknown ids fall back
- * to the working phase.
+ * Maps trace events onto ReviewProgress snapshots, emitting on change. The kind of a node id comes
+ * from the run's graph; unknown ids fall back to the working phase.
  */
 export class ReviewProgressTracker {
   #kindOf: Map<string, NodeKind<ReviewTypes>>;

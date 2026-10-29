@@ -1,6 +1,6 @@
-// Runs the shared diff cases through the WASM Myers core, and asserts the JS
-// and WASM cores produce byte-identical ops (the convergence guard).
-// Requires `deno task wasm:build` first (the glue imports `@essayist/wasm`).
+// Runs the shared diff cases through the WASM Myers core, and asserts the JS and WASM cores produce
+// byte-identical ops (the convergence guard). Requires `deno task wasm:build` first (the glue
+// imports `@essayist/wasm`).
 
 import { assertEquals } from "@std/assert";
 
@@ -8,15 +8,14 @@ import { computeDiffWith, jsMyers } from "./diff.ts";
 import { runDiffCases } from "./diff_cases.ts";
 import { myers } from "./diff_wasm_glue.ts";
 
-// `diff_test.ts` runs the shared cases through `computeDiff` (JS core, the
-// default); here we run them through `computeDiffWith(..., myers)` (WASM core).
-// The two cores are byte-identical, so the shared cases have a single set of
-// expectations, and together the two files cover both paths.
+// `diff_test.ts` runs the shared cases through `computeDiff` (JS core, the default); here we run
+// them through `computeDiffWith(..., myers)` (WASM core). The two cores are byte-identical, so the
+// shared cases have a single set of expectations, and together the two files cover both paths.
 runDiffCases("computeDiffWith", (oldText, newText) => computeDiffWith(oldText, newText, myers));
 
-// Direct convergence guard: the JS and WASM cores must emit the exact same
-// flat op Int32Array for the same int-id inputs, including repeated-token
-// (ambiguous LCS) cases where tie-breaks could diverge.
+// Direct convergence guard: the JS and WASM cores must emit the exact same flat op Int32Array for
+// the same int-id inputs, including repeated-token (ambiguous LCS) cases where tie-breaks could
+// diverge.
 
 function assertCoresAgree(a: Int32Array, b: Int32Array): void {
   assertEquals(

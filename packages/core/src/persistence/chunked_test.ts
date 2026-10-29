@@ -171,8 +171,8 @@ test("assembleList -- keeps scan order and leaves plain values alone", () => {
     },
   ];
   const values = assembleList(entries);
-  // Two values, in scan order: a chunked one and a plain one. The orphan
-  // tail is not a value on its own, so it is not reported.
+  // Two values, in scan order: a chunked one and a plain one. The orphan tail is not a value on its
+  // own, so it is not reported.
   assertEquals(values.length, 2);
   assertEquals(values[0].key, ["t", "000001"]);
   assertEquals(values[0].nReceived, 1);

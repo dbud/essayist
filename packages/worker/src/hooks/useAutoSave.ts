@@ -5,8 +5,8 @@ import { autoSave, autoSaveInterval } from "#/signals/preferences.ts";
 import { debouncedEffect } from "#/utils/debouncedEffect.ts";
 
 /**
- * Saves the file's pending content once the edits settle, and on the way out:
- * when the page is hidden, and when the view is torn down (a file switch).
+ * Saves the file's pending content once the edits settle, and on the way out: when the page is
+ * hidden, and when the view is torn down (a file switch).
  */
 export function useAutoSave(file: FileContent | null): void {
   useEffect(() => {

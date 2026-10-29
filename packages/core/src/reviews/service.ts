@@ -1,7 +1,8 @@
 /**
- * Review runs as an Effect service: creation, reads, and listing for now;
- * claim, heartbeat, and end-state ops land alongside in later commits.
+ * Review runs as an Effect service: creation, reads, and listing for now; claim, heartbeat, and
+ * end-state ops land alongside in later commits.
  *
+ * parfit-ignore
  * Key layout:
  *   ["reviews", wsId, runId] -> ReviewRun
  */
@@ -60,18 +61,18 @@ export interface Interface {
     WorkspaceId
   >;
   /**
-   * Take the lease on a run, so only one owner works on it at a time.
-   * Undefined when the run is gone, another owner holds a live lease, or a
-   * concurrent claim won the race. Claiming as the current owner renews.
+   * Take the lease on a run, so only one owner works on it at a time. Undefined when the run is
+   * gone, another owner holds a live lease, or a concurrent claim won the race. Claiming as the
+   * current owner renews.
    */
   claimRun(
     id: string,
     options: ClaimOptions,
   ): Effect.Effect<ReviewRun | undefined, PersistenceError, WorkspaceId>;
   /**
-   * Renew the lease on a run, only while it is leased to the given owner.
-   * Unlike claim, this never takes a lease. False when the run is gone,
-   * another owner holds the lease, or a concurrent write won the race.
+   * Renew the lease on a run, only while it is leased to the given owner. Unlike claim, this never
+   * takes a lease. False when the run is gone, another owner holds the lease, or a concurrent write
+   * won the race.
    */
   heartbeatRun(id: string, owner: string): Effect.Effect<boolean, PersistenceError, WorkspaceId>;
 }
@@ -80,8 +81,8 @@ export class ReviewRuns extends Context.Service<ReviewRuns, Interface>()(
   "@essayist/core/reviews/ReviewRuns",
 ) {
   /** Requires the {@linkcode Persistence} service; compose with
-   * Persistence.layerKv at the composition root. The workspace scope comes
-   * from the WorkspaceId tag at call time. */
+   * Persistence.layerKv at the composition root. The workspace scope comes from the WorkspaceId tag
+   * at call time. */
   static readonly layerNoDeps: Layer.Layer<ReviewRuns, never, Persistence> = Layer.effect(
     ReviewRuns,
     Effect.gen(function* () {
@@ -180,8 +181,7 @@ export class ReviewRuns extends Context.Service<ReviewRuns, Interface>()(
             leaseOwner: owner,
             heartbeatAt: yield* Clock.currentTimeMillis,
           };
-          // A lost race (concurrent claim) reads as "not claimable", not
-          // as a backend fault.
+          // A lost race (concurrent claim) reads as "not claimable", not as a backend fault.
           const outcome = yield* Effect.result(
             persistence.batch([{ type: "set", key, value: claimed }], {
               checks: [{ key, versionstamp: entry.versionstamp }],

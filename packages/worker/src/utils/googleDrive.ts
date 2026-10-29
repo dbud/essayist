@@ -1,6 +1,6 @@
 /**
- * The server-side Google Drive integration: export a Doc as markdown via
- * the Drive v3 export endpoint.
+ * The server-side Google Drive integration: export a Doc as markdown via the Drive v3 export
+ * endpoint.
  */
 
 import { Effect, Schema } from "effect";

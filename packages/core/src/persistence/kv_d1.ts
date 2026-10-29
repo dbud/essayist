@@ -1,12 +1,11 @@
 /**
- * D1 implementation of the {@linkcode Persistence} service over the
- * `@effect/sql-d1` client: a `D1Database` binding in the worker, or a
- * compatible adapter (the tests use the SQLite shim in `testing/d1.ts`).
- * One kv table, encoded by the sibling `kv_d1_codec`.
+ * D1 implementation of the {@linkcode Persistence} service over the `@effect/sql-d1` client: a
+ * `D1Database` binding in the worker, or a compatible adapter (the tests use the SQLite shim in
+ * `testing/d1.ts`). One kv table, encoded by the sibling `kv_d1_codec`.
  *
- * Batches run as one atomic D1 batch: a failed statement rolls the whole
- * batch back, and a batch with checks opens with an assertion statement
- * that fails on purpose when any check no longer holds.
+ * Batches run as one atomic D1 batch: a failed statement rolls the whole batch back, and a batch
+ * with checks opens with an assertion statement that fails on purpose when any check no longer
+ * holds.
  */
 
 import type * as D1Client from "@effect/sql-d1/D1Client";
@@ -51,8 +50,8 @@ const rowEntry = <T>(row: Row): Entry<T> => ({
 const backendFault = (cause: unknown) => new PersistenceError({ cause });
 
 /** A versionstamp check for one key, as absence or an exact stamp. It
- * carries its own parens: `and` only wraps two or more clauses, and a bare
- * `NOT <clause> = 0` would bind the wrong way. */
+ * carries its own parens: `and` only wraps two or more clauses, and a bare `NOT <clause> = 0` would
+ * bind the wrong way. */
 const guardClause = (client: D1Client.D1Client, check: { key: Key; versionstamp: string | null }) =>
   check.versionstamp === null
     ? client`((SELECT count(*) FROM kv WHERE key = ${packKey(check.key)}) = 0)`
@@ -61,8 +60,8 @@ const guardClause = (client: D1Client.D1Client, check: { key: Key; versionstamp:
       )}) = ${Number(check.versionstamp)})`;
 
 /** The statement that opens a checked batch: nothing inserts when every
- * check holds, and a NOT NULL violation on kv.key fails and rolls back
- * the whole batch when any check no longer holds. */
+ * check holds, and a NOT NULL violation on kv.key fails and rolls back the whole batch when any
+ * check no longer holds. */
 const assertionFor = (client: D1Client.D1Client, checks: NonNullable<BatchOptions["checks"]>) =>
   client`INSERT INTO kv (key, value, version) SELECT NULL, NULL, NULL WHERE NOT ${client.and(
     checks.map((check) => guardClause(client, check)),
@@ -206,8 +205,8 @@ export function layerKvD1(client: D1Client.D1Client): Layer.Layer<Persistence> {
         // No checks: any failure is a backend fault.
         return yield* Effect.fail(backendFault(outcome.failure));
       }
-      // The batch rolled back whole; re-read the checked keys to tell a
-      // concurrent modification from a backend fault.
+      // The batch rolled back whole; re-read the checked keys to tell a concurrent modification
+      // from a backend fault.
       const state = yield* Effect.result(verifyRows(checks.map((check) => packKey(check.key))));
       const failing = Result.isSuccess(state)
         ? checks.find((check) => {

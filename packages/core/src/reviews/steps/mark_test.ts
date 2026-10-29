@@ -97,8 +97,8 @@ test("applyProposedMarks -- rejects labels outside the allowed set", async () =>
 });
 
 test("applyProposedMarks -- every mark carries a label", () => {
-  // A mark with no label would apply without the aspect check and render
-  // without a badge, so the schema requires one.
+  // A mark with no label would apply without the aspect check and render without a badge, so the
+  // schema requires one.
   const parsed = Schema.decodeUnknownResult(ProposedMarksSchema)({
     marks: [{ selected_text: "hello", comment: "no label" }],
   });

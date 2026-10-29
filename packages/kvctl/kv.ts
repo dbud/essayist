@@ -1,6 +1,5 @@
-// Store wiring shared by kvctl commands: one runtime over a D1 database,
-// via the REST transport (the remote account) or, with --local, the sqlite
-// transport over the vite dev server's D1 state.
+// Store wiring shared by kvctl commands: one runtime over a D1 database, via the REST transport
+// (the remote account) or, with --local, the sqlite transport over the vite dev server's D1 state.
 
 import { readdirSync } from "node:fs";
 import { basename, join } from "node:path";
@@ -88,8 +87,8 @@ function database(globals: KvctlGlobals): D1Database {
   return d1RestDatabase(restConfig());
 }
 
-// One layer: the domain services plus Persistence in the runtime context
-// (the raw listings need it), all over the one database.
+// One layer: the domain services plus Persistence in the runtime context (the raw listings need
+// it), all over the one database.
 export function storeLayer(
   db: D1Database,
 ): Layer.Layer<

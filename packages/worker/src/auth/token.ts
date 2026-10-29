@@ -81,11 +81,9 @@ function refreshRequest(
 }
 
 /**
- * A fresh access token for the session: the cached one while it is
- * still valid, otherwise a refresh via Google. `undefined` when the
- * session has no tokens (created before the Drive scope existed) or
- * nothing valid can be produced (revoked grant, no stored refresh
- * token).
+ * A fresh access token for the session: the cached one while it is still valid, otherwise a refresh
+ * via Google. `undefined` when the session has no tokens (created before the Drive scope existed)
+ * or nothing valid can be produced (revoked grant, no stored refresh token).
  */
 export const getValidAccessToken = (
   sessionId: string,
@@ -101,9 +99,8 @@ export const getValidAccessToken = (
     const now = yield* Clock.currentTimeMillis;
     if (expiresAtValid(tokens, now)) return tokens.accessToken;
 
-    // The session-level refresh token first, the user-level store as
-    // the fallback: Google returns a refresh token only on the first
-    // authorization.
+    // The session-level refresh token first, the user-level store as the fallback: Google returns a
+    // refresh token only on the first authorization.
     const refreshToken = tokens.refreshToken ?? (yield* auth.getRefreshToken(session.userId));
     if (refreshToken === undefined) {
       yield* Effect.logWarning("google token refresh skipped: no refresh token stored", {
@@ -152,10 +149,9 @@ function expiresAtValid(tokens: SessionTokens, now: number): boolean {
 }
 
 /**
- * Fresh session tokens via the user-level refresh token; `undefined`
- * without one or when Google rejects the grant. A rejected refresh
- * still signs the user in, without Google API access; a revoked grant
- * also loses the stored token.
+ * Fresh session tokens via the user-level refresh token; `undefined` without one or when Google
+ * rejects the grant. A rejected refresh still signs the user in, without Google API access; a
+ * revoked grant also loses the stored token.
  */
 export const refreshTokensForUser = (
   userId: string,

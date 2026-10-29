@@ -145,8 +145,8 @@ test("ReviewRuns.listRuns is workspace-scoped", async () => {
   );
 });
 
-// end-state ops (claim and heartbeat land in the next commit; the
-// lease-release test rides there too)
+// end-state ops (claim and heartbeat land in the next commit; the lease-release test rides there
+// too)
 
 test("ReviewRuns.completeRun sets status, summary, completedAt", async () => {
   await run(
@@ -257,8 +257,8 @@ test("ReviewRuns.claimRun -- takes over a stale lease", async () => {
         heartbeatAtLeast: 0,
       });
 
-      // driver-b demands fresher proof of life than the current heartbeat,
-      // so the lease counts as stale and the takeover succeeds.
+      // driver-b demands fresher proof of life than the current heartbeat, so the lease counts as
+      // stale and the takeover succeeds.
       const takeover = yield* runs.claimRun(created.id, {
         owner: "driver-b",
         heartbeatAtLeast: Date.now() + 1_000,
@@ -292,9 +292,8 @@ test("ReviewRuns.claimRun -- a lease ages out with the clock", async () => {
         undefined,
       );
 
-      // Past the window the lease goes stale: the driver again demands
-      // proof of life in the last 15 minutes, and the clock says the
-      // heartbeat is 16 minutes old.
+      // Past the window the lease goes stale: the driver again demands proof of life in the last 15
+      // minutes, and the clock says the heartbeat is 16 minutes old.
       yield* TestClock.adjust(Duration.minutes(16));
       const takeover = yield* runs.claimRun(created.id, {
         owner: "driver-b",

@@ -22,11 +22,10 @@ export interface MarkOptions {
 /**
  * A mark on a text span in a specific version of a file.
  *
- * Marks are version-bound: each mark belongs to exactly one version.
- * When a new version is created (via write), marks from the previous
- * version are migrated using the mark resolver. If the mark's text
- * can be found in the new content, the mark is copied as "resolved".
- * Otherwise, it is copied as "stale".
+ * Marks are version-bound: each mark belongs to exactly one version. When a new version is created
+ * (via write), marks from the previous version are migrated using the mark resolver. If the mark's
+ * text can be found in the new content, the mark is copied as "resolved". Otherwise, it is copied
+ * as "stale".
  */
 export const Mark = Schema.Struct({
   id: Schema.String,

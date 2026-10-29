@@ -1,9 +1,8 @@
 import { useEffect, useRef } from "preact/hooks";
 
 /**
- * Calls `onClickOutside` when a click lands outside `ref.current`.
- * Only listens while the callback is defined. Returns the ref so callers
- * can attach it to an element.
+ * Calls `onClickOutside` when a click lands outside `ref.current`. Only listens while the callback
+ * is defined. Returns the ref so callers can attach it to an element.
  */
 export function useClickOutside(onClickOutside?: () => void) {
   const ref = useRef<HTMLDivElement>(null);

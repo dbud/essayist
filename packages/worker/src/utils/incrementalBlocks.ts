@@ -1,9 +1,8 @@
 import { $getNodeByKey, $getRoot, type EditorState, type LexicalNode, type NodeKey } from "lexical";
 
 /**
- * An associative binary operation with an identity element. Associativity
- * of combine is what allows a document aggregate to be computed as a fold
- * over per-block values.
+ * An associative binary operation with an identity element. Associativity of combine is what allows
+ * a document aggregate to be computed as a fold over per-block values.
  */
 export interface Monoid<T> {
   readonly identity: T;
@@ -16,16 +15,15 @@ interface CachedFold<T> {
 }
 
 /**
- * An incrementally maintained monoid homomorphism from an editor's
- * top-level block sequence to T. With blocks combined by concatenation and
- * f applied per block, the homomorphism law f(a ++ b) = f(a) <+> f(b)
- * makes the document aggregate a fold over per-block values:
+ * An incrementally maintained monoid homomorphism from an editor's top-level block sequence to T.
+ * With blocks combined by concatenation and f applied per block, the homomorphism law f(a ++ b) =
+ * f(a) <+> f(b) makes the document aggregate a fold over per-block values:
  *
- *   f(b1 ++ b2 ++ ...) = f(b1) <+> f(b2) <+> ...
+ * f(b1 ++ b2 ++ ...) = f(b1) <+> f(b2) <+> ...
  *
- * `update` recomputes only dirty top-level blocks and re-folds, so a
- * keystroke costs O(dirty blocks), never O(document). Per-block values are
- * cached per EditorState in a WeakMap and chain across edits.
+ * `update` recomputes only dirty top-level blocks and re-folds, so a keystroke costs O(dirty
+ * blocks), never O(document). Per-block values are cached per EditorState in a WeakMap and chain
+ * across edits.
  */
 export class BlockFold<T> {
   readonly #monoid: Monoid<T>;
@@ -43,8 +41,8 @@ export class BlockFold<T> {
   }
 
   /**
-   * Carry `prev`'s cached fold forward to `next`, re-computing only the
-   * dirty top-level blocks. Call within the editor update cycle.
+   * Carry `prev`'s cached fold forward to `next`, re-computing only the dirty top-level blocks.
+   * Call within the editor update cycle.
    */
   update(
     next: EditorState,
@@ -65,9 +63,8 @@ export class BlockFold<T> {
       const newKeys = new Set(children.map((child) => child.getKey()));
       const parts = new Map(prevFold.parts);
 
-      // Re-compute blocks containing a dirty node, plus any new block.
-      // `dirtyLeaves` is needed for top-level decorator mutations (e.g. HR),
-      // whose key lands in dirtyLeaves, not dirtyElements.
+      // Re-compute blocks containing a dirty node, plus any new block. `dirtyLeaves` is needed for
+      // top-level decorator mutations (e.g. HR), whose key lands in dirtyLeaves, not dirtyElements.
       const dirtyTop = new Set<NodeKey>();
       for (const key of dirtyElements.keys()) {
         const top = topLevelAncestorKey($getNodeByKey(key));
@@ -81,8 +78,8 @@ export class BlockFold<T> {
         if (!parts.has(key)) dirtyTop.add(key);
       }
 
-      // setEditorState (undo/redo) marks only root dirty, which maps to no
-      // top-level block: content may have changed anywhere, so full-fold.
+      // setEditorState (undo/redo) marks only root dirty, which maps to no top-level block: content
+      // may have changed anywhere, so full-fold.
       if (hadDirty && dirtyTop.size === 0) {
         this.#cache.set(next, this.#fullFold(next));
         return;
@@ -121,9 +118,9 @@ export class BlockFold<T> {
     return { parts, aggregate };
   }
 
-  // Left fold in document order. combine is associative, so this equals the
-  // document aggregate (the homomorphism law). Blocks without a part are
-  // skipped, mirroring the removed-key handling in update.
+  // Left fold in document order. combine is associative, so this equals the document aggregate
+  // (the homomorphism law). Blocks without a part are skipped, mirroring the removed-key handling
+  // in update.
   #fold(children: LexicalNode[], parts: Map<NodeKey, T>): T {
     let acc = this.#monoid.identity;
     for (const child of children) {

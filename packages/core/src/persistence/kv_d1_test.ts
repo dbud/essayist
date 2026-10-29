@@ -1,6 +1,6 @@
 /**
- * The Persistence scenario battery against the D1 layer, via the
- * `node:sqlite` shim standing in for the worker's `D1Database` binding.
+ * The Persistence scenario battery against the D1 layer, via the `node:sqlite` shim standing in for
+ * the worker's `D1Database` binding.
  */
 
 import { DatabaseSync } from "node:sqlite";

@@ -1,10 +1,8 @@
 /**
- * The Google Picker tab's per-session payload: the user's drive.file
- * access token plus the public picker credentials. The Google Picker is
- * a client-only library, so it needs an OAuth token client-side; the
- * developerKey is a public API key whose abuse envelope is referrer +
- * API restrictions in the Cloud Console. The client secret stays
- * server-side.
+ * The Google Picker tab's per-session payload: the user's drive.file access token plus the
+ * public picker credentials. The Google Picker is a client-only library, so it needs an OAuth
+ * token client-side; the developerKey is a public API key whose abuse envelope is referrer + API
+ * restrictions in the Cloud Console. The client secret stays server-side.
  */
 
 import type { AuthStore } from "@essayist/core";
@@ -20,7 +18,8 @@ export const PickerConfig = Schema.Struct({
 });
 export type PickerConfig = Schema.Schema.Type<typeof PickerConfig>;
 
-/** The picker session cannot be resolved; `signInFixable` says whether the sign-in flow can repair it. */
+/** The picker session cannot be resolved; `signInFixable` says whether the sign-in flow can repair
+/** it. */
 export class PickerConfigError extends Schema.TaggedError<PickerConfigError>()(
   "PickerConfigError",
   { reason: Schema.String, signInFixable: Schema.Boolean },

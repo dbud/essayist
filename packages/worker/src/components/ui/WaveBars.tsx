@@ -41,9 +41,8 @@ export default function WaveBars({
     };
   });
 
-  // The group scales the whole wave by amplitude. A one-shot keyframe
-  // (wave-amp-in) grows it from 0 on mount; the transition handles later
-  // amplitude prop changes.
+  // The group scales the whole wave by amplitude. A one-shot keyframe (wave-amp-in) grows it from 0
+  // on mount; the transition handles later amplitude prop changes.
   const svg = (
     <svg
       aria-hidden="true"

@@ -10,9 +10,9 @@ import { deepComputed } from "./utils/deepComputed.ts";
 const RESOLVE_DEBOUNCE_MS = 60;
 
 /**
- * Map version-bound marks onto the live editor text with the JS core
- * resolver; the wasm port is ESS-90. A resolved mark keeps the id of its
- * input, so a pass produces the same ids as the persisted set.
+ * Map version-bound marks onto the live editor text with the JS core resolver; the wasm port
+ * is ESS-90. A resolved mark keeps the id of its input, so a pass produces the same ids as the
+ * persisted set.
  */
 export function reanchorMarks(
   marks: readonly Mark[],
@@ -27,10 +27,9 @@ export function reanchorMarks(
 }
 
 /**
- * How the open view stands relative to its persisted marks: the marks are
- * anchored to the version content, while the editor renders the version or
- * its draft. When the two texts match (or nothing is loaded yet) the view
- * is idle and the persisted marks stand as-is; when they differ the view
+ * How the open view stands relative to its persisted marks: the marks are anchored to the version
+ * content, while the editor renders the version or its draft. When the two texts match (or nothing
+ * is loaded yet) the view is idle and the persisted marks stand as-is; when they differ the view
  * drifts and the resolver re-anchors.
  */
 type View =
@@ -75,8 +74,8 @@ export function createResolvedMarks(
     },
   );
 
-  // Drifted content keeps the last resolution while the debounced pass
-  // runs; otherwise the persisted marks stand as-is.
+  // Drifted content keeps the last resolution while the debounced pass runs; otherwise the
+  // persisted marks stand as-is.
   const resolved = deepComputed<readonly Mark[]>(() => {
     const v = view.value;
     return v.phase === "drift" ? reanchored.value : v.marks;

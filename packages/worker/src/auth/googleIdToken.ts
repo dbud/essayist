@@ -1,8 +1,7 @@
 /**
- * Verification of Google ID tokens (JWTs) issued by Google Identity Services
- * (One Tap). jose verifies the RS256 signature against Google's published
- * JWK set (fetched and cached from the JWKS URL) plus the standard aud/iss/
- * exp claims; we add the email checks and map the claims we need.
+ * Verification of Google ID tokens (JWTs) issued by Google Identity Services (One Tap). jose
+ * verifies the RS256 signature against Google's published JWK set (fetched and cached from the JWKS
+ * URL) plus the standard aud/iss/ exp claims; we add the email checks and map the claims we need.
  * https://developers.google.com/identity/gsi/web/guides/verify-google-id-token
  */
 
@@ -29,8 +28,8 @@ export interface VerifyGoogleIdTokenOptions {
   /** OAuth2 client id expected in the `aud` claim of the token. */
   clientId: string;
   /**
-   * Inject for tests; resolves the signing key for the header of the token.
-   * Defaults to jose's remote JWK set for Google.
+   * Inject for tests; resolves the signing key for the header of the token. Defaults to jose's
+   * remote JWK set for Google.
    */
   getKey?: (header: JWTHeaderParameters) => Promise<CryptoKey>;
   /** Inject for tests; defaults to Date.now(). */

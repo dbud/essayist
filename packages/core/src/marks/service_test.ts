@@ -168,9 +168,8 @@ test("Marks.mark -- accepts explicit threadId", async () => {
 });
 
 test("Marks.mark -- captures context around selection", async () => {
-  // With no intervening word boundaries (a single long token run on each
-  // side), the whole long word is included in full -- there is no cap, so a
-  // pathological long token yields a large context.
+  // With no intervening word boundaries (a single long token run on each side), the whole long word
+  // is included in full -- there is no cap, so a pathological long token yields a large context.
   await run(
     Effect.gen(function* () {
       const content = `${"A".repeat(100)}TARGET${"B".repeat(100)}`;
@@ -190,9 +189,9 @@ test("Marks.mark -- captures context around selection", async () => {
 });
 
 test("Marks.mark -- context snapped to word boundaries", async () => {
-  // Small contextSpan so snapping is observable: before_context starts at a
-  // word start, after_context ends at a word end, instead of an arbitrary
-  // char window. Trailing punctuation after a word is not included.
+  // Small contextSpan so snapping is observable: before_context starts at a word start,
+  // after_context ends at a word end, instead of an arbitrary char window. Trailing punctuation
+  // after a word is not included.
   await run(
     Effect.gen(function* () {
       const { files, versionId } = yield* createFile("f.txt", "One. Two. MARK Three. Four.");
@@ -229,8 +228,8 @@ test("Marks.mark -- context truncated at file boundaries", async () => {
 });
 
 test("Marks.mark -- uses custom contextSpan", async () => {
-  // A larger span captures more words, confirming the option controls the
-  // window (distinct from the contextSpan: 5 case above).
+  // A larger span captures more words, confirming the option controls the window (distinct from the
+  // contextSpan: 5 case above).
   await run(
     Effect.gen(function* () {
       const { files, versionId } = yield* createFile("f.txt", "One. Two. MARK Three. Four.");

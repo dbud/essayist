@@ -32,8 +32,8 @@ function structured<T extends Schema.ConstraintDecoder<unknown>>(
 }
 
 /**
- * Run a retrying program on the test clock: fork it, advance time through
- * the sleeps, and join, handing back the replayed prompts.
+ * Run a retrying program on the test clock: fork it, advance time through the sleeps, and join,
+ * handing back the replayed prompts.
  */
 const runClock = <A, E>(
   program: Effect.Effect<A, E, ModelClient>,
@@ -173,14 +173,12 @@ test("ModelClient.callModelStructured -- a transient failure gives up after thre
         provideWith(Effect.result(structured(Schema.Struct({ ok: Schema.Boolean }))), client),
       );
       yield* Effect.yieldNow;
-      // The first attempt has dispatched and failed; the retry sleeps one
-      // full second.
+      // The first attempt has dispatched and failed; the retry sleeps one full second.
       assertEquals(inputs.length, 1);
       yield* TestClock.adjust(Duration.millis(ROUND_RETRY_DELAY_MS - 1));
       yield* Effect.yieldNow;
       assertEquals(inputs.length, 1);
-      // One more millisecond fires the second attempt, which sleeps two
-      // seconds.
+      // One more millisecond fires the second attempt, which sleeps two seconds.
       yield* TestClock.adjust(Duration.millis(1));
       yield* Effect.yieldNow;
       assertEquals(inputs.length, 2);

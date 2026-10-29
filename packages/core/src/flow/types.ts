@@ -28,8 +28,7 @@ export interface Artifact<
 }
 
 /** A node in a flow. The payload is opaque host config. Kinds whose
- * vocabulary type is undefined take no payload; for the rest it is
- * required. */
+ * vocabulary type is undefined take no payload; for the rest it is required. */
 export type FlowNode<T extends FlowTypes = FlowTypes, K extends NodeKind<T> = NodeKind<T>> = {
   id: string;
   kind: K;

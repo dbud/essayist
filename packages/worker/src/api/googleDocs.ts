@@ -1,7 +1,7 @@
 /**
- * The google-docs import flow for the workspace api: resolve the session's Google access
- * token, export the doc as markdown, and write it into the workspace VFS under google-docs/.
- * Failures map to the api error shapes; group handlers stay simple.
+ * The google-docs import flow for the workspace api: resolve the session's Google access token,
+ * export the doc as markdown, and write it into the workspace VFS under google-docs/. Failures map
+ * to the api error shapes; group handlers stay simple.
  */
 
 import { type AuthStore, Files, WorkspaceId, type WriteResult } from "@essayist/core";
@@ -45,8 +45,8 @@ export function importGoogleDocFile({
       config.clientSecret,
     ).pipe(
       Effect.catchTag("PersistenceError", (err) => Effect.die(err)),
-      // A failed refresh is repairable with a fresh sign-in, so the client gets the 401
-      // fail-fast path instead of a per-document failure.
+      // A failed refresh is repairable with a fresh sign-in, so the client gets the 401 fail-fast
+      // path instead of a per-document failure.
       Effect.catchTag("TokenRefreshError", () => Effect.fail(new HttpApiError.Unauthorized({}))),
     );
     if (accessToken === undefined) {

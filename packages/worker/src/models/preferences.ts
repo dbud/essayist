@@ -73,9 +73,8 @@ export interface Preferences {
 }
 
 /**
- * The preferences for a request (server) or a page load (browser), read from
- * a cookie string: the request header on the server, `document.cookie` in the
- * browser.
+ * The preferences for a request (server) or a page load (browser), read from a cookie string: the
+ * request header on the server, `document.cookie` in the browser.
  */
 export function preferencesFromCookie(source: string | null | undefined, url: URL): Preferences {
   const values = readValues(readPreferencesCookie(source, url));

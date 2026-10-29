@@ -1,8 +1,7 @@
-// Shared diff test cases, parameterized over the `compute` function so the JS
-// core path (`diff_test.ts`) and the WASM core path (`diff_wasm_test.ts`) run
-// the same assertions. `label` prefixes the test names so the two suites are
-// distinguishable in output. Both cores are byte-identical (linear-space
-// Myers), so there is a single set of expectations.
+// Shared diff test cases, parameterized over the `compute` function so the JS core path
+// (`diff_test.ts`) and the WASM core path (`diff_wasm_test.ts`) run the same assertions. `label`
+// prefixes the test names so the two suites are distinguishable in output. Both cores are byte-
+// identical (linear-space Myers), so there is a single set of expectations.
 
 import { assertEquals, assertObjectMatch } from "@std/assert";
 import { test } from "vitest";
@@ -128,9 +127,9 @@ export function runDiffCases(label: string, compute: Compute): void {
     });
   });
 
-  // Repeated `sentence. ` token: the linear-space Myers matches the second
-  // occurrence, so the deleted / inserted text is "sentence. Second " (a valid
-  // minimal edit, and the same on the JS and WASM cores).
+  // Repeated `sentence. ` token: the linear-space Myers matches the second occurrence, so the
+  // deleted / inserted text is "sentence. Second " (a valid minimal edit, and the same on the JS
+  // and WASM cores).
   test(name("prose: sentence deleted"), () => {
     const oldContent = "First sentence. Second sentence. Third sentence.";
     const newContent = "First sentence. Third sentence.";

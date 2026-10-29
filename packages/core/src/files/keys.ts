@@ -1,7 +1,8 @@
 /**
- * The Files service key layout: workspace-scoped tuple keys. The builders
- * are pure, so tests and tooling can compute the same paths.
+ * The Files service key layout: workspace-scoped tuple keys. The builders are pure, so tests and
+ * tooling can compute the same paths.
  *
+ * parfit-ignore
  * Key layout:
  *   ["ws", wsId, "file:latest", path]                              -> StoredSnapshot
  *   ["ws", wsId, "file:versions", path]                            -> FileVersion[]

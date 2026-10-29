@@ -54,9 +54,8 @@ export interface MarkPin {
 }
 
 /** Apply proposals as marks on one pinned version, one proposal per
- * attempt: every attempt is reported, including failures with their
- * reason. Each mark appends to the version's single mark list through a
- * checked write, retried on concurrent modification. */
+ * attempt: every attempt is reported, including failures with their reason. Each mark appends to
+ * the version's single mark list through a checked write, retried on concurrent modification. */
 export function applyProposedMarks(
   proposals: readonly MarkProposal[],
   allowedLabels: readonly string[],

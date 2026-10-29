@@ -263,8 +263,8 @@ test("review runners -- repair propose stays idle without failures", async () =>
   });
 
   assertEquals(result.status, "completed");
-  // The gate forwarded nothing, so the repair propose never called the
-  // model and produced no proposals.
+  // The gate forwarded nothing, so the repair propose never called the model and produced no
+  // proposals.
   assertEquals(inputs.length, 1);
   assertEquals(
     result.nodeRuns.find((run) => run.nodeId === "m.repair1.propose")?.status,
@@ -354,8 +354,7 @@ test("review runners -- a repair round re-quotes failed spans", async () => {
       ["mark.proposals", "m.propose"],
       ["mark.placed", "m.apply"],
       ["mark.failed", "m.apply"],
-      // The gate re-emits the failed artifact unchanged; provenance stays
-      // with m.apply.
+      // The gate re-emits the failed artifact unchanged; provenance stays with m.apply.
       ["mark.failed", "m.apply"],
       ["mark.proposals", "m.repair1.propose"],
       ["mark.placed", "m.repair1.apply"],

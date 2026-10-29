@@ -48,8 +48,8 @@ interface WiredNode<T extends FlowTypes> {
 }
 
 /** Executes a graph: schedules ready nodes in declaration order and
- * commits artifacts. Nodes never re-execute. Each node runs on its own
- * child fiber, so an interrupted run takes its in-flight nodes down. */
+ * commits artifacts. Nodes never re-execute. Each node runs on its own child fiber, so an
+ * interrupted run takes its in-flight nodes down. */
 export class FlowRunner<T extends FlowTypes, R = never> {
   #runners = new Map<string, NodeRunner<T, NodeKind<T>, R>>();
   #onEvent?: (event: FlowEvent<T>) => Effect.Effect<void>;
@@ -106,8 +106,8 @@ export class FlowRunner<T extends FlowTypes, R = never> {
           const waker = yield* Deferred.make<string>();
           pending.set(entry.node.id, waker);
           const inputs = entry.consumes.flatMap((dep) => committed.get(dep) ?? []);
-          // Mutations stay on the engine's single thread, on the node's fiber
-          // in completion order: record, commit, then wake the scheduler.
+          // Mutations stay on the engine's single thread, on the node's fiber in completion order:
+          // record, commit, then wake the scheduler.
           yield* Effect.forkChild(
             Effect.gen({ self: this }, function* () {
               const run = yield* this.#execute(entry.node, inputs);
@@ -165,8 +165,8 @@ export class FlowRunner<T extends FlowTypes, R = never> {
       const startedAt = yield* Clock.currentTimeMillis;
       yield* this.#emit({ type: "node_start", nodeId: node.id });
 
-      // The payload boundary: the host's graph construction guarantees
-      // configured kinds carry their payload.
+      // The payload boundary: the host's graph construction guarantees configured kinds carry their
+      // payload.
       const payload = node.payload as T["nodes"][NodeKind<T>];
       const context: NodeContext<T, NodeKind<T>> = {
         payload,

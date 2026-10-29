@@ -4,12 +4,11 @@ import type { ElementFormatType, SerializedElementNode, SerializedTextNode } fro
 
 import type { PastePolicy } from "./policy.ts";
 
-// The payload shape for the fields the sanitizer reads, composed from
-// Lexical's serialized node types. Partial because compact exports omit
-// default values and payloads are untrusted. `format` is unioned because
-// TextNode serializes a bitmask and ElementNode an alignment string;
-// `children` is re-anchored to this recursive type. Unknown extra fields
-// (language, listType, ...) survive the spread untyped.
+// The payload shape for the fields the sanitizer reads, composed from Lexical's serialized node
+// types. Partial because compact exports omit default values and payloads are untrusted. `format`
+// is unioned because TextNode serializes a bitmask and ElementNode an alignment string; `children`
+// is re-anchored to this recursive type. Unknown extra fields (language, listType, ...) survive the
+// spread untyped.
 type SerializedNode = Omit<Partial<SerializedTextNode>, "format"> &
   Omit<Partial<SerializedElementNode>, "children" | "format"> &
   Partial<Pick<SerializedHeadingNode, "tag">> &

@@ -40,9 +40,8 @@ export interface MarksExtensionConfig {
 export const MarksExtension = defineExtension({
   name: "mark",
   nodes: () => [MarkNode],
-  // afterRegistration runs after $initialEditorState is committed; the first
-  // run of the effect is synchronous, so register() would run it against an
-  // empty tree.
+  // afterRegistration runs after $initialEditorState is committed; the first run of the effect is
+  // synchronous, so register() would run it against an empty tree.
   afterRegistration: (
     editor: LexicalEditor,
     { path, resolved, markdown }: MarksExtensionConfig,
@@ -60,8 +59,8 @@ export const MarksExtension = defineExtension({
     return mergeRegister(
       registerNodeKeyTracker(editor, MarkNode, nodeKeys),
 
-      // Jump-to-mark: find the MarkNode by thread id among the tracked keys and
-      // place the caret at its start.
+      // Jump-to-mark: find the MarkNode by thread id among the tracked keys and place the caret at
+      // its start.
       editor.registerCommand(
         SELECT_MARK_COMMAND,
         (threadId: string) => {
@@ -83,21 +82,19 @@ export const MarksExtension = defineExtension({
       effect(() => {
         if (!path) return;
         const marks = resolved.value;
-        // Skip only when there's nothing to do: no marks to wrap and no
-        // existing MarkNodes to unwrap.
+        // Skip only when there's nothing to do: no marks to wrap and no existing MarkNodes to
+        // unwrap.
         if (marks.length === 0 && nodeKeys.size === 0) return;
 
-        // `resolved` drives the effect (it re-emits on mark resolution and on
-        // edits, debounced by the worker). `markdown` is read untracked: it's
-        // the stable offset space for save/restore, since marks don't change
-        // the exported markdown.
+        // `resolved` drives the effect (it re-emits on mark resolution and on edits, debounced by
+        // the worker). `markdown` is read untracked: it's the stable offset space for save/restore,
+        // since marks don't change the exported markdown.
         const content = untracked(() => markdown.value);
 
         editor.update(
           () => {
-            // A fresh span collection from the in-flight tree, shared with
-            // $applyMarks (unwrap preserves keys/text/order, so it stays valid
-            // post-unwrap).
+            // A fresh span collection from the in-flight tree, shared with $applyMarks (unwrap
+            // preserves keys/text/order, so it stays valid post-unwrap).
             const spans = $collectTextNodeSpans(content);
             const saved = $saveSelection(spans);
             $applyMarks(marks, nodeKeys, spans);
@@ -111,14 +108,13 @@ export const MarksExtension = defineExtension({
 });
 
 /**
- * Unwraps existing MarkNodes and wraps the given mark spans as non-overlapping
- * multi-id segments. `spans` is collected once by the caller from the in-flight
- * tree before unwrapping (unwrap preserves keys/text/order, so the same span
- * list is valid post-unwrap). Segments are wrapped right-to-left: each wrap
- * splits text nodes but keeps the original key on the left portion, so
- * leftward (not-yet-processed) segments' pre-resolved (key, offset) references
- * stay valid -- no re-collection per wrap. Runs in a $-context; no selection
- * handling (the caller saves/restores around it).
+ * Unwraps existing MarkNodes and wraps the given mark spans as non-overlapping multi-id segments.
+ * `spans` is collected once by the caller from the in-flight tree before unwrapping (unwrap
+ * preserves keys/text/order, so the same span list is valid post-unwrap). Segments are wrapped
+ * right-to-left: each wrap splits text nodes but keeps the original key on the left portion, so
+ * leftward (not-yet-processed) segments' pre-resolved (key, offset) references stay valid -- no
+ * re- collection per wrap. Runs in a $-context; no selection handling (the caller saves/restores
+ * around it).
  */
 export function $applyMarks(
   marks: ReadonlyArray<MarkSpan>,
@@ -137,8 +133,8 @@ export function $applyMarks(
   const segments = segmentMarks(marks);
   if (segments.length === 0) return;
 
-  // Resolve every segment against the single span list up front. Right-to-left
-  // wrapping (below) keeps these references valid; see the header comment.
+  // Resolve every segment against the single span list up front. Right-to-left wrapping (below)
+  // keeps these references valid; see the header comment.
   const resolved = segments
     .map((seg) => ({
       seg,
@@ -148,10 +144,9 @@ export function $applyMarks(
 
   for (const { seg, range } of resolved) {
     const selection = $createSelection(range);
-    // $wrapSelectionInMarkNode always invokes createNode with [id] (the single
-    // id argument); ignore that and close over the full id-set of the segment
-    // so a shared interval becomes a single MarkNode carrying the id of every
-    // covering mark.
+    // $wrapSelectionInMarkNode always invokes createNode with [id] (the single id argument); ignore
+    // that and close over the full id-set of the segment so a shared interval becomes a single
+    // MarkNode carrying the id of every covering mark.
     $wrapSelectionInMarkNode(selection, false, seg.ids[0], () => $createMarkNode(seg.ids));
   }
 }

@@ -1,5 +1,5 @@
-// The session middleware for HttpApi groups; resolves the site session
-// like the pages middleware and provides UserSession to handlers.
+// The session middleware for HttpApi groups; resolves the site session like the pages middleware
+// and provides UserSession to handlers.
 import { AuthStore, type User, Workspaces } from "@essayist/core";
 import { Context, Effect, Layer } from "effect";
 import { HttpApiError, HttpApiMiddleware } from "effect/http-api";
@@ -25,8 +25,8 @@ export class SessionMiddleware extends HttpApiMiddleware.Service<
   }
 >()("api/Session", { error: HttpApiError.Unauthorized }) {}
 
-// Persistence faults are defects: no api contract covers them, so the
-// middleware dies and the tier answers 500.
+// Persistence faults are defects: no api contract covers them, so the middleware dies and the tier
+// answers 500.
 export const sessionMiddleware: Layer.Layer<SessionMiddleware, never, AuthStore | Workspaces> =
   Layer.succeed(SessionMiddleware, (httpEffect) =>
     Effect.gen(function* () {

@@ -1,6 +1,6 @@
 /**
- * The review configuration as an Effect service: model pools, prompts,
- * categories, review passes, and the active-pass pin, in storage.
+ * The review configuration as an Effect service: model pools, prompts, categories, review passes,
+ * and the active-pass pin, in storage.
  */
 
 import { Context, Effect, Layer } from "effect";
@@ -13,6 +13,7 @@ import {
 
 import type { Category, ModelPool, Prompt, ReviewPass } from "./types.ts";
 
+// parfit-ignore
 // Key layout:
 //   ["cfg","model_pools",  id]   -> ModelPool
 //   ["cfg","prompts",      key]  -> Prompt

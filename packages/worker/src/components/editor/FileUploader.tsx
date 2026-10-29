@@ -7,9 +7,9 @@ import { useEditorModels } from "#/pages/editor/models.ts";
 import { type DroppedFile, filesFromFileInput, readFilesAsText } from "#/utils/fileUpload.ts";
 import { formatCount } from "#/utils/format.ts";
 
-// The upload button + hidden file input. Selections are read as text
-// (binaries skipped and reported) and upserted to the workspace through
-// the batch runner; a task toast mirrors progress and settles with counts.
+// The upload button + hidden file input. Selections are read as text (binaries skipped and
+// reported) and upserted to the workspace through the batch runner; a task toast mirrors progress
+// and settles with counts.
 export default function FileUploader() {
   const uploading = useSignal(false);
   const { fileTrees } = useEditorModels();

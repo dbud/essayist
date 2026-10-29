@@ -1,8 +1,7 @@
 export type TextPart = string | string[] | false | undefined;
 
 /**
- * Join blocks on blank lines, dropping empty blocks.
- * Use for paragraph-level composition.
+ * Join blocks on blank lines, dropping empty blocks. Use for paragraph-level composition.
  */
 export function joinBlocks(...parts: TextPart[]): string {
   return parts
@@ -12,8 +11,8 @@ export function joinBlocks(...parts: TextPart[]): string {
 }
 
 /**
- * Join lines, dropping undelivered parts but keeping empty strings, which
- * act as blank separator lines.
+ * Join lines, dropping undelivered parts but keeping empty strings, which act as blank separator
+ * lines.
  */
 export function joinLines(...parts: TextPart[]): string {
   return parts

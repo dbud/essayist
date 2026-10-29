@@ -1,7 +1,7 @@
 /**
- * All the preferences travel in a single cookie holding a JSON object. The
- * browser writes it, the server reads it from the request, so the rendered
- * page and the browser start from the same values.
+ * All the preferences travel in a single cookie holding a JSON object. The browser writes it,
+ * the server reads it from the request, so the rendered page and the browser start from the same
+ * values.
  */
 
 const COOKIE_NAME = "prefs";
@@ -12,9 +12,8 @@ export function preferencesCookieName(url: URL): string {
 }
 
 /**
- * Reads the payload from a "name=value; name2=value2" string, the format
- * both the request header and `document.cookie` use. A payload that is not
- * a JSON object reads as empty.
+ * Reads the payload from a "name=value; name2=value2" string, the format both the request header
+ * and `document.cookie` use. A payload that is not a JSON object reads as empty.
  */
 export function readPreferencesCookie(
   source: string | null | undefined,

@@ -1,6 +1,6 @@
 /**
- * Finds or creates the app user for a Google profile and refreshes the
- * stored name/picture when they changed.
+ * Finds or creates the app user for a Google profile and refreshes the stored name/picture when
+ * they changed.
  */
 
 import {

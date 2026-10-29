@@ -1,7 +1,6 @@
 /**
- * Helpers for the file-browser upload flow (the file picker) and binary
- * detection. Binary files are skipped using the same null-byte heuristic
- * git uses.
+ * Helpers for the file-browser upload flow (the file picker) and binary detection. Binary files are
+ * skipped using the same null-byte heuristic git uses.
  */
 
 export interface UploadedFile {
@@ -15,9 +14,8 @@ export interface DroppedFile {
 }
 
 /**
- * Read a File as UTF-8 text. Returns `null` if the file looks binary (a null
- * byte appears in the first 8 KB) -- the same heuristic git uses to decide
- * whether a file is text.
+ * Read a File as UTF-8 text. Returns `null` if the file looks binary (a null byte appears in the
+ * first 8 KB) -- the same heuristic git uses to decide whether a file is text.
  */
 async function readFileAsText(file: File): Promise<string | null> {
   const buf = await file.arrayBuffer();
@@ -30,16 +28,16 @@ async function readFileAsText(file: File): Promise<string | null> {
 }
 
 /**
- * Extract {path, file} pairs from a `<input type="file" multiple>` selection.
- * The path is the bare filename (no folder structure).
+ * Extract {path, file} pairs from a `<input type="file" multiple>` selection. The path is the bare
+ * filename (no folder structure).
  */
 export function filesFromFileInput(fileList: FileList): DroppedFile[] {
   return Array.from(fileList).map((file) => ({ path: file.name, file }));
 }
 
 /**
- * Read a list of {path, file} pairs as text, skipping binaries. Returns the
- * decoded uploads plus the list of skipped paths so the UI can report them.
+ * Read a list of {path, file} pairs as text, skipping binaries. Returns the decoded uploads plus
+ * the list of skipped paths so the UI can report them.
  */
 export async function readFilesAsText(
   files: DroppedFile[],

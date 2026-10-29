@@ -45,8 +45,8 @@ test("wordEdges -- Unicode letters and numbers count as word chars", () => {
 });
 
 // trimContextSeparators -- trim surrounding separators from a resolved gap.
-// `trimLeadingPunctuation` / `trimTrailingPunctuation` say whether punctuation
-// is trimmed on that side (whitespace is always trimmed).
+// `trimLeadingPunctuation` / `trimTrailingPunctuation` say whether punctuation is trimmed on that
+// side (whitespace is always trimmed).
 
 test("trimContextSeparators -- empty raw returns empty", () => {
   assertEquals(trimContextSeparators("", true, true), { text: "", leading: 0 });
@@ -103,8 +103,8 @@ test("trimContextSeparators -- preserves internal separators", () => {
 });
 
 test("trimContextSeparators -- trims a leading comma but not the space after it", () => {
-  // Whitespace is trimmed first, then punctuation; the space following the
-  // comma is not re-trimmed, so it survives at the start of the text.
+  // Whitespace is trimmed first, then punctuation; the space following the comma is not re-trimmed,
+  // so it survives at the start of the text.
   assertEquals(trimContextSeparators(", hello,", true, true), {
     text: " hello",
     leading: 1,

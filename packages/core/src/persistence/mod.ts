@@ -39,13 +39,10 @@ export type WriteOp = { type: "set"; key: Key; value: unknown } | { type: "delet
 /** Options for a batch write. */
 export interface BatchOptions {
   /**
-   * Optimistic-concurrency guards. The batch commits only if every guard
-   * passes against the current store state:
-   * - `versionstamp: null` requires the key to be absent.
-   * - `versionstamp: "<v>"` requires the key to be present with that exact
-   *   versionstamp.
-   * On any mismatch the whole batch is rejected (no ops applied) and an error
-   * is thrown.
+   * Optimistic-concurrency guards. The batch commits only if every guard passes against the current
+   * store state: - `versionstamp: null` requires the key to be absent. - `versionstamp: "<v>"`
+   * requires the key to be present with that exact versionstamp. On any mismatch the whole batch is
+   * rejected (no ops applied) and an error is thrown.
    */
   checks?: Array<{ key: Key; versionstamp: string | null }>;
 }

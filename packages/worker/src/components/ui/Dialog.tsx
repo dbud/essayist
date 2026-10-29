@@ -12,15 +12,12 @@ interface DialogProps {
 }
 
 /** Modal dialog using native <dialog> with Panel animation.
- *  Two signals decouple dialog visibility from Panel animation:
- *  - open: controls showModal/close
- *  - panelOpen: controls the Panel's is-open/is-closed class
- *  On open: showModal first, then rAF to set panelOpen so the browser
- *  renders the 0fr state before transitioning to 1fr.
- *  On close: panelOpen flips to false (by close, useEffect, or consumer),
- *  Panel animates closed, then onSettled calls dialog.close().
- *  Clicks outside the panel (backdrop or aside) close via the Panel's
- *  click-outside. */
+ * Two signals decouple dialog visibility from Panel animation: - open: controls showModal/close -
+ * panelOpen: controls the Panel's is-open/is-closed class On open: showModal first, then rAF to set
+ * panelOpen so the browser renders the 0fr state before transitioning to 1fr. On close: panelOpen
+ * flips to false (by close, useEffect, or consumer), Panel animates closed, then onSettled calls
+ * dialog.close(). Clicks outside the panel (backdrop or aside) close via the Panel's click-outside.
+ * */
 export default function Dialog({ open, children, aside }: DialogProps) {
   const ref = useRef<HTMLDialogElement>(null);
   const panelOpen = useSignal(false);

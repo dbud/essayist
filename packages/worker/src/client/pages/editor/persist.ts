@@ -26,8 +26,7 @@ function schedule(): void {
   timer = setTimeout(() => flush(false), DEBOUNCE_MS);
 }
 
-// The pagehide flush uses keepalive so pending writes survive page
-// unload.
+// The pagehide flush uses keepalive so pending writes survive page unload.
 export function setupSelectionPersist(selected: ReadonlySignal<FileSelection | null>): void {
   effect(() => {
     const selection = selected.value;

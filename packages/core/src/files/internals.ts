@@ -1,6 +1,6 @@
 /**
- * Shared internals for the Files service: the version and chunk read tree
- * and the mark re-anchoring plan, bound to one persistence service.
+ * Shared internals for the Files service: the version and chunk read tree and the mark re-anchoring
+ * plan, bound to one persistence service.
  */
 
 import { type Context, Effect } from "effect";
@@ -34,9 +34,8 @@ const MAX_GET_MANY = 10;
 const MAX_ATTEMPTS = 10;
 
 /**
- * Retry an optimistic-concurrency attempt on a checked batch rejection: the
- * attempt re-runs until the guard matches. Mirrors the legacy class's
- * 10-attempt retry with no delay between attempts.
+ * Retry an optimistic-concurrency attempt on a checked batch rejection: the attempt re-runs until
+ * the guard matches. Mirrors the legacy class's 10-attempt retry with no delay between attempts.
  */
 export const retryConcurrency = <A, E, R>(effect: Effect.Effect<A, E, R>): Effect.Effect<A, E, R> =>
   Effect.retry(effect, {
@@ -131,8 +130,8 @@ export function makeInternals(persistence: Context.Service.Shape<typeof Persiste
     });
 
   /**
-   * Snapshot of the given version, or the latest when none is given.
-   * Fails with FileMissingError when the file or version is missing.
+   * Snapshot of the given version, or the latest when none is given. Fails with FileMissingError
+   * when the file or version is missing.
    */
   const getSnapshot = (
     wsId: string,
@@ -159,11 +158,10 @@ export function makeInternals(persistence: Context.Service.Shape<typeof Persiste
     });
 
   /**
-   * Set-op giving targetVersionId's marks plus fromVersionId's marks
-   * re-anchored onto newContent; undefined when nothing is pending.
-   * fromVersionId marks whose thread_id is already on the target are
-   * skipped. The source version's content must exist in storage, or the
-   * migration cannot resolve anchors and the effect fails.
+   * Set-op giving targetVersionId's marks plus fromVersionId's marks re-anchored onto newContent;
+   * undefined when nothing is pending. fromVersionId marks whose thread_id is already on the
+   * target are skipped. The source version's content must exist in storage, or the migration cannot
+   * resolve anchors and the effect fails.
    */
   const migrationOp = (
     wsId: string,

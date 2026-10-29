@@ -1,13 +1,11 @@
 /**
- * Runtime-neutral KV implementation of the {@linkcode Persistence} service:
- * `Deno.Kv`-shaped calls wrapped in Effects, with a failed concurrency
- * check failing as {@linkcode ConcurrentModificationError}.
+ * Runtime-neutral KV implementation of the {@linkcode Persistence} service: `Deno.Kv`-shaped
+ * calls wrapped in Effects, with a failed concurrency check failing as {@linkcode
+ * ConcurrentModificationError}.
  *
- * {@linkcode kvLayer} is the implementation, typed structurally
- * against the npm `@deno/kv` client interface, so non-Deno runtimes (vitest,
- * the future KV Connect bridge) pass handles from that package. Deno call
- * sites enter through the sibling `kv_deno.ts` over a native `Deno.Kv`
- * handle.
+ * {@linkcode kvLayer} is the implementation, typed structurally against the npm `@deno/kv` client
+ * interface, so non-Deno runtimes (vitest, the future KV Connect bridge) pass handles from that
+ * package. Deno call sites enter through the sibling `kv_deno.ts` over a native `Deno.Kv` handle.
  */
 
 import type { Kv, KvEntryMaybe } from "@deno/kv";
@@ -45,8 +43,8 @@ export function kvLayer(kv: Kv): Layer.Layer<Persistence> {
         }
         const result = await atomic.commit();
         if (!result.ok) {
-          // A check failed (concurrent modification); pick the key from the
-          // first check for the error, or an empty key if there were none.
+          // A check failed (concurrent modification); pick the key from the first check for the
+          // error, or an empty key if there were none.
           throw new ConcurrentModificationError({
             key: [...(checks[0]?.key ?? [])],
           });
@@ -113,12 +111,10 @@ export function kvLayer(kv: Kv): Layer.Layer<Persistence> {
                   versionstamp: entry.versionstamp,
                 });
               }
-              // The deno runtime answers "" (or nothing) for a listing
-              // that never advanced or reached its end; the npm client
-              // throws before the first iteration and keeps the
-              // last-yielded key as the cursor at the end of the listing.
-              // Normalize both to "no next page", and treat a short final
-              // page under a limit as exhausted.
+              // The deno runtime answers "" (or nothing) for a listing that never advanced or
+              // reached its end; the npm client throws before the first iteration and keeps the
+              // last-yielded key as the cursor at the end of the listing. Normalize both to "no
+              // next page", and treat a short final page under a limit as exhausted.
               let next = "";
               try {
                 next = iter.cursor ?? "";

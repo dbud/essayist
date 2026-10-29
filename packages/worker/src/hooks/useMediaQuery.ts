@@ -2,9 +2,9 @@ import { useSignal } from "@preact/signals";
 import { useEffect } from "preact/hooks";
 
 /**
- * Reactive media-query signal. Returns a Signal<boolean> tracking whether the
- * given media query currently matches. SSR-safe: reports `false` until mounted
- * on the client, then updates to the real match (and on subsequent changes).
+ * Reactive media-query signal. Returns a Signal<boolean> tracking whether the given media query
+ * currently matches. SSR-safe: reports `false` until mounted on the client, then updates to the
+ * real match (and on subsequent changes).
  */
 export function useMediaQuery(query: string) {
   const matches = useSignal(false);

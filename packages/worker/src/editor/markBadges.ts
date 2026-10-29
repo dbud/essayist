@@ -9,9 +9,9 @@ import { contentEndRect, hasRect, type MeasureContext } from "./domMeasure.ts";
 import type { TrackedFragment } from "./trackNodePositions.ts";
 
 /**
- * Ordinal badges for mark fragments, applying the rightmost-per-block
- * rule: within a block, a mark's number appears only on its last fragment
- * there. A mark spanning multiple blocks still badges once per block.
+ * Ordinal badges for mark fragments, applying the rightmost-per-block rule: within a block, a
+ * mark's number appears only on its last fragment there. A mark spanning multiple blocks still
+ * badges once per block.
  */
 export function computeMarkBadges(
   fragments: TrackedFragment[],
@@ -52,10 +52,9 @@ export function computeMarkBadges(
 }
 
 /**
- * Per-fragment badge ordinals after the rightmost-per-block rule. `ordered`
- * must be in document order. A mark that continues into a same-block fragment
- * is deferred to that later fragment; it's kept on its last fragment per block.
- * Ids without an ordinal are dropped.
+ * Per-fragment badge ordinals after the rightmost-per-block rule. `ordered` must be in document
+ * order. A mark that continues into a same-block fragment is deferred to that later fragment; it's
+ * kept on its last fragment per block. Ids without an ordinal are dropped.
  */
 export function visibleBadgeNumbers(
   ordered: ReadonlyArray<{ ids: string[]; blockKey: string }>,

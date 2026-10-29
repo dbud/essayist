@@ -38,8 +38,8 @@ test("TokenizedText.findExactNear -- empty text returns null", () => {
 });
 
 test("TokenizedText.findExactNear -- no exact occurrence returns null", () => {
-  // "hallo" is not in the text; with exact-only matching this returns null
-  // (a near-match is resolved later via context anchoring, not here).
+  // "hallo" is not in the text; with exact-only matching this returns null (a near-match is
+  // resolved later via context anchoring, not here).
   const tt = new TokenizedText("hello world goodbye");
   assertEquals(tt.findExactNear("hallo", 3), null);
 });
@@ -74,8 +74,8 @@ test("TokenizedText.findExactInTokenWindow -- match within the window", () => {
 });
 
 test("TokenizedText.findExactInTokenWindow -- outside the window returns null", () => {
-  // "hello" sits at offset 0, but the window around near=10 (in "world")
-  // covers only the "world" token, so "hello" is out of range.
+  // "hello" sits at offset 0, but the window around near=10 (in "world") covers only the "world"
+  // token, so "hello" is out of range.
   const tt = new TokenizedText("hello world");
   assertEquals(tt.findExactInTokenWindow("hello", { near: 10, withinTokens: 0 }), null);
 });

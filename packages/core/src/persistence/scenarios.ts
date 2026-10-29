@@ -1,6 +1,6 @@
 /**
- * The Persistence scenario battery, shared by the backends: every
- * implementation of the service must pass the same scenarios.
+ * The Persistence scenario battery, shared by the backends: every implementation of the service
+ * must pass the same scenarios.
  */
 
 import { assert, assertEquals, assertInstanceOf } from "@std/assert";

@@ -90,10 +90,10 @@ function MarkdownPreview() {
 }
 
 /**
- * Splits the markdown into a gap/marked segment list, using `segmentMarks` so
- * overlapping/nested marks produce one segment carrying every covering mark
- * (mirroring the editor's multi-id MarkNodes). Zero-length marks (which
- * `segmentMarks` drops) are kept as point segments rendered as a marker glyph.
+ * Splits the markdown into a gap/marked segment list, using `segmentMarks` so overlapping/nested
+ * marks produce one segment carrying every covering mark (mirroring the editor's multi-id
+ * MarkNodes). Zero-length marks (which `segmentMarks` drops) are kept as point segments rendered as
+ * a marker glyph.
  */
 function buildSegments(markdown: string, marks: Mark[]): TextSegment[] {
   if (marks.length === 0) return [{ text: markdown, marks: [] }];
@@ -101,9 +101,9 @@ function buildSegments(markdown: string, marks: Mark[]): TextSegment[] {
   const byThread = new Map(marks.map((m) => [m.thread_id, m]));
   const resolve = (ids: readonly string[]): Mark[] => mapNotNullish(ids, (id) => byThread.get(id));
 
-  // Non-zero marks -> non-overlapping intervals via segmentMarks; zero-length
-  // marks -> point intervals at their offset. Merge by offset and walk with a
-  // cursor, emitting gap segments between.
+  // Non-zero marks -> non-overlapping intervals via segmentMarks; zero-length marks -> point
+  // intervals at their offset. Merge by offset and walk with a cursor, emitting gap segments
+  // between.
   const intervals = segmentMarks(marks.filter((m) => m.length > 0)).map(
     ({ offset, length, ids }) => ({ offset, length, marks: resolve(ids) }),
   );

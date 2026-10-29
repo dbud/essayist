@@ -5,10 +5,9 @@ import { env } from "#/env.ts";
 import { runtime } from "#/runtime.ts";
 
 /**
- * The dev-only identity override: a request names the user it acts as
- * through the `x-dev-user` header, so the dev server needs no sign-in.
- * Every use is wrapped in an import.meta.env.DEV check, which the
- * production build replaces, so bundles carry none of this.
+ * The dev-only identity override: a request names the user it acts as through the `x-dev-user`
+ * header, so the dev server needs no sign-in. Every use is wrapped in an import.meta.env.DEV check,
+ * which the production build replaces, so bundles carry none of this.
  */
 
 export const DEV_USER_HEADER = "x-dev-user";

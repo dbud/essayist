@@ -1,9 +1,8 @@
 /**
- * The Google OAuth routes: `/oauth/google` starts the sign-in and
- * receives the callback (the @hono/oauth-providers middleware redirects
- * entry requests and handles the callback when `code` is present),
- * `/oauth/onetap` exchanges the GIS credential form post, and
- * `/oauth/signout` deletes the session.
+ * The Google OAuth routes: `/oauth/google` starts the sign-in and receives the callback (the
+ * @hono/oauth-providers middleware redirects entry requests and handles the callback when `code`
+ * is present), `/oauth/onetap` exchanges the GIS credential form post, and `/oauth/signout` deletes
+ * the session.
  */
 
 import { AuthStore, nextId, type SessionTokens } from "@essayist/core";
@@ -25,12 +24,12 @@ import { resolveGoogleUser } from "#/auth/user.ts";
 import { env } from "#/env.ts";
 import { runtime } from "#/runtime.ts";
 
-// `drive.file` grants access only to files the user explicitly picks in
-// the app, never their whole Drive.
+// `drive.file` grants access only to files the user explicitly picks in the app, never their whole
+// Drive.
 const SCOPES = ["openid", "email", "profile", "https://www.googleapis.com/auth/drive.file"];
 
-// The @hono middleware passes no parameters to the callback, so a
-// short-lived cookie carries the post-sign-in redirect target.
+// The @hono middleware passes no parameters to the callback, so a short-lived cookie carries the
+// post-sign-in redirect target.
 const NEXT_COOKIE = "oauth-next";
 const NEXT_COOKIE_MAX_AGE = 600;
 
@@ -79,8 +78,8 @@ export const oauthRoutes = new Hono()
     })(c, next);
   })
   .get("/google", async (c) => {
-    // Without `code` the middleware redirects; reaching the handler
-    // means a state-validated callback.
+    // Without `code` the middleware redirects; reaching the handler means a state-validated
+    // callback.
     const token = c.get("token");
     const googleUser = c.get("user-google");
     const next = safeNext(getCookie(c, NEXT_COOKIE) ?? null);
@@ -121,8 +120,7 @@ export const oauthRoutes = new Hono()
     return response;
   })
   .post("/onetap", async (c) => {
-    // The credential form posts from the island are same-origin; reject
-    // anything else.
+    // The credential form posts from the island are same-origin; reject anything else.
     const origin = c.req.header("origin");
     if (origin !== new URL(c.req.url).origin) {
       return c.text("Cross-origin sign-in rejected", 403);

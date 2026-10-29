@@ -10,8 +10,8 @@ import { usePreferences } from "#/models/preferences.ts";
 export default function ThemeToggle() {
   const { theme, themeOverride, toggleTheme } = usePreferences();
   const booting = useBooting();
-  // The server cannot know the system scheme: it renders the pinned theme, or
-  // light when there is none. The first client render has to match it.
+  // The server cannot know the system scheme: it renders the pinned theme, or light when there is
+  // none. The first client render has to match it.
   const dark = booting.value ? themeOverride.value === "dark" : theme.value === "dark";
   return (
     <button

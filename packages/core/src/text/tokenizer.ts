@@ -9,10 +9,9 @@ export type Tokenizer = (text: string) => Token[];
 /**
  * Build a tokenizer from a scanning regex.
  *
- * `regex` must have the global flag (checked once at build time), or this
- * throws -- a non-global regex would loop forever on `exec`. The returned
- * function resets `regex.lastIndex` before each scan, so a single shared
- * module-level regex is safe to reuse across calls.
+ * `regex` must have the global flag (checked once at build time), or this throws -- a non-global
+ * regex would loop forever on `exec`. The returned function resets `regex.lastIndex` before each
+ * scan, so a single shared module-level regex is safe to reuse across calls.
  */
 export function createTokenizer(regex: RegExp): Tokenizer {
   if (!regex.global) {

@@ -60,8 +60,8 @@ function passFixture(units: ReviewUnit[]): ResolvedReviewPass {
   };
 }
 
-// The file content and the runner's services share one KV store; the env
-// also exposes Persistence for raw row fixtures.
+// The file content and the runner's services share one KV store; the env also exposes Persistence
+// for raw row fixtures.
 interface Setup {
   kv: Kv;
   env: Layer.Layer<Marks | Persistence | ReviewRuns | TraceEvents | Files>;
@@ -167,8 +167,7 @@ const ANALYSIS_ROUND =
   '{"thesis":"Drafts are raw material.","claims":[],"outline":[],"strengths":[],"risks":[]}';
 
 /** Per-node event type sequences; cross-node order varies with the
- * scheduler, per-node order is fixed. Custom events carry the host
- * event's type. */
+ * scheduler, per-node order is fixed. Custom events carry the host event's type. */
 function byNode(trace: TraceEvent[]): Record<string, string[]> {
   const grouped: Record<string, string[]> = {};
   for (const event of trace) {
@@ -391,8 +390,8 @@ test("runReviewPass -- a resumed pass skips completed nodes and shows each once"
   // analyze completed, so its artifacts are recoverable from the trace.
   assertEquals(nodeEnd(interrupted, "analyze")?.status, "completed");
 
-  // Second attempt over the same run: the fold supplies analyze's artifacts,
-  // so only the failed unit is scheduled.
+  // Second attempt over the same run: the fold supplies analyze's artifacts, so only the failed
+  // unit is scheduled.
   const second = createFakeClient([
     {
       text: '{"marks":[{"selected_text":"brave","comment":"Good.","label":"grammar"}]}',
@@ -461,9 +460,8 @@ test("runReviewPass -- a node error fails the run and skips dependents", async (
 
   const trace = (await viaRuns(env, (deps) => deps.traces.get(run.id))) ?? [];
   const grouped = byNode(trace);
-  // The prompt is recorded before each call, the repair says why the first
-  // reply was rejected, and the re-ask that also failed leaves two
-  // model_call events with a repair between them.
+  // The prompt is recorded before each call, the repair says why the first reply was rejected, and
+  // the re-ask that also failed leaves two model_call events with a repair between them.
   assertEquals(grouped.analyze, [
     "node_start",
     "prompt",
@@ -505,8 +503,8 @@ test("runReviewPass -- fails a pass that commits no summary", async () => {
   const env = Layer.merge(baseEnv, ModelClient.layerOf(client));
 
   const run = await runPass(env, {
-    // No summary unit, so the graph commits no summary artifact. Reading it
-    // back is a structural surprise, not a pass with a blank summary.
+    // No summary unit, so the graph commits no summary artifact. Reading it back is a structural
+    // surprise, not a pass with a blank summary.
     pass: passFixture([unitFixture({ id: "analyze" })]),
     path: "essay.txt",
   });

@@ -1,8 +1,7 @@
 /**
- * The marks-family surface of the Files service: mark-list storage bound to
- * one persistence service and the Files internals. Mark placement lives in
- * the Marks service; a write migrates marks in the same atomic batch as the
- * version append, which is why the list storage lives on Files.
+ * The marks-family surface of the Files service: mark-list storage bound to one persistence service
+ * and the Files internals. Mark placement lives in the Marks service; a write migrates marks in the
+ * same atomic batch as the version append, which is why the list storage lives on Files.
  */
 
 import { type Context, Effect } from "effect";
@@ -103,9 +102,8 @@ export function makeMarkLists(
         );
         if (!resolved) return empty;
 
-        // Checking latestKey guards against a save landing mid-commit: on a
-        // versionstamp mismatch the batch is rejected and the attempt re-runs
-        // against the new latest.
+        // Checking latestKey guards against a save landing mid-commit: on a versionstamp mismatch
+        // the batch is rejected and the attempt re-runs against the new latest.
         yield* persistence.batch([resolved.op], {
           checks: [
             {

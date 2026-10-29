@@ -196,8 +196,8 @@ test("groupTraceNodes -- orphans a custom event with no node", () => {
 });
 
 test("groupTraceNodes -- a skipped node opens its own section", () => {
-  // A node skipped for a failed dependency emits node_end with no
-  // node_start, so it must still get a section carrying the reason.
+  // A node skipped for a failed dependency emits node_end with no node_start, so it must still get
+  // a section carrying the reason.
   const { nodes, orphans } = groupTraceNodes(
     trace([
       { type: "node_start", nodeId: "structure.propose" },

@@ -28,8 +28,8 @@ const MarkNodeOnly = defineExtension({
   nodes: () => [MarkNode],
 });
 
-// Registers MarkNode + RichText without the apply effect, so the test can
-// drive $applyMarks directly with controlled spans.
+// Registers MarkNode + RichText without the apply effect, so the test can drive $applyMarks
+// directly with controlled spans.
 const testExtension = defineExtension({
   name: "mark-apply-test",
   dependencies: [RichTextExtension, configExtension(MarkNodeOnly)],
@@ -122,9 +122,9 @@ function collectMarkKeys(editor: LexicalEditor): Set<string> {
 }
 
 /**
- * Runs $applyMarks inside an editor update with a fresh span collection (the
- * same shape the real effect uses), tracking existing MarkNode keys so a
- * re-apply unwraps the previous fragments. Returns the resulting fragments.
+ * Runs $applyMarks inside an editor update with a fresh span collection (the same shape the real
+ * effect uses), tracking existing MarkNode keys so a re-apply unwraps the previous fragments.
+ * Returns the resulting fragments.
  */
 function applyAndCollect(
   editor: LexicalEditor,
@@ -200,8 +200,8 @@ test("$applyMarks -- identical spans share one fragment with both ids", () => {
 test("$applyMarks -- multi-paragraph mark yields one fragment per paragraph", () => {
   const editor = createEditor();
   setParagraphs(editor, "Para one.", "Para two.");
-  // exported markdown: "Para one.\n\nPara two." -> "Para one." at 0 (len 9),
-  // "Para two." at 11 (len 9). Mark covers [0,20): both paragraphs.
+  // exported markdown: "Para one.\n\nPara two." -> "Para one." at 0 (len 9), "Para two." at 11 (len
+  // 9). Mark covers [0,20): both paragraphs.
   const fragments = applyAndCollect(editor, [{ offset: 0, length: 20, thread_id: "m" }]);
   assertEquals(fragments, [
     { ids: ["m"], text: "Para one." },
@@ -212,9 +212,8 @@ test("$applyMarks -- multi-paragraph mark yields one fragment per paragraph", ()
 test("$applyMarks -- overlap across a paragraph boundary", () => {
   const editor = createEditor();
   setParagraphs(editor, "Para one.", "Para two.");
-  // m1 spans both paragraphs [0,20); m2 sits in the first paragraph [0,5).
-  // Segments: [0,5){m1,m2}, [5,20){m1}. The second segment crosses into para 2
-  // and produces two fragments.
+  // m1 spans both paragraphs [0,20); m2 sits in the first paragraph [0,5). Segments: [0,5){m1,m2},
+  // [5,20){m1}. The second segment crosses into para 2 and produces two fragments.
   const fragments = applyAndCollect(editor, [
     { offset: 0, length: 20, thread_id: "m1" },
     { offset: 0, length: 5, thread_id: "m2" },

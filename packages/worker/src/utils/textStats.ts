@@ -2,16 +2,16 @@ import type { EditorState } from "lexical";
 
 import { BlockFold, type Monoid } from "./incrementalBlocks.ts";
 
-// Words are alphanumeric runs, optionally joined by single hyphens, so
-// hyphenated words count as a single word ("well-known" is a single word).
-// Note: the wordTokens from core (vfs/text_search.ts) still splits on hyphens.
+// Words are alphanumeric runs, optionally joined by single hyphens, so hyphenated words count as a
+// single word ("well-known" is a single word). Note: the wordTokens from core (vfs/text_search.ts)
+// still splits on hyphens.
 const WORD_REGEX = /[\p{L}\p{N}]+(?:-[\p{L}\p{N}]+)*/gu;
 
 // Non-whitespace characters for the "no spaces" count. \s matches NBSP too.
 const NON_WS_REGEX = /\S/g;
 
-// String.prototype.match with a global regex ignores lastIndex, so the
-// shared regexes are safe to reuse.
+// String.prototype.match with a global regex ignores lastIndex, so the shared regexes are safe
+// to reuse.
 function countMatches(text: string, regex: RegExp): number {
   return text.match(regex)?.length ?? 0;
 }
@@ -46,8 +46,8 @@ export function editorStateCharCount(state: EditorState): number {
   return charCountFold.read(state);
 }
 
-// All characters including spaces. Block separators count in neither
-// character stat; paragraph marks are not characters.
+// All characters including spaces. Block separators count in neither character stat; paragraph
+// marks are not characters.
 export function editorStateCharCountWithSpaces(state: EditorState): number {
   return charCountWithSpacesFold.read(state);
 }

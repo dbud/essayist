@@ -12,18 +12,16 @@ export interface DiffHunk {
   newText: string;
 }
 
-// The \s+ alternative captures leading whitespace; without it \S+\s*
-// would skip it and leading-whitespace changes would be invisible to the
-// diff. Punctuation stays attached to the word.
+// The \s+ alternative captures leading whitespace; without it \S+\s* would skip it and leading-
+// whitespace changes would be invisible to the diff. Punctuation stays attached to the word.
 const DIFF_TOKEN_REGEX = /(\s+)|(\S+\s*)/g;
 
 const tokenize = createTokenizer(DIFF_TOKEN_REGEX);
 
-// Two interchangeable Myers implementations share the encode/decode boundary
-// (tokens -> integer ids -> flat op Int32Array -> DiffOp[]): the pure-JS
-// `jsMyers` (default) and a faster Rust implementation injected via `setMyers`.
-// `diff.ts` never imports the Rust crate, so the browser bundle only pulls in
-// the wasm glue when it's explicitly enabled.
+// Two interchangeable Myers implementations share the encode/decode boundary (tokens -> integer
+// ids -> flat op Int32Array -> DiffOp[]): the pure-JS `jsMyers` (default) and a faster Rust
+// implementation injected via `setMyers`. `diff.ts` never imports the Rust crate, so the browser
+// bundle only pulls in the wasm glue when it's explicitly enabled.
 export type MyersFn = (oldTokenIds: Int32Array, newTokenIds: Int32Array) => Int32Array;
 
 let myersFn: MyersFn = jsMyers;
@@ -86,11 +84,10 @@ export interface DiffOp {
   newIdx?: number;
 }
 
-// Each distinct token text maps to a single integer id shared across old/new so the
-// core compares ids with `==` (equivalent to `oldTokens[x].text ===
-// newTokens[y].text`). The core returns a flat Int32Array of
-// `[type, oldIdx, newIdx, ...]` triples where type is 0=equal, 1=insert,
-// 2=delete (matching `DiffOp.type`); the unused index is -1.
+// Each distinct token text maps to a single integer id shared across old/new so the core compares
+// ids with `==` (equivalent to `oldTokens[x].text === newTokens[y].text`). The core returns a flat
+// Int32Array of `[type, oldIdx, newIdx, ...]` triples where type is 0=equal, 1=insert, 2=delete
+// (matching `DiffOp.type`); the unused index is -1.
 
 const EQ = 0;
 const INS = 1;
@@ -144,9 +141,8 @@ function decodeOps(flat: Int32Array): DiffOp[] {
 }
 
 /**
- * Ops for two sequences compared by text identity, at a granularity of the
- * caller's choosing: tokens here, whole lines in a unified diff. Indices
- * refer to the given arrays.
+ * Ops for two sequences compared by text identity, at a granularity of the caller's choosing:
+ * tokens here, whole lines in a unified diff. Indices refer to the given arrays.
  */
 export function myersDiff(
   oldTexts: readonly string[],
@@ -177,17 +173,16 @@ function diffRec(a: Int32Array, b: Int32Array, aOff: number, bOff: number, ops: 
 
   const [x, y, u, v] = findMiddleSnake(a, b);
 
-  // The search only fails to split when the middle of the optimal path is a
-  // zero-length snake at an endpoint, which happens exactly for a single edit
-  // at the very start or end (D <= 1). Recover those directly so the recursion
-  // always makes progress; everything else splits cleanly.
+  // The search only fails to split when the middle of the optimal path is a zero-length snake at
+  // an endpoint, which happens exactly for a single edit at the very start or end (D <= 1). Recover
+  // those directly so the recursion always makes progress; everything else splits cleanly.
   if (x === 0 && y === 0 && u === 0 && v === 0) {
     for (let i = 0; i < n; i++) ops.push(DEL, aOff + i, -1);
     for (let j = 0; j < m; j++) ops.push(INS, -1, bOff + j);
     return;
   }
-  // Single edit at the very end: matches are a common prefix, then the trailing
-  // edit (a side is empty after the prefix).
+  // Single edit at the very end: matches are a common prefix, then the trailing edit (a side is
+  // empty after the prefix).
   if (x === n && y === m) {
     const p = commonPrefixLen(a, b);
     for (let k = 0; k < p; k++) ops.push(EQ, aOff + k, bOff + k);
@@ -212,8 +207,8 @@ function diffRec(a: Int32Array, b: Int32Array, aOff: number, bOff: number, ops: 
 }
 
 /** Find a middle snake: a matched run `(x,y) -> (u,v)` on an optimal edit
- * path, with `a[x..u] == b[y..v]`. Forward search from `(0,0)`, reverse from
- * `(n,m)`, increasing `d` until they overlap. */
+ * path, with `a[x..u] == b[y..v]`. Forward search from `(0,0)`, reverse from `(n,m)`, increasing
+ * `d` until they overlap. */
 function findMiddleSnake(a: Int32Array, b: Int32Array): [number, number, number, number] {
   const n = a.length;
   const m = b.length;

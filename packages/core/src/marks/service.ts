@@ -1,8 +1,7 @@
 /**
- * Mark placement as an Effect service: resolve a selected text span against
- * a version's content, capture context, and store the mark through the
- * Files service's mark list. Mark-list storage and migration live on Files;
- * the pure resolver lives in resolver.ts.
+ * Mark placement as an Effect service: resolve a selected text span against a version's content,
+ * capture context, and store the mark through the Files service's mark list. Mark-list storage and
+ * migration live on Files; the pure resolver lives in resolver.ts.
  */
 
 import { Clock, Context, Effect, Layer } from "effect";
@@ -32,8 +31,8 @@ export function lineToOffset(content: string, line: number): number {
 
 export interface Interface {
   /**
-   * Place a mark on a text span of a file version. `marked: false` when the
-   * file or version is missing or the span is not found on that version.
+   * Place a mark on a text span of a file version. `marked: false` when the file or version is
+   * missing or the span is not found on that version.
    */
   mark(
     path: string,
@@ -45,8 +44,8 @@ export interface Interface {
 
 export class Marks extends Context.Service<Marks, Interface>()("@essayist/core/marks/Marks") {
   /** Requires the {@linkcode Files} service; compose with Files.layerNoDeps
-   * and Persistence.layerKv at the composition root. The workspace scope
-   * comes from the WorkspaceId tag at call time. */
+   * and Persistence.layerKv at the composition root. The workspace scope comes from the WorkspaceId
+   * tag at call time. */
   static readonly layerNoDeps: Layer.Layer<Marks, never, Files> = Layer.effect(
     Marks,
     Effect.gen(function* () {

@@ -1,10 +1,9 @@
 /**
- * Stores a value too large for one KV entry, where a single entry caps at
- * 64 KiB.
+ * Stores a value too large for one KV entry, where a single entry caps at 64 KiB.
  *
- * A value that fits is stored as one entry: a six-byte header, then the
- * bytes. A larger value is split across several keys under the same base
- * key, numbered by position so a scan returns them in order.
+ * A value that fits is stored as one entry: a six-byte header, then the bytes. A larger value is
+ * split across several keys under the same base key, numbered by position so a scan returns them
+ * in order.
  */
 
 import { sortBy } from "@std/collections";
@@ -113,8 +112,8 @@ type Found =
   | { chunked: true; key: Key; header: ChunkHeader };
 
 /**
- * Put back together every value written by this layer in a scan, and leave
- * the rest as they came. A value missing a chunk comes back with no bytes.
+ * Put back together every value written by this layer in a scan, and leave the rest as they came. A
+ * value missing a chunk comes back with no bytes.
  */
 export function assembleList(entries: readonly Entry[]): AssembledValue[] {
   const found = new Map<string, Found>();

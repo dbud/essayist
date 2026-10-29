@@ -1,7 +1,6 @@
 /**
- * Scenarios for the D1 wire encoding: keys round-trip through hex, byte
- * order equals tuple order, prefix ranges bracket exactly their children,
- * and CBOR values round-trip losslessly.
+ * Scenarios for the D1 wire encoding: keys round-trip through hex, byte order equals tuple order,
+ * prefix ranges bracket exactly their children, and CBOR values round-trip losslessly.
  */
 
 import { assertEquals } from "@std/assert";
@@ -37,8 +36,8 @@ test("byte order of the stored text equals tuple order", () => {
     ["cfgab"],
     ["d"],
   ];
-  // A deterministic shuffle to prove the ordering comes from the encoding,
-  // not from the input order.
+  // A deterministic shuffle to prove the ordering comes from the encoding, not from the input
+  // order.
   const shuffled = [
     ordered[5],
     ordered[0],
@@ -73,9 +72,8 @@ test("keyRange brackets exactly the prefix children", () => {
     const packed = packKey(key);
     return packed >= range.begin && packed < end;
   });
-  // Tuple children of ["cfg", "a"]. By byte order, a string continuation
-  // of the last part (the NUL in "a\0b") also lands inside, as in FDB and
-  // Deno KV; no key here contains a NUL in practice.
+  // Tuple children of ["cfg", "a"]. By byte order, a string continuation of the last part (the NUL
+  // in "a\0b") also lands inside, as in FDB and Deno KV; no key here contains a NUL in practice.
   assertEquals(inside, [
     ["cfg", "a"],
     ["cfg", "a", "z"],

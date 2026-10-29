@@ -1,9 +1,8 @@
 /**
- * Waits for an external script to be available, injecting a tag when the
- * page has not already rendered one. Resolves immediately when the global
- * the script defines is already present (e.g. island remount). Concurrent
- * calls for the same src share one promise; a failed load clears the cache
- * so a later call can retry.
+ * Waits for an external script to be available, injecting a tag when the page has not already
+ * rendered one. Resolves immediately when the global the script defines is already present (e.g.
+ * island remount). Concurrent calls for the same src share one promise; a failed load clears the
+ * cache so a later call can retry.
  */
 const pending = new Map<string, Promise<void>>();
 

@@ -90,8 +90,8 @@ export default function Editor({
   const contentEditable = useMemo(
     () => (
       <ContentEditable
-        // TODO -- Lexical doesn't seem to pass these attributes
-        // TODO -- extract setting to preferences
+        // TODO -- Lexical doesn't seem to pass these attributes TODO -- extract setting to
+        // preferences
         spellcheck="false"
         autocorrect="off"
         autocapitalize="off"

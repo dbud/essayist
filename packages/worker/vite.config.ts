@@ -5,8 +5,7 @@ import { cloudflare } from "@cloudflare/vite-plugin";
 import tailwindcss from "@tailwindcss/vite";
 import { defineConfig, type Plugin } from "vite";
 
-// Client entry files are build inputs by file name; pages without one
-// (login) get no script tag.
+// Client entry files are build inputs by file name; pages without one (login) get no script tag.
 const clientEntries = Object.fromEntries(
   readdirSync("src/client/pages")
     .filter((file) => file.endsWith(".tsx"))
@@ -28,9 +27,8 @@ function moduleBindings(environment: string, bindings: Record<string, string>): 
 
 export default defineConfig({
   plugins: [
-    // Specifiers the client environment re-binds to dependency-free
-    // modules, keeping server-only modules (happy-dom) out of the client
-    // graph.
+    // Specifiers the client environment re-binds to dependency-free modules, keeping server-only
+    // modules (happy-dom) out of the client graph.
     moduleBindings("client", {
       "#/editor/withDOM.ts": "./src/editor/withDOM.client.ts",
     }),

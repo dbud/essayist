@@ -32,8 +32,8 @@ export class HtmlSanitizer {
       ALLOWED_TAGS: this.#allowedTags(),
       ALLOWED_ATTR: ["class"],
     });
-    // Reparse as a full document: a fragment would leave top-level text
-    // nodes without an element parent, which breaks Lexical's DOM import.
+    // Reparse as a full document: a fragment would leave top-level text nodes without an element
+    // parent, which breaks Lexical's DOM import.
     return new DOMParser().parseFromString(clean, "text/html");
   }
 
@@ -54,10 +54,9 @@ export class HtmlSanitizer {
   }
 }
 
-// Lexical maps <s> to strikethrough but has no converter for <del> or
-// <strike>, so they are renamed before the allowlist runs. Anchors become
-// literal GitHub-style markdown link text, e.g. [label](https://example.com),
-// so pasted links stay plain text.
+// Lexical maps <s> to strikethrough but has no converter for <del> or <strike>, so they are
+// renamed before the allowlist runs. Anchors become literal GitHub-style markdown link text, e.g.
+// [label](https://example.com), so pasted links stay plain text.
 export function transformPastedHtml(body: ParentNode, doc: Document): void {
   for (const el of body.querySelectorAll("del, strike")) {
     const renamed = doc.createElement("s");

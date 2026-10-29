@@ -6,10 +6,9 @@ import type { ReviewTypes } from "#/reviews/graph.ts";
 const CONTENT = "content";
 
 /** Decompose a resolved review pass into a flow graph: a model-call node
- * per unit, with attempt units unrolling their mark subgraph behind gates.
- * Unit inputs stay symbolic (unit ids) until every unit is built; a final
- * pass resolves each unit to the node standing for the finished unit.
- * The source node and every apply node pin the review to one file
+ * per unit, with attempt units unrolling their mark subgraph behind gates. Unit inputs stay
+ * symbolic (unit ids) until every unit is built; a final pass resolves each unit to the node
+ * standing for the finished unit. The source node and every apply node pin the review to one file
  * version; a preview graph (pin omitted) carries an inert pin. */
 export function buildReviewGraph(
   pass: ResolvedReviewPass,

@@ -1,11 +1,11 @@
 /**
- * JSON values split across KV entries when a value does not fit in one, as
- * an Effect service.
+ * JSON values split across KV entries when a value does not fit in one, as an Effect service.
  *
- * A value that fits is stored as one entry: a six-byte header, then the
- * bytes. A larger value is split across several keys under the same base
- * key, numbered by position so a scan returns them in order.
+ * A value that fits is stored as one entry: a six-byte header, then the bytes. A larger value is
+ * split across several keys under the same base key, numbered by position so a scan returns them
+ * in order.
  *
+ * parfit-ignore
  * Key layout for `put(key, value)`:
  *   key            -> head chunk (framed header + first bytes)
  *   key, "c1"      -> second chunk
@@ -47,17 +47,16 @@ export interface StoredValue<T> {
 
 export interface Interface {
   /**
-   * Write a value, splitting it across entries when it does not fit. Chunks
-   * left over from a longer previous value are deleted, since they would
-   * otherwise be read back as part of this value.
+   * Write a value, splitting it across entries when it does not fit. Chunks left over from a longer
+   * previous value are deleted, since they would otherwise be read back as part of this value.
    */
   put(
     key: Key,
     value: unknown,
   ): Effect.Effect<void, PersistenceError | ConcurrentModificationError>;
   /**
-   * Read every value under a prefix, in key order. Fails with
-   * {@linkcode MissingChunksError} when a value is missing a chunk.
+   * Read every value under a prefix, in key order. Fails with {@linkcode MissingChunksError} when a
+   * value is missing a chunk.
    */
   list<T>(prefix: Key): Effect.Effect<StoredValue<T>[], PersistenceError | MissingChunksError>;
 }
@@ -77,8 +76,7 @@ export class ChunkedValues extends Context.Service<ChunkedValues, Interface>()(
         value: unknown,
       ): Effect.Effect<void, PersistenceError | ConcurrentModificationError> =>
         Effect.gen(function* () {
-          // Read the head before overwriting it, to learn how many chunks
-          // the previous value had.
+          // Read the head before overwriting it, to learn how many chunks the previous value had.
           const previous = yield* persistence.get<Uint8Array>(key);
           const chunks = planChunks(encoder.encode(JSON.stringify(value)));
           for (const chunk of chunks) {

@@ -6,9 +6,8 @@ import type { ReviewNodeEvent } from "#/reviews/graph.ts";
 import type { TraceEvent } from "./types.ts";
 
 /**
- * Log a trace event. Failures and model calls are logged at info, since a
- * prod run without a trace is the only record of them. Event content is
- * logged in full at debug.
+ * Log a trace event. Failures and model calls are logged at info, since a prod run without a trace
+ * is the only record of them. Event content is logged in full at debug.
  */
 export function logTraceEvent(event: TraceEvent): Effect.Effect<void> {
   switch (event.type) {

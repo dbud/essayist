@@ -17,28 +17,26 @@ export default function Sidenotes({ scrollContainerRef }: SidenotesProps) {
   const editor = activeEditor.value;
   const { scrollTop, viewportHeight } = sidenotes;
   const { heights, entries, viewportLayout, topGhost, bottomGhost } = sidenotes.current.value;
-  // Measure rendered sidenote heights for stacking. Re-measure when the
-  // entries change and on marks-column width changes. `entries` is independent
-  // of `heights`, so this can't cycle with its own output. Sidenotes stay
-  // visibility:hidden until measured so the unstacked first paint never shows
-  // overlap. Ghosts omit data-thread-id so they aren't measured.
+  // Measure rendered sidenote heights for stacking. Re-measure when the entries change and on
+  // marks-column width changes. `entries` is independent of `heights`, so this can't cycle with its
+  // own output. Sidenotes stay visibility:hidden until measured so the unstacked first paint never
+  // shows overlap. Ghosts omit data-thread-id so they aren't measured.
   const innerRef = useElementHeights<HTMLDivElement>(heights, {
     selector: "[data-thread-id]",
     key: "threadId",
     deps: [entries.value],
   });
 
-  // Sidenotes stay invisible until measured, and whenever they extend past
-  // a viewport edge, where the pinned ghost takes over. At exact edge
-  // alignment the regular sidenote wins: visible, with no ghost -- so a
-  // ghost click lands on the solid note.
+  // Sidenotes stay invisible until measured, and whenever they extend past a viewport edge, where
+  // the pinned ghost takes over. At exact edge alignment the regular sidenote wins: visible, with
+  // no ghost -- so a ghost click lands on the solid note.
   const isHidden = (v: SidenoteView) =>
     !heights.value.has(v.entry.mark.thread_id) ||
     (viewportHeight.value > 0 &&
       (v.top < scrollTop.value || v.top + v.height > scrollTop.value + viewportHeight.value));
 
-  // Ghost boxes in content coordinates; absent ghosts fall outside the
-  // panel derivation via infinities.
+  // Ghost boxes in content coordinates; absent ghosts fall outside the panel derivation via
+  // infinities.
   const topGhostHeight = topGhost.value
     ? (heights.value.get(topGhost.value.entry.mark.thread_id) ?? 0)
     : 0;
@@ -52,11 +50,10 @@ export default function Sidenotes({ scrollContainerRef }: SidenotesProps) {
     ? scrollTop.value + viewportHeight.value - bottomGhostHeight
     : Number.POSITIVE_INFINITY;
 
-  // Paper panel behind the fully-visible sidenotes: it spans from the first
-  // visible note (or the head of the bottom ghost, when it pokes above) to
-  // the last visible note (or the tail of the top ghost, when it hangs
-  // below), and occludes the ghost parts in between. The edge-anchored
-  // parts of the ghosts outside the panel stay visible.
+  // Paper panel behind the fully-visible sidenotes: it spans from the first visible note (or the
+  // head of the bottom ghost, when it pokes above) to the last visible note (or the tail of the top
+  // ghost, when it hangs below), and occludes the ghost parts in between. The edge-anchored parts
+  // of the ghosts outside the panel stay visible.
   const visible = viewportLayout.value.filter((v) => !isHidden(v));
   const first = visible.at(0);
   const last = visible.at(-1);
@@ -67,13 +64,13 @@ export default function Sidenotes({ scrollContainerRef }: SidenotesProps) {
   );
   const hasPanel = panelTop < panelBottom;
 
-  // The panel casts a shadow onto a ghost only while its edge sits inside
-  // the box of that ghost (partial coverage).
+  // The panel casts a shadow onto a ghost only while its edge sits inside the box of that ghost
+  // (partial coverage).
   const coversTopGhost = hasPanel && panelTop < topGhostBottom;
   const coversBottomGhost = hasPanel && panelBottom > bottomGhostTop;
 
-  // Partial occlusion of each ghost (0..1): drives the fade of the ghost
-  // and the panel shadow intensity.
+  // Partial occlusion of each ghost (0..1): drives the fade of the ghost and the panel shadow
+  // intensity.
   const topOcclusion =
     topGhost.value && hasPanel ? clamp((topGhostBottom - panelTop) / topGhostHeight) : 0;
   const bottomOcclusion =

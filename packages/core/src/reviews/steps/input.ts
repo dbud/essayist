@@ -14,8 +14,8 @@ export function renderPrompt(body: string, variables?: Record<string, string>): 
 }
 
 /**
- * The unit's allowed mark labels, with descriptions, as a prompt section;
- * undefined for units that place no marks.
+ * The unit's allowed mark labels, with descriptions, as a prompt section; undefined for units that
+ * place no marks.
  */
 export function renderCategories(categories: readonly Category[]): string | undefined {
   if (categories.length === 0) return undefined;
@@ -29,9 +29,8 @@ export function renderCategories(categories: readonly Category[]): string | unde
   );
 }
 
-// One renderer per artifact type: how the artifact reads inside a model
-// call input. Exhaustive over the vocabulary, so a new artifact type
-// cannot reach a prompt without a rendering.
+// One renderer per artifact type: how the artifact reads inside a model call input. Exhaustive over
+// the vocabulary, so a new artifact type cannot reach a prompt without a rendering.
 const ARTIFACT_RENDERERS = {
   content: renderContent,
   analysis: renderAnalysis,
@@ -110,8 +109,8 @@ function renderAttemptList(
 }
 
 /** Build the input of a model call: the unit's prompts followed by the
- * rendered dependency artifacts in dependsOn order. The adapter wires the
- * essay last, so it anchors the prompt. */
+ * rendered dependency artifacts in dependsOn order. The adapter wires the essay last, so it anchors
+ * the prompt. */
 export function composeCallInput(prompts: ResolvedPrompts, inputs: Artifacts<ReviewTypes>): string {
   return joinBlocks(
     prompts.system,
@@ -130,8 +129,8 @@ const REPAIR_PREAMBLE = [
 ];
 
 /** Build the input of a repair call: system prompt and instructions, then
- * a context window around each failed attempt. The full essay is not
- * included; each window carries its slice of it. */
+ * a context window around each failed attempt. The full essay is not included; each window carries
+ * its slice of it. */
 export function composeRepairInput(
   prompts: ResolvedPrompts,
   inputs: Artifacts<ReviewTypes>,

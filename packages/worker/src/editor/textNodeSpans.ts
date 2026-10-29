@@ -3,11 +3,10 @@ import { assert } from "@std/assert/assert";
 import type { LexicalNode, TextNode } from "lexical";
 import { $getRoot, $isElementNode, $isTextNode } from "lexical";
 
-// Chars `@lexical/markdown` escapes with a `\` prefix in non-code text nodes.
-// `/g` for `.replace`; use `HAS_ESCAPE` for `.test`.
+// Chars `@lexical/markdown` escapes with a `\` prefix in non-code text nodes. `/g` for `.replace`;
+// use `HAS_ESCAPE` for `.test`.
 const ESCAPE_SET = /([*_`~\\])/g;
-// Non-global form of `ESCAPE_SET` for stateless `.test` (single-char and
-// "contains any" checks).
+// Non-global form of `ESCAPE_SET` for stateless `.test` (single-char and "contains any" checks).
 const HAS_ESCAPE = /[*_`~\\]/;
 
 /**
@@ -29,10 +28,9 @@ export interface NodeRange {
 /**
  * Maps a Lexical TextNode to a substring of the exported markdown.
  *
- * `text` is the editor-space text. `offset` is the markdown-space index where
- * the node's footprint begins. `markdown` is the markdown-space form of `text`
- * -- what the export wrote at `offset` -- stored only when it differs from
- * `text` (non-code prose containing an escape-set char).
+ * `text` is the editor-space text. `offset` is the markdown-space index where the node's footprint
+ * begins. `markdown` is the markdown-space form of `text` -- what the export wrote at `offset` --
+ * stored only when it differs from `text` (non-code prose containing an escape-set char).
  */
 export interface TextNodeSpan {
   key: string;
@@ -47,9 +45,8 @@ export interface Span {
 }
 
 /**
- * Walks the active tree (`$getRoot()`) and maps each TextNode to its position
- * in the exported markdown. Runs in a $-context, so during `editor.update` it
- * sees the in-flight (mutated) state.
+ * Walks the active tree (`$getRoot()`) and maps each TextNode to its position in the exported
+ * markdown. Runs in a $-context, so during `editor.update` it sees the in-flight (mutated) state.
  */
 export function $collectTextNodeSpans(content: string): TextNodeSpan[] {
   const spans: TextNodeSpan[] = [];
@@ -77,10 +74,9 @@ export function $collectTextNodeSpans(content: string): TextNodeSpan[] {
 }
 
 /**
- * Finds the TextNode and local editor offset for a markdown-space offset.
- * Binary search on the sorted spans -- O(log n). An offset in a gap between
- * spans (markdown syntax like `#`, `>`, `**`) snaps to the nearest valid text
- * position: end of the preceding span or start of the next.
+ * Finds the TextNode and local editor offset for a markdown-space offset. Binary search on the
+ * sorted spans -- O(log n). An offset in a gap between spans (markdown syntax like `#`, `>`, `**`)
+ * snaps to the nearest valid text position: end of the preceding span or start of the next.
  */
 export function findPosition(spans: TextNodeSpan[], offset: number): NodePosition | null {
   if (spans.length === 0) return null;
@@ -106,9 +102,8 @@ export function findPosition(spans: TextNodeSpan[], offset: number): NodePositio
   const markdown = span.markdown ?? span.text;
   const mdLocal = offset - span.offset;
 
-  // Past the markdown range of this span and into a gap. Snap to the start
-  // of the next span if available, otherwise caret after the last char of
-  // this span.
+  // Past the markdown range of this span and into a gap. Snap to the start of the next span if
+  // available, otherwise caret after the last char of this span.
   if (mdLocal > markdown.length) {
     if (candidate + 1 < spans.length) {
       return { key: spans[candidate + 1].key, offset: 0 };
@@ -122,13 +117,12 @@ export function findPosition(spans: TextNodeSpan[], offset: number): NodePositio
 }
 
 /**
- * Inverse of `findPosition`: maps a NodePosition to its markdown-space offset,
- * or null when the position isn't on a tracked TextNode (e.g. an element/root
- * selection), so callers can fall back to a clone.
+ * Inverse of `findPosition`: maps a NodePosition to its markdown-space offset, or null when the
+ * position isn't on a tracked TextNode (e.g. an element/root selection), so callers can fall back
+ * to a clone.
  *
- * A caret "before X" round-trips to the markdown offset of `X` (skipping the
- * `\` of `\X`), so editor offsets map back to the visible char, not the
- * escape prefix.
+ * A caret "before X" round-trips to the markdown offset of `X` (skipping the `\` of `\X`), so
+ * editor offsets map back to the visible char, not the escape prefix.
  */
 export function positionToOffset(
   spans: TextNodeSpan[],
@@ -141,8 +135,7 @@ export function positionToOffset(
 }
 
 /**
- * Converts a content offset range to a NodeRange.
- * Returns null only if there are no spans at all.
+ * Converts a content offset range to a NodeRange. Returns null only if there are no spans at all.
  */
 export function findRange(spans: TextNodeSpan[], { offset, length }: Span): NodeRange {
   // findPosition never returns null when spans is non-empty
@@ -159,10 +152,9 @@ export function findRange(spans: TextNodeSpan[], { offset, length }: Span): Node
 }
 
 /**
- * Converts a markdown-space local offset to an editor-space local offset,
- * walking `\X` escapes. Each `\X` is 2 markdown chars / 1 editor char. A
- * target landing on the `X` (between `\` and `X`) maps to "before X" -- the
- * `\` has no editor char. Inverse of `editorOffsetToMarkdown`.
+ * Converts a markdown-space local offset to an editor-space local offset, walking `\X` escapes.
+ * Each `\X` is 2 markdown chars / 1 editor char. A target landing on the `X` (between `\` and `X`)
+ * maps to "before X" -- the `\` has no editor char. Inverse of `editorOffsetToMarkdown`.
  */
 function markdownOffsetToEditor(markdown: string, mOffset: number): number {
   let m = 0; // markdown offset
@@ -185,8 +177,8 @@ function markdownOffsetToEditor(markdown: string, mOffset: number): number {
 }
 
 /**
- * Inverse of `markdownOffsetToEditor`. A caret "before X" maps to the markdown
- * offset of `X` (skipping the `\`), not the escape prefix.
+ * Inverse of `markdownOffsetToEditor`. A caret "before X" maps to the markdown offset of `X`
+ * (skipping the `\`), not the escape prefix.
  */
 function editorOffsetToMarkdown(markdown: string, eOffset: number): number {
   let m = 0;
@@ -211,9 +203,9 @@ function* $walkTextNodes(
   node: LexicalNode,
   inCode = false,
 ): Generator<{ node: TextNode; inCode: boolean }> {
-  // Block code (`CodeNode`) is emitted raw by the export -- no escaping -- so
-  // every text node under it is code-context. Inline code is a `TextNode` with
-  // the `code` format flag (not under a `CodeNode`); folded into `inCode` below.
+  // Block code (`CodeNode`) is emitted raw by the export -- no escaping -- so every text node
+  // under it is code-context. Inline code is a `TextNode` with the `code` format flag (not under a
+  // `CodeNode`); folded into `inCode` below.
   if ($isCodeNode(node)) inCode = true;
   if ($isTextNode(node)) {
     yield { node, inCode: inCode || node.hasFormat("code") };

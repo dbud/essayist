@@ -18,8 +18,8 @@ import {
 } from "./textNodeSpans.ts";
 
 /**
- * Creates a Lexical RangeSelection from a NodeRange, preserving direction
- * (anchor then focus). Must run inside a reactive/update ($-) context.
+ * Creates a Lexical RangeSelection from a NodeRange, preserving direction (anchor then focus). Must
+ * run inside a reactive/update ($-) context.
  */
 export function $createSelection(range: NodeRange): RangeSelection {
   const selection = $createRangeSelection();
@@ -29,11 +29,11 @@ export function $createSelection(range: NodeRange): RangeSelection {
 }
 
 /**
- * Saved selection captured before a mutation that may reshuffle TextNodes
- * (e.g. wrapping a range in a MarkNode).
+ * Saved selection captured before a mutation that may reshuffle TextNodes (e.g. wrapping a range in
+ * a MarkNode).
  *
- * - `selection`: clone of the original, used as a fallback.
- * - `anchor`/`focus`: absolute markdown offsets, null for non-text endpoints.
+ * - `selection`: clone of the original, used as a fallback. - `anchor`/`focus`: absolute markdown
+ * offsets, null for non-text endpoints.
  */
 export interface SavedSelection {
   selection: BaseSelection | null;
@@ -42,8 +42,7 @@ export interface SavedSelection {
 }
 
 /**
- * Captures the current selection as a clone plus absolute markdown offsets.
- * Runs in a $-context.
+ * Captures the current selection as a clone plus absolute markdown offsets. Runs in a $-context.
  */
 export function $saveSelection(spans: TextNodeSpan[]): SavedSelection {
   const selection = $getSelection();
@@ -75,26 +74,24 @@ export function $saveSelection(spans: TextNodeSpan[]): SavedSelection {
 }
 
 /**
- * Restores a selection saved by `$saveSelection` after a mutation. Runs in a
- * $-context, in the same update that performed the mutation.
+ * Restores a selection saved by `$saveSelection` after a mutation. Runs in a $-context, in the same
+ * update that performed the mutation.
  *
- * Re-resolves the saved offsets against the post-mutation tree by walking
- * `$getRoot()` (the in-flight state), not `editor.getEditorState()` (committed,
- * pre-mutation mid-update). Pass `content` when the caller already has the
- * markdown to avoid recomputing it; otherwise it's derived from the tree.
+ * Re-resolves the saved offsets against the post-mutation tree by walking `$getRoot()` (the in-
+ * flight state), not `editor.getEditorState()` (committed, pre-mutation mid-update). Pass `content`
+ * when the caller already has the markdown to avoid recomputing it; otherwise it's derived from
+ * the tree.
  *
- * When the saved offsets are missing (an endpoint wasn't on a tracked text
- * node, or its key went stale after a mark (re)wrap), falls back to the cloned
- * selection -- unless that clone is itself a text selection, in which case its
- * (key, offset) may no longer be valid against the mutated tree and restoring
- * it could set an out-of-bounds offset. That only happens in the rare case
- * where an apply runs before onChange refreshes the spans, so the selection is
- * dropped rather than risk a crash.
+ * When the saved offsets are missing (an endpoint wasn't on a tracked text node, or its key went
+ * stale after a mark (re)wrap), falls back to the cloned selection -- unless that clone is itself
+ * a text selection, in which case its (key, offset) may no longer be valid against the mutated
+ * tree and restoring it could set an out-of-bounds offset. That only happens in the rare case where
+ * an apply runs before onChange refreshes the spans, so the selection is dropped rather than risk
+ * a crash.
  *
  * Carries the saved selection's format and style onto the rebuilt selection:
- * $createRangeSelection() starts at format 0, so restoring by offsets alone
- * would drop a collapsed caret's toggled format (italic, bold, code) on every
- * re-mark.
+ * $createRangeSelection() starts at format 0, so restoring by offsets alone would drop a collapsed
+ * caret's toggled format (italic, bold, code) on every re-mark.
  */
 export function $restoreSelection(saved: SavedSelection, content?: string): void {
   const clone = saved.selection;

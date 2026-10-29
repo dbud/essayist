@@ -8,10 +8,10 @@ import {
 } from "lexical";
 
 /**
- * The MarkNodes "at" the selection anchor, in priority order: the mark(s) on
- * the anchor's ancestor chain (innermost first), then any neighbouring mark
- * Lexical normalized the caret onto at a boundary (previous sibling at offset
- * 0, next sibling at offset textLength). Empty when the caret is in no mark.
+ * The MarkNodes "at" the selection anchor, in priority order: the mark(s) on the anchor's ancestor
+ * chain (innermost first), then any neighbouring mark Lexical normalized the caret onto at a
+ * boundary (previous sibling at offset 0, next sibling at offset textLength). Empty when the caret
+ * is in no mark.
  */
 function $marksAtAnchor(): MarkNode[] {
   const selection = $getSelection();
@@ -56,9 +56,9 @@ export function $markIdsAtAnchor(): Set<string> {
 }
 
 /**
- * The innermost mark thread id at the anchor, or null when none. Segments
- * store ids outer-first / inner-last (see `segmentMarks`), so the innermost
- * mark is the last id on the innermost segment at the anchor.
+ * The innermost mark thread id at the anchor, or null when none. Segments store ids outer-first /
+ * inner-last (see `segmentMarks`), so the innermost mark is the last id on the innermost segment at
+ * the anchor.
  */
 export function $innerMarkIdAtAnchor(): string | null {
   const [mark, _] = $marksAtAnchor();

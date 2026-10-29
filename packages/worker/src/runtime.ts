@@ -38,9 +38,8 @@ interface RuntimeCell {
 
 const cells = new Map<WorkerEnv, RuntimeCell>();
 
-// One cell per env snapshot. env() memoizes the snapshot per isolate, so
-// a cell builds once per isolate: its layer, its runtime, and the D1
-// client inside the layer.
+// One cell per env snapshot. env() memoizes the snapshot per isolate, so a cell builds once per
+// isolate: its layer, its runtime, and the D1 client inside the layer.
 function cell(env: WorkerEnv): RuntimeCell {
   return cells.getOrInsertComputed(env, (e) => {
     const layer: RuntimeLayer = Layer.unwrap(

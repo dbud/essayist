@@ -1,6 +1,5 @@
 /**
- * The site session cookie and the middleware that resolves
- * `auth-user` per request.
+ * The site session cookie and the middleware that resolves `auth-user` per request.
  */
 
 import { AuthStore, type User, Workspaces } from "@essayist/core";
@@ -18,8 +17,7 @@ declare module "hono" {
   }
 }
 
-// The store TTL is the lifetime authority; a cookie without a live
-// session row resolves to no user.
+// The store TTL is the lifetime authority; a cookie without a live session row resolves to no user.
 const SESSION_TTL_SECONDS = 90 * 24 * 60 * 60;
 
 /** The cookie name: `__Host-` prefixed on https, plain otherwise. */
@@ -62,9 +60,8 @@ function isAuthRoute(path: string): boolean {
 }
 
 /**
- * Resolves `auth-user` and `auth-session-id` from the site session
- * cookie when one is present. Does not enforce: routes decide how to
- * treat an anonymous request.
+ * Resolves `auth-user` and `auth-session-id` from the site session cookie when one is present. Does
+ * not enforce: routes decide how to treat an anonymous request.
  */
 export const resolveSession: MiddlewareHandler = async (c, next) => {
   const path = new URL(c.req.url).pathname;

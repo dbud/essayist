@@ -1,5 +1,5 @@
-// The client transport shared by model actions. Responses are cast: the api tier validates its
-// own outputs against the same schemas.
+// The client transport shared by model actions. Responses are cast: the api tier validates its own
+// outputs against the same schemas.
 
 export interface JsonResponse<T> {
   readonly ok: boolean;

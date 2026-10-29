@@ -16,9 +16,9 @@ export interface MarkBand {
 }
 
 /**
- * Color + band order for each id in a segment. `ids` are thread ids in segment
- * order (outer/earliest mark first -> band 0). A missing mark (transient) has
- * no label, so it falls back to ink.
+ * Color + band order for each id in a segment. `ids` are thread ids in segment order
+ * (outer/earliest mark first -> band 0). A missing mark (transient) has no label, so it falls back
+ * to ink.
  */
 export function assignBands(
   marks: ReadonlyMap<string, Mark>,

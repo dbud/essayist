@@ -17,8 +17,8 @@ export const SidenotesByPathModel = createModel(
 
     const sidenotes = signal(new Map<string, Sidenotes>());
 
-    // Inert stand-in while no file is selected: no editor exists to measure,
-    // so its positions stay empty and nothing writes to it.
+    // Inert stand-in while no file is selected: no editor exists to measure, so its positions stay
+    // empty and nothing writes to it.
     const inert = new SidenotesModel(
       { wsId: "", path: "", versionId: "" },
       {

@@ -26,8 +26,8 @@ export interface UserInput extends UserProfile {
 }
 
 /**
- * Membership role within a workspace. `owner` >= `editor`: an owner can do
- * everything an editor can, plus manage members and delete the workspace.
+ * Membership role within a workspace. `owner` >= `editor`: an owner can do everything an editor
+ * can, plus manage members and delete the workspace.
  */
 export type Role = "owner" | "editor";
 
@@ -59,8 +59,7 @@ export class UserEmailTakenError extends Schema.TaggedError<UserEmailTakenError>
 }
 
 /**
- * An operation would leave a workspace with no owner
- * (removing or demoting the last owner).
+ * An operation would leave a workspace with no owner (removing or demoting the last owner).
  */
 export class LastOwnerError extends Schema.TaggedError<LastOwnerError>()("LastOwnerError", {
   wsId: Schema.String,

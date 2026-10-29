@@ -1,9 +1,9 @@
 /**
  * Chunked content storage for the VFS.
  *
- * Deno Deploy KV caps a single value at 64 KiB. The first chunk is always
- * inlined in the manifest; additional chunks (if any) are stored as separate
- * KV keys. Chunks never split a multi-byte UTF-8 sequence.
+ * Deno Deploy KV caps a single value at 64 KiB. The first chunk is always inlined in the manifest;
+ * additional chunks (if any) are stored as separate KV keys. Chunks never split a multi-byte UTF-
+ * 8 sequence.
  */
 
 /** Chunk byte size; under the 64 KiB value limit of KV with headroom for manifest metadata. */
@@ -24,7 +24,8 @@ export interface ChunkedContent {
   extraChunks: Uint8Array[];
 }
 
-/** Split into UTF-8 byte chunks of at most `maxBytes`, never inside a multi-byte sequence. Empty input returns `[]`. */
+/** Split into UTF-8 byte chunks of at most `maxBytes`, never inside a multi-byte sequence. Empty
+/** input returns `[]`. */
 export function splitContent(content: string, maxBytes: number = CHUNK_SIZE): Uint8Array[] {
   const bytes = new TextEncoder().encode(content);
   const chunks: Uint8Array[] = [];
@@ -62,9 +63,8 @@ export function reassemble(manifest: ContentManifest, extraChunks: Uint8Array[])
 }
 
 /**
- * Split content into a manifest (chunk 0 inlined) plus extra chunks to write
- * as separate keys. Atomic: the manifest and extra chunks come from the same
- * split, so they can't diverge.
+ * Split content into a manifest (chunk 0 inlined) plus extra chunks to write as separate keys.
+ * Atomic: the manifest and extra chunks come from the same split, so they can't diverge.
  */
 export function chunkContent(content: string, maxBytes: number = CHUNK_SIZE): ChunkedContent {
   const chunks = splitContent(content, maxBytes);

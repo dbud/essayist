@@ -1,6 +1,6 @@
 /**
- * Cross-file text search as an Effect service: regex and literal search
- * over the files of one workspace, backed by the Files service.
+ * Cross-file text search as an Effect service: regex and literal search over the files of one
+ * workspace, backed by the Files service.
  */
 
 import { Context, Effect, Layer } from "effect";
@@ -13,8 +13,8 @@ import type { WorkspaceId } from "#/workspace/WorkspaceId.ts";
 
 export interface Interface {
   /**
-   * Search the workspace's files for a regex pattern, at most `maxResults`
-   * matches overall. An invalid regex falls back to a literal match.
+   * Search the workspace's files for a regex pattern, at most `maxResults` matches overall. An
+   * invalid regex falls back to a literal match.
    */
   grep(
     pattern: string,
@@ -29,8 +29,8 @@ export interface Interface {
 
 export class Search extends Context.Service<Search, Interface>()("@essayist/core/search/Search") {
   /** Requires the {@linkcode Files} service; compose with Files.layerNoDeps
-   * and Persistence.layerKv at the composition root. The workspace scope
-   * comes from the WorkspaceId tag at call time. */
+   * and Persistence.layerKv at the composition root. The workspace scope comes from the WorkspaceId
+   * tag at call time. */
   static readonly layerNoDeps: Layer.Layer<Search, never, Files> = Layer.effect(
     Search,
     Effect.gen(function* () {

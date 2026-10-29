@@ -1,8 +1,7 @@
 /**
- * The structured-output instructions the models read: a schema's shape
- * rendered as pseudocode, plus an optional example, and fence stripping for
- * replies. The walker reads the schema's AST directly, so the prompt text
- * changes only when a schema's shape changes.
+ * The structured-output instructions the models read: a schema's shape rendered as pseudocode, plus
+ * an optional example, and fence stripping for replies. The walker reads the schema's AST directly,
+ * so the prompt text changes only when a schema's shape changes.
  */
 
 import { Schema, SchemaAST } from "effect";
@@ -11,9 +10,8 @@ type Ast = SchemaAST.AST;
 type Annotations = Schema.Annotations.Documentation<Schema.Json>;
 
 function annotationsOf(ast: Ast): Annotations {
-  // Resolved the way Effect does: a checked schema (Int, bounded numbers)
-  // keeps its annotations on the last check; unchecked ones keep them on the
-  // node.
+  // Resolved the way Effect does: a checked schema (Int, bounded numbers) keeps its annotations on
+  // the last check; unchecked ones keep them on the node.
   const resolved =
     ast.checks !== undefined && ast.checks.length > 0
       ? ast.checks[ast.checks.length - 1].annotations
@@ -22,8 +20,8 @@ function annotationsOf(ast: Ast): Annotations {
 }
 
 /** A check marking whole numbers, the way `Schema.Int` carries one. The id
- * is the check's stable identity marker, matched the same way Effect's own
- * encoders and JSON projection match it. */
+ * is the check's stable identity marker, matched the same way Effect's own encoders and JSON
+ * projection match it. */
 function isInt(ast: Ast): boolean {
   return hasIntCheck(ast.checks ?? []);
 }
@@ -81,8 +79,8 @@ function isNullable(ast: Ast): boolean {
 }
 
 /** The literal prefix and scalar type of a field whose whole type is
- * literals: `Schema.Literal`, alone or unioned (as `Schema.Literals`
- * builds it). `Null` members may join; nullability reports separately. */
+ * literals: `Schema.Literal`, alone or unioned (as `Schema.Literals` builds it). `Null` members may
+ * join; nullability reports separately. */
 function literalParts(ast: Ast): string[] | undefined {
   if (SchemaAST.isLiteral(ast)) {
     return [`literal ${formatValue(ast.literal)}`, typeof ast.literal];
@@ -135,8 +133,8 @@ function describeField(sig: SchemaAST.PropertySignature, ast: Ast, indent: strin
     parts.push(`default: ${formatValue(annotations.default)}`);
   }
 
-  // The description reads after the type, separated by a marker that cannot
-  // appear in prose, so a sentence never runs into a type.
+  // The description reads after the type, separated by a marker that cannot appear in prose, so a
+  // sentence never runs into a type.
   const type = parts.join(", ");
   const described = annotations.description ? `${type} -- ${annotations.description}` : type;
   return [`${indent}- ${sig.name as string}: ${described}`, ...nestedFieldsOf(ast, indent)];

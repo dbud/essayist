@@ -10,8 +10,8 @@ const scoped = <A, E, R>(
   wsId: string,
 ): Effect.Effect<A, E, R> => Effect.provideService(effect, WorkspaceId, { wsId });
 
-// A per-workspace companion file: its name and content derive from the
-// workspace, so content on screen identifies the workspace it came from.
+// A per-workspace companion file: its name and content derive from the workspace, so content on
+// screen identifies the workspace it came from.
 const notesPath = (wsName: string): string => {
   const slug =
     wsName
@@ -70,8 +70,8 @@ export const seedDemo = new Command<KvctlGlobals>()
         );
       }
 
-      // Seed files only for a workspace that lacks them: the essay (with
-      // marks, fresh essay only) plus the per-workspace notes file.
+      // Seed files only for a workspace that lacks them: the essay (with marks, fresh essay only)
+      // plus the per-workspace notes file.
       const files = await runtime.runPromise(
         Effect.orDie(
           scoped(

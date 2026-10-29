@@ -1,6 +1,6 @@
 export interface MeasureContext {
-  // Viewport rect of the offsetParent of the root; positions are reported in
-  // this space (same as offsetTop/offsetLeft).
+  // Viewport rect of the offsetParent of the root; positions are reported in this space (same as
+  // offsetTop/offsetLeft).
   containerRect: DOMRect;
   doc: Document;
 }
@@ -20,9 +20,8 @@ export function hasRect(rect: DOMRect | null): rect is DOMRect {
   return rect !== null && (rect.top !== 0 || rect.height !== 0);
 }
 
-// Last line rect of the content of `el`. getClientRects on the full range,
-// since the rect of a collapsed range is zero-height. null if no laid-out
-// content.
+// Last line rect of the content of `el`. getClientRects on the full range, since the rect of a
+// collapsed range is zero-height. null if no laid-out content.
 export function contentEndRect(el: HTMLElement, doc: Document): DOMRect | null {
   const range = doc.createRange();
   range.selectNodeContents(el);
@@ -41,10 +40,9 @@ export function charRectAt(text: Text, index: number, doc: Document): DOMRect | 
   return rect.height > 0 ? rect : null;
 }
 
-// Resolve a selection point to an equivalent point inside a text node, so a
-// collapsed range there has a line-box: a caret on an element (e.g. a mark
-// after a join) sits at an element boundary, whose range is zero-height. null
-// for a truly empty block.
+// Resolve a selection point to an equivalent point inside a text node, so a collapsed range there
+// has a line-box: a caret on an element (e.g. a mark after a join) sits at an element boundary,
+// whose range is zero-height. null for a truly empty block.
 export function resolveTextPoint(
   node: Node,
   offset: number,
@@ -83,8 +81,7 @@ function lastTextDescendant(node: Node, doc: Document): Text | null {
   return last;
 }
 
-// Nearest ancestor with a non-zero rect, for a block with no line-box (e.g. an
-// empty paragraph).
+// Nearest ancestor with a non-zero rect, for a block with no line-box (e.g. an empty paragraph).
 export function elementRectFallback(node: Node, doc: Document): DOMRect | null {
   let el: Element | null =
     node.nodeType === doc.ELEMENT_NODE ? (node as Element) : node.parentElement;
@@ -96,9 +93,8 @@ export function elementRectFallback(node: Node, doc: Document): DOMRect | null {
   return null;
 }
 
-// Rect of the element child adjacent to a caret with no neighbouring text -- the
-// single line it occupies. The element fallback would otherwise return the
-// whole containing block.
+// Rect of the element child adjacent to a caret with no neighbouring text -- the single line it
+// occupies. The element fallback would otherwise return the whole containing block.
 export function adjacentElementRect(node: Node, offset: number, doc: Document): DOMRect | null {
   if (node.nodeType !== doc.ELEMENT_NODE) return null;
   const children = (node as Element).childNodes;
@@ -115,8 +111,8 @@ export function adjacentElementRect(node: Node, offset: number, doc: Document): 
   return null;
 }
 
-// Collapsed range at `offset` in `el`'s first text child, or `el`'s own rect if
-// it has none, so a zero-length mark still anchors at the paragraph.
+// Collapsed range at `offset` in `el`'s first text child, or `el`'s own rect if it has none, so a
+// zero-length mark still anchors at the paragraph.
 export function textPointRect(el: HTMLElement, offset: number, doc: Document): DOMRect {
   const textNode = el.firstChild;
   if (textNode === null || textNode.nodeType !== doc.TEXT_NODE) {

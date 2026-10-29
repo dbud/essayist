@@ -1,8 +1,7 @@
 import { useEffect, useRef } from "preact/hooks";
 
 /** Toggle overflow:visible on the clip after open transitions settle, and
- *  on mount if already open. Clear it on close so content clips during the
- *  collapse animation. */
+ * on mount if already open. Clear it on close so content clips during the collapse animation. */
 export function usePaneClip(
   open: boolean,
   transitionProp: "grid-template-rows" | "grid-template-columns",

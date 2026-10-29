@@ -1,6 +1,6 @@
 /**
- * Per-user server-side state as an Effect service: the user's most recent
- * selection and, over time, other cross-device preferences.
+ * Per-user server-side state as an Effect service: the user's most recent selection and, over time,
+ * other cross-device preferences.
  */
 
 import { Context, Effect, Layer } from "effect";
@@ -11,6 +11,7 @@ import {
   type PersistenceError,
 } from "#/persistence/mod.ts";
 
+// parfit-ignore
 // Key layout:
 //   ["user_state", userId, "workspace"]      -> { wsId }
 //   ["user_state", userId, "file", wsId]     -> { path }

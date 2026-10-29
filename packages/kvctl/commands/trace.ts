@@ -7,9 +7,8 @@ import { withStore } from "#/kv.ts";
 import { pprint } from "#/utils/pprint.ts";
 
 /**
- * Print a run's trace as reassembled events, so the events can be piped to
- * jq. Chunked values are joined back into whole events, which `explore` shows
- * as raw bytes.
+ * Print a run's trace as reassembled events, so the events can be piped to jq. Chunked values are
+ * joined back into whole events, which `explore` shows as raw bytes.
  */
 export const trace = new Command<KvctlGlobals>()
   .description("Print a run's trace, one JSON event per document.")

@@ -1,6 +1,6 @@
 /**
- * Pure grep matching: line matches with before/after context, the
- * literal-escape fallback for invalid regexes, and the default context span.
+ * Pure grep matching: line matches with before/after context, the literal-escape fallback for
+ * invalid regexes, and the default context span.
  */
 
 /** How many context lines surround each match. */

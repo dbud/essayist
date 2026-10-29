@@ -1,11 +1,10 @@
 /**
- * A `D1Database`-shaped adapter over the Cloudflare D1 REST API, for node
- * runtimes without a binding (kvctl). Single statements bind params
- * natively; a batch joins statements with `;` in one /query call, which is
- * all-or-nothing, and the REST API forbids params across statements, so a
- * batch carries its params inlined as literals. That is sound for this
- * table's params by construction: fdb-tuple hex keys, CBOR base64 values,
- * and version counters share no string metacharacters.
+ * A `D1Database`-shaped adapter over the Cloudflare D1 REST API, for node runtimes without a
+ * binding (kvctl). Single statements bind params natively; a batch joins statements with `;` in
+ * one /query call, which is all-or-nothing, and the REST API forbids params across statements,
+ * so a batch carries its params inlined as literals. That is sound for this table's params by
+ * construction: fdb-tuple hex keys, CBOR base64 values, and version counters share no string
+ * metacharacters.
  */
 
 import type { D1Database, D1PreparedStatement } from "@cloudflare/workers-types";

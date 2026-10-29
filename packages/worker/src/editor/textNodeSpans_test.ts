@@ -34,8 +34,8 @@ function importMarkdown(md: string): EditorState {
   return editor.getEditorState();
 }
 
-// Committed-state counterpart to `$collectTextNodeSpans` for tests outside an
-// update. Takes the already-exported markdown.
+// Committed-state counterpart to `$collectTextNodeSpans` for tests outside an update. Takes the
+// already-exported markdown.
 function buildTextNodeSpans(state: EditorState, content: string): TextNodeSpan[] {
   return state.read(() => $collectTextNodeSpans(content));
 }
@@ -61,8 +61,8 @@ test("buildTextNodeSpans -- heading syntax chars snap to nearest text", () => {
   assert(heading);
   assertEquals(heading.offset, 2);
 
-  // Offset 0 ("#") and 1 (" ") are in the gap before the heading text.
-  // They snap to the start of the first span.
+  // Offset 0 ("#") and 1 (" ") are in the gap before the heading text. They snap to the start of
+  // the first span.
   const pos0 = findPosition(spans, 0);
   assert(pos0);
   assertEquals(pos0.key, heading.key);
@@ -132,8 +132,7 @@ test("findRange -- focus is exclusive (one past last char)", () => {
   const md = "ABCDEF";
   const spans = buildTextNodeSpans(importMarkdown(md), md);
 
-  // Select "CDE" -- offset 2, length 3.
-  // Anchor at 2 ("C"), focus at 5 (a position past "E").
+  // Select "CDE" -- offset 2, length 3. Anchor at 2 ("C"), focus at 5 (a position past "E").
   const range = findRange(spans, { offset: 2, length: 3 });
   assert(range);
   assertEquals(range.anchor.offset, 2);
@@ -162,9 +161,8 @@ test("findPosition -- past end snaps to caret after last char", () => {
 test("findPosition -- gap between spans snaps to end of preceding span", () => {
   const md = "Hello **world**";
   const spans = buildTextNodeSpans(importMarkdown(md), md);
-  // Two spans: "Hello " at 0, "world" at 8 (after "**")
-  // Offset 6 is "*" -- in the gap between spans.
-  // Snaps to end of "Hello " (offset 6), staying in the same TextNode.
+  // Two spans: "Hello " at 0, "world" at 8 (after "**") Offset 6 is "*" -- in the gap between
+  // spans. Snaps to end of "Hello " (offset 6), staying in the same TextNode.
   const pos = findPosition(spans, 6);
   assert(pos);
   assertEquals(pos.key, spans[0].key);
@@ -174,23 +172,21 @@ test("findPosition -- gap between spans snaps to end of preceding span", () => {
 test("findPosition -- gap between spans snaps forward", () => {
   const md = "Hello **world**";
   const spans = buildTextNodeSpans(importMarkdown(md), md);
-  // Two spans: "Hello " at 0, "world" at 8 (after "**")
-  // Offset 7 is "*" -- in the gap between spans, past end of "Hello ".
-  // Snaps to start of next span.
+  // Two spans: "Hello " at 0, "world" at 8 (after "**") Offset 7 is "*" -- in the gap between
+  // spans, past end of "Hello ". Snaps to start of next span.
   const pos = findPosition(spans, 7);
   assert(pos);
   assertEquals(pos.key, spans[1].key);
   assertEquals(pos.offset, 0);
 });
 
-// The export escapes `* _ ` ~ \` as `\X` inside non-code text nodes. A bare
-// `indexOf(textNodeText)` fails when the node contains any of those chars, so
-// the node would be dropped from the span list. These cover the pre-escape
-// path and the code-context (verbatim) path.
+// The export escapes `* _ ` ~ \` as `\X` inside non-code text nodes. A bare `indexOf(textNodeText)`
+// fails when the node contains any of those chars, so the node would be dropped from the span list.
+// These cover the pre-escape path and the code-context (verbatim) path.
 
 test("buildTextNodeSpans -- literal escaped asterisk in prose is found", () => {
-  // md "a\*b" imports as a text node "a*b" (literal *); export re-escapes to
-  // "a\*b". A bare indexOf("a*b") would fail and drop the node.
+  // md "a\*b" imports as a text node "a*b" (literal *); export re-escapes to "a\*b". A bare
+  // indexOf("a*b") would fail and drop the node.
   const md = "a\\*b";
   const spans = buildTextNodeSpans(importMarkdown(md), md);
   assertEquals(spans.length, 1);
@@ -199,17 +195,16 @@ test("buildTextNodeSpans -- literal escaped asterisk in prose is found", () => {
 });
 
 test("buildTextNodeSpans -- multi-char prose with * is not dropped", () => {
-  // md "before \* after" imports as a text node "before * after" (literal *);
-  // export re-escapes to "before \* after". A bare indexOf("before * after")
-  // would fail and drop the node.
+  // md "before \* after" imports as a text node "before * after" (literal *); export re-escapes to
+  // "before \* after". A bare indexOf("before * after") would fail and drop the node.
   const md = "before \\* after";
   const spans = buildTextNodeSpans(importMarkdown(md), md);
   assertEquals(spans.length, 1);
   assertEquals(spans[0].text, "before * after");
   assertEquals(spans[0].offset, 0);
-  // content "before \* after": the `*` is at content offset 8 (the `\` at 7
-  // is its escape prefix, invisible in the editor). A length-1 mark on the
-  // visible `*` (content [8,9)) wraps editor char [7,8) -- the `*` itself.
+  // content "before \* after": the `*` is at content offset 8 (the `\` at 7 is its escape prefix,
+  // invisible in the editor). A length-1 mark on the visible `*` (content [8,9)) wraps editor char
+  // [7,8) -- the `*` itself.
   const range = findRange(spans, { offset: 8, length: 1 });
   assert(range);
   assertEquals(range.anchor.key, spans[0].key);
@@ -217,15 +212,14 @@ test("buildTextNodeSpans -- multi-char prose with * is not dropped", () => {
   assertEquals(range.focus.offset, 8);
 });
 
-// The `\X` escapes of the export consume a content index with no editor char.
-// Marks
-// whose content range includes those escapes must map to editor offsets by
-// walking the escape, not by plain subtraction. These cover the reported bug
-// (content offset 4 in "a\*b" mapping to editor offset 4 instead of 3).
+// The `\X` escapes of the export consume a content index with no editor char. Marks whose content
+// range includes those escapes must map to editor offsets by walking the escape, not by plain
+// subtraction. These cover the reported bug (content offset 4 in "a\*b" mapping to editor offset 4
+// instead of 3).
 
 test("findPosition -- escape span: content offset maps to editor offset via `X` walk", () => {
-  // content "a\*b" (length 4) -- editor text node "a*b" (length 3).
-  // content offsets: a=0, \=1, *=2, b=3.
+  // content "a\*b" (length 4) -- editor text node "a*b" (length 3). content offsets: a=0, \=1,
+  // *=2, b=3.
   const md = "a\\*b";
   const spans = buildTextNodeSpans(importMarkdown(md), md);
   assertEquals(spans.length, 1);
@@ -245,9 +239,8 @@ test("findPosition -- escape span: content offset maps to editor offset via `X` 
 });
 
 test("findRange -- mark covering content `a*` wraps editor `a*` not `a*b`", () => {
-  // The reported bug: a mark at content [0,3) ("a\*") wrapped editor [0,3)
-  // ("a*b", the whole node) because the `\` escape was ignored. The wrap must
-  // cover editor [0,2) ("a*").
+  // The reported bug: a mark at content [0,3) ("a\*") wrapped editor [0,3) ("a*b", the whole node)
+  // because the `\` escape was ignored. The wrap must cover editor [0,2) ("a*").
   const md = "a\\*b";
   const spans = buildTextNodeSpans(importMarkdown(md), md);
   const range = findRange(spans, { offset: 0, length: 3 });
@@ -257,10 +250,10 @@ test("findRange -- mark covering content `a*` wraps editor `a*` not `a*b`", () =
 });
 
 test("findPosition -- escape at start of node", () => {
-  // content "x**y**\*": the literal `*` node has text "*" and its content form
-  // is "\*", so span.offset = 6 (the `\`, where the escaped form begins in
-  // the export). Content offsets 6 (the `\`) and 7 (the `*`) both map to
-  // editor offset 0 (before `*`) -- the `\` has no editor char of its own.
+  // content "x**y**\*": the literal `*` node has text "*" and its content form is "\*", so
+  // span.offset = 6 (the `\`, where the escaped form begins in the export). Content offsets 6 (the
+  // `\`) and 7 (the `*`) both map to editor offset 0 (before `*`) -- the `\` has no editor char of
+  // its own.
   const md = "x**y**\\*";
   const spans = buildTextNodeSpans(importMarkdown(md), md);
   const star = spans.find((s) => s.text === "*");
@@ -276,9 +269,9 @@ test("findPosition -- escape at start of node", () => {
 });
 
 test("positionToOffset -- escape span round-trips caret through content space", () => {
-  // For every editor offset in "a*b", positionToOffset -> findPosition must
-  // return the same editor offset. The `\*` escape means content offsets are
-  // denser than editor offsets, so the inverse must skip the `\`.
+  // For every editor offset in "a*b", positionToOffset -> findPosition must return the same editor
+  // offset. The `\*` escape means content offsets are denser than editor offsets, so the inverse
+  // must skip the `\`.
   const md = "a\\*b";
   const spans = buildTextNodeSpans(importMarkdown(md), md);
   const span = spans[0];
@@ -293,8 +286,8 @@ test("positionToOffset -- escape span round-trips caret through content space", 
 });
 
 test("positionToOffset -- caret before `*` maps to content offset of `*`, not ``", () => {
-  // Editor offset 1 (before `*`) is content offset 2 (at `*`), not 1 (at `\`).
-  // The `\` is invisible; the caret belongs to the visible char it escapes.
+  // Editor offset 1 (before `*`) is content offset 2 (at `*`), not 1 (at `\`). The `\` is
+  // invisible; the caret belongs to the visible char it escapes.
   const md = "a\\*b";
   const spans = buildTextNodeSpans(importMarkdown(md), md);
   const span = spans[0];
@@ -303,9 +296,9 @@ test("positionToOffset -- caret before `*` maps to content offset of `*`, not ``
 });
 
 test("buildTextNodeSpans -- literal * after bold matches the \\* form, not the bold marker", () => {
-  // content "x**y**\*" -- the literal "*" (\*) begins at offset 6; the bold
-  // close markers are at 4-5. A bare indexOf("*", 4) would land on the bold
-  // close (4); the pre-escaped needle "\*" lands on the literal at 6.
+  // content "x**y**\*" -- the literal "*" (\*) begins at offset 6; the bold close markers are at 4-
+  // 5. A bare indexOf("*", 4) would land on the bold close (4); the pre-escaped needle "\*" lands
+  // on the literal at 6.
   const md = "x**y**\\*";
   const spans = buildTextNodeSpans(importMarkdown(md), md);
   // Spans: "x" at 0, "y" at 3, "*" (literal) at 6.
@@ -333,9 +326,9 @@ test("buildTextNodeSpans -- block code with * stays verbatim (raw)", () => {
 });
 
 test("buildTextNodeSpans -- literal backslash in prose", () => {
-  // md "a\\b" (markdown "a\\b") imports as "a\b"; export re-escapes to "a\\b"
-  // (a literal backslash is `\\` in the content form). The node is tracked and
-  // the `\\` escape is walked so offsets round-trip.
+  // md "a\\b" (markdown "a\\b") imports as "a\b"; export re-escapes to "a\\b" (a literal backslash
+  // is `\\` in the content form). The node is tracked and the `\\` escape is walked so offsets
+  // round-trip.
   const md = "a\\\\b";
   const spans = buildTextNodeSpans(importMarkdown(md), md);
   assertEquals(spans.length, 1);

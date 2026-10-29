@@ -16,10 +16,9 @@ export const MarksAtCursorExtension = defineExtension({
   name: "marks-at-cursor",
   config: { selection: defaultEditorSelection },
   afterRegistration: (editor: LexicalEditor, { selection }: SelectionExtensionConfig) => {
-    // Publish the mark ids at the caret into `selection.markIds`, and the
-    // innermost of those into `selection.innerMarkId`. The active
-    // highlighting is rendered by the MarkHighlights overlay, which reads
-    // these signals; the <mark> element stays transparent.
+    // Publish the mark ids at the caret into `selection.markIds`, and the innermost of those into
+    // `selection.innerMarkId`. The active highlighting is rendered by the MarkHighlights overlay,
+    // which reads these signals; the <mark> element stays transparent.
     const read = (editorState: EditorState) => {
       editorState.read(() => {
         selection.markIds.value = $markIdsAtAnchor();

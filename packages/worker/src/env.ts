@@ -1,6 +1,6 @@
-// The worker environment: Effect Config over the fetch handler's Cloudflare
-// bindings (workerd exposes no process.env at module scope), memoized per
-// isolate; vite feeds the same keys via .dev.vars locally.
+// The worker environment: Effect Config over the fetch handler's Cloudflare bindings (workerd
+// exposes no process.env at module scope), memoized per isolate; vite feeds the same keys via
+// .dev.vars locally.
 
 import type { D1Database } from "@cloudflare/workers-types";
 import { assert } from "@std/assert";
@@ -46,8 +46,7 @@ export function googleConfigLayer(e: WorkerEnv): Layer.Layer<GoogleConfig> {
 
 let cached: WorkerEnv | undefined;
 
-// The one boundary cast: hono's fetch env is untyped, and the D1 binding
-// is the account's database.
+// The one boundary cast: hono's fetch env is untyped, and the D1 binding is the account's database.
 function dbBinding(bindings: unknown): D1Database {
   const db = (bindings as { DB?: unknown }).DB;
   assert(db !== undefined, "the D1 binding DB is missing");
@@ -64,8 +63,8 @@ export function env(bindings: unknown): WorkerEnv {
     ),
   );
 
-  // One boot log of which variables were present; values never leave this
-  // module. Console here: the runtime's json logger composes later.
+  // One boot log of which variables were present; values never leave this module. Console here: the
+  // runtime's json logger composes later.
   Effect.runSync(
     Effect.logInfo("worker environment loaded", {
       present: Object.entries(snapshot)

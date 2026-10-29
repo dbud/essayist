@@ -1,11 +1,10 @@
 import type { HighlightRendererProps } from "./types.ts";
 
-// Wavy underline beneath each marked line segment. Overlapping marks cascade
-// downward by band order. Active id gets a thicker, opaque stroke. Drawn as
-// SVG paths in the overlay layer.
+// Wavy underline beneath each marked line segment. Overlapping marks cascade downward by band
+// order. Active id gets a thicker, opaque stroke. Drawn as SVG paths in the overlay layer.
 
-// Tunables. BASELINE_RATIO is the baseline as a fraction of the line-box
-// height (prose line-height ~1.75 -> baseline ~0.67); the wave sits just below.
+// Tunables. BASELINE_RATIO is the baseline as a fraction of the line-box height (prose line-height
+// ~1.75 -> baseline ~0.67); the wave sits just below.
 const BASELINE_RATIO = 1.0;
 const STACK_GAP = 4; // vertical offset per overlapping mark
 const AMPLITUDE = 1;
@@ -16,8 +15,8 @@ const WAVELENGTH = 10;
 const r = (n: number): string => n.toFixed(1);
 
 /** A sine-like wave from x0..x0+w centered on y0. Built from cubic beziers, a
- *  single bezier per half-wave, alternating above/below y0. A trailing
- *  partial half-wave tapers so the wave fits exactly within w. */
+ * single bezier per half-wave, alternating above/below y0. A trailing partial half-wave tapers so
+ * the wave fits exactly within w. */
 function wavePath(x0: number, y0: number, w: number, amp: number): string {
   const half = WAVELENGTH / 2;
   const k = 0.36; // control-point ratio for a sine-ish cubic

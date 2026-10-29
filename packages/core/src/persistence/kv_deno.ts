@@ -10,8 +10,8 @@ import { PersistenceError } from "./mod.ts";
 import type { Persistence } from "./service.ts";
 
 /** A layer that opens its own connection, closing it when the runtime
- * disposes. Omit `path` for the platform KV; pass a file path for a local
- * store, or `:memory:` for an ephemeral one (tests). */
+ * disposes. Omit `path` for the platform KV; pass a file path for a local store, or `:memory:` for
+ * an ephemeral one (tests). */
 export function layerKv(path?: string): Layer.Layer<Persistence, PersistenceError> {
   return layerKvHandle(
     Effect.tryPromise({

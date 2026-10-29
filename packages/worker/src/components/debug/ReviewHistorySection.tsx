@@ -1,7 +1,6 @@
 import type { ReviewRun, ReviewRunStatus } from "@essayist/core";
 
-// TODO -- the trace view needs a worker route -- ESS-95
-// import { ScrollText } from "lucide-preact";
+// TODO -- the trace view needs a worker route -- ESS-95 import { ScrollText } from "lucide-preact";
 import Section from "#/components/debug/Section.tsx";
 import MarkdownView from "#/components/MarkdownView.tsx";
 import { useEditorModels } from "#/pages/editor/models.ts";

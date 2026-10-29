@@ -16,9 +16,8 @@ export type SidenoteHeights = Map<string, number>;
 // thread_id -> 1-based ordinal in document order (by mark.offset).
 export type MarkNumbers = Map<string, number>;
 
-// A badge per MarkNode fragment: an ordinal label rendered at the end of
-// the text of the fragment, positioned over the editor (not in the
-// contentEditable).
+// A badge per MarkNode fragment: an ordinal label rendered at the end of the text of the fragment,
+// positioned over the editor (not in the contentEditable).
 export interface MarkBadge {
   key: NodeKey;
   left: number; // end-x of the fragment's text, relative to the editor column
@@ -26,8 +25,8 @@ export interface MarkBadge {
   numbers: number[]; // ordinals of the marks covering this fragment, ascending
 }
 
-// A band of a marked segment on a single visual line. A segment carrying N
-// ids yields N bands stacked vertically within each of its line-rects.
+// A band of a marked segment on a single visual line. A segment carrying N ids yields N bands
+// stacked vertically within each of its line-rects.
 export interface MarkRect {
   id: string; // thread id this band belongs to
   color: string; // category color or FALLBACK_COLOR (from markColors.ts)
@@ -58,8 +57,8 @@ export interface SidenoteView extends SidenoteViewBase {
   height: number; // measured height, 0 while unmeasured
 }
 
-// Ghost render slot: offscreen sidenote pinned to a viewport edge by CSS in
-// GhostSidenote (no render position).
+// Ghost render slot: offscreen sidenote pinned to a viewport edge by CSS in GhostSidenote (no
+// render position).
 export interface GhostSidenoteView extends SidenoteViewBase {
   ghost: "top" | "bottom";
   trueTop: number; // scroll target on click
@@ -76,15 +75,13 @@ interface SidenotesDeps {
 }
 
 /**
- * Sidenote presentation for a file. Owns the measured positions (written by
- * the editor extension via trackNodePositions) and heights (written by the
- * FileViewer layout hook via useElementHeights), and derives the ordinal per
- * mark, the cursor's active flag, the raw sorted entries, and the stacked
- * tops. Per (workspace, path, version) so each file and view keeps its own
+ * Sidenote presentation for a file. Owns the measured positions (written by the editor
+ * extension via trackNodePositions) and heights (written by the FileViewer layout hook via
+ * useElementHeights), and derives the ordinal per mark, the cursor's active flag, the raw sorted
+ * entries, and the stacked tops. Per (workspace, path, version) so each file and view keeps its own
  * measured state.
  *
- * `entries` is independent of `heights`; `layout` is the only reader of
- * `heights`.
+ * `entries` is independent of `heights`; `layout` is the only reader of `heights`.
  */
 export const SidenotesModel = createModel((key: FileKey, deps: SidenotesDeps) => {
   const { resolvedMarks, categories, scrollTop, viewportHeight } = deps;
@@ -96,8 +93,8 @@ export const SidenotesModel = createModel((key: FileKey, deps: SidenotesDeps) =>
   const { resolved } = resolvedMarks;
   const { markIds: activeMarkIds } = getEditorSelection(key);
 
-  // 1-based ordinal per thread id, in document order. Shared by the editor
-  // (data-number badges) and the sidenote column so the numbers always match.
+  // 1-based ordinal per thread id, in document order. Shared by the editor (data-number badges) and
+  // the sidenote column so the numbers always match.
   const numbers = computed(
     (): MarkNumbers =>
       new Map(
@@ -107,8 +104,8 @@ export const SidenotesModel = createModel((key: FileKey, deps: SidenotesDeps) =>
       ),
   );
 
-  // Raw sidenotes: mark + ordinal + active flag + mark position, sorted by
-  // position. Independent of measured heights.
+  // Raw sidenotes: mark + ordinal + active flag + mark position, sorted by position. Independent of
+  // measured heights.
   const entries = computed((): SidenoteEntry[] => {
     const out: SidenoteEntry[] = [];
     for (const mark of resolved.value) {
@@ -125,9 +122,9 @@ export const SidenotesModel = createModel((key: FileKey, deps: SidenotesDeps) =>
     return out.toSorted((a, b) => a.markTop - b.markTop || a.mark.offset - b.mark.offset);
   });
 
-  // Stacked tops so sidenotes never overlap: walk in mark order, pushing each
-  // down to clear the measured height of the previous entry. Unmeasured entries
-  // (height 0) stack at their mark top until measured.
+  // Stacked tops so sidenotes never overlap: walk in mark order, pushing each down to clear the
+  // measured height of the previous entry. Unmeasured entries (height 0) stack at their mark top
+  // until measured.
   const layout = computed((): Map<string, number> => {
     const out = new Map<string, number>();
     let prevBottom = -Infinity;
@@ -149,10 +146,9 @@ export const SidenotesModel = createModel((key: FileKey, deps: SidenotesDeps) =>
     }),
   );
 
-  // Ghost: the nearest sidenote extending past this viewport edge (strict:
-  // at exact edge alignment the regular sidenote wins and no ghost is
-  // mounted), with a measured height. Ghosts render beneath real
-  // sidenotes, whose backgrounds occlude them where they overlap.
+  // Ghost: the nearest sidenote extending past this viewport edge (strict: at exact edge alignment
+  // the regular sidenote wins and no ghost is mounted), with a measured height. Ghosts render
+  // beneath real sidenotes, whose backgrounds occlude them where they overlap.
   const edgeGhost = (direction: "top" | "bottom"): GhostSidenoteView | undefined => {
     const vh = viewportHeight.value;
     if (vh <= 0) return undefined;

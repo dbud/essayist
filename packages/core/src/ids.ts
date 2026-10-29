@@ -1,6 +1,6 @@
 /**
- * Fresh ids through a reference with a default: call sites need no wiring,
- * and tests can provide a deterministic generator.
+ * Fresh ids through a reference with a default: call sites need no wiring, and tests can provide a
+ * deterministic generator.
  */
 
 import { Context } from "effect";

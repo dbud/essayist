@@ -5,22 +5,20 @@ import { deepComputed } from "./deepComputed.ts";
 /**
  * An async, debounced counterpart to `deepComputed`.
  *
- * `deps` is tracked; on any change `compute` runs after `debounceMs` of quiet.
- * The result is cached with deep equality (via `deepComputed`) so downstream
- * effects refire only on structural changes.
+ * `deps` is tracked; on any change `compute` runs after `debounceMs` of quiet. The result is cached
+ * with deep equality (via `deepComputed`) so downstream effects refire only on structural changes.
  *
- * Each run gets an AbortSignal. When inputs change, or a newer run supersedes
- * an in-flight one, the previous signal is aborted so `compute` can abandon
- * stale work. Aborted runs are dropped silently; the latest completing run
- * clears `stale`. A run rejected with an AbortError its own signal did not
- * raise (e.g. a shared worker was terminated by another caller) gives up and
- * clears `stale` itself, so the UI does not get stuck "resolving".
+ * Each run gets an AbortSignal. When inputs change, or a newer run supersedes an in-flight one,
+ * the previous signal is aborted so `compute` can abandon stale work. Aborted runs are dropped
+ * silently; the latest completing run clears `stale`. A run rejected with an AbortError its own
+ * signal did not raise (e.g. a shared worker was terminated by another caller) gives up and clears
+ * `stale` itself, so the UI does not get stuck "resolving".
  *
- * The creation-time run is initialization: `stale` stays false for it, so
- * the initial value is treated as settled.
+ * The creation-time run is initialization: `stale` stays false for it, so the initial value is
+ * treated as settled.
  *
- * `skip` holds the initial value and skips tracking; the server uses it so
- * signal effects never schedule timers.
+ * `skip` holds the initial value and skips tracking; the server uses it so signal effects never
+ * schedule timers.
  */
 export interface AsyncComputed<T> {
   value: ReadonlySignal<T>;
@@ -61,8 +59,8 @@ export function asyncComputed<D, T>(
     const { signal: abortSignal } = current;
     compute(d, abortSignal)
       .then((result) => {
-        // `!abortSignal.aborted` also drops a run that settled during a debounce
-        // window after its inputs already changed.
+        // `!abortSignal.aborted` also drops a run that settled during a debounce window after its
+        // inputs already changed.
         if (runSeq === seq && !abortSignal.aborted) {
           out.value = result;
           stale.value = false;

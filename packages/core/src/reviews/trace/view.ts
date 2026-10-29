@@ -37,10 +37,9 @@ export interface TraceView {
 }
 
 /**
- * Folds a node-scoped trace into per-node views, preserving seq order.
- * A custom event attaches to the most recently started node that has not
- * ended; anything else is an orphan. A node_end with no node_start still
- * opens a section, so a node skipped for a failed dependency is visible.
+ * Folds a node-scoped trace into per-node views, preserving seq order. A custom event attaches to
+ * the most recently started node that has not ended; anything else is an orphan. A node_end with no
+ * node_start still opens a section, so a node skipped for a failed dependency is visible.
  */
 export function groupTraceNodes(
   trace: readonly TraceEvent[],

@@ -41,11 +41,10 @@ function compose(href: string, record: QueryRecord): string {
 }
 
 /**
- * Keeps the record and the url query synchronized: record changes push a
- * history entry (the very first divergence replaces, covering an SSR-boot
- * correction); pops hand the parsed query back to onPop, which decides
- * how it lands in the domain. Returns a teardown. Browser only; construct
- * it from the client boot.
+ * Keeps the record and the url query synchronized: record changes push a history entry (the very
+ * first divergence replaces, covering an SSR-boot correction); pops hand the parsed query back to
+ * onPop, which decides how it lands in the domain. Returns a teardown. Browser only; construct it
+ * from the client boot.
  */
 export function setupUrlQuerySync(
   record: ReadonlySignal<QueryRecord>,

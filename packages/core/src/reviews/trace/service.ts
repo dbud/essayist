@@ -1,13 +1,13 @@
 /**
- * Review traces as an Effect service: one entry per event, split across
- * entries when an event does not fit.
+ * Review traces as an Effect service: one entry per event, split across entries when an event does
+ * not fit.
  *
+ * parfit-ignore
  * Key layout (workspace-scoped via the WorkspaceId tag):
  *   ["review_traces", wsId, runId, "000000"] -> TraceEvent
  *
- * Writers number their events; a seq of 6 padded zero-filled digits orders
- * the scan. Reads sort by seq, not by key, so resumes beyond 999999 stay
- * ordered.
+ * Writers number their events; a seq of 6 padded zero-filled digits orders the scan. Reads sort by
+ * seq, not by key, so resumes beyond 999999 stay ordered.
  */
 
 import { sortBy } from "@std/collections";
@@ -28,8 +28,8 @@ export interface Interface {
     event: TraceEvent,
   ): Effect.Effect<void, PersistenceError | ConcurrentModificationError, WorkspaceId>;
   /**
-   * The trace of a run in seq order, oldest first; undefined when nothing
-   * was written. A stored event missing a chunk fails the read.
+   * The trace of a run in seq order, oldest first; undefined when nothing was written. A stored
+   * event missing a chunk fails the read.
    */
   get(
     runId: string,
@@ -40,8 +40,8 @@ export class TraceEvents extends Context.Service<TraceEvents, Interface>()(
   "@essayist/core/reviews/trace/TraceEvents",
 ) {
   /** Requires the {@linkcode ChunkedValues} service; compose from
-   * Persistence.layerKv at the composition root. The workspace scope comes
-   * from the WorkspaceId tag at call time. */
+   * Persistence.layerKv at the composition root. The workspace scope comes from the WorkspaceId tag
+   * at call time. */
   static readonly layerNoDeps: Layer.Layer<TraceEvents, never, ChunkedValues> = Layer.effect(
     TraceEvents,
     Effect.gen(function* () {

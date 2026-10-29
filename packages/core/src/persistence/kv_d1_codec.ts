@@ -1,11 +1,10 @@
 /**
  * Wire encoding for the D1-backed kv table.
  *
- * Keys hex-encode the FoundationDB tuple format (via fdb-tuple):
- * order-preserving, self-framing bytes, so byte order equals tuple order,
- * prefix scans are a plain range, and hex text keeps the order. Values
- * base64-encode CBOR (via cbor-x), which carries the JSON-like domain
- * values and Uint8Array chunks intact. Both transports only see TEXT.
+ * Keys hex-encode the FoundationDB tuple format (via fdb-tuple): order-preserving, self-framing
+ * bytes, so byte order equals tuple order, prefix scans are a plain range, and hex text keeps the
+ * order. Values base64-encode CBOR (via cbor-x), which carries the JSON-like domain values and
+ * Uint8Array chunks intact. Both transports only see TEXT.
  */
 
 import { decodeBase64, decodeHex, encodeBase64, encodeHex } from "@std/encoding";
@@ -37,9 +36,8 @@ export interface KeyRange {
 }
 
 /** The [begin, end) hex-text range containing exactly the keys with `key`
- * as a prefix, the prefix key included. The last byte of a packed tuple is
- * the 0x00 terminator, so the exclusive bound bumps that byte; an empty
- * prefix is unbounded. */
+ * as a prefix, the prefix key included. The last byte of a packed tuple is the 0x00 terminator, so
+ * the exclusive bound bumps that byte; an empty prefix is unbounded. */
 export function keyRange(prefix: Key): KeyRange {
   const bytes = packKeyBytes(prefix);
   if (bytes.length === 0) return { begin: "", end: undefined };

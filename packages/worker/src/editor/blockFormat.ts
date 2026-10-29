@@ -20,8 +20,8 @@ import {
 export type BlockType = "normal" | "h1" | "h2" | "h3" | "quote" | "code" | "bullet" | "number";
 
 /**
- * The block type at the selection anchor. Reads the current selection, so it
- * must run in a $-context (e.g. `editorState.read` or `editor.update`).
+ * The block type at the selection anchor. Reads the current selection, so it must run in a
+ * $-context (e.g. `editorState.read` or `editor.update`).
  */
 export function $getBlockType(): BlockType {
   const selection = $getSelection();
@@ -49,9 +49,8 @@ export function $getBlockType(): BlockType {
 }
 
 /**
- * Converts the content blocks (paragraph / heading / quote / code) within the
- * selection to `type`. List conversion is handled by Lexical's list commands,
- * not here. Runs in a $-context.
+ * Converts the content blocks (paragraph / heading / quote / code) within the selection to `type`.
+ * List conversion is handled by Lexical's list commands, not here. Runs in a $-context.
  */
 export function $setBlocksType(type: "normal" | "h1" | "h2" | "h3" | "quote" | "code"): void {
   const selection = $getSelection();

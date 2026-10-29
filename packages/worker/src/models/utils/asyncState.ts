@@ -7,9 +7,9 @@ export default function createAsyncState(initialLoading = false): [
     error: Signal<string>;
   },
 ] {
-  // `loading` is the display state; `running` is the concurrent-run guard.
-  // They are decoupled so a model can start in the loading state (e.g. for
-  // SSR) without making the first `run` bail on the guard.
+  // `loading` is the display state; `running` is the concurrent-run guard. They are decoupled so
+  // a model can start in the loading state (e.g. for SSR) without making the first `run` bail on
+  // the guard.
   const loading = signal(initialLoading);
   const running = signal(false);
   const error = signal("");

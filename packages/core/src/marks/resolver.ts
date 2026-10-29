@@ -31,15 +31,12 @@ export interface ResolveOptions {
 /**
  * Resolve a set of marks from an old version against new content.
  *
- * The algorithm:
- * 1. Compute a word-level diff between old and new content.
- * 2. For each mark, check if it falls in an unchanged region.
- *    - If yes: map its offset arithmetically.
- *    - If no: search for the mark's text using fuzzy matching.
- * 3. Marks whose text cannot be found are returned as stale.
+ * The algorithm: 1. Compute a word-level diff between old and new content. 2. For each mark, check
+ * if it falls in an unchanged region. - If yes: map its offset arithmetically. - If no: search for
+ * the mark's text using fuzzy matching. 3. Marks whose text cannot be found are returned as stale.
  *
- * Marks that were already stale in the previous version are preserved
- * as stale (they are not re-searched).
+ * Marks that were already stale in the previous version are preserved as stale (they are not re-
+ * searched).
  */
 export function resolveMarks(
   { marks, newContent, oldContent }: ResolveInput,
@@ -86,12 +83,10 @@ function mapOffset(mark: Mark, hunks: DiffHunk[]): [boolean, number, number] {
     if (markStart < hunk.oldEnd && markEnd > hunk.oldStart) {
       // Mark overlaps this hunk.
       //
-      // If the hunk is contained within the mark (allowing boundary
-      // contact, but strictly contained on at least one side), the edit
-      // is inside the marked region: keep the offset and adjust length.
-      // A hunk that exactly equals the mark span is NOT treated as
-      // inside -- that case (the whole marked text was replaced) is
-      // left to fuzzy matching.
+      // If the hunk is contained within the mark (allowing boundary contact, but strictly contained
+      // on at least one side), the edit is inside the marked region: keep the offset and adjust
+      // length. A hunk that exactly equals the mark span is NOT treated as inside -- that case (the
+      // whole marked text was replaced) is left to fuzzy matching.
       const hunkIsInsideMark =
         markStart <= hunk.oldStart &&
         markEnd >= hunk.oldEnd &&
@@ -103,8 +98,8 @@ function mapOffset(mark: Mark, hunks: DiffHunk[]): [boolean, number, number] {
         const estimatedOffset = hunk.newStart + Math.round(ratio * (hunk.newEnd - hunk.newStart));
         return [false, estimatedOffset, 0];
       }
-      // Hunk is inside the mark -- offset stays, length adjusts by the
-      // net length change of the hunk itself.
+      // Hunk is inside the mark -- offset stays, length adjusts by the net length change of the
+      // hunk itself.
       lengthDelta += hunk.newEnd - hunk.newStart - (hunk.oldEnd - hunk.oldStart);
       continue;
     }
@@ -115,20 +110,15 @@ function mapOffset(mark: Mark, hunks: DiffHunk[]): [boolean, number, number] {
 }
 
 /**
- * Resolve a mark using fuzzy matching when the diff-based offset
- * mapping is not exact (the mark overlaps a changed region).
+ * Resolve a mark using fuzzy matching when the diff-based offset mapping is not exact (the mark
+ * overlaps a changed region).
  *
- * Strategy:
- * 1. Search for the selected text itself near the expected offset
- *    (exact match first, then fuzzy). If found, done.
- * 2. Search for before/after context. If one exists but failed to
- *    match, the neighborhood is gone -- stale. Otherwise compute
- *    the mark region [start, end) from matched contexts.
- * 3. Full-content scan for the selected text. If found at a
- *    different location, the mark was moved -- resolve there.
- * 4. If nothing found anywhere, the mark is stale.
- *    Otherwise resolve to [start, end) (may be zero-length if
- *    the text was deleted).
+ * Strategy: 1. Search for the selected text itself near the expected offset (exact match first,
+ * then fuzzy). If found, done. 2. Search for before/after context. If one exists but failed to
+ * match, the neighborhood is gone -- stale. Otherwise compute the mark region [start, end) from
+ * matched contexts. 3. Full-content scan for the selected text. If found at a different location,
+ * the mark was moved -- resolve there. 4. If nothing found anywhere, the mark is stale. Otherwise
+ * resolve to [start, end) (may be zero-length if the text was deleted).
  */
 function fuzzyResolveMark(
   mark: Mark,
@@ -168,15 +158,12 @@ function fuzzyResolveMark(
 
   // Phase 2: anchor via before/after context (token multiset fuzzy).
   //
-  // Boundaries are snapped to word edges so the resolved selected_text does
-  // not pick up surrounding separators:
-  //   - before: the selection starts at nextOffset (the word after the
-  //     before_context).
-  //   - after: the selection ends at startOffset (the after_context's first
-  //     word); the separators between the selection and that word stay in
-  //     the gap and are trimmed below (the original selected_text decides
-  //     whether trailing punctuation belongs to the selection or to the
-  //     after_context).
+  // Boundaries are snapped to word edges so the resolved selected_text does not pick up surrounding
+  // separators: - before: the selection starts at nextOffset (the word after the before_context).
+  // - after: the selection ends at startOffset (the after_context's first word); the separators
+  // between the selection and that word stay in the gap and are trimmed below (the original
+  // selected_text decides whether trailing punctuation belongs to the selection or to the
+  // after_context).
   function matchContext(
     text: string,
     near: number,
@@ -196,8 +183,8 @@ function fuzzyResolveMark(
   const beforeResult = matchContext(mark.before_context, expectedNewOffset, "before");
   const afterResult = matchContext(
     mark.after_context,
-    // Anchor the after-context search at the end of the before match, else
-    // at the original estimate.
+    // Anchor the after-context search at the end of the before match, else at the original
+    // estimate.
     beforeResult?.nextOffset ?? expectedNewOffset,
     "after",
   );
@@ -216,10 +203,9 @@ function fuzzyResolveMark(
     };
   }
 
-  // Both contexts matched but in reversed order (after_context sits
-  // before before_context): the neighborhood structure is gone, go
-  // stale. Abutting contexts (afterStart == beforeEnd) are still valid
-  // (zero-length resolved mark) and stay resolved.
+  // Both contexts matched but in reversed order (after_context sits before before_context): the
+  // neighborhood structure is gone, go stale. Abutting contexts (afterStart == beforeEnd) are still
+  // valid (zero-length resolved mark) and stay resolved.
   const beforeEnd = beforeResult?.nextOffset;
   const afterStart = afterResult?.startOffset;
   if (beforeEnd != null && afterStart != null && afterStart < beforeEnd) {
@@ -253,18 +239,16 @@ function fuzzyResolveMark(
     };
   }
 
-  // Resolve to [start, end), trimming surrounding separators that
-  // belong to the contexts rather than the selection. Whitespace is
-  // always trimmed; punctuation is trimmed only on a side where the
-  // original selected_text starts/ends with a word character (so a
-  // selection that genuinely includes trailing punctuation keeps it).
+  // Resolve to [start, end), trimming surrounding separators that belong to the contexts rather
+  // than the selection. Whitespace is always trimmed; punctuation is trimmed only on a side where
+  // the original selected_text starts/ends with a word character (so a selection that genuinely
+  // includes trailing punctuation keeps it).
   const raw = tt.text.slice(start, end);
   const { startsWithWord, endsWithWord } = wordEdges(mark.selected_text);
   const trimmed = trimContextSeparators(raw, startsWithWord, endsWithWord);
-  // If the selected text was deleted (empty gap), only treat it as a
-  // zero-length resolved mark when BOTH contexts matched and abut --
-  // that confidently locates where the text was. With a single context
-  // (the other empty or missing), the selection is just gone: stale.
+  // If the selected text was deleted (empty gap), only treat it as a zero-length resolved mark when
+  // BOTH contexts matched and abut -- that confidently locates where the text was. With a single
+  // context (the other empty or missing), the selection is just gone: stale.
   if (trimmed.text.length === 0 && !(beforeResult && afterResult)) {
     return {
       ...mark,

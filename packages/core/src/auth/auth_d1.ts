@@ -1,7 +1,6 @@
 /**
- * D1 transport of the {@linkcode AuthStore} service. Expiry is
- * filtered in the read query, so revocation is immediate; the TTL
- * re-applies at every token refresh.
+ * D1 transport of the {@linkcode AuthStore} service. Expiry is filtered in the read query, so
+ * revocation is immediate; the TTL re-applies at every token refresh.
  */
 
 import type * as D1Client from "@effect/sql-d1/D1Client";
@@ -57,9 +56,8 @@ const RefreshTokenFromRow = RefreshTokenRow.pipe(
 const backendFault = (cause: unknown) => new PersistenceError({ cause });
 
 export function layerAuthD1(client: D1Client.D1Client): Layer.Layer<AuthStore, PersistenceError> {
-  // TODO -- this DDL batch runs on every isolate spin-up; consider a
-  // schema version check to skip it when the schema already exists
-  // (ESS-92)
+  // TODO -- this DDL batch runs on every isolate spin-up; consider a schema version check to skip
+  // it when the schema already exists (ESS-92)
 
   const ensureSchema = SqlSchema.void({
     Request: Schema.Void,
@@ -76,9 +74,8 @@ export function layerAuthD1(client: D1Client.D1Client): Layer.Layer<AuthStore, P
           refresh_token TEXT NOT NULL,
           updated_at INTEGER NOT NULL
         ) WITHOUT ROWID`,
-        // TODO -- the expiry sweep (DELETE FROM auth_session WHERE
-        // expires_at < now) will use this index; the sweep command does
-        // not exist yet.
+        // TODO -- the expiry sweep (DELETE FROM auth_session WHERE expires_at < now) will use this
+        // index; the sweep command does not exist yet.
         client`CREATE INDEX IF NOT EXISTS auth_session_expiry
           ON auth_session (expires_at)`,
       ]),
@@ -149,10 +146,9 @@ export function layerAuthD1(client: D1Client.D1Client): Layer.Layer<AuthStore, P
       backendFault,
     );
 
-  // TODO -- getSession always fetches and decodes the google tokens
-  // column, but the session middleware only needs the user id; only
-  // the token refresh flow needs tokens. A tokens-free read variant
-  // would lighten the hot path. (ESS-92)
+  // TODO -- getSession always fetches and decodes the google tokens column, but the session
+  // middleware only needs the user id; only the token refresh flow needs tokens. A tokens-free read
+  // variant would lighten the hot path. (ESS-92)
 
   const getSession = (id: string): Effect.Effect<Session | undefined, PersistenceError> =>
     Effect.mapError(

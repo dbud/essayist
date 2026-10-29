@@ -1,6 +1,5 @@
-// The hono renderer augmentation: typed props for c.render in the pages
-// tier. The app state is injected by the renderer middleware, so callers
-// never pass it.
+// The hono renderer augmentation: typed props for c.render in the pages tier. The app state is
+// injected by the renderer middleware, so callers never pass it.
 import type { ComponentChild } from "preact";
 
 type PageRenderer = (

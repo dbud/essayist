@@ -1,9 +1,8 @@
 import type { LexicalEditor } from "lexical";
 
-// Coalesce many schedule() calls into a single fn() on the next animation
-// frame; dispose() cancels a pending frame. For extensions that re-measure the
-// DOM only after Lexical has reconciled. With no animation frame loop
-// (SSR, headless) measurements cannot run, so scheduling is a no-op.
+// Coalesce many schedule() calls into a single fn() on the next animation frame; dispose() cancels
+// a pending frame. For extensions that re-measure the DOM only after Lexical has reconciled. With
+// no animation frame loop (SSR, headless) measurements cannot run, so scheduling is a no-op.
 export function createRafScheduler(fn: () => void): {
   schedule: () => void;
   dispose: () => void;
@@ -28,10 +27,9 @@ export function createRafScheduler(fn: () => void): {
   };
 }
 
-// Attach root-scoped observers (ResizeObserver, event listeners) that must
-// follow the root of the editor across swaps. setup(root) returns a teardown
-// run before the next root is set up and on final cleanup. The initial root is
-// set up synchronously.
+// Attach root-scoped observers (ResizeObserver, event listeners) that must follow the root of the
+// editor across swaps. setup(root) returns a teardown run before the next root is set up and on
+// final cleanup. The initial root is set up synchronously.
 export function registerRootObserver(
   editor: LexicalEditor,
   setup: (root: HTMLElement) => () => void,

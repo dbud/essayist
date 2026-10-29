@@ -4,10 +4,9 @@ import { useCallback, useEffect, useRef } from "preact/hooks";
 export type ScrollContainerRef = { current: HTMLDivElement | null };
 
 /**
- * Tracks a scroll container's `scrollTop` and `clientHeight` into the given
- * signals, used to derive offscreen-sidenote ghosts. Scroll events are
- * coalesced via requestAnimationFrame. Returns a ref to attach to the scroll
- * container.
+ * Tracks a scroll container's `scrollTop` and `clientHeight` into the given signals, used to derive
+ * offscreen-sidenote ghosts. Scroll events are coalesced via requestAnimationFrame. Returns a ref
+ * to attach to the scroll container.
  */
 export function useScrollViewport(
   scrollTop: Signal<number>,

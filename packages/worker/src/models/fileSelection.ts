@@ -4,8 +4,8 @@ import type { FileTrees } from "./fileTrees.ts";
 import type { Workspaces } from "./workspaces.ts";
 
 /**
- * A file open at a concrete version: the key for every per-view model,
- * signal cache and component props. Per-view caches use the string form.
+ * A file open at a concrete version: the key for every per-view model, signal cache and component
+ * props. Per-view caches use the string form.
  */
 export interface FileKey {
   wsId: string;

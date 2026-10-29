@@ -4,10 +4,9 @@ import { loadGsi } from "#/client/googleGsi.ts";
 import GoogleSigninLink from "#/components/GoogleSigninLink.tsx";
 
 /** The login page: the native "Sign in with Google" button plus the One
- * Tap prompt (FedCM) for eligible visitors. Both share one callback that
- * posts the ID token credential to /oauth/onetap, which sets the session
- * cookie and redirects to `next`. If GIS fails to load, falls back to the
- * full OAuth redirect link. */
+ * Tap prompt (FedCM) for eligible visitors. Both share one callback that posts the ID token
+ * credential to /oauth/onetap, which sets the session cookie and redirects to `next`. If GIS fails
+ * to load, falls back to the full OAuth redirect link. */
 export default function Page({
   googleClientId,
   next,
@@ -36,8 +35,8 @@ export default function Page({
             formRef.current?.submit();
           },
         });
-        // Arriving from /oauth/signout: clear the auto selection
-        // remembered by GSI so the user is not silently signed back in.
+        // Arriving from /oauth/signout: clear the auto selection remembered by GSI so the user is
+        // not silently signed back in.
         if (new URLSearchParams(globalThis.location.search).has("signedout")) {
           google.accounts.id.disableAutoSelect();
         }

@@ -1,12 +1,10 @@
 // KV management CLI for the Essayist web app, over a D1 database.
 //
-// Usage:
-//   pnpm --filter @essayist/kvctl kvctl <command> [args...] [--target <id>]
+// Usage: pnpm --filter @essayist/kvctl kvctl <command> [args...] [--target <id>]
 //
-// The remote target reads CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_D1_DATABASE_ID
-// and CLOUDFLARE_API_TOKEN in .env (loaded via --env-file=../../.env by the
-// kvctl script); --target overrides the database id. --local instead uses
-// the vite dev server's D1 state. Run the script with --help for usage.
+// The remote target reads CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_D1_DATABASE_ID and CLOUDFLARE_API_TOKEN
+// in .env (loaded via --env-file=../../.env by the kvctl script); --target overrides the database
+// id. --local instead uses the vite dev server's D1 state. Run the script with --help for usage.
 
 import { Command } from "@cliffy/command";
 

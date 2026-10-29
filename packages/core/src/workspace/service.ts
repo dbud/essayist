@@ -1,10 +1,9 @@
 /**
  * Storage for users, workspaces, and memberships as an Effect service.
  *
- * Cross-entity invariants (unique email, workspace + owner membership
- * created together, dual membership indexes) are enforced with atomic
- * batch writes and concurrency checks, so a concurrent conflicting write
- * rejects the whole batch.
+ * Cross-entity invariants (unique email, workspace + owner membership created together, dual
+ * membership indexes) are enforced with atomic batch writes and concurrency checks, so a concurrent
+ * conflicting write rejects the whole batch.
  */
 
 import { mapNotNullish, sortBy } from "@std/collections";
@@ -29,6 +28,7 @@ import type {
 } from "./types.ts";
 import { LastOwnerError, UserEmailTakenError } from "./types.ts";
 
+// parfit-ignore
 // Key layout:
 //   ["users", userId]                        -> User
 //   ["user_emails", email]                   -> userId   (unique-email index)
@@ -44,9 +44,9 @@ const MEMBERS_BY_WS = "members_by_ws";
 const MEMBERS_BY_USER = "members_by_user";
 
 /**
- * The Workspace service contract. Batch writes surfaced an optimistic
- * conflict wherever checks are used, so those error channels carry
- * {@linkcode ConcurrentModificationError} even where a check cannot fail.
+ * The Workspace service contract. Batch writes surfaced an optimistic conflict wherever checks are
+ * used, so those error channels carry {@linkcode ConcurrentModificationError} even where a check
+ * cannot fail.
  */
 export interface Interface {
   /** Create a user with a unique email; `UserEmailTakenError` on conflict. */
@@ -261,8 +261,7 @@ export class Workspaces extends Context.Service<Workspaces, Interface>()(
             role,
             createdAt: existing?.value.createdAt ?? (yield* Clock.currentTimeMillis),
           };
-          // Optimistic concurrency: reject if the membership changed since
-          // read.
+          // Optimistic concurrency: reject if the membership changed since read.
           yield* persistence.batch(
             [
               { type: "set", key: memberKey, value: member },

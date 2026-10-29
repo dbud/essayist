@@ -21,26 +21,25 @@ function $isEmptyParagraph(node: LexicalNode | null | undefined): boolean {
   );
 }
 
-// `$convertToMarkdownString` treats its node as a container and serializes
-// the children as top-level blocks, so passing a block directly yields "".
-// Wrap it as the sole child of a root-like node to get the per-block string.
-// Relies on createMarkdownExport only reading node.getChildren() on the arg.
+// `$convertToMarkdownString` treats its node as a container and serializes the children as top-
+// level blocks, so passing a block directly yields "". Wrap it as the sole child of a root-like
+// node to get the per-block string. Relies on createMarkdownExport only reading node.getChildren()
+// on the arg.
 function $serializeBlock(block: LexicalNode): string {
   const wrapper = { getChildren: () => [block] } as unknown as ElementNode;
   return $convertToMarkdownString(TRANSFORMERS, wrapper);
 }
 
-// Per-block value: the serialized markdown plus the empty-paragraph flag,
-// so the separator logic can run in combine without reading live nodes at
-// fold time.
+// Per-block value: the serialized markdown plus the empty-paragraph flag, so the separator logic
+// can run in combine without reading live nodes at fold time.
 interface MarkdownBlock {
   text: string;
   empty: boolean;
 }
 
-// Monoid concatenation with the separators of createMarkdownExport: double
-// newline between two non-empty blocks, single newline otherwise, and no
-// separator before the first block (the identity case).
+// Monoid concatenation with the separators of createMarkdownExport: double newline between two non-
+// empty blocks, single newline otherwise, and no separator before the first block (the identity
+// case).
 const markdownMonoid: Monoid<MarkdownBlock> = {
   identity: { text: "", empty: true },
   combine: (a, b) => {

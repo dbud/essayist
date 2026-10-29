@@ -4,12 +4,12 @@ import type { Mark } from "@essayist/core";
 export type MarkSpan = Pick<Mark, "offset" | "length" | "thread_id">;
 
 /**
- * A maximal non-overlapping interval covering part of the union of all mark
- * spans, together with the thread ids of every mark that covers it.
+ * A maximal non-overlapping interval covering part of the union of all mark spans, together with
+ * the thread ids of every mark that covers it.
  *
- * Overlapping/nested marks become adjacent segments whose id-sets encode the
- * overlap, so the editor never has to nest `MarkNode`s -- it wraps each
- * segment in a single `MarkNode` carrying its id-set.
+ * Overlapping/nested marks become adjacent segments whose id-sets encode the overlap, so the editor
+ * never has to nest `MarkNode`s -- it wraps each segment in a single `MarkNode` carrying its id-
+ * set.
  */
 export interface MarkSegment {
   offset: number;
@@ -18,11 +18,10 @@ export interface MarkSegment {
 }
 
 /**
- * Splits a set of (possibly overlapping) mark spans into maximal
- * non-overlapping segments, each tagged with every thread id whose span covers
- * it. Zero-length spans are dropped. The result is sorted by offset, and each
- * segment's `ids` are ordered by the originating span's `(offset, -length,
- * thread_id)` so an outer/earlier mark is listed first.
+ * Splits a set of (possibly overlapping) mark spans into maximal non-overlapping segments, each
+ * tagged with every thread id whose span covers it. Zero-length spans are dropped. The result
+ * is sorted by offset, and each segment's `ids` are ordered by the originating span's `(offset,
+ * -length, thread_id)` so an outer/earlier mark is listed first.
  */
 export function segmentMarks(marks: ReadonlyArray<MarkSpan>): MarkSegment[] {
   const spans: MarkSpan[] = [];
@@ -35,8 +34,8 @@ export function segmentMarks(marks: ReadonlyArray<MarkSpan>): MarkSegment[] {
   }
   if (spans.length === 0) return [];
 
-  // Deterministic id order within a segment: earlier offset first, then the
-  // longer (outer) span first, then thread_id for a stable tiebreak.
+  // Deterministic id order within a segment: earlier offset first, then the longer (outer) span
+  // first, then thread_id for a stable tiebreak.
   spans.sort((a, b) =>
     a.offset !== b.offset
       ? a.offset - b.offset

@@ -34,10 +34,9 @@ export interface TrackNodePositionsOptions<T extends LexicalNode> {
   /** Extra per-fragment work after measuring (e.g. DOM badging). */
   onFragments?: (fragments: TrackedFragment[]) => void;
   /**
-   * Positions to measure for ids with no tracked node (e.g. zero-length
-   * marks, which wrap no text and so produce no MarkNode). Each spec maps an
-   * id to a TextNode key + local offset; the line top is derived from a
-   * collapsed Range at that offset, in the same coordinate space as the
+   * Positions to measure for ids with no tracked node (e.g. zero-length marks, which wrap no text
+   * and so produce no MarkNode). Each spec maps an id to a TextNode key + local offset; the line
+   * top is derived from a collapsed Range at that offset, in the same coordinate space as the
    * fragment offsetTop (relative to the root's offsetParent).
    */
   points?: () => PointSpec[];
@@ -50,17 +49,14 @@ export interface PointSpec {
 }
 
 /**
- * Tracks the vertical position of every instance of `nodeClass` in the editor
- * and publishes id -> minimum offsetTop into `output` (a node spanning
- * a paragraph break yields several nodes sharing ids; the min aligns to
- * the first). Re-measures on editor update, node mutation, root resize,
- * any `remeasureOn` signal change, and font loads -- never on scroll, since
- * offsetTop is stable under scroll. rAF-deferred so DOM and mutation
- * callbacks have settled.
+ * Tracks the vertical position of every instance of `nodeClass` in the editor and publishes id ->
+ * minimum offsetTop into `output` (a node spanning a paragraph break yields several nodes sharing
+ * ids; the min aligns to the first). Re-measures on editor update, node mutation, root resize, any
+ * `remeasureOn` signal change, and font loads -- never on scroll, since offsetTop is stable under
+ * scroll. rAF-deferred so DOM and mutation callbacks have settled.
  *
- * Returns a cleanup function. The measured elements must not affect the
- * observed root's size (e.g. they are inline), so repositioning doesn't loop
- * the ResizeObserver.
+ * Returns a cleanup function. The measured elements must not affect the observed root's size (e.g.
+ * they are inline), so repositioning doesn't loop the ResizeObserver.
  */
 export function trackNodePositions<T extends LexicalNode>(
   editor: LexicalEditor,
@@ -134,11 +130,10 @@ export function trackNodePositions<T extends LexicalNode>(
 }
 
 /**
- * Measures point specs (ids with no tracked node) into `tops`, in the same
- * coordinate space as fragment offsetTop: relative to the root element's
- * offsetParent. Uses a collapsed Range at the TextNode offset so the line top
- * is correct even inside a multi-line paragraph (where the TextNode element's
- * own offsetTop would point at its first line).
+ * Measures point specs (ids with no tracked node) into `tops`, in the same coordinate space as
+ * fragment offsetTop: relative to the root element's offsetParent. Uses a collapsed Range at the
+ * TextNode offset so the line top is correct even inside a multi-line paragraph (where the TextNode
+ * element's own offsetTop would point at its first line).
  */
 function measurePoints(
   editor: LexicalEditor,

@@ -12,15 +12,15 @@ interface UseElementHeightsOptions {
 }
 
 /**
- * Measures the `offsetHeight` of every element matching `selector` within a
- * container, keyed by `data-[key]`, and publishes the result into `output`.
- * Re-measures on `deps` changes and on container resize (a width change reflows
- * the measured content). Returns a ref to attach to the container element.
+ * Measures the `offsetHeight` of every element matching `selector` within a container, keyed
+ * by `data-[key]`, and publishes the result into `output`. Re-measures on `deps` changes and on
+ * container resize (a width change reflows the measured content). Returns a ref to attach to the
+ * container element.
  *
- * Skips the write when heights are unchanged, so callers can depend on a value
- * derived from `output` without looping. The container's size must be
- * independent of the measured elements' positions (e.g. they are absolutely
- * positioned) so repositioning doesn't re-trigger the ResizeObserver.
+ * Skips the write when heights are unchanged, so callers can depend on a value derived from
+ * `output` without looping. The container's size must be independent of the measured elements'
+ * positions (e.g. they are absolutely positioned) so repositioning doesn't re-trigger the
+ * ResizeObserver.
  */
 export function useElementHeights<T extends HTMLElement>(
   output: Signal<Map<string, number>>,

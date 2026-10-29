@@ -3,18 +3,16 @@
 /**
  * Myers' shortest-edit-script on integer token ids, linear-space variant.
  *
- * `old_token_ids` / `new_token_ids` carry per-token integer ids assigned in JS
- * so identical token strings share an id; Rust compares ids with `==`,
- * matching the JS `oldTokens[x].text === newTokens[y].text` check. Returns a
- * flat `Int32Array` of `[type, oldIdx, newIdx, ...]` triples where `type` is
- * 0=equal, 1=insert, 2=delete; the unused index is -1 (inserts: oldIdx=-1,
+ * `old_token_ids` / `new_token_ids` carry per-token integer ids assigned in JS so identical
+ * token strings share an id; Rust compares ids with `==`, matching the JS `oldTokens[x].text
+ * === newTokens[y].text` check. Returns a flat `Int32Array` of `[type, oldIdx, newIdx, ...]`
+ * triples where `type` is 0=equal, 1=insert, 2=delete; the unused index is -1 (inserts: oldIdx=-1,
  * deletes: newIdx=-1).
  *
- * `O((N+M)D)` time, `O(N+M)` memory via the middle-snake divide-and-conquer: find
- * a matched diagonal run on an optimal path, recurse on the two halves. The
- * edit script is minimal; its tie-break on repeated-token inputs can differ
- * from a forward-only Myers, but the diff is always a valid minimal
- * alignment (see the test suite).
+ * `O((N+M)D)` time, `O(N+M)` memory via the middle-snake divide-and-conquer: find a matched
+ * diagonal run on an optimal path, recurse on the two halves. The edit script is minimal; its tie-
+ * break on repeated-token inputs can differ from a forward-only Myers, but the diff is always a
+ * valid minimal alignment (see the test suite).
  * @param {Int32Array} old_token_ids
  * @param {Int32Array} new_token_ids
  * @returns {Int32Array}

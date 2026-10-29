@@ -1,5 +1,5 @@
-// The user endpoints: the authenticated user behind the session
-// middleware, the first consumer of that middleware.
+// The user endpoints: the authenticated user behind the session middleware, the first consumer of
+// that middleware.
 import { Schema } from "effect";
 import { HttpApiEndpoint, HttpApiGroup } from "effect/http-api";
 

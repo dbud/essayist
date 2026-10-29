@@ -305,8 +305,8 @@ Example:
 });
 
 test("generateInstructions lists the fields of a nullable object", () => {
-  // A nullable object is the object unioned with null, so the union has to be
-  // unwrapped before the fields are read.
+  // A nullable object is the object unioned with null, so the union has to be unwrapped before the
+  // fields are read.
   const schema = Schema.Struct({
     user: Schema.NullOr(Schema.Struct({ name: Schema.String })),
     tags: Schema.NullOr(Schema.Array(Schema.String)),

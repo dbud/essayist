@@ -6,8 +6,8 @@ interface SwappableProps {
   /** A value that identifies the current content. Changing it triggers the swap animation. */
   swapKey: string | number | null | undefined;
   /**
-   * Animation variant: a Tailwind utility class like `swap-slide` or `swap-rotate`.
-   * Defaults to `swap-slide` if omitted.
+   * Animation variant: a Tailwind utility class like `swap-slide` or `swap-rotate`. Defaults to
+   * `swap-slide` if omitted.
    */
   class?: string;
   children: ComponentChildren;

@@ -1,8 +1,7 @@
 /**
- * Versioned text files as an Effect service: latest reads, versioned writes
- * with in-batch mark migration, listing, history, and unified diffs. The
- * workspace scope comes from the WorkspaceId tag. The key layout lives in
- * keys.ts and the shared internals in internals.ts.
+ * Versioned text files as an Effect service: latest reads, versioned writes with in-batch mark
+ * migration, listing, history, and unified diffs. The workspace scope comes from the WorkspaceId
+ * tag. The key layout lives in keys.ts and the shared internals in internals.ts.
  */
 
 import { sortBy } from "@std/collections";
@@ -44,19 +43,17 @@ import {
 
 export interface Interface {
   /**
-   * Read file content: the latest version, or the pinned version when
-   * given. A missing file or version fails with FileMissingError.
+   * Read file content: the latest version, or the pinned version when given. A missing file or
+   * version fails with FileMissingError.
    */
   read(
     path: string,
     versionId?: string,
   ): Effect.Effect<FileSnapshot, PersistenceError | FileMissingError, WorkspaceId>;
   /**
-   * Write new content as a new version. Snapshots the previous version and
-   * migrates its marks into the new version in the same atomic batch,
-   * guarded on the versions list. Clears any pending draft. Fails with
-   * FileMissingError when the previous version's content is missing in
-   * storage.
+   * Write new content as a new version. Snapshots the previous version and migrates its marks into
+   * the new version in the same atomic batch, guarded on the versions list. Clears any pending
+   * draft. Fails with FileMissingError when the previous version's content is missing in storage.
    */
   write(
     path: string,
@@ -69,16 +66,14 @@ export interface Interface {
   /** List files in the workspace, optionally filtered by path prefix. */
   list(prefix?: string): Effect.Effect<FileEntry[], PersistenceError, WorkspaceId>;
   /**
-   * The versions of a file, oldest first. A missing file fails with
-   * FileMissingError.
+   * The versions of a file, oldest first. A missing file fails with FileMissingError.
    */
   getVersions(
     path: string,
   ): Effect.Effect<FileVersion[], PersistenceError | FileMissingError, WorkspaceId>;
   /**
-   * Write the mutable draft head. No version, no marks migration. A draft
-   * sits on top of an existing version, so a missing file fails with
-   * FileMissingError.
+   * Write the mutable draft head. No version, no marks migration. A draft sits on top of an
+   * existing version, so a missing file fails with FileMissingError.
    */
   writeDraft(
     path: string,
@@ -89,9 +84,8 @@ export interface Interface {
     WorkspaceId
   >;
   /**
-   * Read the draft, or null when no draft exists. With atVersionId, also
-   * null when that version is not the latest: the draft belongs to the
-   * latest version.
+   * Read the draft, or null when no draft exists. With atVersionId, also null when that version is
+   * not the latest: the draft belongs to the latest version.
    */
   readDraft(
     path: string,
@@ -106,8 +100,7 @@ export interface Interface {
     WorkspaceId
   >;
   /** Revert a file to a previous version as a new version. Fails with
-   * FileMissingError when the previous version's content is missing in
-   * storage. */
+   * FileMissingError when the previous version's content is missing in storage. */
   revert(
     path: string,
     versionId: string,
@@ -136,11 +129,9 @@ export interface Interface {
     markId: string,
   ): Effect.Effect<boolean, PersistenceError | ConcurrentModificationError, WorkspaceId>;
   /**
-   * Re-anchor a version's marks onto the latest version. Marks whose
-   * thread_id is already on the latest are skipped; text that no longer
-   * resolves becomes stale. No-op when the given version is latest. Fails
-   * with FileMissingError when the source version's content is missing in
-   * storage.
+   * Re-anchor a version's marks onto the latest version. Marks whose thread_id is already on the
+   * latest are skipped; text that no longer resolves becomes stale. No-op when the given version is
+   * latest. Fails with FileMissingError when the source version's content is missing in storage.
    */
   migrateMarks(
     path: string,
@@ -154,8 +145,8 @@ export interface Interface {
 
 export class Files extends Context.Service<Files, Interface>()("@essayist/core/files/Files") {
   /** Requires the {@linkcode Persistence} service; compose with
-   * Persistence.layerKv at the composition root. The workspace scope comes
-   * from the WorkspaceId tag at call time. */
+   * Persistence.layerKv at the composition root. The workspace scope comes from the WorkspaceId tag
+   * at call time. */
   static readonly layerNoDeps: Layer.Layer<Files, never, Persistence> = Layer.effect(
     Files,
     Effect.gen(function* () {
@@ -202,18 +193,16 @@ export class Files extends Context.Service<Files, Interface>()("@essayist/core/f
               versions.length > 0 ? versions[versions.length - 1].version_id : undefined;
             const { manifest, extraChunks } = chunkContent(content);
 
-            // Write extra chunks individually before the metadata batch.
-            // Deno KV caps total atomic mutation size at 800 KiB, so large
-            // files can't fit all chunks in a single batch. Chunks are
-            // keyed by versionId (unique per write), so if the metadata
-            // batch below fails, these are harmless orphans -- never
-            // referenced until the manifest commits.
+            // Write extra chunks individually before the metadata batch. Deno KV caps total atomic
+            // mutation size at 800 KiB, so large files can't fit all chunks in a single batch.
+            // Chunks are keyed by versionId (unique per write), so if the metadata batch below
+            // fails, these are harmless orphans -- never referenced until the manifest commits.
             for (let i = 0; i < extraChunks.length; i++) {
               yield* persistence.set(contentChunkKey(wsId, path, versionId, i + 1), extraChunks[i]);
             }
 
-            // Metadata batch: versions, manifest, latest, marks -- atomic
-            // with an optimistic concurrency check on the versions list.
+            // Metadata batch: versions, manifest, latest, marks -- atomic with an optimistic
+            // concurrency check on the versions list.
             const ops: WriteOp[] = [
               {
                 type: "set",
@@ -260,9 +249,8 @@ export class Files extends Context.Service<Files, Interface>()("@essayist/core/f
               }
             }
 
-            // Guard against a concurrent write to the same file: if the
-            // versions list changed since we read it, the whole batch is
-            // rejected and retried.
+            // Guard against a concurrent write to the same file: if the versions list changed since
+            // we read it, the whole batch is rejected and retried.
             yield* persistence.batch(ops, {
               checks: [
                 {

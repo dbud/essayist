@@ -166,8 +166,8 @@ test("FlowRunner -- unions same-type artifacts in dependsOn order", async () => 
 });
 
 test("FlowRunner -- delivers a custom event while the node still runs", async () => {
-  // The node is still executing when the event arrives. Buffering to node end
-  // delays delivery until after execute resolves, so this fails there.
+  // The node is still executing when the event arrives. Buffering to node end delays delivery until
+  // after execute resolves, so this fails there.
   let deliveredDuringRun = false;
   let running = true;
   const slow: NodeRunners<TestTypes> = {

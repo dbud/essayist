@@ -26,8 +26,8 @@ export default function GhostSidenote({
   const Icon = ghost === "bottom" ? MoveDown : MoveUp;
   const reducedMotion = useMediaQuery("(prefers-reduced-motion: reduce)");
   return (
-    // Full-height slot with a flow origin at the column top so the sticky
-    // button is always in the stuck state. The slot never intercepts clicks.
+    // Full-height slot with a flow origin at the column top so the sticky button is always in the
+    // stuck state. The slot never intercepts clicks.
     <div class="ghost-slot">
       <button
         type="button"
@@ -41,8 +41,8 @@ export default function GhostSidenote({
         title="Offscreen; jump to mark"
         onClick={() => {
           editor?.dispatchCommand(SELECT_MARK_COMMAND, mark.thread_id);
-          // The scroll-into-view of the selection fires inside the dispatch;
-          // defer ours by a frame so the jump target is the final position.
+          // The scroll-into-view of the selection fires inside the dispatch; defer ours by a frame
+          // so the jump target is the final position.
           requestAnimationFrame(() => {
             scrollContainerRef.current?.scrollTo({
               top: trueTop,
