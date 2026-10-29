@@ -4,7 +4,9 @@ import { useEffect, useRef } from "preact/hooks";
 
 import type { PickerDoc } from "#/client/googlePicker.ts";
 import WaveBars from "#/components/ui/WaveBars.tsx";
-import { showToast } from "#/models/utils/toast.ts";
+import type { FileTree } from "#/models/fileTree.ts";
+import { batchFailureMessage, formatBatchResult } from "#/models/utils/batch.ts";
+import { showToast, showTaskToast } from "#/models/utils/toast.ts";
 import { useEditorModels } from "#/pages/editor/models.ts";
 import { navigationOpened } from "#/signals/navigation.ts";
 import { formatCount } from "#/utils/format.ts";
@@ -16,59 +18,37 @@ interface PickedMessage {
 
 export default function GoogleDocImporter() {
   const importing = useSignal(false);
-  const wsIdRef = useRef<string | null>(null);
-  const { workspaces, fileTrees } = useEditorModels();
+  const treeRef = useRef<FileTree | null>(null);
+  const { fileTrees } = useEditorModels();
 
   async function runImport(docs: PickerDoc[]) {
-    const wsId = wsIdRef.current;
-    wsIdRef.current = null;
-    if (wsId === null) {
+    if (importing.value) {
+      showToast("An import is already running");
+      return;
+    }
+    const tree = treeRef.current;
+    if (tree === null) {
       showToast("No workspace selected", "error");
       return;
     }
     importing.value = true;
-    const toast = showToast(`Importing ${formatCount(docs.length, "document")}…`);
-    const errors: string[] = [];
-    let firstPath: string | null = null;
-
-    for (let i = 0; i < docs.length; i++) {
-      const doc = docs[i];
-      toast.value = {
-        ...toast.value,
-        message: `Importing ${i + 1}/${docs.length}: ${doc.name}…`,
-        type: "info",
-        progress: { done: i, total: docs.length },
-      };
-      const res = await fetch("/api/workspaces/import/google-docs", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ wsId, docId: doc.id, name: doc.name }),
-      });
-      if (!res.ok) {
-        const body = (await res.json().catch(() => null)) as {
-          error?: string;
-        } | null;
-        errors.push(`${doc.name}: ${body?.error ?? `failed (${res.status})`}`);
-      } else {
-        const body = (await res.json()) as { path: string };
-        if (firstPath === null) firstPath = body.path;
+    const task = showTaskToast(`Importing ${formatCount(docs.length, "document")}…`);
+    try {
+      const result = await tree.importDocs(docs, (index, name) =>
+        task.step(`Importing ${index + 1}/${docs.length}: ${name}…`, {
+          done: index,
+          total: docs.length,
+        }),
+      );
+      task.settle(formatBatchResult("Imported", result, "document"), result.failed.length === 0);
+      if (docs.length === 1 && result.ok === 1) {
+        navigationOpened.value = false;
       }
+    } catch (err) {
+      task.settle(batchFailureMessage(err, "Imported", "document"), false);
+    } finally {
+      importing.value = false;
     }
-
-    await fileTrees.current.value?.load();
-    if (firstPath) fileTrees.current.value?.select(firstPath);
-    if (docs.length === 1) navigationOpened.value = false;
-
-    toast.value = {
-      ...toast.value,
-      message:
-        errors.length > 0
-          ? `Imported ${docs.length - errors.length}/${docs.length} (${errors.length} failed)`
-          : `Imported ${formatCount(docs.length, "document")}`,
-      type: errors.length > 0 ? "error" : "success",
-      progress: undefined,
-    };
-    importing.value = false;
   }
 
   // The Picker runs in a separate tab; it postMessages the picked docs back.
@@ -85,7 +65,7 @@ export default function GoogleDocImporter() {
 
   function handleImport() {
     if (importing.value) return;
-    wsIdRef.current = workspaces.selectedId.value;
+    treeRef.current = fileTrees.current.value ?? null;
     globalThis.open("/import/google-docs", "_blank");
   }
 

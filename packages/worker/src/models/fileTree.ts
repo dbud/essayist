@@ -1,11 +1,12 @@
 import { batch, computed, createModel, signal } from "@preact/signals";
 
+import type { PickerDoc } from "#/client/googlePicker.ts";
 import createAsyncState from "#/models/utils/asyncState.ts";
-import { getJson } from "#/models/utils/http.ts";
+import { BatchAuthError, type BatchResult, runBatch } from "#/models/utils/batch.ts";
+import { getJson, requestJson } from "#/models/utils/http.ts";
 
 import type { FileTreeData } from "./fileTree.data";
 
-// TODO -- createFile and uploadFiles when the files api lands
 export const FileTreeModel = createModel((wsId: string, data?: FileTreeData) => {
   const files = signal(data?.files ?? []);
   const selectedPath = signal(data?.selectedPath ?? null);
@@ -47,6 +48,42 @@ export const FileTreeModel = createModel((wsId: string, data?: FileTreeData) => 
     selectedVersionId.value = versionId;
   }
 
+  /** Imports picked Google Docs sequentially. Selects the first imported file. */
+  async function importDocs(
+    docs: readonly PickerDoc[],
+    onStep?: (index: number, name: string) => void,
+  ): Promise<BatchResult> {
+    let firstPath: string | null = null;
+    const result = await runBatch(
+      docs,
+      async (doc) => {
+        const res = await requestJson<{ created: boolean; path: string }>(
+          "POST",
+          "/api/workspaces/import/google-docs",
+          { wsId, docId: doc.id, name: doc.name },
+        );
+        if (res.status === 401) {
+          throw new BatchAuthError();
+        }
+        if (!res.ok || res.data === undefined) {
+          throw new Error(`${doc.name}: ${res.message ?? `failed (${res.status})`}`);
+        }
+        if (!res.data.created) {
+          return { updated: true };
+        }
+        if (firstPath === null) {
+          firstPath = res.data.path;
+        }
+      },
+      { concurrency: 1, onStart: (doc, index) => onStep?.(index, doc.name) },
+    );
+    await load();
+    if (firstPath !== null) {
+      select(firstPath);
+    }
+    return result;
+  }
+
   return {
     files,
     selectedPath,
@@ -57,6 +94,7 @@ export const FileTreeModel = createModel((wsId: string, data?: FileTreeData) => 
     load,
     loading,
     error,
+    importDocs,
   };
 });
 
