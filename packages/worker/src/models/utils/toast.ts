@@ -54,8 +54,8 @@ export interface TaskToast {
   settle(message: string, ok: boolean): void;
 }
 
-/** Push a task toast. The controller composes the common spread mutations each raw call site
- * would repeat. */
+/** Push a task toast. step and settle rewrite the signal value, so call sites don't repeat that
+ * mutation. */
 export function showTaskToast(initial: string): TaskToast {
   const toast = showToast(initial);
   return {
