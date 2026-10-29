@@ -144,6 +144,25 @@ const workspaceHandlers = HttpApiBuilder.group(
           }
           return result;
         }),
+      createFile: (req) =>
+        Effect.gen(function* () {
+          const { user } = yield* UserSession;
+          const { wsId, path, content } = req.payload;
+          yield* requireAccess(wsId, user.id);
+          const entries = yield* files.list(path).pipe(
+            Effect.provideService(WorkspaceId, { wsId }),
+            Effect.catchTag("PersistenceError", (err) => Effect.die(err)),
+          );
+          if (entries.some((entry) => entry.path === path)) {
+            return yield* Effect.fail(new HttpApiError.Conflict());
+          }
+          return yield* files.write(path, content).pipe(
+            Effect.provideService(WorkspaceId, { wsId }),
+            Effect.catchTag("PersistenceError", (err) => Effect.die(err)),
+            Effect.catchTag("ConcurrentModificationError", (err) => Effect.die(err)),
+            Effect.catchTag("FileMissingError", (err) => Effect.die(err)),
+          );
+        }),
       upsertFile: (req) =>
         Effect.gen(function* () {
           const { user } = yield* UserSession;
