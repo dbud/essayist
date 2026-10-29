@@ -2,14 +2,14 @@ import { type Signal, useSignal } from "@preact/signals";
 
 import Dialog from "#/components/ui/Dialog.tsx";
 import WaveBars from "#/components/ui/WaveBars.tsx";
-
-// TODO -- create-workspace api -- ESS-93 import { getWorkspaces } from "#/signals/workspace.ts";
+import { useEditorModels } from "#/pages/editor/models.ts";
 
 interface CreateWorkspaceDialogProps {
   open: Signal<boolean>;
 }
 
 export default function CreateWorkspaceDialog({ open }: CreateWorkspaceDialogProps) {
+  const { workspaces } = useEditorModels();
   const name = useSignal("");
   const error = useSignal<string | null>(null);
   const submitting = useSignal(false);
@@ -21,7 +21,7 @@ export default function CreateWorkspaceDialog({ open }: CreateWorkspaceDialogPro
     submitting.value = true;
     error.value = null;
     try {
-      // TODO -- create-project api -- ESS-93 await getWorkspaces().create(trimmed);
+      await workspaces.create(trimmed);
       name.value = "";
       open.value = false;
     } catch (err) {

@@ -1,7 +1,8 @@
+import type { Workspace } from "@essayist/core";
 import { computed, createModel, signal } from "@preact/signals";
 
 import createAsyncState from "#/models/utils/asyncState.ts";
-import { getJson } from "#/models/utils/http.ts";
+import { getJson, postJson } from "#/models/utils/http.ts";
 
 import type { WorkspacesData } from "./workspaces.data";
 
@@ -25,7 +26,13 @@ export const WorkspacesModel = createModel((data: WorkspacesData) => {
     });
   }
 
-  return { list, selectedId, current, select, refresh, loading, error };
+  async function create(name: string): Promise<void> {
+    const workspace = await postJson<Workspace>("/api/workspaces", { name });
+    list.value = [...list.value, workspace];
+    select(workspace.id);
+  }
+
+  return { list, selectedId, current, select, refresh, create, loading, error };
 });
 
 export type Workspaces = InstanceType<typeof WorkspacesModel>;
