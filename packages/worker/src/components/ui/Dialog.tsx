@@ -9,6 +9,8 @@ interface DialogProps {
   children: ComponentChildren;
   /** Side column rendered beside the panel, outside its frame. */
   aside?: ComponentChildren;
+  /** Fires when the native dialog closes (after the close animation). */
+  onClosed?: () => void;
 }
 
 /** Modal dialog using native <dialog> with Panel animation.
@@ -18,7 +20,7 @@ interface DialogProps {
  * flips to false (by close, useEffect, or consumer), Panel animates closed, then onSettled calls
  * dialog.close(). Clicks outside the panel (backdrop or aside) close via the Panel's click-outside.
  * */
-export default function Dialog({ open, children, aside }: DialogProps) {
+export default function Dialog({ open, children, aside, onClosed }: DialogProps) {
   const ref = useRef<HTMLDialogElement>(null);
   const panelOpen = useSignal(false);
 
@@ -57,7 +59,14 @@ export default function Dialog({ open, children, aside }: DialogProps) {
   }
 
   return (
-    <dialog ref={ref} class="dialog-backdrop" onClose={close}>
+    <dialog
+      ref={ref}
+      class="dialog-backdrop"
+      onClose={() => {
+        close();
+        onClosed?.();
+      }}
+    >
       <div class={`content-layout ${aside ? "content-layout--side" : ""}`}>
         <div class="content-main p-10 min-w-0 max-w-lg md:max-w-2xl xl:max-w-3xl">
           <Panel

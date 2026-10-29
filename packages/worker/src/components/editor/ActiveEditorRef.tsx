@@ -8,6 +8,7 @@ export default function ActiveEditorRef() {
 
   useEffect(() => {
     activeEditor.value = editor;
+    editor.focus();
     return () => {
       // An unmount after a newer editor registered must leave it alone.
       if (activeEditor.value === editor) activeEditor.value = null;

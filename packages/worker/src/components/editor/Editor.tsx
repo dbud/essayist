@@ -6,7 +6,7 @@ import { MarkdownShortcutPlugin } from "@lexical/react/LexicalMarkdownShortcutPl
 import { OnChangePlugin } from "@lexical/react/LexicalOnChangePlugin";
 import { assertExists } from "@std/assert";
 import type { EditorState } from "lexical";
-import { useMemo } from "preact/hooks";
+import { useEffect, useMemo } from "preact/hooks";
 
 import ActiveEditorRef from "#/components/editor/ActiveEditorRef.tsx";
 import { createEditorExtension } from "#/editor/extension.ts";
@@ -15,6 +15,7 @@ import { withDOM } from "#/editor/withDOM.ts";
 import type { FileKey } from "#/models/fileSelection.ts";
 import { usePreferences } from "#/models/preferences.ts";
 import { useEditorModels } from "#/pages/editor/models.ts";
+import { activeEditor } from "#/signals/activeEditor.ts";
 import { getEditorSelection } from "#/signals/editorSelection.ts";
 
 interface EditorProps extends FileKey {
@@ -86,6 +87,10 @@ export default function Editor({
       return html;
     });
   }, [extension]);
+
+  useEffect(() => {
+    activeEditor.value?.focus();
+  }, []);
 
   const contentEditable = useMemo(
     () => (

@@ -12,20 +12,26 @@ interface CreateFileDialogProps {
 export default function CreateFileDialog({ open, onCreated }: CreateFileDialogProps) {
   const { fileTrees } = useEditorModels();
   const name = useSignal("");
+  const pendingName = useSignal<string | null>(null);
 
   function onSubmit(e: Event) {
     e.preventDefault();
     const trimmed = name.value.trim();
     if (!trimmed) return;
-    // A local pending buffer; no server round trip until the first save.
-    fileTrees.current.value?.startPending(trimmed);
+    pendingName.value = trimmed;
     name.value = "";
     open.value = false;
     onCreated?.();
   }
 
+  function onClosed() {
+    const staged = pendingName.value;
+    pendingName.value = null;
+    if (staged !== null) fileTrees.current.value?.startPending(staged);
+  }
+
   return (
-    <Dialog open={open}>
+    <Dialog open={open} onClosed={onClosed}>
       <form onSubmit={onSubmit} class="flex flex-col">
         <div class="cell cell--ink">New file</div>
         <div class="form-grid stack--row">
