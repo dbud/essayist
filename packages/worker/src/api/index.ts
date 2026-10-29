@@ -61,6 +61,13 @@ const workspaceHandlers = HttpApiBuilder.group(
           yield* requireAccess(wsId, user.id);
           yield* Effect.orDie(userState.setSelectedWorkspace(user.id, wsId));
         }),
+      createWorkspace: (req) =>
+        Effect.gen(function* () {
+          const { user } = yield* UserSession;
+          return yield* Effect.orDie(
+            workspacesStore.createWorkspace(req.payload.name, user.id).pipe(Effect.provide(stores)),
+          );
+        }),
       getFiles: (req) =>
         Effect.gen(function* () {
           const { user } = yield* UserSession;

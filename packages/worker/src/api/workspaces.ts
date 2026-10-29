@@ -1,4 +1,4 @@
-import { DraftSnapshot, FileVersion } from "@essayist/core";
+import { DraftSnapshot, FileVersion, Workspace } from "@essayist/core";
 import { Schema } from "effect";
 import { HttpApiEndpoint, HttpApiError, HttpApiGroup } from "effect/http-api";
 
@@ -31,6 +31,13 @@ const getWorkspaces = HttpApiEndpoint.get("getWorkspaces", "/workspaces", {
 const selectWorkspace = HttpApiEndpoint.patch("selectWorkspace", "/workspaces", {
   payload: SelectPayload,
   error: HttpApiError.Forbidden,
+});
+
+const CreatePayload = Schema.Struct({ name: Schema.NonEmptyString });
+
+const createWorkspace = HttpApiEndpoint.post("createWorkspace", "/workspaces", {
+  payload: CreatePayload,
+  success: Workspace,
 });
 
 const getFiles = HttpApiEndpoint.get("getFiles", "/workspaces/files", {
@@ -142,6 +149,7 @@ const importGoogleDoc = HttpApiEndpoint.post("importGoogleDoc", "/workspaces/imp
 export const workspaceGroup = HttpApiGroup.make("workspaces")
   .add(getWorkspaces)
   .add(selectWorkspace)
+  .add(createWorkspace)
   .add(getFiles)
   .add(selectFile)
   .add(getFileContent)
