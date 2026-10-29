@@ -5,6 +5,7 @@ import FileStats from "#/components/editor/FileStats.tsx";
 import FontSelect from "#/components/editor/FontSelect.tsx";
 import { MarkBadges } from "#/components/editor/MarkBadges.tsx";
 import { MarkHighlights } from "#/components/editor/MarkHighlights.tsx";
+import SidenoteControls from "#/components/editor/SidenoteControls.tsx";
 import Sidenotes from "#/components/editor/Sidenotes.tsx";
 import VersionPicker from "#/components/editor/VersionPicker.tsx";
 import Overlay from "#/components/ui/Overlay.tsx";
@@ -82,7 +83,7 @@ function FileViewerBody({ wsId, path, versionId }: FileKey) {
             </div>
           </div>
           <div class="content-side flex items-center">
-            {/* TODO -- SidenoteControls lands with the review runner -- ESS-94 */}
+            <SidenoteControls />
           </div>
         </div>
       </div>
