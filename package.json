@@ -9,7 +9,7 @@
     "fmt": "oxfmt . && pnpm fmt:comments",
     "fmt:comments": "scripts/fmt-comments.sh",
     "lint": "oxlint .",
-    "prepare": "husky",
+    "prepare": "husky && git config blame.ignoreRevsFile .git-blame-ignore-revs",
     "test": "vitest run"
   },
   "devDependencies": {

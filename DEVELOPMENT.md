@@ -56,7 +56,8 @@ Benchmarks are `*.bench.ts` files next to the sources (see
 ignores them.
 
 Mechanical reformat commits are listed in the root
-`.git-blame-ignore-revs`; git reads that file per clone:
+`.git-blame-ignore-revs`. The prepare script configures git to read
+that file after every pnpm install; to set it up by hand, run
 `git config blame.ignoreRevsFile .git-blame-ignore-revs`.
 
 Type checking is `tsc --noEmit` (TypeScript 7) in each package; the
