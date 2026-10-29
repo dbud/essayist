@@ -31,12 +31,14 @@ function SaveStatus() {
   const { saving, saveError, dirty, draft, version } = file;
 
   const savedAt = pending ? undefined : (draft.value?.timestamp ?? version.value?.timestamp);
+  const isPendingVersion = version.value?.version_id === PENDING_VERSION_ID;
+  const action = isPendingVersion ? "Created" : "Saved";
 
   let label: ComponentChild | null = null;
   let statusKey = "";
   if (!pending) {
-    statusKey = "saved";
-    label = savedAt === undefined ? "Saved" : `Saved ${formatRelativeTime(savedAt)}`;
+    statusKey = action.toLowerCase();
+    label = savedAt === undefined ? action : `${action} ${formatRelativeTime(savedAt)}`;
     if (saving.value) {
       statusKey = "saving";
       label = "Saving...";

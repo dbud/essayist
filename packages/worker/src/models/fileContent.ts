@@ -49,7 +49,12 @@ export const FileContentModel = createModel(
 
     if (data === undefined) {
       if (versionId === PENDING_VERSION_ID) {
-        version.value = { version_id: versionId, timestamp: 0, lines: 0, content: "" };
+        version.value = {
+          version_id: versionId,
+          timestamp: Date.now(),
+          lines: 0,
+          content: "",
+        };
       } else if (!import.meta.env.SSR) {
         void load();
       }
