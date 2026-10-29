@@ -46,6 +46,38 @@ export function showToast(
   return toast;
 }
 
+/** A toast a batch flow drives through its steps. */
+export interface TaskToast {
+  /** Advance the label, optionally with a progress bar. */
+  step(message: string, progress?: { done: number; total: number }): void;
+  /** Set the final summary; ok chooses success or error styling. */
+  settle(message: string, ok: boolean): void;
+}
+
+/** Push a task toast. The controller composes the common spread mutations each raw call site
+ * would repeat. */
+export function showTaskToast(initial: string): TaskToast {
+  const toast = showToast(initial);
+  return {
+    step(message, progress) {
+      toast.value = {
+        ...toast.value,
+        message,
+        type: "info",
+        progress,
+      };
+    },
+    settle(message, ok) {
+      toast.value = {
+        ...toast.value,
+        message,
+        type: ok ? "success" : "error",
+        progress: undefined,
+      };
+    },
+  };
+}
+
 /** Begin dismissal: plays the leave animation. The animationend listener of
  * the element calls removeToast once the animation finishes. */
 export function dismissToast(toast: Signal<Toast>): void {
