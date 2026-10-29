@@ -138,6 +138,18 @@ const workspaceHandlers = HttpApiBuilder.group(
           }
           return result;
         }),
+      upsertFile: (req) =>
+        Effect.gen(function* () {
+          const { user } = yield* UserSession;
+          const { wsId, path, content } = req.payload;
+          yield* requireAccess(wsId, user.id);
+          return yield* files.write(path, content).pipe(
+            Effect.provideService(WorkspaceId, { wsId }),
+            Effect.catchTag("PersistenceError", (err) => Effect.die(err)),
+            Effect.catchTag("ConcurrentModificationError", (err) => Effect.die(err)),
+            Effect.catchTag("FileMissingError", () => Effect.fail(new HttpApiError.NotFound())),
+          );
+        }),
       importGoogleDoc: (req) =>
         Effect.gen(function* () {
           const { user, sessionId } = yield* UserSession;

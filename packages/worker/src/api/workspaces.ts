@@ -102,6 +102,26 @@ const GetMarks = HttpApiEndpoint.get("getMarks", "/workspaces/files/marks", {
   error: [HttpApiError.Forbidden, HttpApiError.NotFound],
 });
 
+const UpsertResult = Schema.Struct({
+  version_id: Schema.String,
+  timestamp: Schema.Number,
+  lines: Schema.Number,
+  path: Schema.String,
+  created: Schema.Boolean,
+});
+
+const UpsertPayload = Schema.Struct({
+  wsId: Schema.NonEmptyString,
+  path: Schema.NonEmptyString,
+  content: Schema.String,
+});
+
+const upsertFile = HttpApiEndpoint.put("upsertFile", "/workspaces/files/upsert", {
+  payload: UpsertPayload,
+  success: UpsertResult,
+  error: [HttpApiError.Forbidden, HttpApiError.NotFound],
+});
+
 const ImportPayload = Schema.Struct({
   wsId: Schema.NonEmptyString,
   docId: Schema.NonEmptyString,
@@ -129,5 +149,6 @@ export const workspaceGroup = HttpApiGroup.make("workspaces")
   .add(GetMarks)
   .add(saveFileDraft)
   .add(promoteFileDraft)
+  .add(upsertFile)
   .add(importGoogleDoc)
   .middleware(SessionMiddleware);
