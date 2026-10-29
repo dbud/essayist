@@ -5,7 +5,7 @@ import { showToast } from "#/models/utils/toast.ts";
 import { useEditorModels } from "#/pages/editor/models.ts";
 
 export default function SidenoteControls() {
-  const { writable, reviewRuns } = useEditorModels();
+  const { writable, reviewRuns, fileTrees, fileVersions } = useEditorModels();
   const review = reviewRuns.current.value;
   // A snapshot has no controls; a pending buffer resolves to no runs model.
   if (!writable.value || review === null) return null;
@@ -17,6 +17,9 @@ export default function SidenoteControls() {
       showToast(error.value, "error");
       return;
     }
+    // TODO -- receive promoted version and reviewRun in progress
+    void fileTrees.current.value?.load();
+    void fileVersions.current.value?.load();
     if (result?.status === "completed") showToast("Review complete", "success");
     else showToast(result?.error ?? "Review failed", "error");
   }
