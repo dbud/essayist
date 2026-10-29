@@ -1,5 +1,6 @@
 import { effect, type ReadonlySignal } from "@preact/signals";
 
+import { PENDING_VERSION_ID } from "#/models/fileContent.ts";
 import type { FileSelection } from "#/models/fileSelection.ts";
 import { patchJson } from "#/models/utils/http.ts";
 
@@ -30,7 +31,7 @@ function schedule(): void {
 export function setupSelectionPersist(selected: ReadonlySignal<FileSelection | null>): void {
   effect(() => {
     const selection = selected.value;
-    if (selection === null) return;
+    if (selection === null || selection.versionId === PENDING_VERSION_ID) return;
     if (selection.wsId !== lastWsId) {
       lastWsId = selection.wsId;
       pendingWsId = selection.wsId;

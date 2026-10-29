@@ -1,4 +1,5 @@
 import { batch, computed, createModel, signal } from "@preact/signals";
+import { toKebabCase } from "@std/text/to-kebab-case";
 
 import type { PickerDoc } from "#/client/googlePicker.ts";
 import createAsyncState from "#/models/utils/asyncState.ts";
@@ -6,6 +7,7 @@ import { BatchAuthError, type BatchResult, runBatch } from "#/models/utils/batch
 import { getJson, requestJson } from "#/models/utils/http.ts";
 import type { UploadedFile } from "#/utils/fileUpload.ts";
 
+import { PENDING_VERSION_ID } from "./fileContent.ts";
 import type { FileTreeData } from "./fileTree.data";
 
 export const FileTreeModel = createModel((wsId: string, data?: FileTreeData) => {
@@ -24,7 +26,11 @@ export const FileTreeModel = createModel((wsId: string, data?: FileTreeData) => 
     );
     if (fresh) {
       batch(() => {
-        files.value = fresh.files;
+        // Local pending entries have no server row; carry them through the refresh.
+        files.value = [
+          ...fresh.files,
+          ...files.value.filter((file) => file.latestVersionId === PENDING_VERSION_ID),
+        ];
         selectedPath.value = fresh.selectedPath;
         selectedVersionId.value = fresh.selectedVersionId;
       });
@@ -43,6 +49,29 @@ export const FileTreeModel = createModel((wsId: string, data?: FileTreeData) => 
           ? null
           : (files.value.find((file) => file.path === path)?.latestVersionId ?? null));
     });
+  }
+
+  function startPending(name: string): void {
+    const stem = pendingStem(name);
+    let candidate = `${stem}.md`;
+    let suffix = 2;
+    const taken = new Set(files.value.map((file) => file.path));
+    while (taken.has(candidate)) {
+      candidate = `${stem}-${suffix++}.md`;
+    }
+    batch(() => {
+      files.value = [
+        ...files.value,
+        { path: candidate, lines: 0, latestVersionId: PENDING_VERSION_ID },
+      ];
+      select(candidate, PENDING_VERSION_ID);
+    });
+  }
+
+  function clearPending(path: string): void {
+    files.value = files.value.filter(
+      (file) => !(file.path === path && file.latestVersionId === PENDING_VERSION_ID),
+    );
   }
 
   function selectVersion(versionId: string): void {
@@ -134,6 +163,8 @@ export const FileTreeModel = createModel((wsId: string, data?: FileTreeData) => 
     error,
     importDocs,
     uploadFiles,
+    startPending,
+    clearPending,
   };
 });
 
@@ -189,4 +220,9 @@ function sortTree(node: TreeNode) {
   for (const child of node.children) {
     sortTree(child);
   }
+}
+
+function pendingStem(name: string): string {
+  const slug = toKebabCase(name);
+  return slug === "" ? "untitled" : slug;
 }

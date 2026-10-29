@@ -9,6 +9,8 @@ import { editorStateToMarkdown, markdownToEditorState } from "#/utils/markdown.t
 import type { FileContentData } from "./fileContent.data.ts";
 import type { FileKey } from "./fileSelection.ts";
 
+export const PENDING_VERSION_ID = "pending";
+
 export const FileContentModel = createModel(
   ({ wsId, path, versionId }: FileKey, data?: FileContentData) => {
     const version = signal<FileSnapshot | null>(data?.version ?? null);
@@ -45,12 +47,18 @@ export const FileContentModel = createModel(
       }
     }
 
-    if (data === undefined && !import.meta.env.SSR) void load();
+    if (data === undefined) {
+      if (versionId === PENDING_VERSION_ID) {
+        version.value = { version_id: versionId, timestamp: 0, lines: 0, content: "" };
+      } else if (!import.meta.env.SSR) {
+        void load();
+      }
+    }
 
     const [runSave, { loading: saving, error: saveError }] = createAsyncState();
 
     async function save(options?: { readonly keepalive?: boolean }): Promise<void> {
-      if (!dirty.value) return;
+      if (!dirty.value || versionId === PENDING_VERSION_ID) return;
       const result = await runSave(async () =>
         putJson<DraftSnapshot>(
           "/api/workspaces/files/draft",

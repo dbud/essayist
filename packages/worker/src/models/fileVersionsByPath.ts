@@ -1,5 +1,6 @@
 import { computed, createModel, type ReadonlySignal, signal } from "@preact/signals";
 
+import { PENDING_VERSION_ID } from "./fileContent.ts";
 import type { FileSelection } from "./fileSelection.ts";
 import type { FileVersionsData } from "./fileVersions.data.ts";
 import { type FileVersions, FileVersionsModel } from "./fileVersions.ts";
@@ -20,7 +21,13 @@ export const FileVersionsByPathModel = createModel(
 
     const current = computed(() => {
       const selection = selected.value;
-      if (selection === null || selection.path === null) return null;
+      if (
+        selection === null ||
+        selection.path === null ||
+        selection.versionId === PENDING_VERSION_ID
+      ) {
+        return null;
+      }
       const { wsId, path } = selection;
       return versions.value
         .getOrInsertComputed(wsId, () => new Map())
