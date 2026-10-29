@@ -29,7 +29,9 @@
       "language_servers": ["oxlint", "oxfmt", "vtsls", "!typescript-language-server", "!eslint"],
       "prettier": {
         "allowed": false
-      }
+      },
+      "preferred_line_length": 100,
+      "allow_rewrap": "in_comments"
     },
     "JSON": {
       "format_on_save": "on",
@@ -78,7 +80,9 @@
       "language_servers": ["oxlint", "oxfmt", "vtsls", "!typescript-language-server", "!eslint"],
       "prettier": {
         "allowed": false
-      }
+      },
+      "preferred_line_length": 100,
+      "allow_rewrap": "in_comments"
     },
     "TypeScript": {
       "format_on_save": "on",
@@ -95,7 +99,9 @@
       "language_servers": ["oxlint", "oxfmt", "vtsls", "!typescript-language-server", "!eslint"],
       "prettier": {
         "allowed": false
-      }
+      },
+      "preferred_line_length": 100,
+      "allow_rewrap": "in_comments"
     }
   },
   "lsp": {
