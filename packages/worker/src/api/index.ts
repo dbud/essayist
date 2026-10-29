@@ -1,16 +1,31 @@
 // The api tier; endpoint paths are root-relative and the /api prefix is applied once at assembly.
-import { type AuthStore, Files, UserState, WorkspaceId, Workspaces } from "@essayist/core";
+import {
+  type AuthStore,
+  Files,
+  Marks,
+  ModelClient,
+  resolveActiveReviewPass,
+  ReviewConfig,
+  ReviewRuns,
+  runReviewPass,
+  TraceEvents,
+  UserState,
+  WorkspaceId,
+  Workspaces,
+} from "@essayist/core";
 import { Effect, Layer } from "effect";
 import { HttpApi, HttpApiBuilder, HttpApiError } from "effect/http-api";
 
 import { importGoogleDocFile } from "#/api/googleDocs.ts";
 import { sessionMiddleware, UserSession } from "#/api/sessionMiddleware.ts";
+import { stubModelClient } from "#/api/stubModel.ts";
 import type { GoogleConfig } from "#/env.ts";
 import { fileContentLoader } from "#/models/fileContent.loader.ts";
 import { fileTreeLoader } from "#/models/fileTree.loader.ts";
 import { fileVersionsLoader } from "#/models/fileVersions.loader.ts";
 import { workspacesLoader } from "#/models/workspaces.loader.ts";
 
+import { ApiFailure } from "./errors";
 import { userGroup } from "./user";
 import { workspaceGroup } from "./workspaces";
 
@@ -32,7 +47,15 @@ const workspaceHandlers = HttpApiBuilder.group(
   "workspaces",
   Effect.fn(function* (handlers) {
     const stores = yield* Effect.context<
-      Workspaces | UserState | Files | AuthStore | GoogleConfig
+      | Workspaces
+      | UserState
+      | Files
+      | AuthStore
+      | GoogleConfig
+      | ReviewConfig
+      | ReviewRuns
+      | TraceEvents
+      | Marks
     >();
     const workspacesStore = yield* Workspaces;
     const userState = yield* UserState;
@@ -186,6 +209,58 @@ const workspaceHandlers = HttpApiBuilder.group(
             docId,
             name,
           }).pipe(Effect.provide(stores));
+        }),
+      getReviewRuns: (req) =>
+        Effect.gen(function* () {
+          const { user } = yield* UserSession;
+          const { wsId, path } = req.query;
+          yield* requireAccess(wsId, user.id);
+          return yield* Effect.gen(function* () {
+            const runs = yield* ReviewRuns;
+            return { runs: yield* runs.listRuns(path) };
+          }).pipe(
+            Effect.provideService(WorkspaceId, { wsId }),
+            Effect.provide(stores),
+            Effect.orDie,
+          );
+        }),
+      startReview: (req) =>
+        Effect.gen(function* () {
+          const { user } = yield* UserSession;
+          const { wsId, path } = req.payload;
+          yield* requireAccess(wsId, user.id);
+          // Promote the pending draft first: the review reads the latest checkpoint.
+          yield* files.promoteDraft(path).pipe(
+            Effect.provideService(WorkspaceId, { wsId }),
+            Effect.catchTag("FileMissingError", () => Effect.fail(new HttpApiError.NotFound())),
+            Effect.catchTags({
+              PersistenceError: Effect.die,
+              ConcurrentModificationError: Effect.die,
+            }),
+          );
+          const pass = yield* Effect.orDie(resolveActiveReviewPass.pipe(Effect.provide(stores)));
+          if (pass === undefined) {
+            return yield* Effect.fail(
+              new ApiFailure({ message: "No active review pass configured." }),
+            );
+          }
+          return yield* runReviewPass({ pass, path }).pipe(
+            Effect.provideService(WorkspaceId, { wsId }),
+            Effect.provide(stores),
+            Effect.provideService(ModelClient, stubModelClient),
+            Effect.catchTag("ReviewFileMissingError", () =>
+              Effect.fail(new HttpApiError.NotFound()),
+            ),
+            Effect.catchTag("ReviewLeaseTakenError", (err) =>
+              Effect.fail(new ApiFailure({ message: err.message })),
+            ),
+            Effect.catchTags({
+              ReviewRunMissingError: Effect.die,
+              PersistenceError: Effect.die,
+              ConcurrentModificationError: Effect.die,
+              MissingChunksError: Effect.die,
+            }),
+          );
         }),
     });
   }),

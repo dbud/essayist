@@ -5,6 +5,7 @@ import {
   Files,
   jsonLogLayer,
   layerAuthD1,
+  Marks,
   type PersistenceError,
   ReviewConfig,
   ReviewRuns,
@@ -22,6 +23,7 @@ type WorkerRuntime = ManagedRuntime.ManagedRuntime<
   | ReviewConfig
   | ReviewRuns
   | TraceEvents
+  | Marks
   | Workspaces
   | AuthStore
   | UserState
@@ -40,6 +42,7 @@ type RuntimeLayer = Layer.Layer<
   | ReviewConfig
   | ReviewRuns
   | TraceEvents
+  | Marks
   | Workspaces
   | AuthStore
   | UserState
@@ -71,6 +74,7 @@ function cell(env: WorkerEnv): RuntimeCell {
           ReviewRuns.layerNoDeps,
           Layer.provide(TraceEvents.layerNoDeps, ChunkedValues.layerNoDeps),
           ChunkedValues.layerNoDeps,
+          Layer.provide(Marks.layerNoDeps, Files.layerNoDeps),
           layerAuthD1(client),
           googleConfigLayer(e),
           jsonLogLayer,

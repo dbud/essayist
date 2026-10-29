@@ -1,4 +1,4 @@
-import { DraftSnapshot, FileVersion, Workspace } from "@essayist/core";
+import { DraftSnapshot, FileVersion, ReviewRun, Workspace } from "@essayist/core";
 import { Schema } from "effect";
 import { HttpApiEndpoint, HttpApiError, HttpApiGroup } from "effect/http-api";
 
@@ -6,6 +6,7 @@ import { FileContentData } from "#/models/fileContent.data.ts";
 import { FileTreeData } from "#/models/fileTree.data.ts";
 import { FileVersionsData } from "#/models/fileVersions.data.ts";
 import { MarksData } from "#/models/marks.data.ts";
+import { ReviewRunsData } from "#/models/reviewRuns.data.ts";
 import { WorkspacesData } from "#/models/workspaces.data.ts";
 
 import { ApiFailure } from "./errors";
@@ -152,6 +153,28 @@ const importGoogleDoc = HttpApiEndpoint.post("importGoogleDoc", "/workspaces/imp
   error: [HttpApiError.Forbidden, HttpApiError.Unauthorized, ApiFailure],
 });
 
+const RunsQuery = Schema.Struct({
+  wsId: Schema.NonEmptyString,
+  path: Schema.optional(Schema.String),
+});
+
+const getReviewRuns = HttpApiEndpoint.get("getReviewRuns", "/workspaces/review-runs", {
+  query: RunsQuery,
+  success: ReviewRunsData,
+  error: HttpApiError.Forbidden,
+});
+
+const StartReviewPayload = Schema.Struct({
+  wsId: Schema.NonEmptyString,
+  path: Schema.NonEmptyString,
+});
+
+const startReview = HttpApiEndpoint.post("startReview", "/workspaces/files/review", {
+  payload: StartReviewPayload,
+  success: ReviewRun,
+  error: [HttpApiError.Forbidden, HttpApiError.NotFound, ApiFailure],
+});
+
 export const workspaceGroup = HttpApiGroup.make("workspaces")
   .add(getWorkspaces)
   .add(selectWorkspace)
@@ -166,4 +189,6 @@ export const workspaceGroup = HttpApiGroup.make("workspaces")
   .add(createFile)
   .add(upsertFile)
   .add(importGoogleDoc)
+  .add(getReviewRuns)
+  .add(startReview)
   .middleware(SessionMiddleware);
