@@ -1,21 +1,13 @@
-import type {
-  MarkAttempt,
-  ModelCallRecord,
-  ReviewRun,
-  ReviewRunStatus,
-  TraceEvent,
-  TraceNodeView,
-} from "@essayist/core";
 import {
   groupTraceNodes,
-  ReviewRuns,
-  TraceEvents,
-  WorkspaceId,
-  Workspaces,
+  type MarkAttempt,
+  type ModelCallRecord,
+  type ReviewRun,
+  type ReviewRunStatus,
+  type TraceEvent,
+  type TraceNodeView,
+  type User,
 } from "@essayist/core";
-import { Effect } from "effect";
-import type { PageProps } from "fresh";
-import { page } from "fresh";
 import {
   AlertTriangle,
   ArrowDown,
@@ -26,50 +18,13 @@ import {
   Milestone,
   MoveLeft,
   RefreshCw,
-  RotateCcw,
   Type,
   Wrench,
 } from "lucide-preact";
 import type { ComponentChildren } from "preact";
+
 import MarkdownView from "#/components/MarkdownView.tsx";
-import { define, type State } from "#/define.ts";
-import Navigation from "#/islands/Navigation.tsx";
-import { runtime } from "#/store.ts";
-
-interface TracePageData {
-  run: ReviewRun;
-  trace: TraceEvent[];
-}
-
-export const handler = define.handlers({
-  async GET(ctx) {
-    const { wsId, runId } = ctx.params;
-    const allowed = await runtime.runPromise(
-      Workspaces.use((store) => store.hasAccess(wsId, ctx.state.user.id)),
-    );
-    if (!allowed) {
-      return ctx.redirect("/");
-    }
-    const { run, trace } = await runtime.runPromise(
-      Effect.provideService(
-        Effect.gen(function* () {
-          const runs = yield* ReviewRuns;
-          const traces = yield* TraceEvents;
-          return {
-            run: yield* runs.getRun(runId),
-            trace: (yield* traces.get(runId)) ?? [],
-          };
-        }),
-        WorkspaceId,
-        { wsId },
-      ),
-    );
-    if (!run) {
-      return new Response("Review run not found", { status: 404 });
-    }
-    return page({ run, trace });
-  },
-});
+import Navigation from "#/components/Navigation.tsx";
 
 function statusBadge(status: ReviewRunStatus) {
   const classes =
@@ -81,17 +36,13 @@ function statusBadge(status: ReviewRunStatus) {
   return <span class={classes}>{status}</span>;
 }
 
-/** Editor URL that opens this run's file, in replay mode when asked. */
-function editorHref(
-  run: ReviewRun,
-  { replay = false }: { replay?: boolean } = {},
-): string {
+/** Editor URL that opens this run's file. */
+function editorHref(run: ReviewRun): string {
   const params = new URLSearchParams({
-    ws: run.wsId,
-    file: run.path,
+    wsId: run.wsId,
+    path: run.path,
   });
-  if (replay) params.set("replay", run.id);
-  return `/?${params.toString()}`;
+  return `/editor?${params.toString()}`;
 }
 
 function duration(ms: number): string {
@@ -102,13 +53,7 @@ function pretty(value: unknown): string {
   return JSON.stringify(value, null, 2) ?? "";
 }
 
-function TokenUsage({
-  inputTokens,
-  outputTokens,
-}: {
-  inputTokens: number;
-  outputTokens: number;
-}) {
+function TokenUsage({ inputTokens, outputTokens }: { inputTokens: number; outputTokens: number }) {
   return (
     <span class="flex gap-1">
       <ArrowDown size={14} />
@@ -211,9 +156,7 @@ function OutputRow({ output }: { output: unknown }) {
         output
       </div>
       <div class="cell--data col-span-2 min-w-0 max-h-72 overflow-y-auto break-words">
-        <pre class="min-w-0 whitespace-pre-wrap font-mono">
-          {pretty(output)}
-        </pre>
+        <pre class="min-w-0 whitespace-pre-wrap font-mono">{pretty(output)}</pre>
       </div>
     </>
   );
@@ -223,20 +166,14 @@ function AttemptRow({ attempt }: { attempt: MarkAttempt }) {
   return (
     <div class="cell--data col-span-2 min-w-0 max-h-72 overflow-y-auto break-words flex flex-col gap-4">
       <div class="flex gap-2 items-start">
-        <span
-          class={`badge ${attempt.marked ? "badge--success" : "badge--error"} self-start`}
-        >
+        <span class={`badge ${attempt.marked ? "badge--success" : "badge--error"} self-start`}>
           {attempt.marked ? "placed" : "failed"}
         </span>
         {attempt.label && <span class="self-start">{attempt.label}</span>}
       </div>
-      <div class="whitespace-pre-wrap break-words font-serif italic">
-        {attempt.selected_text}
-      </div>
+      <div class="whitespace-pre-wrap break-words font-serif italic">{attempt.selected_text}</div>
       <div class="whitespace-pre-wrap">{attempt.comment}</div>
-      {attempt.error && (
-        <div class="text-[0.75rem] text-error">{attempt.error}</div>
-      )}
+      {attempt.error && <div class="text-[0.75rem] text-error">{attempt.error}</div>}
     </div>
   );
 }
@@ -250,10 +187,7 @@ function AppliedRow({ attempts }: { attempts: MarkAttempt[] }) {
       </div>
       <div class="col-span-2 min-w-0 flex flex-col stack">
         {attempts.map((attempt) => (
-          <AttemptRow
-            key={attempt.mark_id ?? attempt.selected_text}
-            attempt={attempt}
-          />
+          <AttemptRow key={attempt.mark_id ?? attempt.selected_text} attempt={attempt} />
         ))}
       </div>
     </>
@@ -296,9 +230,7 @@ function EventRow({ event }: { event: NodeEvent }) {
     case "applied":
       // A repair round with nothing to place reports an empty attempt
       // list; there is nothing to show.
-      return event.attempts.length > 0 ? (
-        <AppliedRow attempts={event.attempts} />
-      ) : null;
+      return event.attempts.length > 0 ? <AppliedRow attempts={event.attempts} /> : null;
   }
 }
 
@@ -345,19 +277,12 @@ function NodeSection({ node }: { node: TraceNodeView }) {
                 <span class="badge badge--warning self-start">skipped</span>
               </div>
             )}
-            {done &&
-              node.startedAt !== undefined &&
-              node.completedAt !== undefined && (
-                <div class={metaCell}>
-                  {duration(node.completedAt - node.startedAt)}
-                </div>
-              )}
+            {done && node.startedAt !== undefined && node.completedAt !== undefined && (
+              <div class={metaCell}>{duration(node.completedAt - node.startedAt)}</div>
+            )}
             {(inputTokens > 0 || outputTokens > 0) && (
               <div class={metaCell}>
-                <TokenUsage
-                  inputTokens={inputTokens}
-                  outputTokens={outputTokens}
-                />
+                <TokenUsage inputTokens={inputTokens} outputTokens={outputTokens} />
                 {cost > 0 && ` · $${cost.toFixed(4)}`}
               </div>
             )}
@@ -365,14 +290,10 @@ function NodeSection({ node }: { node: TraceNodeView }) {
         }
       />
       {node.status === "failed" && node.error && (
-        <div class="cell--data col-span-3 min-w-0 break-words">
-          {node.error}
-        </div>
+        <div class="cell--data col-span-3 min-w-0 break-words">{node.error}</div>
       )}
       {node.status === "skipped" && node.reason && (
-        <div class="cell--data col-span-3 min-w-0 break-words">
-          {node.reason}
-        </div>
+        <div class="cell--data col-span-3 min-w-0 break-words">{node.reason}</div>
       )}
       {node.events.map((event, i) => (
         <EventRow key={i} event={event} />
@@ -394,29 +315,25 @@ function groupUnits(nodes: TraceNodeView[]) {
 }
 
 export default function ReviewTracePage({
-  data,
-  state,
-}: PageProps<TracePageData, State>) {
-  const { run, trace } = data;
+  run,
+  trace,
+  user,
+}: {
+  run: ReviewRun;
+  trace: TraceEvent[];
+  user: User;
+}) {
   const view = groupTraceNodes(trace);
   const units = groupUnits(view.nodes);
   return (
     <div class="flex flex-1 min-h-0">
       <main class="flex flex-1 flex-col stack stack--col min-h-0 @container">
-        <Navigation user={state.user}>
+        <Navigation user={user}>
           <div class="flex stack stack--row">
             <a href={editorHref(run)} class="btn">
               <MoveLeft size={16} />
             </a>
             <div class="cell">Review trace</div>
-            <a
-              href={editorHref(run, { replay: true })}
-              class="btn"
-              title="Replay this run in the editor"
-            >
-              <RotateCcw size={16} />
-              Replay...
-            </a>
           </div>
         </Navigation>
         <div class="z-toolbar flex flex-col bg-surface shadow-md">
@@ -429,8 +346,7 @@ export default function ReviewTracePage({
                 <div class="cell min-w-0 flex-1 truncate">{run.path}</div>
                 <div class="cell shrink-0">
                   {new Date(run.startedAt).toLocaleString()}
-                  {run.completedAt &&
-                    ` (${duration(run.completedAt - run.startedAt)})`}
+                  {run.completedAt && ` (${duration(run.completedAt - run.startedAt)})`}
                 </div>
                 <div class="cell shrink-0">
                   <TokenUsage
@@ -452,15 +368,9 @@ export default function ReviewTracePage({
                 <div class="grid grid-cols-3 stack stack--col stack--row">
                   {units.flatMap(({ unit, nodes }) => [
                     unit !== "content" && (
-                      <SectionHeader
-                        key={`unit-${unit}`}
-                        title={unit}
-                        tone="unit"
-                      />
+                      <SectionHeader key={`unit-${unit}`} title={unit} tone="unit" />
                     ),
-                    ...nodes.map((node) => (
-                      <NodeSection key={node.nodeId} node={node} />
-                    )),
+                    ...nodes.map((node) => <NodeSection key={node.nodeId} node={node} />),
                   ])}
                   {view.orphans.map((event) => (
                     <div class="cell--data col-span-3 min-w-0" key={event.seq}>
