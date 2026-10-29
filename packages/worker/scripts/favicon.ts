@@ -1,16 +1,20 @@
 // Generates the favicon assets from the shared logo mark
-// (components/ui/logo-mark.ts):
-//   static/favicon.svg           Vector, used by Chromium and Firefox.
-//   static/favicon.ico           16/32/48 px, PNG-compressed entries
-//   static/apple-touch-icon.png  180 px for iOS home screens.
+// (src/components/logo/logo-mark.ts):
+//   public/favicon.svg           Vector, used by Chromium and Firefox.
+//   public/favicon.ico           16/32/48 px, PNG-compressed entries
+//   public/apple-touch-icon.png  180 px for iOS home screens.
 //
-// Run: deno task -f web favicon
-// Drift check (CI): deno task -f web favicon:check
+// Run: pnpm -C packages/worker run favicon
+// Drift check (CI): pnpm -C packages/worker run favicon:check
+
+import { readFileSync, writeFileSync } from "node:fs";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 import { initWasm, Resvg } from "@resvg/resvg-wasm";
 import { sumOf } from "@std/collections";
 import { formatHex } from "culori";
-import { logoMark } from "#/components/ui/logo-mark.ts";
+
+import { logoMark } from "#/components/logo/logo-mark.ts";
 
 const ICON_SCALE = 0.9;
 const ICO_SIZES = [16, 32, 48];
@@ -28,9 +32,7 @@ export function markSvg(): string {
   const paths = logoMark.paths.map((d) => `      <path d="${d}"/>`).join("\n");
   const line = (n: number) => String(Number(n.toFixed(3)));
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${viewBox.width} ${viewBox.height}">
-  <rect width="${viewBox.width}" height="${viewBox.height}" fill="${toHex(
-    colors.background,
-  )}"/>
+  <rect width="${viewBox.width}" height="${viewBox.height}" fill="${toHex(colors.background)}"/>
   <g transform="translate(${line(pad)} ${line(pad)}) scale(${ICON_SCALE}) ${logoMark.transform}">
     <g fill="none" stroke="${toHex(colors.stroke)}" stroke-width="3">
 ${paths}
@@ -41,9 +43,7 @@ ${paths}
 `;
 }
 
-export function buildIco(
-  images: { size: number; data: Uint8Array }[],
-): Uint8Array {
+export function buildIco(images: { size: number; data: Uint8Array }[]): Uint8Array {
   const count = images.length;
   const headerSize = 6 + count * 16;
   const dataSize = sumOf(images, (image) => image.data.length);
@@ -69,8 +69,10 @@ export function buildIco(
 let wasmReady: Promise<void> | undefined;
 
 async function rasterize(svg: string, size: number): Promise<Uint8Array> {
+  // Node's fetch does not take file URLs; read the wasm bytes directly.
+  // index_bg.wasm has no exports-map entry, so it resolves next to the entry file.
   wasmReady ??= initWasm(
-    fetch(import.meta.resolve("@resvg/resvg-wasm/index_bg.wasm")),
+    readFileSync(fileURLToPath(new URL("index_bg.wasm", import.meta.resolve("@resvg/resvg-wasm")))),
   );
   await wasmReady;
   const resvg = new Resvg(svg, {
@@ -101,36 +103,37 @@ async function buildOutputs() {
 
 async function sameBytes(path: URL, data: Uint8Array): Promise<boolean> {
   try {
-    const current = await Deno.readFile(path);
-    return (
-      current.length === data.length &&
-      current.every((byte, i) => byte === data[i])
-    );
+    const current = readFileSync(path);
+    return current.length === data.length && current.every((byte, i) => byte === data[i]);
   } catch {
     return false;
   }
 }
 
-if (import.meta.main) {
-  const check = Deno.args.includes("--check");
+async function main(): Promise<void> {
+  const check = process.argv.includes("--check");
   const outputs = await buildOutputs();
   if (check) {
     const stale = [];
     for (const { file, data } of outputs) {
-      const path = new URL(`../static/${file}`, import.meta.url);
+      const path = new URL(`../public/${file}`, import.meta.url);
       if (!(await sameBytes(path, data))) stale.push(file);
     }
     if (stale.length > 0) {
       console.error(`favicon stale: ${stale.join(", ")}`);
-      console.error("run: deno task -f web favicon");
-      Deno.exit(1);
+      console.error("run: pnpm -C packages/worker run favicon");
+      process.exit(1);
     }
     console.log("favicon assets up to date");
   } else {
     for (const { file, data } of outputs) {
-      const path = new URL(`../static/${file}`, import.meta.url);
-      await Deno.writeFile(path, data);
-      console.log(`wrote static/${file} (${data.length} bytes)`);
+      const path = new URL(`../public/${file}`, import.meta.url);
+      writeFileSync(path, data);
+      console.log(`wrote public/${file} (${data.length} bytes)`);
     }
   }
+}
+
+if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {
+  await main();
 }
