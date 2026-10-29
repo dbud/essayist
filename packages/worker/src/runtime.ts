@@ -1,11 +1,14 @@
 import * as D1Client from "@effect/sql-d1/D1Client";
 import {
   type AuthStore,
+  ChunkedValues,
   Files,
   jsonLogLayer,
   layerAuthD1,
   type PersistenceError,
   ReviewConfig,
+  ReviewRuns,
+  TraceEvents,
   UserState,
   Workspaces,
 } from "@essayist/core";
@@ -16,7 +19,14 @@ import * as Reactivity from "effect/reactivity/Reactivity";
 import { type GoogleConfig, googleConfigLayer, type WorkerEnv } from "#/env.ts";
 
 type WorkerRuntime = ManagedRuntime.ManagedRuntime<
-  ReviewConfig | Workspaces | AuthStore | UserState | Files | GoogleConfig,
+  | ReviewConfig
+  | ReviewRuns
+  | TraceEvents
+  | Workspaces
+  | AuthStore
+  | UserState
+  | Files
+  | GoogleConfig,
   PersistenceError
 >;
 
@@ -27,7 +37,14 @@ function parseLogLevel(raw: string | undefined) {
 }
 
 type RuntimeLayer = Layer.Layer<
-  ReviewConfig | Workspaces | AuthStore | UserState | Files | GoogleConfig,
+  | ReviewConfig
+  | ReviewRuns
+  | TraceEvents
+  | Workspaces
+  | AuthStore
+  | UserState
+  | Files
+  | GoogleConfig,
   PersistenceError
 >;
 
@@ -51,6 +68,9 @@ function cell(env: WorkerEnv): RuntimeCell {
           UserState.layerNoDeps,
           Files.layerNoDeps,
           Workspaces.layerNoDeps,
+          ReviewRuns.layerNoDeps,
+          Layer.provide(TraceEvents.layerNoDeps, ChunkedValues.layerNoDeps),
+          ChunkedValues.layerNoDeps,
           layerAuthD1(client),
           googleConfigLayer(e),
           jsonLogLayer,
