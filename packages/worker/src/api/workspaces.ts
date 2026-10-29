@@ -8,6 +8,7 @@ import { FileVersionsData } from "#/models/fileVersions.data.ts";
 import { MarksData } from "#/models/marks.data.ts";
 import { WorkspacesData } from "#/models/workspaces.data.ts";
 
+import { ApiFailure } from "./errors";
 import { SessionMiddleware } from "./sessionMiddleware";
 
 const ListQuery = Schema.Struct({ wsId: Schema.optional(Schema.String) });
@@ -115,7 +116,7 @@ const ImportResult = Schema.Struct({
 const importGoogleDoc = HttpApiEndpoint.post("importGoogleDoc", "/workspaces/import/google-docs", {
   payload: ImportPayload,
   success: ImportResult,
-  error: [HttpApiError.Forbidden, HttpApiError.Unauthorized, HttpApiError.ServiceUnavailable],
+  error: [HttpApiError.Forbidden, HttpApiError.Unauthorized, ApiFailure],
 });
 
 export const workspaceGroup = HttpApiGroup.make("workspaces")
