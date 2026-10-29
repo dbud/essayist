@@ -1,56 +1,52 @@
-/** Inert until the worker's files api carries the upload verbs -- ESS-93.
- * The original implementation follows in one block comment for the rewire. */
-
-export default function FileUploader() {
-  return null;
-}
-
-/*
-import { effect } from "@preact/signals";
+import { useSignal } from "@preact/signals";
 import { Upload } from "lucide-preact";
-import { getFileTree } from "#/signals/fileTree.ts";
-import { showToast } from "#/signals/toast.ts";
-import { filesFromFileInput, readFilesAsText } from "#/utils/fileUpload.ts";
+
+import { batchFailureMessage, formatBatchResult } from "#/models/utils/batch.ts";
+import { showToast, showTaskToast } from "#/models/utils/toast.ts";
+import { useEditorModels } from "#/pages/editor/models.ts";
+import { type DroppedFile, filesFromFileInput, readFilesAsText } from "#/utils/fileUpload.ts";
 import { formatCount } from "#/utils/format.ts";
 
-// The upload button + hidden file input. On selection, files are read as
-// text (binaries skipped), PUT to the workspace in parallel, and a toast in
-// the bottom-right mirrors the runner's progress signal.
+// The upload button + hidden file input. Selections are read as text
+// (binaries skipped and reported) and upserted to the workspace through
+// the batch runner; a task toast mirrors progress and settles with counts.
 export default function FileUploader() {
-  const files = getFileTree();
-  if (!files) return null;
-  const { uploadProgress, uploadFiles } = files;
+  const uploading = useSignal(false);
+  const { fileTrees } = useEditorModels();
 
-  async function handleUpload(items: { path: string; file: File }[]) {
-    if (items.length === 0) return;
-    const { uploads } = await readFilesAsText(items);
-    if (uploads.length === 0) {
-      showToast("No text files to upload");
+  async function handleUpload(items: DroppedFile[]) {
+    if (uploading.value) {
+      showToast("An upload is already running");
       return;
     }
-    const toast = showToast("Uploading\u2026");
-    const id = toast.value.id;
-    // Subscribe to the progress signal and mirror it into the toast.
-    const dispose = effect(() => {
-      const p = uploadProgress.value;
-      if (!p) return;
-      const { total, done, complete, errors } = p;
-      toast.value = {
-        id,
-        message: complete
-          ? `Uploaded ${formatCount(total, "file")}${
-              errors.length > 0 ? ` (${errors.length} failed)` : ""
-            }`
-          : `Uploading ${done}/${total}\u2026`,
-        type: complete ? (errors.length > 0 ? "error" : "success") : "info",
-        progress: complete ? undefined : { done, total },
-      };
-    });
+    const tree = fileTrees.current.value;
+    if (tree === null) {
+      showToast("No workspace selected", "error");
+      return;
+    }
+    uploading.value = true;
     try {
-      await uploadFiles(uploads);
+      const { uploads, skipped } = await readFilesAsText(items);
+      if (uploads.length === 0) {
+        showToast(
+          skipped.length === 0
+            ? "No text files to upload"
+            : `No text files to upload (${formatCount(skipped.length, "binary file")} skipped)`,
+        );
+        return;
+      }
+      const task = showTaskToast(`Uploading ${formatCount(uploads.length, "file")}…`);
+      try {
+        const result = await tree.uploadFiles(uploads, {
+          skipped,
+          onProgress: (done, total) => task.step(`Uploading ${done}/${total}…`, { done, total }),
+        });
+        task.settle(formatBatchResult("Uploaded", result, "file"), result.failed.length === 0);
+      } catch (err) {
+        task.settle(batchFailureMessage(err, "Uploaded", "file"), false);
+      }
     } finally {
-      dispose();
-      uploadProgress.value = null;
+      uploading.value = false;
     }
   }
 
@@ -63,15 +59,10 @@ export default function FileUploader() {
   }
 
   return (
-    <label
-      class="btn"
-      title="Upload files"
-      data-tooltip="Upload a file from my computer"
-    >
+    <label class="btn" title="Upload files" data-tooltip="Upload a file from my computer">
       <Upload size={14} />
       Upload file&hellip;
       <input type="file" multiple class="hidden" onChange={onInputChange} />
     </label>
   );
 }
-*/

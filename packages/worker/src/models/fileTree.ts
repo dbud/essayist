@@ -4,6 +4,7 @@ import type { PickerDoc } from "#/client/googlePicker.ts";
 import createAsyncState from "#/models/utils/asyncState.ts";
 import { BatchAuthError, type BatchResult, runBatch } from "#/models/utils/batch.ts";
 import { getJson, requestJson } from "#/models/utils/http.ts";
+import type { UploadedFile } from "#/utils/fileUpload.ts";
 
 import type { FileTreeData } from "./fileTree.data";
 
@@ -84,6 +85,43 @@ export const FileTreeModel = createModel((wsId: string, data?: FileTreeData) => 
     return result;
   }
 
+  /** Upsert every text file with a small parallel pool; binaries never reach this, so the
+   * caller reports their paths through `skipped`. Selects the first uploaded file. */
+  async function uploadFiles(
+    items: readonly UploadedFile[],
+    options?: {
+      readonly skipped?: readonly string[];
+      readonly onProgress?: (done: number, total: number) => void;
+    },
+  ): Promise<BatchResult> {
+    let firstPath: string | null = null;
+    const result = await runBatch(
+      items,
+      async (item) => {
+        const res = await requestJson("PUT", "/api/workspaces/files/upsert", {
+          wsId,
+          path: item.path,
+          content: item.content,
+        });
+        if (res.status === 401) {
+          throw new BatchAuthError();
+        }
+        if (!res.ok) {
+          throw new Error(`${item.path}: ${res.message ?? `failed (${res.status})`}`);
+        }
+        if (firstPath === null) {
+          firstPath = item.path;
+        }
+      },
+      { concurrency: 4, ...options },
+    );
+    await load();
+    if (firstPath !== null) {
+      select(firstPath);
+    }
+    return result;
+  }
+
   return {
     files,
     selectedPath,
@@ -95,6 +133,7 @@ export const FileTreeModel = createModel((wsId: string, data?: FileTreeData) => 
     loading,
     error,
     importDocs,
+    uploadFiles,
   };
 });
 
