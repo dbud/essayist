@@ -1,9 +1,9 @@
-import type { DraftSnapshot, FileSnapshot, FileVersion } from "@essayist/core";
+import type { DraftSnapshot, FileSnapshot, FileVersion, WriteResult } from "@essayist/core";
 import { computed, createModel, signal } from "@preact/signals";
 import type { EditorState } from "lexical";
 
 import createAsyncState from "#/models/utils/asyncState.ts";
-import { getJson, postJson, putJson } from "#/models/utils/http.ts";
+import { getJson, postJson, putJson, requestJson } from "#/models/utils/http.ts";
 import { editorStateToMarkdown, markdownToEditorState } from "#/utils/markdown.ts";
 
 import type { FileContentData } from "./fileContent.data.ts";
@@ -57,16 +57,38 @@ export const FileContentModel = createModel(
 
     const [runSave, { loading: saving, error: saveError }] = createAsyncState();
 
-    async function save(options?: { readonly keepalive?: boolean }): Promise<void> {
-      if (!dirty.value || versionId === PENDING_VERSION_ID) return;
+    async function save(options?: {
+      readonly keepalive?: boolean;
+    }): Promise<"created" | "saved" | undefined> {
+      const content = markdown.value;
+      if (!dirty.value) return;
+      if (version.value?.version_id === PENDING_VERSION_ID) {
+        if (content === "") return;
+        return await runSave(async () => {
+          const res = await requestJson<WriteResult>(
+            "POST",
+            "/api/workspaces/files/create",
+            { wsId, path, content },
+            options,
+          );
+          if (!res.ok || res.data === undefined) {
+            throw new Error(
+              res.message ??
+                (res.status === 409 ? `${path}: already exists` : `failed (${res.status})`),
+            );
+          }
+          const { version_id, timestamp, lines } = res.data;
+          version.value = { version_id, timestamp, lines, content };
+          return "created" as const;
+        });
+      }
       const result = await runSave(async () =>
-        putJson<DraftSnapshot>(
-          "/api/workspaces/files/draft",
-          { wsId, path, content: markdown.value },
-          { keepalive: options?.keepalive },
-        ),
+        putJson<DraftSnapshot>("/api/workspaces/files/draft", { wsId, path, content }, options),
       );
-      if (result) draft.value = result;
+      if (result) {
+        draft.value = result;
+        return "saved";
+      }
     }
 
     async function promote(): Promise<FileVersion> {

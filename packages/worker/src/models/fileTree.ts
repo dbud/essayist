@@ -26,11 +26,12 @@ export const FileTreeModel = createModel((wsId: string, data?: FileTreeData) => 
     );
     if (fresh) {
       batch(() => {
-        // Local pending entries have no server row; carry them through the refresh.
-        files.value = [
-          ...fresh.files,
-          ...files.value.filter((file) => file.latestVersionId === PENDING_VERSION_ID),
-        ];
+        const pending = files.value.filter((file) => file.latestVersionId === PENDING_VERSION_ID);
+        // A pending buffer survives a refresh only while the server still lacks its path.
+        const unsaved = pending.filter(
+          (file) => !fresh.files.some((freshFile) => freshFile.path === file.path),
+        );
+        files.value = [...fresh.files, ...unsaved];
         selectedPath.value = fresh.selectedPath;
         selectedVersionId.value = fresh.selectedVersionId;
       });
@@ -66,12 +67,6 @@ export const FileTreeModel = createModel((wsId: string, data?: FileTreeData) => 
       ];
       select(candidate, PENDING_VERSION_ID);
     });
-  }
-
-  function clearPending(path: string): void {
-    files.value = files.value.filter(
-      (file) => !(file.path === path && file.latestVersionId === PENDING_VERSION_ID),
-    );
   }
 
   function selectVersion(versionId: string): void {
@@ -164,7 +159,6 @@ export const FileTreeModel = createModel((wsId: string, data?: FileTreeData) => 
     importDocs,
     uploadFiles,
     startPending,
-    clearPending,
   };
 });
 

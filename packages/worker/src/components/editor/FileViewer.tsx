@@ -10,6 +10,7 @@ import VersionPicker from "#/components/editor/VersionPicker.tsx";
 import Overlay from "#/components/ui/Overlay.tsx";
 import { useAutoSave } from "#/hooks/useAutoSave.ts";
 import { useKeydown } from "#/hooks/useKeydown.ts";
+import { useSaveFile } from "#/hooks/useSaveFile.ts";
 import { useScrollViewport } from "#/hooks/useScrollViewport.ts";
 import type { FileKey } from "#/models/fileSelection.ts";
 import { useEditorModels } from "#/pages/editor/models.ts";
@@ -33,6 +34,7 @@ export default function FileViewer() {
 function FileViewerBody({ wsId, path, versionId }: FileKey) {
   const { fileContents, writable, resolvedMarks, sidenotes } = useEditorModels();
   const file = fileContents.current.value;
+  const save = useSaveFile(file);
   const selection = getEditorSelection({ wsId, path, versionId });
   const side = sidenotes.current.value;
   const { markRects, markBadges } = side;
@@ -41,7 +43,7 @@ function FileViewerBody({ wsId, path, versionId }: FileKey) {
   useKeydown((e) => {
     if ((e.metaKey || e.ctrlKey) && e.key === "s") {
       e.preventDefault();
-      void file?.save();
+      void save();
     }
   });
 

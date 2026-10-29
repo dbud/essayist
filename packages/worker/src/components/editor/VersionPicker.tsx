@@ -9,6 +9,7 @@ import Swappable from "#/components/ui/Swappable.tsx";
 import WaveBars from "#/components/ui/WaveBars.tsx";
 import { useBooting } from "#/hooks/useBooting.ts";
 import { useTick } from "#/hooks/useTick.ts";
+import { PENDING_VERSION_ID } from "#/models/fileContent.ts";
 import { showToast } from "#/models/utils/toast.ts";
 import { useEditorModels } from "#/pages/editor/models.ts";
 import { autoSave } from "#/signals/preferences.ts";
@@ -98,7 +99,10 @@ export default function VersionPicker() {
   const pending = useFileLoading();
   const active = file.saving.value || pending;
 
-  const promotable = writable.value && (file.draft.value !== null || file.dirty.value);
+  const promotable =
+    writable.value &&
+    selection?.versionId !== PENDING_VERSION_ID &&
+    (file.draft.value !== null || file.dirty.value);
 
   async function promoteDraft(close: () => void): Promise<void> {
     close();
