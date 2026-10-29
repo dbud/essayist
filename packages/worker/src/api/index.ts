@@ -215,13 +215,11 @@ const workspaceHandlers = HttpApiBuilder.group(
           const { user } = yield* UserSession;
           const { wsId, path } = req.query;
           yield* requireAccess(wsId, user.id);
-          return yield* Effect.gen(function* () {
-            const runs = yield* ReviewRuns;
-            return { runs: yield* runs.listRuns(path) };
-          }).pipe(
-            Effect.provideService(WorkspaceId, { wsId }),
-            Effect.provide(stores),
-            Effect.orDie,
+          return yield* Effect.orDie(
+            ReviewRuns.use((store) => store.listRuns(path)).pipe(
+              Effect.provideService(WorkspaceId, { wsId }),
+              Effect.provide(stores),
+            ),
           );
         }),
       startReview: (req) =>

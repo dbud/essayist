@@ -4,7 +4,6 @@ import type { ReviewRun, ReviewRunStatus } from "@essayist/core";
 import Section from "#/components/debug/Section.tsx";
 import MarkdownView from "#/components/MarkdownView.tsx";
 import { useEditorModels } from "#/pages/editor/models.ts";
-import { getReview } from "#/signals/review.ts";
 
 function statusBadge(status: ReviewRunStatus) {
   const classes =
@@ -45,20 +44,16 @@ function RunItem({ run, wsId: _wsId }: { run: ReviewRun; wsId: string }) {
 }
 
 export default function ReviewHistorySection() {
-  const { selected } = useEditorModels();
-  const selection = selected.value;
-  if (selection === null || selection.path === null) return null;
-  return <ReviewHistory wsId={selection.wsId} path={selection.path} />;
-}
-
-function ReviewHistory({ wsId, path }: { wsId: string; path: string }) {
-  const { runs, historyLoading } = getReview(wsId, path);
+  const { reviewRuns } = useEditorModels();
+  const review = reviewRuns.current.value;
+  if (review === null) return null;
+  const { runs, historyLoading } = review;
   if (historyLoading.value || runs.value.length === 0) return null;
   return (
     <Section title="Review history">
       <div class="flex flex-col gap-2">
         {runs.value.map((run) => (
-          <RunItem key={run.id} run={run} wsId={wsId} />
+          <RunItem key={run.id} run={run} wsId={run.wsId} />
         ))}
       </div>
     </Section>

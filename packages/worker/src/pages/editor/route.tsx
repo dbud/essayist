@@ -5,6 +5,7 @@ import { env } from "#/env.ts";
 import { categoriesLoader } from "#/models/categories.loader.ts";
 import { fileTreesLoader } from "#/models/fileTrees.loader.ts";
 import { fileViewLoader } from "#/models/fileView.loader.ts";
+import { reviewRunsLoader } from "#/models/reviewRuns.loader.ts";
 import { workspacesLoader } from "#/models/workspaces.loader.ts";
 import { runtime } from "#/runtime.ts";
 
@@ -31,11 +32,16 @@ export default new Hono().get("/", async (c) => {
             fileTrees.tree.selectedPath,
             fileTrees.tree.selectedVersionId,
           );
+    const reviewRuns =
+      fileTrees.wsId === null || fileTrees.tree?.selectedPath == null
+        ? null
+        : yield* reviewRunsLoader(fileTrees.wsId, fileTrees.tree.selectedPath);
     const categories = yield* categoriesLoader();
     return {
       workspaces,
       fileTrees,
       fileView,
+      reviewRuns,
       categories,
     };
   });
