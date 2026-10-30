@@ -1,9 +1,11 @@
-// Generates the favicon assets from the shared logo mark
-// (src/components/logo/logo-mark.ts):
+// Generates the favicon assets from the shared logo mark (src/components/logo/logo-mark.ts):
+//
+// parfit-ignore
 //   public/favicon.svg           Vector, used by Chromium and Firefox.
 //   public/favicon.ico           16/32/48 px, PNG-compressed entries
 //   public/apple-touch-icon.png  180 px for iOS home screens.
 //
+// parfit-ignore
 // Run: pnpm -C packages/worker run favicon
 // Drift check (CI): pnpm -C packages/worker run favicon:check
 
@@ -69,8 +71,8 @@ export function buildIco(images: { size: number; data: Uint8Array }[]): Uint8Arr
 let wasmReady: Promise<void> | undefined;
 
 async function rasterize(svg: string, size: number): Promise<Uint8Array> {
-  // Node's fetch does not take file URLs; read the wasm bytes directly.
-  // index_bg.wasm has no exports-map entry, so it resolves next to the entry file.
+  // Node's fetch does not take file URLs; read the wasm bytes directly. index_bg.wasm has no
+  // exports-map entry, so it resolves next to the entry file.
   wasmReady ??= initWasm(
     readFileSync(fileURLToPath(new URL("index_bg.wasm", import.meta.resolve("@resvg/resvg-wasm")))),
   );
