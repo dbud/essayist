@@ -8,8 +8,7 @@ import { layerKvHandle } from "#/persistence/kv_layer.ts";
 import { type Persistence, PersistenceError } from "#/persistence/mod.ts";
 
 /** An ephemeral in-memory Persistence layer that owns its connection and
- * closes it when the layer disposes. The Node twin of `kv_deno.ts`'s `layerKv` (which opens via
- * `Deno.openKv`). */
+ * closes it when the layer disposes. */
 export function layerKvMemory(): Layer.Layer<Persistence, PersistenceError> {
   return layerKvHandle(
     Effect.tryPromise({

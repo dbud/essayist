@@ -11,10 +11,6 @@
     "strict": true,
     "target": "es2024"
   },
-  "exclude": [
-    "src/diff/diff_wasm_glue.ts",
-    "src/diff/diff_wasm_test.ts",
-    "src/persistence/kv_deno.ts"
-  ],
+  "exclude": ["src/diff/diff_wasm_glue.ts", "src/diff/diff_wasm_test.ts"],
   "include": ["mod.ts", "src", "vitest.config.ts"]
 }

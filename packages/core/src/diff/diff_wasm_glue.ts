@@ -1,12 +1,12 @@
 // WASM glue for the diff path.
 //
-// Imports `@essayist/wasm` (the workspace package built by `deno task wasm:build`), synchronously
-// inits the module with the wasm bytes, and re-exports the `myers` fn for injection into `diff.ts`
-// via `setMyers`.
+// Imports `@essayist/wasm` (built by wasm-pack from `crates/wasm`), synchronously inits the module
+// with the wasm bytes, and re-exports the `myers` fn for injection into `diff.ts` via `setMyers`.
 //
-// This module is Deno-only (it reads the wasm bytes from disk with `Deno.readFileSync`); it is
-// imported only by the diff wasm tests, never by `diff.ts` itself, so the browser bundle stays free
-// of the wasm glue until it's explicitly enabled. Requires `deno task wasm:build` first.
+// This module reads the wasm bytes from disk with `Deno.readFileSync`, so it runs under Deno only;
+// it is imported only by the diff wasm tests, never by `diff.ts` itself, so the browser bundle
+// stays free of the wasm glue until a Node-readable loader lands with ESS-90. Requires a wasm-pack
+// build of `crates/wasm` first.
 
 import { initSync, myers } from "@essayist/wasm";
 

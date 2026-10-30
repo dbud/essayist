@@ -4,8 +4,7 @@
  * ConcurrentModificationError}.
  *
  * {@linkcode kvLayer} is the implementation, typed structurally against the npm `@deno/kv` client
- * interface, so non-Deno runtimes (vitest, the future KV Connect bridge) pass handles from that
- * package. Deno call sites enter through the sibling `kv_deno.ts` over a native `Deno.Kv` handle.
+ * interface, so runtimes (vitest today, a KV Connect bridge later) pass handles from that package.
  */
 
 import type { Kv, KvEntryMaybe } from "@deno/kv";

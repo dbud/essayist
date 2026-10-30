@@ -1,6 +1,6 @@
 // Runs the shared diff cases through the WASM Myers core, and asserts the JS and WASM cores produce
-// byte-identical ops (the convergence guard). Requires `deno task wasm:build` first (the glue
-// imports `@essayist/wasm`).
+// byte-identical ops (the convergence guard). Requires a wasm-pack build of `crates/wasm` first
+// (the glue imports `@essayist/wasm`).
 
 import { assertEquals } from "@std/assert";
 

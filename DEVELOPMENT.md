@@ -1,12 +1,13 @@
 # Development Guide
 
-Essayist is a monorepo. `packages/core` (Effect services) and
-`packages/worker` (Hono on Workers, Vite + TypeScript 7) form a pnpm
-workspace; shared dev tooling (oxlint, oxfmt, TypeScript, vitest) lives at
-the workspace root. `packages/web` (the Fresh app still serving Deno Deploy),
-`packages/kvctl`, and `crates/wasm` are a dormant deno workspace kept for
-CI until their migration steps land; see the Linear project "Cloudflare
-migration" (ESS-77 through ESS-90) for phase planning.
+Essayist is a monorepo. `packages/core` (Effect services),
+`packages/worker` (Hono on Workers, Vite + TypeScript 7), and
+`packages/kvctl` form a pnpm workspace; shared dev tooling (oxlint, oxfmt,
+TypeScript, vitest) lives at the workspace root. `crates/wasm` holds the
+Rust diff core; its wasm-pack build runs from the pre-commit hook. The
+leftover `packages/web` sources are a frozen reference copy kept only for
+git mv imports during the remaining migration steps (Linear project
+"Cloudflare migration"); they sit outside every workspace and gate.
 
 ## Uniform pnpm loop (core and worker)
 
@@ -23,7 +24,8 @@ pnpm build          # vite build of the worker package
 Per-package form: `pnpm -C packages/core <script>` and
 `pnpm -C packages/worker <script>`. Scripts on core: check, fmt, lint, test.
 Scripts on kvctl: check, fmt, kvctl, lint.
-Scripts on worker: build, check, deploy, dev, preview, typegen, fmt, lint.
+Scripts on worker: build, check, deploy, dev, favicon, favicon:check,
+preview, typegen, fmt, lint.
 
 pnpm-workspace.yaml lists `packages/*`, carries the catalog (shared version
 ranges for effect, @deno/kv, typescript, oxlint, oxfmt, vitest, vite) and
@@ -45,10 +47,8 @@ comment line directly above them; parfit then passes the whole block
 through verbatim. `pnpm check` starts with `oxfmt --check .`
 (formatting must be clean) and `oxlint --deny-warnings .` (any finding
 fails). Inline suppressions read
-`// oxlint-disable-next-line <rule> -- <reason>`. The dormant deno tier
-stays outside the oxc gate: `packages/web`, the deno manifests, and
-`patches` sit in the configs' ignore patterns; drop those entries when
-the tier retires.
+`// oxlint-disable-next-line <rule> -- <reason>`. `packages/web` sits in
+the configs' ignore patterns; drop that entry when the folder retires.
 
 Benchmarks are `*.bench.ts` files next to the sources (see
 `packages/core/src/marks/tokenized.bench.ts`); run with
@@ -63,61 +63,22 @@ that file after every pnpm install; to set it up by hand, run
 Type checking is `tsc --noEmit` (TypeScript 7) in each package; the
 workspace root's binaries are on PATH for member scripts. core's tsconfig
 maps `@/` to `src`, includes the `dom` lib for the portable web APIs core
-uses, and excludes the deno-boundary files: `kv_layer.ts` (deno entry
-points) and the two wasm files.
+uses, and excludes the two dormant wasm diff files.
 
 ## Testing (core)
 
 core runs vitest (`pnpm test`; config in `packages/core/vitest.config.ts`).
 The suite uses `@std/assert` (via the JSR npm alias) and the npm `@deno/kv`
-client's in-memory backend: tests compose `kvLayerCompat` over `openKv()`,
-and the shared helper lives in `src/persistence/testing/kv.ts`
-(`layerKvCompat`, `testLayer`). The runtime-neutral KV implementation is
-`src/persistence/kv_layer_compat.ts`; `kv_layer.ts` keeps only the
-deno-facing entry points (`kvLayer`, `layerKv`) used by web and kvctl.
+client's in-memory backend: tests compose `kvLayer` over `openKv()`, and
+the shared helper lives in `src/persistence/testing/kv.ts`
+(`layerKvMemory`, `testLayer`). `src/persistence/kv_layer.ts` is the
+runtime-neutral KV implementation the tests run on; the D1 adapters
+(`kv_d1.ts` and its rest/sqlite shims) serve the live runtimes.
 
 The diff wasm convergence tests (`diff_wasm_test.ts`) are dormant until
 the WASM worker returns (ESS-90).
 
-## Deno workspace (dormant)
-
-deno still exists for web (Fresh on Deno Deploy builds), kvctl, and the
-wasm pkg, and is frozen for the duration of the Cloudflare migration.
-Do not run deno locally: with pnpm's `node_modules` present, deno
-switches to a node_modules resolution mode, fails on this layout, and
-rewrites `package.json` (adding `workspaces`/`catalog` mirrors of
-pnpm-workspace.yaml). If that happens, strip the added fields and rerun
-`pnpm install`.
-
-CI is a two-job workflow: `pnpm` (install, check, test, worker build)
-gates every push and PR, and `worker-deploy` ships the migration branch's
-live environment after it (manual via workflow_dispatch). The deno CI
-and the Deno Deploy release were dropped for the migration; its import
-maps (web's and kvctl's deno.jsonc plus a `@deno/kv` entry in core's)
-still resolve the global cache, so the tasks below keep working if run
-deliberately.
-
-deno tasks:
-
-```
-deno task check     # deno lint + deno check + Biome (deno workspace)
-deno task fmt
-deno task -f core check
-deno task -f web check
-```
-
-### Web Development (legacy, until cutover)
-
-```
-deno task -f web dev        # Dev server with HMR
-deno task -f web build      # Production build (vite build → _fresh/)
-deno task -f web favicon    # Regenerate favicon assets
-```
-
-Production serving stays on the last frozen Deno Deploy release until
-the cutover.
-
-## Workers App (migration)
+## Workers App
 
 `packages/worker` is a pnpm workspace package depending on `@essayist/core`
 via `workspace:*` (a live source symlink). Its wrangler config sits next to
@@ -129,33 +90,26 @@ are fine to add as the migration needs them.
 pnpm -C packages/worker dev       # vite dev (wrangler dev with HMR)
 pnpm -C packages/worker preview   # preview the built bundle
 pnpm -C packages/worker typegen   # regenerate Workers types from wrangler
-pnpm -C packages/worker deploy    # live environment; CI deploys on migration pushes
+pnpm -C packages/worker deploy    # live environment; CI deploys on main pushes
 ```
 
 ## Favicon
 
-`static/favicon.svg`, `static/favicon.ico` (16/32/48) and
-`static/apple-touch-icon.png` are generated from the shared logo mark in
-`packages/web/components/ui/logo-mark.ts`, which also feeds the
-`EssayistLogo` component. CI no longer checks favicons: after changing
-the mark or its palette in `assets/styles.css`, run
-`deno task -f web favicon` and commit the results (`favicon:check` to
-verify).
+`public/favicon.svg`, `public/favicon.ico` (16/32/48) and
+`public/apple-touch-icon.png` are generated from the shared logo mark in
+`packages/worker/src/components/logo/logo-mark.ts`, which also feeds the
+`EssayistLogo` component. `pnpm -C packages/worker run favicon` regenerates
+the assets (commit the results); `favicon:check` verifies byte parity and
+runs in CI.
 
 ## WASM
 
 `crates/wasm` compiles the Rust diff core to WASM with `wasm-pack`, emitting
 `crates/wasm/pkg/` (imported as `@essayist/wasm`). The pkg is force-tracked in
-git so Deno Deploy, which can't build Rust, ships the prebuilt artifact.
-Rebuild after changing Rust sources:
-
-```
-deno task wasm:build        # Optimized build (what gets committed)
-deno task wasm:build:dev    # Unoptimized build for faster iteration
-```
-
-During the Cloudflare migration the wasm diff worker is deferred (ESS-90);
-the editor ports to the pure-JS diff in core first.
+git; the pre-commit hook rebuilds and re-stages it when Rust sources change.
+The editor currently ports to the pure-JS diff in core; the wasm diff
+worker returns with ESS-90, which also brings back a scriptable
+wasm-pack build (the deno build tasks retired with that workspace).
 
 ## Pre-commit Checklist
 

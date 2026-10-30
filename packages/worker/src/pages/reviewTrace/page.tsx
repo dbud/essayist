@@ -228,8 +228,8 @@ function EventRow({ event }: { event: NodeEvent }) {
     case "model_call":
       return <ModelCallRow call={event.call} />;
     case "applied":
-      // A repair round with nothing to place reports an empty attempt
-      // list; there is nothing to show.
+      // A repair round with nothing to place reports an empty attempt list; there is nothing to
+      // show.
       return event.attempts.length > 0 ? <AppliedRow attempts={event.attempts} /> : null;
   }
 }
@@ -251,8 +251,8 @@ function NodeSection({ node }: { node: TraceNodeView }) {
     cost += event.call.usage.cost ?? 0;
   }
   const done = node.status === "completed" || node.status === "failed";
-  // A node that made no model call (source, gate, collect, an idle
-  // repair) has no work to show, so it reads as a muted stripe.
+  // A node that made no model call (source, gate, collect, an idle repair) has no work to show, so
+  // it reads as a muted stripe.
   const idle = node.events.every((event) => event.type !== "model_call");
   const metaCell = `cell shrink-0 ${idle ? "striped" : "cell--ink"}`;
   return (

@@ -5,7 +5,7 @@
     "perf": "error",
     "suspicious": "error"
   },
-  "ignorePatterns": ["patches/**", "packages/web/**", "**/deno.jsonc"],
+  "ignorePatterns": ["packages/web/**"],
   "options": {
     "typeAware": true
   },
