@@ -12,7 +12,7 @@ const config = Config.all({
   GOOGLE_CLIENT_SECRET: Config.option(Config.String("GOOGLE_CLIENT_SECRET")),
   GOOGLE_API_KEY: Config.option(Config.String("GOOGLE_API_KEY")),
   GOOGLE_APP_ID: Config.option(Config.String("GOOGLE_APP_ID")),
-  SENTRY_DSN: Config.option(Config.String("SENTRY_DSN")),
+  SENTRY_DSN: Config.String("SENTRY_DSN"),
   SENTRY_RELEASE: Config.option(Config.String("SENTRY_RELEASE")),
   SENTRY_ENVIRONMENT: Config.option(Config.String("SENTRY_ENVIRONMENT")),
 });
@@ -23,7 +23,7 @@ export interface WorkerEnv {
   readonly googleClientSecret: string | undefined;
   readonly googleApiKey: string | undefined;
   readonly googleAppId: string | undefined;
-  readonly sentryDsn: string | undefined;
+  readonly sentryDsn: string;
   readonly sentryRelease: string | undefined;
   readonly sentryEnvironment: string | undefined;
   readonly db: D1Database;
@@ -69,23 +69,13 @@ export function env(bindings: unknown): WorkerEnv {
     ),
   );
 
-  // One boot log of which variables were present; values never leave this module. Console here: the
-  // runtime's json logger composes later.
-  Effect.runSync(
-    Effect.logInfo("worker environment loaded", {
-      present: Object.entries(snapshot)
-        .filter(([, option]) => option._tag === "Some")
-        .map(([name]) => name),
-    }),
-  );
-
   cached = {
     logLevel: Option.getOrUndefined(snapshot.LOG_LEVEL),
     googleClientId: Option.getOrUndefined(snapshot.GOOGLE_CLIENT_ID),
     googleClientSecret: Option.getOrUndefined(snapshot.GOOGLE_CLIENT_SECRET),
     googleApiKey: Option.getOrUndefined(snapshot.GOOGLE_API_KEY),
     googleAppId: Option.getOrUndefined(snapshot.GOOGLE_APP_ID),
-    sentryDsn: Option.getOrUndefined(snapshot.SENTRY_DSN),
+    sentryDsn: snapshot.SENTRY_DSN,
     sentryRelease: Option.getOrUndefined(snapshot.SENTRY_RELEASE),
     // Without the var, prod builds land on Sentry's own production default.
     sentryEnvironment:

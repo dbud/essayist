@@ -63,6 +63,9 @@ jobs:
       - name: Install
         run: pnpm install --frozen-lockfile
 
+      - name: Check the sentry dsn secret
+        run: pnpm -C packages/worker exec wrangler secret list | grep -q SENTRY_DSN
+
       - name: Deploy worker
         run: pnpm -C packages/worker run deploy -- --var SENTRY_RELEASE:$GITHUB_SHA
         env:

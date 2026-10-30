@@ -1,11 +1,11 @@
 import { jsonLogLayer } from "@essayist/core";
+import { captureException } from "@sentry/cloudflare";
 import { Cache, Cause, Effect, Layer } from "effect";
 import { HttpRouter, HttpServer } from "effect/http";
 
 import { layerApi } from "#/api/index.ts";
 import type { WorkerEnv } from "#/env.ts";
 import { runtime, runtimeLayer } from "#/runtime.ts";
-import { captureError } from "#/telemetry/sentry.ts";
 
 type RequestHandler = (request: Request) => Promise<Response>;
 
@@ -35,7 +35,7 @@ export function apiHandler(request: Request, e: WorkerEnv): Promise<Response> {
       Effect.gen(function* () {
         const pretty = Cause.pretty(cause);
         yield* Effect.logError("api handler failed", { cause: pretty });
-        captureError(pretty);
+        captureException(pretty);
         return new Response("internal error", { status: 500 });
       }),
     ),

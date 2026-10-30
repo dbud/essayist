@@ -1,22 +1,21 @@
+import { jsonLogLayer } from "@essayist/core";
+import { captureException } from "@sentry/cloudflare";
 import { Effect } from "effect";
 import { Hono } from "hono";
 
 import { pageRenderer } from "#/app/render.tsx";
 import { oauthRoutes } from "#/auth/routes.ts";
 import { requireUser, resolveSession } from "#/auth/session.ts";
-import { env } from "#/env.ts";
 import { pages } from "#/pages/index.ts";
-import { runtime } from "#/runtime.ts";
-import { captureError } from "#/telemetry/sentry.ts";
 
 export const webApp = new Hono()
   .onError((error, c) => {
-    runtime(env(c.env)).runFork(
+    Effect.runFork(
       Effect.logError("page handler failed", {
         message: error instanceof Error ? error.message : String(error),
-      }),
+      }).pipe(Effect.provide(jsonLogLayer)),
     );
-    captureError(error);
+    captureException(error);
     return c.text("internal error", 500);
   })
   .use("*", resolveSession)
