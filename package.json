@@ -19,7 +19,6 @@
     "oxlint": "catalog:",
     "oxlint-tsgolint": "^7.0.2005",
     "typescript": "catalog:",
-    "typescript-lsp": "npm:typescript@6.0.3",
     "vitest": "catalog:"
   },
   "packageManager": "pnpm@12.11.2"
