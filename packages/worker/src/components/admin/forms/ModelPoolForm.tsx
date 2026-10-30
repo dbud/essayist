@@ -5,12 +5,13 @@ import { useState } from "preact/hooks";
 import { FormShell } from "#/components/admin/ui/forms/FormShell.tsx";
 import { TextareaRow } from "#/components/admin/ui/forms/TextareaRow.tsx";
 import { TextRow } from "#/components/admin/ui/forms/TextRow.tsx";
-import { getAdminConfig, type ModelPoolInput } from "#/models/admin.ts";
+import { type ModelPoolInput } from "#/models/admin.ts";
+import { useAdminModels } from "#/pages/admin/models.ts";
 
 import { lines } from "./lines.ts";
 
 export function ModelPoolForm({ entity, open }: { entity?: ModelPool; open: Signal<boolean> }) {
-  const admin = getAdminConfig();
+  const { admin } = useAdminModels();
   const [name, setName] = useState(entity?.name ?? "");
   const [modelsText, setModelsText] = useState((entity?.models ?? []).join("\n"));
   const [error, setError] = useState<string | null>(null);

@@ -27,6 +27,7 @@ import { importGoogleDocFile } from "#/api/googleDocs.ts";
 import { sessionMiddleware, UserSession, adminMiddleware } from "#/api/sessionMiddleware.ts";
 import { stubModelClient } from "#/api/stubModel.ts";
 import type { GoogleConfig } from "#/env.ts";
+import { adminConfigLoader } from "#/models/admin.loader.ts";
 import { fileContentLoader } from "#/models/fileContent.loader.ts";
 import { fileTreeLoader } from "#/models/fileTree.loader.ts";
 import { fileVersionsLoader } from "#/models/fileVersions.loader.ts";
@@ -293,14 +294,10 @@ const adminHandlers = HttpApiBuilder.group(
 
     return handlers.handleAll({
       getAdminConfig: () =>
-        Effect.gen(function* () {
-          const modelPools = yield* config.listModelPools();
-          const prompts = yield* config.listPrompts();
-          const categories = yield* config.listCategories();
-          const reviewPasses = yield* config.listReviewPasses();
-          const activeReviewPassId = yield* config.getActiveReviewPassId();
-          return { modelPools, prompts, categories, reviewPasses, activeReviewPassId };
-        }).pipe(Effect.catchTag("PersistenceError", Effect.die)),
+        adminConfigLoader().pipe(
+          Effect.provideService(ReviewConfig, config),
+          Effect.catchTag("PersistenceError", Effect.die),
+        ),
       createCategory: (req) => {
         const category = { ...req.payload, id: nextId() };
         return config.saveCategory(category).pipe(diePersist, Effect.as(category));

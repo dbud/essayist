@@ -1,21 +1,14 @@
-// The control panel data model: the full admin config plus CRUD mutations.
-// The categories palette preview lives here too; it derives from this model's
+// The control panel model: seeded from page data, CRUD mutations through the
+// admin api. The categories palette preview derives here from the model's
 // categories and the open category form.
 import type { Category, ModelPool, Prompt, ReviewPass } from "@essayist/core";
 import { computed, createModel, signal } from "@preact/signals";
 
 import { FALLBACK_COLOR } from "#/editor/markColors.ts";
+import type { AdminConfigData } from "#/models/admin.data.ts";
 import createAsyncState from "#/models/utils/asyncState.ts";
 import { requestJson } from "#/models/utils/http.ts";
 import { showToast } from "#/models/utils/toast.ts";
-
-export interface AdminConfig {
-  modelPools: ModelPool[];
-  prompts: Prompt[];
-  categories: Category[];
-  reviewPasses: ReviewPass[];
-  activeReviewPassId?: string;
-}
 
 export type ModelPoolInput = Omit<ModelPool, "id">;
 export type CategoryInput = Omit<Category, "id">;
@@ -37,37 +30,37 @@ export interface SwatchEntry {
   color: string;
 }
 
-/** Palette rows: a row per category (the edited row shows the live color),
- * a "(new)" row while creating, then the fallback row for unlabeled marks. */
-export const swatchEntries = computed<SwatchEntry[]>(() => {
-  const preview = categoryPreview.value;
-  const entries: SwatchEntry[] = getAdminConfig().categories.value.map(({ id, label, color }) => ({
-    key: id,
-    label,
-    color: preview && id === preview.id ? preview.color : (color ?? FALLBACK_COLOR),
-  }));
-  if (preview && preview.id === null) {
-    entries.push({
-      key: "__new",
-      label: preview.label || "(new)",
-      color: preview.color,
-    });
-  }
-  entries.push({ key: "__ink", label: "(unlabeled)", color: FALLBACK_COLOR });
-  return entries;
-});
+export const AdminConfigModel = createModel((data: AdminConfigData) => {
+  const modelPools = signal<readonly ModelPool[]>(data.modelPools);
+  const prompts = signal<readonly Prompt[]>(data.prompts);
+  const categories = signal<readonly Category[]>(data.categories);
+  const reviewPasses = signal<readonly ReviewPass[]>(data.reviewPasses);
+  const activeReviewPassId = signal<string | undefined>(data.activeReviewPassId);
+  const [run, { loading, error }] = createAsyncState();
 
-export const AdminConfigModel = createModel(() => {
-  const modelPools = signal<ModelPool[]>([]);
-  const prompts = signal<Prompt[]>([]);
-  const categories = signal<Category[]>([]);
-  const reviewPasses = signal<ReviewPass[]>([]);
-  const activeReviewPassId = signal<string | undefined>(undefined);
-  const [run, { loading, error }] = createAsyncState(true);
+  // Palette rows: a row per category (the edited row shows the live color),
+  // a "(new)" row while creating, then the fallback row for unlabeled marks.
+  const swatchEntries = computed<SwatchEntry[]>(() => {
+    const preview = categoryPreview.value;
+    const entries: SwatchEntry[] = categories.value.map(({ id, label, color }) => ({
+      key: id,
+      label,
+      color: preview && id === preview.id ? preview.color : (color ?? FALLBACK_COLOR),
+    }));
+    if (preview && preview.id === null) {
+      entries.push({
+        key: "__new",
+        label: preview.label || "(new)",
+        color: preview.color,
+      });
+    }
+    entries.push({ key: "__ink", label: "(unlabeled)", color: FALLBACK_COLOR });
+    return entries;
+  });
 
   async function load() {
     const result = await run(async () => {
-      const res = await requestJson<AdminConfig>("GET", "/api/admin/config");
+      const res = await requestJson<AdminConfigData>("GET", "/api/admin/config");
       if (!res.ok || res.data === undefined) {
         throw new Error(res.message ?? `config load failed with ${res.status}`);
       }
@@ -112,31 +105,31 @@ export const AdminConfigModel = createModel(() => {
   const put = (path: string, body: unknown) => mutate(() => send("PUT", path, body));
   const del = (path: string) => mutate(() => send("DELETE", path));
 
-  const createModelPool = (data: ModelPoolInput) => post("/api/admin/model-pools", data);
+  const createModelPool = (input: ModelPoolInput) => post("/api/admin/model-pools", input);
 
-  const updateModelPool = (id: string, data: ModelPoolInput) =>
-    put(`/api/admin/model-pools/${encodeURIComponent(id)}`, data);
+  const updateModelPool = (id: string, input: ModelPoolInput) =>
+    put(`/api/admin/model-pools/${encodeURIComponent(id)}`, input);
 
   const deleteModelPool = (id: string) => del(`/api/admin/model-pools/${encodeURIComponent(id)}`);
 
-  const createPrompt = (data: Prompt) => post("/api/admin/prompts", data);
+  const createPrompt = (prompt: Prompt) => post("/api/admin/prompts", prompt);
 
-  const updatePrompt = (key: string, data: Prompt) =>
-    put(`/api/admin/prompts/${encodeURIComponent(key)}`, data);
+  const updatePrompt = (key: string, prompt: Prompt) =>
+    put(`/api/admin/prompts/${encodeURIComponent(key)}`, prompt);
 
   const deletePrompt = (key: string) => del(`/api/admin/prompts/${encodeURIComponent(key)}`);
 
-  const createCategory = (data: CategoryInput) => post("/api/admin/categories", data);
+  const createCategory = (input: CategoryInput) => post("/api/admin/categories", input);
 
-  const updateCategory = (id: string, data: CategoryInput) =>
-    put(`/api/admin/categories/${encodeURIComponent(id)}`, data);
+  const updateCategory = (id: string, input: CategoryInput) =>
+    put(`/api/admin/categories/${encodeURIComponent(id)}`, input);
 
   const deleteCategory = (id: string) => del(`/api/admin/categories/${encodeURIComponent(id)}`);
 
-  const createReviewPass = (data: ReviewPassInput) => post("/api/admin/review-passes", data);
+  const createReviewPass = (input: ReviewPassInput) => post("/api/admin/review-passes", input);
 
-  const updateReviewPass = (id: string, data: ReviewPassInput) =>
-    put(`/api/admin/review-passes/${encodeURIComponent(id)}`, data);
+  const updateReviewPass = (id: string, input: ReviewPassInput) =>
+    put(`/api/admin/review-passes/${encodeURIComponent(id)}`, input);
 
   const deleteReviewPass = (id: string) =>
     del(`/api/admin/review-passes/${encodeURIComponent(id)}`);
@@ -144,14 +137,13 @@ export const AdminConfigModel = createModel(() => {
   const setActiveReviewPass = (reviewPassId: string) =>
     put("/api/admin/active-review-pass", { reviewPassId });
 
-  if (!import.meta.env.SSR) void load();
-
   return {
     modelPools,
     prompts,
     categories,
     reviewPasses,
     activeReviewPassId,
+    swatchEntries,
     loading,
     error,
     reload: load,
@@ -171,11 +163,3 @@ export const AdminConfigModel = createModel(() => {
     setActiveReviewPass,
   };
 });
-
-export type AdminModel = InstanceType<typeof AdminConfigModel>;
-
-const cache = new Map<string, AdminModel>();
-
-export function getAdminConfig(): AdminModel {
-  return cache.getOrInsertComputed("admin", () => new AdminConfigModel());
-}

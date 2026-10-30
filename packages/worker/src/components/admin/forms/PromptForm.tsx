@@ -6,10 +6,10 @@ import { List } from "#/components/admin/ui/EntityRows.tsx";
 import { FormShell } from "#/components/admin/ui/forms/FormShell.tsx";
 import { TextareaRow } from "#/components/admin/ui/forms/TextareaRow.tsx";
 import { TextRow } from "#/components/admin/ui/forms/TextRow.tsx";
-import { getAdminConfig } from "#/models/admin.ts";
+import { useAdminModels } from "#/pages/admin/models.ts";
 
 export function PromptForm({ entity, open }: { entity?: Prompt; open: Signal<boolean> }) {
-  const admin = getAdminConfig();
+  const { admin } = useAdminModels();
   const [key, setKey] = useState(entity?.key ?? "");
   const [body, setBody] = useState(entity?.body ?? "");
   const [error, setError] = useState<string | null>(null);

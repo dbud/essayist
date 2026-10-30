@@ -29,7 +29,7 @@ export function ReviewPassRow({
   onEditUnit,
 }: {
   pass: ReviewPass;
-  prompts: Prompt[];
+  prompts: readonly Prompt[];
   active: boolean;
   busy: boolean;
   showActivate: boolean;

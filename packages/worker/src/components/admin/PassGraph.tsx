@@ -4,8 +4,8 @@ import { useEffect, useState } from "preact/hooks";
 
 import { type Option, OptionsRow } from "#/components/ui/forms/OptionsRow.tsx";
 import WaveBars from "#/components/ui/WaveBars.tsx";
-import { getAdminConfig } from "#/models/admin.ts";
 import { showToast } from "#/models/utils/toast.ts";
+import { useAdminModels } from "#/pages/admin/models.ts";
 
 interface PassGraphData {
   name: string;
@@ -31,9 +31,9 @@ function loadMermaid(): Promise<MermaidApi> {
 }
 
 /** The built flow graph of a review pass, rendered with mermaid's
- * agentflow type and ELK layout. */
+ * agentflow diagram type. */
 export default function PassGraph() {
-  const admin = getAdminConfig();
+  const { admin } = useAdminModels();
   const [selected, setSelected] = useState<string | undefined>(undefined);
   const passes = admin.reviewPasses.value;
   const passId = selected ?? admin.activeReviewPassId.value;
@@ -114,7 +114,7 @@ export default function PassGraph() {
       {!error && !graph && <WaveBars class="h-10" />}
       {graph && (
         <div
-          // deno-lint-ignore react-no-danger -- mermaid-rendered svg from our own definition
+          // Mermaid-rendered svg from our own definition.
           dangerouslySetInnerHTML={{ __html: svg }}
           class="graph-svg min-w-0 overflow-x-auto bg-surface"
         />

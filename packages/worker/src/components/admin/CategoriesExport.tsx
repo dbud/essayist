@@ -1,6 +1,6 @@
 import type { Category } from "@essayist/core";
 
-export function CategoriesExport({ categories }: { categories: Category[] }) {
+export function CategoriesExport({ categories }: { categories: readonly Category[] }) {
   const json = JSON.stringify(categories, null, 2);
   return (
     <div class="flex flex-col stack stack--col shadow-md">

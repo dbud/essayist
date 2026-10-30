@@ -5,7 +5,8 @@ import { useState } from "preact/hooks";
 import { FormShell } from "#/components/admin/ui/forms/FormShell.tsx";
 import { TextRow } from "#/components/admin/ui/forms/TextRow.tsx";
 import { type Option, OptionsRow } from "#/components/ui/forms/OptionsRow.tsx";
-import { getAdminConfig, type ReviewPassInput } from "#/models/admin.ts";
+import { type ReviewPassInput } from "#/models/admin.ts";
+import { useAdminModels } from "#/pages/admin/models.ts";
 
 function PromptPreview({ text }: { text?: string }) {
   if (!text) return null;
@@ -13,7 +14,7 @@ function PromptPreview({ text }: { text?: string }) {
 }
 
 export function ReviewPassForm({ entity, open }: { entity?: ReviewPass; open: Signal<boolean> }) {
-  const admin = getAdminConfig();
+  const { admin } = useAdminModels();
   const [name, setName] = useState(entity?.name ?? "");
   const [poolId, setPoolId] = useState(entity?.modelPoolId ?? admin.modelPools.value[0]?.id ?? "");
   const [systemKey, setSystemKey] = useState(

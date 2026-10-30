@@ -33,7 +33,6 @@ export function FormShell({
             {error}
           </div>
         )}
-        {/*<div class="col-span-2 separator" />*/}
         <div class="form-actions">
           <button type="button" class="btn" onClick={onCancel} disabled={submitting}>
             Cancel

@@ -9,7 +9,8 @@ import { TextRow } from "#/components/admin/ui/forms/TextRow.tsx";
 import { CheckboxIcon } from "#/components/ui/icons.tsx";
 import Slider from "#/components/ui/Slider.tsx";
 import { FALLBACK_COLOR } from "#/editor/markColors.ts";
-import { type CategoryInput, categoryPreview, getAdminConfig } from "#/models/admin.ts";
+import { type CategoryInput, categoryPreview } from "#/models/admin.ts";
+import { useAdminModels } from "#/pages/admin/models.ts";
 
 // Canonical stored form: oklch(<L>% <C> <H>).
 const OKLCH_RE = /^oklch\(([\d.]+)%\s+([\d.]+)\s+([\d.]+)\)$/;
@@ -21,7 +22,7 @@ function parseOklch(color: string | undefined) {
 }
 
 export function CategoryForm({ entity, open }: { entity?: Category; open: Signal<boolean> }) {
-  const admin = getAdminConfig();
+  const { admin } = useAdminModels();
   const initial = parseOklch(entity?.color);
   const [label, setLabel] = useState(entity?.label ?? "");
   const [severity, setSeverity] = useState(entity?.severity ?? "");
@@ -35,8 +36,8 @@ export function CategoryForm({ entity, open }: { entity?: Category; open: Signal
   const canonical = `oklch(${Math.round(l)}% ${Number(c.toFixed(2))} ${Math.round(h)})`;
   const previewColor = colorEnabled ? canonical : FALLBACK_COLOR;
 
-  // Render-phase open read subscribes the form; the effect syncs while open
-  // and clears the palette on close.
+  // Reading open.value during render subscribes the component; the effect then
+  // syncs the palette while the dialog is open and clears it on close.
   const isOpen = open.value;
   useEffect(() => {
     categoryPreview.value = isOpen

@@ -14,8 +14,8 @@ import type { DialogRequest } from "#/components/admin/types.ts";
 import { NewButton } from "#/components/admin/ui/EntityCard.tsx";
 import Tabs, { type TabItem } from "#/components/admin/ui/Tabs.tsx";
 import WaveBars from "#/components/ui/WaveBars.tsx";
-import { getAdminConfig } from "#/models/admin.ts";
-import { persistentSignal } from "#/utils/persistentSignal.ts";
+import { useAdminModels } from "#/pages/admin/models.ts";
+import { usePersistentSignal } from "#/utils/persistentSignal.ts";
 
 type TabKey = "passes" | "graph" | "pools" | "prompts" | "categories";
 
@@ -26,8 +26,6 @@ const TAB_ITEMS: TabItem<TabKey>[] = [
   { value: "prompts", label: "Prompts" },
   { value: "categories", label: "Categories" },
 ];
-
-const tab = persistentSignal<TabKey>("adminTab", "pools");
 
 function Empty() {
   return <p class="text-sm text-ink/60">None configured.</p>;
@@ -49,7 +47,9 @@ export default function AdminConfig() {
     deleteReviewPass,
     setActiveReviewPass,
     updateReviewPass,
-  } = getAdminConfig();
+  } = useAdminModels().admin;
+  // Hydration-safe: starts as the SSR fallback, swaps in the stored tab after mount.
+  const tab = usePersistentSignal<TabKey>("adminTab", "pools");
   const dialogOpen = useSignal(false);
   const dialogRequest = useSignal<DialogRequest | null>(null);
   const dialogStamp = useSignal(0);

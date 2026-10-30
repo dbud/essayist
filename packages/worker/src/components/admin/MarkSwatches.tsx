@@ -1,10 +1,13 @@
 import { ColorSwatch } from "#/components/admin/ColorSwatch.tsx";
-import { swatchEntries } from "#/models/admin.ts";
+import { type SwatchEntry } from "#/models/admin.ts";
+import { useAdminModels } from "#/pages/admin/models.ts";
 
 export default function MarkSwatches() {
+  const { admin } = useAdminModels();
+  const entries: SwatchEntry[] = admin.swatchEntries.value;
   return (
     <div class="flex flex-col stack stack--col shadow-md text-xs">
-      {swatchEntries.value.map(({ key, label, color }) => (
+      {entries.map(({ key, label, color }) => (
         <div key={key} class="grid grid-cols-[auto_1fr] stack stack--row">
           <div class="cell--data w-24 text-ink/60">{label}</div>
           <div class="cell--data min-w-0">
