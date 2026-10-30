@@ -1,6 +1,6 @@
 import { signal } from "@preact/signals";
 import { IS_BROWSER } from "fresh/runtime";
-import { parseReplayParams, type ReplayParams } from "@/utils/reviewReplay.ts";
+import { parseReplayParams, type ReplayParams } from "#/utils/reviewReplay.ts";
 
 /**
  * Replay mode, read from the page URL: ?replay=<runId> (&speed=<n>).

@@ -1,22 +1,25 @@
-import { assert, assertEquals } from "@std/assert";
+import { openKv } from "@deno/kv";
+import { assert, assertEquals, assertInstanceOf } from "@std/assert";
 import { assertObjectMatch } from "@std/assert/object-match";
-import { Effect, Layer } from "effect";
-import type { Mark } from "@/marks/types.ts";
-import { kvLayer } from "@/persistence/kv_layer.ts";
+import { Effect, Layer, Result } from "effect";
+import { test } from "vitest";
+
+import type { Mark } from "#/marks/types.ts";
+import { kvLayer } from "#/persistence/kv_layer.ts";
 import {
   type ConcurrentModificationError,
   Persistence,
   type PersistenceError,
-} from "@/persistence/mod.ts";
-import { testLayer } from "@/persistence/testing/kv.ts";
-import { WorkspaceId } from "@/workspace/WorkspaceId.ts";
+} from "#/persistence/mod.ts";
+import { testLayer } from "#/persistence/testing/kv.ts";
+import { WorkspaceId } from "#/workspace/WorkspaceId.ts";
+
 import { Files } from "./service.ts";
+import { FileMissingError } from "./types.ts";
 
-type E = PersistenceError | ConcurrentModificationError;
+type E = PersistenceError | ConcurrentModificationError | FileMissingError;
 
-const run = <A>(
-  program: Effect.Effect<A, E, Files | WorkspaceId>,
-): Promise<A> =>
+const run = <A>(program: Effect.Effect<A, E, Files | WorkspaceId>): Promise<A> =>
   Effect.runPromise(
     Effect.provide(
       Effect.provideService(program, WorkspaceId, { wsId: "default" }),
@@ -41,7 +44,7 @@ function largeContent(): string {
 
 // read
 
-Deno.test("Files.read -- full file (latest)", async () => {
+test("Files.read -- full file (latest)", async () => {
   await run(
     Effect.gen(function* () {
       const files = yield* Files;
@@ -49,144 +52,87 @@ Deno.test("Files.read -- full file (latest)", async () => {
       const result = yield* files.read("essay.txt");
       assertEquals(result.content, SAMPLE_ESSAY);
       assertEquals(result.lines, 4);
-      assertEquals(result.start_line, 1);
-      assertEquals(result.end_line, 4);
     }),
   );
 });
 
-Deno.test("Files.read -- line range", async () => {
+test("Files.read -- missing file fails", async () => {
   await run(
     Effect.gen(function* () {
       const files = yield* Files;
-      yield* files.write("essay.txt", SAMPLE_ESSAY);
-      const result = yield* files.read("essay.txt", {
-        startLine: 2,
-        endLine: 3,
-      });
-      assertEquals(
-        result.content,
-        SAMPLE_ESSAY.split("\n").slice(1, 3).join("\n"),
-      );
-      assertEquals(result.lines, 4);
-      assertEquals(result.start_line, 2);
-      assertEquals(result.end_line, 3);
+      const outcome = yield* Effect.result(files.read("missing.txt"));
+      if (Result.isSuccess(outcome)) {
+        throw new Error("a missing file read succeeded");
+      }
+      assertInstanceOf(outcome.failure, FileMissingError);
     }),
   );
 });
 
-Deno.test("Files.read -- numbered output", async () => {
-  await run(
-    Effect.gen(function* () {
-      const files = yield* Files;
-      yield* files.write("essay.txt", SAMPLE_ESSAY);
-      const result = yield* files.read("essay.txt", {
-        startLine: 1,
-        endLine: 2,
-        numbered: true,
-      });
-      assertEquals(result.content.split("\n"), [
-        "     1: The quick brown fox jumps over the lazy dog.",
-        "     2: This sentence contains every letter of the alphabet.",
-      ]);
-    }),
-  );
-});
-
-Deno.test("Files.read -- missing file returns empty", async () => {
-  await run(
-    Effect.gen(function* () {
-      const files = yield* Files;
-      const result = yield* files.read("missing.txt");
-      assertEquals(result.content, "");
-      assertEquals(result.version_id, "");
-      assertEquals(result.lines, 0);
-    }),
-  );
-});
-
-Deno.test("Files.read -- clamps line range", async () => {
-  await run(
-    Effect.gen(function* () {
-      const files = yield* Files;
-      yield* files.write("essay.txt", SAMPLE_ESSAY);
-      const result = yield* files.read("essay.txt", {
-        startLine: -5,
-        endLine: 100,
-      });
-      assertEquals(result.start_line, 1);
-      assertEquals(result.end_line, 4);
-    }),
-  );
-});
-
-Deno.test("Files.read -- specific version", async () => {
+test("Files.read -- specific version", async () => {
   await run(
     Effect.gen(function* () {
       const files = yield* Files;
       yield* files.write("f.txt", "original");
       yield* files.write("f.txt", "modified");
-      const history = yield* files.getHistory("f.txt");
+      const history = yield* files.getVersions("f.txt");
       assertEquals(history.length, 2);
-      const original = yield* files.read("f.txt", {
-        versionId: history[0].version_id,
-      });
+      const original = yield* files.read("f.txt", history[0].version_id);
       assertEquals(original.content, "original");
-      const latest = yield* files.read("f.txt", {
-        versionId: history[1].version_id,
-      });
+      const latest = yield* files.read("f.txt", history[1].version_id);
       assertEquals(latest.content, "modified");
     }),
   );
 });
 
-Deno.test("Files.read -- unknown version returns empty miss", async () => {
+test("Files.read -- unknown version fails", async () => {
   await run(
     Effect.gen(function* () {
       const files = yield* Files;
       yield* files.write("f.txt", "original");
-      const miss = yield* files.read("f.txt", { versionId: "no_such_version" });
-      assertEquals(miss.version_id, "");
-      assertEquals(miss.content, "");
-      assertEquals(miss.lines, 0);
+      const outcome = yield* Effect.result(files.read("f.txt", "no_such_version"));
+      if (Result.isSuccess(outcome)) {
+        throw new Error("an unknown version read succeeded");
+      }
+      assertInstanceOf(outcome.failure, FileMissingError);
     }),
   );
 });
 
 // list
 
-Deno.test("Files.list -- all files", async () => {
+test("Files.list -- all files", async () => {
   await run(
     Effect.gen(function* () {
       const files = yield* Files;
-      yield* files.write("a.txt", "line1");
-      yield* files.write("b.txt", "line1\nline2");
-      yield* files.write("c.md", "x\ny\nz");
+      const a = yield* files.write("a.txt", "line1");
+      const b = yield* files.write("b.txt", "line1\nline2");
+      const c = yield* files.write("c.md", "x\ny\nz");
       assertEquals(yield* files.list(), [
-        { path: "a.txt", lines: 1 },
-        { path: "b.txt", lines: 2 },
-        { path: "c.md", lines: 3 },
+        { path: "a.txt", lines: 1, latestVersionId: a.version_id },
+        { path: "b.txt", lines: 2, latestVersionId: b.version_id },
+        { path: "c.md", lines: 3, latestVersionId: c.version_id },
       ]);
     }),
   );
 });
 
-Deno.test("Files.list -- with prefix", async () => {
+test("Files.list -- with prefix", async () => {
   await run(
     Effect.gen(function* () {
       const files = yield* Files;
-      yield* files.write("notes/a.txt", "x");
-      yield* files.write("notes/b.txt", "y");
+      const a = yield* files.write("notes/a.txt", "x");
+      const b = yield* files.write("notes/b.txt", "y");
       yield* files.write("other/c.txt", "z");
       assertEquals(yield* files.list("notes/"), [
-        { path: "notes/a.txt", lines: 1 },
-        { path: "notes/b.txt", lines: 1 },
+        { path: "notes/a.txt", lines: 1, latestVersionId: a.version_id },
+        { path: "notes/b.txt", lines: 1, latestVersionId: b.version_id },
       ]);
     }),
   );
 });
 
-Deno.test("Files.list -- empty", async () => {
+test("Files.list -- empty", async () => {
   await run(
     Effect.gen(function* () {
       const files = yield* Files;
@@ -197,19 +143,32 @@ Deno.test("Files.list -- empty", async () => {
 
 // history
 
-Deno.test("Files.getHistory -- includes all versions including latest", async () => {
+test("Files.getVersions -- missing file fails", async () => {
+  await run(
+    Effect.gen(function* () {
+      const files = yield* Files;
+      const outcome = yield* Effect.result(files.getVersions("missing.txt"));
+      if (Result.isSuccess(outcome)) {
+        throw new Error("a missing file history succeeded");
+      }
+      assertInstanceOf(outcome.failure, FileMissingError);
+    }),
+  );
+});
+
+test("Files.getVersions -- includes all versions including latest", async () => {
   await run(
     Effect.gen(function* () {
       const files = yield* Files;
       yield* files.write("f.txt", "v1");
       yield* files.write("f.txt", "v2");
       yield* files.write("f.txt", "v3");
-      assertEquals((yield* files.getHistory("f.txt")).length, 3);
+      assertEquals((yield* files.getVersions("f.txt")).length, 3);
     }),
   );
 });
 
-Deno.test("Files.getHistory -- versions are sorted by timestamp", async () => {
+test("Files.getVersions -- versions are sorted by timestamp", async () => {
   await run(
     Effect.gen(function* () {
       const files = yield* Files;
@@ -217,7 +176,7 @@ Deno.test("Files.getHistory -- versions are sorted by timestamp", async () => {
       yield* files.write("f.txt", "v2");
       yield* files.write("f.txt", "v3");
       yield* files.write("f.txt", "v4");
-      const history = yield* files.getHistory("f.txt");
+      const history = yield* files.getVersions("f.txt");
       assertEquals(history.length, 4);
       for (let i = 1; i < history.length; i++) {
         assertEquals(history[i].timestamp >= history[i - 1].timestamp, true);
@@ -226,13 +185,13 @@ Deno.test("Files.getHistory -- versions are sorted by timestamp", async () => {
   );
 });
 
-Deno.test("Files.getHistory -- includes line count per version", async () => {
+test("Files.getVersions -- includes line count per version", async () => {
   await run(
     Effect.gen(function* () {
       const files = yield* Files;
       yield* files.write("f.txt", "one line");
       yield* files.write("f.txt", "line one\nline two\nline three");
-      const history = yield* files.getHistory("f.txt");
+      const history = yield* files.getVersions("f.txt");
       assertEquals(history[0].lines, 1);
       assertEquals(history[1].lines, 3);
     }),
@@ -241,7 +200,7 @@ Deno.test("Files.getHistory -- includes line count per version", async () => {
 
 // drafts and revert
 
-Deno.test("Files.writeDraft -- stores and reads the draft without creating a version", async () => {
+test("Files.writeDraft -- stores and reads the draft without creating a version", async () => {
   await run(
     Effect.gen(function* () {
       const files = yield* Files;
@@ -251,13 +210,28 @@ Deno.test("Files.writeDraft -- stores and reads the draft without creating a ver
       const draft = yield* files.readDraft("f.txt");
       assertEquals(draft?.content, "draft text");
       assertEquals(typeof draft?.timestamp, "number");
-      assertEquals((yield* files.getHistory("f.txt")).length, 1);
+      assertEquals((yield* files.getVersions("f.txt")).length, 1);
       assertEquals((yield* files.read("f.txt")).content, "checkpoint");
     }),
   );
 });
 
-Deno.test("Files.promoteDraft -- creates a version from the draft and clears it", async () => {
+test("Files.readDraft -- null when the version is not the latest", async () => {
+  await run(
+    Effect.gen(function* () {
+      const files = yield* Files;
+      yield* files.write("f.txt", "original");
+      yield* files.write("f.txt", "modified");
+      yield* files.writeDraft("f.txt", "draft text");
+      const history = yield* files.getVersions("f.txt");
+      const head = yield* files.readDraft("f.txt", history[1].version_id);
+      assertEquals(head?.content, "draft text");
+      assertEquals(yield* files.readDraft("f.txt", history[0].version_id), null);
+    }),
+  );
+});
+
+test("Files.promoteDraft -- creates a version from the draft and clears it", async () => {
   await run(
     Effect.gen(function* () {
       const files = yield* Files;
@@ -268,12 +242,12 @@ Deno.test("Files.promoteDraft -- creates a version from the draft and clears it"
       assertEquals(result?.created, false);
       assertEquals((yield* files.read("f.txt")).content, "draft text");
       assertEquals(yield* files.readDraft("f.txt"), null);
-      assertEquals((yield* files.getHistory("f.txt")).length, 2);
+      assertEquals((yield* files.getVersions("f.txt")).length, 2);
     }),
   );
 });
 
-Deno.test("Files.promoteDraft -- null when no draft exists", async () => {
+test("Files.promoteDraft -- null when no draft exists", async () => {
   await run(
     Effect.gen(function* () {
       const files = yield* Files;
@@ -283,7 +257,7 @@ Deno.test("Files.promoteDraft -- null when no draft exists", async () => {
   );
 });
 
-Deno.test("Files.write -- clears a pending draft", async () => {
+test("Files.write -- clears a pending draft", async () => {
   await run(
     Effect.gen(function* () {
       const files = yield* Files;
@@ -297,10 +271,11 @@ Deno.test("Files.write -- clears a pending draft", async () => {
   );
 });
 
-Deno.test("Files.writeDraft -- shrinks cleanly across chunk boundaries", async () => {
+test("Files.writeDraft -- shrinks cleanly across chunk boundaries", async () => {
   await run(
     Effect.gen(function* () {
       const files = yield* Files;
+      yield* files.write("f.txt", "");
       yield* files.writeDraft("f.txt", "x".repeat(60 * 1024 * 2 + 10));
       yield* files.writeDraft("f.txt", "short");
 
@@ -310,13 +285,13 @@ Deno.test("Files.writeDraft -- shrinks cleanly across chunk boundaries", async (
   );
 });
 
-Deno.test("Files.revert -- restores previous version as new version", async () => {
+test("Files.revert -- restores previous version as new version", async () => {
   await run(
     Effect.gen(function* () {
       const files = yield* Files;
       yield* files.write("f.txt", "original");
       yield* files.write("f.txt", "modified");
-      const history = yield* files.getHistory("f.txt");
+      const history = yield* files.getVersions("f.txt");
       const originalVersionId = history[0].version_id;
       assertEquals(yield* files.revert("f.txt", originalVersionId), true);
       assertEquals((yield* files.read("f.txt")).content, "original");
@@ -324,20 +299,20 @@ Deno.test("Files.revert -- restores previous version as new version", async () =
   );
 });
 
-Deno.test("Files.revert -- creates a new version when reverting", async () => {
+test("Files.revert -- creates a new version when reverting", async () => {
   await run(
     Effect.gen(function* () {
       const files = yield* Files;
       yield* files.write("f.txt", "v1");
       yield* files.write("f.txt", "v2");
-      const history = yield* files.getHistory("f.txt");
+      const history = yield* files.getVersions("f.txt");
       yield* files.revert("f.txt", history[0].version_id);
-      assertEquals((yield* files.getHistory("f.txt")).length, 3);
+      assertEquals((yield* files.getVersions("f.txt")).length, 3);
     }),
   );
 });
 
-Deno.test("Files.revert -- returns false for invalid version", async () => {
+test("Files.revert -- returns false for invalid version", async () => {
   await run(
     Effect.gen(function* () {
       const files = yield* Files;
@@ -349,34 +324,30 @@ Deno.test("Files.revert -- returns false for invalid version", async () => {
 
 // diff
 
-Deno.test("Files.diff -- between versions", async () => {
+test("Files.diff -- between versions", async () => {
   await run(
     Effect.gen(function* () {
       const files = yield* Files;
       yield* files.write("f.txt", "line1\nline2\nline3");
       yield* files.write("f.txt", "line1\nmodified\nline3");
-      const history = yield* files.getHistory("f.txt");
-      const { diff } = yield* files.diff(
-        "f.txt",
-        history[0].version_id,
-        history[1].version_id,
-      );
+      const history = yield* files.getVersions("f.txt");
+      const { diff } = yield* files.diff("f.txt", history[0].version_id, history[1].version_id);
       assertEquals(diff.includes("-line2"), true);
       assertEquals(diff.includes("+modified"), true);
     }),
   );
 });
 
-Deno.test("Files.diff -- identical content produces empty diff", async () => {
+test("Files.diff -- identical content produces empty diff", async () => {
   await run(
     Effect.gen(function* () {
       const files = yield* Files;
       yield* files.write("f.txt", "same");
       yield* files.write("f.txt", "different");
-      const history = yield* files.getHistory("f.txt");
+      const history = yield* files.getVersions("f.txt");
       if (history.length >= 2) {
         yield* files.write("f.txt", "same");
-        const newHistory = yield* files.getHistory("f.txt");
+        const newHistory = yield* files.getVersions("f.txt");
         const { diff } = yield* files.diff(
           "f.txt",
           newHistory[0].version_id,
@@ -388,7 +359,7 @@ Deno.test("Files.diff -- identical content produces empty diff", async () => {
   );
 });
 
-Deno.test("Files -- large document roundtrips", async () => {
+test("Files -- large document roundtrips", async () => {
   const content = largeContent();
   assert(content.length > 60 * 1024, "fixture should exceed one chunk");
   await run(
@@ -402,12 +373,9 @@ Deno.test("Files -- large document roundtrips", async () => {
   );
 });
 
-// marks storage (marks synthesized with saveMark; placement lands with the
-// Marks service)
+// marks storage (marks synthesized with saveMark; placement lands with the Marks service)
 
-function createMark(
-  overrides: Partial<Mark> & { selected_text: string },
-): Mark {
+function createMark(overrides: Partial<Mark> & { selected_text: string }): Mark {
   const {
     id = `mark_${Math.random().toString(36).slice(2)}`,
     thread_id = `thread_${Math.random().toString(36).slice(2)}`,
@@ -442,7 +410,7 @@ function createMark(
   };
 }
 
-Deno.test("Files.getMarks -- returns empty when no marks", async () => {
+test("Files.getMarks -- returns empty when no marks", async () => {
   await run(
     Effect.gen(function* () {
       const files = yield* Files;
@@ -452,17 +420,13 @@ Deno.test("Files.getMarks -- returns empty when no marks", async () => {
   );
 });
 
-Deno.test("Files.getMarks -- returns all marks for a version in save order", async () => {
+test("Files.getMarks -- returns all marks for a version in save order", async () => {
   await run(
     Effect.gen(function* () {
       const files = yield* Files;
       const v1 = (yield* files.write("f.txt", "hello world")).version_id;
-      yield* files.saveMark(
-        createMark({ version_id: v1, selected_text: "hello" }),
-      );
-      yield* files.saveMark(
-        createMark({ version_id: v1, selected_text: "world", offset: 6 }),
-      );
+      yield* files.saveMark(createMark({ version_id: v1, selected_text: "hello" }));
+      yield* files.saveMark(createMark({ version_id: v1, selected_text: "world", offset: 6 }));
 
       const marks = yield* files.getMarks("f.txt", v1);
       assertEquals(marks.length, 2);
@@ -472,7 +436,7 @@ Deno.test("Files.getMarks -- returns all marks for a version in save order", asy
   );
 });
 
-Deno.test("Files.deleteMark -- removes a mark", async () => {
+test("Files.deleteMark -- removes a mark", async () => {
   await run(
     Effect.gen(function* () {
       const files = yield* Files;
@@ -486,7 +450,7 @@ Deno.test("Files.deleteMark -- removes a mark", async () => {
   );
 });
 
-Deno.test("Files.deleteMark -- returns false for nonexistent mark", async () => {
+test("Files.deleteMark -- returns false for nonexistent mark", async () => {
   await run(
     Effect.gen(function* () {
       const files = yield* Files;
@@ -496,14 +460,13 @@ Deno.test("Files.deleteMark -- returns false for nonexistent mark", async () => 
   );
 });
 
-Deno.test("Files -- marks are isolated per workspace scope", async () => {
+test("Files -- marks are isolated per workspace scope", async () => {
   await run(
     Effect.gen(function* () {
       const files = yield* Files;
       const inA = Effect.provideService(
         Effect.gen(function* () {
-          const v = (yield* files.write("f.txt", "the quick brown fox"))
-            .version_id;
+          const v = (yield* files.write("f.txt", "the quick brown fox")).version_id;
           yield* files.saveMark(
             createMark({
               version_id: v,
@@ -518,30 +481,22 @@ Deno.test("Files -- marks are isolated per workspace scope", async () => {
         { wsId: "ws-a" },
       );
       yield* inA;
-      yield* Effect.provideService(
-        files.write("f.txt", "the quick brown fox"),
-        WorkspaceId,
-        { wsId: "ws-b" },
-      );
+      yield* Effect.provideService(files.write("f.txt", "the quick brown fox"), WorkspaceId, {
+        wsId: "ws-b",
+      });
 
       const a = yield* Effect.provideService(
         Effect.gen(function* () {
-          const versions = yield* files.getHistory("f.txt");
-          return yield* files.getMarks(
-            "f.txt",
-            versions[versions.length - 1].version_id,
-          );
+          const versions = yield* files.getVersions("f.txt");
+          return yield* files.getMarks("f.txt", versions[versions.length - 1].version_id);
         }),
         WorkspaceId,
         { wsId: "ws-a" },
       );
       const b = yield* Effect.provideService(
         Effect.gen(function* () {
-          const versions = yield* files.getHistory("f.txt");
-          return yield* files.getMarks(
-            "f.txt",
-            versions[versions.length - 1].version_id,
-          );
+          const versions = yield* files.getVersions("f.txt");
+          return yield* files.getMarks("f.txt", versions[versions.length - 1].version_id);
         }),
         WorkspaceId,
         { wsId: "ws-b" },
@@ -552,16 +507,13 @@ Deno.test("Files -- marks are isolated per workspace scope", async () => {
   );
 });
 
-Deno.test("Files.write -- migrates marks to the new version when text unchanged", async () => {
+test("Files.write -- migrates marks to the new version when text unchanged", async () => {
   await run(
     Effect.gen(function* () {
       const files = yield* Files;
       const v1 = (yield* files.write("f.txt", "hello world")).version_id;
-      yield* files.saveMark(
-        createMark({ version_id: v1, selected_text: "hello", offset: 0 }),
-      );
-      const v2 = (yield* files.write("f.txt", "hello beautiful world"))
-        .version_id;
+      yield* files.saveMark(createMark({ version_id: v1, selected_text: "hello", offset: 0 }));
+      const v2 = (yield* files.write("f.txt", "hello beautiful world")).version_id;
 
       const marks = yield* files.getMarks("f.txt", v2);
       assertEquals(marks.length, 1);
@@ -574,16 +526,13 @@ Deno.test("Files.write -- migrates marks to the new version when text unchanged"
   );
 });
 
-Deno.test("Files.write -- migrates marks with shifted offset", async () => {
+test("Files.write -- migrates marks with shifted offset", async () => {
   await run(
     Effect.gen(function* () {
       const files = yield* Files;
       const v1 = (yield* files.write("f.txt", "hello world")).version_id;
-      yield* files.saveMark(
-        createMark({ version_id: v1, selected_text: "world", offset: 6 }),
-      );
-      const v2 = (yield* files.write("f.txt", "hello beautiful world"))
-        .version_id;
+      yield* files.saveMark(createMark({ version_id: v1, selected_text: "world", offset: 6 }));
+      const v2 = (yield* files.write("f.txt", "hello beautiful world")).version_id;
 
       const marks = yield* files.getMarks("f.txt", v2);
       assertEquals(marks.length, 1);
@@ -592,14 +541,12 @@ Deno.test("Files.write -- migrates marks with shifted offset", async () => {
   );
 });
 
-Deno.test("Files.write -- marks become stale when text is deleted", async () => {
+test("Files.write -- marks become stale when text is deleted", async () => {
   await run(
     Effect.gen(function* () {
       const files = yield* Files;
       const v1 = (yield* files.write("f.txt", "hello world")).version_id;
-      yield* files.saveMark(
-        createMark({ version_id: v1, selected_text: "world", offset: 6 }),
-      );
+      yield* files.saveMark(createMark({ version_id: v1, selected_text: "world", offset: 6 }));
       const v2 = (yield* files.write("f.txt", "hello")).version_id;
 
       const marks = yield* files.getMarks("f.txt", v2);
@@ -609,14 +556,12 @@ Deno.test("Files.write -- marks become stale when text is deleted", async () => 
   );
 });
 
-Deno.test("Files.write -- stale marks survive subsequent writes", async () => {
+test("Files.write -- stale marks survive subsequent writes", async () => {
   await run(
     Effect.gen(function* () {
       const files = yield* Files;
       const v1 = (yield* files.write("f.txt", "hello world")).version_id;
-      yield* files.saveMark(
-        createMark({ version_id: v1, selected_text: "world", offset: 6 }),
-      );
+      yield* files.saveMark(createMark({ version_id: v1, selected_text: "world", offset: 6 }));
       const v2 = (yield* files.write("f.txt", "hello")).version_id;
       assertEquals((yield* files.getMarks("f.txt", v2))[0].status, "stale");
 
@@ -628,13 +573,13 @@ Deno.test("Files.write -- stale marks survive subsequent writes", async () => {
   );
 });
 
-Deno.test("Files.revert -- migrates marks through write", async () => {
+test("Files.revert -- migrates marks through write", async () => {
   await run(
     Effect.gen(function* () {
       const files = yield* Files;
       const v1 = (yield* files.write("f.txt", "hello world")).version_id;
-      // Contexts like the mark tool captures them; the resolver re-anchors
-      // through matched contexts when the selected text moved or returned.
+      // Contexts like the mark tool captures them; the resolver re-anchors through matched contexts
+      // when the selected text moved or returned.
       yield* files.saveMark(
         createMark({
           version_id: v1,
@@ -657,20 +602,16 @@ Deno.test("Files.revert -- migrates marks through write", async () => {
   );
 });
 
-Deno.test("Files.migrateMarks -- re-anchors marks added to an old version", async () => {
+test("Files.migrateMarks -- re-anchors marks added to an old version", async () => {
   await run(
     Effect.gen(function* () {
       const files = yield* Files;
       const v1 = (yield* files.write("f.txt", "hello world")).version_id;
-      yield* files.saveMark(
-        createMark({ version_id: v1, selected_text: "hello", offset: 0 }),
-      );
+      yield* files.saveMark(createMark({ version_id: v1, selected_text: "hello", offset: 0 }));
       yield* files.write("f.txt", "hello beautiful world");
 
       // Added to v1 after the write, so the write migration missed it.
-      yield* files.saveMark(
-        createMark({ version_id: v1, selected_text: "world", offset: 6 }),
-      );
+      yield* files.saveMark(createMark({ version_id: v1, selected_text: "world", offset: 6 }));
 
       const result = yield* files.migrateMarks("f.txt", v1);
       const latest = yield* files.read("f.txt");
@@ -686,14 +627,12 @@ Deno.test("Files.migrateMarks -- re-anchors marks added to an old version", asyn
   );
 });
 
-Deno.test("Files.migrateMarks -- skips marks already on the latest", async () => {
+test("Files.migrateMarks -- skips marks already on the latest", async () => {
   await run(
     Effect.gen(function* () {
       const files = yield* Files;
       const v1 = (yield* files.write("f.txt", "hello world")).version_id;
-      yield* files.saveMark(
-        createMark({ version_id: v1, selected_text: "hello", offset: 0 }),
-      );
+      yield* files.saveMark(createMark({ version_id: v1, selected_text: "hello", offset: 0 }));
       yield* files.write("f.txt", "hello there");
 
       const result = yield* files.migrateMarks("f.txt", v1);
@@ -705,14 +644,12 @@ Deno.test("Files.migrateMarks -- skips marks already on the latest", async () =>
   );
 });
 
-Deno.test("Files.migrateMarks -- no-op when source version is latest", async () => {
+test("Files.migrateMarks -- no-op when source version is latest", async () => {
   await run(
     Effect.gen(function* () {
       const files = yield* Files;
       const v1 = (yield* files.write("f.txt", "hello world")).version_id;
-      yield* files.saveMark(
-        createMark({ version_id: v1, selected_text: "hello", offset: 0 }),
-      );
+      yield* files.saveMark(createMark({ version_id: v1, selected_text: "hello", offset: 0 }));
 
       const result = yield* files.migrateMarks("f.txt", v1);
       assertEquals(result, { migrated: 0, stale: 0 });
@@ -721,15 +658,13 @@ Deno.test("Files.migrateMarks -- no-op when source version is latest", async () 
   );
 });
 
-Deno.test("Files.migrateMarks -- resolves shifted text", async () => {
+test("Files.migrateMarks -- resolves shifted text", async () => {
   await run(
     Effect.gen(function* () {
       const files = yield* Files;
       const v1 = (yield* files.write("f.txt", "alpha beta")).version_id;
       yield* files.write("f.txt", "alpha gamma beta");
-      yield* files.saveMark(
-        createMark({ version_id: v1, selected_text: "beta", offset: 6 }),
-      );
+      yield* files.saveMark(createMark({ version_id: v1, selected_text: "beta", offset: 6 }));
 
       const result = yield* files.migrateMarks("f.txt", v1);
       const latest = yield* files.read("f.txt");
@@ -745,15 +680,13 @@ Deno.test("Files.migrateMarks -- resolves shifted text", async () => {
   );
 });
 
-Deno.test("Files.migrateMarks -- marks go stale when text is gone", async () => {
+test("Files.migrateMarks -- marks go stale when text is gone", async () => {
   await run(
     Effect.gen(function* () {
       const files = yield* Files;
       const v1 = (yield* files.write("f.txt", "hello world")).version_id;
       yield* files.write("f.txt", "completely different");
-      yield* files.saveMark(
-        createMark({ version_id: v1, selected_text: "world", offset: 6 }),
-      );
+      yield* files.saveMark(createMark({ version_id: v1, selected_text: "world", offset: 6 }));
 
       const result = yield* files.migrateMarks("f.txt", v1);
       const latest = yield* files.read("f.txt");
@@ -764,7 +697,7 @@ Deno.test("Files.migrateMarks -- marks go stale when text is gone", async () => 
   );
 });
 
-Deno.test("Files.migrateMarks -- returns zeros for unknown version", async () => {
+test("Files.migrateMarks -- returns zeros for unknown version", async () => {
   await run(
     Effect.gen(function* () {
       const files = yield* Files;
@@ -778,13 +711,10 @@ Deno.test("Files.migrateMarks -- returns zeros for unknown version", async () =>
 
 // storage layout: chunk 0 inlines in the manifest; the rest get chunk keys
 
-Deno.test("Files -- small file inlines content in the latest key (no chunk keys)", async () => {
-  const kv = await Deno.openKv(":memory:");
+test("Files -- small file inlines content in the latest key (no chunk keys)", async () => {
+  const kv = await openKv();
   try {
-    const env = Layer.merge(
-      kvLayer(kv),
-      Layer.provide(Files.layerNoDeps, kvLayer(kv)),
-    );
+    const env = Layer.merge(kvLayer(kv), Layer.provide(Files.layerNoDeps, kvLayer(kv)));
     const { entries } = await Effect.runPromise(
       Effect.provide(
         Effect.provideService(
@@ -800,27 +730,20 @@ Deno.test("Files -- small file inlines content in the latest key (no chunk keys)
         env,
       ),
     );
-    const manifestKeys = entries.filter(
-      (e) => e.key[e.key.length - 1] === "file:manifest",
-    );
-    const chunkKeys = entries.filter(
-      (e) => e.key[e.key.length - 2] === "file:chunk",
-    );
+    const manifestKeys = entries.filter((e) => e.key[e.key.length - 1] === "file:manifest");
+    const chunkKeys = entries.filter((e) => e.key[e.key.length - 2] === "file:chunk");
     assertEquals(manifestKeys.length, 1);
     assertEquals(chunkKeys.length, 0, "small file must not write chunk keys");
   } finally {
-    await kv.close();
+    kv.close();
   }
 });
 
-Deno.test("Files -- large write inlines first chunk, rest as chunk keys", async () => {
+test("Files -- large write inlines first chunk, rest as chunk keys", async () => {
   const content = largeContent();
-  const kv = await Deno.openKv(":memory:");
+  const kv = await openKv();
   try {
-    const env = Layer.merge(
-      kvLayer(kv),
-      Layer.provide(Files.layerNoDeps, kvLayer(kv)),
-    );
+    const env = Layer.merge(kvLayer(kv), Layer.provide(Files.layerNoDeps, kvLayer(kv)));
     const { entries } = await Effect.runPromise(
       Effect.provide(
         Effect.provideService(
@@ -836,17 +759,11 @@ Deno.test("Files -- large write inlines first chunk, rest as chunk keys", async 
         env,
       ),
     );
-    const manifestKeys = entries.filter(
-      (e) => e.key[e.key.length - 1] === "file:manifest",
-    );
-    const chunkKeys = entries.filter(
-      (e) => e.key[e.key.length - 2] === "file:chunk",
-    );
+    const manifestKeys = entries.filter((e) => e.key[e.key.length - 1] === "file:manifest");
+    const chunkKeys = entries.filter((e) => e.key[e.key.length - 2] === "file:chunk");
     assertEquals(manifestKeys.length, 1);
     // Chunk 0 is inlined in the manifest; chunk keys start at index 1.
-    const indices = chunkKeys
-      .map((e) => Number(e.key[e.key.length - 1]))
-      .sort((a, b) => a - b);
+    const indices = chunkKeys.map((e) => Number(e.key[e.key.length - 1])).toSorted((a, b) => a - b);
     assertEquals(indices[0], 1);
     assert(chunkKeys.length > 1, "should produce multiple chunk keys");
     for (const e of chunkKeys) {
@@ -854,6 +771,6 @@ Deno.test("Files -- large write inlines first chunk, rest as chunk keys", async 
       assert(v.length <= 60 * 1024, "chunk must respect CHUNK_SIZE");
     }
   } finally {
-    await kv.close();
+    kv.close();
   }
 });

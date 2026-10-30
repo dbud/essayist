@@ -1,10 +1,10 @@
 import type { Category, ModelPool, Prompt, ReviewPass } from "@essayist/core";
 import { createModel, signal } from "@preact/signals";
 import { IS_BROWSER } from "fresh/runtime";
-import { getCategories } from "@/signals/categories.ts";
-import createAsyncState from "@/utils/asyncState.ts";
-import { createMutations } from "@/utils/createMutations.ts";
-import { ensureOk } from "@/utils/ensureOk.ts";
+import { getCategories } from "#/signals/categories.ts";
+import createAsyncState from "#/utils/asyncState.ts";
+import { createMutations } from "#/utils/createMutations.ts";
+import { ensureOk } from "#/utils/ensureOk.ts";
 
 export interface AdminConfig {
   modelPools: ModelPool[];

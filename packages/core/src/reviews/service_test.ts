@@ -1,19 +1,17 @@
 import { assertEquals } from "@std/assert";
 import { Clock, Duration, Effect } from "effect";
 import { TestClock } from "effect/testing";
-import type {
-  ConcurrentModificationError,
-  PersistenceError,
-} from "@/persistence/mod.ts";
-import { testLayer } from "@/persistence/testing/kv.ts";
-import { WorkspaceId } from "@/workspace/WorkspaceId.ts";
+import { test } from "vitest";
+
+import type { ConcurrentModificationError, PersistenceError } from "#/persistence/mod.ts";
+import { testLayer } from "#/persistence/testing/kv.ts";
+import { WorkspaceId } from "#/workspace/WorkspaceId.ts";
+
 import { ReviewRuns } from "./service.ts";
 
 type E = PersistenceError | ConcurrentModificationError;
 
-const run = <A>(
-  program: Effect.Effect<A, E, ReviewRuns | WorkspaceId>,
-): Promise<A> =>
+const run = <A>(program: Effect.Effect<A, E, ReviewRuns | WorkspaceId>): Promise<A> =>
   Effect.runPromise(
     Effect.provide(
       Effect.provideService(program, WorkspaceId, { wsId: "ws" }),
@@ -22,11 +20,10 @@ const run = <A>(
   );
 
 /** Like run, with the program clock under the test clock. */
-const runOnClock = <A>(
-  program: Effect.Effect<A, E, ReviewRuns | WorkspaceId>,
-): Promise<A> => run(Effect.provide(program, TestClock.layer()));
+const runOnClock = <A>(program: Effect.Effect<A, E, ReviewRuns | WorkspaceId>): Promise<A> =>
+  run(Effect.provide(program, TestClock.layer()));
 
-Deno.test("ReviewRuns.createRun + getRun", async () => {
+test("ReviewRuns.createRun + getRun", async () => {
   await run(
     Effect.gen(function* () {
       const runs = yield* ReviewRuns;
@@ -44,7 +41,7 @@ Deno.test("ReviewRuns.createRun + getRun", async () => {
   );
 });
 
-Deno.test("ReviewRuns.createRun stores versionId when given", async () => {
+test("ReviewRuns.createRun stores versionId when given", async () => {
   await run(
     Effect.gen(function* () {
       const runs = yield* ReviewRuns;
@@ -64,7 +61,7 @@ Deno.test("ReviewRuns.createRun stores versionId when given", async () => {
   );
 });
 
-Deno.test("ReviewRuns.listRuns newest first", async () => {
+test("ReviewRuns.listRuns newest first", async () => {
   await run(
     Effect.gen(function* () {
       const runs = yield* ReviewRuns;
@@ -87,7 +84,7 @@ Deno.test("ReviewRuns.listRuns newest first", async () => {
   );
 });
 
-Deno.test("ReviewRuns.listRuns filters by path", async () => {
+test("ReviewRuns.listRuns filters by path", async () => {
   await run(
     Effect.gen(function* () {
       const runs = yield* ReviewRuns;
@@ -118,7 +115,7 @@ Deno.test("ReviewRuns.listRuns filters by path", async () => {
   );
 });
 
-Deno.test("ReviewRuns.listRuns is workspace-scoped", async () => {
+test("ReviewRuns.listRuns is workspace-scoped", async () => {
   await run(
     Effect.provideService(
       Effect.gen(function* () {
@@ -148,10 +145,10 @@ Deno.test("ReviewRuns.listRuns is workspace-scoped", async () => {
   );
 });
 
-// end-state ops (claim and heartbeat land in the next commit; the
-// lease-release test rides there too)
+// end-state ops (claim and heartbeat land in the next commit; the lease-release test rides there
+// too)
 
-Deno.test("ReviewRuns.completeRun sets status, summary, completedAt", async () => {
+test("ReviewRuns.completeRun sets status, summary, completedAt", async () => {
   await run(
     Effect.gen(function* () {
       const runs = yield* ReviewRuns;
@@ -169,7 +166,7 @@ Deno.test("ReviewRuns.completeRun sets status, summary, completedAt", async () =
   );
 });
 
-Deno.test("ReviewRuns.failRun sets status and error", async () => {
+test("ReviewRuns.failRun sets status and error", async () => {
   await run(
     Effect.gen(function* () {
       const runs = yield* ReviewRuns;
@@ -185,7 +182,7 @@ Deno.test("ReviewRuns.failRun sets status and error", async () => {
   );
 });
 
-Deno.test("ReviewRuns.completeRun/failRun unknown id return undefined", async () => {
+test("ReviewRuns.completeRun/failRun unknown id return undefined", async () => {
   await run(
     Effect.gen(function* () {
       const runs = yield* ReviewRuns;
@@ -197,7 +194,7 @@ Deno.test("ReviewRuns.completeRun/failRun unknown id return undefined", async ()
 
 // claim and heartbeat
 
-Deno.test("ReviewRuns.claimRun leases the run", async () => {
+test("ReviewRuns.claimRun leases the run", async () => {
   await run(
     Effect.gen(function* () {
       const runs = yield* ReviewRuns;
@@ -232,7 +229,7 @@ Deno.test("ReviewRuns.claimRun leases the run", async () => {
   );
 });
 
-Deno.test("ReviewRuns.claimRun -- undefined for an unknown run", async () => {
+test("ReviewRuns.claimRun -- undefined for an unknown run", async () => {
   await run(
     Effect.gen(function* () {
       const runs = yield* ReviewRuns;
@@ -247,7 +244,7 @@ Deno.test("ReviewRuns.claimRun -- undefined for an unknown run", async () => {
   );
 });
 
-Deno.test("ReviewRuns.claimRun -- takes over a stale lease", async () => {
+test("ReviewRuns.claimRun -- takes over a stale lease", async () => {
   await run(
     Effect.gen(function* () {
       const runs = yield* ReviewRuns;
@@ -260,8 +257,8 @@ Deno.test("ReviewRuns.claimRun -- takes over a stale lease", async () => {
         heartbeatAtLeast: 0,
       });
 
-      // driver-b demands fresher proof of life than the current heartbeat,
-      // so the lease counts as stale and the takeover succeeds.
+      // driver-b demands fresher proof of life than the current heartbeat, so the lease counts as
+      // stale and the takeover succeeds.
       const takeover = yield* runs.claimRun(created.id, {
         owner: "driver-b",
         heartbeatAtLeast: Date.now() + 1_000,
@@ -272,7 +269,7 @@ Deno.test("ReviewRuns.claimRun -- takes over a stale lease", async () => {
   );
 });
 
-Deno.test("ReviewRuns.claimRun -- a lease ages out with the clock", async () => {
+test("ReviewRuns.claimRun -- a lease ages out with the clock", async () => {
   await runOnClock(
     Effect.gen(function* () {
       const runs = yield* ReviewRuns;
@@ -295,9 +292,8 @@ Deno.test("ReviewRuns.claimRun -- a lease ages out with the clock", async () => 
         undefined,
       );
 
-      // Past the window the lease goes stale: the driver again demands
-      // proof of life in the last 15 minutes, and the clock says the
-      // heartbeat is 16 minutes old.
+      // Past the window the lease goes stale: the driver again demands proof of life in the last 15
+      // minutes, and the clock says the heartbeat is 16 minutes old.
       yield* TestClock.adjust(Duration.minutes(16));
       const takeover = yield* runs.claimRun(created.id, {
         owner: "driver-b",
@@ -308,7 +304,7 @@ Deno.test("ReviewRuns.claimRun -- a lease ages out with the clock", async () => 
   );
 });
 
-Deno.test("ReviewRuns.heartbeatRun renews only our own lease", async () => {
+test("ReviewRuns.heartbeatRun renews only our own lease", async () => {
   await run(
     Effect.gen(function* () {
       const runs = yield* ReviewRuns;
@@ -331,7 +327,7 @@ Deno.test("ReviewRuns.heartbeatRun renews only our own lease", async () => {
   );
 });
 
-Deno.test("ReviewRuns.heartbeatRun -- false for an unknown run", async () => {
+test("ReviewRuns.heartbeatRun -- false for an unknown run", async () => {
   await run(
     Effect.gen(function* () {
       const runs = yield* ReviewRuns;
@@ -340,7 +336,7 @@ Deno.test("ReviewRuns.heartbeatRun -- false for an unknown run", async () => {
   );
 });
 
-Deno.test("ReviewRuns -- completing and failing a run releases its lease", async () => {
+test("ReviewRuns -- completing and failing a run releases its lease", async () => {
   await run(
     Effect.gen(function* () {
       const runs = yield* ReviewRuns;

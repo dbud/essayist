@@ -1,13 +1,13 @@
 /**
- * Stores a value too large for one KV entry, where a single entry caps at
- * 64 KiB.
+ * Stores a value too large for one KV entry, where a single entry caps at 64 KiB.
  *
- * A value that fits is stored as one entry: a six-byte header, then the
- * bytes. A larger value is split across several keys under the same base
- * key, numbered by position so a scan returns them in order.
+ * A value that fits is stored as one entry: a six-byte header, then the bytes. A larger value is
+ * split across several keys under the same base key, numbered by position so a scan returns them
+ * in order.
  */
 
 import { sortBy } from "@std/collections";
+
 import type { Entry, Key } from "./mod.ts";
 
 /** Deno KV's cap on one value. Nothing is added on top of a Uint8Array's
@@ -42,8 +42,7 @@ export function frameChunk(payload: Uint8Array, nChunks: number): Uint8Array {
 }
 
 export function unframeChunk(value: unknown): ChunkHeader | null {
-  if (!(value instanceof Uint8Array) || value.length < HEADER_BYTES)
-    return null;
+  if (!(value instanceof Uint8Array) || value.length < HEADER_BYTES) return null;
   if (value[0] !== MAGIC) return null;
   const view = new DataView(value.buffer, value.byteOffset, value.byteLength);
   const nChunks = view.getUint32(2, true);
@@ -51,10 +50,7 @@ export function unframeChunk(value: unknown): ChunkHeader | null {
   return { nChunks, payload: value.subarray(HEADER_BYTES) };
 }
 
-export function planChunks(
-  payload: Uint8Array,
-  maxPayload: number = CHUNK_PAYLOAD_BYTES,
-): Chunk[] {
+export function planChunks(payload: Uint8Array, maxPayload: number = CHUNK_PAYLOAD_BYTES): Chunk[] {
   const nChunks = Math.max(1, Math.ceil(payload.length / maxPayload));
   const chunks: Chunk[] = [];
   for (let i = 0; i < nChunks; i++) {
@@ -107,9 +103,7 @@ function assembleOne(
 ): AssembledValue {
   const nReceived = chunks?.size ?? 0;
   if (!chunks || nReceived < nChunks) return { key, nChunks, nReceived };
-  const ordered = sortBy([...chunks], ([index, ..._]) => index).map(
-    ([, chunk]) => chunk,
-  );
+  const ordered = sortBy([...chunks], ([index, ..._]) => index).map(([, chunk]) => chunk);
   return { key, nChunks, nReceived, payload: concat(ordered) };
 }
 
@@ -118,8 +112,8 @@ type Found =
   | { chunked: true; key: Key; header: ChunkHeader };
 
 /**
- * Put back together every value written by this layer in a scan, and leave
- * the rest as they came. A value missing a chunk comes back with no bytes.
+ * Put back together every value written by this layer in a scan, and leave the rest as they came. A
+ * value missing a chunk comes back with no bytes.
  */
 export function assembleList(entries: readonly Entry[]): AssembledValue[] {
   const found = new Map<string, Found>();
@@ -139,19 +133,13 @@ export function assembleList(entries: readonly Entry[]): AssembledValue[] {
     if (index === 0 && !found.has(id)) {
       found.set(id, { chunked: true, key: base, header });
     }
-    parts
-      .getOrInsert(id, new Map<number, Uint8Array>())
-      .set(index, header.payload);
+    parts.getOrInsert(id, new Map<number, Uint8Array>()).set(index, header.payload);
   }
 
   return [...found.values()].map((value) => {
     if (!value.chunked) {
       return { key: value.key, nChunks: 1, nReceived: 1, raw: value.raw };
     }
-    return assembleOne(
-      value.key,
-      value.header.nChunks,
-      parts.get(String(value.key)),
-    );
+    return assembleOne(value.key, value.header.nChunks, parts.get(String(value.key)));
   });
 }

@@ -1,5 +1,5 @@
-import type { FlowGraph, FlowNodeOf, NodeKind } from "@/flow/types.ts";
-import type { ReviewTypes } from "@/reviews/graph.ts";
+import type { FlowGraph, FlowNodeOf, NodeKind } from "#/flow/types.ts";
+import type { ReviewTypes } from "#/reviews/graph.ts";
 
 /** Agentflow shape per review node kind. */
 const SHAPES: Record<NodeKind<ReviewTypes>, string> = {
@@ -38,11 +38,10 @@ function unitIdOf(id: string): string {
 }
 
 /**
- * An agentflow-beta definition of a built review graph: the source in a
- * global block, multi-node units in flow containers (single-node units
- * stay bare), dependsOn as sequence edges, and repair gates labeling
- * their outgoing edges. Label = the real node id, so sanitized ids stay
- * parseable while the boxes read exactly like the graph.
+ * An agentflow-beta definition of a built review graph: the source in a global block, multi-node
+ * units in flow containers (single-node units stay bare), dependsOn as sequence edges, and repair
+ * gates labeling their outgoing edges. Label = the real node id, so sanitized ids stay parseable
+ * while the boxes read exactly like the graph.
  */
 export function agentflowDefinition(graph: FlowGraph<ReviewTypes>): string {
   const lines: string[] = ["agentflow-beta TB"];
@@ -62,9 +61,7 @@ export function agentflowDefinition(graph: FlowGraph<ReviewTypes>): string {
   }
 
   const hop = (dep: string): string =>
-    nodeById.get(dep)?.kind === "mark.repair.gate"
-      ? " -- failed marks -->"
-      : " -->";
+    nodeById.get(dep)?.kind === "mark.repair.gate" ? " -- failed marks -->" : " -->";
 
   if (sources.length > 0) {
     lines.push("", "global");

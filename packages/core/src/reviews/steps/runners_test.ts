@@ -1,28 +1,25 @@
+import { openKv } from "@deno/kv";
 import { assertEquals } from "@std/assert";
 import { Effect, Layer } from "effect";
-import type { ResolvedReviewUnit } from "@/config/types.ts";
-import { Files } from "@/files/service.ts";
-import type { PassWhenSpec } from "@/flow/helpers.ts";
-import { FlowRunner } from "@/flow/runner.ts";
-import type {
-  Artifact,
-  Artifacts,
-  FlowEvent,
-  FlowGraph,
-  FlowRunResult,
-} from "@/flow/types.ts";
-import { Marks } from "@/marks/service.ts";
-import type { Mark } from "@/marks/types.ts";
-import { createFakeClient } from "@/model/fake_client.ts";
-import { ModelClient } from "@/model/service.ts";
-import { kvLayer } from "@/persistence/kv_layer.ts";
+import { test } from "vitest";
+
+import type { ResolvedReviewUnit } from "#/config/types.ts";
+import { Files } from "#/files/service.ts";
+import type { PassWhenSpec } from "#/flow/helpers.ts";
+import { FlowRunner } from "#/flow/runner.ts";
+import type { Artifact, Artifacts, FlowEvent, FlowGraph, FlowRunResult } from "#/flow/types.ts";
+import { Marks } from "#/marks/service.ts";
+import type { Mark } from "#/marks/types.ts";
+import { createFakeClient } from "#/model/fake_client.ts";
+import { ModelClient } from "#/model/service.ts";
+import { kvLayer } from "#/persistence/kv_layer.ts";
 import {
   type ReviewNodeEvent,
   type ReviewServices,
   type ReviewTypes,
   reviewRunners,
-} from "@/reviews/graph.ts";
-import { WorkspaceId } from "@/workspace/WorkspaceId.ts";
+} from "#/reviews/graph.ts";
+import { WorkspaceId } from "#/workspace/WorkspaceId.ts";
 
 const ANALYSIS_ROUND =
   '{"thesis":"Drafts are raw material.","claims":[],"outline":[],"strengths":[],"risks":[]}';
@@ -48,10 +45,7 @@ const GATE_PAYLOAD: PassWhenSpec<ReviewTypes> = {
 
 function customs(events: FlowEvent[]): [string, string][] {
   return events
-    .filter(
-      (event): event is Extract<FlowEvent, { type: "custom" }> =>
-        event.type === "custom",
-    )
+    .filter((event): event is Extract<FlowEvent, { type: "custom" }> => event.type === "custom")
     .map((event) => [event.nodeId, (event.event as ReviewNodeEvent).type]);
 }
 
@@ -60,21 +54,15 @@ function artifactsOf<A extends keyof ReviewTypes["artifacts"]>(
   type: A,
 ): ReviewTypes["artifacts"][A][] {
   return result.artifacts
-    .filter(
-      (artifact): artifact is Artifact<ReviewTypes, A> =>
-        artifact.type === type,
-    )
+    .filter((artifact): artifact is Artifact<ReviewTypes, A> => artifact.type === type)
     .map((artifact) => artifact.data);
 }
 
 /** One shared KV per test, seeded through the Files service. */
 async function setup(content: string) {
-  const kv = await Deno.openKv(":memory:");
+  const kv = await openKv();
   const env = Layer.provide(
-    Layer.mergeAll(
-      Files.layerNoDeps,
-      Layer.provide(Marks.layerNoDeps, Files.layerNoDeps),
-    ),
+    Layer.mergeAll(Files.layerNoDeps, Layer.provide(Marks.layerNoDeps, Files.layerNoDeps)),
     kvLayer(kv),
   );
   const versionId = await Effect.runPromise(
@@ -109,19 +97,16 @@ const readMarks = (
     ),
   );
 
-const run = (
+const runFlow = (
   env: Layer.Layer<ModelClient | Files | Marks>,
   flow: FlowRunner<ReviewTypes, ReviewServices>,
   graph: FlowGraph<ReviewTypes>,
 ): Promise<FlowRunResult<ReviewTypes>> =>
   Effect.runPromise(
-    Effect.provide(
-      Effect.provideService(flow.run(graph), WorkspaceId, { wsId: "ws" }),
-      env,
-    ),
+    Effect.provide(Effect.provideService(flow.run(graph), WorkspaceId, { wsId: "ws" }), env),
   );
 
-Deno.test("review runners -- analyze, propose, apply, and synthesize in a flow", async () => {
+test("review runners -- analyze, propose, apply, and synthesize in a flow", async () => {
   const { env: baseEnv, versionId } = await setup("hello brave world");
   const { client, inputs } = createFakeClient([
     { text: ANALYSIS_ROUND, reasoning: "reading closely" },
@@ -178,7 +163,7 @@ Deno.test("review runners -- analyze, propose, apply, and synthesize in a flow",
     ],
   };
 
-  const result = await run(env, flow, graph);
+  const result = await runFlow(env, flow, graph);
 
   assertEquals(result.errors, []);
   assertEquals(result.status, "completed");
@@ -214,7 +199,7 @@ Deno.test("review runners -- analyze, propose, apply, and synthesize in a flow",
   assertEquals(marks[0].meta, { runId: "r", unitId: "mechanics" });
 });
 
-Deno.test("review runners -- repair propose stays idle without failures", async () => {
+test("review runners -- repair propose stays idle without failures", async () => {
   const { env: baseEnv, versionId } = await setup("hello world");
   const { client, inputs } = createFakeClient([
     {
@@ -226,7 +211,7 @@ Deno.test("review runners -- repair propose stays idle without failures", async 
   const provenance = { runId: "r", unitId: "m" };
   const flow = new FlowRunner<ReviewTypes, ReviewServices>({ runners });
 
-  const result = await run(env, flow, {
+  const result = await runFlow(env, flow, {
     nodes: [
       {
         id: "content",
@@ -275,19 +260,17 @@ Deno.test("review runners -- repair propose stays idle without failures", async 
         },
       },
     ],
-  } as FlowGraph<ReviewTypes>);
+  });
 
   assertEquals(result.status, "completed");
-  // The gate forwarded nothing, so the repair propose never called the
-  // model and produced no proposals.
+  // The gate forwarded nothing, so the repair propose never called the model and produced no
+  // proposals.
   assertEquals(inputs.length, 1);
   assertEquals(
     result.nodeRuns.find((run) => run.nodeId === "m.repair1.propose")?.status,
     "completed",
   );
-  const proposals = result.artifacts.filter(
-    (artifact) => artifact.type === "mark.proposals",
-  );
+  const proposals = result.artifacts.filter((artifact) => artifact.type === "mark.proposals");
   assertEquals(proposals.length, 1);
   assertEquals(proposals[0].producedBy, "m.propose");
   const marks = await readMarks(env, versionId);
@@ -297,7 +280,7 @@ Deno.test("review runners -- repair propose stays idle without failures", async 
   );
 });
 
-Deno.test("review runners -- a repair round re-quotes failed spans", async () => {
+test("review runners -- a repair round re-quotes failed spans", async () => {
   const { env: baseEnv, versionId } = await setup("hello world");
   const { client, inputs } = createFakeClient([
     {
@@ -312,7 +295,7 @@ Deno.test("review runners -- a repair round re-quotes failed spans", async () =>
   const provenance = { runId: "r", unitId: "m" };
   const flow = new FlowRunner<ReviewTypes, ReviewServices>({ runners });
 
-  const result = await run(env, flow, {
+  const result = await runFlow(env, flow, {
     nodes: [
       {
         id: "content",
@@ -361,7 +344,7 @@ Deno.test("review runners -- a repair round re-quotes failed spans", async () =>
         },
       },
     ],
-  } as FlowGraph<ReviewTypes>);
+  });
 
   assertEquals(result.status, "completed");
   assertEquals(
@@ -371,8 +354,7 @@ Deno.test("review runners -- a repair round re-quotes failed spans", async () =>
       ["mark.proposals", "m.propose"],
       ["mark.placed", "m.apply"],
       ["mark.failed", "m.apply"],
-      // The gate re-emits the failed artifact unchanged; provenance stays
-      // with m.apply.
+      // The gate re-emits the failed artifact unchanged; provenance stays with m.apply.
       ["mark.failed", "m.apply"],
       ["mark.proposals", "m.repair1.propose"],
       ["mark.placed", "m.repair1.apply"],

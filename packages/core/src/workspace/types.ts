@@ -26,18 +26,19 @@ export interface UserInput extends UserProfile {
 }
 
 /**
- * Membership role within a workspace. `owner` >= `editor`: an owner can do
- * everything an editor can, plus manage members and delete the workspace.
+ * Membership role within a workspace. `owner` >= `editor`: an owner can do everything an editor
+ * can, plus manage members and delete the workspace.
  */
 export type Role = "owner" | "editor";
 
 /** A named collection of files owned by a user, shareable with others. */
-export interface Workspace {
-  id: string;
-  name: string;
-  ownerId: string;
-  createdAt: number;
-}
+export const Workspace = Schema.Struct({
+  id: Schema.String,
+  name: Schema.String,
+  ownerId: Schema.String,
+  createdAt: Schema.Number,
+});
+export type Workspace = Schema.Schema.Type<typeof Workspace>;
 
 /** The many-to-many share edge between a user and a workspace. */
 export interface WorkspaceMember {
@@ -58,13 +59,11 @@ export class UserEmailTakenError extends Schema.TaggedError<UserEmailTakenError>
 }
 
 /**
- * An operation would leave a workspace with no owner
- * (removing or demoting the last owner).
+ * An operation would leave a workspace with no owner (removing or demoting the last owner).
  */
-export class LastOwnerError extends Schema.TaggedError<LastOwnerError>()(
-  "LastOwnerError",
-  { wsId: Schema.String },
-) {
+export class LastOwnerError extends Schema.TaggedError<LastOwnerError>()("LastOwnerError", {
+  wsId: Schema.String,
+}) {
   override get message() {
     return `Cannot remove the last owner of workspace ${this.wsId}`;
   }

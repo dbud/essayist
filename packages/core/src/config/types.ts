@@ -51,9 +51,7 @@ export const ReviewUnitSchema = Schema.Struct({
       /** Required non-empty. */
       allowedCategoryIds: Schema.Array(Schema.String),
       /** Repair calls for unmatched spans. Default 1. */
-      repairRounds: Schema.optionalKey(
-        Schema.Int.check(Schema.isGreaterThanOrEqualTo(0)),
-      ),
+      repairRounds: Schema.optionalKey(Schema.Int.check(Schema.isGreaterThanOrEqualTo(0))),
     }),
   ),
   /** Marks the unit's artifact as the run summary. */

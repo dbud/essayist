@@ -1,12 +1,12 @@
 import { Files } from "@essayist/core";
-import { runScoped } from "@/run.ts";
-import type { FileKey } from "@/signals/file.ts";
-import { registerLoader } from "@/signals/models.server.ts";
+import { runScoped } from "#/run.ts";
+import type { FileKey } from "#/signals/file.ts";
+import { registerLoader } from "#/signals/models.server.ts";
 import {
   type VersionHistoryData,
   versionHistoryNs,
-} from "@/signals/versionHistory.ts";
-import { runtime } from "@/store.ts";
+} from "#/signals/versionHistory.ts";
+import { runtime } from "#/store.ts";
 
 export async function versionHistoryLoader({
   wsId,
@@ -16,7 +16,7 @@ export async function versionHistoryLoader({
     versions: await runScoped(
       runtime,
       wsId,
-    )(Files.use((files) => files.getHistory(path))),
+    )(Files.use((files) => files.getVersions(path))),
   };
 }
 

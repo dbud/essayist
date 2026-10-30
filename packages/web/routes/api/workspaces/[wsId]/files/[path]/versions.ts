@@ -1,5 +1,5 @@
-import { define } from "@/define.ts";
-import { versionHistoryLoader } from "@/signals/versionHistory.server.ts";
+import { define } from "#/define.ts";
+import { versionHistoryLoader } from "#/signals/versionHistory.server.ts";
 
 export const handler = {
   GET: define.handlers(async (ctx) => {

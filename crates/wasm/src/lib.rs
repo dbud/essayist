@@ -1,33 +1,30 @@
 //! Essayist WASM crate.
 //!
-//! Exposes a linear-space Myers diff via the `myers` `#[wasm_bindgen]`
-//! export, backed by the pure-Rust `myers_ops` core. The diff runs in
-//! `O((N+M)D)` time and `O(N+M)` memory via a Hirschberg-style
-//! middle-snake divide-and-conquer.
+//! Exposes a linear-space Myers diff via the `myers` `#[wasm_bindgen]` export, backed by the pure-
+//! Rust `myers_ops` core. The diff runs in `O((N+M)D)` time and `O(N+M)` memory via a Hirschberg-
+//! style middle-snake divide-and-conquer.
 
 use js_sys::Int32Array;
 use wasm_bindgen::prelude::*;
 
-/// Op type codes for the flat `Int32Array` encoding returned by `myers`.
-/// 0 = equal, 1 = insert, 2 = delete (matches the JS `DiffOp.type` ordering).
+/// Op type codes for the flat `Int32Array` encoding returned by `myers`. 0 = equal, 1 = insert, 2 =
+/// delete (matches the JS `DiffOp.type` ordering).
 const EQ: i32 = 0;
 const INS: i32 = 1;
 const DEL: i32 = 2;
 
 /// Myers' shortest-edit-script on integer token ids, linear-space variant.
 ///
-/// `old_token_ids` / `new_token_ids` carry per-token integer ids assigned in JS
-/// so identical token strings share an id; Rust compares ids with `==`,
-/// matching the JS `oldTokens[x].text === newTokens[y].text` check. Returns a
-/// flat `Int32Array` of `[type, oldIdx, newIdx, ...]` triples where `type` is
-/// 0=equal, 1=insert, 2=delete; the unused index is -1 (inserts: oldIdx=-1,
+/// `old_token_ids` / `new_token_ids` carry per-token integer ids assigned in JS so identical
+/// token strings share an id; Rust compares ids with `==`, matching the JS `oldTokens[x].text
+/// === newTokens[y].text` check. Returns a flat `Int32Array` of `[type, oldIdx, newIdx, ...]`
+/// triples where `type` is 0=equal, 1=insert, 2=delete; the unused index is -1 (inserts: oldIdx=-1,
 /// deletes: newIdx=-1).
 ///
-/// `O((N+M)D)` time, `O(N+M)` memory via the middle-snake divide-and-conquer: find
-/// a matched diagonal run on an optimal path, recurse on the two halves. The
-/// edit script is minimal; its tie-break on repeated-token inputs can differ
-/// from a forward-only Myers, but the diff is always a valid minimal
-/// alignment (see the test suite).
+/// `O((N+M)D)` time, `O(N+M)` memory via the middle-snake divide-and-conquer: find a matched
+/// diagonal run on an optimal path, recurse on the two halves. The edit script is minimal; its tie-
+/// break on repeated-token inputs can differ from a forward-only Myers, but the diff is always a
+/// valid minimal alignment (see the test suite).
 #[wasm_bindgen]
 pub fn myers(old_token_ids: &[i32], new_token_ids: &[i32]) -> Int32Array {
     let ops = myers_ops(old_token_ids, new_token_ids);
@@ -36,17 +33,16 @@ pub fn myers(old_token_ids: &[i32], new_token_ids: &[i32]) -> Int32Array {
     out
 }
 
-/// Pure-Rust Myers core returning the flat op vec. Separated from the
-/// `#[wasm_bindgen]` wrapper so it can be unit-tested on the native target
-/// without the JS glue, and used by the bench/example.
+/// Pure-Rust Myers core returning the flat op vec. Separated from the `#[wasm_bindgen]` wrapper so
+/// it can be unit-tested on the native target without the JS glue, and used by the bench/example.
 pub fn myers_ops(a: &[i32], b: &[i32]) -> Vec<i32> {
     let mut ops = Vec::new();
     diff_rec(a, b, 0, 0, &mut ops);
     ops
 }
 
-/// Recursive divide-and-conquer. `a_off` / `b_off` are the absolute offsets of
-/// `a` / `b` within the original inputs, used to emit absolute op indices.
+/// Recursive divide-and-conquer. `a_off` / `b_off` are the absolute offsets of `a` / `b` within the
+/// original inputs, used to emit absolute op indices.
 fn diff_rec(a: &[i32], b: &[i32], a_off: i32, b_off: i32, ops: &mut Vec<i32>) {
     let n = a.len() as i32;
     let m = b.len() as i32;
@@ -65,13 +61,13 @@ fn diff_rec(a: &[i32], b: &[i32], a_off: i32, b_off: i32, ops: &mut Vec<i32>) {
 
     let (x, y, u, v) = find_middle_snake(a, b);
 
-    // `find_middle_snake` only fails to split when the optimal path's middle
-    // is a zero-length snake at an endpoint, which happens exactly for a
-    // single edit at the very start or end (D <= 1). Recover those directly
-    // so the recursion always makes progress; everything else splits cleanly.
+    // `find_middle_snake` only fails to split when the optimal path's middle is a zero-length
+    // snake at an endpoint, which happens exactly for a single edit at the very start or end (D
+    // <= 1). Recover those directly so the recursion always makes progress; everything else splits
+    // cleanly.
     if x == 0 && y == 0 && u == 0 && v == 0 {
-        // Defensive: the search found no overlap (should not happen for valid
-        // inputs). Emit a valid, possibly non-minimal, script.
+        // Defensive: the search found no overlap (should not happen for valid inputs). Emit a
+        // valid, possibly non-minimal, script.
         for i in 0..n {
             ops.extend_from_slice(&[DEL, a_off + i, -1]);
         }
@@ -80,8 +76,8 @@ fn diff_rec(a: &[i32], b: &[i32], a_off: i32, b_off: i32, ops: &mut Vec<i32>) {
         }
         return;
     }
-    // Single edit at the very end: matches are a common prefix, then the
-    // trailing edit (one side is empty after the prefix).
+    // Single edit at the very end: matches are a common prefix, then the trailing edit (one side is
+    // empty after the prefix).
     if x == n && y == m {
         let p = common_prefix_len(a, b);
         for k in 0..p {
@@ -127,17 +123,17 @@ fn diff_rec(a: &[i32], b: &[i32], a_off: i32, b_off: i32, ops: &mut Vec<i32>) {
     );
 }
 
-/// Find a middle snake: a matched run `(x,y) -> (u,v)` on an optimal edit
-/// path, with `a[x..u] == b[y..v]`. Runs a forward search from `(0,0)` and a
-/// reverse search from `(n,m)` for increasing `d` until they overlap.
+/// Find a middle snake: a matched run `(x,y) -> (u,v)` on an optimal edit path, with `a[x..u] ==
+/// b[y..v]`. Runs a forward search from `(0,0)` and a reverse search from `(n,m)` for increasing
+/// `d` until they overlap.
 #[allow(clippy::too_many_lines)]
 fn find_middle_snake(a: &[i32], b: &[i32]) -> (i32, i32, i32, i32) {
     let n = a.len() as i32;
     let m = b.len() as i32;
     let delta = n - m;
     let max_d = (n + m + 1) / 2;
-    // Generous offset/size so every diagonal we touch (forward k in [-d,d],
-    // reverse k in [delta-d, delta+d]) stays in bounds.
+    // Generous offset/size so every diagonal we touch (forward k in [-d,d], reverse k in [delta-d,
+    // delta+d]) stays in bounds.
     let off = 2 * (n + m);
     let sz = (4 * (n + m) + 1) as usize;
     let mut vf = vec![0i32; sz];
@@ -193,8 +189,8 @@ fn find_middle_snake(a: &[i32], b: &[i32]) -> (i32, i32, i32, i32) {
             vr[(off + k) as usize] = x;
             // delta even: reverse at distance d meets forward at distance d.
             if delta % 2 == 0 && k >= -d && k <= d && x <= vf[(off + k) as usize] {
-                // Middle snake = the reverse snake on diagonal k, oriented
-                // forward: (post-slide) -> (pre-slide).
+                // Middle snake = the reverse snake on diagonal k, oriented forward: (post-slide) ->
+                // (pre-slide).
                 return (x, x - k, x_in, x_in - k);
             }
             k -= 2;
@@ -343,8 +339,8 @@ mod tests {
         }
     }
 
-    /// Reconstruct validity + index consistency: walking the ops must consume
-    /// exactly `a` and `b`, with EQ ops pairing equal tokens.
+    /// Reconstruct validity + index consistency: walking the ops must consume exactly `a` and `b`,
+    /// with EQ ops pairing equal tokens.
     fn validate(ops: &[i32], a: &[i32], b: &[i32]) -> bool {
         let mut i = 0usize;
         let mut j = 0usize;
@@ -413,8 +409,8 @@ mod tests {
     fn is_valid_and_minimal_on_random() {
         let mut rng = Lcg(0x9e3779b97f4a7c15);
         for _ in 0..4000 {
-            // Small alphabet forces repeated tokens -> exercises LCS
-            // ambiguity, where tie-breaks (and bugs) surface.
+            // Small alphabet forces repeated tokens -> exercises LCS ambiguity, where tie-breaks
+            // (and bugs) surface.
             let a = rand_seq(&mut rng, 24, 5);
             let b = rand_seq(&mut rng, 24, 5);
             let ops = myers_ops(&a, &b);

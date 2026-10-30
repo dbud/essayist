@@ -1,5 +1,6 @@
-import type { NodeKind } from "@/flow/types.ts";
-import type { ReviewNodeEvent, ReviewTypes } from "@/reviews/graph.ts";
+import type { NodeKind } from "#/flow/types.ts";
+import type { ReviewNodeEvent, ReviewTypes } from "#/reviews/graph.ts";
+
 import type { TraceEvent } from "./types.ts";
 
 /** The events and lifecycle of a single node. */
@@ -36,10 +37,9 @@ export interface TraceView {
 }
 
 /**
- * Folds a node-scoped trace into per-node views, preserving seq order.
- * A custom event attaches to the most recently started node that has not
- * ended; anything else is an orphan. A node_end with no node_start still
- * opens a section, so a node skipped for a failed dependency is visible.
+ * Folds a node-scoped trace into per-node views, preserving seq order. A custom event attaches to
+ * the most recently started node that has not ended; anything else is an orphan. A node_end with no
+ * node_start still opens a section, so a node skipped for a failed dependency is visible.
  */
 export function groupTraceNodes(
   trace: readonly TraceEvent[],
@@ -69,8 +69,7 @@ export function groupTraceNodes(
         break;
       }
       case "node_end": {
-        const target =
-          byId.get(event.nodeId) ?? section(event.nodeId, event.at);
+        const target = byId.get(event.nodeId) ?? section(event.nodeId, event.at);
         applyRun(target, event.run);
         if (open === target) open = undefined;
         break;

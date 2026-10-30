@@ -1,10 +1,11 @@
 import { Effect, type Schema } from "effect";
+
 import {
   type ModelCallError,
   type ModelCallRecord,
   ModelClient,
   type StructuredParseError,
-} from "@/model/service.ts";
+} from "#/model/service.ts";
 
 /** Events of a structured call, delivered in order. */
 export type CallEvent =
@@ -15,9 +16,7 @@ export type CallEvent =
   | { type: "output"; output: unknown }
   | { type: "model_call"; call: ModelCallRecord };
 
-export interface CallStructuredOptions<
-  T extends Schema.ConstraintDecoder<unknown>,
-> {
+export interface CallStructuredOptions<T extends Schema.ConstraintDecoder<unknown>> {
   onEvent: (event: CallEvent) => Effect.Effect<void>;
   input: string;
   models: readonly string[];
@@ -29,11 +28,7 @@ export interface CallStructuredOptions<
  * onEvent as they happen and ending with the output event. */
 export function callStructured<T extends Schema.ConstraintDecoder<unknown>>(
   options: CallStructuredOptions<T>,
-): Effect.Effect<
-  T["Type"],
-  StructuredParseError | ModelCallError,
-  ModelClient
-> {
+): Effect.Effect<T["Type"], StructuredParseError | ModelCallError, ModelClient> {
   return Effect.gen(function* () {
     const client = yield* ModelClient;
     const output = yield* client.callModelStructured(

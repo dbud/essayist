@@ -7,10 +7,10 @@ import {
   WorkspaceId,
 } from "@essayist/core";
 import { Effect } from "effect";
-import { define } from "@/define.ts";
-import { runtime } from "@/store.ts";
-import { ResolveReviewError, resolveReviewSetup } from "@/utils/review.ts";
-import { sseResponse } from "@/utils/sse.ts";
+import { define } from "#/define.ts";
+import { runtime } from "#/store.ts";
+import { ResolveReviewError, resolveReviewSetup } from "#/utils/review.ts";
+import { sseResponse } from "#/utils/sse.ts";
 
 export const handler = {
   POST: define.handlers(async (ctx) => {

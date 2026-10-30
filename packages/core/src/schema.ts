@@ -1,8 +1,7 @@
 /**
- * The structured-output instructions the models read: a schema's shape
- * rendered as pseudocode, plus an optional example, and fence stripping for
- * replies. The walker reads the schema's AST directly, so the prompt text
- * changes only when a schema's shape changes.
+ * The structured-output instructions the models read: a schema's shape rendered as pseudocode, plus
+ * an optional example, and fence stripping for replies. The walker reads the schema's AST directly,
+ * so the prompt text changes only when a schema's shape changes.
  */
 
 import { Schema, SchemaAST } from "effect";
@@ -11,19 +10,18 @@ type Ast = SchemaAST.AST;
 type Annotations = Schema.Annotations.Documentation<Schema.Json>;
 
 function annotationsOf(ast: Ast): Annotations {
-  // Resolved the way Effect does: a checked schema (Int, bounded numbers)
-  // keeps its annotations on the last check; unchecked ones keep them on the
-  // node.
+  // Resolved the way Effect does: a checked schema (Int, bounded numbers) keeps its annotations on
+  // the last check; unchecked ones keep them on the node.
   const resolved =
     ast.checks !== undefined && ast.checks.length > 0
       ? ast.checks[ast.checks.length - 1].annotations
       : ast.annotations;
-  return (resolved ?? {}) as Annotations;
+  return resolved ?? {};
 }
 
 /** A check marking whole numbers, the way `Schema.Int` carries one. The id
- * is the check's stable identity marker, matched the same way Effect's own
- * encoders and JSON projection match it. */
+ * is the check's stable identity marker, matched the same way Effect's own encoders and JSON
+ * projection match it. */
 function isInt(ast: Ast): boolean {
   return hasIntCheck(ast.checks ?? []);
 }
@@ -77,15 +75,12 @@ function describeType(ast: Ast): string {
 }
 
 function isNullable(ast: Ast): boolean {
-  return (
-    SchemaAST.isNull(ast) ||
-    (SchemaAST.isUnion(ast) && ast.types.some(SchemaAST.isNull))
-  );
+  return SchemaAST.isNull(ast) || (SchemaAST.isUnion(ast) && ast.types.some(SchemaAST.isNull));
 }
 
 /** The literal prefix and scalar type of a field whose whole type is
- * literals: `Schema.Literal`, alone or unioned (as `Schema.Literals`
- * builds it). `Null` members may join; nullability reports separately. */
+ * literals: `Schema.Literal`, alone or unioned (as `Schema.Literals` builds it). `Null` members may
+ * join; nullability reports separately. */
 function literalParts(ast: Ast): string[] | undefined {
   if (SchemaAST.isLiteral(ast)) {
     return [`literal ${formatValue(ast.literal)}`, typeof ast.literal];
@@ -129,11 +124,7 @@ function nestedFieldsOf(ast: Ast, indent: string): string[] {
   return object ? describeProperties(object, `${indent}  `) : [];
 }
 
-function describeField(
-  sig: SchemaAST.PropertySignature,
-  ast: Ast,
-  indent: string,
-): string[] {
+function describeField(sig: SchemaAST.PropertySignature, ast: Ast, indent: string): string[] {
   const annotations = annotationsOf(ast);
   const parts = literalParts(ast) ?? [describeType(ast)];
   if (ast.context?.isOptional === true) parts.push("optional");
@@ -142,40 +133,27 @@ function describeField(
     parts.push(`default: ${formatValue(annotations.default)}`);
   }
 
-  // The description reads after the type, separated by a marker that cannot
-  // appear in prose, so a sentence never runs into a type.
+  // The description reads after the type, separated by a marker that cannot appear in prose, so a
+  // sentence never runs into a type.
   const type = parts.join(", ");
-  const described = annotations.description
-    ? `${type} -- ${annotations.description}`
-    : type;
-  return [
-    `${indent}- ${sig.name as string}: ${described}`,
-    ...nestedFieldsOf(ast, indent),
-  ];
+  const described = annotations.description ? `${type} -- ${annotations.description}` : type;
+  return [`${indent}- ${sig.name as string}: ${described}`, ...nestedFieldsOf(ast, indent)];
 }
 
 /** One `- field: type` line per property, recursing into nested objects. */
 function describeProperties(object: SchemaAST.Objects, indent = ""): string[] {
-  return object.propertySignatures.flatMap((sig) =>
-    describeField(sig, sig.type, indent),
-  );
+  return object.propertySignatures.flatMap((sig) => describeField(sig, sig.type, indent));
 }
 
 function formatValue(value: Schema.Json | SchemaAST.LiteralValue): string {
-  if (
-    typeof value === "bigint" ||
-    typeof value === "number" ||
-    typeof value === "boolean"
-  ) {
+  if (typeof value === "bigint" || typeof value === "number" || typeof value === "boolean") {
     return String(value);
   }
   return JSON.stringify(value);
 }
 
 /** The whole-value example, or one built from annotated fields. */
-function buildExample(
-  object: SchemaAST.Objects,
-): Schema.JsonObject | undefined {
+function buildExample(object: SchemaAST.Objects): Schema.JsonObject | undefined {
   const root = annotationsOf(object).examples?.[0];
   if (Schema.is(Schema.JsonObject)(root)) return root;
   const example: Record<string, Schema.Json> = {};
@@ -185,13 +163,11 @@ function buildExample(
       example[sig.name as string] = value;
     }
   }
-  return Object.keys(example).length > 0
-    ? (example as Schema.JsonObject)
-    : undefined;
+  return Object.keys(example).length > 0 ? example : undefined;
 }
 
-export function generateInstructions<T extends Schema.Constraint>(
-  schema: T,
+export function generateInstructions(
+  schema: Schema.Constraint,
   options?: { includeExample?: boolean },
 ): string {
   const ast = schema.ast;

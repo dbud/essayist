@@ -1,14 +1,17 @@
+import { type Kv, openKv } from "@deno/kv";
 import { assert, assertEquals, assertRejects } from "@std/assert";
 import { type Context, Effect, Layer } from "effect";
-import type { ResolvedReviewPass, ReviewUnit } from "@/config/types.ts";
-import { Files } from "@/files/service.ts";
-import type { NodeRun } from "@/flow/types.ts";
-import { Marks } from "@/marks/service.ts";
-import { createFakeClient } from "@/model/fake_client.ts";
-import { ModelClient } from "@/model/service.ts";
-import { ChunkedValues } from "@/persistence/chunked_values.ts";
-import { kvLayer } from "@/persistence/kv_layer.ts";
-import { Persistence } from "@/persistence/mod.ts";
+import { test } from "vitest";
+
+import type { ResolvedReviewPass, ReviewUnit } from "#/config/types.ts";
+import { Files } from "#/files/service.ts";
+import type { NodeRun } from "#/flow/types.ts";
+import { Marks } from "#/marks/service.ts";
+import { createFakeClient } from "#/model/fake_client.ts";
+import { ModelClient } from "#/model/service.ts";
+import { ChunkedValues } from "#/persistence/chunked_values.ts";
+import { kvLayer } from "#/persistence/kv_layer.ts";
+import { Persistence } from "#/persistence/mod.ts";
 import {
   ReviewFileMissingError,
   ReviewLeaseTakenError,
@@ -16,16 +19,14 @@ import {
   type RunReviewPassOptions,
   resumeReviewPass,
   runReviewPass,
-} from "@/reviews/runner.ts";
-import { ReviewRuns } from "@/reviews/service.ts";
-import { TraceEvents } from "@/reviews/trace/service.ts";
-import type { TraceEvent } from "@/reviews/trace/types.ts";
-import type { ReviewRun } from "@/reviews/types.ts";
-import { WorkspaceId } from "@/workspace/WorkspaceId.ts";
+} from "#/reviews/runner.ts";
+import { ReviewRuns } from "#/reviews/service.ts";
+import { TraceEvents } from "#/reviews/trace/service.ts";
+import type { TraceEvent } from "#/reviews/trace/types.ts";
+import type { ReviewRun } from "#/reviews/types.ts";
+import { WorkspaceId } from "#/workspace/WorkspaceId.ts";
 
-function unitFixture(
-  partial: Partial<ReviewUnit> & Pick<ReviewUnit, "id">,
-): ReviewUnit {
+function unitFixture(partial: Partial<ReviewUnit> & Pick<ReviewUnit, "id">): ReviewUnit {
   return { promptKey: "dir", ...partial };
 }
 
@@ -59,24 +60,21 @@ function passFixture(units: ReviewUnit[]): ResolvedReviewPass {
   };
 }
 
-// The file content and the runner's services share one KV store; the env
-// also exposes Persistence for raw row fixtures.
+// The file content and the runner's services share one KV store; the env also exposes Persistence
+// for raw row fixtures.
 interface Setup {
-  kv: Deno.Kv;
+  kv: Kv;
   env: Layer.Layer<Marks | Persistence | ReviewRuns | TraceEvents | Files>;
   versionId?: string;
 }
 
 function setup(): Promise<Setup>;
-function setup(file: {
-  path: string;
-  content: string;
-}): Promise<Setup & { versionId: string }>;
+function setup(file: { path: string; content: string }): Promise<Setup & { versionId: string }>;
 async function setup(file?: {
   path: string;
   content: string;
 }): Promise<Setup & { versionId?: string }> {
-  const kv = await Deno.openKv(":memory:");
+  const kv = await openKv();
   const env = Layer.provide(
     Layer.mergeAll(
       ReviewRuns.layerNoDeps,
@@ -110,9 +108,7 @@ async function setup(file?: {
 /** Run a small program against the test's shared KV store: the body gets
  * the services, as they come out of the shared env. */
 function viaRuns<A>(
-  env: Layer.Layer<
-    Marks | ModelClient | Persistence | ReviewRuns | TraceEvents | Files
-  >,
+  env: Layer.Layer<Marks | ModelClient | Persistence | ReviewRuns | TraceEvents | Files>,
   body: (deps: {
     runs: Context.Service.Shape<typeof ReviewRuns>;
     traces: Context.Service.Shape<typeof TraceEvents>;
@@ -171,8 +167,7 @@ const ANALYSIS_ROUND =
   '{"thesis":"Drafts are raw material.","claims":[],"outline":[],"strengths":[],"risks":[]}';
 
 /** Per-node event type sequences; cross-node order varies with the
- * scheduler, per-node order is fixed. Custom events carry the host
- * event's type. */
+ * scheduler, per-node order is fixed. Custom events carry the host event's type. */
 function byNode(trace: TraceEvent[]): Record<string, string[]> {
   const grouped: Record<string, string[]> = {};
   for (const event of trace) {
@@ -191,13 +186,11 @@ function nodeEnd(trace: TraceEvent[], nodeId: string): NodeRun | undefined {
 
 function appliedEvents(trace: TraceEvent[]) {
   return trace.flatMap((event) =>
-    event.type === "custom" && event.event.type === "applied"
-      ? [event.event]
-      : [],
+    event.type === "custom" && event.event.type === "applied" ? [event.event] : [],
   );
 }
 
-Deno.test("runReviewPass -- completes a pass with marks, summary, and a per-node trace", async () => {
+test("runReviewPass -- completes a pass with marks, summary, and a per-node trace", async () => {
   const { env: baseEnv, versionId } = await setup({
     path: "essay.txt",
     content: "hello brave world",
@@ -231,9 +224,7 @@ Deno.test("runReviewPass -- completes a pass with marks, summary, and a per-node
   assertEquals(run.status, "completed");
   assertEquals(run.summary, "Solid draft.");
 
-  const marks = await viaRuns(env, (deps) =>
-    deps.files.getMarks("essay.txt", versionId),
-  );
+  const marks = await viaRuns(env, (deps) => deps.files.getMarks("essay.txt", versionId));
   assertEquals(marks[0].selected_text, "brave");
   assertEquals(marks[0].meta, {
     runId: run.id,
@@ -243,21 +234,8 @@ Deno.test("runReviewPass -- completes a pass with marks, summary, and a per-node
   const trace = (await viaRuns(env, (deps) => deps.traces.get(run.id))) ?? [];
   assertEquals(byNode(trace), {
     content: ["node_start", "node_end"],
-    analyze: [
-      "node_start",
-      "prompt",
-      "model_call",
-      "reasoning",
-      "output",
-      "node_end",
-    ],
-    "mechanics.propose": [
-      "node_start",
-      "prompt",
-      "model_call",
-      "output",
-      "node_end",
-    ],
+    analyze: ["node_start", "prompt", "model_call", "reasoning", "output", "node_end"],
+    "mechanics.propose": ["node_start", "prompt", "model_call", "output", "node_end"],
     "mechanics.apply": ["node_start", "applied", "node_end"],
     "mechanics.collect": ["node_start", "node_end"],
     "mechanics.repair1.gate": ["node_start", "node_end"],
@@ -273,7 +251,7 @@ Deno.test("runReviewPass -- completes a pass with marks, summary, and a per-node
   assertEquals(inputs[1].includes("Thesis: Drafts are raw material."), true);
 });
 
-Deno.test("runReviewPass -- a repair round re-quotes the failed spans", async () => {
+test("runReviewPass -- a repair round re-quotes the failed spans", async () => {
   const { env: baseEnv, versionId } = await setup({
     path: "essay.txt",
     content: "hello world",
@@ -306,23 +284,11 @@ Deno.test("runReviewPass -- a repair round re-quotes the failed spans", async ()
   const trace = (await viaRuns(env, (deps) => deps.traces.get(run.id))) ?? [];
   assertEquals(byNode(trace), {
     content: ["node_start", "node_end"],
-    "mechanics.propose": [
-      "node_start",
-      "prompt",
-      "model_call",
-      "output",
-      "node_end",
-    ],
+    "mechanics.propose": ["node_start", "prompt", "model_call", "output", "node_end"],
     "mechanics.apply": ["node_start", "applied", "node_end"],
     "mechanics.collect": ["node_start", "node_end"],
     "mechanics.repair1.gate": ["node_start", "node_end"],
-    "mechanics.repair1.propose": [
-      "node_start",
-      "prompt",
-      "model_call",
-      "output",
-      "node_end",
-    ],
+    "mechanics.repair1.propose": ["node_start", "prompt", "model_call", "output", "node_end"],
     "mechanics.repair1.apply": ["node_start", "applied", "node_end"],
     summary: ["node_start", "prompt", "model_call", "output", "node_end"],
   });
@@ -331,13 +297,11 @@ Deno.test("runReviewPass -- a repair round re-quotes the failed spans", async ()
   assertEquals(applied[1].attempts[0].marked, true);
   // The repair prompt quotes the failed span and its surroundings.
   assertEquals(inputs[1].includes('Attempted span: "ghost span"'), true);
-  const marks = await viaRuns(env, (deps) =>
-    deps.files.getMarks("essay.txt", versionId),
-  );
+  const marks = await viaRuns(env, (deps) => deps.files.getMarks("essay.txt", versionId));
   assertEquals(marks[0].selected_text, "hello");
 });
 
-Deno.test("runReviewPass -- a zero budget keeps failed marks with no repair nodes", async () => {
+test("runReviewPass -- a zero budget keeps failed marks with no repair nodes", async () => {
   const { env: baseEnv, versionId } = await setup({
     path: "essay.txt",
     content: "hello world",
@@ -372,13 +336,11 @@ Deno.test("runReviewPass -- a zero budget keeps failed marks with no repair node
   ]);
   const applied = appliedEvents(trace);
   assertEquals(applied[0].attempts[0].marked, false);
-  const marks = await viaRuns(env, (deps) =>
-    deps.files.getMarks("essay.txt", versionId),
-  );
+  const marks = await viaRuns(env, (deps) => deps.files.getMarks("essay.txt", versionId));
   assertEquals(marks, []);
 });
 
-Deno.test("runReviewPass -- resuming a run that does not exist is an error", async () => {
+test("runReviewPass -- resuming a run that does not exist is an error", async () => {
   const { env: baseEnv } = await setup({
     path: "essay.txt",
     content: "hello world",
@@ -401,16 +363,13 @@ Deno.test("runReviewPass -- resuming a run that does not exist is an error", asy
   );
 });
 
-Deno.test("runReviewPass -- a resumed pass skips completed nodes and shows each once", async () => {
+test("runReviewPass -- a resumed pass skips completed nodes and shows each once", async () => {
   const { env: baseEnv, versionId } = await setup({
     path: "essay.txt",
     content: "hello brave world",
   });
   // First attempt: analyze succeeds, then the unit below it fails on bad JSON.
-  const first = createFakeClient([
-    { text: ANALYSIS_ROUND },
-    { text: "not json" },
-  ]);
+  const first = createFakeClient([{ text: ANALYSIS_ROUND }, { text: "not json" }]);
   const env = Layer.merge(baseEnv, ModelClient.layerOf(first.client));
 
   const run = await runPass(env, {
@@ -427,13 +386,12 @@ Deno.test("runReviewPass -- a resumed pass skips completed nodes and shows each 
   });
 
   assertEquals(run.status, "failed");
-  const interrupted =
-    (await viaRuns(env, (deps) => deps.traces.get(run.id))) ?? [];
+  const interrupted = (await viaRuns(env, (deps) => deps.traces.get(run.id))) ?? [];
   // analyze completed, so its artifacts are recoverable from the trace.
   assertEquals(nodeEnd(interrupted, "analyze")?.status, "completed");
 
-  // Second attempt over the same run: the fold supplies analyze's artifacts,
-  // so only the failed unit is scheduled.
+  // Second attempt over the same run: the fold supplies analyze's artifacts, so only the failed
+  // unit is scheduled.
   const second = createFakeClient([
     {
       text: '{"marks":[{"selected_text":"brave","comment":"Good.","label":"grammar"}]}',
@@ -468,13 +426,11 @@ Deno.test("runReviewPass -- a resumed pass skips completed nodes and shows each 
   assertEquals(analyzeEvents.filter((type) => type === "node_start").length, 1);
   assertEquals(analyzeEvents.filter((type) => type === "node_end").length, 1);
   // The first attempt's mark never reached the VFS, so the retry's does.
-  const marks = await viaRuns(env, (deps) =>
-    deps.files.getMarks("essay.txt", versionId),
-  );
+  const marks = await viaRuns(env, (deps) => deps.files.getMarks("essay.txt", versionId));
   assertEquals(marks[0]?.selected_text, "brave");
 });
 
-Deno.test("runReviewPass -- a node error fails the run and skips dependents", async () => {
+test("runReviewPass -- a node error fails the run and skips dependents", async () => {
   const { env: baseEnv } = await setup({
     path: "essay.txt",
     content: "hello world",
@@ -504,9 +460,8 @@ Deno.test("runReviewPass -- a node error fails the run and skips dependents", as
 
   const trace = (await viaRuns(env, (deps) => deps.traces.get(run.id))) ?? [];
   const grouped = byNode(trace);
-  // The prompt is recorded before each call, the repair says why the first
-  // reply was rejected, and the re-ask that also failed leaves two
-  // model_call events with a repair between them.
+  // The prompt is recorded before each call, the repair says why the first reply was rejected, and
+  // the re-ask that also failed leaves two model_call events with a repair between them.
   assertEquals(grouped.analyze, [
     "node_start",
     "prompt",
@@ -539,7 +494,7 @@ Deno.test("runReviewPass -- a node error fails the run and skips dependents", as
   }
 });
 
-Deno.test("runReviewPass -- fails a pass that commits no summary", async () => {
+test("runReviewPass -- fails a pass that commits no summary", async () => {
   const { env: baseEnv } = await setup({
     path: "essay.txt",
     content: "hello world",
@@ -548,8 +503,8 @@ Deno.test("runReviewPass -- fails a pass that commits no summary", async () => {
   const env = Layer.merge(baseEnv, ModelClient.layerOf(client));
 
   const run = await runPass(env, {
-    // No summary unit, so the graph commits no summary artifact. Reading it
-    // back is a structural surprise, not a pass with a blank summary.
+    // No summary unit, so the graph commits no summary artifact. Reading it back is a structural
+    // surprise, not a pass with a blank summary.
     pass: passFixture([unitFixture({ id: "analyze" })]),
     path: "essay.txt",
   });
@@ -559,7 +514,7 @@ Deno.test("runReviewPass -- fails a pass that commits no summary", async () => {
   assertEquals(run.summary, undefined);
 });
 
-Deno.test("runReviewPass -- fails with a typed error when the file does not exist", async () => {
+test("runReviewPass -- fails with a typed error when the file does not exist", async () => {
   const { env: baseEnv } = await setup({
     path: "other.txt",
     content: "x",
@@ -581,7 +536,7 @@ Deno.test("runReviewPass -- fails with a typed error when the file does not exis
   assertEquals(await viaRuns(env, (deps) => deps.runs.listRuns()), []);
 });
 
-Deno.test("runReviewPass -- heartbeats the lease while running, then releases it", async () => {
+test("runReviewPass -- heartbeats the lease while running, then releases it", async () => {
   const { kv } = await setup({
     path: "essay.txt",
     content: "hello brave world",
@@ -591,10 +546,7 @@ Deno.test("runReviewPass -- heartbeats the lease while running, then releases it
     { text: ANALYSIS_ROUND },
     { text: '{"summary":"Solid draft."}' },
   ]);
-  const env = Layer.merge(
-    countingReviews(kv, count),
-    ModelClient.layerOf(client),
-  );
+  const env = Layer.merge(countingReviews(kv, count), ModelClient.layerOf(client));
 
   const run = await runPass(env, {
     pass: passFixture([
@@ -613,7 +565,7 @@ Deno.test("runReviewPass -- heartbeats the lease while running, then releases it
   assertEquals(row?.heartbeatAt, undefined);
 });
 
-Deno.test("runReviewPass -- refuses to resume a run another driver holds", async () => {
+test("runReviewPass -- refuses to resume a run another driver holds", async () => {
   const { env: baseEnv } = await setup({
     path: "essay.txt",
     content: "hello world",
@@ -646,7 +598,7 @@ Deno.test("runReviewPass -- refuses to resume a run another driver holds", async
   );
 });
 
-Deno.test("runReviewPass -- resumes a run whose lease went stale", async () => {
+test("runReviewPass -- resumes a run whose lease went stale", async () => {
   const { env: baseEnv, versionId } = await setup({
     path: "essay.txt",
     content: "hello brave world",
@@ -690,7 +642,7 @@ Deno.test("runReviewPass -- resumes a run whose lease went stale", async () => {
 /** Wraps the ReviewRuns service with heartbeat counters, backed by the same
  * KV store as the fixtures. */
 function countingReviews(
-  kv: Deno.Kv,
+  kv: Kv,
   count: { renewed: number; refused: number },
 ): Layer.Layer<Marks | Persistence | ReviewRuns | TraceEvents | Files> {
   const heartbeats = Layer.effect(

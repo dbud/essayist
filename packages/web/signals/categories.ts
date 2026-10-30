@@ -1,7 +1,7 @@
 import type { Category } from "@essayist/core";
 import { computed, createModel, signal } from "@preact/signals";
-import { get, modelData, namespace } from "@/signals/models.ts";
-import { ensureOk } from "@/utils/ensureOk.ts";
+import { get, modelData, namespace } from "#/signals/models.ts";
+import { ensureOk } from "#/utils/ensureOk.ts";
 
 export const categoriesNs = namespace<Category[]>("categories");
 

@@ -7,6 +7,8 @@
 _fresh/
 .vite/
 .worktrees/
+dist/
+.wrangler/
 
 local-kv.sqlite3*
 
@@ -20,3 +22,5 @@ coverage/
 
 TODO*
 .DS_Store
+.dev.vars
+tmp/

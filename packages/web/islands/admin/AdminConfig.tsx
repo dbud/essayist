@@ -1,20 +1,20 @@
 import type { Category, ModelPool, Prompt, ReviewPass } from "@essayist/core";
 import { useSignal } from "@preact/signals";
 import type { ComponentChildren } from "preact";
-import { NewButton } from "@/components/ui/EntityCard.tsx";
-import Tabs, { type TabItem } from "@/components/ui/Tabs.tsx";
-import WaveBars from "@/components/ui/WaveBars.tsx";
-import { CategoriesExport } from "@/islands/admin/CategoriesExport.tsx";
-import EntityDialog from "@/islands/admin/EntityDialog.tsx";
-import PassGraph, { PassGraphSide } from "@/islands/admin/PassGraph.tsx";
-import { CategoryRow } from "@/islands/admin/rows/CategoryRow.tsx";
-import { ModelPoolRow } from "@/islands/admin/rows/ModelPoolRow.tsx";
-import { PromptRow } from "@/islands/admin/rows/PromptRow.tsx";
-import { ReviewPassRow } from "@/islands/admin/rows/ReviewPassRow.tsx";
-import type { DialogRequest } from "@/islands/admin/types.ts";
-import MarkSwatches from "@/islands/MarkSwatches.tsx";
-import { getAdminConfig } from "@/signals/admin.ts";
-import { persistentSignal } from "@/utils/persistentSignal.ts";
+import { NewButton } from "#/components/ui/EntityCard.tsx";
+import Tabs, { type TabItem } from "#/components/ui/Tabs.tsx";
+import WaveBars from "#/components/ui/WaveBars.tsx";
+import { CategoriesExport } from "#/islands/admin/CategoriesExport.tsx";
+import EntityDialog from "#/islands/admin/EntityDialog.tsx";
+import PassGraph, { PassGraphSide } from "#/islands/admin/PassGraph.tsx";
+import { CategoryRow } from "#/islands/admin/rows/CategoryRow.tsx";
+import { ModelPoolRow } from "#/islands/admin/rows/ModelPoolRow.tsx";
+import { PromptRow } from "#/islands/admin/rows/PromptRow.tsx";
+import { ReviewPassRow } from "#/islands/admin/rows/ReviewPassRow.tsx";
+import type { DialogRequest } from "#/islands/admin/types.ts";
+import MarkSwatches from "#/islands/MarkSwatches.tsx";
+import { getAdminConfig } from "#/signals/admin.ts";
+import { persistentSignal } from "#/utils/persistentSignal.ts";
 
 type TabKey = "passes" | "graph" | "pools" | "prompts" | "categories";
 

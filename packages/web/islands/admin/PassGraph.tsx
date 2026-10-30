@@ -1,10 +1,10 @@
 import type { ReviewPass } from "@essayist/core";
 import { signal } from "@preact/signals";
 import { useEffect, useState } from "preact/hooks";
-import { type Option, OptionsRow } from "@/components/ui/forms/OptionsRow.tsx";
-import WaveBars from "@/components/ui/WaveBars.tsx";
-import { getAdminConfig } from "@/signals/admin.ts";
-import { showToast } from "@/signals/toast.ts";
+import { type Option, OptionsRow } from "#/components/ui/forms/OptionsRow.tsx";
+import WaveBars from "#/components/ui/WaveBars.tsx";
+import { getAdminConfig } from "#/signals/admin.ts";
+import { showToast } from "#/signals/toast.ts";
 
 interface PassGraphData {
   name: string;

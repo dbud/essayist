@@ -1,17 +1,12 @@
-import type { FlowEvent, NodeKind } from "@/flow/types.ts";
-import type { ReviewTypes } from "@/reviews/graph.ts";
+import type { FlowEvent, NodeKind } from "#/flow/types.ts";
+import type { ReviewTypes } from "#/reviews/graph.ts";
 
 /** Coarse activity label for a running review. */
-export type ReviewPhase =
-  | "working"
-  | "analyzing"
-  | "marking"
-  | "repairing"
-  | "summarizing";
+export type ReviewPhase = "working" | "analyzing" | "marking" | "repairing" | "summarizing";
 
 /**
- * Text-free progress snapshot for product UI. Never carries model content:
- * inputs, outputs, and usage are dropped at derivation.
+ * Text-free progress snapshot for product UI. Never carries model content: inputs, outputs, and
+ * usage are dropped at derivation.
  */
 export interface ReviewProgress {
   phase: ReviewPhase;
@@ -30,9 +25,8 @@ const KIND_PHASE: Record<NodeKind<ReviewTypes>, ReviewPhase> = {
 };
 
 /**
- * Maps trace events onto ReviewProgress snapshots, emitting on change.
- * The kind of a node id comes from the run's graph; unknown ids fall back
- * to the working phase.
+ * Maps trace events onto ReviewProgress snapshots, emitting on change. The kind of a node id comes
+ * from the run's graph; unknown ids fall back to the working phase.
  */
 export class ReviewProgressTracker {
   #kindOf: Map<string, NodeKind<ReviewTypes>>;
@@ -56,9 +50,7 @@ export class ReviewProgressTracker {
         break;
       case "custom":
         if (event.event.type !== "applied") return;
-        this.#notes += event.event.attempts.filter(
-          (attempt) => attempt.marked,
-        ).length;
+        this.#notes += event.event.attempts.filter((attempt) => attempt.marked).length;
         break;
       default:
         return;

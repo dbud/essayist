@@ -1,11 +1,13 @@
 import { assertEquals } from "@std/assert";
 import { Schema } from "effect";
+import { test } from "vitest";
+
 import { generateInstructions, stripMarkdownFences } from "./schema.ts";
 
 const HEADER =
   "Return only one valid JSON object matching this shape. Do not use markdown fences, code blocks, comments, or any extra text:";
 
-Deno.test("generateInstructions produces correct output for modelResponseSchema", () => {
+test("generateInstructions produces correct output for modelResponseSchema", () => {
   const schema = Schema.Struct({
     success: Schema.Boolean.annotate({
       description: "true if successful, false otherwise",
@@ -28,7 +30,7 @@ Deno.test("generateInstructions produces correct output for modelResponseSchema"
   );
 });
 
-Deno.test("generateInstructions includes example when includeExample is true", () => {
+test("generateInstructions includes example when includeExample is true", () => {
   const schema = Schema.Struct({
     success: Schema.Boolean.annotate({
       description: "ok",
@@ -61,7 +63,7 @@ Example:
   );
 });
 
-Deno.test("generateInstructions marks nullable fields as nullable", () => {
+test("generateInstructions marks nullable fields as nullable", () => {
   const schema = Schema.Struct({
     value: Schema.NullOr(Schema.String),
   });
@@ -74,7 +76,7 @@ Deno.test("generateInstructions marks nullable fields as nullable", () => {
   );
 });
 
-Deno.test("generateInstructions handles optional fields", () => {
+test("generateInstructions handles optional fields", () => {
   const schema = Schema.Struct({
     name: Schema.String,
     nickname: Schema.optionalKey(Schema.String),
@@ -89,7 +91,7 @@ Deno.test("generateInstructions handles optional fields", () => {
   );
 });
 
-Deno.test("generateInstructions handles enum fields", () => {
+test("generateInstructions handles enum fields", () => {
   const schema = Schema.Struct({
     status: Schema.Literals(["active", "inactive"]),
   });
@@ -102,7 +104,7 @@ Deno.test("generateInstructions handles enum fields", () => {
   );
 });
 
-Deno.test("generateInstructions handles array fields", () => {
+test("generateInstructions handles array fields", () => {
   const schema = Schema.Struct({
     tags: Schema.Array(Schema.String),
   });
@@ -115,7 +117,7 @@ Deno.test("generateInstructions handles array fields", () => {
   );
 });
 
-Deno.test("generateInstructions handles union types", () => {
+test("generateInstructions handles union types", () => {
   const schema = Schema.Struct({
     value: Schema.Union([Schema.String, Schema.Number]),
   });
@@ -128,7 +130,7 @@ Deno.test("generateInstructions handles union types", () => {
   );
 });
 
-Deno.test("generateInstructions handles nullable arrays", () => {
+test("generateInstructions handles nullable arrays", () => {
   const schema = Schema.Struct({
     items: Schema.NullOr(Schema.Array(Schema.String)),
   });
@@ -141,7 +143,7 @@ Deno.test("generateInstructions handles nullable arrays", () => {
   );
 });
 
-Deno.test("generateInstructions handles optional arrays", () => {
+test("generateInstructions handles optional arrays", () => {
   const schema = Schema.Struct({
     items: Schema.optionalKey(Schema.Array(Schema.String)),
   });
@@ -154,7 +156,7 @@ Deno.test("generateInstructions handles optional arrays", () => {
   );
 });
 
-Deno.test("generateInstructions handles record types", () => {
+test("generateInstructions handles record types", () => {
   const schema = Schema.Struct({
     metadata: Schema.Record(Schema.String, Schema.String),
   });
@@ -167,7 +169,7 @@ Deno.test("generateInstructions handles record types", () => {
   );
 });
 
-Deno.test("generateInstructions handles literal types", () => {
+test("generateInstructions handles literal types", () => {
   const schema = Schema.Struct({
     type: Schema.Literal("article"),
   });
@@ -180,7 +182,7 @@ Deno.test("generateInstructions handles literal types", () => {
   );
 });
 
-Deno.test("generateInstructions handles default values", () => {
+test("generateInstructions handles default values", () => {
   const schema = Schema.Struct({
     name: Schema.String,
     status: Schema.String.annotate({ default: "active" }),
@@ -195,7 +197,7 @@ Deno.test("generateInstructions handles default values", () => {
   );
 });
 
-Deno.test("generateInstructions handles nullable objects", () => {
+test("generateInstructions handles nullable objects", () => {
   const schema = Schema.Struct({
     user: Schema.NullOr(
       Schema.Struct({
@@ -213,7 +215,7 @@ Deno.test("generateInstructions handles nullable objects", () => {
   );
 });
 
-Deno.test("generateInstructions lists the fields of a nested object", () => {
+test("generateInstructions lists the fields of a nested object", () => {
   const schema = Schema.Struct({
     user: Schema.Struct({
       name: Schema.String,
@@ -231,7 +233,7 @@ Deno.test("generateInstructions lists the fields of a nested object", () => {
   );
 });
 
-Deno.test("generateInstructions lists the fields of an array of objects", () => {
+test("generateInstructions lists the fields of an array of objects", () => {
   const schema = Schema.Struct({
     outline: Schema.Array(
       Schema.Struct({
@@ -255,14 +257,12 @@ Deno.test("generateInstructions lists the fields of an array of objects", () => 
   );
 });
 
-Deno.test("generateInstructions recurses through nested arrays of objects", () => {
+test("generateInstructions recurses through nested arrays of objects", () => {
   const schema = Schema.Struct({
     groups: Schema.Array(
       Schema.Struct({
         title: Schema.String,
-        items: Schema.Array(
-          Schema.Struct({ id: Schema.String, qty: Schema.Number }),
-        ),
+        items: Schema.Array(Schema.Struct({ id: Schema.String, qty: Schema.Number })),
       }),
     ),
   });
@@ -279,7 +279,7 @@ Deno.test("generateInstructions recurses through nested arrays of objects", () =
   );
 });
 
-Deno.test("generateInstructions prefers a whole-value example over per-field ones", () => {
+test("generateInstructions prefers a whole-value example over per-field ones", () => {
   const schema = Schema.Struct({
     outline: Schema.Array(Schema.Struct({ first_line: Schema.Int })),
   }).annotate({
@@ -304,9 +304,9 @@ Example:
   );
 });
 
-Deno.test("generateInstructions lists the fields of a nullable object", () => {
-  // A nullable object is the object unioned with null, so the union has to be
-  // unwrapped before the fields are read.
+test("generateInstructions lists the fields of a nullable object", () => {
+  // A nullable object is the object unioned with null, so the union has to be unwrapped before the
+  // fields are read.
   const schema = Schema.Struct({
     user: Schema.NullOr(Schema.Struct({ name: Schema.String })),
     tags: Schema.NullOr(Schema.Array(Schema.String)),
@@ -322,7 +322,7 @@ Deno.test("generateInstructions lists the fields of a nullable object", () => {
   );
 });
 
-Deno.test("generateInstructions describes a record by its value type, not its keys", () => {
+test("generateInstructions describes a record by its value type, not its keys", () => {
   const schema = Schema.Struct({
     scores: Schema.Array(Schema.Record(Schema.String, Schema.Number)),
   });
@@ -335,7 +335,7 @@ Deno.test("generateInstructions describes a record by its value type, not its ke
   );
 });
 
-Deno.test("generateInstructions handles tuple types", () => {
+test("generateInstructions handles tuple types", () => {
   const schema = Schema.Struct({
     coords: Schema.Tuple([Schema.Number, Schema.Number]),
   });
@@ -348,7 +348,7 @@ Deno.test("generateInstructions handles tuple types", () => {
   );
 });
 
-Deno.test("generateInstructions handles boolean fields", () => {
+test("generateInstructions handles boolean fields", () => {
   const schema = Schema.Struct({
     active: Schema.Boolean,
   });
@@ -361,7 +361,7 @@ Deno.test("generateInstructions handles boolean fields", () => {
   );
 });
 
-Deno.test("generateInstructions handles number fields", () => {
+test("generateInstructions handles number fields", () => {
   const schema = Schema.Struct({
     count: Schema.Number,
   });
@@ -374,27 +374,18 @@ Deno.test("generateInstructions handles number fields", () => {
   );
 });
 
-Deno.test("stripMarkdownFences removes json code fences", () => {
-  assertEquals(
-    stripMarkdownFences('```json\n{"key": "value"}\n```'),
-    '{"key": "value"}',
-  );
+test("stripMarkdownFences removes json code fences", () => {
+  assertEquals(stripMarkdownFences('```json\n{"key": "value"}\n```'), '{"key": "value"}');
 });
 
-Deno.test("stripMarkdownFences removes plain code fences", () => {
-  assertEquals(
-    stripMarkdownFences('```\n{"key": "value"}\n```'),
-    '{"key": "value"}',
-  );
+test("stripMarkdownFences removes plain code fences", () => {
+  assertEquals(stripMarkdownFences('```\n{"key": "value"}\n```'), '{"key": "value"}');
 });
 
-Deno.test("stripMarkdownFences handles text without fences", () => {
+test("stripMarkdownFences handles text without fences", () => {
   assertEquals(stripMarkdownFences('{"key": "value"}'), '{"key": "value"}');
 });
 
-Deno.test("stripMarkdownFences trims whitespace around fences", () => {
-  assertEquals(
-    stripMarkdownFences('  ```json\n{"key": "value"}\n```  '),
-    '{"key": "value"}',
-  );
+test("stripMarkdownFences trims whitespace around fences", () => {
+  assertEquals(stripMarkdownFences('  ```json\n{"key": "value"}\n```  '), '{"key": "value"}');
 });

@@ -1,16 +1,17 @@
 import { Command } from "@cliffy/command";
 import { pluralize } from "@essayist/core";
-import type { KvctlGlobals } from "@/globals.ts";
-import { withKv } from "@/kv.ts";
-import { pprint } from "@/utils/pprint.ts";
+
+import type { KvctlGlobals } from "#/globals.ts";
+import { listAll, withStore } from "#/kv.ts";
+import { pprint } from "#/utils/pprint.ts";
 
 export const explore = new Command<KvctlGlobals>()
-  .description("List keys, optionally under a tuple prefix.")
+  .description("List entries, optionally under a tuple prefix.")
   .arguments("[prefix...:string]")
   .action(({ target, local }, ...prefix: string[]) =>
-    withKv({ target, local }, async ({ kv }) => {
+    withStore({ target, local }, async ({ runtime }) => {
       let n = 0;
-      for await (const entry of kv.list({ prefix })) {
+      for await (const entry of listAll(runtime, prefix)) {
         n++;
         pprint([entry.key, entry.value]);
       }

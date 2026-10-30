@@ -1,10 +1,10 @@
 /**
- * The persistence service: tuple keys, atomic batch writes, and
- * versionstamp-based optimistic concurrency, as Effects.
+ * The persistence service: tuple keys, atomic batch writes, and versionstamp-based optimistic
+ * concurrency, as Effects.
  */
 
-import { Context, Effect, Layer, Schema } from "effect";
-import { kvLayer } from "./kv_layer.ts";
+import { Context, type Effect, Schema } from "effect";
+
 import type {
   BatchOptions,
   ConcurrentModificationError,
@@ -17,10 +17,9 @@ import type {
 } from "./mod.ts";
 
 /** A backend fault: the underlying adapter failed. */
-export class PersistenceError extends Schema.TaggedError<PersistenceError>()(
-  "PersistenceError",
-  { cause: Schema.Defect() },
-) {
+export class PersistenceError extends Schema.TaggedError<PersistenceError>()("PersistenceError", {
+  cause: Schema.Defect(),
+}) {
   override get message() {
     return "the persistence backend failed";
   }
@@ -53,30 +52,10 @@ export interface Interface {
     value: unknown,
   ): Effect.Effect<void, PersistenceError | ConcurrentModificationError>;
   /** Single-key delete, a convenience over batch. */
-  delete(
-    key: Key,
-  ): Effect.Effect<void, PersistenceError | ConcurrentModificationError>;
+  delete(key: Key): Effect.Effect<void, PersistenceError | ConcurrentModificationError>;
 }
 
 /** Key/value persistence with tuple keys, as an Effect service. */
 export class Persistence extends Context.Service<Persistence, Interface>()(
   "@essayist/core/persistence/Persistence",
-) {
-  /** A layer that opens its own connection, closing it when the runtime
-   * disposes. Omit `path` for the platform KV; pass a file path for a
-   * local store, or `:memory:` for an ephemeral one (tests). */
-  static layerKv(path?: string): Layer.Layer<Persistence, PersistenceError> {
-    return Layer.unwrap(
-      Effect.map(
-        Effect.acquireRelease(
-          Effect.tryPromise({
-            try: () => Deno.openKv(path),
-            catch: (cause) => new PersistenceError({ cause }),
-          }),
-          (kv) => Effect.sync(() => kv.close()),
-        ),
-        kvLayer,
-      ),
-    );
-  }
-}
+) {}

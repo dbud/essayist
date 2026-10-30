@@ -1,10 +1,10 @@
 import type { ReviewPass } from "@essayist/core";
 import type { Signal } from "@preact/signals";
 import { useState } from "preact/hooks";
-import { FormShell } from "@/components/ui/forms/FormShell.tsx";
-import { type Option, OptionsRow } from "@/components/ui/forms/OptionsRow.tsx";
-import { TextRow } from "@/components/ui/forms/TextRow.tsx";
-import { getAdminConfig, type ReviewPassInput } from "@/signals/admin.ts";
+import { FormShell } from "#/components/ui/forms/FormShell.tsx";
+import { type Option, OptionsRow } from "#/components/ui/forms/OptionsRow.tsx";
+import { TextRow } from "#/components/ui/forms/TextRow.tsx";
+import { getAdminConfig, type ReviewPassInput } from "#/signals/admin.ts";
 
 function PromptPreview({ text }: { text?: string }) {
   if (!text) return null;

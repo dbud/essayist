@@ -1,20 +1,17 @@
 /**
- * Mark placement as an Effect service: resolve a selected text span against
- * a version's content, capture context, and store the mark through the
- * Files service's mark list. Mark-list storage and migration live on Files;
- * the pure resolver lives in resolver.ts.
+ * Mark placement as an Effect service: resolve a selected text span against a version's content,
+ * capture context, and store the mark through the Files service's mark list. Mark-list storage and
+ * migration live on Files; the pure resolver lives in resolver.ts.
  */
 
 import { Clock, Context, Effect, Layer } from "effect";
-import { Files } from "@/files/service.ts";
-import { Ids } from "@/ids.ts";
-import { TokenizedText } from "@/marks/tokenized.ts";
-import type { Mark, MarkOptions, MarkResult } from "@/marks/types.ts";
-import type {
-  ConcurrentModificationError,
-  PersistenceError,
-} from "@/persistence/mod.ts";
-import type { WorkspaceId } from "@/workspace/WorkspaceId.ts";
+
+import { Files } from "#/files/service.ts";
+import { Ids } from "#/ids.ts";
+import { TokenizedText } from "#/marks/tokenized.ts";
+import type { Mark, MarkOptions, MarkResult } from "#/marks/types.ts";
+import type { ConcurrentModificationError, PersistenceError } from "#/persistence/mod.ts";
+import type { WorkspaceId } from "#/workspace/WorkspaceId.ts";
 
 /** Context span captured around a selection when none is given. */
 const DEFAULT_CONTEXT_SPAN = 60;
@@ -34,27 +31,21 @@ export function lineToOffset(content: string, line: number): number {
 
 export interface Interface {
   /**
-   * Place a mark on a text span of a file version. `marked: false` when the
-   * file or version is missing or the span is not found on that version.
+   * Place a mark on a text span of a file version. `marked: false` when the file or version is
+   * missing or the span is not found on that version.
    */
   mark(
     path: string,
     selectedText: string,
     comment: string,
     options?: MarkOptions,
-  ): Effect.Effect<
-    MarkResult,
-    PersistenceError | ConcurrentModificationError,
-    WorkspaceId
-  >;
+  ): Effect.Effect<MarkResult, PersistenceError | ConcurrentModificationError, WorkspaceId>;
 }
 
-export class Marks extends Context.Service<Marks, Interface>()(
-  "@essayist/core/marks/Marks",
-) {
+export class Marks extends Context.Service<Marks, Interface>()("@essayist/core/marks/Marks") {
   /** Requires the {@linkcode Files} service; compose with Files.layerNoDeps
-   * and Persistence.layerKv at the composition root. The workspace scope
-   * comes from the WorkspaceId tag at call time. */
+   * and Persistence.layerKv at the composition root. The workspace scope comes from the WorkspaceId
+   * tag at call time. */
   static readonly layerNoDeps: Layer.Layer<Marks, never, Files> = Layer.effect(
     Marks,
     Effect.gen(function* () {
@@ -72,21 +63,18 @@ export class Marks extends Context.Service<Marks, Interface>()(
           versionId,
           provenance,
         }: MarkOptions = {},
-      ): Effect.Effect<
-        MarkResult,
-        PersistenceError | ConcurrentModificationError,
-        WorkspaceId
-      > =>
+      ): Effect.Effect<MarkResult, PersistenceError | ConcurrentModificationError, WorkspaceId> =>
         Effect.gen(function* () {
-          const snapshot = yield* files.read(path, { versionId });
-          // version_id "" marks a missing file or version: not markable.
-          if (snapshot.version_id === "") {
+          const snapshot = yield* files
+            .read(path, versionId)
+            .pipe(Effect.catchTag("FileMissingError", () => Effect.succeed(null)));
+          if (snapshot === null) {
+            // TODO -- harden failure on missing file
             return { mark_id: "", thread_id: "", marked: false };
           }
           const { content, version_id } = snapshot;
 
-          const offsetHint =
-            lineHint !== undefined ? lineToOffset(content, lineHint) : 0;
+          const offsetHint = lineHint !== undefined ? lineToOffset(content, lineHint) : 0;
           const tt = new TokenizedText(content);
           const offset = tt.findExactNear(selectedText, offsetHint);
           if (offset === null) {
@@ -94,14 +82,11 @@ export class Marks extends Context.Service<Marks, Interface>()(
           }
 
           const beforeContext = tt.captureBeforeContext(offset, contextSpan);
-          const afterContext = tt.captureAfterContext(
-            offset + selectedText.length,
-            contextSpan,
-          );
+          const afterContext = tt.captureAfterContext(offset + selectedText.length, contextSpan);
 
           const ids = yield* Ids;
           const created_at = yield* Clock.currentTimeMillis;
-          const mark: Mark = {
+          const created: Mark = {
             id: ids.next(),
             thread_id: threadId ?? ids.next(),
             path,
@@ -110,18 +95,18 @@ export class Marks extends Context.Service<Marks, Interface>()(
             before_context: beforeContext,
             after_context: afterContext,
             comment,
-            label,
+            ...(label !== undefined && { label }),
             created_at,
             offset,
             length: selectedText.length,
             status: "resolved",
             ...(provenance && { meta: provenance }),
           };
-          yield* files.saveMark(mark);
+          yield* files.saveMark(created);
 
           return {
-            mark_id: mark.id,
-            thread_id: mark.thread_id,
+            mark_id: created.id,
+            thread_id: created.thread_id,
             marked: true,
           };
         });

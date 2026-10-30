@@ -1,4 +1,4 @@
-import { useMediaQuery } from "@/hooks/useMediaQuery.ts";
+import { useMediaQuery } from "#/hooks/useMediaQuery.ts";
 
 const SMALL_SCREEN = "(max-width: 1023px)";
 

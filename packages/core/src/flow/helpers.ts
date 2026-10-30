@@ -1,4 +1,5 @@
 import { Effect } from "effect";
+
 import type {
   Artifact,
   Artifacts,
@@ -6,7 +7,7 @@ import type {
   FlowTypes,
   NodeKind,
   NodeRunner,
-} from "@/flow/types.ts";
+} from "#/flow/types.ts";
 
 /** Spec carried on a forwarding node's payload. */
 export interface ForwardSpec<T extends FlowTypes> {
@@ -24,10 +25,7 @@ export interface PassWhenSpec<T extends FlowTypes> {
 
 /** Re-emit the selected dependency artifact types, unchanged; the original
  * producer is kept. */
-export function forward<
-  T extends FlowTypes,
-  K extends NodeKind<T>,
->(): NodeRunner<T, K> {
+export function forward<T extends FlowTypes, K extends NodeKind<T>>(): NodeRunner<T, K> {
   return {
     execute: (payload, { inputs }) => {
       // The payload is trusted to be this kind's spec.
@@ -39,10 +37,7 @@ export function forward<
 
 /** Forward the selected types while a predicate holds; complete with no
  * artifacts otherwise. */
-export function passWhen<
-  T extends FlowTypes,
-  K extends NodeKind<T>,
->(): NodeRunner<T, K> {
+export function passWhen<T extends FlowTypes, K extends NodeKind<T>>(): NodeRunner<T, K> {
   return {
     execute: (payload, { inputs }) => {
       // The payload is trusted to be this kind's spec.

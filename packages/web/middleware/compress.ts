@@ -1,6 +1,6 @@
 import type { Middleware } from "fresh";
-import { define, type State } from "@/define.ts";
-import { env } from "@/env.ts";
+import { define, type State } from "#/define.ts";
+import { env } from "#/env.ts";
 
 const COMPRESSIBLE =
   /^(text\/|application\/(?:javascript|json|xml|wasm)|image\/svg)/;

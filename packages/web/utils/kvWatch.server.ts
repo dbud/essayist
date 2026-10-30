@@ -6,11 +6,11 @@
  * only the new versionstamp matters).
  */
 
-import { reportError } from "@/utils/reportError.server.ts";
+import { reportError } from "#/utils/reportError.server.ts";
 import {
   type SupervisedStream,
   supervise,
-} from "@/utils/supervisedStream.server.ts";
+} from "#/utils/supervisedStream.server.ts";
 
 interface Watcher {
   subs: Map<string, Sub>;

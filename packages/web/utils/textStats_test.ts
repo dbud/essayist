@@ -11,7 +11,7 @@ import {
   type LexicalEditor,
   type UpdateListenerPayload,
 } from "lexical";
-import { bootstrapEditorExtension } from "@/editor/extension.ts";
+import { bootstrapEditorExtension } from "#/editor/extension.ts";
 import {
   charCountFold,
   charCountWithSpacesFold,
@@ -19,7 +19,7 @@ import {
   editorStateCharCountWithSpaces,
   editorStateWordCount,
   wordCountFold,
-} from "@/utils/textStats.ts";
+} from "#/utils/textStats.ts";
 
 function createEditor(): LexicalEditor {
   return buildEditorFromExtensions({

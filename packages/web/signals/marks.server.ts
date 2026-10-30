@@ -1,9 +1,9 @@
 import { Files } from "@essayist/core";
-import { runScoped } from "@/run.ts";
-import type { FileKey } from "@/signals/file.ts";
-import { type MarksData, marksNs } from "@/signals/marks.ts";
-import { registerLoader } from "@/signals/models.server.ts";
-import { runtime } from "@/store.ts";
+import { runScoped } from "#/run.ts";
+import type { FileKey } from "#/signals/file.ts";
+import { type MarksData, marksNs } from "#/signals/marks.ts";
+import { registerLoader } from "#/signals/models.server.ts";
+import { runtime } from "#/store.ts";
 
 export async function marksLoader({
   wsId,
@@ -12,16 +12,11 @@ export async function marksLoader({
 }: FileKey): Promise<MarksData> {
   const run = runScoped(runtime, wsId);
   const checkpoint = await run(
-    Files.use((files) => files.read(path, { versionId })),
+    Files.use((files) => files.read(path, versionId)),
   );
-  if (versionId && checkpoint.version_id === "") {
-    throw new Error(`Version not found: ${versionId}`);
-  }
-  const marks = checkpoint.version_id
-    ? await run(
-        Files.use((files) => files.getMarks(path, checkpoint.version_id)),
-      )
-    : [];
+  const marks = await run(
+    Files.use((files) => files.getMarks(path, checkpoint.version_id)),
+  );
   return {
     marks,
     versionId: checkpoint.version_id,

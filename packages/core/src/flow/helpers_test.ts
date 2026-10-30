@@ -1,15 +1,11 @@
 import { assertEquals } from "@std/assert";
 import { Effect } from "effect";
+import { test } from "vitest";
+
 import type { ForwardSpec, PassWhenSpec } from "./helpers.ts";
 import { forward, passWhen } from "./helpers.ts";
 import { FlowRunner } from "./runner.ts";
-import type {
-  FlowGraph,
-  FlowRunResult,
-  FlowTypes,
-  NodeRunner,
-  NodeRunners,
-} from "./types.ts";
+import type { FlowGraph, FlowRunResult, FlowTypes, NodeRunner, NodeRunners } from "./types.ts";
 
 interface HelperTypes extends FlowTypes {
   nodes: {
@@ -26,10 +22,7 @@ interface HelperTypes extends FlowTypes {
 
 const source: NodeRunner<HelperTypes, "source"> = {
   execute({ text }, { artifact }) {
-    return Effect.succeed([
-      artifact("text", text),
-      artifact("token", text.toUpperCase()),
-    ]);
+    return Effect.succeed([artifact("text", text), artifact("token", text.toUpperCase())]);
   },
 };
 
@@ -44,7 +37,7 @@ const run = (
   graph: FlowGraph<HelperTypes>,
 ): Promise<FlowRunResult<HelperTypes>> => Effect.runPromise(flow.run(graph));
 
-Deno.test("forward -- re-emits selected types, keeping the producer", async () => {
+test("forward -- re-emits selected types, keeping the producer", async () => {
   const flow = new FlowRunner<HelperTypes>({ runners });
 
   const graph: FlowGraph<HelperTypes> = {
@@ -69,7 +62,7 @@ Deno.test("forward -- re-emits selected types, keeping the producer", async () =
   ]);
 });
 
-Deno.test("passWhen -- forwards while the predicate holds", async () => {
+test("passWhen -- forwards while the predicate holds", async () => {
   const flow = new FlowRunner<HelperTypes>({ runners });
 
   const graph: FlowGraph<HelperTypes> = {
@@ -97,7 +90,7 @@ Deno.test("passWhen -- forwards while the predicate holds", async () => {
   ]);
 });
 
-Deno.test("passWhen -- completes empty when the predicate fails", async () => {
+test("passWhen -- completes empty when the predicate fails", async () => {
   const flow = new FlowRunner<HelperTypes>({ runners });
 
   const graph: FlowGraph<HelperTypes> = {

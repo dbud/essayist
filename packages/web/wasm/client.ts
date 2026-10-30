@@ -1,7 +1,7 @@
 import type { Mark } from "@essayist/core";
 import { resolveMarks } from "@essayist/core";
 import { IS_BROWSER } from "fresh/runtime";
-import { createWorkerClient } from "@/utils/workerClient.ts";
+import { createWorkerClient } from "#/utils/workerClient.ts";
 
 const client = createWorkerClient<
   { marks: Mark[]; oldContent: string; newContent: string },

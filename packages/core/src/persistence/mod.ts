@@ -34,20 +34,15 @@ export interface ListResult<T = unknown> {
 }
 
 /** A write applied atomically within one batch call. */
-export type WriteOp =
-  | { type: "set"; key: Key; value: unknown }
-  | { type: "delete"; key: Key };
+export type WriteOp = { type: "set"; key: Key; value: unknown } | { type: "delete"; key: Key };
 
 /** Options for a batch write. */
 export interface BatchOptions {
   /**
-   * Optimistic-concurrency guards. The batch commits only if every guard
-   * passes against the current store state:
-   * - `versionstamp: null` requires the key to be absent.
-   * - `versionstamp: "<v>"` requires the key to be present with that exact
-   *   versionstamp.
-   * On any mismatch the whole batch is rejected (no ops applied) and an error
-   * is thrown.
+   * Optimistic-concurrency guards. The batch commits only if every guard passes against the current
+   * store state: - `versionstamp: null` requires the key to be absent. - `versionstamp: "<v>"`
+   * requires the key to be present with that exact versionstamp. On any mismatch the whole batch is
+   * rejected (no ops applied) and an error is thrown.
    */
   checks?: Array<{ key: Key; versionstamp: string | null }>;
 }
@@ -63,13 +58,19 @@ export class ConcurrentModificationError extends Schema.TaggedError<ConcurrentMo
   }
 }
 
-/** Fields a record carries to be leasable by one owner at a time. */
-export interface Lease {
-  /** Id of the driver currently advancing this record. */
-  leaseOwner?: string;
-  /** When the owner last proved it was alive. */
-  heartbeatAt?: number;
-}
+/** The lease fields a record carries to be claimable by one owner at a time. */
+export const Lease = Schema.Struct({
+  leaseOwner: Schema.optionalKey(
+    Schema.String.annotate({
+      description: "Id of the driver currently advancing this record.",
+    }),
+  ),
+  heartbeatAt: Schema.optionalKey(
+    Schema.Number.annotate({ description: "When the owner last proved it was alive." }),
+  ),
+});
+
+export type Lease = Schema.Schema.Type<typeof Lease>;
 
 /** A record with {@link Lease} fields on it. */
 export type Leased<T> = T & Lease;

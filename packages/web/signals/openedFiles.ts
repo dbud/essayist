@@ -1,8 +1,8 @@
 import { computed, createModel } from "@preact/signals";
-import { getFileTreeFor } from "@/signals/fileTree.ts";
-import { get, namespace } from "@/signals/models.ts";
-import { getWorkspaces } from "@/signals/workspace.ts";
-import { persistentSignal } from "@/utils/persistentSignal.ts";
+import { getFileTreeFor } from "#/signals/fileTree.ts";
+import { get, namespace } from "#/signals/models.ts";
+import { getWorkspaces } from "#/signals/workspace.ts";
+import { persistentSignal } from "#/utils/persistentSignal.ts";
 
 export const openedFilesNs = namespace("openedFiles");
 

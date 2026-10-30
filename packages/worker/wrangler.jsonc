@@ -1,0 +1,29 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "assets": {
+    "directory": "./dist/client",
+  },
+  "compatibility_date": "2026-10-06",
+  "compatibility_flags": ["nodejs_compat"],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_id": "553b3689-f25b-4848-a1f4-98da845f6caf",
+      "database_name": "essayist-db",
+    },
+  ],
+  "main": "./src/main.ts",
+  "name": "essayist-worker",
+  "observability": {
+    "logs": {
+      "enabled": true,
+      "invocation_logs": true,
+    },
+  },
+  "upload_source_maps": true,
+  "vars": {
+    "GOOGLE_APP_ID": "444389978447",
+    "GOOGLE_CLIENT_ID": "444389978447-gg68etvjp2fd00uh0t7h4hubkruojbhp.apps.googleusercontent.com",
+    "LOG_LEVEL": "info",
+  },
+}

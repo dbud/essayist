@@ -1,51 +1,35 @@
 /**
- * The review pass driver as an Effect program: the run lifecycle (claim,
- * heartbeat, complete, fail) goes through the ReviewRuns service, and the
- * flow engine runs inside it.
+ * The review pass driver as an Effect program: the run lifecycle (claim, heartbeat, complete, fail)
+ * goes through the ReviewRuns service, and the flow engine runs inside it.
  *
- * Heartbeats run interval-only: one loop fiber sleeps the interval between
- * beats, so beats never overlap and the staleness window (15 minutes vs a
- * 60-second interval) keeps a live run claimed without event pacing.
+ * Heartbeats run interval-only: one loop fiber sleeps the interval between beats, so beats never
+ * overlap and the staleness window (15 minutes vs a 60-second interval) keeps a live run claimed
+ * without event pacing.
  */
 
-import {
-  type Cause,
-  Clock,
-  type Context,
-  Effect,
-  Fiber,
-  Queue,
-  Result,
-  Schema,
-} from "effect";
-import type { ResolvedReviewPass } from "@/config/types.ts";
-import { Files } from "@/files/service.ts";
-import { FlowRunner } from "@/flow/runner.ts";
-import type { FlowEvent } from "@/flow/types.ts";
-import { view } from "@/flow/view.ts";
-import { Ids } from "@/ids.ts";
-import type { Marks } from "@/marks/service.ts";
-import type { ModelClient } from "@/model/service.ts";
-import type { MissingChunksError } from "@/persistence/chunked_values.ts";
-import type {
-  ConcurrentModificationError,
-  PersistenceError,
-} from "@/persistence/mod.ts";
-import { buildReviewGraph } from "@/reviews/adapter.ts";
-import {
-  type ReviewServices,
-  type ReviewTypes,
-  reviewRunners,
-} from "@/reviews/graph.ts";
-import type { ReviewProgress } from "@/reviews/progress.ts";
-import { ReviewProgressTracker } from "@/reviews/progress.ts";
-import { ReviewRuns } from "@/reviews/service.ts";
-import { logTraceEvent } from "@/reviews/trace/log.ts";
-import { foldCompleted } from "@/reviews/trace/mod.ts";
-import { TraceEvents } from "@/reviews/trace/service.ts";
-import type { TraceEvent } from "@/reviews/trace/types.ts";
-import type { ReviewRun } from "@/reviews/types.ts";
-import { WorkspaceId } from "@/workspace/WorkspaceId.ts";
+import { type Cause, Clock, type Context, Effect, Fiber, Queue, Result, Schema } from "effect";
+
+import type { ResolvedReviewPass } from "#/config/types.ts";
+import { Files } from "#/files/service.ts";
+import { FlowRunner } from "#/flow/runner.ts";
+import type { FlowEvent } from "#/flow/types.ts";
+import { view } from "#/flow/view.ts";
+import { Ids } from "#/ids.ts";
+import type { Marks } from "#/marks/service.ts";
+import type { ModelClient } from "#/model/service.ts";
+import type { MissingChunksError } from "#/persistence/chunked_values.ts";
+import type { ConcurrentModificationError, PersistenceError } from "#/persistence/mod.ts";
+import { buildReviewGraph } from "#/reviews/adapter.ts";
+import { type ReviewServices, type ReviewTypes, reviewRunners } from "#/reviews/graph.ts";
+import type { ReviewProgress } from "#/reviews/progress.ts";
+import { ReviewProgressTracker } from "#/reviews/progress.ts";
+import { ReviewRuns } from "#/reviews/service.ts";
+import { logTraceEvent } from "#/reviews/trace/log.ts";
+import { foldCompleted } from "#/reviews/trace/mod.ts";
+import { TraceEvents } from "#/reviews/trace/service.ts";
+import type { TraceEvent } from "#/reviews/trace/types.ts";
+import type { ReviewRun } from "#/reviews/types.ts";
+import { WorkspaceId } from "#/workspace/WorkspaceId.ts";
 
 /** Options for {@linkcode runReviewPass}. */
 export interface RunReviewPassOptions {
@@ -56,16 +40,10 @@ export interface RunReviewPassOptions {
 }
 
 /** Services the review pass runs on: the steps pull them from context. */
-type RunnerServices =
-  | ReviewRuns
-  | TraceEvents
-  | WorkspaceId
-  | Files
-  | Marks
-  | ModelClient;
+type RunnerServices = ReviewRuns | TraceEvents | WorkspaceId | Files | Marks | ModelClient;
 
-// Heartbeats go out every interval. The interval must stay far under the
-// staleness window, or a live run can be stolen.
+// Heartbeats go out every interval. The interval must stay far under the staleness window, or a
+// live run can be stolen.
 const HEARTBEAT_MS = 60_000;
 const HEARTBEAT_STALE_MS = 15 * 60_000;
 
@@ -114,8 +92,10 @@ export function runReviewPass(
   const { path } = options;
   return Effect.gen(function* () {
     const files = yield* Files;
-    const history = yield* files.getHistory(path);
-    const versionId = history.at(-1)?.version_id;
+    const versionId = yield* files.getVersions(path).pipe(
+      Effect.catchTag("FileMissingError", () => Effect.fail(new ReviewFileMissingError({ path }))),
+      Effect.map((history) => history.at(-1)?.version_id),
+    );
     if (!versionId) {
       return yield* Effect.fail(new ReviewFileMissingError({ path }));
     }
@@ -167,10 +147,9 @@ function start(
       reviewPassId: pass.pass.id,
       versionId,
     });
-    return yield* Effect.annotateLogs(
-      execute(options, run, versionId, 0, undefined),
-      { runId: run.id },
-    );
+    return yield* Effect.annotateLogs(execute(options, run, versionId, 0, undefined), {
+      runId: run.id,
+    });
   });
 }
 
@@ -179,11 +158,7 @@ function start(
 function claim(
   runs: Context.Service.Shape<typeof ReviewRuns>,
   runId: string,
-): Effect.Effect<
-  string,
-  ReviewLeaseTakenError | PersistenceError,
-  WorkspaceId
-> {
+): Effect.Effect<string, ReviewLeaseTakenError | PersistenceError, WorkspaceId> {
   return Effect.gen(function* () {
     const ids = yield* Ids;
     const owner = ids.next();
@@ -208,8 +183,8 @@ function heartbeatLoop(
   return Effect.gen(function* () {
     let warnedLeaseLost = false;
     while (true) {
-      // One beat per iteration, in flight only: the write is uninterruptible
-      // so the unwind below never races it.
+      // One beat per iteration, in flight only: the write is uninterruptible so the unwind below
+      // never races it.
       const held = yield* Effect.result(
         Effect.uninterruptible(
           Effect.provideService(runs.heartbeatRun(runId, owner), WorkspaceId, {
@@ -245,15 +220,11 @@ function execute(
     const { onProgress, pass, path } = options;
     const completed = priorTrace ? foldCompleted(priorTrace) : undefined;
     const graph = buildReviewGraph(pass, run.id, { path, versionId });
-    const kindOf = new Map(
-      graph.nodes.map((node) => [node.id, node.kind] as const),
-    );
-    const tracker = onProgress
-      ? new ReviewProgressTracker(onProgress, kindOf)
-      : undefined;
+    const kindOf = new Map(graph.nodes.map((node) => [node.id, node.kind] as const));
+    const tracker = onProgress ? new ReviewProgressTracker(onProgress, kindOf) : undefined;
 
-    // Events are logged and seq-stamped where they happen; a writer fiber
-    // appends them through a queue, off the emission path.
+    // Events are logged and seq-stamped where they happen; a writer fiber appends them through a
+    // queue, off the emission path.
     const queue = yield* Queue.unbounded<TraceEvent, Cause.Done>();
     const record = (event: FlowEvent<ReviewTypes>): Effect.Effect<void> =>
       Effect.gen(function* () {
@@ -279,9 +250,7 @@ function execute(
     });
 
     // Prove life right away, then stay proven on the interval.
-    const fiber = yield* Effect.forkChild(
-      heartbeatLoop(runs, wsId, run.id, owner),
-    );
+    const fiber = yield* Effect.forkChild(heartbeatLoop(runs, wsId, run.id, owner));
     const writerFiber = yield* Effect.forkChild(writer);
 
     // The native steps read their services from context.
@@ -294,9 +263,9 @@ function execute(
       .run(graph, { completed })
       .pipe(Effect.provideService(WorkspaceId, { wsId }));
     const flowOutcome = yield* Effect.result(flowRun);
-    // The heartbeat stops before the terminal write. No more events arrive,
-    // so the writer drains the queue and finishes; joining it stores the
-    // whole trace before the run settles, and re-raises a storage fault.
+    // The heartbeat stops before the terminal write. No more events arrive, so the writer drains
+    // the queue and finishes; joining it stores the whole trace before the run settles, and re-
+    // raises a storage fault.
     yield* Fiber.interrupt(fiber);
     yield* Queue.end(queue);
     yield* Fiber.join(writerFiber);
@@ -312,10 +281,9 @@ function execute(
       return yield* fail(runs, run, result.errors.join("; "));
     }
 
-    // A pass with no summary unit commits none, and `one` throws.
-    // TODO -- once a pass can carry several summary units, add a node
-    // taking those `summary` artifacts and producing one `writeup`
-    // artifact, so the run yields a single value here.
+    // A pass with no summary unit commits none, and `one` throws. TODO -- once a pass can carry
+    // several summary units, add a node taking those `summary` artifacts and producing one
+    // `writeup` artifact, so the run yields a single value here.
     const tail = yield* Effect.result(
       Effect.gen(function* () {
         const summary = yield* Effect.try({

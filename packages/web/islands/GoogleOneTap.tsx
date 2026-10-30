@@ -1,6 +1,6 @@
 import { ArrowUpRight } from "lucide-preact";
 import { useEffect, useRef, useState } from "preact/hooks";
-import { loadGsi } from "@/utils/googleGsi.ts";
+import { loadGsi } from "#/utils/googleGsi.ts";
 
 interface GoogleOneTapProps {
   clientId: string;

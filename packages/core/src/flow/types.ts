@@ -28,19 +28,13 @@ export interface Artifact<
 }
 
 /** A node in a flow. The payload is opaque host config. Kinds whose
- * vocabulary type is undefined take no payload; for the rest it is
- * required. */
-export type FlowNode<
-  T extends FlowTypes = FlowTypes,
-  K extends NodeKind<T> = NodeKind<T>,
-> = {
+ * vocabulary type is undefined take no payload; for the rest it is required. */
+export type FlowNode<T extends FlowTypes = FlowTypes, K extends NodeKind<T> = NodeKind<T>> = {
   id: string;
   kind: K;
   /** Node ids whose committed artifacts arrive as inputs, in order. */
   dependsOn: readonly string[];
-} & (undefined extends T["nodes"][K]
-  ? { payload?: T["nodes"][K] }
-  : { payload: T["nodes"][K] });
+} & (undefined extends T["nodes"][K] ? { payload?: T["nodes"][K] } : { payload: T["nodes"][K] });
 
 /** Dependency artifacts of one node, frozen at its start. */
 export interface Artifacts<T extends FlowTypes> {
@@ -54,42 +48,28 @@ export interface Artifacts<T extends FlowTypes> {
   allOf<A extends ArtifactType<T>>(type: A): Artifact<T, A>[];
 }
 
-export interface NodeContext<
-  T extends FlowTypes,
-  K extends NodeKind<T> = NodeKind<T>,
-> {
+export interface NodeContext<T extends FlowTypes, K extends NodeKind<T> = NodeKind<T>> {
   /** The node's payload, typed by the vocabulary for this kind. */
   payload: T["nodes"][K];
   inputs: Artifacts<T>;
   /** Emit a host event; delivered before this node's terminal event. */
   emit(event: T["events"]): Effect.Effect<void>;
   /** Create an output artifact; provenance is stamped with this node. */
-  artifact<A extends ArtifactType<T>>(
-    type: A,
-    data: T["artifacts"][A],
-  ): Artifact<T, A>;
+  artifact<A extends ArtifactType<T>>(type: A, data: T["artifacts"][A]): Artifact<T, A>;
 }
 
 /** The graph is structurally invalid: a duplicate id, an unknown
  * dependency or kind, or a cycle. Rejected before any node runs. */
-export class FlowGraphError extends Schema.TaggedError<FlowGraphError>()(
-  "FlowGraphError",
-  { reason: Schema.String },
-) {
+export class FlowGraphError extends Schema.TaggedError<FlowGraphError>()("FlowGraphError", {
+  reason: Schema.String,
+}) {
   override get message() {
     return this.reason;
   }
 }
 
-export interface NodeRunner<
-  T extends FlowTypes,
-  K extends NodeKind<T> = NodeKind<T>,
-  R = never,
-> {
-  execute(
-    payload: T["nodes"][K],
-    ctx: NodeContext<T, K>,
-  ): Effect.Effect<Artifact<T>[], Error, R>;
+export interface NodeRunner<T extends FlowTypes, K extends NodeKind<T> = NodeKind<T>, R = never> {
+  execute(payload: T["nodes"][K], ctx: NodeContext<T, K>): Effect.Effect<Artifact<T>[], Error, R>;
 }
 
 /** One runner per node kind; a missing one is a compile error. */

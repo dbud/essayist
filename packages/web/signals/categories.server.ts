@@ -1,9 +1,9 @@
 import type { Category } from "@essayist/core";
 import { ReviewConfig } from "@essayist/core";
-import { categoriesNs } from "@/signals/categories.ts";
-import { registerLoader } from "@/signals/models.server.ts";
-import { kv, runtime } from "@/store.ts";
-import { cached } from "@/utils/kvCache.server.ts";
+import { categoriesNs } from "#/signals/categories.ts";
+import { registerLoader } from "#/signals/models.server.ts";
+import { kv, runtime } from "#/store.ts";
+import { cached } from "#/utils/kvCache.server.ts";
 
 const cache = cached<Category[]>(
   "categories",

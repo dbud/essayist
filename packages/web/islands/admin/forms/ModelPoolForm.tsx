@@ -1,11 +1,11 @@
 import type { ModelPool } from "@essayist/core";
 import type { Signal } from "@preact/signals";
 import { useState } from "preact/hooks";
-import { FormShell } from "@/components/ui/forms/FormShell.tsx";
-import { TextareaRow } from "@/components/ui/forms/TextareaRow.tsx";
-import { TextRow } from "@/components/ui/forms/TextRow.tsx";
-import { lines } from "@/islands/admin/forms/lines.ts";
-import { getAdminConfig, type ModelPoolInput } from "@/signals/admin.ts";
+import { FormShell } from "#/components/ui/forms/FormShell.tsx";
+import { TextareaRow } from "#/components/ui/forms/TextareaRow.tsx";
+import { TextRow } from "#/components/ui/forms/TextRow.tsx";
+import { lines } from "#/islands/admin/forms/lines.ts";
+import { getAdminConfig, type ModelPoolInput } from "#/signals/admin.ts";
 
 export function ModelPoolForm({
   entity,

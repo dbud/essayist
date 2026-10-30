@@ -7,8 +7,8 @@
  */
 
 import { Effect } from "effect";
-import { runtime } from "@/store.ts";
-import { delay } from "@/utils/delay.ts";
+import { runtime } from "#/store.ts";
+import { delay } from "#/utils/delay.ts";
 
 /** Delay before the first stream reconnect (doubling, capped). */
 const RESTART_BACKOFF_MS = 1_000;

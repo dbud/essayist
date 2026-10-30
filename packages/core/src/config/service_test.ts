@@ -1,9 +1,12 @@
 import { assertEquals } from "@std/assert";
 import { Effect } from "effect";
-import { testLayer } from "@/persistence/testing/kv.ts";
+import { test } from "vitest";
+
+import { testLayer } from "#/persistence/testing/kv.ts";
+
 import { ReviewConfig } from "./service.ts";
 
-Deno.test("ReviewConfig -- CRUD round-trips", async () => {
+test("ReviewConfig -- CRUD round-trips", async () => {
   const program = Effect.gen(function* () {
     const store = yield* ReviewConfig;
     yield* store.saveModelPool({ id: "p", name: "P", models: ["m/a"] });
@@ -33,12 +36,10 @@ Deno.test("ReviewConfig -- CRUD round-trips", async () => {
     yield* store.deleteReviewPass("r");
     assertEquals(yield* store.getReviewPass("r"), undefined);
   });
-  await Effect.runPromise(
-    Effect.provide(program, testLayer(ReviewConfig.layerNoDeps)),
-  );
+  await Effect.runPromise(Effect.provide(program, testLayer(ReviewConfig.layerNoDeps)));
 });
 
-Deno.test("ReviewConfig -- getCategories splits found and missing ids", async () => {
+test("ReviewConfig -- getCategories splits found and missing ids", async () => {
   const program = Effect.gen(function* () {
     const store = yield* ReviewConfig;
     yield* store.saveCategory({ id: "a", label: "A" });
@@ -52,12 +53,10 @@ Deno.test("ReviewConfig -- getCategories splits found and missing ids", async ()
     ]);
     assertEquals(missing, ["ghost"]);
   });
-  await Effect.runPromise(
-    Effect.provide(program, testLayer(ReviewConfig.layerNoDeps)),
-  );
+  await Effect.runPromise(Effect.provide(program, testLayer(ReviewConfig.layerNoDeps)));
 });
 
-Deno.test("ReviewConfig -- active pin set and clear", async () => {
+test("ReviewConfig -- active pin set and clear", async () => {
   const program = Effect.gen(function* () {
     const store = yield* ReviewConfig;
     yield* store.saveReviewPass({
@@ -74,12 +73,10 @@ Deno.test("ReviewConfig -- active pin set and clear", async () => {
     yield* store.clearActiveReviewPass();
     assertEquals(yield* store.getActiveReviewPassId(), undefined);
   });
-  await Effect.runPromise(
-    Effect.provide(program, testLayer(ReviewConfig.layerNoDeps)),
-  );
+  await Effect.runPromise(Effect.provide(program, testLayer(ReviewConfig.layerNoDeps)));
 });
 
-Deno.test("ReviewConfig -- list helpers", async () => {
+test("ReviewConfig -- list helpers", async () => {
   const program = Effect.gen(function* () {
     const store = yield* ReviewConfig;
     yield* store.saveModelPool({ id: "p", name: "P", models: ["m/a"] });
@@ -98,7 +95,5 @@ Deno.test("ReviewConfig -- list helpers", async () => {
     assertEquals((yield* store.listCategories()).length, 1);
     assertEquals((yield* store.listReviewPasses()).length, 1);
   });
-  await Effect.runPromise(
-    Effect.provide(program, testLayer(ReviewConfig.layerNoDeps)),
-  );
+  await Effect.runPromise(Effect.provide(program, testLayer(ReviewConfig.layerNoDeps)));
 });

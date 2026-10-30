@@ -1,21 +1,21 @@
 import { Command } from "@cliffy/command";
 import { type TraceEvent, TraceEvents, WorkspaceId } from "@essayist/core";
 import { Effect } from "effect";
-import type { KvctlGlobals } from "@/globals.ts";
-import { withKv } from "@/kv.ts";
-import { pprint } from "@/utils/pprint.ts";
+
+import type { KvctlGlobals } from "#/globals.ts";
+import { withStore } from "#/kv.ts";
+import { pprint } from "#/utils/pprint.ts";
 
 /**
- * Print a run's trace as reassembled events, so the events can be piped to
- * jq. Chunked values are joined back into whole events, which `explore` shows
- * as raw bytes.
+ * Print a run's trace as reassembled events, so the events can be piped to jq. Chunked values are
+ * joined back into whole events, which `explore` shows as raw bytes.
  */
 export const trace = new Command<KvctlGlobals>()
   .description("Print a run's trace, one JSON event per document.")
   .arguments("<wsId:string> <runId:string>")
   .option("--summary", "Print one line per event instead of full JSON.")
   .action(({ local, summary }, wsId: string, runId: string) =>
-    withKv({ local }, async ({ runtime }) => {
+    withStore({ local }, async ({ runtime }) => {
       const events = await runtime.runPromise(
         Effect.provideService(
           Effect.gen(function* () {
@@ -28,7 +28,7 @@ export const trace = new Command<KvctlGlobals>()
       );
       if (!events) {
         console.error(`No trace for run ${runId} in workspace ${wsId}`);
-        Deno.exit(1);
+        process.exit(1);
       }
       for (const event of events) {
         if (summary) {
@@ -52,7 +52,7 @@ function summarise(event: TraceEvent): string {
       case "model_call":
         return `${inner.call.model} ${inner.call.durationMs}ms`;
       case "output":
-        return `keys=${Object.keys((inner.output ?? {}) as object).join(",")}`;
+        return `keys=${Object.keys(inner.output ?? {}).join(",")}`;
       case "prompt":
       case "reasoning":
         return `len=${inner.text.length}`;

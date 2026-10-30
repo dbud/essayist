@@ -1,12 +1,13 @@
 import { Command } from "@cliffy/command";
 import { ReviewConfig } from "@essayist/core";
-import type { KvctlGlobals } from "@/globals.ts";
-import { withKv } from "@/kv.ts";
+
+import type { KvctlGlobals } from "#/globals.ts";
+import { withStore } from "#/kv.ts";
 
 export const seedConfig = new Command<KvctlGlobals>()
   .description("Seed default review config.")
   .action(({ target, local }) =>
-    withKv({ target, local }, async ({ runtime }) => {
+    withStore({ target, local }, async ({ runtime }) => {
       const poolId = "free-pool";
       await runtime.runPromise(
         ReviewConfig.use((store) =>
@@ -51,9 +52,7 @@ export const seedConfig = new Command<KvctlGlobals>()
         },
       ];
       for (const p of prompts) {
-        await runtime.runPromise(
-          ReviewConfig.use((store) => store.savePrompt(p)),
-        );
+        await runtime.runPromise(ReviewConfig.use((store) => store.savePrompt(p)));
       }
 
       const categories = [
@@ -89,9 +88,7 @@ export const seedConfig = new Command<KvctlGlobals>()
         },
       ] as const;
       for (const c of categories) {
-        await runtime.runPromise(
-          ReviewConfig.use((store) => store.saveCategory(c)),
-        );
+        await runtime.runPromise(ReviewConfig.use((store) => store.saveCategory(c)));
       }
 
       const reviewPassId = "essay-review";

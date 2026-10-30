@@ -1,14 +1,12 @@
-/** Options for reading a file. */
-export interface ReadOptions {
-  /** Version ID to read. If omitted, reads the latest version. */
-  versionId?: string;
-  /** First line to return (1-based, inclusive). Defaults to 1. */
-  startLine?: number;
-  /** Last line to return (1-based, inclusive). Defaults to the last line. */
-  endLine?: number;
-  /** If true, prefix each line with its line number. */
-  numbered?: boolean;
-}
+import { Schema } from "effect";
+
+/** Metadata about a file version (no content). */
+export const FileVersion = Schema.Struct({
+  version_id: Schema.String,
+  timestamp: Schema.Number,
+  lines: Schema.Number,
+});
+export type FileVersion = Schema.Schema.Type<typeof FileVersion>;
 
 /** Result of a write operation. */
 export interface WriteResult extends FileVersion {
@@ -17,36 +15,42 @@ export interface WriteResult extends FileVersion {
 }
 
 /** A file entry from listing. */
-export interface FileEntry {
-  path: string;
-  lines: number;
-}
+export const FileEntry = Schema.Struct({
+  path: Schema.String,
+  lines: Schema.Number,
+  latestVersionId: Schema.String,
+});
+export type FileEntry = Schema.Schema.Type<typeof FileEntry>;
 
 /** A file version snapshot -- version metadata + content. */
-export interface FileSnapshot extends FileVersion {
-  content: string;
-}
-
-/** Result of a read operation -- snapshot + line range window. */
-export interface FileReadResult extends FileSnapshot {
-  start_line: number;
-  end_line: number;
-}
-
-/** Metadata about a file version (no content). */
-export interface FileVersion {
-  version_id: string;
-  timestamp: number;
-  lines: number;
-}
+export const FileSnapshot = Schema.Struct({
+  version_id: Schema.String,
+  timestamp: Schema.Number,
+  lines: Schema.Number,
+  content: Schema.String,
+});
+export type FileSnapshot = Schema.Schema.Type<typeof FileSnapshot>;
 
 /** The persisted draft head. */
-export interface DraftSnapshot {
-  content: string;
-  timestamp: number;
-}
+export const DraftSnapshot = Schema.Struct({
+  content: Schema.String,
+  timestamp: Schema.Number,
+});
+export type DraftSnapshot = Schema.Schema.Type<typeof DraftSnapshot>;
 
 /** Result of a diff operation. */
 export interface DiffResult {
   diff: string;
+}
+
+/** A read targeted a path or version that does not exist. */
+export class FileMissingError extends Schema.TaggedError<FileMissingError>()("FileMissingError", {
+  path: Schema.String,
+  versionId: Schema.NullOr(Schema.String),
+}) {
+  override get message() {
+    return this.versionId === null
+      ? `File ${this.path} does not exist`
+      : `Version ${this.versionId} of ${this.path} does not exist`;
+  }
 }

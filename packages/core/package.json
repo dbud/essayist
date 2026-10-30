@@ -1,0 +1,36 @@
+{
+  "name": "@essayist/core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "imports": {
+    "#/*": "./src/*"
+  },
+  "exports": {
+    ".": "./mod.ts",
+    "./kv_d1": "./src/persistence/kv_d1.ts",
+    "./kv_d1_rest": "./src/persistence/kv_d1_rest.ts",
+    "./kv_d1_sqlite": "./src/persistence/kv_d1_sqlite.ts"
+  },
+  "scripts": {
+    "check": "tsc --noEmit",
+    "fmt": "oxfmt .",
+    "lint": "oxlint .",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@deno/kv": "catalog:",
+    "@effect/ai-openrouter": "catalog:",
+    "@effect/sql-d1": "catalog:",
+    "@std/assert": "catalog:",
+    "@std/collections": "catalog:",
+    "@std/encoding": "catalog:",
+    "cbor-x": "^1.6.8",
+    "effect": "catalog:",
+    "fdb-tuple": "^1.0.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "catalog:",
+    "@types/node": "catalog:"
+  }
+}

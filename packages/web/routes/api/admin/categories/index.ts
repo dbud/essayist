@@ -1,7 +1,7 @@
 import { CategorySchema, nextId } from "@essayist/core";
 import { Result, Schema } from "effect";
-import { define } from "@/define.ts";
-import { saveCategory } from "@/signals/categories.server.ts";
+import { define } from "#/define.ts";
+import { saveCategory } from "#/signals/categories.server.ts";
 
 export const handler = {
   POST: define.handlers(async (ctx) => {

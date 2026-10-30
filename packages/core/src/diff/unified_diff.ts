@@ -22,9 +22,7 @@ export function unifiedDiff(
   const lines: string[] = [`--- ${oldLabel}`, `+++ ${newLabel}`];
 
   for (const hunk of hunks) {
-    lines.push(
-      `@@ -${hunk.oldStart},${hunk.oldCount} +${hunk.newStart},${hunk.newCount} @@`,
-    );
+    lines.push(`@@ -${hunk.oldStart},${hunk.oldCount} +${hunk.newStart},${hunk.newCount} @@`);
     for (const line of hunk.lines) {
       lines.push(line);
     }
@@ -124,11 +122,7 @@ function buildUnifiedHunk(
   };
 }
 
-function buildUnifiedHunks(
-  ops: DiffOp[],
-  oldLines: string[],
-  newLines: string[],
-): UnifiedHunk[] {
+function buildUnifiedHunks(ops: DiffOp[], oldLines: string[], newLines: string[]): UnifiedHunk[] {
   const hunks: UnifiedHunk[] = [];
   let idx = 0;
 

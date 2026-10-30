@@ -1,6 +1,6 @@
 import { IS_BROWSER } from "fresh/runtime";
-import { anyFileDirty, flushAllDirty } from "@/signals/file.ts";
-import { autoSave } from "@/signals/preferences.ts";
+import { anyFileDirty, flushAllDirty } from "#/signals/file.ts";
+import { autoSave } from "#/signals/preferences.ts";
 
 // Loss prevention at page unload. Autosave on: flush dirty files with a
 // keepalive PUT (best effort). Autosave off: never write silently; the

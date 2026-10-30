@@ -1,7 +1,7 @@
 import { Workspaces } from "@essayist/core";
-import { define } from "@/define.ts";
-import { runScoped } from "@/run.ts";
-import { runtime } from "@/store.ts";
+import { define } from "#/define.ts";
+import { runScoped } from "#/run.ts";
+import { runtime } from "#/store.ts";
 
 /**
  * Resolve the workspace from the route's `:wsId` param, enforce access, and

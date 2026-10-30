@@ -1,6 +1,6 @@
 /**
- * Pure grep matching: line matches with before/after context, the
- * literal-escape fallback for invalid regexes, and the default context span.
+ * Pure grep matching: line matches with before/after context, the literal-escape fallback for
+ * invalid regexes, and the default context span.
  */
 
 /** How many context lines surround each match. */
@@ -19,10 +19,7 @@ export function escapeRegex(text: string): string {
 }
 
 /** Compile `pattern` as a regex; an invalid regex falls back to a literal. */
-export function compilePattern(
-  pattern: string,
-  caseSensitive: boolean,
-): RegExp {
+export function compilePattern(pattern: string, caseSensitive: boolean): RegExp {
   const flags = caseSensitive ? "g" : "gi";
   try {
     return new RegExp(pattern, flags);
@@ -32,11 +29,7 @@ export function compilePattern(
 }
 
 /** Line matches with context, in document order. */
-export function matchLines(
-  content: string,
-  regex: RegExp,
-  contextSpan: number,
-): LineMatch[] {
+export function matchLines(content: string, regex: RegExp, contextSpan: number): LineMatch[] {
   const lines = content.split("\n");
   const matches: LineMatch[] = [];
   for (let i = 0; i < lines.length; i++) {

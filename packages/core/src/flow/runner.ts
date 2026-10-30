@@ -1,5 +1,6 @@
 import { distinct, sortBy } from "@std/collections";
 import { Cause, Clock, Deferred, Effect, Exit, Result } from "effect";
+
 import type {
   Artifact,
   CompletedNodeRun,
@@ -15,9 +16,9 @@ import type {
   NodeRunner,
   NodeRunners,
   SkippedNodeRun,
-} from "@/flow/types.ts";
-import { FlowGraphError } from "@/flow/types.ts";
-import { view } from "@/flow/view.ts";
+} from "#/flow/types.ts";
+import { FlowGraphError } from "#/flow/types.ts";
+import { view } from "#/flow/view.ts";
 
 export interface FlowRunnerOptions<T extends FlowTypes, R = never> {
   runners: NodeRunners<T, R>;
@@ -47,8 +48,8 @@ interface WiredNode<T extends FlowTypes> {
 }
 
 /** Executes a graph: schedules ready nodes in declaration order and
- * commits artifacts. Nodes never re-execute. Each node runs on its own
- * child fiber, so an interrupted run takes its in-flight nodes down. */
+ * commits artifacts. Nodes never re-execute. Each node runs on its own child fiber, so an
+ * interrupted run takes its in-flight nodes down. */
 export class FlowRunner<T extends FlowTypes, R = never> {
   #runners = new Map<string, NodeRunner<T, NodeKind<T>, R>>();
   #onEvent?: (event: FlowEvent<T>) => Effect.Effect<void>;
@@ -56,10 +57,7 @@ export class FlowRunner<T extends FlowTypes, R = never> {
 
   constructor(options: FlowRunnerOptions<T, R>) {
     // The registry key is the node kind, so the cast is sound.
-    const registry = options.runners as unknown as Record<
-      string,
-      NodeRunner<T, NodeKind<T>, R>
-    >;
+    const registry = options.runners as unknown as Record<string, NodeRunner<T, NodeKind<T>, R>>;
     for (const [kind, runner] of Object.entries(registry)) {
       this.#runners.set(kind, runner);
     }
@@ -83,7 +81,7 @@ export class FlowRunner<T extends FlowTypes, R = never> {
       const nodeRuns: NodeRun<T>[] = [];
       /** Completed on each node's fiber once its outcome is recorded;
        * the scheduler wakes on the node id. */
-      const pending = new Map<string, Deferred.Deferred<string, never>>();
+      const pending = new Map<string, Deferred.Deferred<string>>();
       const errors = new Map<string, string>();
 
       const commit = (entry: WiredNode<T>, produced: Artifact<T>[]): void => {
@@ -107,11 +105,9 @@ export class FlowRunner<T extends FlowTypes, R = never> {
           entry.launched = true;
           const waker = yield* Deferred.make<string>();
           pending.set(entry.node.id, waker);
-          const inputs = entry.consumes.flatMap(
-            (dep) => committed.get(dep) ?? [],
-          );
-          // Mutations stay on the engine's single thread, on the node's fiber
-          // in completion order: record, commit, then wake the scheduler.
+          const inputs = entry.consumes.flatMap((dep) => committed.get(dep) ?? []);
+          // Mutations stay on the engine's single thread, on the node's fiber in completion order:
+          // record, commit, then wake the scheduler.
           yield* Effect.forkChild(
             Effect.gen({ self: this }, function* () {
               const run = yield* this.#execute(entry.node, inputs);
@@ -140,9 +136,7 @@ export class FlowRunner<T extends FlowTypes, R = never> {
         pending.delete(doneId);
       }
 
-      for (const entry of wired
-        .values()
-        .filter((candidate) => !candidate.launched)) {
+      for (const entry of wired.values().filter((candidate) => !candidate.launched)) {
         const run: SkippedNodeRun = {
           nodeId: entry.node.id,
           status: "skipped",
@@ -152,11 +146,8 @@ export class FlowRunner<T extends FlowTypes, R = never> {
         yield* this.#emit({ type: "node_end", nodeId: entry.node.id, run });
       }
 
-      const position = new Map(
-        wired.keys().map((nodeId, index) => [nodeId, index] as const),
-      );
-      const status: FlowRunResult<T>["status"] =
-        errors.size === 0 ? "completed" : "failed";
+      const position = new Map(wired.keys().map((nodeId, index) => [nodeId, index] as const));
+      const status: FlowRunResult<T>["status"] = errors.size === 0 ? "completed" : "failed";
       return {
         status,
         errors: [...errors.values()],
@@ -174,8 +165,8 @@ export class FlowRunner<T extends FlowTypes, R = never> {
       const startedAt = yield* Clock.currentTimeMillis;
       yield* this.#emit({ type: "node_start", nodeId: node.id });
 
-      // The payload boundary: the host's graph construction guarantees
-      // configured kinds carry their payload.
+      // The payload boundary: the host's graph construction guarantees configured kinds carry their
+      // payload.
       const payload = node.payload as T["nodes"][NodeKind<T>];
       const context: NodeContext<T, NodeKind<T>> = {
         payload,
@@ -235,9 +226,7 @@ function wire<T extends FlowTypes, R>(
 
   for (const node of graph.nodes) {
     if (wired.has(node.id)) {
-      return Result.fail(
-        new FlowGraphError({ reason: `duplicate node id "${node.id}"` }),
-      );
+      return Result.fail(new FlowGraphError({ reason: `duplicate node id "${node.id}"` }));
     }
     if (!runners.has(node.kind)) {
       return Result.fail(
@@ -293,9 +282,7 @@ function wire<T extends FlowTypes, R>(
     .map((entry) => entry.node.id)
     .toArray();
   if (stuck.length > 0) {
-    return Result.fail(
-      new FlowGraphError({ reason: `cycle detected: ${stuck.join(", ")}` }),
-    );
+    return Result.fail(new FlowGraphError({ reason: `cycle detected: ${stuck.join(", ")}` }));
   }
   return Result.succeed(wired);
 }

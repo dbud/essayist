@@ -1,0 +1,107 @@
+@utility cell--base {
+  --btn-bg: var(--color-surface);
+  --btn-bg-hover: color-mix(in oklch, var(--color-surface), var(--color-opposite) 10%);
+  --btn-duration: 120ms;
+
+  @apply inline-flex gap-1;
+  @apply appearance-none border-0 rounded-none select-none whitespace-nowrap isolate;
+  @apply font-sans font-normal text-ink leading-none shadow-none;
+  font-size: 0.8rem;
+  text-decoration: none;
+  background: var(--btn-bg);
+  transition:
+    background-color var(--btn-duration) ease-out,
+    color var(--btn-duration) ease-out,
+    transform calc(var(--btn-duration) / 2) ease-out,
+    opacity var(--btn-duration) ease-out;
+
+  & > * {
+    @apply relative z-1;
+  }
+}
+
+@utility cell {
+  @apply cell--base;
+  @apply h-10 min-w-11 pr-6 pl-1 pt-1 pb-0;
+
+  &.is-selected {
+    --btn-bg: var(--color-accent);
+    color: white;
+  }
+}
+
+@utility cell--data {
+  @apply cell--base;
+  @apply min-h-10 pl-1 pt-1 pr-6;
+  padding-bottom: 1.45rem;
+  white-space: normal;
+}
+
+@utility note {
+  @apply italic self-start ms-auto whitespace-nowrap text-[0.7rem] ps-5 -me-4 leading-none;
+  color: color-mix(in oklch, currentColor, transparent 50%);
+}
+
+@utility btn {
+  @apply cell;
+  @apply cursor-pointer;
+
+  &:hover:where(:not(.dropdown-open, .is-selected)) {
+    --btn-bg: var(--btn-bg-hover);
+  }
+  &:focus-visible {
+    @apply outline-2 outline-offset-2;
+    outline-style: solid;
+    outline-color: var(--color-accent);
+  }
+  &:disabled {
+    @apply pointer-events-none striped opacity-60;
+  }
+}
+
+@utility cell--accent {
+  --btn-bg: var(--color-accent);
+  --btn-bg-hover: oklch(from var(--color-accent) l calc(c * 1.3) h);
+  color: white;
+  box-shadow:
+    -1px 0 0 var(--btn-bg),
+    1px 0 0 var(--btn-bg);
+}
+
+@utility cell--ink {
+  --btn-bg: var(--color-ink);
+  --btn-bg-hover: color-mix(in oklch, var(--color-ink), var(--color-opposite) 30%);
+  color: var(--color-surface);
+}
+
+@utility btn--ghost {
+  @apply cell--base;
+  @apply cursor-pointer;
+  --btn-bg: transparent;
+  --btn-bg-hover: transparent;
+  background: transparent;
+  color: inherit;
+
+  &:not(:disabled) {
+    text-decoration: underline 1px solid color-mix(in oklch, transparent 40%, currentColor);
+    text-underline-offset: 0.2rem;
+  }
+  &:hover {
+    color: var(--color-accent);
+  }
+
+  &.is-selected {
+    @apply text-accent font-medium;
+    text-decoration: none;
+  }
+}
+
+@layer base {
+  kbd {
+    @apply inline-block rounded-xs border border-ink pr-1 py-px min-w-5.5 font-sans text-[0.65rem] leading-none shadow-md;
+  }
+
+  kbd + kbd {
+    @apply ml-0.5;
+  }
+}

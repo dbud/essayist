@@ -1,7 +1,7 @@
 import { Effect } from "effect";
 import { HttpError, type Middleware } from "fresh";
-import { define, type State } from "@/define.ts";
-import { runtime } from "@/store.ts";
+import { define, type State } from "#/define.ts";
+import { runtime } from "#/store.ts";
 
 /** Query params that carry a credential rather than data. */
 const SECRET_PARAMS = new Set([

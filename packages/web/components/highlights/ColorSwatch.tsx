@@ -1,4 +1,4 @@
-import type { MarkRect } from "@/signals/sidenotes.ts";
+import type { MarkRect } from "#/signals/sidenotes.ts";
 import { WavyRenderer } from "./WavyRenderer.tsx";
 
 const EMPTY: ReadonlySet<string> = new Set();

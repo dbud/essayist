@@ -1,6 +1,6 @@
 import { ReviewConfig } from "@essayist/core";
-import { define } from "@/define.ts";
-import { runtime } from "@/store.ts";
+import { define } from "#/define.ts";
+import { runtime } from "#/store.ts";
 
 export const handler = {
   PUT: define.handlers(async (ctx) => {

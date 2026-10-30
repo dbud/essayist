@@ -1,9 +1,9 @@
 import { ReviewRuns, WorkspaceId } from "@essayist/core";
 import { Effect } from "effect";
-import { registerLoader } from "@/signals/models.server.ts";
-import type { ReviewKey } from "@/signals/review.ts";
-import { type ReviewData, reviewNs } from "@/signals/review.ts";
-import { runtime } from "@/store.ts";
+import { registerLoader } from "#/signals/models.server.ts";
+import type { ReviewKey } from "#/signals/review.ts";
+import { type ReviewData, reviewNs } from "#/signals/review.ts";
+import { runtime } from "#/store.ts";
 
 export async function reviewLoader({
   wsId,

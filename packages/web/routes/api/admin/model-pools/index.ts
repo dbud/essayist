@@ -1,7 +1,7 @@
 import { ModelPoolSchema, nextId, ReviewConfig } from "@essayist/core";
 import { Result, Schema } from "effect";
-import { define } from "@/define.ts";
-import { runtime } from "@/store.ts";
+import { define } from "#/define.ts";
+import { runtime } from "#/store.ts";
 
 export const handler = {
   POST: define.handlers(async (ctx) => {

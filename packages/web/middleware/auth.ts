@@ -1,10 +1,10 @@
 import { Workspaces } from "@essayist/core";
 import type { Middleware } from "fresh";
-import { define, type State } from "@/define.ts";
-import { env } from "@/env.ts";
-import { demoUser, runtime } from "@/store.ts";
-import { getOAuthHelpers } from "@/utils/oauth.ts";
-import { getUserIdForSession } from "@/utils/sessions.ts";
+import { define, type State } from "#/define.ts";
+import { env } from "#/env.ts";
+import { demoUser, runtime } from "#/store.ts";
+import { getOAuthHelpers } from "#/utils/oauth.ts";
+import { getUserIdForSession } from "#/utils/sessions.ts";
 
 /**
  * Resolves `ctx.state.user` for each request.

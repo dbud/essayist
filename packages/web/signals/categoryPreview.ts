@@ -1,6 +1,6 @@
 import { computed, signal } from "@preact/signals";
-import { FALLBACK_COLOR } from "@/editor/markColors.ts";
-import { getCategories } from "@/signals/categories.ts";
+import { FALLBACK_COLOR } from "#/editor/markColors.ts";
+import { getCategories } from "#/signals/categories.ts";
 
 export interface CategoryPreview {
   /** Category id when editing, null while creating. */

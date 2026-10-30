@@ -1,83 +1,145 @@
 {
   "languages": {
     "CSS": {
-      "code_actions_on_format": {
-        "source.fixAll.biome": true
-      },
-      "formatter": "language_server",
-      "language_servers": ["biome"]
+      "format_on_save": "on",
+      "formatter": [
+        {
+          "language_server": {
+            "name": "oxfmt"
+          }
+        }
+      ],
+      "language_servers": ["oxfmt"],
+      "prettier": {
+        "allowed": false
+      }
     },
     "JavaScript": {
-      "code_actions_on_format": {
-        "source.fixAll.biome": true,
-        "source.organizeImports.biome": true
+      "format_on_save": "on",
+      "formatter": [
+        {
+          "language_server": {
+            "name": "oxfmt"
+          }
+        },
+        {
+          "code_action": "source.fixAll.oxc"
+        }
+      ],
+      "language_servers": ["oxlint", "oxfmt", "vtsls", "!typescript-language-server", "!eslint"],
+      "prettier": {
+        "allowed": false
       },
-      "formatter": "language_server",
-      "language_servers": [
-        "biome",
-        "deno",
-        "!typescript-language-server",
-        "!vtsls",
-        "!eslint"
-      ]
+      "preferred_line_length": 100,
+      "allow_rewrap": "in_comments"
     },
     "JSON": {
-      "code_actions_on_format": {
-        "source.fixAll.biome": true
-      },
-      "formatter": "language_server",
-      "language_servers": ["biome"]
+      "format_on_save": "on",
+      "formatter": [
+        {
+          "language_server": {
+            "name": "oxfmt"
+          }
+        }
+      ],
+      "language_servers": ["oxfmt"],
+      "prettier": {
+        "allowed": false
+      }
     },
     "JSONC": {
-      "code_actions_on_format": {
-        "source.fixAll.biome": true
-      },
-      "formatter": "language_server",
-      "language_servers": ["biome"]
+      "format_on_save": "on",
+      "formatter": [
+        {
+          "language_server": {
+            "name": "oxfmt"
+          }
+        }
+      ],
+      "language_servers": ["oxfmt"],
+      "prettier": {
+        "allowed": false
+      }
     },
     "Rust": {
       "formatter": "language_server",
       "language_servers": ["rust-analyzer"]
     },
     "TSX": {
-      "code_actions_on_format": {
-        "source.fixAll.biome": true,
-        "source.organizeImports.biome": true
+      "format_on_save": "on",
+      "formatter": [
+        {
+          "language_server": {
+            "name": "oxfmt"
+          }
+        },
+        {
+          "code_action": "source.fixAll.oxc"
+        }
+      ],
+      "language_servers": ["oxlint", "oxfmt", "vtsls", "!typescript-language-server", "!eslint"],
+      "prettier": {
+        "allowed": false
       },
-      "formatter": "language_server",
-      "language_servers": [
-        "biome",
-        "deno",
-        "!typescript-language-server",
-        "!vtsls",
-        "!eslint"
-      ]
+      "preferred_line_length": 100,
+      "allow_rewrap": "in_comments"
     },
     "TypeScript": {
-      "code_actions_on_format": {
-        "source.fixAll.biome": true,
-        "source.organizeImports.biome": true
+      "format_on_save": "on",
+      "formatter": [
+        {
+          "language_server": {
+            "name": "oxfmt"
+          }
+        },
+        {
+          "code_action": "source.fixAll.oxc"
+        }
+      ],
+      "language_servers": ["oxlint", "oxfmt", "vtsls", "!typescript-language-server", "!eslint"],
+      "prettier": {
+        "allowed": false
       },
-      "formatter": "language_server",
-      "language_servers": [
-        "biome",
-        "deno",
-        "!typescript-language-server",
-        "!vtsls",
-        "!eslint"
-      ]
+      "preferred_line_length": 100,
+      "allow_rewrap": "in_comments"
     }
   },
   "lsp": {
-    "biome": {
-      "settings": {
-        "require_config_file": true
+    "oxfmt": {
+      "initialization_options": {
+        "settings": {
+          "fmt.configPath": null,
+          "run": "onSave"
+        }
       }
     },
-    "deno": {
+    "oxlint": {
+      "initialization_options": {
+        "settings": {
+          "configPath": null,
+          "disableNestedConfig": false,
+          "fixKind": "safe_fix",
+          "run": "onType"
+        }
+      }
+    },
+    "vtsls": {
       "settings": {
-        "deno": {
-          "enable": true
+        "javascript": {
+          "tsdk": "node_modules/typescript-lsp/lib",
+          "tsserver": {
+            "experimental": {
+              "enableProjectDiagnostics": false
+            }
+          }
+        },
+        "typescript": {
+          "tsdk": "node_modules/typescript-lsp/lib",
+          "tsserver": {
+            "experimental": {
+              "enableProjectDiagnostics": false
+            }
+          }
         }
       }
     }

@@ -1,0 +1,74 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+    branches: ["main"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# core and worker on the pnpm workspace. Gates every
+# push and PR; the deploy ships the live environment after the checks
+# and tests pass.
+jobs:
+  pnpm:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup repo
+        uses: actions/checkout@v7
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 26
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Check core and worker
+        run: pnpm check
+
+      - name: Test core
+        run: pnpm test
+
+      - name: Build worker
+        run: pnpm build
+
+      - name: Check favicon assets
+        run: pnpm -C packages/worker run favicon:check
+
+  # The live deployment; manual from any ref.
+  worker-deploy:
+    needs: pnpm
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'push' &&
+      (github.ref == 'refs/heads/cloudflare-migration' || github.ref == 'refs/heads/main'))
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup repo
+        uses: actions/checkout@v7
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 26
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Deploy worker
+        run: pnpm -C packages/worker run deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

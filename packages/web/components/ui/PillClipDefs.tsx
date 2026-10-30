@@ -7,7 +7,7 @@ import {
   SQ_TL_RING,
   SQ_TR,
   SQ_TR_RING,
-} from "@/components/ui/pillClipPaths.ts";
+} from "#/components/ui/pillClipPaths.ts";
 
 const MASK_VARS = `:root {
   --sq-tl: ${SQ_TL};

@@ -2,9 +2,8 @@ const WORD_CHAR = /[\p{L}\p{N}]/u;
 const NON_WORD_NON_SPACE = /[^\s\p{L}\p{N}]/u;
 
 /**
- * Whether each edge of `text` is a word character (Unicode letter/number).
- * Empty text has neither. Used to decide which gap separators belong to a
- * context rather than the selection.
+ * Whether each edge of `text` is a word character (Unicode letter/number). Empty text has neither.
+ * Used to decide which gap separators belong to a context rather than the selection.
  */
 export function wordEdges(text: string): {
   startsWithWord: boolean;
@@ -16,8 +15,8 @@ export function wordEdges(text: string): {
 }
 
 /**
- * Count separator chars to trim from the start of `raw`: whitespace always,
- * then punctuation if `trimPunctuation`.
+ * Count separator chars to trim from the start of `raw`: whitespace always, then punctuation if
+ * `trimPunctuation`.
  */
 function countLeadingSeparators(raw: string, trimPunctuation: boolean): number {
   let n = 0;
@@ -29,9 +28,8 @@ function countLeadingSeparators(raw: string, trimPunctuation: boolean): number {
 }
 
 /**
- * Count separator chars to trim from the end of `raw`, stopping at
- * `lowerBound` (the leading trim count, so the two never overlap): whitespace
- * always, then punctuation if `trimPunctuation`.
+ * Count separator chars to trim from the end of `raw`, stopping at `lowerBound` (the leading trim
+ * count, so the two never overlap): whitespace always, then punctuation if `trimPunctuation`.
  */
 function countTrailingSeparators(
   raw: string,
@@ -54,11 +52,10 @@ function countTrailingSeparators(
 }
 
 /**
- * Trim surrounding separator characters from a resolved gap. Whitespace is
- * always trimmed on both sides. Punctuation is trimmed on a side only when
- * `trimLeadingPunctuation` / `trimTrailingPunctuation` is set (meaning the
- * separator there belongs to a context, not the selection). Returns the
- * trimmed text and how many leading chars were removed (so the caller can
+ * Trim surrounding separator characters from a resolved gap. Whitespace is always trimmed
+ * on both sides. Punctuation is trimmed on a side only when `trimLeadingPunctuation` /
+ * `trimTrailingPunctuation` is set (meaning the separator there belongs to a context, not the
+ * selection). Returns the trimmed text and how many leading chars were removed (so the caller can
  * adjust the offset).
  */
 export function trimContextSeparators(
@@ -69,11 +66,7 @@ export function trimContextSeparators(
   if (raw.length === 0) return { text: "", leading: 0 };
 
   const leading = countLeadingSeparators(raw, trimLeadingPunctuation);
-  const trailing = countTrailingSeparators(
-    raw,
-    leading,
-    trimTrailingPunctuation,
-  );
+  const trailing = countTrailingSeparators(raw, leading, trimTrailingPunctuation);
 
   return { text: raw.slice(leading, raw.length - trailing), leading };
 }

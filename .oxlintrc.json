@@ -1,0 +1,31 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "categories": {
+    "correctness": "error",
+    "perf": "error",
+    "suspicious": "error"
+  },
+  "ignorePatterns": ["packages/web/**"],
+  "options": {
+    "typeAware": true
+  },
+  "rules": {
+    "eslint/no-await-in-loop": "off", // sequential awaits are deliberate batching
+    "eslint/no-underscore-dangle": "off", // the `_` prefix is the discard convention
+    "eslint/no-unused-vars": [
+      "error",
+      {
+        "argsIgnorePattern": "^_",
+        "caughtErrorsIgnorePattern": "^_",
+        "varsIgnorePattern": "^_"
+      }
+    ],
+    "oxc/no-map-spread": "off", // immutable copy-on-write updates spread inside map
+    "typescript/consistent-return": "off", // Effect-style bodies mix implicit returns
+    "typescript/no-non-null-assertion": "error",
+    "typescript/no-unsafe-type-assertion": "off", // boundary casts are by design
+    "typescript/unbound-method": "off", // function passing is the Effect style
+    "unicorn/consistent-function-scoping": "off", // render-local closures are by design
+    "unicorn/no-document-cookie": "error"
+  }
+}

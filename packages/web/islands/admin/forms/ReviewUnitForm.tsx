@@ -1,11 +1,11 @@
 import type { ReviewPass, ReviewUnit } from "@essayist/core";
 import type { Signal } from "@preact/signals";
 import { useState } from "preact/hooks";
-import { FormShell } from "@/components/ui/forms/FormShell.tsx";
-import { type Option, OptionsRow } from "@/components/ui/forms/OptionsRow.tsx";
-import { TextRow } from "@/components/ui/forms/TextRow.tsx";
-import Slider from "@/components/ui/Slider.tsx";
-import { getAdminConfig } from "@/signals/admin.ts";
+import { FormShell } from "#/components/ui/forms/FormShell.tsx";
+import { type Option, OptionsRow } from "#/components/ui/forms/OptionsRow.tsx";
+import { TextRow } from "#/components/ui/forms/TextRow.tsx";
+import Slider from "#/components/ui/Slider.tsx";
+import { getAdminConfig } from "#/signals/admin.ts";
 
 const NONE: Option = { value: "", label: "none" };
 

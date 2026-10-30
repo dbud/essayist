@@ -1,10 +1,10 @@
-// Shared diff test cases, parameterized over the `compute` function so the JS
-// core path (`diff_test.ts`) and the WASM core path (`diff_wasm_test.ts`) run
-// the same assertions. `label` prefixes the test names so the two suites are
-// distinguishable in output. Both cores are byte-identical (linear-space
-// Myers), so there is a single set of expectations.
+// Shared diff test cases, parameterized over the `compute` function so the JS core path
+// (`diff_test.ts`) and the WASM core path (`diff_wasm_test.ts`) run the same assertions. `label`
+// prefixes the test names so the two suites are distinguishable in output. Both cores are byte-
+// identical (linear-space Myers), so there is a single set of expectations.
 
 import { assertEquals, assertObjectMatch } from "@std/assert";
+import { test } from "vitest";
 
 import type { DiffHunk } from "./diff.ts";
 
@@ -13,11 +13,11 @@ type Compute = (oldText: string, newText: string) => DiffHunk[];
 export function runDiffCases(label: string, compute: Compute): void {
   const name = (s: string) => `${label} -- ${s}`;
 
-  Deno.test(name("identical content produces no hunks"), () => {
+  test(name("identical content produces no hunks"), () => {
     assertEquals(compute("hello world", "hello world"), []);
   });
 
-  Deno.test(name("empty old content produces single insert hunk"), () => {
+  test(name("empty old content produces single insert hunk"), () => {
     assertEquals(compute("", "hello world"), [
       {
         type: "insert",
@@ -31,7 +31,7 @@ export function runDiffCases(label: string, compute: Compute): void {
     ]);
   });
 
-  Deno.test(name("empty new content produces single delete hunk"), () => {
+  test(name("empty new content produces single delete hunk"), () => {
     assertEquals(compute("hello world", ""), [
       {
         type: "delete",
@@ -45,11 +45,11 @@ export function runDiffCases(label: string, compute: Compute): void {
     ]);
   });
 
-  Deno.test(name("both empty produces no hunks"), () => {
+  test(name("both empty produces no hunks"), () => {
     assertEquals(compute("", ""), []);
   });
 
-  Deno.test(name("single word replaced"), () => {
+  test(name("single word replaced"), () => {
     const result = compute("The quick brown fox", "The slow brown fox");
     assertEquals(result.length, 1);
     assertObjectMatch(result[0], {
@@ -59,7 +59,7 @@ export function runDiffCases(label: string, compute: Compute): void {
     });
   });
 
-  Deno.test(name("single word inserted"), () => {
+  test(name("single word inserted"), () => {
     const result = compute("The brown fox", "The quick brown fox");
     assertEquals(result.length, 1);
     assertObjectMatch(result[0], {
@@ -69,7 +69,7 @@ export function runDiffCases(label: string, compute: Compute): void {
     });
   });
 
-  Deno.test(name("single word deleted"), () => {
+  test(name("single word deleted"), () => {
     const result = compute("The quick brown fox", "The brown fox");
     assertEquals(result.length, 1);
     assertObjectMatch(result[0], {
@@ -79,11 +79,8 @@ export function runDiffCases(label: string, compute: Compute): void {
     });
   });
 
-  Deno.test(name("two separate changes"), () => {
-    const result = compute(
-      "Alpha Beta Gamma Delta",
-      "Alpha Modified Gamma Altered",
-    );
+  test(name("two separate changes"), () => {
+    const result = compute("Alpha Beta Gamma Delta", "Alpha Modified Gamma Altered");
     assertEquals(result.length, 2);
     assertObjectMatch(result[0], {
       type: "replace",
@@ -97,7 +94,7 @@ export function runDiffCases(label: string, compute: Compute): void {
     });
   });
 
-  Deno.test(name("change at beginning"), () => {
+  test(name("change at beginning"), () => {
     const result = compute("Hello world", "Goodbye world");
     assertEquals(result.length, 1);
     assertObjectMatch(result[0], {
@@ -107,7 +104,7 @@ export function runDiffCases(label: string, compute: Compute): void {
     });
   });
 
-  Deno.test(name("prose: one word changed in paragraph"), () => {
+  test(name("prose: one word changed in paragraph"), () => {
     const oldContent = "The art of writing requires patience and dedication.";
     const newContent = "The art of writing requires patience and commitment.";
     const result = compute(oldContent, newContent);
@@ -119,7 +116,7 @@ export function runDiffCases(label: string, compute: Compute): void {
     });
   });
 
-  Deno.test(name("prose: word inserted in paragraph"), () => {
+  test(name("prose: word inserted in paragraph"), () => {
     const oldContent = "Writing requires dedication.";
     const newContent = "Writing truly requires dedication.";
     const result = compute(oldContent, newContent);
@@ -130,10 +127,10 @@ export function runDiffCases(label: string, compute: Compute): void {
     });
   });
 
-  // Repeated `sentence. ` token: the linear-space Myers matches the second
-  // occurrence, so the deleted / inserted text is "sentence. Second " (a valid
-  // minimal edit, and the same on the JS and WASM cores).
-  Deno.test(name("prose: sentence deleted"), () => {
+  // Repeated `sentence. ` token: the linear-space Myers matches the second occurrence, so the
+  // deleted / inserted text is "sentence. Second " (a valid minimal edit, and the same on the JS
+  // and WASM cores).
+  test(name("prose: sentence deleted"), () => {
     const oldContent = "First sentence. Second sentence. Third sentence.";
     const newContent = "First sentence. Third sentence.";
     const result = compute(oldContent, newContent);
@@ -144,7 +141,7 @@ export function runDiffCases(label: string, compute: Compute): void {
     });
   });
 
-  Deno.test(name("prose: sentence inserted"), () => {
+  test(name("prose: sentence inserted"), () => {
     const oldContent = "First sentence. Third sentence.";
     const newContent = "First sentence. Second sentence. Third sentence.";
     const result = compute(oldContent, newContent);
@@ -155,7 +152,7 @@ export function runDiffCases(label: string, compute: Compute): void {
     });
   });
 
-  Deno.test(name("prose: multiple paragraph changes"), () => {
+  test(name("prose: multiple paragraph changes"), () => {
     const result = compute(
       `The first paragraph is about writing.
 The second paragraph is about editing.
@@ -172,7 +169,7 @@ The third paragraph is about publishing.`,
     });
   });
 
-  Deno.test(name("punctuation attached to words"), () => {
+  test(name("punctuation attached to words"), () => {
     const result = compute("Hello, world!", "Hello, universe!");
     assertEquals(result.length, 1);
     assertObjectMatch(result[0], {
@@ -181,7 +178,7 @@ The third paragraph is about publishing.`,
     });
   });
 
-  Deno.test(name("multiple spaces between words"), () => {
+  test(name("multiple spaces between words"), () => {
     const result = compute("Hello  world", "Hello  universe");
     assertEquals(result.length, 1);
     assertObjectMatch(result[0], {
@@ -190,7 +187,7 @@ The third paragraph is about publishing.`,
     });
   });
 
-  Deno.test(name("newlines are preserved in tokens"), () => {
+  test(name("newlines are preserved in tokens"), () => {
     const result = compute("Line one.\nLine two.", "Line one.\nLine three.");
     assertEquals(result.length, 1);
     assertObjectMatch(result[0], {
@@ -199,7 +196,7 @@ The third paragraph is about publishing.`,
     });
   });
 
-  Deno.test(name("completely different content"), () => {
+  test(name("completely different content"), () => {
     const result = compute("abc def", "xyz uvw");
     assertEquals(result.length, 1);
     assertObjectMatch(result[0], {
@@ -209,7 +206,7 @@ The third paragraph is about publishing.`,
     });
   });
 
-  Deno.test(name("single character difference"), () => {
+  test(name("single character difference"), () => {
     const result = compute("cat", "car");
     assertEquals(result.length, 1);
     assertObjectMatch(result[0], {
@@ -219,7 +216,7 @@ The third paragraph is about publishing.`,
     });
   });
 
-  Deno.test(name("long prose with single word change"), () => {
+  test(name("long prose with single word change"), () => {
     const result = compute(
       "The art of writing is a craft that has been practiced for thousands of years evolving from ancient cave paintings to digital documents we create today At its core writing is about communication the transfer of ideas emotions and knowledge from one mind to another across time and space",
       "The art of writing is a craft that has been practiced for thousands of years evolving from ancient cave paintings to digital documents we create today At its core writing is about communication the transfer of ideas feelings and knowledge from one mind to another across time and space",
@@ -232,7 +229,7 @@ The third paragraph is about publishing.`,
     });
   });
 
-  Deno.test(name("change hunk has correct offsets"), () => {
+  test(name("change hunk has correct offsets"), () => {
     assertEquals(compute("The quick brown fox", "The slow brown fox"), [
       {
         type: "replace",
@@ -246,7 +243,7 @@ The third paragraph is about publishing.`,
     ]);
   });
 
-  Deno.test(name("delete hunk has correct offsets"), () => {
+  test(name("delete hunk has correct offsets"), () => {
     assertEquals(compute("The quick brown fox", "The brown fox"), [
       {
         type: "delete",
@@ -260,7 +257,7 @@ The third paragraph is about publishing.`,
     ]);
   });
 
-  Deno.test(name("insert hunk has correct offsets"), () => {
+  test(name("insert hunk has correct offsets"), () => {
     const result = compute("The brown fox", "The quick brown fox");
     assertEquals(result.length, 1);
     assertObjectMatch(result[0], {
@@ -274,11 +271,8 @@ The third paragraph is about publishing.`,
     });
   });
 
-  Deno.test(name("two changes have correct offsets"), () => {
-    const result = compute(
-      "Alpha Beta Gamma Delta",
-      "Alpha Modified Gamma Altered",
-    );
+  test(name("two changes have correct offsets"), () => {
+    const result = compute("Alpha Beta Gamma Delta", "Alpha Modified Gamma Altered");
     assertEquals(result, [
       {
         type: "replace",

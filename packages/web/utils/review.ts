@@ -2,8 +2,8 @@ import {
   type ResolvedReviewPass,
   resolveActiveReviewPass,
 } from "@essayist/core";
-import { env } from "@/env.ts";
-import type { Runtime } from "@/store.ts";
+import { env } from "#/env.ts";
+import type { Runtime } from "#/store.ts";
 
 export class ResolveReviewError extends Error {}
 

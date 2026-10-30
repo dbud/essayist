@@ -2,12 +2,9 @@ import type { Service } from "@effect/ai-openrouter/OpenRouterClient";
 import { assert, assertEquals } from "@std/assert";
 import { Duration, Effect, Fiber, Result, Schema } from "effect";
 import { TestClock } from "effect/testing";
-import {
-  authAiError,
-  createFakeClient,
-  type FakeRound,
-  networkAiError,
-} from "./fake_client.ts";
+import { test } from "vitest";
+
+import { authAiError, createFakeClient, type FakeRound, networkAiError } from "./fake_client.ts";
 import {
   ModelCallError,
   type ModelCallRecord,
@@ -35,8 +32,8 @@ function structured<T extends Schema.ConstraintDecoder<unknown>>(
 }
 
 /**
- * Run a retrying program on the test clock: fork it, advance time through
- * the sleeps, and join, handing back the replayed prompts.
+ * Run a retrying program on the test clock: fork it, advance time through the sleeps, and join,
+ * handing back the replayed prompts.
  */
 const runClock = <A, E>(
   program: Effect.Effect<A, E, ModelClient>,
@@ -53,7 +50,7 @@ const runClock = <A, E>(
     return { result: yield* Fiber.join(fiber), inputs };
   }).pipe(Effect.provide(TestClock.layer()));
 
-Deno.test("ModelClient.callModelStructured -- parses the first reply", async () => {
+test("ModelClient.callModelStructured -- parses the first reply", async () => {
   const { client } = createFakeClient([
     {
       text: '{"ok":true}',
@@ -84,7 +81,7 @@ Deno.test("ModelClient.callModelStructured -- parses the first reply", async () 
   });
 });
 
-Deno.test("ModelClient.callModelStructured -- an invalid reply triggers the re-ask", async () => {
+test("ModelClient.callModelStructured -- an invalid reply triggers the re-ask", async () => {
   const { client, inputs } = createFakeClient([
     { text: "not json at all" },
     { text: '{"ok":true}' },
@@ -109,29 +106,20 @@ Deno.test("ModelClient.callModelStructured -- an invalid reply triggers the re-a
   assertEquals(modelCalls.length, 2);
 });
 
-Deno.test("ModelClient.callModelStructured -- a second parse failure fails typed", async () => {
-  const { client } = createFakeClient([
-    { text: "wrong once" },
-    { text: "wrong twice" },
-  ]);
+test("ModelClient.callModelStructured -- a second parse failure fails typed", async () => {
+  const { client } = createFakeClient([{ text: "wrong once" }, { text: "wrong twice" }]);
 
   const outcome = await Effect.runPromise(
-    provideWith(
-      Effect.result(structured(Schema.Struct({ ok: Schema.Boolean }))),
-      client,
-    ),
+    provideWith(Effect.result(structured(Schema.Struct({ ok: Schema.Boolean }))), client),
   );
 
   assert(Result.isFailure(outcome), "the double parse failure must fail");
   if (Result.isFailure(outcome)) {
-    assert(
-      outcome.failure instanceof StructuredParseError,
-      "the parse failure type",
-    );
+    assert(outcome.failure instanceof StructuredParseError, "the parse failure type");
   }
 });
 
-Deno.test("ModelClient.callModelStructured -- a transient failure is re-issued one second later", async () => {
+test("ModelClient.callModelStructured -- a transient failure is re-issued one second later", async () => {
   const { result, inputs } = await Effect.runPromise(
     runClock(
       structured(Schema.Struct({ ok: Schema.Boolean })),
@@ -151,7 +139,7 @@ Deno.test("ModelClient.callModelStructured -- a transient failure is re-issued o
   assertEquals(result, { ok: true });
 });
 
-Deno.test("ModelClient.callModelStructured -- a transient failure reports the retry", async () => {
+test("ModelClient.callModelStructured -- a transient failure reports the retry", async () => {
   const retries: RetryFailure[] = [];
 
   await Effect.runPromise(
@@ -174,7 +162,7 @@ Deno.test("ModelClient.callModelStructured -- a transient failure reports the re
   assert(retries[0].error.includes("socket hang up"), "the error report");
 });
 
-Deno.test("ModelClient.callModelStructured -- a transient failure gives up after three attempts, spaced linearly", async () => {
+test("ModelClient.callModelStructured -- a transient failure gives up after three attempts, spaced linearly", async () => {
   const { client, inputs } = createFakeClient([
     { text: '{"ok":true}', failWith: networkAiError("socket hang up") },
   ]);
@@ -182,20 +170,15 @@ Deno.test("ModelClient.callModelStructured -- a transient failure gives up after
   const outcome = await Effect.runPromise(
     Effect.gen(function* () {
       const fiber = yield* Effect.forkChild(
-        provideWith(
-          Effect.result(structured(Schema.Struct({ ok: Schema.Boolean }))),
-          client,
-        ),
+        provideWith(Effect.result(structured(Schema.Struct({ ok: Schema.Boolean }))), client),
       );
       yield* Effect.yieldNow;
-      // The first attempt has dispatched and failed; the retry sleeps one
-      // full second.
+      // The first attempt has dispatched and failed; the retry sleeps one full second.
       assertEquals(inputs.length, 1);
       yield* TestClock.adjust(Duration.millis(ROUND_RETRY_DELAY_MS - 1));
       yield* Effect.yieldNow;
       assertEquals(inputs.length, 1);
-      // One more millisecond fires the second attempt, which sleeps two
-      // seconds.
+      // One more millisecond fires the second attempt, which sleeps two seconds.
       yield* TestClock.adjust(Duration.millis(1));
       yield* Effect.yieldNow;
       assertEquals(inputs.length, 2);
@@ -216,22 +199,19 @@ Deno.test("ModelClient.callModelStructured -- a transient failure gives up after
   }
 });
 
-Deno.test("ModelClient.callModelStructured -- a deterministic failure is not retried", async () => {
+test("ModelClient.callModelStructured -- a deterministic failure is not retried", async () => {
   const { client, inputs } = createFakeClient([
     { text: '{"ok":true}', failWith: authAiError("invalid key") },
   ]);
 
   await Effect.runPromise(
-    provideWith(
-      Effect.result(structured(Schema.Struct({ ok: Schema.Boolean }))),
-      client,
-    ),
+    provideWith(Effect.result(structured(Schema.Struct({ ok: Schema.Boolean }))), client),
   );
 
   assertEquals(inputs.length, 1);
 });
 
-Deno.test("ModelClient.callModelStructured -- a re-ask that fails transiently is retried", async () => {
+test("ModelClient.callModelStructured -- a re-ask that fails transiently is retried", async () => {
   const repairs: RepairAttempt[] = [];
   const { result, inputs } = await Effect.runPromise(
     runClock(

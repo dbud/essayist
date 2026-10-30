@@ -1,13 +1,13 @@
 import type { Mark } from "@essayist/core";
 import { createModel, effect, signal, untracked } from "@preact/signals";
 import { IS_BROWSER } from "fresh/runtime";
-import type { FileKey } from "@/signals/file.ts";
-import { getFile } from "@/signals/file.ts";
-import { get, modelData, namespace } from "@/signals/models.ts";
-import { asyncComputed } from "@/utils/asyncComputed.ts";
-import { deepComputed } from "@/utils/deepComputed.ts";
-import { ensureOk } from "@/utils/ensureOk.ts";
-import { resolveMarksViaWorker } from "@/wasm/client.ts";
+import type { FileKey } from "#/signals/file.ts";
+import { getFile } from "#/signals/file.ts";
+import { get, modelData, namespace } from "#/signals/models.ts";
+import { asyncComputed } from "#/utils/asyncComputed.ts";
+import { deepComputed } from "#/utils/deepComputed.ts";
+import { ensureOk } from "#/utils/ensureOk.ts";
+import { resolveMarksViaWorker } from "#/wasm/client.ts";
 
 export interface MarksData {
   marks: Mark[];

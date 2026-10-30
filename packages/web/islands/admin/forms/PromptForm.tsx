@@ -1,11 +1,11 @@
 import { extractVariables, type Prompt } from "@essayist/core";
 import type { Signal } from "@preact/signals";
 import { useState } from "preact/hooks";
-import { List } from "@/components/ui/EntityRows.tsx";
-import { FormShell } from "@/components/ui/forms/FormShell.tsx";
-import { TextareaRow } from "@/components/ui/forms/TextareaRow.tsx";
-import { TextRow } from "@/components/ui/forms/TextRow.tsx";
-import { getAdminConfig } from "@/signals/admin.ts";
+import { List } from "#/components/ui/EntityRows.tsx";
+import { FormShell } from "#/components/ui/forms/FormShell.tsx";
+import { TextareaRow } from "#/components/ui/forms/TextareaRow.tsx";
+import { TextRow } from "#/components/ui/forms/TextRow.tsx";
+import { getAdminConfig } from "#/signals/admin.ts";
 
 export function PromptForm({
   entity,

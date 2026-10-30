@@ -1,7 +1,7 @@
 import { extractVariables, type Prompt } from "@essayist/core";
 import { Pencil, Trash2 } from "lucide-preact";
-import { ActionBtn, EntityCard } from "@/components/ui/EntityCard.tsx";
-import { Field, List } from "@/components/ui/EntityRows.tsx";
+import { ActionBtn, EntityCard } from "#/components/ui/EntityCard.tsx";
+import { Field, List } from "#/components/ui/EntityRows.tsx";
 
 export function PromptRow({
   prompt,

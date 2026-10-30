@@ -1,11 +1,11 @@
-import { define } from "@/define.ts";
-import { resolveGoogleUser } from "@/utils/googleUser.ts";
-import { getGoogleUserInfo, getOAuthHelpers } from "@/utils/oauth.ts";
+import { define } from "#/define.ts";
+import { resolveGoogleUser } from "#/utils/googleUser.ts";
+import { getGoogleUserInfo, getOAuthHelpers } from "#/utils/oauth.ts";
 import {
   createSession,
   setUserRefreshToken,
   toSessionTokens,
-} from "@/utils/sessions.ts";
+} from "#/utils/sessions.ts";
 
 /**
  * Google OAuth callback. The @deno/kv-oauth helper validates the callback,

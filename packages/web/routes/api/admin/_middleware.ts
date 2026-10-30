@@ -1,4 +1,4 @@
-import { define } from "@/define.ts";
+import { define } from "#/define.ts";
 
 export default define.middleware((ctx) => {
   if (ctx.state.user?.role !== "admin") {
