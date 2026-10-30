@@ -5,3 +5,6 @@
 
 # style: reflow comments with parfit
 489c1b0a1eda9135bb716a0ea2791e8794ba5f6b
+
+# docs: reflow DEVELOPMENT.md, bullet the pre-commit checklist
+f167fd879b4477f44499180f7d4f2e0086b4e3f8
