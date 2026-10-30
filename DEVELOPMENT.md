@@ -93,6 +93,11 @@ pnpm -C packages/worker typegen   # regenerate Workers types from wrangler
 pnpm -C packages/worker deploy    # live environment; CI deploys on main pushes
 ```
 
+CI gates every branch push. Pushes to main deploy the live worker once
+the checks pass; other branch pushes ship a per-branch preview to
+workers.dev, with the URL in the run summary. Manual workflow
+dispatches choose the target (prod or preview).
+
 ## Favicon
 
 `public/favicon.svg`, `public/favicon.ico` (16/32/48) and

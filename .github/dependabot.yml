@@ -2,8 +2,7 @@ version: 2
 updates:
   - package-ecosystem: "npm"
     directory: "/"
-    # TODO -- target main once migration is over
-    target-branch: "cloudflare-migration"
+    target-branch: "main"
     schedule:
       interval: "weekly"
     groups:
