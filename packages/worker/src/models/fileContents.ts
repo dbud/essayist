@@ -26,6 +26,8 @@ export const FileContentsModel = createModel(
       );
     });
 
+    const anyDirty = computed(() => files.value.values().some((file) => file.dirty.value));
+
     if (!import.meta.env.SSR) {
       // The pending version's editor state moves to the created version.
       effect(() => {
@@ -51,7 +53,7 @@ export const FileContentsModel = createModel(
       });
     }
 
-    return { current };
+    return { current, anyDirty };
   },
 );
 

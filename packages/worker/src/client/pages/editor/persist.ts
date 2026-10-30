@@ -1,6 +1,7 @@
 import { effect, type ReadonlySignal } from "@preact/signals";
 
 import { PENDING_VERSION_ID } from "#/models/fileContent.ts";
+import type { FileContents } from "#/models/fileContents.ts";
 import type { FileSelection } from "#/models/fileSelection.ts";
 import { patchJson } from "#/models/utils/http.ts";
 
@@ -43,4 +44,12 @@ export function setupSelectionPersist(selected: ReadonlySignal<FileSelection | n
   });
 
   globalThis.addEventListener("pagehide", () => flush(true));
+}
+
+// Autosave off: nothing writes; the prompt guards unsaved changes.
+export function setupUnloadGuard(contents: FileContents, autosave: ReadonlySignal<boolean>): void {
+  globalThis.addEventListener("beforeunload", (e) => {
+    if (autosave.value || !contents.anyDirty.value) return;
+    e.preventDefault();
+  });
 }
