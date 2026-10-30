@@ -1,8 +1,5 @@
 import type { ComponentChildren } from "preact";
-import { useEffect } from "preact/hooks";
-import { useErrorBoundary } from "preact/hooks";
-
-import { reportError } from "#/client/sentry.ts";
+import { useEffect, useErrorBoundary } from "preact/hooks";
 
 interface ErrorBoundaryProps {
   children?: ComponentChildren;
@@ -12,8 +9,11 @@ export default function ErrorBoundary({ children }: ErrorBoundaryProps) {
   const [error, resetError] = useErrorBoundary();
 
   useEffect(() => {
-    if (error) reportError(error);
+    if (!error) return;
+    void import("@sentry/browser").then((Sentry) => Sentry.captureException(error));
   }, [error]);
+
+  if (error && import.meta.env.SSR) throw error;
 
   if (error) {
     return (
