@@ -1,15 +1,22 @@
-import { inspect } from "node:util";
-
+import { Effect } from "effect";
 import { Hono } from "hono";
 
 import { pageRenderer } from "#/app/render.tsx";
 import { oauthRoutes } from "#/auth/routes.ts";
 import { requireUser, resolveSession } from "#/auth/session.ts";
+import { env } from "#/env.ts";
 import { pages } from "#/pages/index.ts";
+import { runtime } from "#/runtime.ts";
+import { captureError } from "#/telemetry/sentry.ts";
 
 export const webApp = new Hono()
   .onError((error, c) => {
-    console.error(inspect(error, { depth: 8 }));
+    runtime(env(c.env)).runFork(
+      Effect.logError("page handler failed", {
+        message: error instanceof Error ? error.message : String(error),
+      }),
+    );
+    captureError(error);
     return c.text("internal error", 500);
   })
   .use("*", resolveSession)

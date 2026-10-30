@@ -2,6 +2,7 @@ import { readdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
 import { cloudflare } from "@cloudflare/vite-plugin";
+import { sentryCloudflareVitePlugin } from "@sentry/cloudflare/vite";
 import tailwindcss from "@tailwindcss/vite";
 import { defineConfig, type Plugin } from "vite";
 
@@ -34,6 +35,7 @@ export default defineConfig({
     }),
     tailwindcss(),
     cloudflare({ viteEnvironment: { name: "worker" } }),
+    sentryCloudflareVitePlugin(),
   ],
   environments: {
     worker: { build: { sourcemap: true } },

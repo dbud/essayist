@@ -1,11 +1,11 @@
-// One handler per env snapshot, built on first use like the runtime; the layer shares the runtime's
-// memo map, so both tiers run the same service instances.
+import { jsonLogLayer } from "@essayist/core";
 import { Cache, Cause, Effect, Layer } from "effect";
 import { HttpRouter, HttpServer } from "effect/http";
 
 import { layerApi } from "#/api/index.ts";
 import type { WorkerEnv } from "#/env.ts";
 import { runtime, runtimeLayer } from "#/runtime.ts";
+import { captureError } from "#/telemetry/sentry.ts";
 
 type RequestHandler = (request: Request) => Promise<Response>;
 
@@ -32,11 +32,14 @@ export function apiHandler(request: Request, e: WorkerEnv): Promise<Response> {
     });
   }).pipe(
     Effect.catchCause((cause) =>
-      Effect.sync(() => {
-        console.error(Cause.pretty(cause));
+      Effect.gen(function* () {
+        const pretty = Cause.pretty(cause);
+        yield* Effect.logError("api handler failed", { cause: pretty });
+        captureError(pretty);
         return new Response("internal error", { status: 500 });
       }),
     ),
+    Effect.provide(jsonLogLayer),
   );
   return Effect.runPromise(program);
 }

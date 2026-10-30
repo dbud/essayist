@@ -12,6 +12,9 @@ const config = Config.all({
   GOOGLE_CLIENT_SECRET: Config.option(Config.String("GOOGLE_CLIENT_SECRET")),
   GOOGLE_API_KEY: Config.option(Config.String("GOOGLE_API_KEY")),
   GOOGLE_APP_ID: Config.option(Config.String("GOOGLE_APP_ID")),
+  SENTRY_DSN: Config.option(Config.String("SENTRY_DSN")),
+  SENTRY_RELEASE: Config.option(Config.String("SENTRY_RELEASE")),
+  SENTRY_ENVIRONMENT: Config.option(Config.String("SENTRY_ENVIRONMENT")),
 });
 
 export interface WorkerEnv {
@@ -20,6 +23,9 @@ export interface WorkerEnv {
   readonly googleClientSecret: string | undefined;
   readonly googleApiKey: string | undefined;
   readonly googleAppId: string | undefined;
+  readonly sentryDsn: string | undefined;
+  readonly sentryRelease: string | undefined;
+  readonly sentryEnvironment: string | undefined;
   readonly db: D1Database;
 }
 
@@ -79,6 +85,12 @@ export function env(bindings: unknown): WorkerEnv {
     googleClientSecret: Option.getOrUndefined(snapshot.GOOGLE_CLIENT_SECRET),
     googleApiKey: Option.getOrUndefined(snapshot.GOOGLE_API_KEY),
     googleAppId: Option.getOrUndefined(snapshot.GOOGLE_APP_ID),
+    sentryDsn: Option.getOrUndefined(snapshot.SENTRY_DSN),
+    sentryRelease: Option.getOrUndefined(snapshot.SENTRY_RELEASE),
+    // Without the var, prod builds land on Sentry's own production default.
+    sentryEnvironment:
+      Option.getOrUndefined(snapshot.SENTRY_ENVIRONMENT) ??
+      (import.meta.env.DEV ? "development" : undefined),
     db,
   };
   return cached;

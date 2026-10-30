@@ -18,7 +18,7 @@
     "lint": "oxlint .",
     "preview": "vite preview",
     "test": "vitest run",
-    "typegen": "wrangler types"
+    "typegen": "wrangler types --include-runtime=false"
   },
   "dependencies": {
     "@effect/ai-openrouter": "catalog:",
@@ -43,6 +43,7 @@
     "@lexical/react": "^0.52.0",
     "@lexical/rich-text": "^0.52.0",
     "@preact/signals": "^2.11.4",
+    "@sentry/cloudflare": "^11.10.0",
     "@std/assert": "catalog:",
     "@std/collections": "catalog:",
     "@std/text": "catalog:",

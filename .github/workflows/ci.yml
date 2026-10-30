@@ -64,7 +64,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Deploy worker
-        run: pnpm -C packages/worker run deploy
+        run: pnpm -C packages/worker run deploy -- --var SENTRY_RELEASE:$GITHUB_SHA
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -107,7 +107,7 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           SLUG: ${{ steps.slug.outputs.slug }}
         run: |
-          pnpm -C packages/worker run deploy-preview --tag "$SLUG" --message "$GITHUB_SHA" --preview-alias "$SLUG" > upload.log 2>&1
+          pnpm -C packages/worker run deploy-preview --tag "$SLUG" --message "$GITHUB_SHA" --preview-alias "$SLUG" --var SENTRY_RELEASE:$GITHUB_SHA --var SENTRY_ENVIRONMENT:preview > upload.log 2>&1
           url=$(grep -oE 'https://[a-z0-9-]+\.workers\.dev' upload.log | head -1)
           echo "url=$url" >> "$GITHUB_OUTPUT"
           tail -5 upload.log >> "$GITHUB_STEP_SUMMARY"
