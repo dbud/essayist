@@ -1,7 +1,8 @@
 import { extractVariables, type Prompt } from "@essayist/core";
 import { Pencil, Trash2 } from "lucide-preact";
-import { ActionBtn, EntityCard } from "#/components/ui/EntityCard.tsx";
-import { Field, List } from "#/components/ui/EntityRows.tsx";
+
+import { ActionBtn, EntityCard } from "#/components/admin/ui/EntityCard.tsx";
+import { Field, List } from "#/components/admin/ui/EntityRows.tsx";
 
 export function PromptRow({
   prompt,
@@ -20,18 +21,8 @@ export function PromptRow({
       title={<span>{prompt.key}</span>}
       actions={
         <>
-          <ActionBtn
-            label="Edit prompt"
-            icon={Pencil}
-            disabled={busy}
-            onClick={onEdit}
-          />
-          <ActionBtn
-            label="Delete prompt"
-            icon={Trash2}
-            disabled={busy}
-            onClick={onDelete}
-          />
+          <ActionBtn label="Edit prompt" icon={Pencil} disabled={busy} onClick={onEdit} />
+          <ActionBtn label="Delete prompt" icon={Trash2} disabled={busy} onClick={onDelete} />
         </>
       }
     >

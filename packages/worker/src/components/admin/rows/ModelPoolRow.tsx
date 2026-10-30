@@ -1,7 +1,8 @@
 import type { ModelPool } from "@essayist/core";
 import { Pencil, Trash2 } from "lucide-preact";
-import { ActionBtn, EntityCard } from "#/components/ui/EntityCard.tsx";
-import { List } from "#/components/ui/EntityRows.tsx";
+
+import { ActionBtn, EntityCard } from "#/components/admin/ui/EntityCard.tsx";
+import { List } from "#/components/admin/ui/EntityRows.tsx";
 
 export function ModelPoolRow({
   pool,
@@ -20,18 +21,8 @@ export function ModelPoolRow({
       id={pool.id}
       actions={
         <>
-          <ActionBtn
-            label="Edit model pool"
-            icon={Pencil}
-            disabled={busy}
-            onClick={onEdit}
-          />
-          <ActionBtn
-            label="Delete model pool"
-            icon={Trash2}
-            disabled={busy}
-            onClick={onDelete}
-          />
+          <ActionBtn label="Edit model pool" icon={Pencil} disabled={busy} onClick={onEdit} />
+          <ActionBtn label="Delete model pool" icon={Trash2} disabled={busy} onClick={onDelete} />
         </>
       }
     >

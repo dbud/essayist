@@ -58,6 +58,7 @@
     "lexical": "^0.52.0",
     "lucide-preact": "^1.62.0",
     "marked": "^18.1.2",
+    "mermaid": "^12.2.0",
     "preact": "^11.0.2",
     "preact-render-to-string": "^6.8.2",
     "tailwindcss": "^4.3.3"

@@ -1,15 +1,15 @@
 import type { Category } from "@essayist/core";
 import type { Signal } from "@preact/signals";
 import { useEffect, useState } from "preact/hooks";
-import { ColorSwatch } from "#/components/highlights/ColorSwatch.tsx";
-import { FormShell } from "#/components/ui/forms/FormShell.tsx";
-import { TextareaRow } from "#/components/ui/forms/TextareaRow.tsx";
-import { TextRow } from "#/components/ui/forms/TextRow.tsx";
+
+import { ColorSwatch } from "#/components/admin/ColorSwatch.tsx";
+import { FormShell } from "#/components/admin/ui/forms/FormShell.tsx";
+import { TextareaRow } from "#/components/admin/ui/forms/TextareaRow.tsx";
+import { TextRow } from "#/components/admin/ui/forms/TextRow.tsx";
 import { CheckboxIcon } from "#/components/ui/icons.tsx";
 import Slider from "#/components/ui/Slider.tsx";
 import { FALLBACK_COLOR } from "#/editor/markColors.ts";
-import { type CategoryInput, getAdminConfig } from "#/signals/admin.ts";
-import { categoryPreview } from "#/signals/categoryPreview.ts";
+import { type CategoryInput, categoryPreview, getAdminConfig } from "#/models/admin.ts";
 
 // Canonical stored form: oklch(<L>% <C> <H>).
 const OKLCH_RE = /^oklch\(([\d.]+)%\s+([\d.]+)\s+([\d.]+)\)$/;
@@ -17,18 +17,10 @@ const DEFAULTS = { l: 65, c: 0.4, h: 90 };
 
 function parseOklch(color: string | undefined) {
   const m = color?.match(OKLCH_RE);
-  return m
-    ? { l: Number(m[1]), c: Number(m[2]), h: Number(m[3]) }
-    : { ...DEFAULTS };
+  return m ? { l: Number(m[1]), c: Number(m[2]), h: Number(m[3]) } : { ...DEFAULTS };
 }
 
-export function CategoryForm({
-  entity,
-  open,
-}: {
-  entity?: Category;
-  open: Signal<boolean>;
-}) {
+export function CategoryForm({ entity, open }: { entity?: Category; open: Signal<boolean> }) {
   const admin = getAdminConfig();
   const initial = parseOklch(entity?.color);
   const [label, setLabel] = useState(entity?.label ?? "");
@@ -79,11 +71,7 @@ export function CategoryForm({
       <TextRow label="label" value={label} onInput={setLabel} />
       <TextRow label="severity" value={severity} onInput={setSeverity} />
       <span class="cell">color</span>
-      <button
-        type="button"
-        class="btn w-full"
-        onClick={() => setColorEnabled((v) => !v)}
-      >
+      <button type="button" class="btn w-full" onClick={() => setColorEnabled((v) => !v)}>
         <CheckboxIcon selected={colorEnabled} size={15} />
         <span>custom color</span>
       </button>
@@ -127,12 +115,7 @@ export function CategoryForm({
           {colorEnabled ? canonical : "fallback"}
         </span>
       </div>
-      <TextareaRow
-        label="description"
-        value={description}
-        onInput={setDescription}
-        rows={4}
-      />
+      <TextareaRow label="description" value={description} onInput={setDescription} rows={4} />
     </FormShell>
   );
 }

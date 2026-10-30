@@ -1,24 +1,18 @@
 import type { ModelPool } from "@essayist/core";
 import type { Signal } from "@preact/signals";
 import { useState } from "preact/hooks";
-import { FormShell } from "#/components/ui/forms/FormShell.tsx";
-import { TextareaRow } from "#/components/ui/forms/TextareaRow.tsx";
-import { TextRow } from "#/components/ui/forms/TextRow.tsx";
-import { lines } from "#/islands/admin/forms/lines.ts";
-import { getAdminConfig, type ModelPoolInput } from "#/signals/admin.ts";
 
-export function ModelPoolForm({
-  entity,
-  open,
-}: {
-  entity?: ModelPool;
-  open: Signal<boolean>;
-}) {
+import { FormShell } from "#/components/admin/ui/forms/FormShell.tsx";
+import { TextareaRow } from "#/components/admin/ui/forms/TextareaRow.tsx";
+import { TextRow } from "#/components/admin/ui/forms/TextRow.tsx";
+import { getAdminConfig, type ModelPoolInput } from "#/models/admin.ts";
+
+import { lines } from "./lines.ts";
+
+export function ModelPoolForm({ entity, open }: { entity?: ModelPool; open: Signal<boolean> }) {
   const admin = getAdminConfig();
   const [name, setName] = useState(entity?.name ?? "");
-  const [modelsText, setModelsText] = useState(
-    (entity?.models ?? []).join("\n"),
-  );
+  const [modelsText, setModelsText] = useState((entity?.models ?? []).join("\n"));
   const [error, setError] = useState<string | null>(null);
 
   async function handleSubmit(e: Event) {

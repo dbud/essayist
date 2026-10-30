@@ -1,15 +1,14 @@
 import type { Prompt, ReviewPass } from "@essayist/core";
 import { CircleCheck, Pencil, Plus, Trash2 } from "lucide-preact";
 import { Fragment } from "preact";
-import { ActionBtn, EntityCard } from "#/components/ui/EntityCard.tsx";
-import { Field, List } from "#/components/ui/EntityRows.tsx";
+
+import { ActionBtn, EntityCard } from "#/components/admin/ui/EntityCard.tsx";
+import { Field, List } from "#/components/admin/ui/EntityRows.tsx";
 
 function PromptField({ label, prompt }: { label: string; prompt?: Prompt }) {
   return (
     <>
-      <div class={`cell--data text-ink/60 ${prompt ? "row-span-2" : ""}`}>
-        {label}
-      </div>
+      <div class={`cell--data text-ink/60 ${prompt ? "row-span-2" : ""}`}>{label}</div>
       <div class="cell--data min-w-0">{prompt?.key ?? "missing"}</div>
       {prompt && <div class="cell--data min-w-0">{prompt.body}</div>}
     </>
@@ -47,9 +46,7 @@ export function ReviewPassRow({
       title={
         <>
           <span>{pass.name}</span>
-          {active && (
-            <span class="badge badge--success self-start">active</span>
-          )}
+          {active && <span class="badge badge--success self-start">active</span>}
         </>
       }
       id={pass.id}
@@ -63,24 +60,9 @@ export function ReviewPassRow({
               onClick={onActivate}
             />
           )}
-          <ActionBtn
-            label="Edit review pass"
-            icon={Pencil}
-            disabled={busy}
-            onClick={onEdit}
-          />
-          <ActionBtn
-            label="Add unit to pass"
-            icon={Plus}
-            disabled={busy}
-            onClick={onAddUnit}
-          />
-          <ActionBtn
-            label="Delete review pass"
-            icon={Trash2}
-            disabled={busy}
-            onClick={onDelete}
-          />
+          <ActionBtn label="Edit review pass" icon={Pencil} disabled={busy} onClick={onEdit} />
+          <ActionBtn label="Add unit to pass" icon={Plus} disabled={busy} onClick={onAddUnit} />
+          <ActionBtn label="Delete review pass" icon={Trash2} disabled={busy} onClick={onDelete} />
         </>
       }
     >
@@ -109,27 +91,14 @@ export function ReviewPassRow({
           </div>
           <PromptField label="prompt" prompt={byKey(unit.promptKey)} />
           {unit.instructionsPromptKey && (
-            <PromptField
-              label="instructions"
-              prompt={byKey(unit.instructionsPromptKey)}
-            />
+            <PromptField label="instructions" prompt={byKey(unit.instructionsPromptKey)} />
           )}
-          {unit.modelPoolId && (
-            <Field label="pool override" value={unit.modelPoolId} />
-          )}
-          {unit.inputs && unit.inputs.length > 0 && (
-            <List label="inputs" items={unit.inputs} />
-          )}
+          {unit.modelPoolId && <Field label="pool override" value={unit.modelPoolId} />}
+          {unit.inputs && unit.inputs.length > 0 && <List label="inputs" items={unit.inputs} />}
           {unit.attempt && (
             <>
-              <List
-                label="categories"
-                items={unit.attempt.allowedCategoryIds}
-              />
-              <Field
-                label="repair rounds"
-                value={unit.attempt.repairRounds ?? 1}
-              />
+              <List label="categories" items={unit.attempt.allowedCategoryIds} />
+              <Field label="repair rounds" value={unit.attempt.repairRounds ?? 1} />
             </>
           )}
         </Fragment>

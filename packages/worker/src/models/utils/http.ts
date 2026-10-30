@@ -12,7 +12,7 @@ export interface JsonResponse<T> {
 /** A single json request. Failures return as values; batch flows read them per item, and the
  * wrappers below throw on failure and unwrap the body. */
 export async function requestJson<T>(
-  method: "GET" | "POST" | "PUT" | "PATCH",
+  method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE",
   path: string,
   body?: unknown,
   options?: {

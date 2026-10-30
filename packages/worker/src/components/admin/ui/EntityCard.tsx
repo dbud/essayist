@@ -42,26 +42,14 @@ export function ActionBtn({
   onClick: () => void;
 }) {
   return (
-    <button
-      type="button"
-      class="btn"
-      data-tooltip={label}
-      disabled={disabled}
-      onClick={onClick}
-    >
+    <button type="button" class="btn" data-tooltip={label} disabled={disabled} onClick={onClick}>
       <Icon size={14} />
     </button>
   );
 }
 
 /** Accent "New <entity>" trigger wrapped in a ruled row. */
-export function NewButton({
-  label,
-  onClick,
-}: {
-  label: string;
-  onClick: () => void;
-}) {
+export function NewButton({ label, onClick }: { label: string; onClick: () => void }) {
   return (
     <div class="flex stack stack--row">
       <button type="button" class="btn cell--accent" onClick={onClick}>

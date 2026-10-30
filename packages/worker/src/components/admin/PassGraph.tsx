@@ -1,10 +1,11 @@
 import type { ReviewPass } from "@essayist/core";
 import { signal } from "@preact/signals";
 import { useEffect, useState } from "preact/hooks";
+
 import { type Option, OptionsRow } from "#/components/ui/forms/OptionsRow.tsx";
 import WaveBars from "#/components/ui/WaveBars.tsx";
-import { getAdminConfig } from "#/signals/admin.ts";
-import { showToast } from "#/signals/toast.ts";
+import { getAdminConfig } from "#/models/admin.ts";
+import { showToast } from "#/models/utils/toast.ts";
 
 interface PassGraphData {
   name: string;
@@ -51,7 +52,7 @@ export default function PassGraph() {
       .then(async (res) => {
         const body = await res.json().catch(() => null);
         if (!res.ok) {
-          throw new Error(body?.error ?? `HTTP ${res.status}`);
+          throw new Error(body?.message ?? body?.error ?? `HTTP ${res.status}`);
         }
         return body as PassGraphData;
       })
@@ -73,11 +74,9 @@ export default function PassGraph() {
     if (!graph) return;
     let cancelled = false;
     loadMermaid()
-      .then((mermaid) =>
-        mermaid.render(`pass-graph-${Date.now()}`, graph.definition),
-      )
-      .then(({ svg }) => {
-        if (!cancelled) setSvg(svg);
+      .then((api) => api.render(`pass-graph-${Date.now()}`, graph.definition))
+      .then(({ svg: rendered }) => {
+        if (!cancelled) setSvg(rendered);
       })
       .catch((e: unknown) => {
         if (!cancelled) setError(e instanceof Error ? e.message : String(e));
@@ -145,9 +144,7 @@ export function PassGraphSide() {
       </div>
       <div class="grid stack stack--row">
         <div class="cell--data max-h-80 min-w-0 overflow-auto">
-          <pre class="min-w-0 font-mono text-xs whitespace-pre-wrap">
-            {definition}
-          </pre>
+          <pre class="min-w-0 font-mono text-xs whitespace-pre-wrap">{definition}</pre>
         </div>
       </div>
     </div>

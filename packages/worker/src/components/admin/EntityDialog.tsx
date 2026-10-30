@@ -1,13 +1,14 @@
 import type { Signal } from "@preact/signals";
 import type { ComponentChildren } from "preact";
+
+import { CategoryForm } from "#/components/admin/forms/CategoryForm.tsx";
+import { ModelPoolForm } from "#/components/admin/forms/ModelPoolForm.tsx";
+import { PromptForm } from "#/components/admin/forms/PromptForm.tsx";
+import { ReviewPassForm } from "#/components/admin/forms/ReviewPassForm.tsx";
+import { ReviewUnitForm } from "#/components/admin/forms/ReviewUnitForm.tsx";
+import MarkSwatches from "#/components/admin/MarkSwatches.tsx";
+import type { DialogRequest } from "#/components/admin/types.ts";
 import Dialog from "#/components/ui/Dialog.tsx";
-import { CategoryForm } from "#/islands/admin/forms/CategoryForm.tsx";
-import { ModelPoolForm } from "#/islands/admin/forms/ModelPoolForm.tsx";
-import { PromptForm } from "#/islands/admin/forms/PromptForm.tsx";
-import { ReviewPassForm } from "#/islands/admin/forms/ReviewPassForm.tsx";
-import { ReviewUnitForm } from "#/islands/admin/forms/ReviewUnitForm.tsx";
-import type { DialogRequest } from "#/islands/admin/types.ts";
-import MarkSwatches from "#/islands/MarkSwatches.tsx";
 
 export default function EntityDialog({
   open,
@@ -36,13 +37,7 @@ export default function EntityDialog({
       form = <ReviewPassForm entity={request.entity} open={open} />;
       break;
     case "unit":
-      form = (
-        <ReviewUnitForm
-          pass={request.pass}
-          unitId={request.unitId}
-          open={open}
-        />
-      );
+      form = <ReviewUnitForm pass={request.pass} unitId={request.unitId} open={open} />;
       break;
   }
   return (

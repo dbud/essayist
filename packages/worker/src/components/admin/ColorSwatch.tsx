@@ -1,5 +1,5 @@
-import type { MarkRect } from "#/signals/sidenotes.ts";
-import { WavyRenderer } from "./WavyRenderer.tsx";
+import { WavyRenderer } from "#/components/editor/highlights/WavyRenderer.tsx";
+import type { MarkRect } from "#/models/sidenotes.ts";
 
 const EMPTY: ReadonlySet<string> = new Set();
 const SWATCH_W = 64;
@@ -30,17 +30,11 @@ export function ColorSwatch({ color }: { color: string }) {
         <span class="relative">text</span>
       </span>
       <span class="relative inline-flex h-6 w-16 items-center justify-center">
-        <span
-          class="mark-band inset-0"
-          style={{ backgroundColor: color, color }}
-        />
+        <span class="mark-band inset-0" style={{ backgroundColor: color, color }} />
         <span class="relative">text</span>
       </span>
       <span class="relative inline-flex h-6 w-16 items-center justify-center">
-        <span
-          class="mark-band is-inner inset-0"
-          style={{ backgroundColor: color, color }}
-        />
+        <span class="mark-band is-inner inset-0" style={{ backgroundColor: color, color }} />
         <span class="relative">text</span>
       </span>
     </>

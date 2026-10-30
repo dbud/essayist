@@ -1,19 +1,20 @@
 import type { Category, ModelPool, Prompt, ReviewPass } from "@essayist/core";
 import { useSignal } from "@preact/signals";
 import type { ComponentChildren } from "preact";
-import { NewButton } from "#/components/ui/EntityCard.tsx";
-import Tabs, { type TabItem } from "#/components/ui/Tabs.tsx";
+
+import { CategoriesExport } from "#/components/admin/CategoriesExport.tsx";
+import EntityDialog from "#/components/admin/EntityDialog.tsx";
+import MarkSwatches from "#/components/admin/MarkSwatches.tsx";
+import PassGraph, { PassGraphSide } from "#/components/admin/PassGraph.tsx";
+import { CategoryRow } from "#/components/admin/rows/CategoryRow.tsx";
+import { ModelPoolRow } from "#/components/admin/rows/ModelPoolRow.tsx";
+import { PromptRow } from "#/components/admin/rows/PromptRow.tsx";
+import { ReviewPassRow } from "#/components/admin/rows/ReviewPassRow.tsx";
+import type { DialogRequest } from "#/components/admin/types.ts";
+import { NewButton } from "#/components/admin/ui/EntityCard.tsx";
+import Tabs, { type TabItem } from "#/components/admin/ui/Tabs.tsx";
 import WaveBars from "#/components/ui/WaveBars.tsx";
-import { CategoriesExport } from "#/islands/admin/CategoriesExport.tsx";
-import EntityDialog from "#/islands/admin/EntityDialog.tsx";
-import PassGraph, { PassGraphSide } from "#/islands/admin/PassGraph.tsx";
-import { CategoryRow } from "#/islands/admin/rows/CategoryRow.tsx";
-import { ModelPoolRow } from "#/islands/admin/rows/ModelPoolRow.tsx";
-import { PromptRow } from "#/islands/admin/rows/PromptRow.tsx";
-import { ReviewPassRow } from "#/islands/admin/rows/ReviewPassRow.tsx";
-import type { DialogRequest } from "#/islands/admin/types.ts";
-import MarkSwatches from "#/islands/MarkSwatches.tsx";
-import { getAdminConfig } from "#/signals/admin.ts";
+import { getAdminConfig } from "#/models/admin.ts";
 import { persistentSignal } from "#/utils/persistentSignal.ts";
 
 type TabKey = "passes" | "graph" | "pools" | "prompts" | "categories";
@@ -84,16 +85,10 @@ export default function AdminConfig() {
   }
 
   function removeUnit(pass: ReviewPass, unitId: string) {
-    const referring = pass.units
-      .filter((u) => u.inputs?.includes(unitId))
-      .map((u) => u.id);
+    const referring = pass.units.filter((u) => u.inputs?.includes(unitId)).map((u) => u.id);
     const warning =
-      referring.length > 0
-        ? ` It is referenced as input by: ${referring.join(", ")}.`
-        : "";
-    if (
-      !confirm(`Delete unit "${unitId}" from pass "${pass.name}"?${warning}`)
-    ) {
+      referring.length > 0 ? ` It is referenced as input by: ${referring.join(", ")}.` : "";
+    if (!confirm(`Delete unit "${unitId}" from pass "${pass.name}"?${warning}`)) {
       return;
     }
     void updateReviewPass(pass.id, {
@@ -115,10 +110,7 @@ export default function AdminConfig() {
       case "passes":
         body = (
           <div class="flex flex-col gap-10">
-            <NewButton
-              label="New review pass"
-              onClick={() => openEntity({ kind: "pass" })}
-            />
+            <NewButton label="New review pass" onClick={() => openEntity({ kind: "pass" })} />
             {reviewPasses.value.length === 0 ? (
               <Empty />
             ) : (
@@ -135,9 +127,7 @@ export default function AdminConfig() {
                   onDelete={() => removeReviewPass(p)}
                   onDeleteUnit={(unitId) => removeUnit(p, unitId)}
                   onAddUnit={() => openEntity({ kind: "unit", pass: p })}
-                  onEditUnit={(unitId) =>
-                    openEntity({ kind: "unit", pass: p, unitId })
-                  }
+                  onEditUnit={(unitId) => openEntity({ kind: "unit", pass: p, unitId })}
                 />
               ))
             )}
@@ -151,10 +141,7 @@ export default function AdminConfig() {
       case "pools":
         body = (
           <div class="flex flex-col gap-10">
-            <NewButton
-              label="New model pool"
-              onClick={() => openEntity({ kind: "pool" })}
-            />
+            <NewButton label="New model pool" onClick={() => openEntity({ kind: "pool" })} />
             {modelPools.value.length === 0 ? (
               <Empty />
             ) : (
@@ -174,10 +161,7 @@ export default function AdminConfig() {
       case "prompts":
         body = (
           <div class="flex flex-col gap-10">
-            <NewButton
-              label="New prompt"
-              onClick={() => openEntity({ kind: "prompt" })}
-            />
+            <NewButton label="New prompt" onClick={() => openEntity({ kind: "prompt" })} />
             {prompts.value.length === 0 ? (
               <Empty />
             ) : (
@@ -203,10 +187,7 @@ export default function AdminConfig() {
         );
         body = (
           <div class="flex flex-col gap-10">
-            <NewButton
-              label="New category"
-              onClick={() => openEntity({ kind: "category" })}
-            />
+            <NewButton label="New category" onClick={() => openEntity({ kind: "category" })} />
             {categories.value.length === 0 ? (
               <Empty />
             ) : (
@@ -250,11 +231,7 @@ export default function AdminConfig() {
           {side && <div class="content-side py-10">{side}</div>}
         </div>
       </div>
-      <EntityDialog
-        open={dialogOpen}
-        request={dialogRequest.value}
-        stamp={dialogStamp.value}
-      />
+      <EntityDialog open={dialogOpen} request={dialogRequest.value} stamp={dialogStamp.value} />
     </>
   );
 }

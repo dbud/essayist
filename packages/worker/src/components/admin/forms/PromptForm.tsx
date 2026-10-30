@@ -1,19 +1,14 @@
 import { extractVariables, type Prompt } from "@essayist/core";
 import type { Signal } from "@preact/signals";
 import { useState } from "preact/hooks";
-import { List } from "#/components/ui/EntityRows.tsx";
-import { FormShell } from "#/components/ui/forms/FormShell.tsx";
-import { TextareaRow } from "#/components/ui/forms/TextareaRow.tsx";
-import { TextRow } from "#/components/ui/forms/TextRow.tsx";
-import { getAdminConfig } from "#/signals/admin.ts";
 
-export function PromptForm({
-  entity,
-  open,
-}: {
-  entity?: Prompt;
-  open: Signal<boolean>;
-}) {
+import { List } from "#/components/admin/ui/EntityRows.tsx";
+import { FormShell } from "#/components/admin/ui/forms/FormShell.tsx";
+import { TextareaRow } from "#/components/admin/ui/forms/TextareaRow.tsx";
+import { TextRow } from "#/components/admin/ui/forms/TextRow.tsx";
+import { getAdminConfig } from "#/models/admin.ts";
+
+export function PromptForm({ entity, open }: { entity?: Prompt; open: Signal<boolean> }) {
   const admin = getAdminConfig();
   const [key, setKey] = useState(entity?.key ?? "");
   const [body, setBody] = useState(entity?.body ?? "");
@@ -28,9 +23,7 @@ export function PromptForm({
       key: entity?.key ?? key.trim(),
       body,
     };
-    const ok = entity
-      ? await admin.updatePrompt(entity.key, data)
-      : await admin.createPrompt(data);
+    const ok = entity ? await admin.updatePrompt(entity.key, data) : await admin.createPrompt(data);
     if (ok) open.value = false;
   }
 
@@ -43,12 +36,7 @@ export function PromptForm({
       error={error}
       onSubmit={handleSubmit}
     >
-      <TextRow
-        label="key"
-        value={key}
-        onInput={setKey}
-        disabled={entity !== undefined}
-      />
+      <TextRow label="key" value={key} onInput={setKey} disabled={entity !== undefined} />
       <TextareaRow
         label="body"
         value={body}

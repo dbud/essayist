@@ -1,5 +1,5 @@
-import { ColorSwatch } from "#/components/highlights/ColorSwatch.tsx";
-import { swatchEntries } from "#/signals/categoryPreview.ts";
+import { ColorSwatch } from "#/components/admin/ColorSwatch.tsx";
+import { swatchEntries } from "#/models/admin.ts";
 
 export default function MarkSwatches() {
   return (

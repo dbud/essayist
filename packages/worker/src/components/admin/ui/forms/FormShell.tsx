@@ -1,4 +1,5 @@
 import type { ComponentChildren } from "preact";
+
 import WaveBars from "#/components/ui/WaveBars.tsx";
 
 interface FormShellProps {
@@ -28,28 +29,16 @@ export function FormShell({
       <div class="form-grid stack--row">
         {children}
         {error && (
-          <div
-            role="alert"
-            class="cell--data col-span-2 whitespace-[normal] text-red-500"
-          >
+          <div role="alert" class="cell--data col-span-2 whitespace-[normal] text-red-500">
             {error}
           </div>
         )}
         {/*<div class="col-span-2 separator" />*/}
         <div class="form-actions">
-          <button
-            type="button"
-            class="btn"
-            onClick={onCancel}
-            disabled={submitting}
-          >
+          <button type="button" class="btn" onClick={onCancel} disabled={submitting}>
             Cancel
           </button>
-          <button
-            type="submit"
-            class="btn cell--accent relative w-30"
-            disabled={submitting}
-          >
+          <button type="submit" class="btn cell--accent relative w-30" disabled={submitting}>
             {submitLabel}
             <WaveBars fill amplitude={submitting ? 1 : 0} />
           </button>

@@ -1,11 +1,12 @@
 import type { ReviewPass, ReviewUnit } from "@essayist/core";
 import type { Signal } from "@preact/signals";
 import { useState } from "preact/hooks";
-import { FormShell } from "#/components/ui/forms/FormShell.tsx";
+
+import { FormShell } from "#/components/admin/ui/forms/FormShell.tsx";
+import { TextRow } from "#/components/admin/ui/forms/TextRow.tsx";
 import { type Option, OptionsRow } from "#/components/ui/forms/OptionsRow.tsx";
-import { TextRow } from "#/components/ui/forms/TextRow.tsx";
 import Slider from "#/components/ui/Slider.tsx";
-import { getAdminConfig } from "#/signals/admin.ts";
+import { getAdminConfig } from "#/models/admin.ts";
 
 const NONE: Option = { value: "", label: "none" };
 
@@ -26,12 +27,8 @@ export function ReviewUnitForm({
   const admin = getAdminConfig();
   const unit = pass.units.find((u) => u.id === unitId);
   const [id, setId] = useState(unit?.id ?? "");
-  const [promptKey, setPromptKey] = useState(
-    unit?.promptKey ?? admin.prompts.value[0]?.key ?? "",
-  );
-  const [instructionsKey, setInstructionsKey] = useState(
-    unit?.instructionsPromptKey ?? "",
-  );
+  const [promptKey, setPromptKey] = useState(unit?.promptKey ?? admin.prompts.value[0]?.key ?? "");
+  const [instructionsKey, setInstructionsKey] = useState(unit?.instructionsPromptKey ?? "");
   const [poolOverride, setPoolOverride] = useState(unit?.modelPoolId ?? "");
   const [inputs, setInputs] = useState<string[]>([...(unit?.inputs ?? [])]);
   const [marks, setMarks] = useState(unit?.attempt !== undefined);
@@ -103,8 +100,7 @@ export function ReviewUnitForm({
     value: p.id,
     label: p.name,
   }));
-  const promptBody = (key: string) =>
-    admin.prompts.value.find((p) => p.key === key)?.body;
+  const promptBody = (key: string) => admin.prompts.value.find((p) => p.key === key)?.body;
   const categoryOptions: Option[] = admin.categories.value.map((c) => ({
     value: c.id,
     label: c.label,
@@ -155,9 +151,7 @@ export function ReviewUnitForm({
           values={inputs}
           onToggle={(value) =>
             setInputs((prev) =>
-              prev.includes(value)
-                ? prev.filter((i) => i !== value)
-                : [...prev, value],
+              prev.includes(value) ? prev.filter((i) => i !== value) : [...prev, value],
             )
           }
         />
@@ -183,9 +177,7 @@ export function ReviewUnitForm({
             values={categoryIds}
             onToggle={(value) =>
               setCategoryIds((prev) =>
-                prev.includes(value)
-                  ? prev.filter((c) => c !== value)
-                  : [...prev, value],
+                prev.includes(value) ? prev.filter((c) => c !== value) : [...prev, value],
               )
             }
           />
