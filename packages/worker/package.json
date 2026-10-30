@@ -42,7 +42,7 @@
     "@lexical/markdown": "^0.52.0",
     "@lexical/react": "^0.52.0",
     "@lexical/rich-text": "^0.52.0",
-    "@preact/signals": "^2.11.3",
+    "@preact/signals": "^2.11.4",
     "@std/assert": "catalog:",
     "@std/collections": "catalog:",
     "@std/text": "catalog:",
@@ -56,10 +56,10 @@
     "hono": "^4.13.14",
     "jose": "catalog:",
     "lexical": "^0.52.0",
-    "lucide-preact": "^1.61.0",
-    "marked": "^18.0.14",
+    "lucide-preact": "^1.62.0",
+    "marked": "^18.1.2",
     "preact": "^11.0.2",
-    "preact-render-to-string": "^6.8.1",
+    "preact-render-to-string": "^6.8.2",
     "tailwindcss": "^4.3.3"
   },
   "devDependencies": {
@@ -73,6 +73,6 @@
     "@types/node": "catalog:",
     "vite": "catalog:",
     "vitest": "catalog:",
-    "wrangler": "^4.152.0"
+    "wrangler": "^4.153.0"
   }
 }
