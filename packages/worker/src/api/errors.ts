@@ -9,3 +9,11 @@ export class ApiFailure extends Schema.TaggedError<ApiFailure>()(
   { message: Schema.String },
   { description: "ApiFailure", httpApiStatus: 503 },
 ) {}
+
+// The bad-request sibling of ApiFailure: an invalid config entity or unresolvable review pass
+// reported to the admin client with a readable reason.
+export class ApiBadRequest extends Schema.TaggedError<ApiBadRequest>()(
+  "ApiBadRequest",
+  { message: Schema.String },
+  { description: "ApiBadRequest", httpApiStatus: 400 },
+) {}

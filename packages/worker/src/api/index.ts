@@ -1,10 +1,16 @@
 // The api tier; endpoint paths are root-relative and the /api prefix is applied once at assembly.
 import {
   type AuthStore,
+  agentflowDefinition,
+  buildReviewGraph,
+  ConcurrentModificationError,
   Files,
   Marks,
   ModelClient,
+  nextId,
+  type PersistenceError,
   resolveActiveReviewPass,
+  resolveReviewPass,
   ReviewConfig,
   ReviewRuns,
   runReviewPass,
@@ -17,7 +23,7 @@ import { Effect, Layer } from "effect";
 import { HttpApi, HttpApiBuilder, HttpApiError } from "effect/http-api";
 
 import { importGoogleDocFile } from "#/api/googleDocs.ts";
-import { sessionMiddleware, UserSession } from "#/api/sessionMiddleware.ts";
+import { sessionMiddleware, UserSession, adminMiddleware } from "#/api/sessionMiddleware.ts";
 import { stubModelClient } from "#/api/stubModel.ts";
 import type { GoogleConfig } from "#/env.ts";
 import { fileContentLoader } from "#/models/fileContent.loader.ts";
@@ -25,11 +31,12 @@ import { fileTreeLoader } from "#/models/fileTree.loader.ts";
 import { fileVersionsLoader } from "#/models/fileVersions.loader.ts";
 import { workspacesLoader } from "#/models/workspaces.loader.ts";
 
-import { ApiFailure } from "./errors";
+import { adminGroup } from "./admin";
+import { ApiBadRequest, ApiFailure } from "./errors";
 import { userGroup } from "./user";
 import { workspaceGroup } from "./workspaces";
 
-const api = HttpApi.make("api").add(userGroup).add(workspaceGroup).prefix("/api");
+const api = HttpApi.make("api").add(userGroup).add(workspaceGroup).add(adminGroup).prefix("/api");
 
 const userHandlers = HttpApiBuilder.group(
   api,
@@ -264,8 +271,116 @@ const workspaceHandlers = HttpApiBuilder.group(
   }),
 );
 
+const adminHandlers = HttpApiBuilder.group(
+  api,
+  "admin",
+  Effect.fn(function* (handlers) {
+    const config = yield* ReviewConfig;
+    const OK = { ok: true as const };
+    // Persistence and concurrent-write faults are defects per the worker convention; every config
+    // store call fails with exactly this pair (or the Persistence-only reads, caught pointwise).
+    const diePersist = <A, R>(
+      self: Effect.Effect<A, PersistenceError | ConcurrentModificationError, R>,
+    ): Effect.Effect<A, never, R> =>
+      Effect.catchTags(self, {
+        PersistenceError: Effect.die,
+        ConcurrentModificationError: Effect.die,
+      });
+
+    return handlers.handleAll({
+      getAdminConfig: () =>
+        Effect.gen(function* () {
+          const modelPools = yield* config.listModelPools();
+          const prompts = yield* config.listPrompts();
+          const categories = yield* config.listCategories();
+          const reviewPasses = yield* config.listReviewPasses();
+          const activeReviewPassId = yield* config.getActiveReviewPassId();
+          return { modelPools, prompts, categories, reviewPasses, activeReviewPassId };
+        }).pipe(Effect.catchTag("PersistenceError", Effect.die)),
+      createCategory: (req) => {
+        const category = { ...req.payload, id: nextId() };
+        return config.saveCategory(category).pipe(diePersist, Effect.as(category));
+      },
+      updateCategory: (req) => {
+        const category = { ...req.payload, id: req.params.id };
+        return config.saveCategory(category).pipe(diePersist, Effect.as(category));
+      },
+      deleteCategory: (req) => config.deleteCategory(req.params.id).pipe(diePersist, Effect.as(OK)),
+      createModelPool: (req) => {
+        const pool = { ...req.payload, id: nextId() };
+        return config.saveModelPool(pool).pipe(diePersist, Effect.as(pool));
+      },
+      updateModelPool: (req) => {
+        const pool = { ...req.payload, id: req.params.id };
+        return config.saveModelPool(pool).pipe(diePersist, Effect.as(pool));
+      },
+      deleteModelPool: (req) =>
+        config.deleteModelPool(req.params.id).pipe(diePersist, Effect.as(OK)),
+      createPrompt: (req) =>
+        config.savePrompt(req.payload).pipe(diePersist, Effect.as(req.payload)),
+      updatePrompt: (req) => {
+        const prompt = { ...req.payload, key: req.params.key };
+        return config.savePrompt(prompt).pipe(diePersist, Effect.as(prompt));
+      },
+      deletePrompt: (req) => config.deletePrompt(req.params.key).pipe(diePersist, Effect.as(OK)),
+      createReviewPass: (req) => {
+        const pass = { ...req.payload, id: nextId() };
+        return config.saveReviewPass(pass).pipe(diePersist, Effect.as(pass));
+      },
+      updateReviewPass: (req) => {
+        const pass = { ...req.payload, id: req.params.id };
+        return config.saveReviewPass(pass).pipe(diePersist, Effect.as(pass));
+      },
+      deleteReviewPass: (req) =>
+        config.deleteReviewPass(req.params.id).pipe(diePersist, Effect.as(OK)),
+      setActiveReviewPass: (req) =>
+        Effect.gen(function* () {
+          const reviewPassId = req.payload.reviewPassId;
+          const pass = yield* config
+            .getReviewPass(reviewPassId)
+            .pipe(Effect.catchTag("PersistenceError", Effect.die));
+          if (pass === undefined) {
+            return yield* Effect.fail(new HttpApiError.NotFound());
+          }
+          yield* config.setActiveReviewPass(reviewPassId).pipe(diePersist);
+          return { activeReviewPassId: reviewPassId };
+        }),
+      getPassGraph: (req) =>
+        Effect.gen(function* () {
+          const pass = yield* config
+            .getReviewPass(req.params.id)
+            .pipe(Effect.catchTag("PersistenceError", Effect.die));
+          if (pass === undefined) {
+            return yield* Effect.fail(new HttpApiError.NotFound());
+          }
+          const resolved = yield* resolveReviewPass(pass).pipe(
+            Effect.provideService(ReviewConfig, config),
+            Effect.catchTag("ConfigMissingError", (err) =>
+              Effect.fail(new ApiBadRequest({ message: err.message })),
+            ),
+            Effect.catchTag("ConfigInvalidError", (err) =>
+              Effect.fail(new ApiBadRequest({ message: err.message })),
+            ),
+            Effect.catchTag("PersistenceError", Effect.die),
+          );
+          const graph = buildReviewGraph(resolved, "preview");
+          return {
+            name: pass.name,
+            nodes: graph.nodes.map((node) => ({ id: node.id, kind: node.kind })),
+            edges: graph.nodes.flatMap((node) =>
+              node.dependsOn.map((dep) => ({ from: dep, to: node.id })),
+            ),
+            definition: agentflowDefinition(graph),
+          };
+        }),
+    });
+  }),
+);
+
 export const layerApi = HttpApiBuilder.layer(api).pipe(
   Layer.provide(userHandlers),
   Layer.provide(workspaceHandlers),
+  Layer.provide(adminHandlers),
   Layer.provide(sessionMiddleware),
+  Layer.provide(adminMiddleware),
 );
