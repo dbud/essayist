@@ -13,9 +13,8 @@ on:
 permissions:
   contents: read
 
-# Checks run on every branch push. Pushes to main ship the live
-# environment after the checks pass; other branch pushes ship a
-# per-branch preview to workers.dev. A manual run deploys prod (default)
+# Checks run on every branch push. Pushes to main ship the live environment after the checks pass;
+# other branch pushes ship a per-branch preview to workers.dev. A manual run deploys prod (default)
 # or a preview, from any ref.
 jobs:
   checks:
