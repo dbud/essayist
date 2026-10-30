@@ -7,11 +7,13 @@ export type Theme = "light" | "dark";
 export type HighlightStyle = "band" | "wavy";
 export type SansFont = "atkinson" | "gothic" | "system";
 export type SerifFont = "vollkorn" | "plex" | "system";
+export type AdminTab = "passes" | "graph" | "pools" | "prompts" | "categories";
 
 const THEME_VALUES: ReadonlySet<Theme> = new Set<Theme>(["light", "dark"]);
 const HIGHLIGHT_STYLE_VALUES: readonly HighlightStyle[] = ["band", "wavy"];
 const SANS_FONT_VALUES: readonly SansFont[] = ["atkinson", "gothic", "system"];
 const SERIF_FONT_VALUES: readonly SerifFont[] = ["vollkorn", "plex", "system"];
+const ADMIN_TAB_VALUES: readonly AdminTab[] = ["passes", "graph", "pools", "prompts", "categories"];
 
 const DARK_QUERY = "(prefers-color-scheme: dark)";
 
@@ -30,6 +32,7 @@ export interface PreferenceValues {
   readonly sansFont: SansFont;
   readonly serifFont: SerifFont;
   readonly highlightStyle: HighlightStyle;
+  readonly adminTab: AdminTab;
 }
 
 function readBoolean(raw: unknown, fallback: boolean): boolean {
@@ -58,6 +61,7 @@ function readValues(raw: Record<string, unknown>): PreferenceValues {
     sansFont: readOneOf(raw.sansFont, SANS_FONT_VALUES, "gothic"),
     serifFont: readOneOf(raw.serifFont, SERIF_FONT_VALUES, "plex"),
     highlightStyle: readOneOf(raw.highlightStyle, HIGHLIGHT_STYLE_VALUES, "wavy"),
+    adminTab: readOneOf(raw.adminTab, ADMIN_TAB_VALUES, "pools"),
   };
 }
 
@@ -69,6 +73,7 @@ export interface Preferences {
   readonly sansFont: Signal<SansFont>;
   readonly serifFont: Signal<SerifFont>;
   readonly highlightStyle: Signal<HighlightStyle>;
+  readonly adminTab: Signal<AdminTab>;
   readonly toggleTheme: () => void;
 }
 
@@ -88,6 +93,7 @@ function createPreferences(values: PreferenceValues, url: URL): Preferences {
   const sansFont = signal(values.sansFont);
   const serifFont = signal(values.serifFont);
   const highlightStyle = signal(values.highlightStyle);
+  const adminTab = signal(values.adminTab);
 
   const theme = computed<Theme>(() => themeOverride.value ?? (systemDark.value ? "dark" : "light"));
 
@@ -107,6 +113,7 @@ function createPreferences(values: PreferenceValues, url: URL): Preferences {
         sansFont: sansFont.value,
         serifFont: serifFont.value,
         highlightStyle: highlightStyle.value,
+        adminTab: adminTab.value,
       };
       // The first run would write back the values that were just read.
       if (initial) {
@@ -140,6 +147,7 @@ function createPreferences(values: PreferenceValues, url: URL): Preferences {
     sansFont,
     serifFont,
     highlightStyle,
+    adminTab,
     toggleTheme,
   };
 }

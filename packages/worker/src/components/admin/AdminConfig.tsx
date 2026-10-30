@@ -14,12 +14,10 @@ import type { DialogRequest } from "#/components/admin/types.ts";
 import { NewButton } from "#/components/admin/ui/EntityCard.tsx";
 import Tabs, { type TabItem } from "#/components/admin/ui/Tabs.tsx";
 import WaveBars from "#/components/ui/WaveBars.tsx";
+import { type AdminTab, usePreferences } from "#/models/preferences.ts";
 import { useAdminModels } from "#/pages/admin/models.ts";
-import { usePersistentSignal } from "#/utils/persistentSignal.ts";
 
-type TabKey = "passes" | "graph" | "pools" | "prompts" | "categories";
-
-const TAB_ITEMS: TabItem<TabKey>[] = [
+const TAB_ITEMS: TabItem<AdminTab>[] = [
   { value: "passes", label: "Review passes" },
   { value: "graph", label: "Graph" },
   { value: "pools", label: "Model pools" },
@@ -48,8 +46,7 @@ export default function AdminConfig() {
     setActiveReviewPass,
     updateReviewPass,
   } = useAdminModels().admin;
-  // Hydration-safe: starts as the SSR fallback, swaps in the stored tab after mount.
-  const tab = usePersistentSignal<TabKey>("adminTab", "pools");
+  const { adminTab } = usePreferences();
   const dialogOpen = useSignal(false);
   const dialogRequest = useSignal<DialogRequest | null>(null);
   const dialogStamp = useSignal(0);
@@ -106,7 +103,7 @@ export default function AdminConfig() {
   } else if (loadingEmpty) {
     body = null;
   } else {
-    switch (tab.value) {
+    switch (adminTab.value) {
       case "passes":
         body = (
           <div class="flex flex-col gap-10">
@@ -218,8 +215,8 @@ export default function AdminConfig() {
               <Tabs
                 class="w-fit"
                 items={TAB_ITEMS}
-                value={tab.value}
-                onChange={(v) => (tab.value = v)}
+                value={adminTab.value}
+                onChange={(v) => (adminTab.value = v)}
               />
             )}
           </div>
