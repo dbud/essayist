@@ -78,6 +78,10 @@ pnpm -C packages/worker typegen   # regenerate Workers types from wrangler
 pnpm -C packages/worker deploy    # live environment; CI deploys on main pushes
 ```
 
+Typegen writes an env-only `worker-configuration.d.ts` (committed); rerun it after changing
+`wrangler.jsonc` or the `.dev.vars` key set. `.dev.vars` must define `SENTRY_DSN`: the worker
+refuses to serve without it, and CI's deploy job fails the same way before deploying.
+
 CI gates every branch push. Pushes to main deploy the live worker once the checks pass; other branch
 pushes ship a per-branch preview to workers.dev, with the URL in the run summary. Manual workflow
 dispatches choose the target (prod or preview).
