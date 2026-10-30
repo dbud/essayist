@@ -2,6 +2,7 @@ import type { MiddlewareHandler } from "hono";
 import type { ComponentChildren } from "preact";
 import { render } from "preact-render-to-string";
 
+import { env } from "#/env.ts";
 import {
   type Preferences,
   PreferencesProvider,
@@ -16,12 +17,25 @@ export interface DocumentProps {
   readonly title: string;
   readonly client?: string;
   readonly data?: unknown;
+  readonly sentry: {
+    readonly dsn: string;
+    readonly environment?: string;
+    readonly release?: string;
+  };
   readonly state: AppState;
   readonly preferences: Preferences;
   readonly children?: ComponentChildren;
 }
 
-export function Document({ title, client, data, state, preferences, children }: DocumentProps) {
+export function Document({
+  title,
+  client,
+  data,
+  sentry,
+  state,
+  preferences,
+  children,
+}: DocumentProps) {
   const { themeOverride, sansFont, serifFont } = preferences;
   return (
     <html
@@ -37,6 +51,12 @@ export function Document({ title, client, data, state, preferences, children }: 
         <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
         <link rel="icon" href="/favicon.ico" sizes="48x48" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+        <meta
+          name="sentry-dsn"
+          content={sentry.dsn}
+          data-environment={sentry.environment}
+          data-release={sentry.release}
+        />
         <link rel="stylesheet" href={styleSheetUrl()} />
         {data !== undefined && <PageDataScript data={data} />}
         <AppStateScript state={state} />
@@ -51,17 +71,21 @@ export function Document({ title, client, data, state, preferences, children }: 
   );
 }
 
-// The app state seeds from the middleware-resolved context, so pages read it via useAppState. New
-// request-scoped context (workspace, file) extends here.
 export const pageRenderer: MiddlewareHandler = async (c, next) => {
+  const e = env(c.env);
   c.setRenderer((content, props) => {
     const state = {
       user: c.get("auth-user"),
       sessionId: c.get("auth-session-id"),
     };
     const preferences = preferencesFromCookie(c.req.header("cookie"), new URL(c.req.url));
+    const sentry = {
+      dsn: e.sentryDsn,
+      environment: e.sentryEnvironment,
+      release: e.sentryRelease,
+    };
     const node = (
-      <Document {...props} state={state} preferences={preferences}>
+      <Document {...props} sentry={sentry} state={state} preferences={preferences}>
         {content}
       </Document>
     );

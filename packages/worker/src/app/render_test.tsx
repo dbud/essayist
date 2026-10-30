@@ -13,7 +13,12 @@ function renderDocument(values: unknown): string {
     url,
   );
   return render(
-    <Document title="test" state={{}} preferences={preferences}>
+    <Document
+      title="test"
+      sentry={{ dsn: "https://dsn.invalid/1" }}
+      state={{}}
+      preferences={preferences}
+    >
       <p>content</p>
     </Document>,
   );

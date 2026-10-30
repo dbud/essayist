@@ -1,3 +1,4 @@
+import "./sentry.ts";
 import { assert } from "@std/assert";
 import type { ComponentChild } from "preact";
 import { hydrate } from "preact";
