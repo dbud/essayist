@@ -5,6 +5,7 @@ import {
   buildReviewGraph,
   ConcurrentModificationError,
   Files,
+  FileMissingError,
   Marks,
   ModelClient,
   nextId,
@@ -76,6 +77,17 @@ const workspaceHandlers = HttpApiBuilder.group(
         }
       });
 
+    // The file write verbs fail with this triple: persistence and concurrent-write faults are
+    // defects per the worker convention, a missing file maps to 404.
+    const dieWriteErrors = <A, R>(
+      self: Effect.Effect<A, PersistenceError | ConcurrentModificationError | FileMissingError, R>,
+    ): Effect.Effect<A, HttpApiError.NotFound, R> =>
+      Effect.catchTags(self, {
+        PersistenceError: Effect.die,
+        ConcurrentModificationError: Effect.die,
+        FileMissingError: () => Effect.fail(new HttpApiError.NotFound()),
+      });
+
     return handlers.handleAll({
       getWorkspaces: (req) =>
         Effect.gen(function* () {
@@ -120,7 +132,7 @@ const workspaceHandlers = HttpApiBuilder.group(
           yield* requireAccess(wsId, user.id);
           return yield* fileContentLoader(wsId, path, versionId).pipe(
             Effect.provide(stores),
-            Effect.catchTag("PersistenceError", (err) => Effect.die(err)),
+            Effect.catchTag("PersistenceError", Effect.die),
             Effect.catchTag("FileMissingError", () => Effect.fail(new HttpApiError.NotFound())),
           );
         }),
@@ -131,7 +143,7 @@ const workspaceHandlers = HttpApiBuilder.group(
           yield* requireAccess(wsId, user.id);
           return yield* fileVersionsLoader(wsId, path).pipe(
             Effect.provide(stores),
-            Effect.catchTag("PersistenceError", (err) => Effect.die(err)),
+            Effect.catchTag("PersistenceError", Effect.die),
             Effect.catchTag("FileMissingError", () => Effect.fail(new HttpApiError.NotFound())),
           );
         }),
@@ -140,35 +152,30 @@ const workspaceHandlers = HttpApiBuilder.group(
           const { user } = yield* UserSession;
           const { wsId, path, versionId } = req.query;
           yield* requireAccess(wsId, user.id);
-          const marks = yield* files.getMarks(path, versionId).pipe(
-            Effect.provideService(WorkspaceId, { wsId }),
-            Effect.catchTag("PersistenceError", (err) => Effect.die(err)),
-          );
-          return marks;
+          return yield* files
+            .getMarks(path, versionId)
+            .pipe(
+              Effect.provideService(WorkspaceId, { wsId }),
+              Effect.catchTag("PersistenceError", Effect.die),
+            );
         }),
       saveFileDraft: (req) =>
         Effect.gen(function* () {
           const { user } = yield* UserSession;
           const { wsId, path, content } = req.payload;
           yield* requireAccess(wsId, user.id);
-          return yield* files.writeDraft(path, content).pipe(
-            Effect.provideService(WorkspaceId, { wsId }),
-            Effect.catchTag("PersistenceError", (err) => Effect.die(err)),
-            Effect.catchTag("ConcurrentModificationError", (err) => Effect.die(err)),
-            Effect.catchTag("FileMissingError", () => Effect.fail(new HttpApiError.NotFound())),
-          );
+          return yield* files
+            .writeDraft(path, content)
+            .pipe(Effect.provideService(WorkspaceId, { wsId }), dieWriteErrors);
         }),
       promoteFileDraft: (req) =>
         Effect.gen(function* () {
           const { user } = yield* UserSession;
           const { wsId, path } = req.payload;
           yield* requireAccess(wsId, user.id);
-          const result = yield* files.promoteDraft(path).pipe(
-            Effect.provideService(WorkspaceId, { wsId }),
-            Effect.catchTag("PersistenceError", (err) => Effect.die(err)),
-            Effect.catchTag("ConcurrentModificationError", (err) => Effect.die(err)),
-            Effect.catchTag("FileMissingError", () => Effect.fail(new HttpApiError.NotFound())),
-          );
+          const result = yield* files
+            .promoteDraft(path)
+            .pipe(Effect.provideService(WorkspaceId, { wsId }), dieWriteErrors);
           if (result === null) {
             return yield* Effect.fail(new HttpApiError.NotFound());
           }
@@ -179,18 +186,23 @@ const workspaceHandlers = HttpApiBuilder.group(
           const { user } = yield* UserSession;
           const { wsId, path, content } = req.payload;
           yield* requireAccess(wsId, user.id);
-          const entries = yield* files.list(path).pipe(
-            Effect.provideService(WorkspaceId, { wsId }),
-            Effect.catchTag("PersistenceError", (err) => Effect.die(err)),
-          );
+          const entries = yield* files
+            .list(path)
+            .pipe(
+              Effect.provideService(WorkspaceId, { wsId }),
+              Effect.catchTag("PersistenceError", Effect.die),
+            );
           if (entries.some((entry) => entry.path === path)) {
             return yield* Effect.fail(new HttpApiError.Conflict());
           }
           return yield* files.write(path, content).pipe(
             Effect.provideService(WorkspaceId, { wsId }),
-            Effect.catchTag("PersistenceError", (err) => Effect.die(err)),
-            Effect.catchTag("ConcurrentModificationError", (err) => Effect.die(err)),
-            Effect.catchTag("FileMissingError", (err) => Effect.die(err)),
+            Effect.catchTags({
+              PersistenceError: Effect.die,
+              ConcurrentModificationError: Effect.die,
+              // create-only: by the time write runs the path exists, so a missing file is a defect
+              FileMissingError: Effect.die,
+            }),
           );
         }),
       upsertFile: (req) =>
@@ -198,12 +210,9 @@ const workspaceHandlers = HttpApiBuilder.group(
           const { user } = yield* UserSession;
           const { wsId, path, content } = req.payload;
           yield* requireAccess(wsId, user.id);
-          return yield* files.write(path, content).pipe(
-            Effect.provideService(WorkspaceId, { wsId }),
-            Effect.catchTag("PersistenceError", (err) => Effect.die(err)),
-            Effect.catchTag("ConcurrentModificationError", (err) => Effect.die(err)),
-            Effect.catchTag("FileMissingError", () => Effect.fail(new HttpApiError.NotFound())),
-          );
+          return yield* files
+            .write(path, content)
+            .pipe(Effect.provideService(WorkspaceId, { wsId }), dieWriteErrors);
         }),
       importGoogleDoc: (req) =>
         Effect.gen(function* () {
@@ -235,14 +244,9 @@ const workspaceHandlers = HttpApiBuilder.group(
           const { wsId, path } = req.payload;
           yield* requireAccess(wsId, user.id);
           // Promote the pending draft first: the review reads the latest checkpoint.
-          yield* files.promoteDraft(path).pipe(
-            Effect.provideService(WorkspaceId, { wsId }),
-            Effect.catchTag("FileMissingError", () => Effect.fail(new HttpApiError.NotFound())),
-            Effect.catchTags({
-              PersistenceError: Effect.die,
-              ConcurrentModificationError: Effect.die,
-            }),
-          );
+          yield* files
+            .promoteDraft(path)
+            .pipe(Effect.provideService(WorkspaceId, { wsId }), dieWriteErrors);
           const pass = yield* Effect.orDie(resolveActiveReviewPass.pipe(Effect.provide(stores)));
           if (pass === undefined) {
             return yield* Effect.fail(
