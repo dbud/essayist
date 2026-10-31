@@ -20,7 +20,7 @@ catalog:
   "@std/text": npm:@jsr/std__text@^1.1.0
   "@types/google.accounts": ^0.0.18
   "@types/node": ^26.6.5
-  effect: ~4.0.6
+  effect: ~4.0.7
   jose: ^6.2.13
   oxfmt: ^0.75.0
   oxlint: ^1.90.0
