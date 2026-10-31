@@ -70,7 +70,7 @@
     "@cloudflare/vite-plugin": "^1.65.0",
     "@cloudflare/workers-types": "catalog:",
     "@resvg/resvg-wasm": "2.6.2",
-    "@types/culori": "^2.0.0",
+    "@types/culori": "^4.0.1",
     "@types/gapi": "^0.0.47",
     "@types/google.accounts": "catalog:",
     "@types/google.picker": "^0.0.52",
