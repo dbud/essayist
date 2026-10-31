@@ -59,10 +59,10 @@
     "hono": "^4.13.14",
     "jose": "catalog:",
     "lexical": "^0.52.0",
-    "lucide-preact": "^1.62.0",
+    "lucide-preact": "^1.63.0",
     "marked": "^18.1.2",
     "mermaid": "^12.2.0",
-    "preact": "^11.0.2",
+    "preact": "^11.1.0",
     "preact-render-to-string": "^6.8.2",
     "tailwindcss": "^4.3.3"
   },
@@ -77,6 +77,6 @@
     "@types/node": "catalog:",
     "vite": "catalog:",
     "vitest": "catalog:",
-    "wrangler": "^4.153.0"
+    "wrangler": "^4.154.0"
   }
 }

@@ -10,10 +10,10 @@ minimumReleaseAgeExclude:
   - "@effect/ai-openrouter"
   - "@effect/sql-d1"
 catalog:
-  "@cloudflare/workers-types": ^5.20261027.1
+  "@cloudflare/workers-types": ^5.20261028.1
   "@deno/kv": ^0.14.0
-  "@effect/ai-openrouter": ~4.0.6
-  "@effect/sql-d1": ~4.0.6
+  "@effect/ai-openrouter": ~4.0.7
+  "@effect/sql-d1": ~4.0.7
   "@std/assert": npm:@jsr/std__assert@^1.0.19
   "@std/collections": npm:@jsr/std__collections@^1.4.0
   "@std/encoding": npm:@jsr/std__encoding@^1.0.11
