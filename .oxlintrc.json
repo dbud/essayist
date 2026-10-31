@@ -5,7 +5,6 @@
     "perf": "error",
     "suspicious": "error"
   },
-  "ignorePatterns": ["packages/web/**"],
   "options": {
     "typeAware": true
   },

@@ -4,13 +4,10 @@
 .env.production.local
 .env.local
 
-_fresh/
 .vite/
 .worktrees/
 dist/
 .wrangler/
-
-local-kv.sqlite3*
 
 node_modules/
 vendor/

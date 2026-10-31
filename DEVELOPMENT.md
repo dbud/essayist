@@ -4,9 +4,7 @@ Essayist is a monorepo. `packages/core` (Effect services), `packages/worker` (Ho
 
 - TypeScript 7), and `packages/kvctl` form a pnpm workspace; shared dev tooling (oxlint, oxfmt,
   TypeScript, vitest) lives at the workspace root. `crates/wasm` holds the Rust diff core; its
-  wasm- pack build runs from the pre-commit hook. The leftover `packages/web` sources are a frozen
-  reference copy kept only for git mv imports during the remaining migration steps (Linear project
-  "Cloudflare migration"); they sit outside every workspace and gate.
+  wasm-pack build runs from the pre-commit hook.
 
 ## Uniform pnpm loop (core and worker)
 
@@ -37,8 +35,7 @@ tool cannot fail CI. Sweep commits from a reflow pass belong in `.git-blame-igno
 blocks that must keep their column alignment, such as KV key layout tables, carry a `parfit-ignore`
 comment line directly above them; parfit then passes the whole block through verbatim. `pnpm check`
 starts with `oxfmt --check .` (formatting must be clean) and `oxlint --deny-warnings .` (any finding
-fails). Inline suppressions read `// oxlint-disable-next-line <rule> -- <reason>`. `packages/web`
-sits in the configs' ignore patterns; drop that entry when the folder retires.
+fails). Inline suppressions read `// oxlint-disable-next-line <rule> -- <reason>`.
 
 Benchmarks are `*.bench.ts` files next to the sources (see
 `packages/core/src/marks/tokenized.bench.ts`); run with `pnpm -C packages/core exec vitest bench`.
