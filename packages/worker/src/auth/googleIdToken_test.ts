@@ -1,10 +1,9 @@
 import { assertEquals, assertRejects } from "@std/assert";
 import { encodeBase64Url } from "@std/encoding/base64url";
 import type { JWTHeaderParameters } from "jose";
-import {
-  GoogleIdTokenError,
-  verifyGoogleIdToken,
-} from "#/utils/googleIdToken.ts";
+import { test } from "vitest";
+
+import { GoogleIdTokenError, verifyGoogleIdToken } from "#/auth/googleIdToken.ts";
 
 const CLIENT_ID = "test-client-id";
 const NOW = 1_700_000_000_000;
@@ -42,10 +41,7 @@ const getKey = (header: JWTHeaderParameters): Promise<CryptoKey> => {
 const encodeBase64UrlJson = (value: unknown) =>
   encodeBase64Url(new TextEncoder().encode(JSON.stringify(value)));
 
-async function signIdToken(
-  payload: Record<string, unknown>,
-  kid = "test-key",
-): Promise<string> {
+async function signIdToken(payload: Record<string, unknown>, kid = "test-key"): Promise<string> {
   const signedPart = `${encodeBase64UrlJson({ alg: "RS256", kid })}.${encodeBase64UrlJson(payload)}`;
   const signature = await crypto.subtle.sign(
     "RSASSA-PKCS1-v1_5",
@@ -55,9 +51,7 @@ async function signIdToken(
   return `${signedPart}.${encodeBase64Url(new Uint8Array(signature))}`;
 }
 
-function claims(
-  overrides: Record<string, unknown> = {},
-): Record<string, unknown> {
+function claims(overrides: Record<string, unknown> = {}): Record<string, unknown> {
   return {
     iss: "https://accounts.google.com",
     aud: CLIENT_ID,
@@ -81,7 +75,7 @@ async function verify(payload: Record<string, unknown>) {
   });
 }
 
-Deno.test("verifyGoogleIdToken -- accepts a valid token", async () => {
+test("verifyGoogleIdToken -- accepts a valid token", async () => {
   assertEquals(await verify(claims()), {
     sub: "1234567890",
     email: "dima@example.com",
@@ -90,18 +84,18 @@ Deno.test("verifyGoogleIdToken -- accepts a valid token", async () => {
   });
 });
 
-Deno.test("verifyGoogleIdToken -- accepts the bare issuer spelling", async () => {
+test("verifyGoogleIdToken -- accepts the bare issuer spelling", async () => {
   const result = await verify(claims({ iss: "accounts.google.com" }));
   assertEquals(result.email, "dima@example.com");
 });
 
-Deno.test("verifyGoogleIdToken -- omits empty name and picture", async () => {
+test("verifyGoogleIdToken -- omits empty name and picture", async () => {
   const result = await verify(claims({ name: "", picture: "" }));
   assertEquals(result.name, undefined);
   assertEquals(result.picture, undefined);
 });
 
-Deno.test("verifyGoogleIdToken -- rejects a foreign audience", async () => {
+test("verifyGoogleIdToken -- rejects a foreign audience", async () => {
   await assertRejects(
     () => verify(claims({ aud: "someone-elses-client" })),
     GoogleIdTokenError,
@@ -109,23 +103,15 @@ Deno.test("verifyGoogleIdToken -- rejects a foreign audience", async () => {
   );
 });
 
-Deno.test("verifyGoogleIdToken -- rejects an expired token", async () => {
-  await assertRejects(
-    () => verify(claims({ exp: NOW / 1000 - 120 })),
-    GoogleIdTokenError,
-    "exp",
-  );
+test("verifyGoogleIdToken -- rejects an expired token", async () => {
+  await assertRejects(() => verify(claims({ exp: NOW / 1000 - 120 })), GoogleIdTokenError, "exp");
 });
 
-Deno.test("verifyGoogleIdToken -- rejects a not-yet-valid token", async () => {
-  await assertRejects(
-    () => verify(claims({ nbf: NOW / 1000 + 120 })),
-    GoogleIdTokenError,
-    "nbf",
-  );
+test("verifyGoogleIdToken -- rejects a not-yet-valid token", async () => {
+  await assertRejects(() => verify(claims({ nbf: NOW / 1000 + 120 })), GoogleIdTokenError, "nbf");
 });
 
-Deno.test("verifyGoogleIdToken -- rejects an unknown issuer", async () => {
+test("verifyGoogleIdToken -- rejects an unknown issuer", async () => {
   await assertRejects(
     () => verify(claims({ iss: "https://evil.example" })),
     GoogleIdTokenError,
@@ -133,7 +119,7 @@ Deno.test("verifyGoogleIdToken -- rejects an unknown issuer", async () => {
   );
 });
 
-Deno.test("verifyGoogleIdToken -- rejects an unverified email", async () => {
+test("verifyGoogleIdToken -- rejects an unverified email", async () => {
   await assertRejects(
     () => verify(claims({ email_verified: false })),
     GoogleIdTokenError,
@@ -141,7 +127,7 @@ Deno.test("verifyGoogleIdToken -- rejects an unverified email", async () => {
   );
 });
 
-Deno.test("verifyGoogleIdToken -- rejects a tampered signature", async () => {
+test("verifyGoogleIdToken -- rejects a tampered signature", async () => {
   const idToken = await signIdToken(claims());
   const [header, payload, signature] = idToken.split(".");
   const tampered = `${signature[0] === "A" ? "B" : "A"}${signature.slice(1)}`;
@@ -157,7 +143,7 @@ Deno.test("verifyGoogleIdToken -- rejects a tampered signature", async () => {
   );
 });
 
-Deno.test("verifyGoogleIdToken -- rejects an unknown key id", async () => {
+test("verifyGoogleIdToken -- rejects an unknown key id", async () => {
   const idToken = await signIdToken(claims(), "rotated-key");
   await assertRejects(
     () =>
@@ -171,7 +157,7 @@ Deno.test("verifyGoogleIdToken -- rejects an unknown key id", async () => {
   );
 });
 
-Deno.test("verifyGoogleIdToken -- rejects a malformed token", async () => {
+test("verifyGoogleIdToken -- rejects a malformed token", async () => {
   await assertRejects(
     () =>
       verifyGoogleIdToken("not-a-jwt", {

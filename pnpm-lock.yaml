@@ -381,6 +381,9 @@ importers:
       '@std/collections':
         specifier: 'catalog:'
         version: '@jsr/std__collections@1.4.0'
+      '@std/encoding':
+        specifier: 'catalog:'
+        version: '@jsr/std__encoding@1.0.11'
       '@std/text':
         specifier: 'catalog:'
         version: '@jsr/std__text@1.1.0'

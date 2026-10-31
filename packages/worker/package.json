@@ -47,6 +47,7 @@
     "@sentry/cloudflare": "^11.10.0",
     "@std/assert": "catalog:",
     "@std/collections": "catalog:",
+    "@std/encoding": "catalog:",
     "@std/text": "catalog:",
     "@tailwindcss/typography": "^0.5.20",
     "@tailwindcss/vite": "^4.3.3",

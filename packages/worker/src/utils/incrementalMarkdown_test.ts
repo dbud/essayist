@@ -15,11 +15,10 @@ import {
   type LexicalEditor,
   type UpdateListenerPayload,
 } from "lexical";
+import { test } from "vitest";
+
 import { bootstrapEditorExtension } from "#/editor/extension.ts";
-import {
-  editorStateToMarkdown,
-  markdownFold,
-} from "#/utils/incrementalMarkdown.ts";
+import { editorStateToMarkdown, markdownFold } from "#/utils/incrementalMarkdown.ts";
 
 function createEditor(): LexicalEditor {
   return buildEditorFromExtensions({
@@ -49,10 +48,7 @@ function groundTruth(state: EditorState): string {
 }
 
 // Run an edit and capture the update payload (dirty sets + prev/next states).
-function applyEdit(
-  editor: LexicalEditor,
-  fn: () => void,
-): UpdateListenerPayload {
+function applyEdit(editor: LexicalEditor, fn: () => void): UpdateListenerPayload {
   let payload: UpdateListenerPayload | null = null;
   const off = editor.registerUpdateListener((p) => {
     payload = p;
@@ -65,10 +61,7 @@ function applyEdit(
 
 // Restore a previous state wholesale (the undo path): setEditorState with
 // its captured update payload.
-function applyRestore(
-  editor: LexicalEditor,
-  state: EditorState,
-): UpdateListenerPayload {
+function applyRestore(editor: LexicalEditor, state: EditorState): UpdateListenerPayload {
   let payload: UpdateListenerPayload | null = null;
   const off = editor.registerUpdateListener((p) => {
     payload = p;
@@ -83,7 +76,7 @@ function applyRestore(
 // reproduce Lexical's `$convertToMarkdownString` exactly for a variety of
 // documents. This is the core check that the per-block wrapper + monoid
 // concatenation match the reference implementation.
-Deno.test("editorStateToMarkdown -- matches full export for varied docs", () => {
+test("editorStateToMarkdown -- matches full export for varied docs", () => {
   const cases = [
     "Hello world",
     "# Title\n\nFirst paragraph.\n\nSecond paragraph.",
@@ -93,17 +86,13 @@ Deno.test("editorStateToMarkdown -- matches full export for varied docs", () => 
   for (const md of cases) {
     const editor = createEditor();
     const state = importMarkdown(editor, md);
-    assertEquals(
-      editorStateToMarkdown(state),
-      groundTruth(state),
-      `mismatch for:\n${md}`,
-    );
+    assertEquals(editorStateToMarkdown(state), groundTruth(state), `mismatch for:\n${md}`);
   }
 });
 
 // An empty paragraph between two non-empty ones exercises the single-vs-double
 // newline join branch (isEmptyParagraph).
-Deno.test("editorStateToMarkdown -- empty paragraph join separators", () => {
+test("editorStateToMarkdown -- empty paragraph join separators", () => {
   const editor = createEditor();
   editor.update(
     () => {
@@ -123,7 +112,7 @@ Deno.test("editorStateToMarkdown -- empty paragraph join separators", () => {
 // Incremental updates must stay byte-identical to the full export across a
 // sequence of edits (append, insert, remove) on a single editor. This
 // validates the dirty-block resolution and cache chaining.
-Deno.test("markdownFold -- incremental matches full after edits", () => {
+test("markdownFold -- incremental matches full after edits", () => {
   const md = `# Title
 
 First paragraph.
@@ -148,9 +137,7 @@ Last paragraph.`;
     },
     // Append a new paragraph at the end.
     () => {
-      $getRoot().append(
-        $createParagraphNode().append($createTextNode("New paragraph")),
-      );
+      $getRoot().append($createParagraphNode().append($createTextNode("New paragraph")));
     },
     // Remove the last child.
     () => {
@@ -164,46 +151,29 @@ Last paragraph.`;
 
   for (const fn of edits) {
     const p = applyEdit(editor, fn);
-    markdownFold.update(
-      p.editorState,
-      p.prevEditorState,
-      p.dirtyElements,
-      p.dirtyLeaves,
-    );
-    assertEquals(
-      editorStateToMarkdown(p.editorState),
-      groundTruth(p.editorState),
-    );
+    markdownFold.update(p.editorState, p.prevEditorState, p.dirtyElements, p.dirtyLeaves);
+    assertEquals(editorStateToMarkdown(p.editorState), groundTruth(p.editorState));
   }
 });
 
-Deno.test("markdownFold -- unprimed prev falls back to full serialize", () => {
+test("markdownFold -- unprimed prev falls back to full serialize", () => {
   const editor = createEditor();
   importMarkdown(editor, "Hello.");
   const p = applyEdit(editor, () => {
     const first = $getRoot().getFirstChild();
     if ($isElementNode(first)) {
       const text = first.getFirstChild();
-      if ($isTextNode(text))
-        text.setTextContent(`${text.getTextContent()} world`);
+      if ($isTextNode(text)) text.setTextContent(`${text.getTextContent()} world`);
     }
   });
-  markdownFold.update(
-    p.editorState,
-    p.prevEditorState,
-    p.dirtyElements,
-    p.dirtyLeaves,
-  );
-  assertEquals(
-    editorStateToMarkdown(p.editorState),
-    groundTruth(p.editorState),
-  );
+  markdownFold.update(p.editorState, p.prevEditorState, p.dirtyElements, p.dirtyLeaves);
+  assertEquals(editorStateToMarkdown(p.editorState), groundTruth(p.editorState));
 });
 
 // Selection-only commits pass empty dirty sets (no content changed), so
 // carrying the previous aggregate forward is valid and keeps caret movement
 // off the full-serialize path.
-Deno.test("markdownFold -- selection-only commits carry the fold forward", () => {
+test("markdownFold -- selection-only commits carry the fold forward", () => {
   const editor = createEditor();
   importMarkdown(editor, "hello");
   const p = applyEdit(editor, () => {
@@ -212,23 +182,15 @@ Deno.test("markdownFold -- selection-only commits carry the fold forward", () =>
   });
   assertEquals(p.dirtyElements.size, 0);
   assertEquals(p.dirtyLeaves.size, 0);
-  markdownFold.update(
-    p.editorState,
-    p.prevEditorState,
-    p.dirtyElements,
-    p.dirtyLeaves,
-  );
-  assertEquals(
-    editorStateToMarkdown(p.editorState),
-    groundTruth(p.editorState),
-  );
+  markdownFold.update(p.editorState, p.prevEditorState, p.dirtyElements, p.dirtyLeaves);
+  assertEquals(editorStateToMarkdown(p.editorState), groundTruth(p.editorState));
 });
 
 // Undo restores the previous state via setEditorState. Lexical reports such
 // whole-state replaces with only `root` in dirtyElements and no dirty
 // leaves, while the content can differ arbitrarily from the previous state.
 // The fold must not carry the previous content forward in that case.
-Deno.test("markdownFold -- undo restore folds the restored content", () => {
+test("markdownFold -- undo restore folds the restored content", () => {
   const editor = createEditor();
   const restored = importMarkdown(editor, "hello");
 
@@ -237,16 +199,8 @@ Deno.test("markdownFold -- undo restore folds the restored content", () => {
     const text = $getRoot().getAllTextNodes()[0];
     text.setTextContent("hello!");
   });
-  markdownFold.update(
-    p1.editorState,
-    p1.prevEditorState,
-    p1.dirtyElements,
-    p1.dirtyLeaves,
-  );
-  assertEquals(
-    editorStateToMarkdown(p1.editorState),
-    groundTruth(p1.editorState),
-  );
+  markdownFold.update(p1.editorState, p1.prevEditorState, p1.dirtyElements, p1.dirtyLeaves);
+  assertEquals(editorStateToMarkdown(p1.editorState), groundTruth(p1.editorState));
 
   // The restore changed the content for real -- it is not a selection
   // no-op.
@@ -255,14 +209,6 @@ Deno.test("markdownFold -- undo restore folds the restored content", () => {
   assert(p2.dirtyElements.has("root"));
   assertEquals(p2.dirtyLeaves.size, 0);
 
-  markdownFold.update(
-    p2.editorState,
-    p2.prevEditorState,
-    p2.dirtyElements,
-    p2.dirtyLeaves,
-  );
-  assertEquals(
-    editorStateToMarkdown(p2.editorState),
-    groundTruth(p2.editorState),
-  );
+  markdownFold.update(p2.editorState, p2.prevEditorState, p2.dirtyElements, p2.dirtyLeaves);
+  assertEquals(editorStateToMarkdown(p2.editorState), groundTruth(p2.editorState));
 });

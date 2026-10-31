@@ -11,6 +11,8 @@ import {
   type LexicalEditor,
   type UpdateListenerPayload,
 } from "lexical";
+import { test } from "vitest";
+
 import { bootstrapEditorExtension } from "#/editor/extension.ts";
 import {
   charCountFold,
@@ -77,10 +79,7 @@ function groundTruthCharsWithSpaces(state: EditorState): number {
 }
 
 // Run an edit and capture the update payload (dirty sets + prev/next states).
-function applyEdit(
-  editor: LexicalEditor,
-  fn: () => void,
-): UpdateListenerPayload {
+function applyEdit(editor: LexicalEditor, fn: () => void): UpdateListenerPayload {
   let payload: UpdateListenerPayload | null = null;
   const off = editor.registerUpdateListener((p) => {
     payload = p;
@@ -94,7 +93,7 @@ function applyEdit(
 // Fixed expectations pin the token rules: words are alphanumeric runs, so
 // markdown punctuation, markers, and fences contribute nothing. Character
 // counts read plain text, so syntax markers are absent there too.
-Deno.test("editorStateWordCount -- fixed expectations", () => {
+test("editorStateWordCount -- fixed expectations", () => {
   const cases: Array<[string, number]> = [
     ["", 0],
     ["Hello world", 2],
@@ -115,7 +114,7 @@ Deno.test("editorStateWordCount -- fixed expectations", () => {
 });
 
 // [md, chars (no spaces), chars (with spaces)]
-Deno.test("editorStateCharCount -- fixed expectations", () => {
+test("editorStateCharCount -- fixed expectations", () => {
   const cases: Array<[string, number, number]> = [
     ["", 0, 0],
     ["Hello world", 10, 11],
@@ -129,18 +128,14 @@ Deno.test("editorStateCharCount -- fixed expectations", () => {
     const editor = createEditor();
     const state = importMarkdown(editor, md);
     assertEquals(editorStateCharCount(state), chars, `for:\n${md}`);
-    assertEquals(
-      editorStateCharCountWithSpaces(state),
-      withSpaces,
-      `for:\n${md}`,
-    );
+    assertEquals(editorStateCharCountWithSpaces(state), withSpaces, `for:\n${md}`);
   }
 });
 
 // Incremental counts must match full recomputes across a sequence of edits
 // (append, insert, remove) on a single editor. This validates the shared
 // dirty-block resolution and cache chaining.
-Deno.test("textStats folds -- incremental matches full after edits", () => {
+test("textStats folds -- incremental matches full after edits", () => {
   const md = `# Title
 
 First paragraph.
@@ -154,10 +149,7 @@ Last paragraph.`;
   const initial = importMarkdown(editor, md);
   assertEquals(editorStateWordCount(initial), 9);
   assertEquals(editorStateCharCount(initial), groundTruthChars(initial));
-  assertEquals(
-    editorStateCharCountWithSpaces(initial),
-    groundTruthCharsWithSpaces(initial),
-  );
+  assertEquals(editorStateCharCountWithSpaces(initial), groundTruthCharsWithSpaces(initial));
 
   const edits: Array<() => void> = [
     // Append to the heading text (same words, longer token).
@@ -170,9 +162,7 @@ Last paragraph.`;
     },
     // Append a new paragraph at the end.
     () => {
-      $getRoot().append(
-        $createParagraphNode().append($createTextNode("New paragraph")),
-      );
+      $getRoot().append($createParagraphNode().append($createTextNode("New paragraph")));
     },
     // Remove the last child.
     () => {
@@ -186,26 +176,11 @@ Last paragraph.`;
 
   for (const fn of edits) {
     const p = applyEdit(editor, fn);
-    for (const fold of [
-      wordCountFold,
-      charCountFold,
-      charCountWithSpacesFold,
-    ]) {
-      fold.update(
-        p.editorState,
-        p.prevEditorState,
-        p.dirtyElements,
-        p.dirtyLeaves,
-      );
+    for (const fold of [wordCountFold, charCountFold, charCountWithSpacesFold]) {
+      fold.update(p.editorState, p.prevEditorState, p.dirtyElements, p.dirtyLeaves);
     }
-    assertEquals(
-      editorStateWordCount(p.editorState),
-      groundTruthWords(p.editorState),
-    );
-    assertEquals(
-      editorStateCharCount(p.editorState),
-      groundTruthChars(p.editorState),
-    );
+    assertEquals(editorStateWordCount(p.editorState), groundTruthWords(p.editorState));
+    assertEquals(editorStateCharCount(p.editorState), groundTruthChars(p.editorState));
     assertEquals(
       editorStateCharCountWithSpaces(p.editorState),
       groundTruthCharsWithSpaces(p.editorState),
@@ -213,35 +188,23 @@ Last paragraph.`;
   }
 });
 
-Deno.test("textStats folds -- unprimed prev falls back to full count", () => {
+test("textStats folds -- unprimed prev falls back to full count", () => {
   const editor = createEditor();
   importMarkdown(editor, "Hello.");
   const p = applyEdit(editor, () => {
     const first = $getRoot().getFirstChild();
     if ($isElementNode(first)) {
       const text = first.getFirstChild();
-      if ($isTextNode(text))
-        text.setTextContent(`${text.getTextContent()} world`);
+      if ($isTextNode(text)) text.setTextContent(`${text.getTextContent()} world`);
     }
   });
   for (const fold of [wordCountFold, charCountFold, charCountWithSpacesFold]) {
-    fold.update(
-      p.editorState,
-      p.prevEditorState,
-      p.dirtyElements,
-      p.dirtyLeaves,
-    );
+    fold.update(p.editorState, p.prevEditorState, p.dirtyElements, p.dirtyLeaves);
   }
   assertEquals(editorStateWordCount(p.editorState), 2);
-  assertEquals(
-    editorStateWordCount(p.editorState),
-    groundTruthWords(p.editorState),
-  );
+  assertEquals(editorStateWordCount(p.editorState), groundTruthWords(p.editorState));
   assertEquals(editorStateCharCount(p.editorState), 11);
-  assertEquals(
-    editorStateCharCount(p.editorState),
-    groundTruthChars(p.editorState),
-  );
+  assertEquals(editorStateCharCount(p.editorState), groundTruthChars(p.editorState));
   assertEquals(editorStateCharCountWithSpaces(p.editorState), 12);
   assertEquals(
     editorStateCharCountWithSpaces(p.editorState),

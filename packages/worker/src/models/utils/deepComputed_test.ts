@@ -1,15 +1,17 @@
 import { computed, effect, signal } from "@preact/signals";
 import { assertEquals } from "@std/assert";
+import { test } from "vitest";
+
 import { deepComputed } from "./deepComputed.ts";
 
-Deno.test("deepComputed -- downstream effect does not re-fire when result is deeply equal", () => {
+test("deepComputed -- downstream effect does not re-fire when result is deeply equal", () => {
   const s = signal([1, 2]);
   const c = deepComputed(() => [...s.value]);
 
   let effectRuns = 0;
   effect(() => {
     effectRuns++;
-    c.value;
+    void c.value;
   });
 
   assertEquals(effectRuns, 1);
@@ -27,7 +29,7 @@ Deno.test("deepComputed -- downstream effect does not re-fire when result is dee
   assertEquals(effectRuns, 2);
 });
 
-Deno.test("deepComputed -- downstream computed does not re-fire when result is deeply equal", () => {
+test("deepComputed -- downstream computed does not re-fire when result is deeply equal", () => {
   const s = signal({ x: 1 });
   const c = deepComputed(() => ({ ...s.value }));
 
@@ -49,7 +51,7 @@ Deno.test("deepComputed -- downstream computed does not re-fire when result is d
   assertEquals(downstreamRuns, 2);
 });
 
-Deno.test("deepComputed -- multiple downstream effects all suppressed", () => {
+test("deepComputed -- multiple downstream effects all suppressed", () => {
   const s = signal([1]);
   const c = deepComputed(() => [...s.value]);
 
@@ -57,11 +59,11 @@ Deno.test("deepComputed -- multiple downstream effects all suppressed", () => {
   let runs2 = 0;
   effect(() => {
     runs1++;
-    c.value;
+    void c.value;
   });
   effect(() => {
     runs2++;
-    c.value;
+    void c.value;
   });
 
   assertEquals(runs1, 1);
@@ -76,14 +78,14 @@ Deno.test("deepComputed -- multiple downstream effects all suppressed", () => {
   assertEquals(runs2, 2);
 });
 
-Deno.test("deepComputed -- nested objects are compared deeply", () => {
+test("deepComputed -- nested objects are compared deeply", () => {
   const s = signal({ a: { b: 1 } });
   const c = deepComputed(() => ({ ...s.value }));
 
   let effectRuns = 0;
   effect(() => {
     effectRuns++;
-    c.value;
+    void c.value;
   });
 
   assertEquals(effectRuns, 1);
@@ -97,7 +99,7 @@ Deno.test("deepComputed -- nested objects are compared deeply", () => {
   assertEquals(effectRuns, 2);
 });
 
-Deno.test("deepComputed -- returns cached reference when deeply equal", () => {
+test("deepComputed -- returns cached reference when deeply equal", () => {
   const s = signal([1, 2]);
   const c = deepComputed(() => [...s.value]);
 
@@ -108,7 +110,7 @@ Deno.test("deepComputed -- returns cached reference when deeply equal", () => {
   assertEquals(first, second);
 });
 
-Deno.test("deepComputed -- returns new reference when value changes", () => {
+test("deepComputed -- returns new reference when value changes", () => {
   const s = signal([1]);
   const c = deepComputed(() => [...s.value]);
 
