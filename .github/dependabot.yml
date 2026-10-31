@@ -18,6 +18,11 @@ updates:
         update-types:
           - "minor"
           - "patch"
+        exclude-patterns:
+          - "effect"
+          - "@effect/*"
+          - "lexical"
+          - "@lexical/*"
 
   - package-ecosystem: "cargo"
     directory: "/crates/wasm"
