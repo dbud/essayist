@@ -1,6 +1,6 @@
 import { jsonLogLayer } from "@essayist/core";
 import { captureException } from "@sentry/cloudflare";
-import { Cache, Cause, Effect, Layer } from "effect";
+import { Cache, Cause, Effect, ErrorReporter, Layer, Result } from "effect";
 import { HttpRouter, HttpServer } from "effect/http";
 
 import { layerApi } from "#/api/index.ts";
@@ -9,6 +9,14 @@ import { runtime, runtimeLayer } from "#/runtime.ts";
 
 type RequestHandler = (request: Request) => Promise<Response>;
 
+const sentryReporter: ErrorReporter.ErrorReporter = {
+  [ErrorReporter.TypeId]: ErrorReporter.TypeId,
+  report: ({ cause }) => {
+    const defect = Cause.findDefect(cause);
+    if (Result.isSuccess(defect)) captureException(defect.success);
+  },
+};
+
 const handlers = Effect.runSync(
   Cache.make<WorkerEnv, RequestHandler>({
     capacity: Number.MAX_SAFE_INTEGER,
@@ -16,7 +24,11 @@ const handlers = Effect.runSync(
       Effect.sync(
         () =>
           HttpRouter.toWebHandler(
-            layerApi.pipe(Layer.provide(runtimeLayer(e)), Layer.provide(HttpServer.layerServices)),
+            layerApi.pipe(
+              Layer.provide(runtimeLayer(e)),
+              Layer.provide(HttpServer.layerServices),
+              Layer.provide(ErrorReporter.layer([sentryReporter])),
+            ),
             { memoMap: runtime(e).memoMap },
           ).handler,
       ),
@@ -33,9 +45,10 @@ export function apiHandler(request: Request, e: WorkerEnv): Promise<Response> {
   }).pipe(
     Effect.catchCause((cause) =>
       Effect.gen(function* () {
-        const pretty = Cause.pretty(cause);
-        yield* Effect.logError("api handler failed", { cause: pretty });
-        captureException(pretty);
+        yield* Effect.logError("api handler failed", { cause: Cause.pretty(cause) });
+        const defect = Cause.findDefect(cause);
+        if (Result.isSuccess(defect)) captureException(defect.success);
+        else captureException(Cause.pretty(cause));
         return new Response("internal error", { status: 500 });
       }),
     ),
