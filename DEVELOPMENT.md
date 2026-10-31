@@ -95,8 +95,7 @@ assets (commit the results); `favicon:check` verifies byte parity and runs in CI
 `crates/wasm` compiles the Rust diff core to WASM with `wasm-pack`, emitting `crates/wasm/pkg/`
 (imported as `@essayist/wasm`). The pkg is force-tracked in git; the pre-commit hook rebuilds and
 re-stages it when Rust sources change. The editor currently ports to the pure-JS diff in core; the
-wasm diff worker returns with ESS-90, which also brings back a scriptable wasm-pack build (the deno
-build tasks retired with that workspace).
+wasm diff worker returns with ESS-90.
 
 ## Pre-commit Checklist
 
