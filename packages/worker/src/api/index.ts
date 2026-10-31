@@ -22,7 +22,6 @@ import {
 } from "@essayist/core";
 import { Effect, Layer } from "effect";
 import { HttpApi, HttpApiBuilder, HttpApiError } from "effect/http-api";
-import * as HttpServerRequest from "effect/http/HttpServerRequest";
 
 import { importGoogleDocFile } from "#/api/googleDocs.ts";
 import { sessionMiddleware, UserSession, adminMiddleware } from "#/api/sessionMiddleware.ts";
@@ -47,15 +46,7 @@ const userHandlers = HttpApiBuilder.group(
   // oxlint-disable-next-line eslint/require-yield -- only registers handlers, nothing to yield
   Effect.fn(function* (handlers) {
     return handlers.handleAll({
-      getUser: () =>
-        Effect.gen(function* () {
-          // Temporary sentry symbolication probe; remove with the probe.
-          const request = yield* HttpServerRequest.HttpServerRequest;
-          if (new URL(request.originalUrl).searchParams.has("probe")) {
-            throw new Error("probe: worker 500 check");
-          }
-          return yield* Effect.map(UserSession, ({ user }) => user);
-        }),
+      getUser: () => Effect.map(UserSession, ({ user }) => user),
     });
   }),
 );

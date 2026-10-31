@@ -1,5 +1,3 @@
-import { useEffect } from "preact/hooks";
-
 import { Caret } from "#/components/Caret.tsx";
 import Editor from "#/components/editor/Editor.tsx";
 import EditorToolbar from "#/components/editor/EditorToolbar.tsx";
@@ -21,12 +19,6 @@ import { getEditorSelection } from "#/signals/editorSelection.ts";
 import { navigationOpened } from "#/signals/navigation.ts";
 
 export default function FileViewer() {
-  // Temporary sentry symbolication probe; remove with the worker probe.
-  useEffect(() => {
-    if (new URLSearchParams(window.location.search).has("probe")) {
-      throw new Error("probe: boundary fallback check");
-    }
-  }, []);
   const { selected } = useEditorModels();
   const selection = selected.value;
   if (selection === null || selection.path === null) return null;
