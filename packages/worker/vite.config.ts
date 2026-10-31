@@ -3,6 +3,7 @@ import { fileURLToPath } from "node:url";
 
 import { cloudflare } from "@cloudflare/vite-plugin";
 import { sentryCloudflareVitePlugin } from "@sentry/cloudflare/vite";
+import { sentryVitePlugin } from "@sentry/vite-plugin";
 import tailwindcss from "@tailwindcss/vite";
 import { defineConfig, type Plugin } from "vite";
 
@@ -26,6 +27,23 @@ function moduleBindings(environment: string, bindings: Record<string, string>): 
   };
 }
 
+// Uploads both bundles' source maps to Sentry when the deploy envs the plugin (SENTRY_AUTH_TOKEN,
+// SENTRY_RELEASE, SENTRY_ORG, SENTRY_PROJECT); anything missing logs a warning and skips. Client
+// maps are deleted after upload so the public assets never serve sources.
+const sentryMaps = sentryVitePlugin({
+  telemetry: false,
+  errorHandler: (error) => console.warn(error),
+  sourcemaps: {
+    assets: [
+      "dist/worker/assets/*.js",
+      "dist/worker/assets/*.js.map",
+      "dist/client/assets/*.js",
+      "dist/client/assets/*.js.map",
+    ],
+    filesToDeleteAfterUpload: "dist/client/assets/*.js.map",
+  },
+});
+
 export default defineConfig({
   plugins: [
     // Specifiers the client environment re-binds to dependency-free modules, keeping server-only
@@ -36,11 +54,13 @@ export default defineConfig({
     tailwindcss(),
     cloudflare({ viteEnvironment: { name: "worker" } }),
     sentryCloudflareVitePlugin(),
+    ...sentryMaps,
   ],
   environments: {
     worker: { build: { sourcemap: true } },
     client: {
       build: {
+        sourcemap: true,
         rolldownOptions: {
           input: {
             ...clientEntries,
