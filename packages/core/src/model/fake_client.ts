@@ -39,12 +39,8 @@ export function networkAiError(description: string): AiError {
   return aiError(
     new NetworkError({
       reason: "TransportError",
-      request: {
-        method: "POST",
-        url: "https://openrouter.test/api/v1/chat/completions",
-        urlParams: [],
-        headers: {},
-      },
+      method: "POST",
+      url: "https://openrouter.test/api/v1/chat/completions",
       description,
     }),
   );

@@ -9,7 +9,7 @@
  */
 
 import type * as D1Client from "@effect/sql-d1/D1Client";
-import { Effect, Layer, Option, Result, Schema } from "effect";
+import { Array, Effect, Layer, Option, Result, Schema } from "effect";
 import { SqlSchema } from "effect/sql";
 
 import { decodeValue, encodeValue, keyRange, packKey, unpackKey } from "./kv_d1_codec.ts";
@@ -69,10 +69,10 @@ const assertionFor = (client: D1Client.D1Client, checks: NonNullable<BatchOption
 
 const setsInsertFor = (
   client: D1Client.D1Client,
-  sets: ReadonlyArray<{ key: Key; value: unknown }>,
+  sets: Array.NonEmptyReadonlyArray<{ key: Key; value: unknown }>,
 ) =>
   client`INSERT INTO kv ${client.insert(
-    sets.map((op) => ({
+    Array.map(sets, (op) => ({
       key: packKey(op.key),
       value: encodeValue(op.value),
       version: 1,
@@ -120,9 +120,9 @@ export function layerKvD1(client: D1Client.D1Client): Layer.Layer<Persistence> {
   const getMany = <T = unknown>(
     keys: Key[],
     _options?: ReadOptions,
-  ): Effect.Effect<Array<Entry<T> | undefined>, PersistenceError> => {
+  ): Effect.Effect<(Entry<T> | undefined)[], PersistenceError> => {
     if (keys.length === 0) {
-      return Effect.succeed<Array<Entry<T> | undefined>>([]);
+      return Effect.succeed<(Entry<T> | undefined)[]>([]);
     }
     return Effect.mapError(
       Effect.map(findRows(keys.map(packKey)), (rows) => {
@@ -196,7 +196,7 @@ export function layerKvD1(client: D1Client.D1Client): Layer.Layer<Persistence> {
       if (checks.length + sets.length + deletes.length === 0) return;
       const statements = [
         ...(checks.length === 0 ? [] : [assertionFor(client, checks)]),
-        ...(sets.length === 0 ? [] : [setsInsertFor(client, sets)]),
+        ...(Array.isReadonlyArrayNonEmpty(sets) ? [setsInsertFor(client, sets)] : []),
         ...(deletes.length === 0 ? [] : [deletesFor(client, deletes)]),
       ];
       const outcome = yield* Effect.result(client.batch(statements));
