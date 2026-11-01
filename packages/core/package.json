@@ -19,7 +19,6 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@deno/kv": "catalog:",
     "@effect/ai-openrouter": "catalog:",
     "@effect/sql-d1": "catalog:",
     "@std/assert": "catalog:",
@@ -31,6 +30,7 @@
   },
   "devDependencies": {
     "@cloudflare/workers-types": "catalog:",
+    "@deno/kv": "catalog:",
     "@types/node": "catalog:"
   }
 }

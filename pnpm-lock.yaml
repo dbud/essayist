@@ -244,9 +244,6 @@ importers:
 
   packages/core:
     dependencies:
-      '@deno/kv':
-        specifier: 'catalog:'
-        version: 0.14.0
       '@effect/ai-openrouter':
         specifier: 'catalog:'
         version: 4.1.1(effect@4.1.1)
@@ -275,6 +272,9 @@ importers:
       '@cloudflare/workers-types':
         specifier: 'catalog:'
         version: 5.20261029.1
+      '@deno/kv':
+        specifier: 'catalog:'
+        version: 0.14.0
       '@types/node':
         specifier: 'catalog:'
         version: 26.6.6
@@ -337,9 +337,6 @@ importers:
         specifier: ^0.53.0
         version: 0.53.0(typescript@7.0.2)
       '@lexical/extension':
-        specifier: ^0.53.0
-        version: 0.53.0(typescript@7.0.2)
-      '@lexical/headless':
         specifier: ^0.53.0
         version: 0.53.0(typescript@7.0.2)
       '@lexical/history':
@@ -1126,14 +1123,6 @@ packages:
 
   '@lexical/hashtag@0.53.0':
     resolution: {integrity: sha512-ZYw82Gj5pDFqhsqRhubiSV6Jv62Iib2pMC+Lu4oHhKox6azh+FtxLNdqoDTp9iCXGaz3YHMuIrZvtl5qYK/UYw==}
-    peerDependencies:
-      typescript: '>=5.2'
-    peerDependenciesMeta:
-      typescript:
-        optional: true
-
-  '@lexical/headless@0.53.0':
-    resolution: {integrity: sha512-fNMbZXFRo+1H323TONUypaIxU5uhHJpl+1n3N31Vr87jShLCo+klqlhYWN8MvKM5S/zPCOvSrkn5HoqdbwpmYg==}
     peerDependencies:
       typescript: '>=5.2'
     peerDependenciesMeta:
@@ -3694,17 +3683,6 @@ snapshots:
       lexical: 0.53.0(typescript@7.0.2)
     optionalDependencies:
       typescript: 7.0.2
-
-  '@lexical/headless@0.53.0(typescript@7.0.2)':
-    dependencies:
-      '@lexical/internal': 0.53.0(typescript@7.0.2)
-      happy-dom: 21.0.4
-      lexical: 0.53.0(typescript@7.0.2)
-    optionalDependencies:
-      typescript: 7.0.2
-    transitivePeerDependencies:
-      - bufferutil
-      - utf-8-validate
 
   '@lexical/history@0.53.0(typescript@7.0.2)':
     dependencies:
