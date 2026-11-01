@@ -116,7 +116,7 @@ test("json paste middleware sanitizes and inserts", () => {
     },
     { discrete: true },
   );
-  assertEquals(markdownOf(editor), "**hi**\n\nsub\n\n[**go**](http://x.com)\n");
+  assertEquals(markdownOf(editor), "**hi**\n\nsub\n\n&#91;**go**&#93;(http://x.com)\n");
 });
 
 test("json payload from a foreign namespace is not claimed", () => {
