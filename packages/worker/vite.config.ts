@@ -54,7 +54,7 @@ export default defineConfig({
     moduleBindings("client", {
       "#/editor/withDOM.ts": "./src/editor/withDOM.client.ts",
     }),
-    clientAllowlist(pkg.client?.allow ?? []),
+    clientAllowlist(pkg.client ?? {}),
     tailwindcss(),
     cloudflare({ viteEnvironment: { name: "worker" } }),
     sentryCloudflareVitePlugin(),

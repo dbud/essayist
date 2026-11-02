@@ -93,8 +93,18 @@
       "lexical",
       "lucide-preact",
       "marked",
-      "mermaid",
       "preact"
-    ]
+    ],
+    "pages": {
+      "admin": [
+        "@effect/ai-openrouter",
+        "effect",
+        "mermaid"
+      ],
+      "editor": [
+        "@effect/ai-openrouter",
+        "effect"
+      ]
+    }
   }
 }
