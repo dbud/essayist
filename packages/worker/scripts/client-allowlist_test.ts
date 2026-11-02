@@ -1,7 +1,14 @@
 import { assertEquals, assert } from "@std/assert";
 import { test } from "vitest";
 
-import { type BundleChunk, closureOf, patternMatcher, violationsText } from "./client-allowlist.ts";
+import {
+  type BundleChunk,
+  closureOf,
+  importChain,
+  pathText,
+  patternMatcher,
+  violationsText,
+} from "./client-allowlist.ts";
 
 const families = ["@fontsource/*", "@fontsource-variable/*", "@lexical/*", "marked"];
 
@@ -77,24 +84,160 @@ test("another page's closure omits the dynamic chunks it does not own", () => {
   assertEquals(closure, ["assets/editor.js", "assets/shared.js"]);
 });
 
-test("the violation report names pages, then packages, then import sites", () => {
-  const pullInShared = new Set(["/src/x.tsx", "/a.ts"]);
-  const violations: Map<string, Map<string, Set<string>>> = new Map([
-    ["admin", new Map([["effect", pullInShared]])],
+test("the report shortens module ids to readable paths", () => {
+  assertEquals(
+    pathText("/Users/dbud/dev/essayist/packages/core/src/ids.ts"),
+    "packages/core/src/ids.ts",
+  );
+  assertEquals(
+    pathText("/store/node_modules/.pnpm/effect@4.1.1/node_modules/effect/dist/index.js"),
+    "effect/dist/index.js",
+  );
+  assertEquals(
+    pathText("/store/node_modules/.pnpm/w@1.0.0/node_modules/@scope/w/mod.js"),
+    "@scope/w/mod.js",
+  );
+  assertEquals(pathText("packages/core/src/ids.ts"), "packages/core/src/ids.ts");
+});
+
+test("the violation report nests the reversed chain under each package", () => {
+  const violations: Map<string, Map<string, string[]>> = new Map([
+    [
+      "admin",
+      new Map([
+        ["effect", ["/a/essayist/core/src/pull.ts", "/x/node_modules/effect/dist/Context.js"]],
+      ]),
+    ],
     [
       "editor",
       new Map([
-        ["@effect/ai-openrouter", new Set(["/src/y.tsx"])],
-        ["effect", new Set(["/src/x.tsx"])],
+        [
+          "@effect/ai-openrouter",
+          ["/b/essayist/core/src/model.ts", "/x/node_modules/effect/dist/index.js"],
+        ],
+        [
+          "effect",
+          [
+            "/b/essayist/core/ids.ts",
+            "/x/node_modules/effect/dist/index.js",
+            "/x/node_modules/effect/dist/Context.js",
+          ],
+        ],
       ]),
     ],
   ]);
   assertEquals(
     violationsText(violations),
     "\tadmin\n" +
-      "\t\teffect <- /a.ts, /src/x.tsx\n" +
+      "\t\teffect\n" +
+      "\t\t\teffect/dist/Context.js\n" +
+      "\t\t\tcore/src/pull.ts\n" +
       "\teditor\n" +
-      "\t\t@effect/ai-openrouter <- /src/y.tsx\n" +
-      "\t\teffect <- /src/x.tsx",
+      "\t\t@effect/ai-openrouter\n" +
+      "\t\t\teffect/dist/index.js\n" +
+      "\t\t\tcore/src/model.ts\n" +
+      "\t\teffect\n" +
+      "\t\t\teffect/dist/Context.js\n" +
+      "\t\t\teffect/dist/index.js\n" +
+      "\t\t\tcore/ids.ts",
   );
+});
+
+test("import chains walk through re-export modules and cycles", () => {
+  // Tree shaking removed the re-export file, but the connection to the island runs through it; the
+  // chain omits it.
+  const island = new Set([
+    "node_modules/effect/dist/Context.js",
+    "node_modules/effect/dist/internal/core.js",
+  ]);
+  const importersOf = (moduleId: string): string[] => {
+    if (moduleId === "node_modules/effect/dist/Context.js") {
+      return ["node_modules/effect/dist/index.js", "node_modules/effect/dist/internal/core.js"];
+    }
+    if (
+      moduleId === "node_modules/effect/dist/index.js" ||
+      moduleId === "node_modules/effect/dist/internal/core.js"
+    ) {
+      return ["core/src/ids.ts", "node_modules/effect/dist/Context.js"];
+    }
+    return [];
+  };
+  const emitted = (moduleId: string): boolean =>
+    island.has(moduleId) || moduleId === "core/src/ids.ts";
+  const chain = importChain(
+    ["node_modules/effect/dist/Context.js"],
+    importersOf,
+    () => false,
+    emitted,
+  );
+  assertEquals(chain, ["core/src/ids.ts", "node_modules/effect/dist/Context.js"]);
+});
+
+test("a direct first-party importer gives a two module chain", () => {
+  const importersOf = (moduleId: string): string[] =>
+    moduleId === "node_modules/mermaid/dist/mermaid.core.mjs"
+      ? ["src/components/admin/PassGraph.tsx"]
+      : [];
+  const chain = importChain(
+    ["node_modules/mermaid/dist/mermaid.core.mjs"],
+    importersOf,
+    () => false,
+    () => true,
+  );
+  assertEquals(chain, [
+    "src/components/admin/PassGraph.tsx",
+    "node_modules/mermaid/dist/mermaid.core.mjs",
+  ]);
+});
+
+test("chains into allowed packages do not count as pullers", () => {
+  // mermaid is allowed here, so dompurify pulled by it is a transitive, not a leak.
+  const importersOf = (moduleId: string): string[] =>
+    moduleId === "node_modules/dompurify/dist/purify.es.mjs"
+      ? ["node_modules/mermaid/dist/mermaid.core.mjs"]
+      : [];
+  const chain = importChain(
+    ["node_modules/dompurify/dist/purify.es.mjs"],
+    importersOf,
+    (name) => name === "mermaid",
+    () => true,
+  );
+  assertEquals(chain, undefined);
+});
+
+test("a first-party module that tree-shaking dropped is not a puller", () => {
+  // auth_d1.ts imports effect but the client build never emitted it, so it does not count as
+  // a puller.
+  const importersOf = (moduleId: string): string[] =>
+    moduleId === "node_modules/effect/dist/Context.js" ? ["packages/core/src/auth/auth_d1.ts"] : [];
+  const chain = importChain(
+    ["node_modules/effect/dist/Context.js"],
+    importersOf,
+    () => false,
+    () => false,
+  );
+  assertEquals(chain, undefined);
+});
+
+test("the chain climbs to the entry file rather than a shallower dead end", () => {
+  const importersOf = new Map<string, string[]>([
+    ["node_modules/effect/dist/Context.js", ["packages/core/src/ids.ts"]],
+    [
+      "packages/core/src/ids.ts",
+      ["packages/core/src/marks/resolver.ts", "client/editor/models.ts"],
+    ],
+    ["client/editor/models.ts", ["client/editor.tsx"]],
+  ]);
+  const chain = importChain(
+    ["node_modules/effect/dist/Context.js"],
+    (moduleId) => importersOf.get(moduleId) ?? [],
+    () => false,
+    () => true,
+  );
+  assertEquals(chain, [
+    "client/editor.tsx",
+    "client/editor/models.ts",
+    "packages/core/src/ids.ts",
+    "node_modules/effect/dist/Context.js",
+  ]);
 });
