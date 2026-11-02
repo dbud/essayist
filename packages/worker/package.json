@@ -78,5 +78,23 @@
     "vite": "catalog:",
     "vitest": "catalog:",
     "wrangler": "^4.156.0"
+  },
+  "client": {
+    "allow": [
+      "@fontsource/*",
+      "@fontsource-variable/*",
+      "@jsr/std__assert",
+      "@jsr/std__text",
+      "@lexical/*",
+      "@preact/signals",
+      "@sentry/browser",
+      "date-fns",
+      "dompurify",
+      "lexical",
+      "lucide-preact",
+      "marked",
+      "mermaid",
+      "preact"
+    ]
   }
 }

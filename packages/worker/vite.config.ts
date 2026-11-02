@@ -7,6 +7,9 @@ import { sentryVitePlugin } from "@sentry/vite-plugin";
 import tailwindcss from "@tailwindcss/vite";
 import { defineConfig, type Plugin } from "vite";
 
+import pkg from "./package.json" with { type: "json" };
+import { clientAllowlist } from "./scripts/client-allowlist.ts";
+
 // Client entry files are build inputs by file name; pages without one (login) get no script tag.
 const clientEntries = Object.fromEntries(
   readdirSync("src/client/pages")
@@ -51,6 +54,7 @@ export default defineConfig({
     moduleBindings("client", {
       "#/editor/withDOM.ts": "./src/editor/withDOM.client.ts",
     }),
+    clientAllowlist(pkg.client?.allow ?? []),
     tailwindcss(),
     cloudflare({ viteEnvironment: { name: "worker" } }),
     sentryCloudflareVitePlugin(),
