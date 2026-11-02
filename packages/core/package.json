@@ -15,7 +15,7 @@
   },
   "scripts": {
     "check": "tsc --noEmit",
-    "fmt": "oxfmt .",
+    "fmt": "oxfmt . && pnpm -w fmt:comments",
     "lint": "oxlint .",
     "test": "vitest run"
   },

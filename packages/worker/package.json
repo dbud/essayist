@@ -14,7 +14,7 @@
     "dev": "vite dev",
     "favicon": "node scripts/favicon.ts",
     "favicon:check": "node scripts/favicon.ts --check",
-    "fmt": "oxfmt .",
+    "fmt": "oxfmt . && pnpm -w fmt:comments",
     "lint": "oxlint .",
     "preview": "vite preview",
     "test": "vitest run",

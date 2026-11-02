@@ -8,7 +8,7 @@
   },
   "scripts": {
     "check": "tsc --noEmit",
-    "fmt": "oxfmt .",
+    "fmt": "oxfmt . && pnpm -w fmt:comments",
     "kvctl": "node --env-file=../../.env kvctl.ts",
     "lint": "oxlint ."
   },
