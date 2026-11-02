@@ -1,4 +1,5 @@
 import { readdirSync } from "node:fs";
+import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
 
 import { cloudflare } from "@cloudflare/vite-plugin";
@@ -9,6 +10,10 @@ import { defineConfig, type Plugin } from "vite";
 
 import pkg from "./package.json" with { type: "json" };
 import { clientAllowlist } from "./scripts/client-allowlist.ts";
+
+// Requires vite's own rolldown, so the analyzer version matches the builder.
+const requireFromVite = createRequire(import.meta.resolve("vite"));
+const { bundleAnalyzerPlugin } = requireFromVite("rolldown/experimental");
 
 // Client entry files are build inputs by file name; pages without one (login) get no script tag.
 const clientEntries = Object.fromEntries(
@@ -55,6 +60,7 @@ export default defineConfig({
       "#/editor/withDOM.ts": "./src/editor/withDOM.client.ts",
     }),
     clientAllowlist(pkg.client ?? {}),
+    process.env.ANALYZE_BUNDLE !== undefined && bundleAnalyzerPlugin({ format: "md" }),
     tailwindcss(),
     cloudflare({ viteEnvironment: { name: "worker" } }),
     sentryCloudflareVitePlugin(),
