@@ -84,6 +84,7 @@
       "@fontsource/*",
       "@fontsource-variable/*",
       "@jsr/std__assert",
+      "@jsr/std__collections",
       "@jsr/std__text",
       "@lexical/*",
       "@preact/signals",
