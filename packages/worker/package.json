@@ -97,13 +97,7 @@
     ],
     "pages": {
       "admin": [
-        "@effect/ai-openrouter",
-        "effect",
         "mermaid"
-      ],
-      "editor": [
-        "@effect/ai-openrouter",
-        "effect"
       ]
     }
   }
