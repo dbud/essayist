@@ -3,7 +3,7 @@ import { Plus } from "lucide-preact";
 import type { ComponentChildren } from "preact";
 
 /** Entity card: toolbar-style header row (title, optional mono id, action
- *  rail) above a ruled label/value grid. */
+ * rail) above a ruled label/value grid. */
 export function EntityCard({
   title,
   id,

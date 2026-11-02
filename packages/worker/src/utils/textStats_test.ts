@@ -42,10 +42,9 @@ function importMarkdown(editor: LexicalEditor, md: string): EditorState {
   return editor.getEditorState();
 }
 
-// Reference counts, recomputed independently of the folds. Words are
-// alphanumeric runs optionally joined by single hyphens; character counts
-// sum plain text per top-level block (block separators are not
-// characters).
+// Reference counts, recomputed independently of the folds. Words are alphanumeric runs optionally
+// joined by single hyphens; character counts sum plain text per top-level block (block separators
+// are not characters).
 const WORD_REGEX = /[\p{L}\p{N}]+(?:-[\p{L}\p{N}]+)*/gu;
 const NON_WS_REGEX = /\S/g;
 
@@ -90,9 +89,9 @@ function applyEdit(editor: LexicalEditor, fn: () => void): UpdateListenerPayload
   return payload;
 }
 
-// Fixed expectations pin the token rules: words are alphanumeric runs, so
-// markdown punctuation, markers, and fences contribute nothing. Character
-// counts read plain text, so syntax markers are absent there too.
+// Fixed expectations pin the token rules: words are alphanumeric runs, so markdown punctuation,
+// markers, and fences contribute nothing. Character counts read plain text, so syntax markers are
+// absent there too.
 test("editorStateWordCount -- fixed expectations", () => {
   const cases: Array<[string, number]> = [
     ["", 0],
@@ -132,9 +131,8 @@ test("editorStateCharCount -- fixed expectations", () => {
   }
 });
 
-// Incremental counts must match full recomputes across a sequence of edits
-// (append, insert, remove) on a single editor. This validates the shared
-// dirty-block resolution and cache chaining.
+// Incremental counts must match full recomputes across a sequence of edits (append, insert, remove)
+// on a single editor. This validates the shared dirty-block resolution and cache chaining.
 test("textStats folds -- incremental matches full after edits", () => {
   const md = `# Title
 

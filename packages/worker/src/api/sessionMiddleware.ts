@@ -1,6 +1,6 @@
 // The session middleware for HttpApi groups; resolves the site session like the pages middleware
-// and provides UserSession to handlers. The admin group uses the admin variant, which adds the
-// role gate on top of the same session resolution.
+// and provides UserSession to handlers. The admin group uses the admin variant, which adds the role
+// gate on top of the same session resolution.
 import { AuthStore, type User, Workspaces } from "@essayist/core";
 import { Context, Effect, Layer } from "effect";
 import { HttpApiError, HttpApiMiddleware } from "effect/http-api";

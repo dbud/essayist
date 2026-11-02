@@ -1,6 +1,5 @@
-// The control panel model: seeded from page data, CRUD mutations through the
-// admin api. The categories palette preview derives here from the model's
-// categories and the open category form.
+// The control panel model: seeded from page data, CRUD mutations through the admin api. The
+// categories palette preview derives here from the model's categories and the open category form.
 import type { Category, ModelPool, Prompt, ReviewPass } from "@essayist/core";
 import { computed, createModel, signal } from "@preact/signals";
 
@@ -38,8 +37,8 @@ export const AdminConfigModel = createModel((data: AdminConfigData) => {
   const activeReviewPassId = signal<string | undefined>(data.activeReviewPassId);
   const [run, { loading, error }] = createAsyncState();
 
-  // Palette rows: a row per category (the edited row shows the live color),
-  // a "(new)" row while creating, then the fallback row for unlabeled marks.
+  // Palette rows: a row per category (the edited row shows the live color), a "(new)" row while
+  // creating, then the fallback row for unlabeled marks.
   const swatchEntries = computed<SwatchEntry[]>(() => {
     const preview = categoryPreview.value;
     const entries: SwatchEntry[] = categories.value.map(({ id, label, color }) => ({

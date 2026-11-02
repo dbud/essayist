@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "preact/hooks";
 
 /** Label + textarea sized to fit its content (lines) plus the gap at the
- *  bottom. */
+ * bottom. */
 export function TextareaRow({
   label,
   value,
@@ -20,8 +20,8 @@ export function TextareaRow({
   useEffect(() => {
     const el = textareaRef.current;
     if (!el) return;
-    // a 0 scrollHeight means the dialog is not laid out yet (display none /
-    // collapsed pane): the rows attribute floor applies instead.
+    // a 0 scrollHeight means the dialog is not laid out yet (display none / collapsed pane): the
+    // rows attribute floor applies instead.
     if (el.scrollHeight === 0) return;
     el.style.height = "auto";
     el.style.height = `${el.scrollHeight}px`;

@@ -36,8 +36,8 @@ export function CategoryForm({ entity, open }: { entity?: Category; open: Signal
   const canonical = `oklch(${Math.round(l)}% ${Number(c.toFixed(2))} ${Math.round(h)})`;
   const previewColor = colorEnabled ? canonical : FALLBACK_COLOR;
 
-  // Reading open.value during render subscribes the component; the effect then
-  // syncs the palette while the dialog is open and clears it on close.
+  // Reading open.value during render subscribes the component; the effect then syncs the palette
+  // while the dialog is open and clears it on close.
   const isOpen = open.value;
   useEffect(() => {
     categoryPreview.value = isOpen

@@ -13,7 +13,7 @@ interface FormShellProps {
 }
 
 /** Entity form shell: ink title bar, ruled label/control grid, Cancel/Save
- *  action row bleeding over the frame. */
+ * action row bleeding over the frame. */
 export function FormShell({
   title,
   submitLabel,
