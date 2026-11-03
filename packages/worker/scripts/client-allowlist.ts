@@ -74,9 +74,9 @@ function modulesOf(pkg: string, chunks: BundleChunk[]): string[] {
 /** The import chain from a client entry file to the package's modules, across the pre-shake
  * importer graph. The graph predates tree shaking, so an importer counts only when the page emitted
  * it; a re-export module is the exception, because shaking removes the module but keeps its edges.
- * Edges into allowed packages are a boundary: their transitives are not first-party imports. The
- * walk reports the deepest first-party module it reaches, and the returned chain omits the removed
- * re-export modules. */
+ * Edges into allowed packages end the walk: the transitives belong to the allowed package. The walk
+ * reports the deepest first-party module it reaches, and the returned chain omits the removed re-
+ * export modules. */
 export function importChain(
   modules: string[],
   importersOf: (moduleId: string) => string[],

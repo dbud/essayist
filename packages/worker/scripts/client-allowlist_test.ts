@@ -190,8 +190,8 @@ test("a direct first-party importer gives a two module chain", () => {
   ]);
 });
 
-test("chains into allowed packages do not count as pullers", () => {
-  // mermaid is allowed here, so dompurify pulled by it is a transitive, not a leak.
+test("chains into allowed packages end the walk", () => {
+  // mermaid is allowed here, so dompurify pulled by it is a transitive of an allowed package.
   const importersOf = (moduleId: string): string[] =>
     moduleId === "node_modules/dompurify/dist/purify.es.mjs"
       ? ["node_modules/mermaid/dist/mermaid.core.mjs"]
@@ -205,9 +205,8 @@ test("chains into allowed packages do not count as pullers", () => {
   assertEquals(chain, undefined);
 });
 
-test("a first-party module that tree-shaking dropped is not a puller", () => {
-  // auth_d1.ts imports effect but the client build never emitted it, so it does not count as
-  // a puller.
+test("the report skips a first-party importer tree shaking dropped", () => {
+  // auth_d1.ts imports effect, but tree shaking drops it from the client build.
   const importersOf = (moduleId: string): string[] =>
     moduleId === "node_modules/effect/dist/Context.js" ? ["packages/core/src/auth/auth_d1.ts"] : [];
   const chain = importChain(
@@ -219,7 +218,7 @@ test("a first-party module that tree-shaking dropped is not a puller", () => {
   assertEquals(chain, undefined);
 });
 
-test("the chain climbs to the entry file rather than a shallower dead end", () => {
+test("the chain climbs past first-party hops to the entry file", () => {
   const importersOf = new Map<string, string[]>([
     ["node_modules/effect/dist/Context.js", ["packages/core/src/ids.ts"]],
     [
