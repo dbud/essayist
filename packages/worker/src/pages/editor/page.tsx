@@ -30,9 +30,7 @@ export default function Page() {
     <>
       <div class="flex flex-1 min-h-0">
         <EditorPage />
-        <ErrorBoundary>
-          <RightSidebar />
-        </ErrorBoundary>
+        <RightSidebar />
       </div>
       <Toaster />
       <Tooltip />

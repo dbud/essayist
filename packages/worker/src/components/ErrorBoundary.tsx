@@ -18,13 +18,13 @@ export default function ErrorBoundary({ children }: ErrorBoundaryProps) {
 
   if (error) {
     return (
-      <div class="flex flex-1 min-h-0 p-5 striped bg-paper">
-        <div class="m-auto w-full max-w-xl flex flex-col stack stack--row stack--col shadow-md">
+      <div class="flex flex-1 min-h-0 striped bg-paper">
+        <div class="m-auto w-full max-w-128 flex flex-col stack stack--row stack--col shadow-md">
           <div class="cell cell--ink flex gap-1">
             <TriangleAlert size={14} />
             Something went wrong
           </div>
-          <div class="cell--data min-w-0 break-words">
+          <div class="cell--data font-mono text-xs min-w-0 overflow-y-auto break-all whitespace-pre-wrap">
             {error instanceof Error ? error.message : String(error)}
           </div>
           <div class="form-actions">
