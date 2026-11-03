@@ -93,12 +93,14 @@
       "dompurify",
       "lexical",
       "lucide-preact",
-      "marked",
       "preact"
     ],
-    "pages": {
+    "budgets": {
       "admin": [
         "mermaid"
+      ],
+      "DebugSidebarContent": [
+        "marked"
       ]
     }
   }
