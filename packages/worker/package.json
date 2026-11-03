@@ -58,10 +58,10 @@
     "hono": "^4.13.14",
     "jose": "catalog:",
     "lexical": "^0.53.0",
-    "lucide-preact": "^1.64.0",
+    "lucide-preact": "^1.66.0",
     "marked": "^18.1.2",
     "mermaid": "^12.2.0",
-    "preact": "^11.1.0",
+    "preact": "^11.1.1",
     "preact-render-to-string": "^6.8.2",
     "tailwindcss": "^4.3.3"
   },
