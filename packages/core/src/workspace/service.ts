@@ -9,7 +9,7 @@
 import { mapNotNullish, sortBy } from "@std/collections";
 import { Clock, Context, Effect, Layer, Result } from "effect";
 
-import { Ids } from "#/ids.ts";
+import { Ids } from "#/idsRef.ts";
 import {
   ConcurrentModificationError,
   type Key,

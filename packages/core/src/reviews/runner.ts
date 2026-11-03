@@ -14,7 +14,7 @@ import { Files } from "#/files/service.ts";
 import { FlowRunner } from "#/flow/runner.ts";
 import type { FlowEvent } from "#/flow/types.ts";
 import { view } from "#/flow/view.ts";
-import { Ids } from "#/ids.ts";
+import { Ids } from "#/idsRef.ts";
 import type { Marks } from "#/marks/service.ts";
 import type { ModelClient } from "#/model/service.ts";
 import type { MissingChunksError } from "#/persistence/chunked_values.ts";

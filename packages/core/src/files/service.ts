@@ -9,7 +9,7 @@ import { Clock, Context, Effect, Layer } from "effect";
 
 import { unifiedDiff } from "#/diff/unified_diff.ts";
 import { type ContentManifest, chunkContent } from "#/files/chunked_content.ts";
-import { Ids } from "#/ids.ts";
+import { Ids } from "#/idsRef.ts";
 import type { Mark, MigrateMarksResult } from "#/marks/types.ts";
 import {
   type ConcurrentModificationError,

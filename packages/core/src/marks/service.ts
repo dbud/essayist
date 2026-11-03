@@ -7,7 +7,7 @@
 import { Clock, Context, Effect, Layer } from "effect";
 
 import { Files } from "#/files/service.ts";
-import { Ids } from "#/ids.ts";
+import { Ids } from "#/idsRef.ts";
 import { TokenizedText } from "#/marks/tokenized.ts";
 import type { Mark, MarkOptions, MarkResult } from "#/marks/types.ts";
 import type { ConcurrentModificationError, PersistenceError } from "#/persistence/mod.ts";

@@ -39,7 +39,8 @@ export {
 } from "#/files/types.ts";
 export { pluralize } from "#/format.ts";
 export type { IdGenerator } from "#/ids.ts";
-export { Ids, nextId } from "#/ids.ts";
+export { Ids } from "#/idsRef.ts";
+export { nextId } from "#/ids.ts";
 export { jsonLogger, jsonLogLayer } from "#/log.ts";
 export type { ResolveInput, ResolveOptions } from "#/marks/resolver.ts";
 export { resolveMarks } from "#/marks/resolver.ts";
