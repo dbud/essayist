@@ -9,12 +9,20 @@
     "module": "esnext",
     "moduleResolution": "bundler",
     "noEmit": true,
+    "noImplicitOverride": true,
     "resolveJsonModule": true,
     "skipLibCheck": true,
     "strict": true,
     "target": "es2024",
-    "types": ["node", "vite/client", "google.accounts", "gapi", "google.picker"]
+    "types": [
+      "node",
+      "vite/client",
+      "google.accounts",
+      "gapi",
+      "google.picker",
+      "@cloudflare/vitest-plugin/types"
+    ]
   },
   "exclude": ["src/client"],
-  "include": ["src", "scripts", "worker-configuration.d.ts", "vite.config.ts"]
+  "include": ["src", "scripts", "tests", "worker-configuration.d.ts", "vite.config.ts"]
 }
