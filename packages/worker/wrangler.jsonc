@@ -12,7 +12,11 @@
       "database_name": "essayist-db",
     },
   ],
+  "durable_objects": {
+    "bindings": [{ "class_name": "ReviewRunDriver", "name": "RUN_DRIVER" }],
+  },
   "main": "./src/main.ts",
+  "migrations": [{ "new_sqlite_classes": ["ReviewRunDriver"], "tag": "v1" }],
   "name": "essayist-worker",
   "observability": {
     "logs": {

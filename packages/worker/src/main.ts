@@ -10,4 +10,6 @@ const app = new Hono<{ Bindings: Cloudflare.Env }>();
 app.all("/api/*", (c) => apiHandler(c.req.raw, env(c.env)));
 app.route("/", webApp);
 
+export { ReviewRunDriver } from "#/reviews/driver.ts";
+
 export default app;

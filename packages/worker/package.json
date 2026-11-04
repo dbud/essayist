@@ -18,7 +18,8 @@
     "lint": "oxlint .",
     "preview": "vite preview",
     "test": "vitest run",
-    "typegen": "wrangler types --include-runtime=false"
+    "test:do": "vitest run --config vitest.do.config.ts",
+    "typegen": "wrangler types"
   },
   "dependencies": {
     "@effect/ai-openrouter": "catalog:",
@@ -67,6 +68,7 @@
   },
   "devDependencies": {
     "@cloudflare/vite-plugin": "^1.66.0",
+    "@cloudflare/vitest-plugin": "^1.5.1",
     "@cloudflare/workers-types": "catalog:",
     "@resvg/resvg-wasm": "2.6.2",
     "@sentry/vite-plugin": "^11.10.0",
