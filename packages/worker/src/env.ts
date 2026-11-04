@@ -4,7 +4,7 @@
 
 import type { D1Database } from "@cloudflare/workers-types";
 import { assert } from "@std/assert";
-import { Config, ConfigProvider, Context, Effect, Layer, Option } from "effect";
+import { Config, ConfigProvider, Context, Effect, Layer, Option, Schema } from "effect";
 
 const config = Config.all({
   LOG_LEVEL: Config.option(Config.String("LOG_LEVEL")),
@@ -15,6 +15,16 @@ const config = Config.all({
   SENTRY_DSN: Config.String("SENTRY_DSN"),
   SENTRY_RELEASE: Config.option(Config.String("SENTRY_RELEASE")),
   SENTRY_ENVIRONMENT: Config.option(Config.String("SENTRY_ENVIRONMENT")),
+  // keep heartbeat < stale < retry
+  DRIVER_HEARTBEAT_MS: Config.schema(Schema.NumberFromString, "DRIVER_HEARTBEAT_MS").pipe(
+    Config.withDefault(30_000),
+  ),
+  DRIVER_STALE_MS: Config.schema(Schema.NumberFromString, "DRIVER_STALE_MS").pipe(
+    Config.withDefault(75_000),
+  ),
+  DRIVER_RETRY_MS: Config.schema(Schema.NumberFromString, "DRIVER_RETRY_MS").pipe(
+    Config.withDefault(90_000),
+  ),
 });
 
 export interface WorkerEnv {
@@ -26,6 +36,9 @@ export interface WorkerEnv {
   readonly sentryDsn: string;
   readonly sentryRelease: string | undefined;
   readonly sentryEnvironment: string | undefined;
+  readonly driverHeartbeatMs: number;
+  readonly driverStaleMs: number;
+  readonly driverRetryMs: number;
   readonly db: D1Database;
 }
 
@@ -81,6 +94,9 @@ export function env(bindings: unknown): WorkerEnv {
     sentryEnvironment:
       Option.getOrUndefined(snapshot.SENTRY_ENVIRONMENT) ??
       (import.meta.env.DEV ? "development" : undefined),
+    driverHeartbeatMs: snapshot.DRIVER_HEARTBEAT_MS,
+    driverStaleMs: snapshot.DRIVER_STALE_MS,
+    driverRetryMs: snapshot.DRIVER_RETRY_MS,
     db,
   };
   return cached;

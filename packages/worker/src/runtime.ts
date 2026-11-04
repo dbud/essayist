@@ -8,6 +8,7 @@ import {
   Marks,
   type PersistenceError,
   ReviewConfig,
+  ReviewPacing,
   ReviewRuns,
   TraceEvents,
   UserState,
@@ -22,6 +23,7 @@ import { type GoogleConfig, googleConfigLayer, type WorkerEnv } from "#/env.ts";
 type WorkerRuntime = ManagedRuntime.ManagedRuntime<
   | ReviewConfig
   | ReviewRuns
+  | ReviewPacing
   | TraceEvents
   | Marks
   | Workspaces
@@ -41,6 +43,7 @@ function parseLogLevel(raw: string | undefined) {
 type RuntimeLayer = Layer.Layer<
   | ReviewConfig
   | ReviewRuns
+  | ReviewPacing
   | TraceEvents
   | Marks
   | Workspaces
@@ -75,6 +78,10 @@ function cell(env: WorkerEnv): RuntimeCell {
           Layer.provide(TraceEvents.layerNoDeps, ChunkedValues.layerNoDeps),
           ChunkedValues.layerNoDeps,
           Layer.provide(Marks.layerNoDeps, Files.layerNoDeps),
+          Layer.succeed(ReviewPacing, {
+            heartbeatMs: e.driverHeartbeatMs,
+            staleMs: e.driverStaleMs,
+          }),
           layerAuthD1(client),
           googleConfigLayer(e),
           jsonLogLayer,

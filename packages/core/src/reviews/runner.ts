@@ -21,6 +21,7 @@ import type { MissingChunksError } from "#/persistence/chunked_values.ts";
 import type { ConcurrentModificationError, PersistenceError } from "#/persistence/mod.ts";
 import { buildReviewGraph } from "#/reviews/adapter.ts";
 import { type ReviewServices, type ReviewTypes, reviewRunners } from "#/reviews/graph.ts";
+import { ReviewPacing } from "#/reviews/pacing.ts";
 import type { ReviewProgress } from "#/reviews/progress.ts";
 import { ReviewProgressTracker } from "#/reviews/progress.ts";
 import { ReviewRuns } from "#/reviews/service.ts";
@@ -40,12 +41,14 @@ export interface RunReviewPassOptions {
 }
 
 /** Services the review pass runs on: the steps pull them from context. */
-type RunnerServices = ReviewRuns | TraceEvents | WorkspaceId | Files | Marks | ModelClient;
-
-// Heartbeats go out every interval. The interval must stay far under the staleness window, or a
-// live run can be stolen.
-const HEARTBEAT_MS = 60_000;
-const HEARTBEAT_STALE_MS = 15 * 60_000;
+type RunnerServices =
+  | ReviewRuns
+  | TraceEvents
+  | WorkspaceId
+  | ReviewPacing
+  | Files
+  | Marks
+  | ModelClient;
 
 /** The file the pass targets has no versions. */
 export class ReviewFileMissingError extends Schema.TaggedError<ReviewFileMissingError>()(
@@ -158,6 +161,7 @@ function start(
 function claim(
   runs: Context.Service.Shape<typeof ReviewRuns>,
   runId: string,
+  staleMs: number,
 ): Effect.Effect<string, ReviewLeaseTakenError | PersistenceError, WorkspaceId> {
   return Effect.gen(function* () {
     const ids = yield* Ids;
@@ -165,7 +169,7 @@ function claim(
     const now = yield* Clock.currentTimeMillis;
     const claimed = yield* runs.claimRun(runId, {
       owner,
-      heartbeatAtLeast: now - HEARTBEAT_STALE_MS,
+      heartbeatAtLeast: now - staleMs,
     });
     if (!claimed) {
       return yield* Effect.fail(new ReviewLeaseTakenError({ runId }));
@@ -179,6 +183,7 @@ function heartbeatLoop(
   wsId: string,
   runId: string,
   owner: string,
+  heartbeatMs: number,
 ): Effect.Effect<void> {
   return Effect.gen(function* () {
     let warnedLeaseLost = false;
@@ -200,7 +205,7 @@ function heartbeatLoop(
         warnedLeaseLost = true;
         yield* Effect.logWarning("review run lease lost", { runId });
       }
-      yield* Effect.sleep(HEARTBEAT_MS);
+      yield* Effect.sleep(heartbeatMs);
     }
   });
 }
@@ -216,7 +221,8 @@ function execute(
     const runs = yield* ReviewRuns;
     const traces = yield* TraceEvents;
     const { wsId } = yield* WorkspaceId;
-    const owner = yield* claim(runs, run.id);
+    const { heartbeatMs, staleMs } = yield* ReviewPacing;
+    const owner = yield* claim(runs, run.id, staleMs);
     const { onProgress, pass, path } = options;
     const completed = priorTrace ? foldCompleted(priorTrace) : undefined;
     const graph = buildReviewGraph(pass, run.id, { path, versionId });
@@ -250,7 +256,7 @@ function execute(
     });
 
     // Prove life right away, then stay proven on the interval.
-    const fiber = yield* Effect.forkChild(heartbeatLoop(runs, wsId, run.id, owner));
+    const fiber = yield* Effect.forkChild(heartbeatLoop(runs, wsId, run.id, owner, heartbeatMs));
     const writerFiber = yield* Effect.forkChild(writer);
 
     // The native steps read their services from context.

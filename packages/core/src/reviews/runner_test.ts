@@ -12,6 +12,7 @@ import { ModelClient } from "#/model/service.ts";
 import { ChunkedValues } from "#/persistence/chunked_values.ts";
 import { kvLayer } from "#/persistence/kv_layer.ts";
 import { Persistence } from "#/persistence/mod.ts";
+import { ReviewPacing } from "#/reviews/pacing.ts";
 import {
   ReviewFileMissingError,
   ReviewLeaseTakenError,
@@ -88,18 +89,11 @@ async function setup(file?: {
   );
   const versionId = file
     ? await Effect.runPromise(
-        Effect.provide(
-          Effect.provideService(
-            Effect.gen(function* () {
-              const files = yield* Files;
-              const write = yield* files.write(file.path, file.content);
-              return write.version_id;
-            }),
-            WorkspaceId,
-            { wsId: "ws" },
-          ),
-          env,
-        ),
+        Effect.gen(function* () {
+          const files = yield* Files;
+          const write = yield* files.write(file.path, file.content);
+          return write.version_id;
+        }).pipe(Effect.provideService(WorkspaceId, { wsId: "ws" }), Effect.provide(env)),
       )
     : undefined;
   return { kv, env, versionId };
@@ -117,20 +111,13 @@ function viaRuns<A>(
   }) => Effect.Effect<A, unknown, WorkspaceId>,
 ): Promise<A> {
   return Effect.runPromise(
-    Effect.provide(
-      Effect.provideService(
-        Effect.gen(function* () {
-          const runs = yield* ReviewRuns;
-          const traces = yield* TraceEvents;
-          const files = yield* Files;
-          const persistence = yield* Persistence;
-          return yield* body({ runs, traces, files, persistence });
-        }),
-        WorkspaceId,
-        { wsId: "ws" },
-      ),
-      env,
-    ),
+    Effect.gen(function* () {
+      const runs = yield* ReviewRuns;
+      const traces = yield* TraceEvents;
+      const files = yield* Files;
+      const persistence = yield* Persistence;
+      return yield* body({ runs, traces, files, persistence });
+    }).pipe(Effect.provideService(WorkspaceId, { wsId: "ws" }), Effect.provide(env)),
   );
 }
 
@@ -139,11 +126,10 @@ async function runPass(
   options: RunReviewPassOptions,
 ): Promise<ReviewRun> {
   return await Effect.runPromise(
-    Effect.provide(
-      Effect.provideService(runReviewPass(options), WorkspaceId, {
-        wsId: "ws",
-      }),
-      env,
+    runReviewPass(options).pipe(
+      Effect.provideService(WorkspaceId, { wsId: "ws" }),
+      Effect.provideService(ReviewPacing, { heartbeatMs: 50, staleMs: 500 }),
+      Effect.provide(env),
     ),
   );
 }
@@ -154,11 +140,10 @@ async function resumePass(
   runId: string,
 ): Promise<ReviewRun> {
   return await Effect.runPromise(
-    Effect.provide(
-      Effect.provideService(resumeReviewPass(options, runId), WorkspaceId, {
-        wsId: "ws",
-      }),
-      env,
+    resumeReviewPass(options, runId).pipe(
+      Effect.provideService(WorkspaceId, { wsId: "ws" }),
+      Effect.provideService(ReviewPacing, { heartbeatMs: 50, staleMs: 500 }),
+      Effect.provide(env),
     ),
   );
 }

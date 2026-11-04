@@ -13,6 +13,7 @@ import {
   resolveActiveReviewPass,
   resolveReviewPass,
   ReviewConfig,
+  ReviewPacing,
   ReviewRuns,
   runReviewPass,
   TraceEvents,
@@ -63,6 +64,7 @@ const workspaceHandlers = HttpApiBuilder.group(
       | GoogleConfig
       | ReviewConfig
       | ReviewRuns
+      | ReviewPacing
       | TraceEvents
       | Marks
     >();
