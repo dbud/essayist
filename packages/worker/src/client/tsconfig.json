@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    // full replacement: no node types in the browser bundle
+    "lib": ["esnext", "esnext.iterator", "dom"],
     "types": ["vite/client", "google.accounts", "gapi", "google.picker"]
   },
   "exclude": [],

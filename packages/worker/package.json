@@ -18,7 +18,7 @@
     "lint": "oxlint .",
     "preview": "vite preview",
     "test": "vitest run",
-    "typegen": "wrangler types --include-runtime=false"
+    "typegen": "wrangler types"
   },
   "dependencies": {
     "@effect/ai-openrouter": "catalog:",
