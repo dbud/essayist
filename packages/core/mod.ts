@@ -74,6 +74,7 @@ export type { ReviewPhase, ReviewProgress } from "#/reviews/progress.ts";
 export { ReviewProgressTracker } from "#/reviews/progress.ts";
 export type { RunnerError, RunReviewPassOptions } from "#/reviews/runner.ts";
 export { ReviewLeaseTakenError, resumeReviewPass, runReviewPass } from "#/reviews/runner.ts";
+export { driveReviewRun, type DriveError, type RunRef } from "#/reviews/drive.ts";
 export { ReviewPacing } from "#/reviews/pacing.ts";
 export { ReviewRuns } from "#/reviews/service.ts";
 export type { TraceEvent, TraceNodeView, TraceTotals, TraceView } from "#/reviews/trace/mod.ts";
