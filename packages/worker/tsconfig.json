@@ -5,7 +5,7 @@
     "isolatedModules": true,
     "jsx": "react-jsx",
     "jsxImportSource": "preact",
-    "lib": ["esnext", "esnext.iterator"],
+    "lib": ["esnext", "esnext.iterator", "dom"],
     "module": "esnext",
     "moduleResolution": "bundler",
     "noEmit": true,

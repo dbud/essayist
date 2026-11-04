@@ -1,6 +1,5 @@
 {
   "compilerOptions": {
-    "lib": ["esnext", "esnext.iterator", "dom"],
     "types": ["vite/client", "google.accounts", "gapi", "google.picker"]
   },
   "exclude": [],
