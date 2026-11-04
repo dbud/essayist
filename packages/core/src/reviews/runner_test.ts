@@ -128,7 +128,7 @@ async function runPass(
   return await Effect.runPromise(
     runReviewPass(options).pipe(
       Effect.provideService(WorkspaceId, { wsId: "ws" }),
-      Effect.provideService(ReviewPacing, { heartbeatMs: 50, staleMs: 500 }),
+      Effect.provideService(ReviewPacing, { heartbeatMs: 50, staleMs: 500, retryMs: 500 }),
       Effect.provide(env),
     ),
   );
@@ -142,7 +142,7 @@ async function resumePass(
   return await Effect.runPromise(
     resumeReviewPass(options, runId).pipe(
       Effect.provideService(WorkspaceId, { wsId: "ws" }),
-      Effect.provideService(ReviewPacing, { heartbeatMs: 50, staleMs: 500 }),
+      Effect.provideService(ReviewPacing, { heartbeatMs: 50, staleMs: 500, retryMs: 500 }),
       Effect.provide(env),
     ),
   );

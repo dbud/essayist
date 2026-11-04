@@ -22,7 +22,7 @@ import * as Reactivity from "effect/reactivity/Reactivity";
 import { stubModelClient } from "#/api/stubModel.ts";
 import { type GoogleConfig, googleConfigLayer, type WorkerEnv } from "#/env.ts";
 
-type WorkerRuntime = ManagedRuntime.ManagedRuntime<
+export type WorkerRuntime = ManagedRuntime.ManagedRuntime<
   | ReviewConfig
   | ReviewRuns
   | ReviewPacing
@@ -86,6 +86,7 @@ function cell(env: WorkerEnv): RuntimeCell {
           Layer.succeed(ReviewPacing, {
             heartbeatMs: e.driverHeartbeatMs,
             staleMs: e.driverStaleMs,
+            retryMs: e.driverRetryMs,
           }),
           layerAuthD1(client),
           googleConfigLayer(e),

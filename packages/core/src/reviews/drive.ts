@@ -31,7 +31,7 @@ export type DriveError =
   | ConcurrentModificationError
   | MissingChunksError;
 
-type DriveServices =
+export type DriveServices =
   | ReviewConfig
   | Files
   | Marks
