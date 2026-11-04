@@ -329,7 +329,7 @@ importers:
         version: 5.3.0
       '@hono/oauth-providers':
         specifier: ^0.9.1
-        version: 0.9.1(hono@4.13.14)
+        version: 0.9.1(hono@4.13.16)
       '@lexical/clipboard':
         specifier: ^0.53.0
         version: 0.53.0(typescript@7.0.2)
@@ -365,7 +365,7 @@ importers:
         version: 0.53.0(typescript@7.0.2)
       '@preact/signals':
         specifier: ^2.11.4
-        version: 2.11.4(preact@11.1.0)
+        version: 2.11.4(preact@11.1.1)
       '@sentry/browser':
         specifier: ^11.10.0
         version: 11.10.0
@@ -406,8 +406,8 @@ importers:
         specifier: ^21.0.4
         version: 21.0.4
       hono:
-        specifier: ^4.13.14
-        version: 4.13.14
+        specifier: ^4.13.16
+        version: 4.13.16
       jose:
         specifier: 'catalog:'
         version: 6.2.14
@@ -415,8 +415,8 @@ importers:
         specifier: ^0.53.0
         version: 0.53.0(typescript@7.0.2)
       lucide-preact:
-        specifier: ^1.64.0
-        version: 1.64.0(preact@11.1.0)
+        specifier: ^1.66.0
+        version: 1.66.0(preact@11.1.1)
       marked:
         specifier: ^18.1.2
         version: 18.1.2
@@ -424,11 +424,11 @@ importers:
         specifier: ^12.2.0
         version: 12.2.0
       preact:
-        specifier: ^11.1.0
-        version: 11.1.0(preact-render-to-string@6.8.2)
+        specifier: ^11.1.1
+        version: 11.1.1(preact-render-to-string@6.8.2)
       preact-render-to-string:
         specifier: ^6.8.2
-        version: 6.8.2(preact@11.1.0)
+        version: 6.8.2(preact@11.1.1)
       tailwindcss:
         specifier: ^4.3.3
         version: 4.3.3
@@ -2582,8 +2582,8 @@ packages:
     resolution: {integrity: sha512-EykJT/Q1KjTWctppgIAgfSO0tKVuZUjhgMr17kqTumMl6Afv3EISleU7qZUzoXDFTAHTDC4NOoG/ZxU3EvlMPQ==}
     engines: {node: '>=8'}
 
-  hono@4.13.14:
-    resolution: {integrity: sha512-yhRLQ21U6qa9Hsu2N7Qcbh8tE+WKEcoErjIo56LeSGiGXGp9sA7UpE86Ui9uexb61KakiGwuHMn2QdV7w6i6kQ==}
+  hono@4.13.16:
+    resolution: {integrity: sha512-AOLOEhvrV+iH92xXCnFr/5+3KjPKcI3xP63XJtX5spAnkznPdHijlIsUTpi7/9EhWqrTCekw5c5zh1K+YsVw7A==}
     engines: {node: '>=16.9.0'}
 
   husky@9.1.7:
@@ -2800,8 +2800,8 @@ packages:
     resolution: {integrity: sha512-U4N8FgzmWxc8k1VH8Kr6lQg18U7Fjvby6wXHVRX/ZZ7IwWbRMgrRbP0Wrb5q5NVinryp4SQampHKdvtecItxUg==}
     engines: {node: 20 || >=22}
 
-  lucide-preact@1.64.0:
-    resolution: {integrity: sha512-dAGV3ibOKv+ykVIRGYuLWPzwEawWyPFR6GtF2D49NVJHs2euBAJMK+96rijJuMW9hM60q/zdXetwoltmBhCZOw==}
+  lucide-preact@1.66.0:
+    resolution: {integrity: sha512-cPNQpGavAQ/877VtkTS8erT6y3fIuPtYyyuUm3Pg4tq7gaxkTe3OK4yzNLADa2QsU/vetI5QmLzjWN/EA9K/tA==}
     peerDependencies:
       preact: ^10.27.2 || ^11.0.0-0
 
@@ -2937,8 +2937,8 @@ packages:
     peerDependencies:
       preact: '>=10 || >= 11.0.0-0'
 
-  preact@11.1.0:
-    resolution: {integrity: sha512-hz1VsjWx5pSYPDVEzb9w+XyOmQpP1qW/ZEaMiYm+C8ykJr8KP+TKGZIbCW0QmZ/Yr/jg3XkZoziEWn9iWHZ9Mw==}
+  preact@11.1.1:
+    resolution: {integrity: sha512-vpFVfai437pbuLri7XVeslCPfrEZX6Z1S2gV+MOFrA/kji+NKUXvH7y01EnVjA1guLigfkVp77Sqipd4SIllCg==}
     peerDependencies:
       preact-render-to-string: '>=6.7.0'
     peerDependenciesMeta:
@@ -3499,9 +3499,9 @@ snapshots:
 
   '@fontsource/ibm-plex-serif@5.3.0': {}
 
-  '@hono/oauth-providers@0.9.1(hono@4.13.14)':
+  '@hono/oauth-providers@0.9.1(hono@4.13.16)':
     dependencies:
-      hono: 4.13.14
+      hono: 4.13.16
 
   '@iconify/types@2.0.0': {}
 
@@ -4162,10 +4162,10 @@ snapshots:
 
   '@preact/signals-core@1.14.5': {}
 
-  '@preact/signals@2.11.4(preact@11.1.0)':
+  '@preact/signals@2.11.4(preact@11.1.1)':
     dependencies:
       '@preact/signals-core': 1.14.5
-      preact: 11.1.0(preact-render-to-string@6.8.2)
+      preact: 11.1.1(preact-render-to-string@6.8.2)
 
   '@resvg/resvg-wasm@2.6.2': {}
 
@@ -4940,7 +4940,7 @@ snapshots:
 
   has-flag@4.0.0: {}
 
-  hono@4.13.14: {}
+  hono@4.13.16: {}
 
   husky@9.1.7: {}
 
@@ -5084,9 +5084,9 @@ snapshots:
 
   lru-cache@11.5.3: {}
 
-  lucide-preact@1.64.0(preact@11.1.0):
+  lucide-preact@1.66.0(preact@11.1.1):
     dependencies:
-      preact: 11.1.0(preact-render-to-string@6.8.2)
+      preact: 11.1.1(preact-render-to-string@6.8.2)
 
   magic-string@0.30.21:
     dependencies:
@@ -5295,13 +5295,13 @@ snapshots:
       picocolors: 1.1.1
       source-map-js: 1.2.2
 
-  preact-render-to-string@6.8.2(preact@11.1.0):
+  preact-render-to-string@6.8.2(preact@11.1.1):
     dependencies:
-      preact: 11.1.0(preact-render-to-string@6.8.2)
+      preact: 11.1.1(preact-render-to-string@6.8.2)
 
-  preact@11.1.0(preact-render-to-string@6.8.2):
+  preact@11.1.1(preact-render-to-string@6.8.2):
     optionalDependencies:
-      preact-render-to-string: 6.8.2(preact@11.1.0)
+      preact-render-to-string: 6.8.2(preact@11.1.1)
 
   react-dom@19.3.1(react@19.3.1):
     dependencies:
