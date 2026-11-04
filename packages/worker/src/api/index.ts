@@ -7,7 +7,7 @@ import {
   Files,
   FileMissingError,
   Marks,
-  ModelClient,
+  type ModelClient,
   nextId,
   type PersistenceError,
   resolveActiveReviewPass,
@@ -26,7 +26,6 @@ import { HttpApi, HttpApiBuilder, HttpApiError } from "effect/http-api";
 
 import { importGoogleDocFile } from "#/api/googleDocs.ts";
 import { sessionMiddleware, UserSession, adminMiddleware } from "#/api/sessionMiddleware.ts";
-import { stubModelClient } from "#/api/stubModel.ts";
 import type { GoogleConfig } from "#/env.ts";
 import { adminConfigLoader } from "#/models/admin.loader.ts";
 import { fileContentLoader } from "#/models/fileContent.loader.ts";
@@ -67,6 +66,7 @@ const workspaceHandlers = HttpApiBuilder.group(
       | ReviewPacing
       | TraceEvents
       | Marks
+      | ModelClient
     >();
     const workspacesStore = yield* Workspaces;
     const userState = yield* UserState;
@@ -259,7 +259,6 @@ const workspaceHandlers = HttpApiBuilder.group(
           return yield* runReviewPass({ pass, path }).pipe(
             Effect.provideService(WorkspaceId, { wsId }),
             Effect.provide(stores),
-            Effect.provideService(ModelClient, stubModelClient),
             Effect.catchTag("ReviewFileMissingError", () =>
               Effect.fail(new HttpApiError.NotFound()),
             ),

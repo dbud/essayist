@@ -6,6 +6,7 @@ import {
   jsonLogLayer,
   layerAuthD1,
   Marks,
+  ModelClient,
   type PersistenceError,
   ReviewConfig,
   ReviewPacing,
@@ -18,6 +19,7 @@ import { layerKvD1 } from "@essayist/core/kv_d1";
 import { Effect, Layer, LogLevel, ManagedRuntime, References } from "effect";
 import * as Reactivity from "effect/reactivity/Reactivity";
 
+import { stubModelClient } from "#/api/stubModel.ts";
 import { type GoogleConfig, googleConfigLayer, type WorkerEnv } from "#/env.ts";
 
 type WorkerRuntime = ManagedRuntime.ManagedRuntime<
@@ -30,6 +32,7 @@ type WorkerRuntime = ManagedRuntime.ManagedRuntime<
   | AuthStore
   | UserState
   | Files
+  | ModelClient
   | GoogleConfig,
   PersistenceError
 >;
@@ -50,6 +53,7 @@ type RuntimeLayer = Layer.Layer<
   | AuthStore
   | UserState
   | Files
+  | ModelClient
   | GoogleConfig,
   PersistenceError
 >;
@@ -75,6 +79,7 @@ function cell(env: WorkerEnv): RuntimeCell {
           Files.layerNoDeps,
           Workspaces.layerNoDeps,
           ReviewRuns.layerNoDeps,
+          Layer.succeed(ModelClient, stubModelClient),
           Layer.provide(TraceEvents.layerNoDeps, ChunkedValues.layerNoDeps),
           ChunkedValues.layerNoDeps,
           Layer.provide(Marks.layerNoDeps, Files.layerNoDeps),
