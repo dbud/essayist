@@ -10,7 +10,7 @@ function transform(html: string): string {
   const win = new Window();
   const dom = new win.DOMParser().parseFromString(html, "text/html");
   // happy-dom types do not structurally satisfy the DOM interfaces
-  transformPastedHtml(dom.body as unknown as ParentNode, dom as unknown as Document);
+  transformPastedHtml(dom.body as unknown as Element, dom as unknown as Document);
   return dom.body.innerHTML;
 }
 

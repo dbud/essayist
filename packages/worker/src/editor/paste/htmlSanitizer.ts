@@ -57,10 +57,10 @@ export class HtmlSanitizer {
 // Lexical maps <s> to strikethrough but has no converter for <del> or <strike>, so they are
 // renamed before the allowlist runs. Anchors become literal GitHub-style markdown link text, e.g.
 // [label](https://example.com), so pasted links stay plain text.
-export function transformPastedHtml(body: ParentNode, doc: Document): void {
+export function transformPastedHtml(body: Element, doc: Document): void {
   for (const el of body.querySelectorAll("del, strike")) {
     const renamed = doc.createElement("s");
-    renamed.append(...el.childNodes);
+    renamed.replaceChildren(...el.childNodes);
     el.replaceWith(renamed);
   }
   for (const el of body.querySelectorAll("a")) {

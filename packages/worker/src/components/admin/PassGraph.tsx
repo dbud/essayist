@@ -12,6 +12,11 @@ interface PassGraphData {
   definition: string;
 }
 
+interface PassGraphError {
+  message?: string;
+  error?: string;
+}
+
 /** The definition of the pass graph in view, shared with the side panel. */
 export const passGraphDefinition = signal<string | null>(null);
 
@@ -50,7 +55,7 @@ export default function PassGraph() {
     passGraphDefinition.value = null;
     fetch(`/api/admin/review-passes/${encodeURIComponent(passId)}/graph`)
       .then(async (res) => {
-        const body = await res.json().catch(() => null);
+        const body = (await res.json().catch(() => null)) as PassGraphError | null;
         if (!res.ok) {
           throw new Error(body?.message ?? body?.error ?? `HTTP ${res.status}`);
         }
