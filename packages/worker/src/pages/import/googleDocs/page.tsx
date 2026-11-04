@@ -1,9 +1,9 @@
 import { useSignal } from "@preact/signals";
 import { useEffect } from "preact/hooks";
 
-import type { PickerConfig } from "#/auth/pickerConfig.ts";
 import GoogleSigninLink from "#/components/GoogleSigninLink.tsx";
 import type { PickerDoc } from "#/models/fileTree.ts";
+import type { PickerConfig } from "#/pages/import/googleDocs/data.ts";
 
 import type { GooglePickerData } from "./data.ts";
 

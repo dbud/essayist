@@ -12,7 +12,7 @@ import { runtime } from "#/runtime.ts";
 import createModels, { EditorModelsProvider } from "./models";
 import Page from "./page";
 
-export default new Hono().get("/", async (c) => {
+export default new Hono<{ Bindings: Cloudflare.Env }>().get("/", async (c) => {
   const user = c.get("auth-user");
   if (user === undefined) return c.redirect("/", 303);
 

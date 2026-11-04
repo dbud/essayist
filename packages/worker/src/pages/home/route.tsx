@@ -7,7 +7,7 @@ import { runtime } from "#/runtime.ts";
 import createModels, { HomeModelsProvider } from "./models";
 import Page from "./page";
 
-export default new Hono().get("/", async (c) => {
+export default new Hono<{ Bindings: Cloudflare.Env }>().get("/", async (c) => {
   const data = {
     categories: await runtime(env(c.env)).runPromise(categoriesLoader()),
   };

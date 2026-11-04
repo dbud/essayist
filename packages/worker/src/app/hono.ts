@@ -8,7 +8,7 @@ import { oauthRoutes } from "#/auth/routes.ts";
 import { requireUser, resolveSession } from "#/auth/session.ts";
 import { pages } from "#/pages/index.ts";
 
-export const webApp = new Hono()
+export const webApp = new Hono<{ Bindings: Cloudflare.Env }>()
   .onError((error, c) => {
     Effect.runFork(
       Effect.logError("page handler failed", {

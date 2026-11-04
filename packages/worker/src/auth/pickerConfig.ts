@@ -1,6 +1,6 @@
 /**
- * The Google Picker tab's per-session payload: the user's drive.file access token plus the
- * public picker credentials. The Google Picker is a client-only library, so it needs an OAuth
+ * Resolves the Google Picker tab's per-session payload: the user's drive.file access token plus
+ * the public picker credentials. The Google Picker is a client-only library, so it needs an OAuth
  * token client-side; the developerKey is a public API key whose abuse envelope is referrer + API
  * restrictions in the Cloud Console. The client secret stays server-side.
  */
@@ -10,13 +10,7 @@ import { Effect, Schema } from "effect";
 
 import { getValidAccessToken } from "#/auth/token.ts";
 import { GoogleConfig } from "#/env.ts";
-
-export const PickerConfig = Schema.Struct({
-  accessToken: Schema.String,
-  developerKey: Schema.String,
-  appId: Schema.optional(Schema.String),
-});
-export type PickerConfig = Schema.Schema.Type<typeof PickerConfig>;
+import type { PickerConfig } from "#/pages/import/googleDocs/data.ts";
 
 /** The picker session cannot be resolved; `signInFixable` says whether the sign-in flow can repair
 /** it. */

@@ -1,8 +1,8 @@
 // Google Picker client wrapper: opens the picker and resolves with the selected documents.
 
-import type { PickerConfig } from "#/auth/pickerConfig.ts";
 import { loadScript } from "#/client/loadScript.ts";
 import type { PickerDoc } from "#/models/fileTree.ts";
+import type { PickerConfig } from "#/pages/import/googleDocs/data.ts";
 
 const GAPI_SRC = "https://apis.google.com/js/api.js";
 

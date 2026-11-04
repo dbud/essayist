@@ -8,7 +8,7 @@ import { runtime } from "#/runtime.ts";
 import type { GooglePickerData } from "./data.ts";
 import ImportGoogleDocsPage from "./page.tsx";
 
-export default new Hono().get("/", async (c) => {
+export default new Hono<{ Bindings: Cloudflare.Env }>().get("/", async (c) => {
   const e = env(c.env);
   const data: GooglePickerData = await runtime(e).runPromise(
     pickerConfig(c.get("auth-session-id")).pipe(

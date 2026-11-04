@@ -36,7 +36,7 @@ const NEXT_COOKIE_MAX_AGE = 600;
 const notConfigured = (client_id: string | undefined, client_secret: string | undefined): boolean =>
   client_id === undefined || client_secret === undefined;
 
-export const oauthRoutes = new Hono()
+export const oauthRoutes = new Hono<{ Bindings: Cloudflare.Env }>()
   .get("/signout", async (c) => {
     const sessionId = readSiteSession(c);
     if (sessionId !== undefined) {

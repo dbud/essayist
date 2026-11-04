@@ -7,7 +7,7 @@ import { runtime } from "#/runtime.ts";
 
 import Page from "./page";
 
-export default new Hono().get("/:wsId/:runId", async (c) => {
+export default new Hono<{ Bindings: Cloudflare.Env }>().get("/:wsId/:runId", async (c) => {
   const user = c.get("auth-user");
   if (user === undefined) return c.redirect("/", 303);
   const { wsId, runId } = c.req.param();

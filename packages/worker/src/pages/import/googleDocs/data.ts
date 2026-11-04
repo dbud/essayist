@@ -1,6 +1,11 @@
 import { Schema } from "effect";
 
-import { PickerConfig } from "#/auth/pickerConfig.ts";
+export const PickerConfig = Schema.Struct({
+  accessToken: Schema.String,
+  developerKey: Schema.String,
+  appId: Schema.optional(Schema.String),
+});
+export type PickerConfig = Schema.Schema.Type<typeof PickerConfig>;
 
 export const GooglePickerError = Schema.Struct({
   text: Schema.String,

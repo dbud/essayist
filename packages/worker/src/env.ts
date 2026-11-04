@@ -65,17 +65,12 @@ export function googleConfigLayer(e: WorkerEnv): Layer.Layer<GoogleConfig> {
 
 let cached: WorkerEnv | undefined;
 
-// The one boundary cast: hono's fetch env is untyped, and the D1 binding is the account's database.
-function dbBinding(bindings: unknown): D1Database {
-  const db = (bindings as { DB?: unknown }).DB;
-  assert(db !== undefined, "the D1 binding DB is missing");
-  return db as D1Database;
-}
-
-export function env(bindings: unknown): WorkerEnv {
+export function env(bindings: Cloudflare.Env): WorkerEnv {
   if (cached !== undefined) return cached;
 
-  const db = dbBinding(bindings);
+  const db = bindings.DB;
+  assert(db !== undefined, "the D1 binding DB is missing");
+
   const snapshot = Effect.runSync(
     config.pipe(
       Effect.provideService(ConfigProvider.ConfigProvider, ConfigProvider.fromUnknown(bindings)),
