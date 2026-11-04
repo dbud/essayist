@@ -15,7 +15,6 @@ import {
   ReviewConfig,
   ReviewPacing,
   ReviewRuns,
-  runReviewPass,
   TraceEvents,
   UserState,
   WorkspaceId,
@@ -32,6 +31,7 @@ import { fileContentLoader } from "#/models/fileContent.loader.ts";
 import { fileTreeLoader } from "#/models/fileTree.loader.ts";
 import { fileVersionsLoader } from "#/models/fileVersions.loader.ts";
 import { workspacesLoader } from "#/models/workspaces.loader.ts";
+import { RunDrivers } from "#/reviews/runDrivers.ts";
 
 import { adminGroup } from "./admin";
 import { ApiBadRequest, ApiFailure } from "./errors";
@@ -67,6 +67,7 @@ const workspaceHandlers = HttpApiBuilder.group(
       | TraceEvents
       | Marks
       | ModelClient
+      | RunDrivers
     >();
     const workspacesStore = yield* Workspaces;
     const userState = yield* UserState;
@@ -250,28 +251,32 @@ const workspaceHandlers = HttpApiBuilder.group(
           yield* files
             .promoteDraft(path)
             .pipe(Effect.provideService(WorkspaceId, { wsId }), dieWriteErrors);
+          // TODO -- promoteDraft can be upgraded later to return the latest versionId with a status
+          // promoted:bool
+          const versionId = yield* files.getVersions(path).pipe(
+            Effect.provideService(WorkspaceId, { wsId }),
+            Effect.map((history) => history.at(-1)?.version_id),
+            dieWriteErrors,
+          );
+          if (versionId === undefined) {
+            return yield* Effect.fail(new HttpApiError.NotFound());
+          }
           const pass = yield* Effect.orDie(resolveActiveReviewPass.pipe(Effect.provide(stores)));
           if (pass === undefined) {
             return yield* Effect.fail(
               new ApiFailure({ message: "No active review pass configured." }),
             );
           }
-          return yield* runReviewPass({ pass, path }).pipe(
-            Effect.provideService(WorkspaceId, { wsId }),
-            Effect.provide(stores),
-            Effect.catchTag("ReviewFileMissingError", () =>
-              Effect.fail(new HttpApiError.NotFound()),
-            ),
-            Effect.catchTag("ReviewLeaseTakenError", (err) =>
-              Effect.fail(new ApiFailure({ message: err.message })),
-            ),
-            Effect.catchTags({
-              ReviewRunMissingError: Effect.die,
-              PersistenceError: Effect.die,
-              ConcurrentModificationError: Effect.die,
-              MissingChunksError: Effect.die,
-            }),
+          const run = yield* Effect.orDie(
+            ReviewRuns.use((runs) =>
+              runs.createRun({ path, reviewPassId: pass.pass.id, versionId }),
+            ).pipe(Effect.provideService(WorkspaceId, { wsId }), Effect.provide(stores)),
           );
+          yield* Effect.gen(function* () {
+            const runDrivers = yield* RunDrivers;
+            yield* runDrivers.kick({ runId: run.id, wsId: run.wsId });
+          }).pipe(Effect.provide(stores));
+          return run;
         }),
     });
   }),

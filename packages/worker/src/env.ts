@@ -40,6 +40,7 @@ export interface WorkerEnv {
   readonly driverStaleMs: number;
   readonly driverRetryMs: number;
   readonly db: D1Database;
+  readonly runDriver: Cloudflare.Env["RUN_DRIVER"];
 }
 
 /** Google client configuration as a service, for the api tier's token flows. */
@@ -71,6 +72,9 @@ export function env(bindings: Cloudflare.Env): WorkerEnv {
   const db = bindings.DB;
   assert(db !== undefined, "the D1 binding DB is missing");
 
+  const runDriver = bindings.RUN_DRIVER;
+  assert(runDriver !== undefined, "the RUN_DRIVER binding is missing");
+
   const snapshot = Effect.runSync(
     config.pipe(
       Effect.provideService(ConfigProvider.ConfigProvider, ConfigProvider.fromUnknown(bindings)),
@@ -93,6 +97,7 @@ export function env(bindings: Cloudflare.Env): WorkerEnv {
     driverStaleMs: snapshot.DRIVER_STALE_MS,
     driverRetryMs: snapshot.DRIVER_RETRY_MS,
     db,
+    runDriver,
   };
   return cached;
 }

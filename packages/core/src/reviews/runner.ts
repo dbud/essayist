@@ -88,6 +88,8 @@ export type RunnerError =
   | ConcurrentModificationError
   | MissingChunksError;
 
+// TODO -- production only resumes; runReviewPass is test-only. Followup: remove it and migrate the
+// tests to createRun + resumeReviewPass.
 /** Run a review pass over a file version. */
 export function runReviewPass(
   options: RunReviewPassOptions,

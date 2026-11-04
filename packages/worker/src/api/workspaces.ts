@@ -1,6 +1,6 @@
 import { DraftSnapshot, FileVersion, ReviewRun, Workspace } from "@essayist/core";
 import { Schema } from "effect";
-import { HttpApiEndpoint, HttpApiError, HttpApiGroup } from "effect/http-api";
+import { HttpApiEndpoint, HttpApiError, HttpApiGroup, HttpApiSchema } from "effect/http-api";
 
 import { FileContentData } from "#/models/fileContent.data.ts";
 import { FileTreeData } from "#/models/fileTree.data.ts";
@@ -169,9 +169,11 @@ const StartReviewPayload = Schema.Struct({
   path: Schema.NonEmptyString,
 });
 
+const accepted = <S extends Schema.Top>(schema: S) => HttpApiSchema.status(202)(schema);
+
 const startReview = HttpApiEndpoint.post("startReview", "/workspaces/files/review", {
   payload: StartReviewPayload,
-  success: ReviewRun,
+  success: accepted(ReviewRun),
   error: [HttpApiError.Forbidden, HttpApiError.NotFound, ApiFailure],
 });
 

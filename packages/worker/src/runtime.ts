@@ -21,6 +21,7 @@ import * as Reactivity from "effect/reactivity/Reactivity";
 
 import { stubModelClient } from "#/api/stubModel.ts";
 import { type GoogleConfig, googleConfigLayer, type WorkerEnv } from "#/env.ts";
+import { RunDrivers } from "#/reviews/runDrivers.ts";
 
 export type WorkerRuntime = ManagedRuntime.ManagedRuntime<
   | ReviewConfig
@@ -33,6 +34,7 @@ export type WorkerRuntime = ManagedRuntime.ManagedRuntime<
   | UserState
   | Files
   | ModelClient
+  | RunDrivers
   | GoogleConfig,
   PersistenceError
 >;
@@ -54,6 +56,7 @@ type RuntimeLayer = Layer.Layer<
   | UserState
   | Files
   | ModelClient
+  | RunDrivers
   | GoogleConfig,
   PersistenceError
 >;
@@ -80,6 +83,7 @@ function cell(env: WorkerEnv): RuntimeCell {
           Workspaces.layerNoDeps,
           ReviewRuns.layerNoDeps,
           Layer.succeed(ModelClient, stubModelClient),
+          RunDrivers.layerOf(e.runDriver),
           Layer.provide(TraceEvents.layerNoDeps, ChunkedValues.layerNoDeps),
           ChunkedValues.layerNoDeps,
           Layer.provide(Marks.layerNoDeps, Files.layerNoDeps),

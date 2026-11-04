@@ -20,7 +20,8 @@ export default function SidenoteControls() {
     // TODO -- receive promoted version and reviewRun in progress
     void fileTrees.current.value?.load();
     void fileVersions.current.value?.load();
-    if (result?.status === "completed") showToast("Review complete", "success");
+    if (result?.status === "running") showToast("Review started", "success");
+    else if (result?.status === "completed") showToast("Review complete", "success");
     else showToast(result?.error ?? "Review failed", "error");
   }
 
