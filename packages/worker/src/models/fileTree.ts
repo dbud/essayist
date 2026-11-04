@@ -1,7 +1,6 @@
 import { batch, computed, createModel, signal } from "@preact/signals";
 import { toKebabCase } from "@std/text/to-kebab-case";
 
-import type { PickerDoc } from "#/client/googlePicker.ts";
 import createAsyncState from "#/models/utils/asyncState.ts";
 import { BatchAuthError, type BatchResult, runBatch } from "#/models/utils/batch.ts";
 import { getJson, requestJson } from "#/models/utils/http.ts";
@@ -9,6 +8,11 @@ import type { UploadedFile } from "#/utils/fileUpload.ts";
 
 import { PENDING_VERSION_ID } from "./fileContent.ts";
 import type { FileTreeData } from "./fileTree.data";
+
+export interface PickerDoc {
+  id: string;
+  name: string;
+}
 
 export const FileTreeModel = createModel((wsId: string, data?: FileTreeData) => {
   const files = signal(data?.files ?? []);

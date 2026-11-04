@@ -1,14 +1,22 @@
 import { useSignal } from "@preact/signals";
 import { useEffect } from "preact/hooks";
 
-import { openGooglePicker, type PickerDoc } from "#/client/googlePicker.ts";
+import type { PickerConfig } from "#/auth/pickerConfig.ts";
 import GoogleSigninLink from "#/components/GoogleSigninLink.tsx";
+import type { PickerDoc } from "#/models/fileTree.ts";
 
 import type { GooglePickerData } from "./data.ts";
 
 type Status = "opening" | "cancelled" | "needsAccess" | "error";
 
-export default function ImportGoogleDocsPage({ data }: { data: GooglePickerData }) {
+export default function ImportGoogleDocsPage({
+  data,
+  openGooglePicker,
+}: {
+  data: GooglePickerData;
+  /** Browser-only; the client entry supplies it. */
+  openGooglePicker?: (config: PickerConfig) => Promise<PickerDoc[]>;
+}) {
   const status = useSignal<Status>(
     data.error === null ? "opening" : data.error.signInFixable ? "needsAccess" : "error",
   );
@@ -17,7 +25,7 @@ export default function ImportGoogleDocsPage({ data }: { data: GooglePickerData 
   useEffect(() => {
     if (data.error !== null) return;
     const config = data.config;
-    if (config === null) return;
+    if (config === null || !openGooglePicker) return;
 
     let cancelled = false;
 

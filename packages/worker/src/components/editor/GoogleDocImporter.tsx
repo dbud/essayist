@@ -2,9 +2,8 @@ import { useSignal } from "@preact/signals";
 import { Download } from "lucide-preact";
 import { useEffect, useRef } from "preact/hooks";
 
-import type { PickerDoc } from "#/client/googlePicker.ts";
 import WaveBars from "#/components/ui/WaveBars.tsx";
-import type { FileTree } from "#/models/fileTree.ts";
+import type { FileTree, PickerDoc } from "#/models/fileTree.ts";
 import { batchFailureMessage, formatBatchResult } from "#/models/utils/batch.ts";
 import { showToast, showTaskToast } from "#/models/utils/toast.ts";
 import { useEditorModels } from "#/pages/editor/models.ts";

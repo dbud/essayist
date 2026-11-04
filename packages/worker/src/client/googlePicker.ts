@@ -2,11 +2,7 @@
 
 import type { PickerConfig } from "#/auth/pickerConfig.ts";
 import { loadScript } from "#/client/loadScript.ts";
-
-export interface PickerDoc {
-  id: string;
-  name: string;
-}
+import type { PickerDoc } from "#/models/fileTree.ts";
 
 const GAPI_SRC = "https://apis.google.com/js/api.js";
 

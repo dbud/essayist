@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "preact/hooks";
 
-import { loadGsi } from "#/client/googleGsi.ts";
 import GoogleSigninLink from "#/components/GoogleSigninLink.tsx";
 
 /** The login page: the native "Sign in with Google" button plus the One
@@ -10,9 +9,12 @@ import GoogleSigninLink from "#/components/GoogleSigninLink.tsx";
 export default function Page({
   googleClientId,
   next,
+  loadGsi,
 }: {
   readonly googleClientId?: string;
   readonly next: string;
+  /** Browser-only; the client entry supplies it. */
+  readonly loadGsi?: () => Promise<void>;
 }) {
   const formRef = useRef<HTMLFormElement>(null);
   const credentialRef = useRef<HTMLInputElement>(null);
@@ -20,7 +22,7 @@ export default function Page({
   const [gsiFailed, setGsiFailed] = useState(false);
 
   useEffect(() => {
-    if (googleClientId === undefined) return;
+    if (googleClientId === undefined || !loadGsi) return;
     let cancelled = false;
     loadGsi()
       .then(() => {
