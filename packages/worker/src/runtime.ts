@@ -4,7 +4,6 @@ import {
   ChunkedValues,
   createStubModelClient,
   Files,
-  jsonLogLayer,
   layerAuthD1,
   Marks,
   ModelClient,
@@ -21,6 +20,7 @@ import { Effect, Layer, LogLevel, ManagedRuntime, References } from "effect";
 import * as Reactivity from "effect/reactivity/Reactivity";
 
 import { type GoogleConfig, googleConfigLayer, type WorkerEnv } from "#/env.ts";
+import { logLayer } from "#/log.ts";
 import { RunDrivers } from "#/reviews/runDrivers.ts";
 
 export type WorkerRuntime = ManagedRuntime.ManagedRuntime<
@@ -100,7 +100,7 @@ function cell(env: WorkerEnv): RuntimeCell {
           }),
           layerAuthD1(client),
           googleConfigLayer(e),
-          jsonLogLayer,
+          logLayer,
           Layer.succeed(References.MinimumLogLevel, parseLogLevel(e.logLevel)),
         ).pipe(Layer.provide(storage));
       }),

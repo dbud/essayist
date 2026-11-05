@@ -1,10 +1,10 @@
-import { jsonLogLayer } from "@essayist/core";
 import { captureException } from "@sentry/cloudflare";
 import { Cache, Cause, Effect, ErrorReporter, Layer, Result } from "effect";
 import { HttpRouter, HttpServer } from "effect/http";
 
 import { layerApi } from "#/api/index.ts";
 import type { WorkerEnv } from "#/env.ts";
+import { logLayer } from "#/log.ts";
 import { runtime, runtimeLayer } from "#/runtime.ts";
 
 type RequestHandler = (request: Request) => Promise<Response>;
@@ -52,7 +52,7 @@ export function apiHandler(request: Request, e: WorkerEnv): Promise<Response> {
         return new Response("internal error", { status: 500 });
       }),
     ),
-    Effect.provide(jsonLogLayer),
+    Effect.provide(logLayer),
   );
   return Effect.runPromise(program);
 }

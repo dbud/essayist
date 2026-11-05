@@ -75,11 +75,11 @@ function logCustom(nodeId: string, event: ReviewNodeEvent): Effect.Effect<void> 
         attempt: event.attempt,
         error: event.error,
       });
-    case "output":
-      return Effect.logDebug("output", {
-        node: nodeId,
-        output: event.output,
-      });
+    case "output": {
+      // Serialized: the dev console bridge truncates nested annotation objects.
+      const output = JSON.stringify(event.output);
+      return Effect.logDebug("output", { node: nodeId, output });
+    }
     case "applied":
       return Effect.logDebug("applied", {
         node: nodeId,
