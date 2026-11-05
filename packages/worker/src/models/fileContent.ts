@@ -96,11 +96,24 @@ export const FileContentModel = createModel(
       }
     }
 
-    async function promote(): Promise<FileVersion> {
-      return postJson<FileVersion>("/api/workspaces/files/promote", {
-        wsId,
-        path,
+    const [runPromote, { loading: promoting, error: promoteError }] = createAsyncState();
+
+    async function promote(): Promise<boolean> {
+      const outcome = await runPromote(async () => {
+        if (dirty.value) {
+          await save();
+          // save() reports through saveError; rethrow so promote surfaces the error
+          if (saveError.value !== "") throw new Error(saveError.value);
+        }
+        const res = await postJson<FileVersion>("/api/workspaces/files/promote", {
+          wsId,
+          path,
+        });
+        version.value = { ...res, content: markdown.value };
+        draft.value = null;
+        return true;
       });
+      return outcome ?? false;
     }
 
     return {
@@ -114,6 +127,8 @@ export const FileContentModel = createModel(
       dirty,
       save,
       promote,
+      promoting,
+      promoteError,
       saving,
       saveError,
       load,

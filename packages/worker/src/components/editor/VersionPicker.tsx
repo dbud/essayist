@@ -109,14 +109,13 @@ export default function VersionPicker() {
   async function promoteDraft(close: () => void): Promise<void> {
     close();
     assertExists(file, "the promoted file exists");
-    try {
-      await file.save();
-      await file.promote();
-      void fileTrees.current.value?.load();
-      void versions?.load();
-    } catch {
-      showToast("Promote failed", "error");
+    const promoted = await file.promote();
+    if (!promoted) {
+      showToast(file.promoteError.value || "Promote failed", "error");
+      return;
     }
+    void fileTrees.current.value?.load();
+    void versions?.load();
   }
 
   return (
