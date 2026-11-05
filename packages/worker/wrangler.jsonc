@@ -29,5 +29,7 @@
     "GOOGLE_APP_ID": "444389978447",
     "GOOGLE_CLIENT_ID": "444389978447-gg68etvjp2fd00uh0t7h4hubkruojbhp.apps.googleusercontent.com",
     "LOG_LEVEL": "info",
+    "STUB_MODEL_DELAY_MS": "5000",
+    "STUB_MODEL_FAULTS": "1",
   },
 }
