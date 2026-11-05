@@ -14,12 +14,10 @@ import { kvLayer } from "#/persistence/kv_layer.ts";
 import { Persistence } from "#/persistence/mod.ts";
 import { ReviewPacing } from "#/reviews/pacing.ts";
 import {
-  ReviewFileMissingError,
   ReviewLeaseTakenError,
   ReviewRunMissingError,
-  type RunReviewPassOptions,
-  resumeReviewPass,
-  runReviewPass,
+  type ResumeReviewRunOptions,
+  resumeReviewRun,
 } from "#/reviews/runner.ts";
 import { ReviewRuns } from "#/reviews/service.ts";
 import { TraceEvents } from "#/reviews/trace/service.ts";
@@ -121,12 +119,22 @@ function viaRuns<A>(
   );
 }
 
-async function runPass(
+/** Create the run like production does, then drive it with resumeReviewRun. */
+async function startRun(
   env: Layer.Layer<Marks | ModelClient | ReviewRuns | TraceEvents | Files>,
-  options: RunReviewPassOptions,
+  options: ResumeReviewRunOptions,
+  versionId: string,
 ): Promise<ReviewRun> {
   return await Effect.runPromise(
-    runReviewPass(options).pipe(
+    Effect.gen(function* () {
+      const runs = yield* ReviewRuns;
+      const run = yield* runs.createRun({
+        path: options.path,
+        reviewPassId: options.pass.pass.id,
+        versionId,
+      });
+      return yield* resumeReviewRun(options, run.id);
+    }).pipe(
       Effect.provideService(WorkspaceId, { wsId: "ws" }),
       Effect.provideService(ReviewPacing, { heartbeatMs: 50, staleMs: 500, retryMs: 500 }),
       Effect.provide(env),
@@ -134,13 +142,13 @@ async function runPass(
   );
 }
 
-async function resumePass(
+async function resumeRun(
   env: Layer.Layer<Marks | ModelClient | ReviewRuns | TraceEvents | Files>,
-  options: RunReviewPassOptions,
+  options: ResumeReviewRunOptions,
   runId: string,
 ): Promise<ReviewRun> {
   return await Effect.runPromise(
-    resumeReviewPass(options, runId).pipe(
+    resumeReviewRun(options, runId).pipe(
       Effect.provideService(WorkspaceId, { wsId: "ws" }),
       Effect.provideService(ReviewPacing, { heartbeatMs: 50, staleMs: 500, retryMs: 500 }),
       Effect.provide(env),
@@ -175,7 +183,7 @@ function appliedEvents(trace: TraceEvent[]) {
   );
 }
 
-test("runReviewPass -- completes a pass with marks, summary, and a per-node trace", async () => {
+test("resumeReviewRun -- completes a pass with marks, summary, and a per-node trace", async () => {
   const { env: baseEnv, versionId } = await setup({
     path: "essay.txt",
     content: "hello brave world",
@@ -189,22 +197,26 @@ test("runReviewPass -- completes a pass with marks, summary, and a per-node trac
   ]);
   const env = Layer.merge(baseEnv, ModelClient.layerOf(client));
 
-  const run = await runPass(env, {
-    pass: passFixture([
-      unitFixture({ id: "analyze" }),
-      unitFixture({
-        id: "mechanics",
-        attempt: { allowedCategoryIds: ["grammar"] },
-        inputs: ["analyze"],
-      }),
-      unitFixture({
-        id: "synthesize",
-        summary: true,
-        inputs: ["analyze", "mechanics.propose"],
-      }),
-    ]),
-    path: "essay.txt",
-  });
+  const run = await startRun(
+    env,
+    {
+      pass: passFixture([
+        unitFixture({ id: "analyze" }),
+        unitFixture({
+          id: "mechanics",
+          attempt: { allowedCategoryIds: ["grammar"] },
+          inputs: ["analyze"],
+        }),
+        unitFixture({
+          id: "synthesize",
+          summary: true,
+          inputs: ["analyze", "mechanics.propose"],
+        }),
+      ]),
+      path: "essay.txt",
+    },
+    versionId,
+  );
 
   assertEquals(run.status, "completed");
   assertEquals(run.summary, "Solid draft.");
@@ -236,7 +248,7 @@ test("runReviewPass -- completes a pass with marks, summary, and a per-node trac
   assertEquals(inputs[1].includes("Thesis: Drafts are raw material."), true);
 });
 
-test("runReviewPass -- a repair round re-quotes the failed spans", async () => {
+test("resumeReviewRun -- a repair round re-quotes the failed spans", async () => {
   const { env: baseEnv, versionId } = await setup({
     path: "essay.txt",
     content: "hello world",
@@ -252,16 +264,20 @@ test("runReviewPass -- a repair round re-quotes the failed spans", async () => {
   ]);
   const env = Layer.merge(baseEnv, ModelClient.layerOf(client));
 
-  const run = await runPass(env, {
-    pass: passFixture([
-      unitFixture({
-        id: "mechanics",
-        attempt: { allowedCategoryIds: ["grammar"] },
-      }),
-      unitFixture({ id: "summary", summary: true, inputs: ["mechanics"] }),
-    ]),
-    path: "essay.txt",
-  });
+  const run = await startRun(
+    env,
+    {
+      pass: passFixture([
+        unitFixture({
+          id: "mechanics",
+          attempt: { allowedCategoryIds: ["grammar"] },
+        }),
+        unitFixture({ id: "summary", summary: true, inputs: ["mechanics"] }),
+      ]),
+      path: "essay.txt",
+    },
+    versionId,
+  );
 
   assertEquals(run.status, "completed");
   assertEquals(run.summary, "Solid draft.");
@@ -286,7 +302,7 @@ test("runReviewPass -- a repair round re-quotes the failed spans", async () => {
   assertEquals(marks[0].selected_text, "hello");
 });
 
-test("runReviewPass -- a zero budget keeps failed marks with no repair nodes", async () => {
+test("resumeReviewRun -- a zero budget keeps failed marks with no repair nodes", async () => {
   const { env: baseEnv, versionId } = await setup({
     path: "essay.txt",
     content: "hello world",
@@ -299,16 +315,20 @@ test("runReviewPass -- a zero budget keeps failed marks with no repair nodes", a
   ]);
   const env = Layer.merge(baseEnv, ModelClient.layerOf(client));
 
-  const run = await runPass(env, {
-    pass: passFixture([
-      unitFixture({
-        id: "mechanics",
-        attempt: { allowedCategoryIds: ["grammar"], repairRounds: 0 },
-      }),
-      unitFixture({ id: "summary", summary: true, inputs: ["mechanics"] }),
-    ]),
-    path: "essay.txt",
-  });
+  const run = await startRun(
+    env,
+    {
+      pass: passFixture([
+        unitFixture({
+          id: "mechanics",
+          attempt: { allowedCategoryIds: ["grammar"], repairRounds: 0 },
+        }),
+        unitFixture({ id: "summary", summary: true, inputs: ["mechanics"] }),
+      ]),
+      path: "essay.txt",
+    },
+    versionId,
+  );
 
   assertEquals(run.status, "completed");
   const trace = (await viaRuns(env, (deps) => deps.traces.get(run.id))) ?? [];
@@ -325,7 +345,7 @@ test("runReviewPass -- a zero budget keeps failed marks with no repair nodes", a
   assertEquals(marks, []);
 });
 
-test("runReviewPass -- resuming a run that does not exist is an error", async () => {
+test("resumeReviewRun -- resuming a run that does not exist is an error", async () => {
   const { env: baseEnv } = await setup({
     path: "essay.txt",
     content: "hello world",
@@ -335,7 +355,7 @@ test("runReviewPass -- resuming a run that does not exist is an error", async ()
 
   await assertRejects(
     () =>
-      resumePass(
+      resumeRun(
         env,
         {
           pass: passFixture([unitFixture({ id: "analyze" })]),
@@ -348,7 +368,7 @@ test("runReviewPass -- resuming a run that does not exist is an error", async ()
   );
 });
 
-test("runReviewPass -- a resumed pass skips completed nodes and shows each once", async () => {
+test("resumeReviewRun -- a resumed pass skips completed nodes and shows each once", async () => {
   const { env: baseEnv, versionId } = await setup({
     path: "essay.txt",
     content: "hello brave world",
@@ -357,18 +377,22 @@ test("runReviewPass -- a resumed pass skips completed nodes and shows each once"
   const first = createFakeClient([{ text: ANALYSIS_ROUND }, { text: "not json" }]);
   const env = Layer.merge(baseEnv, ModelClient.layerOf(first.client));
 
-  const run = await runPass(env, {
-    pass: passFixture([
-      unitFixture({ id: "analyze" }),
-      unitFixture({
-        id: "mechanics",
-        attempt: { allowedCategoryIds: ["grammar"] },
-        inputs: ["analyze"],
-      }),
-      unitFixture({ id: "summary", summary: true, inputs: ["mechanics"] }),
-    ]),
-    path: "essay.txt",
-  });
+  const run = await startRun(
+    env,
+    {
+      pass: passFixture([
+        unitFixture({ id: "analyze" }),
+        unitFixture({
+          id: "mechanics",
+          attempt: { allowedCategoryIds: ["grammar"] },
+          inputs: ["analyze"],
+        }),
+        unitFixture({ id: "summary", summary: true, inputs: ["mechanics"] }),
+      ]),
+      path: "essay.txt",
+    },
+    versionId,
+  );
 
   assertEquals(run.status, "failed");
   const interrupted = (await viaRuns(env, (deps) => deps.traces.get(run.id))) ?? [];
@@ -384,7 +408,7 @@ test("runReviewPass -- a resumed pass skips completed nodes and shows each once"
     { text: '{"summary":"Solid draft."}' },
   ]);
   const resumeEnv = Layer.merge(baseEnv, ModelClient.layerOf(second.client));
-  const resumed = await resumePass(
+  const resumed = await resumeRun(
     resumeEnv,
     {
       pass: passFixture([
@@ -415,30 +439,34 @@ test("runReviewPass -- a resumed pass skips completed nodes and shows each once"
   assertEquals(marks[0]?.selected_text, "brave");
 });
 
-test("runReviewPass -- a node error fails the run and skips dependents", async () => {
-  const { env: baseEnv } = await setup({
+test("resumeReviewRun -- a node error fails the run and skips dependents", async () => {
+  const { env: baseEnv, versionId } = await setup({
     path: "essay.txt",
     content: "hello world",
   });
   const { client } = createFakeClient([{ text: "not json" }]);
   const env = Layer.merge(baseEnv, ModelClient.layerOf(client));
 
-  const run = await runPass(env, {
-    pass: passFixture([
-      unitFixture({ id: "analyze" }),
-      unitFixture({
-        id: "mechanics",
-        attempt: { allowedCategoryIds: ["grammar"] },
-        inputs: ["analyze"],
-      }),
-      unitFixture({
-        id: "synthesize",
-        summary: true,
-        inputs: ["analyze"],
-      }),
-    ]),
-    path: "essay.txt",
-  });
+  const run = await startRun(
+    env,
+    {
+      pass: passFixture([
+        unitFixture({ id: "analyze" }),
+        unitFixture({
+          id: "mechanics",
+          attempt: { allowedCategoryIds: ["grammar"] },
+          inputs: ["analyze"],
+        }),
+        unitFixture({
+          id: "synthesize",
+          summary: true,
+          inputs: ["analyze"],
+        }),
+      ]),
+      path: "essay.txt",
+    },
+    versionId,
+  );
 
   assertEquals(run.status, "failed");
   assertEquals(run.error?.includes("not valid JSON"), true);
@@ -479,50 +507,32 @@ test("runReviewPass -- a node error fails the run and skips dependents", async (
   }
 });
 
-test("runReviewPass -- fails a pass that commits no summary", async () => {
-  const { env: baseEnv } = await setup({
+test("resumeReviewRun -- fails a pass that commits no summary", async () => {
+  const { env: baseEnv, versionId } = await setup({
     path: "essay.txt",
     content: "hello world",
   });
   const { client } = createFakeClient([{ text: ANALYSIS_ROUND }]);
   const env = Layer.merge(baseEnv, ModelClient.layerOf(client));
 
-  const run = await runPass(env, {
-    // No summary unit, so the graph commits no summary artifact. Reading it back is a structural
-    // surprise, not a pass with a blank summary.
-    pass: passFixture([unitFixture({ id: "analyze" })]),
-    path: "essay.txt",
-  });
+  const run = await startRun(
+    env,
+    {
+      // No summary unit, so the graph commits no summary artifact. Reading it back is a structural
+      // surprise, not a pass with a blank summary.
+      pass: passFixture([unitFixture({ id: "analyze" })]),
+      path: "essay.txt",
+    },
+    versionId,
+  );
 
   assertEquals(run.status, "failed");
   assertEquals(run.error?.includes("no summary artifact"), true);
   assertEquals(run.summary, undefined);
 });
 
-test("runReviewPass -- fails with a typed error when the file does not exist", async () => {
-  const { env: baseEnv } = await setup({
-    path: "other.txt",
-    content: "x",
-  });
-  const { client } = createFakeClient([]);
-  const env = Layer.merge(baseEnv, ModelClient.layerOf(client));
-
-  await assertRejects(
-    () =>
-      runPass(env, {
-        pass: passFixture([unitFixture({ id: "analyze" })]),
-        path: "essay.txt",
-      }),
-    ReviewFileMissingError,
-    "File not found: essay.txt",
-  );
-
-  // No run row: nothing was reviewed, so there is nothing to report on.
-  assertEquals(await viaRuns(env, (deps) => deps.runs.listRuns()), []);
-});
-
-test("runReviewPass -- heartbeats the lease while running, then releases it", async () => {
-  const { kv } = await setup({
+test("resumeReviewRun -- heartbeats the lease while running, then releases it", async () => {
+  const { kv, versionId } = await setup({
     path: "essay.txt",
     content: "hello brave world",
   });
@@ -533,13 +543,17 @@ test("runReviewPass -- heartbeats the lease while running, then releases it", as
   ]);
   const env = Layer.merge(countingReviews(kv, count), ModelClient.layerOf(client));
 
-  const run = await runPass(env, {
-    pass: passFixture([
-      unitFixture({ id: "analyze" }),
-      unitFixture({ id: "summary", summary: true, inputs: ["analyze"] }),
-    ]),
-    path: "essay.txt",
-  });
+  const run = await startRun(
+    env,
+    {
+      pass: passFixture([
+        unitFixture({ id: "analyze" }),
+        unitFixture({ id: "summary", summary: true, inputs: ["analyze"] }),
+      ]),
+      path: "essay.txt",
+    },
+    versionId,
+  );
 
   assertEquals(run.status, "completed");
   assert(count.renewed >= 1);
@@ -550,7 +564,7 @@ test("runReviewPass -- heartbeats the lease while running, then releases it", as
   assertEquals(row?.heartbeatAt, undefined);
 });
 
-test("runReviewPass -- refuses to resume a run another driver holds", async () => {
+test("resumeReviewRun -- refuses to resume a run another driver holds", async () => {
   const { env: baseEnv } = await setup({
     path: "essay.txt",
     content: "hello world",
@@ -570,7 +584,7 @@ test("runReviewPass -- refuses to resume a run another driver holds", async () =
 
   await assertRejects(
     () =>
-      resumePass(
+      resumeRun(
         env,
         {
           pass: passFixture([unitFixture({ id: "analyze" })]),
@@ -583,7 +597,7 @@ test("runReviewPass -- refuses to resume a run another driver holds", async () =
   );
 });
 
-test("runReviewPass -- resumes a run whose lease went stale", async () => {
+test("resumeReviewRun -- resumes a run whose lease went stale", async () => {
   const { env: baseEnv, versionId } = await setup({
     path: "essay.txt",
     content: "hello brave world",
@@ -609,7 +623,7 @@ test("runReviewPass -- resumes a run whose lease went stale", async () => {
     }),
   );
 
-  const resumed = await resumePass(
+  const resumed = await resumeRun(
     env,
     {
       pass: passFixture([

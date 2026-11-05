@@ -12,7 +12,7 @@ import type { ModelClient } from "#/model/service.ts";
 import type { MissingChunksError } from "#/persistence/chunked_values.ts";
 import type { ConcurrentModificationError, PersistenceError } from "#/persistence/mod.ts";
 import type { ReviewPacing } from "#/reviews/pacing.ts";
-import { type ReviewFileMissingError, resumeReviewPass } from "#/reviews/runner.ts";
+import { resumeReviewRun } from "#/reviews/runner.ts";
 import { ReviewRuns } from "#/reviews/service.ts";
 import type { TraceEvents } from "#/reviews/trace/service.ts";
 import { WorkspaceId } from "#/workspace/WorkspaceId.ts";
@@ -24,7 +24,6 @@ export interface RunRef {
 
 /** A taken lease and a missing run are outcomes, not failures. */
 export type DriveError =
-  | ReviewFileMissingError
   | ConfigMissingError
   | ConfigInvalidError
   | PersistenceError
@@ -56,7 +55,7 @@ export function driveReviewRun({
       });
       return false;
     }
-    yield* resumeReviewPass({ pass, path: run.path }, runId);
+    yield* resumeReviewRun({ pass, path: run.path }, runId);
     return true;
   }).pipe(
     Effect.catchTag("ReviewLeaseTakenError", () => Effect.succeed(false)),

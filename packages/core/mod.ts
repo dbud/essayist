@@ -72,8 +72,8 @@ export { buildReviewGraph } from "#/reviews/adapter.ts";
 export { agentflowDefinition } from "#/reviews/agentflow.ts";
 export type { ReviewPhase, ReviewProgress } from "#/reviews/progress.ts";
 export { ReviewProgressTracker } from "#/reviews/progress.ts";
-export type { RunnerError, RunReviewPassOptions } from "#/reviews/runner.ts";
-export { ReviewLeaseTakenError, resumeReviewPass, runReviewPass } from "#/reviews/runner.ts";
+export type { RunnerError, ResumeReviewRunOptions } from "#/reviews/runner.ts";
+export { ReviewLeaseTakenError, resumeReviewRun } from "#/reviews/runner.ts";
 export {
   driveReviewRun,
   type DriveError,

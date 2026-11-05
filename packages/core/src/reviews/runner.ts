@@ -32,8 +32,8 @@ import type { TraceEvent } from "#/reviews/trace/types.ts";
 import type { ReviewRun } from "#/reviews/types.ts";
 import { WorkspaceId } from "#/workspace/WorkspaceId.ts";
 
-/** Options for {@linkcode runReviewPass}. */
-export interface RunReviewPassOptions {
+/** Options for {@linkcode resumeReviewRun}. */
+export interface ResumeReviewRunOptions {
   pass: ResolvedReviewPass;
   path: string;
   /** Receives text-free progress snapshots as the run advances. */
@@ -49,16 +49,6 @@ type RunnerServices =
   | Files
   | Marks
   | ModelClient;
-
-/** The file the pass targets has no versions. */
-export class ReviewFileMissingError extends Schema.TaggedError<ReviewFileMissingError>()(
-  "ReviewFileMissingError",
-  { path: Schema.String },
-) {
-  override get message() {
-    return `File not found: ${this.path}`;
-  }
-}
 
 /** Another driver holds a live lease on the run. */
 export class ReviewLeaseTakenError extends Schema.TaggedError<ReviewLeaseTakenError>()(
@@ -81,78 +71,29 @@ export class ReviewRunMissingError extends Schema.TaggedError<ReviewRunMissingEr
 }
 
 export type RunnerError =
-  | ReviewFileMissingError
   | ReviewLeaseTakenError
   | ReviewRunMissingError
   | PersistenceError
   | ConcurrentModificationError
   | MissingChunksError;
 
-// TODO -- production only resumes; runReviewPass is test-only. Followup: remove it and migrate the
-// tests to createRun + resumeReviewPass.
-/** Run a review pass over a file version. */
-export function runReviewPass(
-  options: RunReviewPassOptions,
-): Effect.Effect<ReviewRun, RunnerError, RunnerServices> {
-  const { path } = options;
-  return Effect.gen(function* () {
-    const files = yield* Files;
-    const versionId = yield* files.getVersions(path).pipe(
-      Effect.catchTag("FileMissingError", () => Effect.fail(new ReviewFileMissingError({ path }))),
-      Effect.map((history) => history.at(-1)?.version_id),
-    );
-    if (!versionId) {
-      return yield* Effect.fail(new ReviewFileMissingError({ path }));
-    }
-    return yield* start(options, versionId);
-  });
-}
-
 /** Continue a run that did not finish, over the version it started on. */
-export function resumeReviewPass(
-  options: RunReviewPassOptions,
+export function resumeReviewRun(
+  options: ResumeReviewRunOptions,
   runId: string,
 ): Effect.Effect<ReviewRun, RunnerError, RunnerServices> {
   return Effect.gen(function* () {
     const runs = yield* ReviewRuns;
+    const traces = yield* TraceEvents;
     const run = yield* runs.getRun(runId);
     if (!run?.versionId) {
       return yield* Effect.fail(new ReviewRunMissingError({ runId }));
     }
-    return yield* Effect.annotateLogs(resume(options, run, run.versionId), {
-      runId: run.id,
-    });
-  });
-}
-
-/** Pick up a run's trace where the previous attempt left off. */
-function resume(
-  options: RunReviewPassOptions,
-  run: ReviewRun,
-  versionId: string,
-): Effect.Effect<ReviewRun, RunnerError, RunnerServices> {
-  return Effect.gen(function* () {
-    const traces = yield* TraceEvents;
+    // Pick up the trace where the previous attempt left off.
     const priorTrace = yield* traces.get(run.id);
     const priorLastSeq = priorTrace?.at(-1)?.seq;
     const seq = priorLastSeq === undefined ? 0 : priorLastSeq + 1;
-    return yield* execute(options, run, versionId, seq, priorTrace);
-  });
-}
-
-function start(
-  options: RunReviewPassOptions,
-  versionId: string,
-): Effect.Effect<ReviewRun, RunnerError, RunnerServices> {
-  const { pass, path } = options;
-  return Effect.gen(function* () {
-    const runs = yield* ReviewRuns;
-    const run = yield* runs.createRun({
-      path,
-      reviewPassId: pass.pass.id,
-      versionId,
-    });
-    return yield* Effect.annotateLogs(execute(options, run, versionId, 0, undefined), {
+    return yield* Effect.annotateLogs(execute(options, run, run.versionId, seq, priorTrace), {
       runId: run.id,
     });
   });
@@ -213,8 +154,9 @@ function heartbeatLoop(
 }
 
 function execute(
-  options: RunReviewPassOptions,
+  options: ResumeReviewRunOptions,
   run: ReviewRun,
+  // TODO -- review run should always have versionId as a non-optional field
   versionId: string,
   seq: number,
   priorTrace: TraceEvent[] | undefined,
