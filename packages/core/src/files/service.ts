@@ -91,11 +91,16 @@ export interface Interface {
     path: string,
     atVersionId?: string,
   ): Effect.Effect<DraftSnapshot | null, PersistenceError, WorkspaceId>;
-  /** Promote the draft to a version and clear it. */
+  /**
+   * Promote the draft to a version and clear it. Returns the version a reader should use and
+   * whether it was just created. With a pending draft, the returned version is the newly promoted
+   * one. Without a draft, nothing is created and the returned version is the file's latest. Fails
+   * with FileMissingError when the file has no versions.
+   */
   promoteDraft(
     path: string,
   ): Effect.Effect<
-    WriteResult | null,
+    { version: FileVersion; promoted: boolean },
     PersistenceError | ConcurrentModificationError | FileMissingError,
     WorkspaceId
   >;
@@ -375,7 +380,7 @@ export class Files extends Context.Service<Files, Interface>()("@essayist/core/f
       const promoteDraft = (
         path: string,
       ): Effect.Effect<
-        WriteResult | null,
+        { version: FileVersion; promoted: boolean },
         PersistenceError | ConcurrentModificationError | FileMissingError,
         WorkspaceId
       > =>
@@ -384,14 +389,22 @@ export class Files extends Context.Service<Files, Interface>()("@essayist/core/f
           const manifestEntry = yield* persistence.get<ContentManifest>(
             contentManifestKey(wsId, path, DRAFT_VERSION_ID),
           );
-          if (!manifestEntry) return null;
-          const content = yield* internals.reassembleContent(
-            wsId,
-            path,
-            DRAFT_VERSION_ID,
-            manifestEntry.value,
-          );
-          return yield* write(path, content);
+          if (manifestEntry) {
+            const content = yield* internals.reassembleContent(
+              wsId,
+              path,
+              DRAFT_VERSION_ID,
+              manifestEntry.value,
+            );
+            const written = yield* write(path, content);
+            return { version: written, promoted: true };
+          }
+          const latest = yield* persistence.get<StoredSnapshot>(latestKey(wsId, path));
+          if (!latest) {
+            return yield* Effect.fail(new FileMissingError({ path, versionId: null }));
+          }
+          const { version_id, timestamp, lines } = latest.value;
+          return { version: { version_id, timestamp, lines }, promoted: false };
         });
 
       const revert = (

@@ -239,20 +239,38 @@ test("Files.promoteDraft -- creates a version from the draft and clears it", asy
       yield* files.writeDraft("f.txt", "draft text");
 
       const result = yield* files.promoteDraft("f.txt");
-      assertEquals(result?.created, false);
+      assertEquals(result.promoted, true);
       assertEquals((yield* files.read("f.txt")).content, "draft text");
       assertEquals(yield* files.readDraft("f.txt"), null);
-      assertEquals((yield* files.getVersions("f.txt")).length, 2);
+      const versions = yield* files.getVersions("f.txt");
+      assertEquals(versions.length, 2);
+      assertEquals(result.version.version_id, versions.at(-1)?.version_id);
     }),
   );
 });
 
-test("Files.promoteDraft -- null when no draft exists", async () => {
+test("Files.promoteDraft -- the latest version when no draft exists", async () => {
   await run(
     Effect.gen(function* () {
       const files = yield* Files;
-      yield* files.write("f.txt", "checkpoint");
-      assertEquals(yield* files.promoteDraft("f.txt"), null);
+      const checkpoint = yield* files.write("f.txt", "checkpoint");
+
+      const result = yield* files.promoteDraft("f.txt");
+      assertEquals(result.promoted, false);
+      assertEquals(result.version.version_id, checkpoint.version_id);
+    }),
+  );
+});
+
+test("Files.promoteDraft -- missing file fails", async () => {
+  await run(
+    Effect.gen(function* () {
+      const files = yield* Files;
+      const outcome = yield* Effect.result(files.promoteDraft("missing.txt"));
+      if (Result.isSuccess(outcome)) {
+        throw new Error("a missing file promote succeeded");
+      }
+      assertInstanceOf(outcome.failure, FileMissingError);
     }),
   );
 });

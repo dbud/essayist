@@ -180,10 +180,10 @@ const workspaceHandlers = HttpApiBuilder.group(
           const result = yield* files
             .promoteDraft(path)
             .pipe(Effect.provideService(WorkspaceId, { wsId }), dieWriteErrors);
-          if (result === null) {
+          if (!result.promoted) {
             return yield* Effect.fail(new HttpApiError.NotFound());
           }
-          return result;
+          return result.version;
         }),
       createFile: (req) =>
         Effect.gen(function* () {
@@ -248,19 +248,9 @@ const workspaceHandlers = HttpApiBuilder.group(
           const { wsId, path } = req.payload;
           yield* requireAccess(wsId, user.id);
           // Promote the pending draft first: the review reads the latest checkpoint.
-          yield* files
+          const { version } = yield* files
             .promoteDraft(path)
             .pipe(Effect.provideService(WorkspaceId, { wsId }), dieWriteErrors);
-          // TODO -- promoteDraft can be upgraded later to return the latest versionId with a status
-          // promoted:bool
-          const versionId = yield* files.getVersions(path).pipe(
-            Effect.provideService(WorkspaceId, { wsId }),
-            Effect.map((history) => history.at(-1)?.version_id),
-            dieWriteErrors,
-          );
-          if (versionId === undefined) {
-            return yield* Effect.fail(new HttpApiError.NotFound());
-          }
           const pass = yield* Effect.orDie(resolveActiveReviewPass.pipe(Effect.provide(stores)));
           if (pass === undefined) {
             return yield* Effect.fail(
@@ -269,7 +259,11 @@ const workspaceHandlers = HttpApiBuilder.group(
           }
           const run = yield* Effect.orDie(
             ReviewRuns.use((runs) =>
-              runs.createRun({ path, reviewPassId: pass.pass.id, versionId }),
+              runs.createRun({
+                path,
+                reviewPassId: pass.pass.id,
+                versionId: version.version_id,
+              }),
             ).pipe(Effect.provideService(WorkspaceId, { wsId }), Effect.provide(stores)),
           );
           yield* Effect.gen(function* () {
