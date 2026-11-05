@@ -13,12 +13,7 @@ import { ChunkedValues } from "#/persistence/chunked_values.ts";
 import { kvLayer } from "#/persistence/kv_layer.ts";
 import { Persistence } from "#/persistence/mod.ts";
 import { ReviewPacing } from "#/reviews/pacing.ts";
-import {
-  ReviewLeaseTakenError,
-  ReviewRunMissingError,
-  type ResumeReviewRunOptions,
-  resumeReviewRun,
-} from "#/reviews/runner.ts";
+import { ReviewLeaseTakenError, ReviewRunMissingError, resumeReviewRun } from "#/reviews/runner.ts";
 import { ReviewRuns } from "#/reviews/service.ts";
 import { TraceEvents } from "#/reviews/trace/service.ts";
 import type { TraceEvent } from "#/reviews/trace/types.ts";
@@ -122,18 +117,19 @@ function viaRuns<A>(
 /** Create the run like production does, then drive it with resumeReviewRun. */
 async function startRun(
   env: Layer.Layer<Marks | ModelClient | ReviewRuns | TraceEvents | Files>,
-  options: ResumeReviewRunOptions,
+  pass: ResolvedReviewPass,
+  path: string,
   versionId: string,
 ): Promise<ReviewRun> {
   return await Effect.runPromise(
     Effect.gen(function* () {
       const runs = yield* ReviewRuns;
       const run = yield* runs.createRun({
-        path: options.path,
-        reviewPassId: options.pass.pass.id,
+        path,
+        reviewPassId: pass.pass.id,
         versionId,
       });
-      return yield* resumeReviewRun(options, run.id);
+      return yield* resumeReviewRun(pass, run.id);
     }).pipe(
       Effect.provideService(WorkspaceId, { wsId: "ws" }),
       Effect.provideService(ReviewPacing, { heartbeatMs: 50, staleMs: 500, retryMs: 500 }),
@@ -144,11 +140,11 @@ async function startRun(
 
 async function resumeRun(
   env: Layer.Layer<Marks | ModelClient | ReviewRuns | TraceEvents | Files>,
-  options: ResumeReviewRunOptions,
+  pass: ResolvedReviewPass,
   runId: string,
 ): Promise<ReviewRun> {
   return await Effect.runPromise(
-    resumeReviewRun(options, runId).pipe(
+    resumeReviewRun(pass, runId).pipe(
       Effect.provideService(WorkspaceId, { wsId: "ws" }),
       Effect.provideService(ReviewPacing, { heartbeatMs: 50, staleMs: 500, retryMs: 500 }),
       Effect.provide(env),
@@ -199,22 +195,20 @@ test("resumeReviewRun -- completes a pass with marks, summary, and a per-node tr
 
   const run = await startRun(
     env,
-    {
-      pass: passFixture([
-        unitFixture({ id: "analyze" }),
-        unitFixture({
-          id: "mechanics",
-          attempt: { allowedCategoryIds: ["grammar"] },
-          inputs: ["analyze"],
-        }),
-        unitFixture({
-          id: "synthesize",
-          summary: true,
-          inputs: ["analyze", "mechanics.propose"],
-        }),
-      ]),
-      path: "essay.txt",
-    },
+    passFixture([
+      unitFixture({ id: "analyze" }),
+      unitFixture({
+        id: "mechanics",
+        attempt: { allowedCategoryIds: ["grammar"] },
+        inputs: ["analyze"],
+      }),
+      unitFixture({
+        id: "synthesize",
+        summary: true,
+        inputs: ["analyze", "mechanics.propose"],
+      }),
+    ]),
+    "essay.txt",
     versionId,
   );
 
@@ -266,16 +260,14 @@ test("resumeReviewRun -- a repair round re-quotes the failed spans", async () =>
 
   const run = await startRun(
     env,
-    {
-      pass: passFixture([
-        unitFixture({
-          id: "mechanics",
-          attempt: { allowedCategoryIds: ["grammar"] },
-        }),
-        unitFixture({ id: "summary", summary: true, inputs: ["mechanics"] }),
-      ]),
-      path: "essay.txt",
-    },
+    passFixture([
+      unitFixture({
+        id: "mechanics",
+        attempt: { allowedCategoryIds: ["grammar"] },
+      }),
+      unitFixture({ id: "summary", summary: true, inputs: ["mechanics"] }),
+    ]),
+    "essay.txt",
     versionId,
   );
 
@@ -317,16 +309,14 @@ test("resumeReviewRun -- a zero budget keeps failed marks with no repair nodes",
 
   const run = await startRun(
     env,
-    {
-      pass: passFixture([
-        unitFixture({
-          id: "mechanics",
-          attempt: { allowedCategoryIds: ["grammar"], repairRounds: 0 },
-        }),
-        unitFixture({ id: "summary", summary: true, inputs: ["mechanics"] }),
-      ]),
-      path: "essay.txt",
-    },
+    passFixture([
+      unitFixture({
+        id: "mechanics",
+        attempt: { allowedCategoryIds: ["grammar"], repairRounds: 0 },
+      }),
+      unitFixture({ id: "summary", summary: true, inputs: ["mechanics"] }),
+    ]),
+    "essay.txt",
     versionId,
   );
 
@@ -354,15 +344,7 @@ test("resumeReviewRun -- resuming a run that does not exist is an error", async 
   const env = Layer.merge(baseEnv, ModelClient.layerOf(client));
 
   await assertRejects(
-    () =>
-      resumeRun(
-        env,
-        {
-          pass: passFixture([unitFixture({ id: "analyze" })]),
-          path: "essay.txt",
-        },
-        "no-such-run",
-      ),
+    () => resumeRun(env, passFixture([unitFixture({ id: "analyze" })]), "no-such-run"),
     ReviewRunMissingError,
     "Cannot resume: no run no-such-run",
   );
@@ -379,18 +361,16 @@ test("resumeReviewRun -- a resumed pass skips completed nodes and shows each onc
 
   const run = await startRun(
     env,
-    {
-      pass: passFixture([
-        unitFixture({ id: "analyze" }),
-        unitFixture({
-          id: "mechanics",
-          attempt: { allowedCategoryIds: ["grammar"] },
-          inputs: ["analyze"],
-        }),
-        unitFixture({ id: "summary", summary: true, inputs: ["mechanics"] }),
-      ]),
-      path: "essay.txt",
-    },
+    passFixture([
+      unitFixture({ id: "analyze" }),
+      unitFixture({
+        id: "mechanics",
+        attempt: { allowedCategoryIds: ["grammar"] },
+        inputs: ["analyze"],
+      }),
+      unitFixture({ id: "summary", summary: true, inputs: ["mechanics"] }),
+    ]),
+    "essay.txt",
     versionId,
   );
 
@@ -410,18 +390,15 @@ test("resumeReviewRun -- a resumed pass skips completed nodes and shows each onc
   const resumeEnv = Layer.merge(baseEnv, ModelClient.layerOf(second.client));
   const resumed = await resumeRun(
     resumeEnv,
-    {
-      pass: passFixture([
-        unitFixture({ id: "analyze" }),
-        unitFixture({
-          id: "mechanics",
-          attempt: { allowedCategoryIds: ["grammar"] },
-          inputs: ["analyze"],
-        }),
-        unitFixture({ id: "summary", summary: true, inputs: ["mechanics"] }),
-      ]),
-      path: "essay.txt",
-    },
+    passFixture([
+      unitFixture({ id: "analyze" }),
+      unitFixture({
+        id: "mechanics",
+        attempt: { allowedCategoryIds: ["grammar"] },
+        inputs: ["analyze"],
+      }),
+      unitFixture({ id: "summary", summary: true, inputs: ["mechanics"] }),
+    ]),
     run.id,
   );
 
@@ -449,22 +426,20 @@ test("resumeReviewRun -- a node error fails the run and skips dependents", async
 
   const run = await startRun(
     env,
-    {
-      pass: passFixture([
-        unitFixture({ id: "analyze" }),
-        unitFixture({
-          id: "mechanics",
-          attempt: { allowedCategoryIds: ["grammar"] },
-          inputs: ["analyze"],
-        }),
-        unitFixture({
-          id: "synthesize",
-          summary: true,
-          inputs: ["analyze"],
-        }),
-      ]),
-      path: "essay.txt",
-    },
+    passFixture([
+      unitFixture({ id: "analyze" }),
+      unitFixture({
+        id: "mechanics",
+        attempt: { allowedCategoryIds: ["grammar"] },
+        inputs: ["analyze"],
+      }),
+      unitFixture({
+        id: "synthesize",
+        summary: true,
+        inputs: ["analyze"],
+      }),
+    ]),
+    "essay.txt",
     versionId,
   );
 
@@ -517,12 +492,10 @@ test("resumeReviewRun -- fails a pass that commits no summary", async () => {
 
   const run = await startRun(
     env,
-    {
-      // No summary unit, so the graph commits no summary artifact. Reading it back is a structural
-      // surprise, not a pass with a blank summary.
-      pass: passFixture([unitFixture({ id: "analyze" })]),
-      path: "essay.txt",
-    },
+    // No summary unit, so the graph commits no summary artifact. Reading it back is a structural
+    // surprise, not a pass with a blank summary.
+    passFixture([unitFixture({ id: "analyze" })]),
+    "essay.txt",
     versionId,
   );
 
@@ -545,13 +518,11 @@ test("resumeReviewRun -- heartbeats the lease while running, then releases it", 
 
   const run = await startRun(
     env,
-    {
-      pass: passFixture([
-        unitFixture({ id: "analyze" }),
-        unitFixture({ id: "summary", summary: true, inputs: ["analyze"] }),
-      ]),
-      path: "essay.txt",
-    },
+    passFixture([
+      unitFixture({ id: "analyze" }),
+      unitFixture({ id: "summary", summary: true, inputs: ["analyze"] }),
+    ]),
+    "essay.txt",
     versionId,
   );
 
@@ -583,15 +554,7 @@ test("resumeReviewRun -- refuses to resume a run another driver holds", async ()
   );
 
   await assertRejects(
-    () =>
-      resumeRun(
-        env,
-        {
-          pass: passFixture([unitFixture({ id: "analyze" })]),
-          path: "essay.txt",
-        },
-        run.id,
-      ),
+    () => resumeRun(env, passFixture([unitFixture({ id: "analyze" })]), run.id),
     ReviewLeaseTakenError,
     `Run ${run.id} is claimed by another driver`,
   );
@@ -625,13 +588,10 @@ test("resumeReviewRun -- resumes a run whose lease went stale", async () => {
 
   const resumed = await resumeRun(
     env,
-    {
-      pass: passFixture([
-        unitFixture({ id: "analyze" }),
-        unitFixture({ id: "summary", summary: true, inputs: ["analyze"] }),
-      ]),
-      path: "essay.txt",
-    },
+    passFixture([
+      unitFixture({ id: "analyze" }),
+      unitFixture({ id: "summary", summary: true, inputs: ["analyze"] }),
+    ]),
     run.id,
   );
 

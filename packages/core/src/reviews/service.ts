@@ -34,8 +34,8 @@ export interface Interface {
   /** Create a run in the "running" state. */
   createRun(input: {
     path: string;
+    versionId: string;
     reviewPassId: string;
-    versionId?: string;
     startedAt?: number;
   }): Effect.Effect<ReviewRun, PersistenceError | ConcurrentModificationError, WorkspaceId>;
   /** Get a run, or undefined when absent. */
@@ -90,8 +90,8 @@ export class ReviewRuns extends Context.Service<ReviewRuns, Interface>()(
 
       const createRun = (input: {
         path: string;
+        versionId: string;
         reviewPassId: string;
-        versionId?: string;
         startedAt?: number;
       }): Effect.Effect<ReviewRun, PersistenceError | ConcurrentModificationError, WorkspaceId> =>
         Effect.gen(function* () {
@@ -105,7 +105,7 @@ export class ReviewRuns extends Context.Service<ReviewRuns, Interface>()(
             reviewPassId: input.reviewPassId,
             status: "running",
             startedAt: input.startedAt ?? (yield* Clock.currentTimeMillis),
-            ...(input.versionId && { versionId: input.versionId }),
+            versionId: input.versionId,
           };
           yield* persistence.set([REVIEWS, wsId, id], run);
           return run;

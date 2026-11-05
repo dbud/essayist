@@ -13,7 +13,7 @@ export const ReviewRun = Schema.Struct({
   wsId: Schema.String,
   path: Schema.String,
   reviewPassId: Schema.String,
-  versionId: Schema.optionalKey(Schema.String),
+  versionId: Schema.String,
   status: ReviewRunStatus,
   startedAt: Schema.Number,
   completedAt: Schema.optionalKey(Schema.Number),

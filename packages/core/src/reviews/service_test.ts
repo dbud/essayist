@@ -29,34 +29,16 @@ test("ReviewRuns.createRun + getRun", async () => {
       const runs = yield* ReviewRuns;
       const created = yield* runs.createRun({
         path: "essay.txt",
+        versionId: "v1",
         reviewPassId: "essay-review",
       });
       assertEquals(created.status, "running");
       assertEquals(created.path, "essay.txt");
       assertEquals(created.reviewPassId, "essay-review");
+      assertEquals(created.versionId, "v1");
 
       const fetched = yield* runs.getRun(created.id);
       assertEquals(fetched?.id, created.id);
-    }),
-  );
-});
-
-test("ReviewRuns.createRun stores versionId when given", async () => {
-  await run(
-    Effect.gen(function* () {
-      const runs = yield* ReviewRuns;
-      const created = yield* runs.createRun({
-        path: "essay.txt",
-        reviewPassId: "essay-review",
-        versionId: "v1",
-      });
-      assertEquals(created.versionId, "v1");
-
-      const plain = yield* runs.createRun({
-        path: "essay.txt",
-        reviewPassId: "essay-review",
-      });
-      assertEquals(plain.versionId, undefined);
     }),
   );
 });
@@ -67,11 +49,13 @@ test("ReviewRuns.listRuns newest first", async () => {
       const runs = yield* ReviewRuns;
       const a = yield* runs.createRun({
         path: "a.txt",
+        versionId: "v1",
         reviewPassId: "pass",
         startedAt: 100,
       });
       const b = yield* runs.createRun({
         path: "b.txt",
+        versionId: "v1",
         reviewPassId: "pass",
         startedAt: 200,
       });
@@ -90,16 +74,19 @@ test("ReviewRuns.listRuns filters by path", async () => {
       const runs = yield* ReviewRuns;
       const a = yield* runs.createRun({
         path: "a.txt",
+        versionId: "v1",
         reviewPassId: "pass",
         startedAt: 100,
       });
       yield* runs.createRun({
         path: "b.txt",
+        versionId: "v1",
         reviewPassId: "pass",
         startedAt: 200,
       });
       const a2 = yield* runs.createRun({
         path: "a.txt",
+        versionId: "v1",
         reviewPassId: "pass",
         startedAt: 300,
       });
@@ -120,7 +107,7 @@ test("ReviewRuns.listRuns is workspace-scoped", async () => {
     Effect.provideService(
       Effect.gen(function* () {
         const runs = yield* ReviewRuns;
-        yield* runs.createRun({ path: "a.txt", reviewPassId: "pass" });
+        yield* runs.createRun({ path: "a.txt", versionId: "v1", reviewPassId: "pass" });
       }),
       WorkspaceId,
       { wsId: "ws1" },
@@ -130,7 +117,7 @@ test("ReviewRuns.listRuns is workspace-scoped", async () => {
     Effect.provideService(
       Effect.gen(function* () {
         const runs = yield* ReviewRuns;
-        yield* runs.createRun({ path: "b.txt", reviewPassId: "pass" });
+        yield* runs.createRun({ path: "b.txt", versionId: "v1", reviewPassId: "pass" });
       }),
       WorkspaceId,
       { wsId: "ws2" },
@@ -154,6 +141,7 @@ test("ReviewRuns.completeRun sets status, summary, completedAt", async () => {
       const runs = yield* ReviewRuns;
       const created = yield* runs.createRun({
         path: "essay.txt",
+        versionId: "v1",
         reviewPassId: "pass",
       });
 
@@ -172,6 +160,7 @@ test("ReviewRuns.failRun sets status and error", async () => {
       const runs = yield* ReviewRuns;
       const created = yield* runs.createRun({
         path: "essay.txt",
+        versionId: "v1",
         reviewPassId: "pass",
       });
 
@@ -200,6 +189,7 @@ test("ReviewRuns.claimRun leases the run", async () => {
       const runs = yield* ReviewRuns;
       const created = yield* runs.createRun({
         path: "essay.txt",
+        versionId: "v1",
         reviewPassId: "pass",
       });
 
@@ -250,6 +240,7 @@ test("ReviewRuns.claimRun -- takes over a stale lease", async () => {
       const runs = yield* ReviewRuns;
       const created = yield* runs.createRun({
         path: "essay.txt",
+        versionId: "v1",
         reviewPassId: "pass",
       });
       yield* runs.claimRun(created.id, {
@@ -275,6 +266,7 @@ test("ReviewRuns.claimRun -- a lease ages out with the clock", async () => {
       const runs = yield* ReviewRuns;
       const created = yield* runs.createRun({
         path: "essay.txt",
+        versionId: "v1",
         reviewPassId: "pass",
       });
       yield* runs.claimRun(created.id, {
@@ -310,6 +302,7 @@ test("ReviewRuns.heartbeatRun renews only our own lease", async () => {
       const runs = yield* ReviewRuns;
       const created = yield* runs.createRun({
         path: "essay.txt",
+        versionId: "v1",
         reviewPassId: "pass",
       });
 
@@ -340,8 +333,8 @@ test("ReviewRuns -- completing and failing a run releases its lease", async () =
   await run(
     Effect.gen(function* () {
       const runs = yield* ReviewRuns;
-      const a = yield* runs.createRun({ path: "a.txt", reviewPassId: "pass" });
-      const b = yield* runs.createRun({ path: "b.txt", reviewPassId: "pass" });
+      const a = yield* runs.createRun({ path: "a.txt", versionId: "v1", reviewPassId: "pass" });
+      const b = yield* runs.createRun({ path: "b.txt", versionId: "v1", reviewPassId: "pass" });
       yield* runs.claimRun(a.id, { owner: "driver-a", heartbeatAtLeast: 0 });
       yield* runs.claimRun(b.id, { owner: "driver-a", heartbeatAtLeast: 0 });
 

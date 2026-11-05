@@ -32,14 +32,6 @@ import type { TraceEvent } from "#/reviews/trace/types.ts";
 import type { ReviewRun } from "#/reviews/types.ts";
 import { WorkspaceId } from "#/workspace/WorkspaceId.ts";
 
-/** Options for {@linkcode resumeReviewRun}. */
-export interface ResumeReviewRunOptions {
-  pass: ResolvedReviewPass;
-  path: string;
-  /** Receives text-free progress snapshots as the run advances. */
-  onProgress?: (progress: ReviewProgress) => void;
-}
-
 /** Services the review pass runs on: the steps pull them from context. */
 type RunnerServices =
   | ReviewRuns
@@ -60,7 +52,7 @@ export class ReviewLeaseTakenError extends Schema.TaggedError<ReviewLeaseTakenEr
   }
 }
 
-/** The run given to resume does not exist or never started on a version. */
+/** The run given to resume does not exist. */
 export class ReviewRunMissingError extends Schema.TaggedError<ReviewRunMissingError>()(
   "ReviewRunMissingError",
   { runId: Schema.String },
@@ -79,21 +71,22 @@ export type RunnerError =
 
 /** Continue a run that did not finish, over the version it started on. */
 export function resumeReviewRun(
-  options: ResumeReviewRunOptions,
+  pass: ResolvedReviewPass,
   runId: string,
+  onProgress?: (progress: ReviewProgress) => void,
 ): Effect.Effect<ReviewRun, RunnerError, RunnerServices> {
   return Effect.gen(function* () {
     const runs = yield* ReviewRuns;
     const traces = yield* TraceEvents;
     const run = yield* runs.getRun(runId);
-    if (!run?.versionId) {
+    if (!run) {
       return yield* Effect.fail(new ReviewRunMissingError({ runId }));
     }
     // Pick up the trace where the previous attempt left off.
     const priorTrace = yield* traces.get(run.id);
     const priorLastSeq = priorTrace?.at(-1)?.seq;
     const seq = priorLastSeq === undefined ? 0 : priorLastSeq + 1;
-    return yield* Effect.annotateLogs(execute(options, run, run.versionId, seq, priorTrace), {
+    return yield* Effect.annotateLogs(execute(pass, run, seq, priorTrace, onProgress), {
       runId: run.id,
     });
   });
@@ -154,12 +147,11 @@ function heartbeatLoop(
 }
 
 function execute(
-  options: ResumeReviewRunOptions,
+  pass: ResolvedReviewPass,
   run: ReviewRun,
-  // TODO -- review run should always have versionId as a non-optional field
-  versionId: string,
   seq: number,
   priorTrace: TraceEvent[] | undefined,
+  onProgress?: (progress: ReviewProgress) => void,
 ): Effect.Effect<ReviewRun, RunnerError, RunnerServices> {
   return Effect.gen(function* () {
     const runs = yield* ReviewRuns;
@@ -167,9 +159,8 @@ function execute(
     const { wsId } = yield* WorkspaceId;
     const { heartbeatMs, staleMs } = yield* ReviewPacing;
     const owner = yield* claim(runs, run.id, staleMs);
-    const { onProgress, pass, path } = options;
     const completed = priorTrace ? foldCompleted(priorTrace) : undefined;
-    const graph = buildReviewGraph(pass, run.id, { path, versionId });
+    const graph = buildReviewGraph(pass, run.id, { path: run.path, versionId: run.versionId });
     const kindOf = new Map(graph.nodes.map((node) => [node.id, node.kind] as const));
     const tracker = onProgress ? new ReviewProgressTracker(onProgress, kindOf) : undefined;
 
@@ -241,7 +232,7 @@ function execute(
           catch: () => new SummaryMissingError(),
         });
         const files = yield* Files;
-        yield* files.migrateMarks(path, versionId);
+        yield* files.migrateMarks(run.path, run.versionId);
         const done = yield* runs.completeRun(run.id, summary);
         return { summary, done };
       }),

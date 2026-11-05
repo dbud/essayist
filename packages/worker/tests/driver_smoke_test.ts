@@ -38,7 +38,11 @@ test("a kicked run without an active pass stays parked with its beat armed", asy
   const run = await runtime(e).runPromise(
     Effect.gen(function* () {
       const runs = yield* ReviewRuns;
-      return yield* runs.createRun({ path: "driver-smoke.md", reviewPassId: "none" });
+      return yield* runs.createRun({
+        path: "driver-smoke.md",
+        versionId: "v1",
+        reviewPassId: "none",
+      });
     }).pipe(Effect.provideService(WorkspaceId, { wsId: "smoke-ws" })),
   );
 

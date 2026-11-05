@@ -55,7 +55,7 @@ export function driveReviewRun({
       });
       return false;
     }
-    yield* resumeReviewRun({ pass, path: run.path }, runId);
+    yield* resumeReviewRun(pass, runId);
     return true;
   }).pipe(
     Effect.catchTag("ReviewLeaseTakenError", () => Effect.succeed(false)),
