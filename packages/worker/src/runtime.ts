@@ -2,6 +2,7 @@ import * as D1Client from "@effect/sql-d1/D1Client";
 import {
   type AuthStore,
   ChunkedValues,
+  createStubModelClient,
   Files,
   jsonLogLayer,
   layerAuthD1,
@@ -19,7 +20,6 @@ import { layerKvD1 } from "@essayist/core/kv_d1";
 import { Effect, Layer, LogLevel, ManagedRuntime, References } from "effect";
 import * as Reactivity from "effect/reactivity/Reactivity";
 
-import { stubModelClient } from "#/api/stubModel.ts";
 import { type GoogleConfig, googleConfigLayer, type WorkerEnv } from "#/env.ts";
 import { RunDrivers } from "#/reviews/runDrivers.ts";
 
@@ -82,7 +82,13 @@ function cell(env: WorkerEnv): RuntimeCell {
           Files.layerNoDeps,
           Workspaces.layerNoDeps,
           ReviewRuns.layerNoDeps,
-          Layer.succeed(ModelClient, stubModelClient),
+          Layer.succeed(
+            ModelClient,
+            createStubModelClient({
+              delayMs: e.stubModelDelayMs,
+              faultyProposals: e.stubModelFaults,
+            }),
+          ),
           RunDrivers.layerOf(e.runDriver),
           Layer.provide(TraceEvents.layerNoDeps, ChunkedValues.layerNoDeps),
           ChunkedValues.layerNoDeps,

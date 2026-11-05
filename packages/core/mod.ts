@@ -55,6 +55,7 @@ export {
 } from "#/marks/types.ts";
 export type { ModelCallRecord } from "#/model/service.ts";
 export { ModelClient, StructuredParseError } from "#/model/service.ts";
+export { createStubModelClient, type StubModelOptions } from "#/model/stub.ts";
 export { ChunkedValues, MissingChunksError } from "#/persistence/chunked_values.ts";
 export {
   type BatchOptions,

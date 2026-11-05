@@ -25,6 +25,8 @@ const config = Config.all({
   DRIVER_RETRY_MS: Config.schema(Schema.NumberFromString, "DRIVER_RETRY_MS").pipe(
     Config.withDefault(90_000),
   ),
+  STUB_MODEL_DELAY_MS: Config.option(Config.schema(Schema.NumberFromString, "STUB_MODEL_DELAY_MS")),
+  STUB_MODEL_FAULTS: Config.option(Config.schema(Schema.NumberFromString, "STUB_MODEL_FAULTS")),
 });
 
 export interface WorkerEnv {
@@ -39,6 +41,8 @@ export interface WorkerEnv {
   readonly driverHeartbeatMs: number;
   readonly driverStaleMs: number;
   readonly driverRetryMs: number;
+  readonly stubModelDelayMs: number | undefined;
+  readonly stubModelFaults: number | undefined;
   readonly db: D1Database;
   readonly runDriver: Cloudflare.Env["RUN_DRIVER"];
 }
@@ -96,6 +100,8 @@ export function env(bindings: Cloudflare.Env): WorkerEnv {
     driverHeartbeatMs: snapshot.DRIVER_HEARTBEAT_MS,
     driverStaleMs: snapshot.DRIVER_STALE_MS,
     driverRetryMs: snapshot.DRIVER_RETRY_MS,
+    stubModelDelayMs: Option.getOrUndefined(snapshot.STUB_MODEL_DELAY_MS),
+    stubModelFaults: Option.getOrUndefined(snapshot.STUB_MODEL_FAULTS),
     db,
     runDriver,
   };
