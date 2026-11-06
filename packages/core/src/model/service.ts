@@ -16,21 +16,23 @@ import * as FetchHttpClient from "effect/http/FetchHttpClient";
 import { generateInstructions, stripMarkdownFences } from "#/schema.ts";
 import { joinBlocks } from "#/text/markdown.ts";
 
-export interface ModelCallUsage {
-  inputTokens: number;
-  outputTokens: number;
-  cachedTokens?: number;
-  reasoningTokens?: number;
-  cost?: number;
-}
+export const ModelCallUsage = Schema.Struct({
+  inputTokens: Schema.Int,
+  outputTokens: Schema.Int,
+  cachedTokens: Schema.optionalKey(Schema.Int),
+  reasoningTokens: Schema.optionalKey(Schema.Int),
+  cost: Schema.optionalKey(Schema.Number),
+});
+export type ModelCallUsage = Schema.Schema.Type<typeof ModelCallUsage>;
 
 /** A settled model call, for the trace. */
-export interface ModelCallRecord {
+export const ModelCallRecord = Schema.Struct({
   /** The model that actually served the reply. */
-  model: string;
-  durationMs: number;
-  usage?: ModelCallUsage;
-}
+  model: Schema.String,
+  durationMs: Schema.Number,
+  usage: Schema.optionalKey(ModelCallUsage),
+});
+export type ModelCallRecord = Schema.Schema.Type<typeof ModelCallRecord>;
 
 /** A re-ask: what the model replied, and why it did not fit the schema. */
 export interface RepairAttempt {

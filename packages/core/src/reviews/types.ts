@@ -24,13 +24,14 @@ export const ReviewRun = Schema.Struct({
 export type ReviewRun = Schema.Schema.Type<typeof ReviewRun>;
 
 /** A proposed mark and its application result. */
-export interface MarkAttempt {
-  selected_text: string;
-  comment: string;
-  label?: string;
-  line_hint?: number;
-  marked: boolean;
-  mark_id?: string;
-  thread_id?: string;
-  error?: string;
-}
+export const MarkAttempt = Schema.Struct({
+  selected_text: Schema.String,
+  comment: Schema.String,
+  label: Schema.optionalKey(Schema.String),
+  line_hint: Schema.optionalKey(Schema.Int),
+  marked: Schema.Boolean,
+  mark_id: Schema.optionalKey(Schema.String),
+  thread_id: Schema.optionalKey(Schema.String),
+  error: Schema.optionalKey(Schema.String),
+});
+export type MarkAttempt = Schema.Schema.Type<typeof MarkAttempt>;

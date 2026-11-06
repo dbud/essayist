@@ -1,3 +1,5 @@
+import { Schema } from "effect";
+
 import type { ResolvedReviewUnit } from "#/config/types.ts";
 import type { Files } from "#/files/service.ts";
 import type { ForwardSpec, PassWhenSpec } from "#/flow/helpers.ts";
@@ -5,7 +7,7 @@ import { forward, passWhen } from "#/flow/helpers.ts";
 import type { FlowTypes, NodeRunners } from "#/flow/types.ts";
 import type { Marks } from "#/marks/service.ts";
 import type { MarkProvenance } from "#/marks/types.ts";
-import type { ModelCallRecord, ModelClient } from "#/model/service.ts";
+import { type ModelClient, ModelCallRecord } from "#/model/service.ts";
 import { type Analysis, analyzeRunner } from "#/reviews/steps/analyze.ts";
 import {
   type MarkProposal,
@@ -15,17 +17,22 @@ import {
 } from "#/reviews/steps/mark.ts";
 import { sourceRunner } from "#/reviews/steps/source.ts";
 import { synthesizeRunner } from "#/reviews/steps/synthesize.ts";
-import type { MarkAttempt } from "#/reviews/types.ts";
+import { MarkAttempt } from "#/reviews/types.ts";
 import type { WorkspaceId } from "#/workspace/WorkspaceId.ts";
 
-export type ReviewNodeEvent =
-  | { type: "prompt"; text: string }
-  | { type: "reasoning"; text: string }
-  | { type: "output"; output: unknown }
-  | { type: "repair"; raw: string; error: string }
-  | { type: "retry"; attempt: number; error: string }
-  | { type: "model_call"; call: ModelCallRecord }
-  | { type: "applied"; attempts: MarkAttempt[] };
+export const ReviewNodeEvent = Schema.Union([
+  Schema.Struct({ type: Schema.Literal("prompt"), text: Schema.String }),
+  Schema.Struct({ type: Schema.Literal("reasoning"), text: Schema.String }),
+  Schema.Struct({ type: Schema.Literal("output"), output: Schema.Unknown }),
+  Schema.Struct({ type: Schema.Literal("repair"), raw: Schema.String, error: Schema.String }),
+  Schema.Struct({ type: Schema.Literal("retry"), attempt: Schema.Int, error: Schema.String }),
+  Schema.Struct({ type: Schema.Literal("model_call"), call: ModelCallRecord }),
+  Schema.Struct({
+    type: Schema.Literal("applied"),
+    attempts: Schema.mutable(Schema.Array(MarkAttempt)),
+  }),
+]);
+export type ReviewNodeEvent = Schema.Schema.Type<typeof ReviewNodeEvent>;
 
 export interface ReviewTypes extends FlowTypes {
   events: ReviewNodeEvent;
