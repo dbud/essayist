@@ -17,15 +17,19 @@ export type ArtifactType<T extends FlowTypes> = keyof T["artifacts"] & string;
 /** Node kind keys of a host vocabulary. */
 export type NodeKind<T extends FlowTypes> = keyof T["nodes"] & string;
 
-export interface Artifact<
+/** One committed artifact, distributed over the artifact type so the
+ * literals split the union. */
+export type Artifact<
   T extends FlowTypes = FlowTypes,
   A extends ArtifactType<T> = ArtifactType<T>,
-> {
-  type: A;
-  data: T["artifacts"][A];
-  /** Id of the producing node, preserved by forwarding helpers. */
-  producedBy: string;
-}
+> = {
+  [K in A]: {
+    type: K;
+    data: T["artifacts"][K];
+    /** Id of the producing node, preserved by forwarding helpers. */
+    producedBy: string;
+  };
+}[A];
 
 /** A node in a flow. The payload is opaque host config. Kinds whose
  * vocabulary type is undefined take no payload; for the rest it is required. */

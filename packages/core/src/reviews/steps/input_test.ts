@@ -16,7 +16,7 @@ const PROMPTS: ResolvedPrompts = {
 
 function inputsOf(...artifacts: Artifact<ReviewTypes>[]): Artifacts<ReviewTypes> {
   const matching = <A extends ArtifactType<ReviewTypes>>(type: A) =>
-    artifacts.filter((artifact): artifact is Artifact<ReviewTypes, A> => artifact.type === type);
+    artifacts.filter((artifact) => artifact.type === type) as Artifact<ReviewTypes, A>[];
   return {
     all: artifacts,
     allOf: matching,

@@ -7,7 +7,7 @@ import type { ResolvedReviewUnit } from "#/config/types.ts";
 import { Files } from "#/files/service.ts";
 import type { PassWhenSpec } from "#/flow/helpers.ts";
 import { FlowRunner } from "#/flow/runner.ts";
-import type { Artifact, Artifacts, FlowEvent, FlowGraph, FlowRunResult } from "#/flow/types.ts";
+import type { Artifacts, FlowEvent, FlowGraph, FlowRunResult } from "#/flow/types.ts";
 import { Marks } from "#/marks/service.ts";
 import type { Mark } from "#/marks/types.ts";
 import { createFakeClient } from "#/model/fake_client.ts";
@@ -54,8 +54,8 @@ function artifactsOf<A extends keyof ReviewTypes["artifacts"]>(
   type: A,
 ): ReviewTypes["artifacts"][A][] {
   return result.artifacts
-    .filter((artifact): artifact is Artifact<ReviewTypes, A> => artifact.type === type)
-    .map((artifact) => artifact.data);
+    .filter((artifact) => artifact.type === type)
+    .map((artifact) => artifact.data as ReviewTypes["artifacts"][A]);
 }
 
 /** One shared KV per test, seeded through the Files service. */

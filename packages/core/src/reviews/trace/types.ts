@@ -5,28 +5,38 @@ import { AnalysisSchema } from "#/reviews/steps/analyze.ts";
 import { MarkProposalSchema } from "#/reviews/steps/mark.ts";
 import { MarkAttempt } from "#/reviews/types.ts";
 
-/**
- * One committed artifact. The engine pairs type with data at construction, so storage validates the
- * data payloads but not their pairing. The field types mirror the engine's Artifact record; a per-
- * kind union would not, because TS does not distribute the engine's generic instantiation.
- */
-const ArtifactRow = Schema.Struct({
-  type: Schema.Literals([
-    "content",
-    "analysis",
-    "mark.proposals",
-    "mark.placed",
-    "mark.failed",
-    "summary",
-  ]),
-  data: Schema.Union([
-    Schema.String,
-    AnalysisSchema,
-    Schema.Array(MarkProposalSchema),
-    Schema.mutable(Schema.Array(MarkAttempt)),
-  ]),
-  producedBy: Schema.String,
-});
+const Artifact = Schema.Union([
+  Schema.Struct({
+    type: Schema.Literal("content"),
+    data: Schema.String,
+    producedBy: Schema.String,
+  }),
+  Schema.Struct({
+    type: Schema.Literal("analysis"),
+    data: AnalysisSchema,
+    producedBy: Schema.String,
+  }),
+  Schema.Struct({
+    type: Schema.Literal("mark.proposals"),
+    data: Schema.Array(MarkProposalSchema),
+    producedBy: Schema.String,
+  }),
+  Schema.Struct({
+    type: Schema.Literal("mark.placed"),
+    data: Schema.mutable(Schema.Array(MarkAttempt)),
+    producedBy: Schema.String,
+  }),
+  Schema.Struct({
+    type: Schema.Literal("mark.failed"),
+    data: Schema.mutable(Schema.Array(MarkAttempt)),
+    producedBy: Schema.String,
+  }),
+  Schema.Struct({
+    type: Schema.Literal("summary"),
+    data: Schema.String,
+    producedBy: Schema.String,
+  }),
+]);
 
 const NodeRun = Schema.Union([
   Schema.Struct({
@@ -34,7 +44,7 @@ const NodeRun = Schema.Union([
     status: Schema.Literal("completed"),
     startedAt: Schema.Number,
     completedAt: Schema.Number,
-    artifacts: Schema.mutable(Schema.Array(ArtifactRow)),
+    artifacts: Schema.mutable(Schema.Array(Artifact)),
   }),
   Schema.Struct({
     nodeId: Schema.String,
