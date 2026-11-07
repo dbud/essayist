@@ -82,10 +82,12 @@ export {
   type RunRef,
 } from "#/reviews/drive.ts";
 export { ReviewPacing } from "#/reviews/pacing.ts";
+export { layerReviewRunsD1 } from "#/reviews/runs_d1.ts";
 export { ReviewRuns } from "#/reviews/service.ts";
 export type { TraceEvent, TraceNodeView, TraceTotals, TraceView } from "#/reviews/trace/mod.ts";
 export { groupTraceNodes } from "#/reviews/trace/mod.ts";
 export { TraceEvents } from "#/reviews/trace/service.ts";
+export { layerTraceEventsD1 } from "#/reviews/trace/trace_d1.ts";
 export { ReviewRun, ReviewRunStatus } from "#/reviews/types.ts";
 export type { MarkAttempt } from "#/reviews/types.ts";
 export { Search } from "#/search/service.ts";

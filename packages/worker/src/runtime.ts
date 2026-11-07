@@ -1,10 +1,11 @@
 import * as D1Client from "@effect/sql-d1/D1Client";
 import {
   type AuthStore,
-  ChunkedValues,
   createStubModelClient,
   Files,
   layerAuthD1,
+  layerReviewRunsD1,
+  layerTraceEventsD1,
   Marks,
   ModelClient,
   type PersistenceError,
@@ -81,7 +82,7 @@ function cell(env: WorkerEnv): RuntimeCell {
           UserState.layerNoDeps,
           Files.layerNoDeps,
           Workspaces.layerNoDeps,
-          ReviewRuns.layerNoDeps,
+          layerReviewRunsD1(client),
           Layer.succeed(
             ModelClient,
             createStubModelClient({
@@ -90,8 +91,7 @@ function cell(env: WorkerEnv): RuntimeCell {
             }),
           ),
           RunDrivers.layerOf(e.runDriver),
-          Layer.provide(TraceEvents.layerNoDeps, ChunkedValues.layerNoDeps),
-          ChunkedValues.layerNoDeps,
+          layerTraceEventsD1(client),
           Layer.provide(Marks.layerNoDeps, Files.layerNoDeps),
           Layer.succeed(ReviewPacing, {
             heartbeatMs: e.driverHeartbeatMs,

@@ -11,9 +11,12 @@ import { Command } from "@cliffy/command";
 import { explore } from "#/commands/explore.ts";
 import { grantRole } from "#/commands/grant-role.ts";
 import { listUsers } from "#/commands/list-users.ts";
+import { runs } from "#/commands/runs.ts";
 import { seedConfig } from "#/commands/seed-config.ts";
 import { seedDemo } from "#/commands/seed-demo.ts";
+import { sql } from "#/commands/sql.ts";
 import { trace } from "#/commands/trace.ts";
+import { wipeRuns } from "#/commands/wipe-runs.ts";
 import { wipe } from "#/commands/wipe.ts";
 
 await new Command()
@@ -28,6 +31,9 @@ await new Command()
     global: true,
   })
   .command("wipe", wipe)
+  .command("wipe-runs", wipeRuns)
+  .command("runs", runs)
+  .command("sql", sql)
   .command("explore", explore)
   .command("trace", trace)
   .command("grant-role", grantRole)

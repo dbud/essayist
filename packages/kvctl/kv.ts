@@ -9,14 +9,16 @@ import { fileURLToPath } from "node:url";
 import type { D1Database } from "@cloudflare/workers-types";
 import * as D1 from "@effect/sql-d1/D1Client";
 import {
-  ChunkedValues,
   type Entry,
   Files,
   type Key,
+  layerReviewRunsD1,
+  layerTraceEventsD1,
   Marks,
   Persistence,
   type PersistenceError,
   ReviewConfig,
+  ReviewRuns,
   TraceEvents,
   Workspaces,
 } from "@essayist/core";
@@ -30,7 +32,7 @@ import type { KvctlGlobals } from "#/globals.ts";
 
 /** The services kvctl commands reach through the runtime. */
 export type KvRuntime = ManagedRuntime.ManagedRuntime<
-  Workspaces | ReviewConfig | TraceEvents | ChunkedValues | Persistence | Files | Marks,
+  Workspaces | ReviewConfig | ReviewRuns | TraceEvents | Persistence | Files | Marks,
   PersistenceError
 >;
 
@@ -75,7 +77,7 @@ function restConfig(): D1RestConfig {
   }
 }
 
-function database(globals: KvctlGlobals): D1Database {
+export function database(globals: KvctlGlobals): D1Database {
   // --target overrides which remote database id is used.
   if (globals.target !== undefined) {
     return d1RestDatabase({
@@ -88,27 +90,31 @@ function database(globals: KvctlGlobals): D1Database {
 }
 
 // One layer: the domain services plus Persistence in the runtime context (the raw listings need
-// it), all over the one database.
+// it), all over the one database. The run and trace layers apply their own tables, so kvctl needs
+// no separate schema step.
 export function storeLayer(
   db: D1Database,
 ): Layer.Layer<
-  Workspaces | ReviewConfig | TraceEvents | ChunkedValues | Persistence | Files | Marks
+  Workspaces | ReviewConfig | ReviewRuns | TraceEvents | Persistence | Files | Marks,
+  PersistenceError
 > {
-  const d1 = Layer.unwrap(Effect.map(D1.make({ db }), layerKvD1)).pipe(
-    Layer.provide(Reactivity.layer),
-  );
-  return Layer.provide(
-    Layer.mergeAll(
-      Workspaces.layerNoDeps,
-      ReviewConfig.layerNoDeps,
-      Layer.provide(TraceEvents.layerNoDeps, ChunkedValues.layerNoDeps),
-      ChunkedValues.layerNoDeps,
-      Layer.provide(Marks.layerNoDeps, Files.layerNoDeps),
-      Files.layerNoDeps,
-      d1,
-    ),
-    d1,
-  );
+  return Layer.unwrap(
+    Effect.map(D1.make({ db }), (client) => {
+      const d1 = layerKvD1(client);
+      return Layer.provide(
+        Layer.mergeAll(
+          Workspaces.layerNoDeps,
+          ReviewConfig.layerNoDeps,
+          Files.layerNoDeps,
+          Layer.provide(Marks.layerNoDeps, Files.layerNoDeps),
+          layerReviewRunsD1(client),
+          layerTraceEventsD1(client),
+          d1,
+        ),
+        d1,
+      );
+    }),
+  ).pipe(Layer.provide(Reactivity.layer));
 }
 
 export async function withStore<T>(

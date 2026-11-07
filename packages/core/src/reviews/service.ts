@@ -41,7 +41,7 @@ export interface Interface {
   /** Get a run, or undefined when absent. */
   getRun(id: string): Effect.Effect<ReviewRun | undefined, PersistenceError, WorkspaceId>;
   /** List runs for the workspace, newest first. Optionally filtered by file. */
-  listRuns(path?: string): Effect.Effect<ReviewRun[], PersistenceError, WorkspaceId>;
+  listRuns(path?: string): Effect.Effect<ReadonlyArray<ReviewRun>, PersistenceError, WorkspaceId>;
   /** Complete a run with its final summary. Undefined when absent. */
   completeRun(
     id: string,
@@ -120,7 +120,9 @@ export class ReviewRuns extends Context.Service<ReviewRuns, Interface>()(
           return entry?.value;
         });
 
-      const listRuns = (path?: string): Effect.Effect<ReviewRun[], PersistenceError, WorkspaceId> =>
+      const listRuns = (
+        path?: string,
+      ): Effect.Effect<ReadonlyArray<ReviewRun>, PersistenceError, WorkspaceId> =>
         Effect.gen(function* () {
           const { wsId } = yield* WorkspaceId;
           const { entries } = yield* persistence.list<ReviewRun>([REVIEWS, wsId]);
