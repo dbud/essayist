@@ -144,7 +144,7 @@ export function layerReviewRunsD1(
     Effect.gen(function* () {
       const { wsId } = yield* WorkspaceId;
       const ids = yield* Ids;
-      const run: ReviewRun = {
+      const run = new ReviewRun({
         id: ids.next(),
         wsId,
         path,
@@ -157,7 +157,7 @@ export function layerReviewRunsD1(
         summary: Option.none(),
         leaseOwner: Option.none(),
         heartbeatAt: Option.none(),
-      };
+      });
       yield* Effect.mapError(insertRun(run), backendFault);
       return run;
     });
