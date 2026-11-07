@@ -12,9 +12,6 @@ import { ReviewRun, ReviewRunStatus } from "./types.ts";
 
 const backendFault = (cause: unknown) => new PersistenceError({ cause });
 
-const RUN_COLUMNS =
-  "id, wsId, path, reviewPassId, versionId, status, startedAt, completedAt, error, summary, leaseOwner, heartbeatAt";
-
 export function layerReviewRunsD1(
   client: D1Client.D1Client,
 ): Layer.Layer<ReviewRuns, PersistenceError> {
@@ -62,7 +59,7 @@ export function layerReviewRunsD1(
     Request: Schema.Struct({ wsId: Schema.String, id: Schema.String }),
     Result: ReviewRun,
     execute: ({ wsId, id }) =>
-      client`SELECT ${client.literal(RUN_COLUMNS)} FROM review_runs
+      client`SELECT * FROM review_runs
         WHERE wsId = ${wsId} AND id = ${id}`,
   });
 
@@ -71,9 +68,9 @@ export function layerReviewRunsD1(
     Result: ReviewRun,
     execute: ({ wsId, path }) =>
       path === null
-        ? client`SELECT ${client.literal(RUN_COLUMNS)} FROM review_runs
+        ? client`SELECT * FROM review_runs
           WHERE wsId = ${wsId} ORDER BY startedAt DESC`
-        : client`SELECT ${client.literal(RUN_COLUMNS)} FROM review_runs
+        : client`SELECT * FROM review_runs
           WHERE wsId = ${wsId} AND path = ${path} ORDER BY startedAt DESC`,
   });
 
@@ -93,7 +90,7 @@ export function layerReviewRunsD1(
           summary = ${summary}, error = ${error},
           leaseOwner = NULL, heartbeatAt = NULL
         WHERE wsId = ${wsId} AND id = ${id}
-        RETURNING ${client.literal(RUN_COLUMNS)}`,
+        RETURNING *`,
   });
 
   // takes the lease when it is free, ours, or stale; a lost race updates no row
@@ -112,7 +109,7 @@ export function layerReviewRunsD1(
         WHERE wsId = ${wsId} AND id = ${id}
           AND (leaseOwner IS NULL OR leaseOwner = ${owner}
             OR COALESCE(heartbeatAt, 0) < ${heartbeatAtLeast})
-        RETURNING ${client.literal(RUN_COLUMNS)}`,
+        RETURNING *`,
   });
 
   const renewHeartbeat = SqlSchema.findOneOption({
@@ -127,7 +124,7 @@ export function layerReviewRunsD1(
       client`UPDATE review_runs
         SET heartbeatAt = ${at}
         WHERE wsId = ${wsId} AND id = ${id} AND leaseOwner = ${owner}
-        RETURNING ${client.literal(RUN_COLUMNS)}`,
+        RETURNING *`,
   });
 
   const createRun = ({
