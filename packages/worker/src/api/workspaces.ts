@@ -1,4 +1,4 @@
-import { DraftSnapshot, FileVersion, ReviewRun, Workspace } from "@essayist/core";
+import { DraftSnapshot, FileVersion, ReviewRun, ReviewRunList, Workspace } from "@essayist/core";
 import { Schema } from "effect";
 import { HttpApiEndpoint, HttpApiError, HttpApiGroup, HttpApiSchema } from "effect/http-api";
 
@@ -6,7 +6,6 @@ import { FileContentData } from "#/models/fileContent.data.ts";
 import { FileTreeData } from "#/models/fileTree.data.ts";
 import { FileVersionsData } from "#/models/fileVersions.data.ts";
 import { MarksData } from "#/models/marks.data.ts";
-import { ReviewRunsData } from "#/models/reviewRuns.data.ts";
 import { WorkspacesData } from "#/models/workspaces.data.ts";
 
 import { ApiFailure } from "./errors";
@@ -160,7 +159,7 @@ const RunsQuery = Schema.Struct({
 
 const getReviewRuns = HttpApiEndpoint.get("getReviewRuns", "/workspaces/review-runs", {
   query: RunsQuery,
-  success: ReviewRunsData,
+  success: ReviewRunList,
   error: HttpApiError.Forbidden,
 });
 
