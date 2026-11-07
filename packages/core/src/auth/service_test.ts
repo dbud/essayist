@@ -7,7 +7,7 @@
 import { DatabaseSync } from "node:sqlite";
 
 import * as D1Client from "@effect/sql-d1/D1Client";
-import { Clock, Effect } from "effect";
+import { Clock, Effect, Option } from "effect";
 import * as Reactivity from "effect/reactivity/Reactivity";
 import { expect, test } from "vitest";
 
@@ -15,7 +15,10 @@ import { d1SqliteShim } from "#/persistence/kv_d1_sqlite.ts";
 
 import { layerAuthD1 } from "./auth_d1.ts";
 import { AuthStore, type Interface } from "./service.ts";
-import type { SessionTokens } from "./types.ts";
+import { type AuthSession, type SessionTokens } from "./types.ts";
+
+const tokensOf = (session: AuthSession | undefined) =>
+  session === undefined ? undefined : Option.getOrUndefined(session.tokens);
 
 const BASE_TIME = 1_700_000_000_000;
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -77,11 +80,10 @@ test("create and read a session without tokens", async () => {
     Effect.gen(function* () {
       yield* t.auth.createSession("s1", "user-1");
       const session = yield* t.auth.getSession("s1");
-      expect(session).toEqual({
-        id: "s1",
-        userId: "user-1",
-        tokens: undefined,
-      });
+      expect(tokensOf(session)).toBeUndefined();
+      expect(session?.id).toBe("s1");
+      expect(session?.userId).toBe("user-1");
+      expect(typeof session?.expiresAt).toBe("number");
       expect(yield* t.auth.getSession("missing")).toBeUndefined();
     }),
   );
@@ -92,7 +94,7 @@ test("tokens round trip", async () => {
     Effect.gen(function* () {
       yield* t.auth.createSession("s1", "user-1", tokens);
       const session = yield* t.auth.getSession("s1");
-      expect(session?.tokens).toEqual(tokens);
+      expect(tokensOf(session)).toEqual(tokens);
     }),
   );
 });
@@ -108,10 +110,11 @@ test("a token blob with absent optional fields reads as unset", async () => {
         expiresAt: 12345,
       });
       const session = yield* t.auth.getSession("s1");
-      expect(session?.tokens?.accessToken).toBe("at");
-      expect(session?.tokens?.tokenType).toBeUndefined();
-      expect(session?.tokens?.refreshToken).toBeUndefined();
-      expect(session?.tokens?.expiresIn).toBeUndefined();
+      const stored = tokensOf(session);
+      expect(stored?.accessToken).toBe("at");
+      expect(stored?.tokenType).toBeUndefined();
+      expect(stored?.refreshToken).toBeUndefined();
+      expect(stored?.expiresIn).toBeUndefined();
     }),
   );
 });
@@ -122,13 +125,13 @@ test("update rewrites tokens and slides the TTL", async () => {
       yield* t.auth.createSession("s1", "user-1", tokens);
       t.tick(3_600_000);
       const refreshed = { ...tokens, accessToken: "at2" };
-      yield* t.auth.updateSessionTokens("s1", "user-1", refreshed);
+      yield* t.auth.updateSessionTokens("s1", refreshed);
       const session = yield* t.auth.getSession("s1");
-      expect(session?.tokens).toEqual(refreshed);
-      const row = t.db.prepare("SELECT expires_at FROM auth_session WHERE id = 's1'").get() as {
-        expires_at: number;
+      expect(tokensOf(session)).toEqual(refreshed);
+      const row = t.db.prepare("SELECT expiresAt FROM auth_session WHERE id = 's1'").get() as {
+        expiresAt: number;
       };
-      expect(row.expires_at).toBe(BASE_TIME + 3_600_000 + 90 * DAY_MS);
+      expect(row.expiresAt).toBe(BASE_TIME + 3_600_000 + 90 * DAY_MS);
     }),
   );
 });
@@ -146,13 +149,13 @@ test("a session past expiry reads as missing", async () => {
 test("delete session and refresh token upsert", async () => {
   await makeHarness().run((t) =>
     Effect.gen(function* () {
-      expect(yield* t.auth.getRefreshToken("user-1")).toBeUndefined();
+      expect(Option.getOrUndefined(yield* t.auth.getRefreshToken("user-1"))).toBeUndefined();
       yield* t.auth.setRefreshToken("user-1", "rt-old");
-      expect(yield* t.auth.getRefreshToken("user-1")).toBe("rt-old");
+      expect(Option.getOrUndefined(yield* t.auth.getRefreshToken("user-1"))).toBe("rt-old");
       yield* t.auth.setRefreshToken("user-1", "rt-new");
-      expect(yield* t.auth.getRefreshToken("user-1")).toBe("rt-new");
+      expect(Option.getOrUndefined(yield* t.auth.getRefreshToken("user-1"))).toBe("rt-new");
       yield* t.auth.deleteRefreshToken("user-1");
-      expect(yield* t.auth.getRefreshToken("user-1")).toBeUndefined();
+      expect(Option.getOrUndefined(yield* t.auth.getRefreshToken("user-1"))).toBeUndefined();
       // deleting a token twice is fine
       yield* t.auth.deleteRefreshToken("user-1");
 
@@ -161,7 +164,7 @@ test("delete session and refresh token upsert", async () => {
       expect(yield* t.auth.getSession("s1")).toBeUndefined();
 
       // Updating the tokens of a deleted session changes nothing.
-      yield* t.auth.updateSessionTokens("s1", "user-1", tokens);
+      yield* t.auth.updateSessionTokens("s1", tokens);
       expect(yield* t.auth.getSession("s1")).toBeUndefined();
     }),
   );

@@ -3,7 +3,7 @@
  */
 
 import { AuthStore, type PersistenceError, type SessionTokens } from "@essayist/core";
-import { Clock, Effect, Schema } from "effect";
+import { Clock, Effect, Option, Schema } from "effect";
 
 /** Google's token endpoint rejected a refresh. */
 export class TokenRefreshError extends Schema.TaggedError<TokenRefreshError>()(
@@ -93,15 +93,17 @@ export const getValidAccessToken = (
   Effect.gen(function* () {
     const auth = yield* AuthStore;
     const session = yield* auth.getSession(sessionId);
-    const tokens = session?.tokens;
-    if (session === undefined || tokens === undefined) return undefined;
+    if (session === undefined) return undefined;
+    const tokens = Option.getOrUndefined(session.tokens);
+    if (tokens === undefined) return undefined;
 
     const now = yield* Clock.currentTimeMillis;
     if (expiresAtValid(tokens, now)) return tokens.accessToken;
 
     // The session-level refresh token first, the user-level store as the fallback: Google returns a
     // refresh token only on the first authorization.
-    const refreshToken = tokens.refreshToken ?? (yield* auth.getRefreshToken(session.userId));
+    const refreshToken =
+      tokens.refreshToken ?? Option.getOrUndefined(yield* auth.getRefreshToken(session.userId));
     if (refreshToken === undefined) {
       yield* Effect.logWarning("google token refresh skipped: no refresh token stored", {
         sessionId: session.id,
@@ -114,7 +116,7 @@ export const getValidAccessToken = (
         GrantRevokedError: () =>
           Effect.gen(function* () {
             // The grant is permanently revoked: drop the dead stored tokens.
-            yield* auth.updateSessionTokens(sessionId, session.userId, {
+            yield* auth.updateSessionTokens(sessionId, {
               ...tokens,
               refreshToken: undefined,
             });
@@ -135,7 +137,7 @@ export const getValidAccessToken = (
       refreshToken: nextRefreshToken,
       expiresAt: now + fresh.expires_in * 1000,
     };
-    yield* auth.updateSessionTokens(sessionId, session.userId, refreshed);
+    yield* auth.updateSessionTokens(sessionId, refreshed);
     yield* auth.setRefreshToken(session.userId, nextRefreshToken);
     yield* Effect.logInfo("google access token refreshed", {
       sessionId: session.id,
@@ -160,7 +162,7 @@ export const refreshTokensForUser = (
 ): Effect.Effect<SessionTokens | undefined, PersistenceError | TokenRefreshError, AuthStore> =>
   Effect.gen(function* () {
     const auth = yield* AuthStore;
-    const refreshToken = yield* auth.getRefreshToken(userId);
+    const refreshToken = Option.getOrUndefined(yield* auth.getRefreshToken(userId));
     if (refreshToken === undefined) return undefined;
 
     const now = yield* Clock.currentTimeMillis;
