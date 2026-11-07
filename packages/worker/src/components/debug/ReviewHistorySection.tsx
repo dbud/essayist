@@ -1,9 +1,9 @@
-import type { ReviewRun, ReviewRunStatus } from "@essayist/core";
-import { Option } from "effect";
+import type { ReviewRunStatus } from "@essayist/core";
 import { ScrollText } from "lucide-preact";
 
 import Section from "#/components/debug/Section.tsx";
 import MarkdownView from "#/components/MarkdownView.tsx";
+import type { ReviewRunData } from "#/models/reviewRuns.data.ts";
 import { useEditorModels } from "#/pages/editor/models.ts";
 
 function statusBadge(status: ReviewRunStatus) {
@@ -16,10 +16,8 @@ function statusBadge(status: ReviewRunStatus) {
   return <span class={classes}>{status}</span>;
 }
 
-function RunItem({ run }: { run: ReviewRun }) {
-  const completedAt = Option.getOrUndefined(run.completedAt);
-  const error = Option.getOrUndefined(run.error);
-  const summary = Option.getOrUndefined(run.summary);
+function RunItem({ run }: { run: ReviewRunData }) {
+  const { completedAt, error, summary } = run;
   return (
     <div class="text-sm p-2 rounded">
       <div class="flex items-center gap-2 mb-1">

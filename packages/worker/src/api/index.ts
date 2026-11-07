@@ -14,13 +14,14 @@ import {
   resolveReviewPass,
   ReviewConfig,
   ReviewPacing,
+  ReviewRunList,
   ReviewRuns,
   TraceEvents,
   UserState,
   WorkspaceId,
   Workspaces,
 } from "@essayist/core";
-import { Effect, Layer } from "effect";
+import { Effect, Layer, Schema } from "effect";
 import { HttpApi, HttpApiBuilder, HttpApiError } from "effect/http-api";
 
 import { importGoogleDocFile } from "#/api/googleDocs.ts";
@@ -237,6 +238,7 @@ const workspaceHandlers = HttpApiBuilder.group(
           yield* requireAccess(wsId, user.id);
           return yield* Effect.orDie(
             ReviewRuns.use((store) => store.listRuns(path)).pipe(
+              Effect.flatMap(Schema.encodeUnknownEffect(ReviewRunList)),
               Effect.provideService(WorkspaceId, { wsId }),
               Effect.provide(stores),
             ),

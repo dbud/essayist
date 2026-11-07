@@ -1,13 +1,12 @@
-import type { ReviewRun } from "@essayist/core";
 import { createModel, signal } from "@preact/signals";
 
 import createAsyncState from "#/models/utils/asyncState.ts";
 import { getJson, postJson } from "#/models/utils/http.ts";
 
-import type { ReviewRunsData } from "./reviewRuns.data.ts";
+import type { ReviewRunData, ReviewRunsData } from "./reviewRuns.data.ts";
 
 export const ReviewRunsModel = createModel((wsId: string, path: string, data?: ReviewRunsData) => {
-  const runs = signal<readonly ReviewRun[]>(data ?? []);
+  const runs = signal<readonly ReviewRunData[]>(data ?? []);
 
   const [runLoad, { loading: historyLoading, error: historyError }] = createAsyncState();
 
@@ -23,9 +22,9 @@ export const ReviewRunsModel = createModel((wsId: string, path: string, data?: R
 
   const [runSubmit, { loading, error }] = createAsyncState();
 
-  async function submit(): Promise<ReviewRun | undefined> {
+  async function submit(): Promise<ReviewRunData | undefined> {
     const result = await runSubmit(async () =>
-      postJson<ReviewRun>("/api/workspaces/files/review", { wsId, path }),
+      postJson<ReviewRunData>("/api/workspaces/files/review", { wsId, path }),
     );
     if (result !== undefined) {
       void load();

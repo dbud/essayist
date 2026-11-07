@@ -22,6 +22,8 @@ export class ReviewRun extends Model.Class<ReviewRun>("ReviewRun")({
   heartbeatAt: Model.FieldOnly(["select"])(Schema.OptionFromNullOr(Schema.Number)),
 }) {}
 
+export const ReviewRunList = Schema.Array(ReviewRun);
+
 /** A proposed mark and its application result. */
 export const MarkAttempt = Schema.Struct({
   selected_text: Schema.String,

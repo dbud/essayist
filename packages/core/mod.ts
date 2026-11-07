@@ -88,7 +88,7 @@ export type { TraceEvent, TraceNodeView, TraceTotals, TraceView } from "#/review
 export { groupTraceNodes } from "#/reviews/trace/mod.ts";
 export { TraceEvents } from "#/reviews/trace/service.ts";
 export { layerTraceEventsD1 } from "#/reviews/trace/trace_d1.ts";
-export { ReviewRun, ReviewRunStatus } from "#/reviews/types.ts";
+export { ReviewRun, ReviewRunList, ReviewRunStatus } from "#/reviews/types.ts";
 export type { MarkAttempt } from "#/reviews/types.ts";
 export { Search } from "#/search/service.ts";
 export type { GrepMatch, GrepOptions, GrepResult } from "#/search/types.ts";
