@@ -12,15 +12,15 @@ minimumReleaseAgeExclude:
 catalog:
   "@cloudflare/workers-types": ^5.20261029.1
   "@deno/kv": ^0.14.0
-  "@effect/ai-openrouter": ~4.1.0
-  "@effect/sql-d1": ~4.1.0
+  "@effect/ai-openrouter": ~4.1.2
+  "@effect/sql-d1": ~4.1.2
   "@std/assert": npm:@jsr/std__assert@^1.0.19
   "@std/collections": npm:@jsr/std__collections@^1.4.0
   "@std/encoding": npm:@jsr/std__encoding@^1.0.11
   "@std/text": npm:@jsr/std__text@^1.1.0
   "@types/google.accounts": ^0.0.18
   "@types/node": ^26.6.6
-  effect: ~4.1.0
+  effect: ~4.1.2
   jose: ^6.2.14
   oxfmt: ^0.75.0
   oxlint: ^1.90.0
