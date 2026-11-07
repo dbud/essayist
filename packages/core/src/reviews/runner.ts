@@ -7,7 +7,17 @@
  * without event pacing.
  */
 
-import { type Cause, Clock, type Context, Effect, Fiber, Queue, Result, Schema } from "effect";
+import {
+  type Cause,
+  Clock,
+  type Context,
+  Effect,
+  Fiber,
+  Option,
+  Queue,
+  Result,
+  Schema,
+} from "effect";
 
 import type { ResolvedReviewPass } from "#/config/types.ts";
 import { Files } from "#/files/service.ts";
@@ -24,7 +34,7 @@ import { type ReviewServices, type ReviewTypes, reviewRunners } from "#/reviews/
 import { ReviewPacing } from "#/reviews/pacing.ts";
 import type { ReviewProgress } from "#/reviews/progress.ts";
 import { ReviewProgressTracker } from "#/reviews/progress.ts";
-import { ReviewRuns } from "#/reviews/service.ts";
+import { type ReviewRunMissingError, ReviewRuns } from "#/reviews/service.ts";
 import { logTraceEvent } from "#/reviews/trace/log.ts";
 import { foldCompleted } from "#/reviews/trace/mod.ts";
 import { TraceEvents } from "#/reviews/trace/service.ts";
@@ -52,16 +62,6 @@ export class ReviewLeaseTakenError extends Schema.TaggedError<ReviewLeaseTakenEr
   }
 }
 
-/** The run given to resume does not exist. */
-export class ReviewRunMissingError extends Schema.TaggedError<ReviewRunMissingError>()(
-  "ReviewRunMissingError",
-  { runId: Schema.String },
-) {
-  override get message() {
-    return `Cannot resume: no run ${this.runId}`;
-  }
-}
-
 export type RunnerError =
   | ReviewLeaseTakenError
   | ReviewRunMissingError
@@ -79,12 +79,9 @@ export function resumeReviewRun(
     const runs = yield* ReviewRuns;
     const traces = yield* TraceEvents;
     const run = yield* runs.getRun(runId);
-    if (!run) {
-      return yield* Effect.fail(new ReviewRunMissingError({ runId }));
-    }
     // Pick up the trace where the previous attempt left off.
     const priorTrace = yield* traces.get(run.id);
-    const priorLastSeq = priorTrace?.at(-1)?.seq;
+    const priorLastSeq = priorTrace.at(-1)?.seq;
     const seq = priorLastSeq === undefined ? 0 : priorLastSeq + 1;
     return yield* Effect.annotateLogs(execute(pass, run, seq, priorTrace, onProgress), {
       runId: run.id,
@@ -107,7 +104,7 @@ function claim(
       owner,
       heartbeatAtLeast: now - staleMs,
     });
-    if (!claimed) {
+    if (Option.isNone(claimed)) {
       return yield* Effect.fail(new ReviewLeaseTakenError({ runId }));
     }
     return owner;
@@ -150,7 +147,7 @@ function execute(
   pass: ResolvedReviewPass,
   run: ReviewRun,
   seq: number,
-  priorTrace: TraceEvent[] | undefined,
+  priorTrace: TraceEvent[],
   onProgress?: (progress: ReviewProgress) => void,
 ): Effect.Effect<ReviewRun, RunnerError, RunnerServices> {
   return Effect.gen(function* () {
@@ -159,7 +156,7 @@ function execute(
     const { wsId } = yield* WorkspaceId;
     const { heartbeatMs, staleMs } = yield* ReviewPacing;
     const owner = yield* claim(runs, run.id, staleMs);
-    const completed = priorTrace ? foldCompleted(priorTrace) : undefined;
+    const completed = foldCompleted(priorTrace);
     const graph = buildReviewGraph(pass, run.id, { path: run.path, versionId: run.versionId });
     const kindOf = new Map(graph.nodes.map((node) => [node.id, node.kind] as const));
     const tracker = onProgress ? new ReviewProgressTracker(onProgress, kindOf) : undefined;
@@ -212,14 +209,12 @@ function execute(
     yield* Fiber.join(writerFiber);
 
     if (Result.isFailure(flowOutcome)) {
-      const caught = flowOutcome.failure;
-      const message = caught instanceof Error ? caught.message : String(caught);
-      return yield* fail(runs, run, message);
+      return yield* runs.failRun(run.id, asMessage(flowOutcome.failure));
     }
 
     const result = flowOutcome.success;
     if (result.status === "failed") {
-      return yield* fail(runs, run, result.errors.join("; "));
+      return yield* runs.failRun(run.id, result.errors.join("; "));
     }
 
     // A pass with no summary unit commits none, and `one` throws. TODO -- once a pass can carry
@@ -238,9 +233,9 @@ function execute(
       }),
     );
     if (Result.isFailure(tail)) {
-      return yield* fail(runs, run, asMessage(tail.failure));
+      return yield* runs.failRun(run.id, asMessage(tail.failure));
     }
-    return tail.success.done ?? run;
+    return tail.success.done;
   });
 }
 
@@ -256,15 +251,4 @@ class SummaryMissingError extends Schema.TaggedError<SummaryMissingError>()(
 
 function asMessage(cause: unknown): string {
   return cause instanceof Error ? cause.message : String(cause);
-}
-
-function fail(
-  runs: Context.Service.Shape<typeof ReviewRuns>,
-  run: ReviewRun,
-  error: string,
-): Effect.Effect<ReviewRun, RunnerError, WorkspaceId> {
-  return Effect.gen(function* () {
-    const failed = yield* runs.failRun(run.id, error);
-    return failed ?? run;
-  });
 }

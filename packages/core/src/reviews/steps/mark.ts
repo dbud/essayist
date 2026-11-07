@@ -84,11 +84,11 @@ export function applyProposedMarks(
         provenance,
         versionId: pin.versionId,
       });
-      attempts.push({
-        ...proposal,
-        ...result,
-        error: result.marked ? undefined : "selected text not found",
-      });
+      attempts.push(
+        result.marked
+          ? { ...proposal, ...result }
+          : { ...proposal, ...result, error: "selected text not found" },
+      );
     }
     return attempts;
   });

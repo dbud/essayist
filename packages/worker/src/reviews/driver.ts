@@ -25,11 +25,7 @@ const arm = (storage: DurableObjectStorage, at: number): Effect.Effect<void> =>
     }
   });
 
-/**
- * One drive beat: arm the next beat before the drive, so a killed handler is re-driven by its
- * pending alarm. Drive failures log and wait for the armed beat; storage faults die and hand the
- * alarm back to the platform's retry.
- */
+/** A failed drive keeps the armed beat; a died beat hands the alarm back to the platform. */
 function beat(
   storage: DurableObjectStorage,
 ): Effect.Effect<boolean, never, DriveServices | ReviewPacing> {

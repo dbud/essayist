@@ -1,14 +1,13 @@
 import { Schema } from "effect";
-
-import { Lease } from "#/persistence/mod.ts";
+import { Model } from "effect/schema";
 
 export const ReviewRunStatus = Schema.Literals(["running", "completed", "failed"]);
 export type ReviewRunStatus = Schema.Schema.Type<typeof ReviewRunStatus>;
 
-/** A review pass run over a file in a workspace. The lease fields ride along while a driver claims
- * the run and are stripped once it settles. */
-export const ReviewRun = Schema.Struct({
-  ...Lease.fields,
+/** A review pass run over a file in a workspace. The nullable fields are select-only: the storage
+ * layer writes them in its claim, heartbeat, and settle statements.
+ */
+export class ReviewRun extends Model.Class<ReviewRun>("ReviewRun")({
   id: Schema.String,
   wsId: Schema.String,
   path: Schema.String,
@@ -16,12 +15,12 @@ export const ReviewRun = Schema.Struct({
   versionId: Schema.String,
   status: ReviewRunStatus,
   startedAt: Schema.Number,
-  completedAt: Schema.optionalKey(Schema.Number),
-  error: Schema.optionalKey(Schema.String),
-  summary: Schema.optionalKey(Schema.String),
-});
-
-export type ReviewRun = Schema.Schema.Type<typeof ReviewRun>;
+  completedAt: Model.FieldOnly(["select"])(Schema.OptionFromNullOr(Schema.Number)),
+  error: Model.FieldOnly(["select"])(Schema.OptionFromNullOr(Schema.String)),
+  summary: Model.FieldOnly(["select"])(Schema.OptionFromNullOr(Schema.String)),
+  leaseOwner: Model.FieldOnly(["select"])(Schema.OptionFromNullOr(Schema.String)),
+  heartbeatAt: Model.FieldOnly(["select"])(Schema.OptionFromNullOr(Schema.Number)),
+}) {}
 
 /** A proposed mark and its application result. */
 export const MarkAttempt = Schema.Struct({

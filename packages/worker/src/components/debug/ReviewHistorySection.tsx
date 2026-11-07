@@ -1,4 +1,5 @@
 import type { ReviewRun, ReviewRunStatus } from "@essayist/core";
+import { Option } from "effect";
 import { ScrollText } from "lucide-preact";
 
 import Section from "#/components/debug/Section.tsx";
@@ -16,22 +17,23 @@ function statusBadge(status: ReviewRunStatus) {
 }
 
 function RunItem({ run }: { run: ReviewRun }) {
+  const completedAt = Option.getOrUndefined(run.completedAt);
+  const error = Option.getOrUndefined(run.error);
+  const summary = Option.getOrUndefined(run.summary);
   return (
     <div class="text-sm p-2 rounded">
       <div class="flex items-center gap-2 mb-1">
         {statusBadge(run.status)}
         <span class="text-xs text-ink/60">
           {new Date(run.startedAt).toLocaleString()}
-          {run.completedAt && <> ({((run.completedAt - run.startedAt) / 1000).toFixed(1)}s)</>}
+          {completedAt && <> ({((completedAt - run.startedAt) / 1000).toFixed(1)}s)</>}
         </span>
         <a href={`/traces/${run.wsId}/${run.id}`} class="btn--ghost ml-auto" title="View trace">
           <ScrollText size={14} />
         </a>
       </div>
-      {run.status === "failed" && run.error && <div class="text-ink/80 text-xs">{run.error}</div>}
-      {run.status === "completed" && run.summary && (
-        <MarkdownView content={run.summary} class="text-xs" />
-      )}
+      {run.status === "failed" && error && <div class="text-ink/80 text-xs">{error}</div>}
+      {run.status === "completed" && summary && <MarkdownView content={summary} class="text-xs" />}
     </div>
   );
 }

@@ -8,6 +8,7 @@ import {
   type TraceNodeView,
   type User,
 } from "@essayist/core";
+import { Option } from "effect";
 import {
   AlertTriangle,
   ArrowDown,
@@ -324,6 +325,7 @@ export default function ReviewTracePage({
   user: User;
 }) {
   const view = groupTraceNodes(trace);
+  const completedAt = Option.getOrUndefined(run.completedAt);
   const units = groupUnits(view.nodes);
   return (
     <div class="flex flex-1 min-h-0">
@@ -346,7 +348,7 @@ export default function ReviewTracePage({
                 <div class="cell min-w-0 flex-1 truncate">{run.path}</div>
                 <div class="cell shrink-0">
                   {new Date(run.startedAt).toLocaleString()}
-                  {run.completedAt && ` (${duration(run.completedAt - run.startedAt)})`}
+                  {completedAt && ` (${duration(completedAt - run.startedAt)})`}
                 </div>
                 <div class="cell shrink-0">
                   <TokenUsage

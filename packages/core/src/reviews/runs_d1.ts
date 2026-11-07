@@ -1,5 +1,5 @@
 import type * as D1Client from "@effect/sql-d1/D1Client";
-import { Clock, Effect, Layer, Option, Schema, SchemaGetter } from "effect";
+import { Clock, Effect, Layer, Option, Schema } from "effect";
 import { SqlSchema } from "effect/sql";
 
 import { Ids } from "#/idsRef.ts";
@@ -7,62 +7,13 @@ import type { ClaimOptions } from "#/persistence/mod.ts";
 import { PersistenceError } from "#/persistence/service.ts";
 import { WorkspaceId } from "#/workspace/WorkspaceId.ts";
 
-import { ReviewRuns } from "./service.ts";
+import { ReviewRunMissingError, ReviewRuns } from "./service.ts";
 import { ReviewRun, ReviewRunStatus } from "./types.ts";
 
 const backendFault = (cause: unknown) => new PersistenceError({ cause });
 
 const RUN_COLUMNS =
-  "id, ws_id, path, review_pass_id, version_id, status, started_at, completed_at, error, summary, lease_owner, lease_heartbeat_at";
-
-const COLUMN_NAMES = {
-  wsId: "ws_id",
-  reviewPassId: "review_pass_id",
-  versionId: "version_id",
-  startedAt: "started_at",
-  completedAt: "completed_at",
-  leaseOwner: "lease_owner",
-  heartbeatAt: "lease_heartbeat_at",
-};
-
-const RunRow = ReviewRun.pipe(
-  Schema.fieldsAssign({
-    completedAt: Schema.optionalKey(Schema.NullOr(Schema.Number)),
-    error: Schema.optionalKey(Schema.NullOr(Schema.String)),
-    summary: Schema.optionalKey(Schema.NullOr(Schema.String)),
-    leaseOwner: Schema.optionalKey(Schema.NullOr(Schema.String)),
-    heartbeatAt: Schema.optionalKey(Schema.NullOr(Schema.Number)),
-  }),
-  Schema.encodeKeys(COLUMN_NAMES),
-);
-
-/**
- * The record shape a row reads back into: the optional fields tolerate the explicit-undefined
- * values the null-to-absent restore produces.
- */
-const RunRecord = ReviewRun.pipe(
-  Schema.fieldsAssign({
-    completedAt: Schema.optional(Schema.Number),
-    error: Schema.optional(Schema.String),
-    summary: Schema.optional(Schema.String),
-    leaseOwner: Schema.optional(Schema.String),
-    heartbeatAt: Schema.optional(Schema.Number),
-  }),
-);
-
-const RunFromRow = RunRow.pipe(
-  Schema.decodeTo(RunRecord, {
-    decode: SchemaGetter.transform((row: typeof RunRow.Type) => ({
-      ...row,
-      completedAt: row.completedAt ?? undefined,
-      error: row.error ?? undefined,
-      summary: row.summary ?? undefined,
-      leaseOwner: row.leaseOwner ?? undefined,
-      heartbeatAt: row.heartbeatAt ?? undefined,
-    })),
-    encode: SchemaGetter.forbiddenEncoding,
-  }),
-);
+  "id, wsId, path, reviewPassId, versionId, status, startedAt, completedAt, error, summary, leaseOwner, heartbeatAt";
 
 export function layerReviewRunsD1(
   client: D1Client.D1Client,
@@ -72,53 +23,61 @@ export function layerReviewRunsD1(
     execute: () =>
       client.batch([
         client`CREATE TABLE IF NOT EXISTS review_runs (
-          ws_id TEXT NOT NULL,
           id TEXT NOT NULL,
+          wsId TEXT NOT NULL,
           path TEXT NOT NULL,
-          review_pass_id TEXT NOT NULL,
-          version_id TEXT NOT NULL,
+          reviewPassId TEXT NOT NULL,
+          versionId TEXT NOT NULL,
           status TEXT NOT NULL CHECK (status IN ('running', 'completed', 'failed')),
-          started_at INTEGER NOT NULL,
-          completed_at INTEGER,
+          startedAt INTEGER NOT NULL,
+          completedAt INTEGER,
           error TEXT,
           summary TEXT,
-          lease_owner TEXT,
-          lease_heartbeat_at INTEGER,
-          PRIMARY KEY (ws_id, id)
+          leaseOwner TEXT,
+          heartbeatAt INTEGER,
+          PRIMARY KEY (wsId, id)
         ) WITHOUT ROWID`,
         client`CREATE INDEX IF NOT EXISTS review_runs_started
-          ON review_runs (ws_id, started_at DESC)`,
-        // A global sweep for runs in progress, for the stale-run janitor.
-        client`CREATE INDEX IF NOT EXISTS review_runs_stale ON review_runs (lease_heartbeat_at)
+          ON review_runs (wsId, startedAt DESC)`,
+        // a global sweep for runs in progress, for the stale-run janitor
+        client`CREATE INDEX IF NOT EXISTS review_runs_stale ON review_runs (heartbeatAt)
           WHERE status = 'running'`,
       ]),
   });
 
   const insertRun = SqlSchema.void({
-    Request: RunRow,
+    Request: Schema.Struct({
+      id: Schema.String,
+      wsId: Schema.String,
+      path: Schema.String,
+      reviewPassId: Schema.String,
+      versionId: Schema.String,
+      status: ReviewRunStatus,
+      startedAt: Schema.Number,
+    }),
     execute: (row) => client`INSERT INTO review_runs ${client.insert([row])}`,
   });
 
-  const findRunRow = SqlSchema.findOneOption({
+  const findRunRow = SqlSchema.findOne({
     Request: Schema.Struct({ wsId: Schema.String, id: Schema.String }),
-    Result: RunFromRow,
+    Result: ReviewRun,
     execute: ({ wsId, id }) =>
       client`SELECT ${client.literal(RUN_COLUMNS)} FROM review_runs
-        WHERE ws_id = ${wsId} AND id = ${id}`,
+        WHERE wsId = ${wsId} AND id = ${id}`,
   });
 
   const findRunRows = SqlSchema.findAll({
     Request: Schema.Struct({ wsId: Schema.String, path: Schema.NullOr(Schema.String) }),
-    Result: RunFromRow,
+    Result: ReviewRun,
     execute: ({ wsId, path }) =>
       path === null
         ? client`SELECT ${client.literal(RUN_COLUMNS)} FROM review_runs
-          WHERE ws_id = ${wsId} ORDER BY started_at DESC`
+          WHERE wsId = ${wsId} ORDER BY startedAt DESC`
         : client`SELECT ${client.literal(RUN_COLUMNS)} FROM review_runs
-          WHERE ws_id = ${wsId} AND path = ${path} ORDER BY started_at DESC`,
+          WHERE wsId = ${wsId} AND path = ${path} ORDER BY startedAt DESC`,
   });
 
-  const settleRun = SqlSchema.findOneOption({
+  const settleRun = SqlSchema.findOne({
     Request: Schema.Struct({
       wsId: Schema.String,
       id: Schema.String,
@@ -127,16 +86,17 @@ export function layerReviewRunsD1(
       summary: Schema.NullOr(Schema.String),
       error: Schema.NullOr(Schema.String),
     }),
-    Result: RunFromRow,
+    Result: ReviewRun,
     execute: ({ wsId, id, status, completedAt, summary, error }) =>
       client`UPDATE review_runs
-        SET status = ${status}, completed_at = ${completedAt},
+        SET status = ${status}, completedAt = ${completedAt},
           summary = ${summary}, error = ${error},
-          lease_owner = NULL, lease_heartbeat_at = NULL
-        WHERE ws_id = ${wsId} AND id = ${id}
+          leaseOwner = NULL, heartbeatAt = NULL
+        WHERE wsId = ${wsId} AND id = ${id}
         RETURNING ${client.literal(RUN_COLUMNS)}`,
   });
 
+  // takes the lease when it is free, ours, or stale; a lost race updates no row
   const claimRunRow = SqlSchema.findOneOption({
     Request: Schema.Struct({
       wsId: Schema.String,
@@ -145,13 +105,13 @@ export function layerReviewRunsD1(
       heartbeatAtLeast: Schema.Number,
       at: Schema.Number,
     }),
-    Result: RunFromRow,
+    Result: ReviewRun,
     execute: ({ wsId, id, owner, heartbeatAtLeast, at }) =>
       client`UPDATE review_runs
-        SET lease_owner = ${owner}, lease_heartbeat_at = ${at}
-        WHERE ws_id = ${wsId} AND id = ${id}
-          AND (lease_owner IS NULL OR lease_owner = ${owner}
-            OR COALESCE(lease_heartbeat_at, 0) < ${heartbeatAtLeast})
+        SET leaseOwner = ${owner}, heartbeatAt = ${at}
+        WHERE wsId = ${wsId} AND id = ${id}
+          AND (leaseOwner IS NULL OR leaseOwner = ${owner}
+            OR COALESCE(heartbeatAt, 0) < ${heartbeatAtLeast})
         RETURNING ${client.literal(RUN_COLUMNS)}`,
   });
 
@@ -162,11 +122,11 @@ export function layerReviewRunsD1(
       owner: Schema.String,
       at: Schema.Number,
     }),
-    Result: RunFromRow,
+    Result: ReviewRun,
     execute: ({ wsId, id, owner, at }) =>
       client`UPDATE review_runs
-        SET lease_heartbeat_at = ${at}
-        WHERE ws_id = ${wsId} AND id = ${id} AND lease_owner = ${owner}
+        SET heartbeatAt = ${at}
+        WHERE wsId = ${wsId} AND id = ${id} AND leaseOwner = ${owner}
         RETURNING ${client.literal(RUN_COLUMNS)}`,
   });
 
@@ -189,9 +149,14 @@ export function layerReviewRunsD1(
         wsId,
         path,
         reviewPassId,
+        versionId,
         status: "running",
         startedAt: startedAt ?? (yield* Clock.currentTimeMillis),
-        versionId,
+        completedAt: Option.none(),
+        error: Option.none(),
+        summary: Option.none(),
+        leaseOwner: Option.none(),
+        heartbeatAt: Option.none(),
       };
       yield* Effect.mapError(insertRun(run), backendFault);
       return run;
@@ -199,31 +164,32 @@ export function layerReviewRunsD1(
 
   const getRun = (
     id: string,
-  ): Effect.Effect<ReviewRun | undefined, PersistenceError, WorkspaceId> =>
+  ): Effect.Effect<ReviewRun, PersistenceError | ReviewRunMissingError, WorkspaceId> =>
     Effect.gen(function* () {
       const { wsId } = yield* WorkspaceId;
-      const option = yield* Effect.mapError(findRunRow({ wsId, id }), backendFault);
-      return Option.isNone(option) ? undefined : option.value;
+      return yield* Effect.catchTags(
+        findRunRow({ wsId, id }),
+        { NoSuchElementError: () => Effect.fail(new ReviewRunMissingError({ id })) },
+        (e) => Effect.fail(backendFault(e)),
+      );
     });
 
-  const listRuns = (path?: string): Effect.Effect<ReviewRun[], PersistenceError, WorkspaceId> =>
+  const listRuns = (
+    path?: string,
+  ): Effect.Effect<ReadonlyArray<ReviewRun>, PersistenceError, WorkspaceId> =>
     Effect.gen(function* () {
       const { wsId } = yield* WorkspaceId;
-      const rows = yield* Effect.mapError(
-        findRunRows({ wsId: wsId, path: path ?? null }),
-        backendFault,
-      );
-      return rows;
+      return yield* Effect.mapError(findRunRows({ wsId, path: path ?? null }), backendFault);
     });
 
   const endRun = (
     id: string,
     status: ReviewRunStatus,
     extra: { summary?: string; error?: string },
-  ): Effect.Effect<ReviewRun | undefined, PersistenceError, WorkspaceId> =>
+  ): Effect.Effect<ReviewRun, PersistenceError | ReviewRunMissingError, WorkspaceId> =>
     Effect.gen(function* () {
       const { wsId } = yield* WorkspaceId;
-      const option = yield* Effect.mapError(
+      return yield* Effect.catchTags(
         settleRun({
           wsId,
           id,
@@ -232,9 +198,9 @@ export function layerReviewRunsD1(
           summary: extra.summary ?? null,
           error: extra.error ?? null,
         }),
-        backendFault,
+        { NoSuchElementError: () => Effect.fail(new ReviewRunMissingError({ id })) },
+        (e) => Effect.fail(backendFault(e)),
       );
-      return Option.isNone(option) ? undefined : option.value;
     });
 
   const completeRun = (id: string, summary: string) => endRun(id, "completed", { summary });
@@ -244,10 +210,10 @@ export function layerReviewRunsD1(
   const claimRun = (
     id: string,
     { owner, heartbeatAtLeast }: ClaimOptions,
-  ): Effect.Effect<ReviewRun | undefined, PersistenceError, WorkspaceId> =>
+  ): Effect.Effect<Option.Option<ReviewRun>, PersistenceError, WorkspaceId> =>
     Effect.gen(function* () {
       const { wsId } = yield* WorkspaceId;
-      const option = yield* Effect.mapError(
+      return yield* Effect.mapError(
         claimRunRow({
           wsId,
           id,
@@ -257,7 +223,6 @@ export function layerReviewRunsD1(
         }),
         backendFault,
       );
-      return Option.isNone(option) ? undefined : option.value;
     });
 
   const heartbeatRun = (
@@ -266,16 +231,11 @@ export function layerReviewRunsD1(
   ): Effect.Effect<boolean, PersistenceError, WorkspaceId> =>
     Effect.gen(function* () {
       const { wsId } = yield* WorkspaceId;
-      const option = yield* Effect.mapError(
-        renewHeartbeat({
-          wsId,
-          id,
-          owner,
-          at: yield* Clock.currentTimeMillis,
-        }),
+      const renewed = yield* Effect.mapError(
+        renewHeartbeat({ wsId, id, owner, at: yield* Clock.currentTimeMillis }),
         backendFault,
       );
-      return Option.isSome(option);
+      return Option.isSome(renewed);
     });
 
   return Layer.unwrap(

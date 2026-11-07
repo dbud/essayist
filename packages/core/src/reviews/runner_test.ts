@@ -1,6 +1,10 @@
+import { DatabaseSync } from "node:sqlite";
+
 import { type Kv, openKv } from "@deno/kv";
+import * as D1Client from "@effect/sql-d1/D1Client";
 import { assert, assertEquals, assertRejects } from "@std/assert";
-import { type Context, Effect, Layer } from "effect";
+import { type Context, Effect, Layer, Option } from "effect";
+import * as Reactivity from "effect/reactivity/Reactivity";
 import { test } from "vitest";
 
 import type { ResolvedReviewPass, ReviewUnit } from "#/config/types.ts";
@@ -9,13 +13,16 @@ import type { NodeRun } from "#/flow/types.ts";
 import { Marks } from "#/marks/service.ts";
 import { createFakeClient } from "#/model/fake_client.ts";
 import { ModelClient } from "#/model/service.ts";
-import { ChunkedValues } from "#/persistence/chunked_values.ts";
+import { d1SqliteShim } from "#/persistence/kv_d1_sqlite.ts";
 import { kvLayer } from "#/persistence/kv_layer.ts";
+import type { PersistenceError } from "#/persistence/mod.ts";
 import { Persistence } from "#/persistence/mod.ts";
 import { ReviewPacing } from "#/reviews/pacing.ts";
-import { ReviewLeaseTakenError, ReviewRunMissingError, resumeReviewRun } from "#/reviews/runner.ts";
-import { ReviewRuns } from "#/reviews/service.ts";
+import { ReviewLeaseTakenError, resumeReviewRun } from "#/reviews/runner.ts";
+import { layerReviewRunsD1 } from "#/reviews/runs_d1.ts";
+import { ReviewRunMissingError, ReviewRuns } from "#/reviews/service.ts";
 import { TraceEvents } from "#/reviews/trace/service.ts";
+import { layerTraceEventsD1 } from "#/reviews/trace/trace_d1.ts";
 import type { TraceEvent } from "#/reviews/trace/types.ts";
 import type { ReviewRun } from "#/reviews/types.ts";
 import { WorkspaceId } from "#/workspace/WorkspaceId.ts";
@@ -58,7 +65,9 @@ function passFixture(units: ReviewUnit[]): ResolvedReviewPass {
 // for raw row fixtures.
 interface Setup {
   kv: Kv;
-  env: Layer.Layer<Marks | Persistence | ReviewRuns | TraceEvents | Files>;
+  d1: D1Client.D1Client;
+  db: DatabaseSync;
+  env: Layer.Layer<Marks | Persistence | ReviewRuns | TraceEvents | Files, PersistenceError>;
   versionId?: string;
 }
 
@@ -69,11 +78,14 @@ async function setup(file?: {
   content: string;
 }): Promise<Setup & { versionId?: string }> {
   const kv = await openKv();
+  const db = new DatabaseSync(":memory:");
+  const d1 = await Effect.runPromise(
+    D1Client.make({ db: d1SqliteShim(db) }).pipe(Effect.scoped, Effect.provide(Reactivity.layer)),
+  );
   const env = Layer.provide(
     Layer.mergeAll(
-      ReviewRuns.layerNoDeps,
-      Layer.provide(TraceEvents.layerNoDeps, ChunkedValues.layerNoDeps),
-      ChunkedValues.layerNoDeps,
+      layerReviewRunsD1(d1),
+      layerTraceEventsD1(d1),
       Files.layerNoDeps,
       Layer.provide(Marks.layerNoDeps, Files.layerNoDeps),
       kvLayer(kv),
@@ -89,18 +101,20 @@ async function setup(file?: {
         }).pipe(Effect.provideService(WorkspaceId, { wsId: "ws" }), Effect.provide(env)),
       )
     : undefined;
-  return { kv, env, versionId };
+  return { kv, d1, db, env, versionId };
 }
 
 /** Run a small program against the test's shared KV store: the body gets
  * the services, as they come out of the shared env. */
 function viaRuns<A>(
-  env: Layer.Layer<Marks | ModelClient | Persistence | ReviewRuns | TraceEvents | Files>,
+  env: Layer.Layer<
+    Marks | ModelClient | Persistence | ReviewRuns | TraceEvents | Files,
+    PersistenceError
+  >,
   body: (deps: {
     runs: Context.Service.Shape<typeof ReviewRuns>;
     traces: Context.Service.Shape<typeof TraceEvents>;
     files: Context.Service.Shape<typeof Files>;
-    persistence: Context.Service.Shape<typeof Persistence>;
   }) => Effect.Effect<A, unknown, WorkspaceId>,
 ): Promise<A> {
   return Effect.runPromise(
@@ -108,15 +122,17 @@ function viaRuns<A>(
       const runs = yield* ReviewRuns;
       const traces = yield* TraceEvents;
       const files = yield* Files;
-      const persistence = yield* Persistence;
-      return yield* body({ runs, traces, files, persistence });
+      return yield* body({ runs, traces, files });
     }).pipe(Effect.provideService(WorkspaceId, { wsId: "ws" }), Effect.provide(env)),
   );
 }
 
 /** Create the run like production does, then drive it with resumeReviewRun. */
 async function startRun(
-  env: Layer.Layer<Marks | ModelClient | ReviewRuns | TraceEvents | Files>,
+  env: Layer.Layer<
+    Marks | ModelClient | Persistence | ReviewRuns | TraceEvents | Files,
+    PersistenceError
+  >,
   pass: ResolvedReviewPass,
   path: string,
   versionId: string,
@@ -139,7 +155,10 @@ async function startRun(
 }
 
 async function resumeRun(
-  env: Layer.Layer<Marks | ModelClient | ReviewRuns | TraceEvents | Files>,
+  env: Layer.Layer<
+    Marks | ModelClient | Persistence | ReviewRuns | TraceEvents | Files,
+    PersistenceError
+  >,
   pass: ResolvedReviewPass,
   runId: string,
 ): Promise<ReviewRun> {
@@ -213,7 +232,7 @@ test("resumeReviewRun -- completes a pass with marks, summary, and a per-node tr
   );
 
   assertEquals(run.status, "completed");
-  assertEquals(run.summary, "Solid draft.");
+  assertEquals(run.summary, Option.some("Solid draft."));
 
   const marks = await viaRuns(env, (deps) => deps.files.getMarks("essay.txt", versionId));
   assertEquals(marks[0].selected_text, "brave");
@@ -272,7 +291,7 @@ test("resumeReviewRun -- a repair round re-quotes the failed spans", async () =>
   );
 
   assertEquals(run.status, "completed");
-  assertEquals(run.summary, "Solid draft.");
+  assertEquals(run.summary, Option.some("Solid draft."));
 
   const trace = (await viaRuns(env, (deps) => deps.traces.get(run.id))) ?? [];
   assertEquals(byNode(trace), {
@@ -346,7 +365,7 @@ test("resumeReviewRun -- resuming a run that does not exist is an error", async 
   await assertRejects(
     () => resumeRun(env, passFixture([unitFixture({ id: "analyze" })]), "no-such-run"),
     ReviewRunMissingError,
-    "Cannot resume: no run no-such-run",
+    "No run no-such-run",
   );
 });
 
@@ -444,7 +463,7 @@ test("resumeReviewRun -- a node error fails the run and skips dependents", async
   );
 
   assertEquals(run.status, "failed");
-  assertEquals(run.error?.includes("not valid JSON"), true);
+  assertEquals(Option.getOrUndefined(run.error)?.includes("not valid JSON"), true);
 
   const trace = (await viaRuns(env, (deps) => deps.traces.get(run.id))) ?? [];
   const grouped = byNode(trace);
@@ -500,12 +519,12 @@ test("resumeReviewRun -- fails a pass that commits no summary", async () => {
   );
 
   assertEquals(run.status, "failed");
-  assertEquals(run.error?.includes("no summary artifact"), true);
-  assertEquals(run.summary, undefined);
+  assertEquals(Option.getOrUndefined(run.error)?.includes("no summary artifact"), true);
+  assertEquals(run.summary, Option.none());
 });
 
 test("resumeReviewRun -- heartbeats the lease while running, then releases it", async () => {
-  const { kv, versionId } = await setup({
+  const { kv, d1, versionId } = await setup({
     path: "essay.txt",
     content: "hello brave world",
   });
@@ -514,7 +533,7 @@ test("resumeReviewRun -- heartbeats the lease while running, then releases it", 
     { text: ANALYSIS_ROUND },
     { text: '{"summary":"Solid draft."}' },
   ]);
-  const env = Layer.merge(countingReviews(kv, count), ModelClient.layerOf(client));
+  const env = Layer.merge(countingReviews(d1, kv, count), ModelClient.layerOf(client));
 
   const run = await startRun(
     env,
@@ -531,8 +550,8 @@ test("resumeReviewRun -- heartbeats the lease while running, then releases it", 
   // A refused beat would mean the finish raced the release.
   assertEquals(count.refused, 0);
   const row = await viaRuns(env, (deps) => deps.runs.getRun(run.id));
-  assertEquals(row?.leaseOwner, undefined);
-  assertEquals(row?.heartbeatAt, undefined);
+  assertEquals(row.leaseOwner, Option.none());
+  assertEquals(row.heartbeatAt, Option.none());
 });
 
 test("resumeReviewRun -- refuses to resume a run another driver holds", async () => {
@@ -561,7 +580,11 @@ test("resumeReviewRun -- refuses to resume a run another driver holds", async ()
 });
 
 test("resumeReviewRun -- resumes a run whose lease went stale", async () => {
-  const { env: baseEnv, versionId } = await setup({
+  const {
+    env: baseEnv,
+    db,
+    versionId,
+  } = await setup({
     path: "essay.txt",
     content: "hello brave world",
   });
@@ -578,12 +601,8 @@ test("resumeReviewRun -- resumes a run whose lease went stale", async () => {
     }),
   );
   // A dead owner, its heartbeat far in the past.
-  await viaRuns(env, (deps) =>
-    deps.persistence.set(["reviews", "ws", run.id], {
-      ...run,
-      leaseOwner: "driver-dead",
-      heartbeatAt: 1,
-    }),
+  db.prepare("UPDATE review_runs SET leaseOwner = 'driver-dead', heartbeatAt = 1 WHERE id = ?").run(
+    run.id,
   );
 
   const resumed = await resumeRun(
@@ -599,11 +618,12 @@ test("resumeReviewRun -- resumes a run whose lease went stale", async () => {
 });
 
 /** Wraps the ReviewRuns service with heartbeat counters, backed by the same
- * KV store as the fixtures. */
+ * runs store as the fixtures. */
 function countingReviews(
+  d1: D1Client.D1Client,
   kv: Kv,
   count: { renewed: number; refused: number },
-): Layer.Layer<Marks | Persistence | ReviewRuns | TraceEvents | Files> {
+): Layer.Layer<Marks | Persistence | ReviewRuns | TraceEvents | Files, PersistenceError> {
   const heartbeats = Layer.effect(
     ReviewRuns,
     Effect.gen(function* () {
@@ -623,13 +643,10 @@ function countingReviews(
   return Layer.merge(
     heartbeats,
     Layer.mergeAll(
-      Layer.provide(TraceEvents.layerNoDeps, ChunkedValues.layerNoDeps),
+      layerTraceEventsD1(d1),
       Files.layerNoDeps,
       Layer.provide(Marks.layerNoDeps, Files.layerNoDeps),
       kvLayer(kv),
     ),
-  ).pipe(
-    Layer.provide(Layer.provide(ReviewRuns.layerNoDeps, kvLayer(kv))),
-    Layer.provide(kvLayer(kv)),
-  );
+  ).pipe(Layer.provide(layerReviewRunsD1(d1)), Layer.provide(kvLayer(kv)));
 }

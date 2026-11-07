@@ -47,7 +47,7 @@ export function driveReviewRun({
   return Effect.gen(function* () {
     const runs = yield* ReviewRuns;
     const run = yield* runs.getRun(runId);
-    if (run === undefined || run.status !== "running") return true;
+    if (run.status !== "running") return true;
     const pass = yield* resolveActiveReviewPass;
     if (pass === undefined) {
       yield* Effect.logWarning("review run parked: no active pass is configured", {

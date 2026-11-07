@@ -1,6 +1,6 @@
 import { Command } from "@cliffy/command";
 import { type ReviewRun, ReviewRuns, WorkspaceId, pluralize } from "@essayist/core";
-import { Effect } from "effect";
+import { Effect, Option } from "effect";
 
 import type { KvctlGlobals } from "#/globals.ts";
 import { withStore } from "#/kv.ts";
@@ -49,10 +49,12 @@ function summariseRun({
       path,
       versionId,
       startedAt,
-      completedAt,
-      summary,
-      error,
-      ...(leaseOwner === undefined ? {} : { lease: `${leaseOwner}@${heartbeatAt}` }),
+      completedAt: Option.getOrUndefined(completedAt),
+      summary: Option.getOrUndefined(summary),
+      error: Option.getOrUndefined(error),
+      ...(Option.isNone(leaseOwner)
+        ? {}
+        : { lease: `${Option.getOrUndefined(leaseOwner)}@${Option.getOrUndefined(heartbeatAt)}` }),
     },
   ];
 }

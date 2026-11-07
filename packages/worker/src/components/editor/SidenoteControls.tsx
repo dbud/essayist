@@ -1,3 +1,4 @@
+import { Option } from "effect";
 import { Highlighter } from "lucide-preact";
 
 import WaveBars from "#/components/ui/WaveBars.tsx";
@@ -13,6 +14,7 @@ export default function SidenoteControls() {
 
   async function onReview() {
     const result = await submit();
+    const failure = result === undefined ? undefined : Option.getOrUndefined(result.error);
     if (error.value) {
       showToast(error.value, "error");
       return;
@@ -22,7 +24,7 @@ export default function SidenoteControls() {
     void fileVersions.current.value?.load();
     if (result?.status === "running") showToast("Review started", "success");
     else if (result?.status === "completed") showToast("Review complete", "success");
-    else showToast(result?.error ?? "Review failed", "error");
+    else showToast(failure ?? "Review failed", "error");
   }
 
   return (

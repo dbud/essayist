@@ -14,20 +14,21 @@ export default new Hono<{ Bindings: Cloudflare.Env }>().get("/:wsId/:runId", asy
   const rt = runtime(env(c.env));
   const allowed = await rt.runPromise(Workspaces.use((store) => store.hasAccess(wsId, user.id)));
   if (!allowed) return c.redirect("/", 303);
-  const { run, trace } = await rt.runPromise(
+  const found = await rt.runPromise(
     Effect.provideService(
       Effect.gen(function* () {
         const runs = yield* ReviewRuns;
         const traces = yield* TraceEvents;
         return {
           run: yield* runs.getRun(runId),
-          trace: (yield* traces.get(runId)) ?? [],
+          trace: yield* traces.get(runId),
         };
       }),
       WorkspaceId,
       { wsId },
-    ),
+    ).pipe(Effect.catchTag("ReviewRunMissingError", () => Effect.succeed(undefined))),
   );
-  if (run === undefined) return c.text("Review run not found", 404);
+  if (found === undefined) return c.text("Review run not found", 404);
+  const { run, trace } = found;
   return c.render(<Page run={run} trace={trace} user={user} />, { title: "review trace" });
 });
