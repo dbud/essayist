@@ -81,6 +81,8 @@ export {
   type DriveServices,
   type RunRef,
 } from "#/reviews/drive.ts";
+export { ReviewJanitor } from "#/reviews/janitor.ts";
+export { layerReviewJanitorD1 } from "#/reviews/janitor_d1.ts";
 export { ReviewPacing } from "#/reviews/pacing.ts";
 export { layerReviewRunsD1 } from "#/reviews/runs_d1.ts";
 export { ReviewRuns } from "#/reviews/service.ts";

@@ -24,6 +24,9 @@
       "invocation_logs": true,
     },
   },
+  "triggers": {
+    "crons": ["* * * * *"],
+  },
   "upload_source_maps": true,
   "vars": {
     "GOOGLE_APP_ID": "444389978447",

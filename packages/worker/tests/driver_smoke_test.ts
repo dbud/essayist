@@ -5,6 +5,7 @@ import { Effect } from "effect";
 import { beforeEach, expect, test, vi } from "vitest";
 
 import { env as makeEnv } from "#/env.ts";
+import { janitorJob } from "#/reviews/janitor.ts";
 import { runtime } from "#/runtime.ts";
 
 // Isolated test storage starts empty; in production the kv table is applied out of band.
@@ -63,4 +64,31 @@ test("a kicked run without an active pass stays parked with its beat armed", asy
     }).pipe(Effect.provideService(WorkspaceId, { wsId: run.wsId })),
   );
   expect(stored?.status).toBe("running");
+});
+
+test("the janitor resumes a run that never got a driver", async () => {
+  const e = makeEnv(env);
+  const run = await runtime(e).runPromise(
+    Effect.gen(function* () {
+      const runs = yield* ReviewRuns;
+      return yield* runs.createRun({
+        path: "janitor-smoke.md",
+        versionId: "v1",
+        reviewPassId: "none",
+      });
+    }).pipe(Effect.provideService(WorkspaceId, { wsId: "smoke-ws" })),
+  );
+
+  const stub = env.RUN_DRIVER.getByName(run.id);
+  expect(await stub.alarmAt()).toBeNull();
+
+  await runtime(e).runPromise(janitorJob);
+
+  await vi.waitFor(
+    async () => {
+      const alarmAt = await stub.alarmAt();
+      expect(alarmAt ?? 0).toBeGreaterThan(Date.now() + 60_000);
+    },
+    { timeout: 5_000 },
+  );
 });

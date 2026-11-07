@@ -4,12 +4,14 @@ import {
   createStubModelClient,
   Files,
   layerAuthD1,
+  layerReviewJanitorD1,
   layerReviewRunsD1,
   layerTraceEventsD1,
   Marks,
   ModelClient,
   type PersistenceError,
   ReviewConfig,
+  ReviewJanitor,
   ReviewPacing,
   ReviewRuns,
   TraceEvents,
@@ -24,8 +26,9 @@ import { type GoogleConfig, googleConfigLayer, type WorkerEnv } from "#/env.ts";
 import { logLayer } from "#/log.ts";
 import { RunDrivers } from "#/reviews/runDrivers.ts";
 
-export type WorkerRuntime = ManagedRuntime.ManagedRuntime<
+export type WorkerServices =
   | ReviewConfig
+  | ReviewJanitor
   | ReviewRuns
   | ReviewPacing
   | TraceEvents
@@ -36,9 +39,9 @@ export type WorkerRuntime = ManagedRuntime.ManagedRuntime<
   | Files
   | ModelClient
   | RunDrivers
-  | GoogleConfig,
-  PersistenceError
->;
+  | GoogleConfig;
+
+export type WorkerRuntime = ManagedRuntime.ManagedRuntime<WorkerServices, PersistenceError>;
 
 function parseLogLevel(raw: string | undefined) {
   const wanted = (raw ?? "info").toLowerCase();
@@ -46,21 +49,7 @@ function parseLogLevel(raw: string | undefined) {
   return level ?? "Info";
 }
 
-type RuntimeLayer = Layer.Layer<
-  | ReviewConfig
-  | ReviewRuns
-  | ReviewPacing
-  | TraceEvents
-  | Marks
-  | Workspaces
-  | AuthStore
-  | UserState
-  | Files
-  | ModelClient
-  | RunDrivers
-  | GoogleConfig,
-  PersistenceError
->;
+type RuntimeLayer = Layer.Layer<WorkerServices, PersistenceError>;
 
 interface RuntimeCell {
   readonly layer: RuntimeLayer;
@@ -83,6 +72,7 @@ function cell(env: WorkerEnv): RuntimeCell {
           Files.layerNoDeps,
           Workspaces.layerNoDeps,
           layerReviewRunsD1(client),
+          layerReviewJanitorD1(client),
           Layer.succeed(
             ModelClient,
             createStubModelClient({
