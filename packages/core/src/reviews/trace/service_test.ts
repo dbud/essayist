@@ -68,6 +68,33 @@ test("TraceEvents -- get orders by seq", async () => {
   );
 });
 
+test("TraceEvents -- get reads the events past a seq", async () => {
+  await run(
+    Effect.gen(function* () {
+      const traces = yield* TraceEvents;
+      for (const seq of [1, 2, 3, 4]) {
+        yield* traces.append("run", {
+          seq,
+          at: seq,
+          type: "node_start",
+          nodeId: `n${seq}`,
+        });
+      }
+
+      const since2 = yield* traces.get("run", 2);
+      assertEquals(
+        since2.map((event) => event.seq),
+        [3, 4],
+      );
+
+      const since4 = yield* traces.get("run", 4);
+      assertEquals(since4, []);
+
+      assertEquals(yield* traces.get("ghost", 0), []);
+    }),
+  );
+});
+
 test("TraceEvents -- traces are workspace-scoped", async () => {
   await run(
     Effect.gen(function* () {

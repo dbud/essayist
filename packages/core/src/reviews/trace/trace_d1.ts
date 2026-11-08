@@ -38,11 +38,17 @@ export function layerTraceEventsD1(
   });
 
   const findEventRows = SqlSchema.findAll({
-    Request: Schema.Struct({ wsId: Schema.String, runId: Schema.String }),
+    Request: Schema.Struct({
+      wsId: Schema.String,
+      runId: Schema.String,
+      afterSeq: Schema.optional(Schema.Int),
+    }),
     Result: Schema.Struct({ event: Schema.fromJsonString(TraceEvent) }),
-    execute: ({ wsId, runId }) =>
+    execute: ({ wsId, runId, afterSeq }) =>
       client`SELECT event FROM review_trace_events
-        WHERE wsId = ${wsId} AND runId = ${runId} ORDER BY seq`,
+        WHERE wsId = ${wsId} AND runId = ${runId}
+        ${afterSeq === undefined ? client`` : client` AND seq > ${afterSeq}`}
+        ORDER BY seq`,
   });
 
   const append = (
@@ -54,10 +60,13 @@ export function layerTraceEventsD1(
       yield* Effect.mapError(insertEvent({ wsId, runId, seq: event.seq, event }), backendFault);
     });
 
-  const get = (runId: string): Effect.Effect<TraceEvent[], PersistenceError, WorkspaceId> =>
+  const get = (
+    runId: string,
+    afterSeq?: number,
+  ): Effect.Effect<TraceEvent[], PersistenceError, WorkspaceId> =>
     Effect.gen(function* () {
       const { wsId } = yield* WorkspaceId;
-      const rows = yield* Effect.mapError(findEventRows({ wsId, runId }), backendFault);
+      const rows = yield* Effect.mapError(findEventRows({ wsId, runId, afterSeq }), backendFault);
       return rows.map((row) => row.event);
     });
 

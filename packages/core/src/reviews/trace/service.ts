@@ -8,8 +8,8 @@ import type { TraceEvent } from "./types.ts";
 export interface Interface {
   /** Append one event; writers pass their own seq-ordered trace events. */
   append(runId: string, event: TraceEvent): Effect.Effect<void, PersistenceError, WorkspaceId>;
-  /** The trace of a run in seq order, oldest first; empty when nothing was written. */
-  get(runId: string): Effect.Effect<TraceEvent[], PersistenceError, WorkspaceId>;
+  /** The trace of a run in seq order, oldest first; with afterSeq, only the events past it. */
+  get(runId: string, afterSeq?: number): Effect.Effect<TraceEvent[], PersistenceError, WorkspaceId>;
 }
 
 export class TraceEvents extends Context.Service<TraceEvents, Interface>()(
