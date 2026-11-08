@@ -547,7 +547,7 @@ test("resumeReviewRun -- heartbeats the lease while running, then releases it", 
 
   assertEquals(run.status, "completed");
   assert(count.renewed >= 1);
-  // A refused beat would mean the finish raced the release.
+  // A refused heartbeat would mean the finish raced the release.
   assertEquals(count.refused, 0);
   const row = await viaRuns(env, (deps) => deps.runs.getRun(run.id));
   assertEquals(row.leaseOwner, Option.none());

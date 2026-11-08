@@ -1,12 +1,3 @@
-/**
- * The review pass driver as an Effect program: the run lifecycle (claim, heartbeat, complete, fail)
- * goes through the ReviewRuns service, and the flow engine runs inside it.
- *
- * Heartbeats run interval-only: one loop fiber sleeps the interval between beats, so beats never
- * overlap and the staleness window (15 minutes vs a 60-second interval) keeps a live run claimed
- * without event pacing.
- */
-
 import {
   type Cause,
   Clock,
@@ -32,8 +23,6 @@ import type { ConcurrentModificationError, PersistenceError } from "#/persistenc
 import { buildReviewGraph } from "#/reviews/adapter.ts";
 import { type ReviewServices, type ReviewTypes, reviewRunners } from "#/reviews/graph.ts";
 import { ReviewPacing } from "#/reviews/pacing.ts";
-import type { ReviewProgress } from "#/reviews/progress.ts";
-import { ReviewProgressTracker } from "#/reviews/progress.ts";
 import { type ReviewRunMissingError, ReviewRuns } from "#/reviews/service.ts";
 import { logTraceEvent } from "#/reviews/trace/log.ts";
 import { foldCompleted } from "#/reviews/trace/mod.ts";
@@ -73,7 +62,6 @@ export type RunnerError =
 export function resumeReviewRun(
   pass: ResolvedReviewPass,
   runId: string,
-  onProgress?: (progress: ReviewProgress) => void,
 ): Effect.Effect<ReviewRun, RunnerError, RunnerServices> {
   return Effect.gen(function* () {
     const runs = yield* ReviewRuns;
@@ -83,7 +71,7 @@ export function resumeReviewRun(
     const priorTrace = yield* traces.get(run.id);
     const priorLastSeq = priorTrace.at(-1)?.seq;
     const seq = priorLastSeq === undefined ? 0 : priorLastSeq + 1;
-    return yield* Effect.annotateLogs(execute(pass, run, seq, priorTrace, onProgress), {
+    return yield* Effect.annotateLogs(execute(pass, run, seq, priorTrace), {
       runId: run.id,
     });
   });
@@ -121,8 +109,8 @@ function heartbeatLoop(
   return Effect.gen(function* () {
     let warnedLeaseLost = false;
     while (true) {
-      // One beat per iteration, in flight only: the write is uninterruptible so the unwind below
-      // never races it.
+      // The write completes before the loop sleeps, so heartbeats never overlap; it is also
+      // uninterruptible, so the drive's teardown only interrupts between heartbeats.
       const held = yield* Effect.result(
         Effect.uninterruptible(
           Effect.provideService(runs.heartbeatRun(runId, owner), WorkspaceId, {
@@ -148,7 +136,6 @@ function execute(
   run: ReviewRun,
   seq: number,
   priorTrace: TraceEvent[],
-  onProgress?: (progress: ReviewProgress) => void,
 ): Effect.Effect<ReviewRun, RunnerError, RunnerServices> {
   return Effect.gen(function* () {
     const runs = yield* ReviewRuns;
@@ -158,8 +145,6 @@ function execute(
     const owner = yield* claim(runs, run.id, staleMs);
     const completed = foldCompleted(priorTrace);
     const graph = buildReviewGraph(pass, run.id, { path: run.path, versionId: run.versionId });
-    const kindOf = new Map(graph.nodes.map((node) => [node.id, node.kind] as const));
-    const tracker = onProgress ? new ReviewProgressTracker(onProgress, kindOf) : undefined;
 
     // Events are logged and seq-stamped where they happen; a writer fiber appends them through a
     // queue, off the emission path.
@@ -172,7 +157,6 @@ function execute(
           at,
           ...event,
         };
-        tracker?.handle(entry);
         yield* Queue.offer(queue, entry);
         yield* logTraceEvent(entry);
       });
