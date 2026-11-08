@@ -11,9 +11,9 @@ export const janitorJob = Effect.gen(function* () {
   for (const ref of stale) {
     yield* Effect.logWarning("review janitor resumes an unclaimed run", ref);
     yield* drivers
-      .kick(ref)
+      .wake(ref)
       .pipe(
-        Effect.catchCause((cause) => Effect.logError("review janitor kick failed", { ref, cause })),
+        Effect.catchCause((cause) => Effect.logError("review janitor wake failed", { ref, cause })),
       );
   }
 });

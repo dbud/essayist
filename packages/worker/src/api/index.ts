@@ -268,7 +268,7 @@ const workspaceHandlers = HttpApiBuilder.group(
           );
           yield* Effect.gen(function* () {
             const runDrivers = yield* RunDrivers;
-            yield* runDrivers.kick({ runId: run.id, wsId: run.wsId });
+            yield* runDrivers.wake({ runId: run.id, wsId: run.wsId });
           }).pipe(Effect.provide(stores));
           return run;
         }),

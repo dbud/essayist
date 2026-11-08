@@ -19,22 +19,22 @@ test("the D1 and driver bindings are reachable", () => {
 });
 
 test("the driver DO answers an alarm probe", async () => {
-  const stub = env.RUN_DRIVER.getByName("smoke");
-  expect(await stub.alarmAt()).toBeNull();
+  const driver = env.RUN_DRIVER.getByName("smoke");
+  expect(await driver.alarmAt()).toBeNull();
 });
 
-test("a kicked run settles and clears its alarm", async () => {
-  const stub = env.RUN_DRIVER.getByName("missing");
-  await stub.start({ runId: "missing", wsId: "smoke-ws" });
+test("a woken run settles and clears its alarm", async () => {
+  const driver = env.RUN_DRIVER.getByName("missing");
+  await driver.wake({ runId: "missing", wsId: "smoke-ws" });
   await vi.waitFor(
     async () => {
-      expect(await stub.alarmAt()).toBeNull();
+      expect(await driver.alarmAt()).toBeNull();
     },
     { timeout: 5_000 },
   );
 });
 
-test("a kicked run without an active pass stays parked with its beat armed", async () => {
+test("a woken run without an active pass stays parked with its alarm armed", async () => {
   const e = makeEnv(env);
   const run = await runtime(e).runPromise(
     Effect.gen(function* () {
@@ -47,11 +47,11 @@ test("a kicked run without an active pass stays parked with its beat armed", asy
     }).pipe(Effect.provideService(WorkspaceId, { wsId: "smoke-ws" })),
   );
 
-  const stub = env.RUN_DRIVER.getByName(run.id);
-  await stub.start({ runId: run.id, wsId: run.wsId });
+  const driver = env.RUN_DRIVER.getByName(run.id);
+  await driver.wake({ runId: run.id, wsId: run.wsId });
   await vi.waitFor(
     async () => {
-      const alarmAt = await stub.alarmAt();
+      const alarmAt = await driver.alarmAt();
       expect(alarmAt ?? 0).toBeGreaterThan(Date.now() + 60_000);
     },
     { timeout: 5_000 },
@@ -79,14 +79,14 @@ test("the janitor resumes a run that never got a driver", async () => {
     }).pipe(Effect.provideService(WorkspaceId, { wsId: "smoke-ws" })),
   );
 
-  const stub = env.RUN_DRIVER.getByName(run.id);
-  expect(await stub.alarmAt()).toBeNull();
+  const driver = env.RUN_DRIVER.getByName(run.id);
+  expect(await driver.alarmAt()).toBeNull();
 
   await runtime(e).runPromise(janitorJob);
 
   await vi.waitFor(
     async () => {
-      const alarmAt = await stub.alarmAt();
+      const alarmAt = await driver.alarmAt();
       expect(alarmAt ?? 0).toBeGreaterThan(Date.now() + 60_000);
     },
     { timeout: 5_000 },
