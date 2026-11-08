@@ -1,4 +1,4 @@
-import { driveReviewRun, ReviewPacing, type RunRef } from "@essayist/core";
+import { driveReviewRun, noopObserver, ReviewPacing, type RunRef } from "@essayist/core";
 import { DurableObject } from "cloudflare:workers";
 import { Effect } from "effect";
 
@@ -55,7 +55,7 @@ export class ReviewRunDriver extends DurableObject {
         // Arm before driving: a killed handler is re-driven by its pending alarm, and while a
         // handler runs, arm is a no-op, so drives stay single.
         yield* arm(storage, Date.now() + retryMs);
-        const settled = yield* driveReviewRun(ref).pipe(
+        const settled = yield* driveReviewRun(ref, noopObserver).pipe(
           Effect.tapCause((cause) => Effect.logError("review driver drive failed", cause)),
           Effect.catchCause(() => Effect.succeed(false)),
         );

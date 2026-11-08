@@ -17,6 +17,8 @@ import { d1SqliteShim } from "#/persistence/kv_d1_sqlite.ts";
 import { kvLayer } from "#/persistence/kv_layer.ts";
 import type { PersistenceError } from "#/persistence/mod.ts";
 import { Persistence } from "#/persistence/mod.ts";
+import { noopObserver } from "#/reviews/observer/noop.ts";
+import type { ReviewObserver } from "#/reviews/observer/types.ts";
 import { ReviewPacing } from "#/reviews/pacing.ts";
 import { ReviewLeaseTakenError, resumeReviewRun } from "#/reviews/runner.ts";
 import { layerReviewRunsD1 } from "#/reviews/runs_d1.ts";
@@ -145,7 +147,7 @@ async function startRun(
         reviewPassId: pass.pass.id,
         versionId,
       });
-      return yield* resumeReviewRun(pass, run.id);
+      return yield* resumeReviewRun(pass, run.id, noopObserver);
     }).pipe(
       Effect.provideService(WorkspaceId, { wsId: "ws" }),
       Effect.provideService(ReviewPacing, { heartbeatMs: 50, staleMs: 500, retryMs: 500 }),
@@ -163,7 +165,7 @@ async function resumeRun(
   runId: string,
 ): Promise<ReviewRun> {
   return await Effect.runPromise(
-    resumeReviewRun(pass, runId).pipe(
+    resumeReviewRun(pass, runId, noopObserver).pipe(
       Effect.provideService(WorkspaceId, { wsId: "ws" }),
       Effect.provideService(ReviewPacing, { heartbeatMs: 50, staleMs: 500, retryMs: 500 }),
       Effect.provide(env),
@@ -552,6 +554,55 @@ test("resumeReviewRun -- heartbeats the lease while running, then releases it", 
   const row = await viaRuns(env, (deps) => deps.runs.getRun(run.id));
   assertEquals(row.leaseOwner, Option.none());
   assertEquals(row.heartbeatAt, Option.none());
+});
+
+test("resumeReviewRun -- an observer sees the trace and the settled run", async () => {
+  const { env: baseEnv, versionId } = await setup({
+    path: "essay.txt",
+    content: "hello brave world",
+  });
+  const env = Layer.merge(
+    baseEnv,
+    ModelClient.layerOf(
+      createFakeClient([{ text: ANALYSIS_ROUND }, { text: '{"summary":"Solid draft."}' }]).client,
+    ),
+  );
+
+  const traced: number[] = [];
+  const settled: ReviewRun[] = [];
+  const observer: ReviewObserver = {
+    onTrace: (event) => Effect.sync(() => traced.push(event.seq)),
+    onSettled: (run) => Effect.sync(() => settled.push(run)),
+  };
+
+  const run = await Effect.runPromise(
+    Effect.gen(function* () {
+      const runs = yield* ReviewRuns;
+      const created = yield* runs.createRun({
+        path: "essay.txt",
+        reviewPassId: "essay-review",
+        versionId,
+      });
+      return yield* resumeReviewRun(
+        passFixture([
+          unitFixture({ id: "analyze" }),
+          unitFixture({ id: "summary", summary: true, inputs: ["analyze"] }),
+        ]),
+        created.id,
+        observer,
+      );
+    }).pipe(
+      Effect.provideService(WorkspaceId, { wsId: "ws" }),
+      Effect.provideService(ReviewPacing, { heartbeatMs: 50, staleMs: 500, retryMs: 500 }),
+      Effect.provide(env),
+    ),
+  );
+
+  assertEquals(run.status, "completed");
+  assert(traced.length > 0);
+  assertEquals(settled.length, 1);
+  assertEquals(settled[0].id, run.id);
+  assertEquals(settled[0].status, "completed");
 });
 
 test("resumeReviewRun -- refuses to resume a run another driver holds", async () => {

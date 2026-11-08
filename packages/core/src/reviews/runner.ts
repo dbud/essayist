@@ -22,6 +22,8 @@ import type { MissingChunksError } from "#/persistence/chunked_values.ts";
 import type { ConcurrentModificationError, PersistenceError } from "#/persistence/mod.ts";
 import { buildReviewGraph } from "#/reviews/adapter.ts";
 import { type ReviewServices, type ReviewTypes, reviewRunners } from "#/reviews/graph.ts";
+import { tolerate } from "#/reviews/observer/tolerate.ts";
+import type { ReviewObserver } from "#/reviews/observer/types.ts";
 import { ReviewPacing } from "#/reviews/pacing.ts";
 import { type ReviewRunMissingError, ReviewRuns } from "#/reviews/service.ts";
 import { logTraceEvent } from "#/reviews/trace/log.ts";
@@ -62,6 +64,7 @@ export type RunnerError =
 export function resumeReviewRun(
   pass: ResolvedReviewPass,
   runId: string,
+  observer: ReviewObserver,
 ): Effect.Effect<ReviewRun, RunnerError, RunnerServices> {
   return Effect.gen(function* () {
     const runs = yield* ReviewRuns;
@@ -71,7 +74,7 @@ export function resumeReviewRun(
     const priorTrace = yield* traces.get(run.id);
     const priorLastSeq = priorTrace.at(-1)?.seq;
     const seq = priorLastSeq === undefined ? 0 : priorLastSeq + 1;
-    return yield* Effect.annotateLogs(execute(pass, run, seq, priorTrace), {
+    return yield* Effect.annotateLogs(execute(pass, run, seq, priorTrace, tolerate(observer)), {
       runId: run.id,
     });
   });
@@ -136,6 +139,7 @@ function execute(
   run: ReviewRun,
   seq: number,
   priorTrace: TraceEvent[],
+  observer: ReviewObserver,
 ): Effect.Effect<ReviewRun, RunnerError, RunnerServices> {
   return Effect.gen(function* () {
     const runs = yield* ReviewRuns;
@@ -145,6 +149,14 @@ function execute(
     const owner = yield* claim(runs, run.id, staleMs);
     const completed = foldCompleted(priorTrace);
     const graph = buildReviewGraph(pass, run.id, { path: run.path, versionId: run.versionId });
+
+    const settled = (
+      done: ReviewRun,
+    ): Effect.Effect<ReviewRun, PersistenceError | ReviewRunMissingError, WorkspaceId> =>
+      Effect.gen(function* () {
+        yield* observer.onSettled(done);
+        return done;
+      });
 
     // Events are logged and seq-stamped where they happen; a writer fiber appends them through a
     // queue, off the emission path.
@@ -161,13 +173,15 @@ function execute(
         yield* logTraceEvent(entry);
       });
 
-    /** Appends until the queue ends; a storage fault fails the writer, and
+    /** Appends and delivers events until the queue ends; a storage fault fails the writer, and
      * joining it re-raises the fault into the run. */
     const writer = Effect.gen(function* () {
       while (true) {
         const next = yield* Effect.result(Queue.take(queue));
         if (Result.isFailure(next)) break;
-        yield* Effect.uninterruptible(traces.append(run.id, next.success));
+        yield* Effect.uninterruptible(
+          Effect.andThen(traces.append(run.id, next.success), observer.onTrace(next.success)),
+        );
       }
     });
 
@@ -193,12 +207,12 @@ function execute(
     yield* Fiber.join(writerFiber);
 
     if (Result.isFailure(flowOutcome)) {
-      return yield* runs.failRun(run.id, asMessage(flowOutcome.failure));
+      return yield* settled(yield* runs.failRun(run.id, asMessage(flowOutcome.failure)));
     }
 
     const result = flowOutcome.success;
     if (result.status === "failed") {
-      return yield* runs.failRun(run.id, result.errors.join("; "));
+      return yield* settled(yield* runs.failRun(run.id, result.errors.join("; ")));
     }
 
     // A pass with no summary unit commits none, and `one` throws. TODO -- once a pass can carry
@@ -217,9 +231,9 @@ function execute(
       }),
     );
     if (Result.isFailure(tail)) {
-      return yield* runs.failRun(run.id, asMessage(tail.failure));
+      return yield* settled(yield* runs.failRun(run.id, asMessage(tail.failure)));
     }
-    return tail.success.done;
+    return yield* settled(tail.success.done);
   });
 }
 

@@ -71,6 +71,8 @@ export {
 } from "#/persistence/mod.ts";
 export { buildReviewGraph } from "#/reviews/adapter.ts";
 export { agentflowDefinition } from "#/reviews/agentflow.ts";
+export type { ReviewObserver } from "#/reviews/observer/types.ts";
+export { noopObserver } from "#/reviews/observer/noop.ts";
 export type { RunnerError } from "#/reviews/runner.ts";
 export { ReviewLeaseTakenError, resumeReviewRun } from "#/reviews/runner.ts";
 export {

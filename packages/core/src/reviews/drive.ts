@@ -11,6 +11,7 @@ import type { Marks } from "#/marks/service.ts";
 import type { ModelClient } from "#/model/service.ts";
 import type { MissingChunksError } from "#/persistence/chunked_values.ts";
 import type { ConcurrentModificationError, PersistenceError } from "#/persistence/mod.ts";
+import type { ReviewObserver } from "#/reviews/observer/types.ts";
 import type { ReviewPacing } from "#/reviews/pacing.ts";
 import { resumeReviewRun } from "#/reviews/runner.ts";
 import { ReviewRuns } from "#/reviews/service.ts";
@@ -40,10 +41,10 @@ export type DriveServices =
   | TraceEvents;
 
 /** True when the run settled or is gone. */
-export function driveReviewRun({
-  runId,
-  wsId,
-}: RunRef): Effect.Effect<boolean, DriveError, DriveServices> {
+export function driveReviewRun(
+  { runId, wsId }: RunRef,
+  observer: ReviewObserver,
+): Effect.Effect<boolean, DriveError, DriveServices> {
   return Effect.gen(function* () {
     const runs = yield* ReviewRuns;
     const run = yield* runs.getRun(runId);
@@ -55,7 +56,7 @@ export function driveReviewRun({
       });
       return false;
     }
-    yield* resumeReviewRun(pass, runId);
+    yield* resumeReviewRun(pass, runId, observer);
     return true;
   }).pipe(
     Effect.catchTag("ReviewLeaseTakenError", () => Effect.succeed(false)),
