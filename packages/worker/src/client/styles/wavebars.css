@@ -17,9 +17,20 @@
   }
 }
 
-.wave-bar {
+@utility wave-bar-base {
+  fill: color-mix(in oklch, currentColor, transparent 22%);
+  transition: height 250ms ease-out;
+}
+
+@utility wave-bar-graph {
+  transform-box: view-box;
+  transform-origin: 0 0;
+  transform: translate(0, 1px) scale(1, -1);
+}
+
+@utility wave-bar {
+  @apply wave-bar-base;
   transform-box: fill-box;
   transform-origin: bottom;
-  fill: color-mix(in oklch, currentColor, transparent 22%);
   animation: wave-bar var(--wave-duration, 1s) ease-in-out var(--wave-delay, 0s) infinite;
 }

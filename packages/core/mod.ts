@@ -70,6 +70,7 @@ export {
   type WriteOp,
 } from "#/persistence/mod.ts";
 export { buildReviewGraph } from "#/reviews/adapter.ts";
+export type { ReviewNodeEvent } from "#/reviews/graph.ts";
 export { agentflowDefinition } from "#/reviews/agentflow.ts";
 export type { ReviewObserver } from "#/reviews/observer/types.ts";
 export { noopObserver } from "#/reviews/observer/noop.ts";

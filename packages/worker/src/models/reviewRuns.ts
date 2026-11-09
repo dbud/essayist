@@ -3,6 +3,7 @@ import { createModel, signal } from "@preact/signals";
 import createAsyncState from "#/models/utils/asyncState.ts";
 import { getJson, postJson } from "#/models/utils/http.ts";
 
+import { pingSample, pulseStore, sampleFromEvent } from "./reviewPulse.ts";
 import type { ReviewRunData, ReviewRunsData } from "./reviewRuns.data.ts";
 import { observeReviewRun } from "./reviewStream.ts";
 
@@ -11,9 +12,17 @@ export const ReviewRunsModel = createModel((wsId: string, path: string, data?: R
 
   const [runLoad, { loading: historyLoading, error: historyError }] = createAsyncState();
 
+  const observeRun = (run: ReviewRunData) => {
+    observeReviewRun(wsId, run.id, {
+      onTrace: (event) => pulseStore.push(run.id, sampleFromEvent(event)),
+      onPing: () => pulseStore.push(run.id, pingSample()),
+      onSettled: () => void load(),
+    });
+  };
+
   const observeRunning = (values: ReviewRunsData) => {
     for (const run of values) {
-      if (run.status === "running") observeReviewRun(wsId, run.id);
+      if (run.status === "running") observeRun(run);
     }
   };
 
@@ -41,7 +50,7 @@ export const ReviewRunsModel = createModel((wsId: string, path: string, data?: R
     );
     if (result !== undefined) {
       void load();
-      observeReviewRun(wsId, result.id);
+      observeRun(result);
     }
     return result;
   }

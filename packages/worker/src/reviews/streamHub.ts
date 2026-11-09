@@ -159,7 +159,7 @@ export class StreamHub {
     return Effect.gen(function* () {
       for (let tick = 0; tick < KEEPALIVE_TICKS; tick++) {
         yield* Effect.sleep(KEEPALIVE_MS);
-        yield* Queue.offer(queue, ": ping\n\n");
+        yield* Queue.offer(queue, "event: ping\ndata: {}\n\n");
       }
       yield* Queue.offer(queue, CLOSE_FRAME);
     });
