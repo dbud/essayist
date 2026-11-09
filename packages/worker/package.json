@@ -10,7 +10,6 @@
     "build": "vite build",
     "check": "tsc --noEmit && tsc --noEmit -p src/client",
     "deploy": "vite build && wrangler deploy",
-    "deploy-preview": "vite build && wrangler versions upload",
     "dev": "vite dev",
     "favicon": "node scripts/favicon.ts",
     "favicon:check": "node scripts/favicon.ts --check",

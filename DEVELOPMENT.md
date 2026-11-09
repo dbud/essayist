@@ -81,8 +81,7 @@ Typegen writes an env-only `worker-configuration.d.ts` (committed); rerun it aft
 refuses to serve without it, and CI's deploy job fails the same way before deploying.
 
 CI gates every branch push. Pushes to main deploy the live worker once the checks pass; other branch
-pushes ship a per-branch preview to workers.dev, with the URL in the run summary. Manual workflow
-dispatches choose the target (prod or preview).
+pushes run checks only. Manual workflow dispatches deploy prod from any ref.
 
 ## Favicon
 
