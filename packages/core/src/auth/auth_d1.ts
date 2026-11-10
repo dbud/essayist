@@ -13,7 +13,9 @@ const SESSION_TTL_MS = 90 * 24 * 60 * 60 * 1000;
 
 const backendFault = (cause: unknown) => new PersistenceError({ cause });
 
-export function layerAuthD1(client: D1Client.D1Client): Layer.Layer<AuthStore, PersistenceError> {
+export function layerAuthD1(
+  client: D1Client.D1Client & SqlClient,
+): Layer.Layer<AuthStore, PersistenceError> {
   const ensureSchema = SqlSchema.void({
     Request: Schema.Void,
     execute: () =>
