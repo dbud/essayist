@@ -1,11 +1,11 @@
 export interface Box {
-  top: number;
-  height: number;
+  readonly top: number;
+  readonly height: number;
 }
 
 export interface Span {
-  top: number;
-  bottom: number;
+  readonly top: number;
+  readonly bottom: number;
 }
 
 export const spanOf = (box: Box): Span => ({ top: box.top, bottom: box.top + box.height });
