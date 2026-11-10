@@ -10,10 +10,8 @@ if [ -n "$staged_rs" ]; then
   git add -u crates/wasm/pkg/
 fi
 
-# Reflow comments, then restage the staged files so the commit carries
-# canonical comments; other reflowed files keep their worktree state.
 staged=$(git diff --cached --name-only --diff-filter=ACMR)
-pnpm fmt:comments
+pnpm fmt
 if [ -n "$staged" ]; then
   git add -u -- $staged
 fi

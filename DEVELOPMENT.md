@@ -104,5 +104,9 @@ wasm diff worker returns with ESS-90.
 
 The `.husky/pre-commit` hook runs `cargo fmt --check` and `cargo clippy --all-targets -- -D
 warnings` (plus a `wasm-pack` rebuild and re-staging of `crates/wasm/pkg/`) when Rust files are
-staged, then `pnpm check` before every commit. Every commit also reflows comments and restages the
-staged files before `pnpm check`; reflow output outside the staged files stays in the worktree.
+staged, then `pnpm check` before every commit. Every commit also runs `pnpm fmt` (oxfmt plus comment
+reflow) and restages the staged files before `pnpm check`; files reformatted outside the commit keep
+the changes in the worktree, uncommitted. The formatting step assumes a full staged set: partial
+(`pathspec`) commits run the hook against a temporary index, so its reflow lands there and the real
+index keeps whatever was staged before. Restage the touched files right after when a partial commit
+is unavoidable.
