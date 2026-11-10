@@ -1,3 +1,5 @@
+const SIDENOTE_GAP = 8;
+
 export interface Measured {
   readonly blocks: readonly {
     readonly key: string;
@@ -37,9 +39,8 @@ interface Block {
 export class Layout {
   readonly #blocks: readonly Block[];
   readonly #sidenotes: ReadonlyMap<string, Sidenote>;
-  readonly #gap: number;
 
-  constructor(measured: Measured, gap: number) {
+  constructor(measured: Measured) {
     this.#sidenotes = new Map<string, Sidenote>(
       measured.sidenotes.map(({ threadId, height }) => [threadId, { height, top: 0 }]),
     );
@@ -51,7 +52,6 @@ export class Layout {
       ...block,
       marks: byBlock.get(block.key) ?? [],
     }));
-    this.#gap = gap;
   }
 
   normalize(): this {
@@ -71,13 +71,13 @@ export class Layout {
     for (const block of this.#blocks) {
       const first = block.marks[0];
       if (first !== undefined) {
-        block.margin = Math.max(0, cursor + this.#gap - (first.top + offset));
+        block.margin = Math.max(0, cursor + SIDENOTE_GAP - (first.top + offset));
         offset += block.margin;
       }
       for (const mark of block.marks) {
         const sidenote = this.#sidenotes.get(mark.threadId);
         if (sidenote === undefined) continue;
-        const top = Math.max(mark.top + offset, cursor + this.#gap);
+        const top = Math.max(mark.top + offset, cursor + SIDENOTE_GAP);
         sidenote.top = top;
         cursor = top + sidenote.height;
       }

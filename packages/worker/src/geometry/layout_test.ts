@@ -13,7 +13,7 @@ const measured = (
   sidenotes: sidenotes.map(([threadId, height]) => ({ threadId, height })),
 });
 
-const reflowed = (input: Measured): Layout => new Layout(input, 8).normalize().reflow();
+const reflowed = (input: Measured): Layout => new Layout(input).normalize().reflow();
 
 test("reflow -- pushes blocks so first marks meet their stacked notes", () => {
   const out = reflowed(
