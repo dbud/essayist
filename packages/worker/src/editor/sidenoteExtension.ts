@@ -23,7 +23,7 @@ import { getMeasureContext } from "./domMeasure.ts";
 import { computeMarkBadges } from "./markBadges.ts";
 import { assignBands } from "./markColors.ts";
 import { $collectTextNodeSpans, findPosition, type TextNodeSpan } from "./textNodeSpans.ts";
-import { trackNodePositions } from "./trackNodePositions.ts";
+import { trackEverything } from "./trackEverything.ts";
 
 interface SidenoteConfig {
   sidenotePositions: Signal<SidenotePositions>;
@@ -59,7 +59,7 @@ export const SidenoteExtension = defineExtension({
       fonts,
     }: SidenoteConfig,
   ) => {
-    return trackNodePositions(editor, {
+    return trackEverything(editor, {
       nodeClass: MarkNode,
       isNode: $isMarkNode,
       getIds: (node) => node.getIDs(),

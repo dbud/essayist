@@ -6,7 +6,7 @@ import { $getNodeByKey, $isParagraphNode, type LexicalEditor, type LexicalNode }
 import type { MarkBadge, MarkNumbers } from "#/models/sidenotes.ts";
 
 import { contentEndRect, hasRect, type MeasureContext } from "./domMeasure.ts";
-import type { TrackedFragment } from "./trackNodePositions.ts";
+import type { TrackedFragment } from "./trackEverything.ts";
 
 /**
  * Ordinal badges for mark fragments, applying the rightmost-per-block rule: within a block, a

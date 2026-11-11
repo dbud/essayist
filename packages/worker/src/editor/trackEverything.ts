@@ -20,7 +20,7 @@ export interface TrackedFragment {
   key: NodeKey;
 }
 
-export interface TrackNodePositionsOptions<T extends LexicalNode> {
+export interface TrackEverythingOptions<T extends LexicalNode> {
   /** Lexical node class whose instances to track. */
   nodeClass: Klass<T>;
   /** Narrows a node to T (e.g. `$isMarkNode`). */
@@ -59,7 +59,7 @@ export interface PointSpec {
  * Returns a cleanup function. The measured elements must not affect the observed root's size (e.g.
  * they are inline), so repositioning doesn't loop the ResizeObserver.
  */
-export function trackNodePositions<T extends LexicalNode>(
+export function trackEverything<T extends LexicalNode>(
   editor: LexicalEditor,
   {
     nodeClass,
@@ -69,7 +69,7 @@ export function trackNodePositions<T extends LexicalNode>(
     remeasureOn,
     onFragments,
     points,
-  }: TrackNodePositionsOptions<T>,
+  }: TrackEverythingOptions<T>,
 ): () => void {
   const nodeKeys = new Set<NodeKey>();
 
