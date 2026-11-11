@@ -10,13 +10,13 @@ import {
 } from "lexical";
 
 import { getMeasureContext, hasRect, textPointRect } from "./domMeasure.ts";
-import { registerNodeKeyTracker } from "./nodeKeyTracker.ts";
 import {
   createRafScheduler,
   registerFontLoadObserver,
   registerResizeObserver,
   registerSignalsObserver,
 } from "./observers.ts";
+import { trackNodeKeys } from "./trackNodeKeys.ts";
 
 export interface TrackedFragment {
   el: HTMLElement;
@@ -76,8 +76,6 @@ export function trackEverything<T extends LexicalNode>(
     points,
   }: TrackEverythingOptions<T>,
 ): () => void {
-  const nodeKeys = new Set<NodeKey>();
-
   const measure = () => {
     const fragments: TrackedFragment[] = [];
     const pointSpecs = points?.();
@@ -103,19 +101,20 @@ export function trackEverything<T extends LexicalNode>(
     onFragments?.(fragments, pointSpecs ?? []);
   };
 
-  const { schedule, dispose } = createRafScheduler(measure);
+  const [schedule, disposeRafScheduler] = createRafScheduler(measure);
 
   output.value = new Map();
 
-  const disposers = [
+  const [nodeKeys, disposeTrackNodeKeys] = trackNodeKeys(editor, nodeClass, schedule);
+
+  return mergeRegister(
     registerResizeObserver(editor, schedule),
-    registerNodeKeyTracker(editor, nodeClass, nodeKeys, schedule),
+    disposeTrackNodeKeys,
     editor.registerUpdateListener(schedule),
     registerFontLoadObserver(schedule),
     registerSignalsObserver(remeasureOn ?? [], schedule),
-  ];
-
-  return mergeRegister(...disposers, dispose);
+    disposeRafScheduler,
+  );
 }
 
 /**

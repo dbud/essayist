@@ -22,9 +22,9 @@ import {
 } from "lexical";
 
 import { type MarkSpan, segmentMarks } from "./markSegments.ts";
-import { registerNodeKeyTracker } from "./nodeKeyTracker.ts";
 import { $createSelection, $restoreSelection, $saveSelection } from "./selection.ts";
 import { $collectTextNodeSpans, findRange, type TextNodeSpan } from "./textNodeSpans.ts";
+import { trackNodeKeys } from "./trackNodeKeys.ts";
 
 export const MARK_RANGE_TAG = "mark-range";
 
@@ -46,7 +46,7 @@ export const MarksExtension = defineExtension({
     editor: LexicalEditor,
     { path, resolved, markdown }: MarksExtensionConfig,
   ) => {
-    const nodeKeys = new Set<NodeKey>();
+    const [nodeKeys, disposeTrackNodeKeys] = trackNodeKeys(editor, MarkNode);
 
     // The editor starts from a state that may still hold MarkNodes
     editor.update(
@@ -57,7 +57,7 @@ export const MarksExtension = defineExtension({
     );
 
     return mergeRegister(
-      registerNodeKeyTracker(editor, MarkNode, nodeKeys),
+      disposeTrackNodeKeys,
 
       // Jump-to-mark: find the MarkNode by thread id among the tracked keys and place the caret at
       // its start.
@@ -118,7 +118,7 @@ export const MarksExtension = defineExtension({
  */
 export function $applyMarks(
   marks: ReadonlyArray<MarkSpan>,
-  nodeKeys: Set<NodeKey>,
+  nodeKeys: ReadonlySet<NodeKey>,
   spans: TextNodeSpan[],
 ): void {
   for (const key of nodeKeys) {

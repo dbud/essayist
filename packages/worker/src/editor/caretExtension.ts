@@ -118,7 +118,7 @@ export const CaretExtension = defineExtension({
       });
     };
 
-    const { schedule, dispose } = createRafScheduler(measure);
+    const [schedule, dispose] = createRafScheduler(measure);
 
     const removeRootObserver = registerRootObserver(editor, (root) => {
       const ro = new ResizeObserver(schedule);
