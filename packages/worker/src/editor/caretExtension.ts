@@ -21,7 +21,7 @@ import {
   getMeasureContext,
   resolveTextPoint,
 } from "./domMeasure.ts";
-import { createRafScheduler, registerRootObserver } from "./editorDom.ts";
+import { createRafScheduler, registerRootObserver } from "./observers.ts";
 import type { SelectionExtensionConfig } from "./toolbarStateExtension.ts";
 
 // Publishes the caret rect into `selection.caretRect` (editor-column coords, matching MarkBadges).

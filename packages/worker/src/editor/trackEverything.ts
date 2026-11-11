@@ -10,12 +10,12 @@ import {
 } from "lexical";
 
 import { getMeasureContext, hasRect, textPointRect } from "./domMeasure.ts";
+import { registerNodeKeyTracker } from "./nodeKeyTracker.ts";
 import {
   createRafScheduler,
   registerFontLoadObserver,
   registerResizeObserver,
-} from "./editorDom.ts";
-import { registerNodeKeyTracker } from "./nodeKeyTracker.ts";
+} from "./observers.ts";
 
 export interface TrackedFragment {
   el: HTMLElement;
