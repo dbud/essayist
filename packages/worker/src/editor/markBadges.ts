@@ -78,6 +78,7 @@ export function visibleBadgeNumbers(
   return result;
 }
 
+// TODO -- perhaps unify parent block detection later?
 /** Block key of a node: nearest leaf block ancestor, else the node itself. */
 function blockKeyOf(node: LexicalNode): string {
   let n: LexicalNode | null = node.getParent();

@@ -31,8 +31,9 @@ export interface TrackNodePositionsOptions<T extends LexicalNode> {
   output: Signal<Map<string, number>>;
   /** Signals whose change should trigger a re-measure (e.g. ordinals). */
   remeasureOn?: ReadonlyArray<Signal<unknown>>;
-  /** Extra per-fragment work after measuring (e.g. DOM badging). */
-  onFragments?: (fragments: TrackedFragment[]) => void;
+  /** Extra work after measuring: the fragments plus point specs (e.g. block resolution, DOM
+   * badging). */
+  onFragments?: (fragments: TrackedFragment[], points: readonly PointSpec[]) => void;
   /**
    * Positions to measure for ids with no tracked node (e.g. zero-length marks, which wrap no text
    * and so produce no MarkNode). Each spec maps an id to a TextNode key + local offset; the line
@@ -74,6 +75,7 @@ export function trackNodePositions<T extends LexicalNode>(
 
   const measure = () => {
     const fragments: TrackedFragment[] = [];
+    const pointSpecs = points?.();
     editor.getEditorState().read(() => {
       for (const key of nodeKeys) {
         const node = $getNodeByKey(key);
@@ -91,9 +93,9 @@ export function trackNodePositions<T extends LexicalNode>(
         if (prev === undefined || top < prev) tops.set(id, top);
       }
     }
-    measurePoints(editor, points?.(), tops);
+    measurePoints(editor, pointSpecs, tops);
     if (!equal(output.value, tops)) output.value = tops;
-    onFragments?.(fragments);
+    onFragments?.(fragments, pointSpecs ?? []);
   };
 
   const { schedule: scheduleMeasure, dispose } = createRafScheduler(measure);
@@ -137,14 +139,14 @@ export function trackNodePositions<T extends LexicalNode>(
  */
 function measurePoints(
   editor: LexicalEditor,
-  specs: PointSpec[] | undefined,
+  points: PointSpec[] | undefined,
   tops: Map<string, number>,
 ) {
-  if (!specs || specs.length === 0) return;
+  if (!points || points.length === 0) return;
   const ctx = getMeasureContext(editor.getRootElement());
   if (ctx === null) return;
   const { containerRect, doc } = ctx;
-  for (const { id, key, offset } of specs) {
+  for (const { id, key, offset } of points) {
     if (tops.has(id)) continue; // a tracked node already covers this id
     const el = editor.getElementByKey(key);
     if (el === null) continue;

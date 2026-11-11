@@ -1,12 +1,13 @@
 const SIDENOTE_GAP = 8;
 
+export interface MarkedBlock {
+  readonly top: number;
+  readonly height: number;
+  readonly margin: number;
+}
+
 export interface Measured {
-  readonly blocks: readonly {
-    readonly key: string;
-    readonly top: number;
-    readonly height: number;
-    readonly margin: number;
-  }[];
+  readonly blocks: readonly (MarkedBlock & { readonly key: string })[];
   readonly marks: readonly {
     readonly blockKey: string;
     readonly threadId: string;

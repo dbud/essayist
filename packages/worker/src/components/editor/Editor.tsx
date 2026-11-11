@@ -44,6 +44,8 @@ export default function Editor({
     numbers: markNumbers,
     markBadges,
     markRects,
+    markedBlocks,
+    markBlocks,
   } = sidenotes.current.value;
 
   const extension = useMemo(
@@ -56,6 +58,8 @@ export default function Editor({
         markNumbers,
         markBadges,
         markRects,
+        markedBlocks,
+        markBlocks,
         categories,
         fonts: [viewerFont],
         writable: writable.value,
@@ -69,6 +73,8 @@ export default function Editor({
       markNumbers,
       markBadges,
       markRects,
+      markedBlocks,
+      markBlocks,
       resolved,
       markdown,
       selection,

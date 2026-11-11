@@ -4,6 +4,7 @@ import { sortBy } from "@std/collections";
 import type { NodeKey } from "lexical";
 
 import { colorForMark } from "#/editor/markColors.ts";
+import { Layout, type Measured, type MarkedBlock } from "#/geometry/layout.ts";
 import type { Categories } from "#/models/categories.ts";
 import { FileKey } from "#/models/fileSelection.ts";
 import type { ResolvedMarks } from "#/models/resolvedMarks.ts";
@@ -38,6 +39,10 @@ export interface MarkRect {
   bandCount: number; // bands on this line
 }
 
+export type MarkedBlocks = Map<NodeKey, MarkedBlock>;
+// thread id -> the block key containing the mark's fragments.
+export type MarkBlocks = Map<string, NodeKey>;
+
 export interface SidenoteEntry {
   mark: Mark;
   number: number;
@@ -64,9 +69,6 @@ export interface GhostSidenoteView extends SidenoteViewBase {
   trueTop: number; // scroll target on click
 }
 
-// Vertical gap (px) between stacked sidenotes.
-const SIDENOTE_GAP = 8;
-
 interface SidenotesDeps {
   resolvedMarks: ResolvedMarks;
   categories: Categories;
@@ -75,13 +77,13 @@ interface SidenotesDeps {
 }
 
 /**
- * Sidenote presentation for a file. Owns the measured positions (written by the editor
- * extension via trackNodePositions) and heights (written by the FileViewer layout hook via
- * useElementHeights), and derives the ordinal per mark, the cursor's active flag, the raw sorted
- * entries, and the stacked tops. Per (workspace, path, version) so each file and view keeps its own
- * measured state.
+ * Sidenote presentation for a file. Owns the mark positions and marked-block geometry (written
+ * by the editor extension via trackNodePositions) and heights (written by the FileViewer layout
+ * hook via useElementHeights), and derives the ordinal per mark, the active flag, the raw sorted
+ * entries, and the reflow (stacked tops plus block margins). Per (workspace, path, version) so each
+ * file and view keeps its own measured state.
  *
- * `entries` is independent of `heights`; `layout` is the only reader of `heights`.
+ * `entries` is independent of `heights`; the reflow is the only reader of `heights`.
  */
 export const SidenotesModel = createModel((key: FileKey, deps: SidenotesDeps) => {
   const { resolvedMarks, categories, scrollTop, viewportHeight } = deps;
@@ -89,6 +91,8 @@ export const SidenotesModel = createModel((key: FileKey, deps: SidenotesDeps) =>
   const heights = signal<SidenoteHeights>(new Map());
   const markBadges = signal<MarkBadge[]>([]);
   const markRects = signal<MarkRect[]>([]);
+  const markedBlocks = signal<MarkedBlocks>(new Map());
+  const markBlocks = signal<MarkBlocks>(new Map());
 
   const { resolved } = resolvedMarks;
   const { markIds: activeMarkIds } = getEditorSelection(key);
@@ -122,20 +126,41 @@ export const SidenotesModel = createModel((key: FileKey, deps: SidenotesDeps) =>
     return out.toSorted((a, b) => a.markTop - b.markTop || a.mark.offset - b.mark.offset);
   });
 
-  // Stacked tops so sidenotes never overlap: walk in mark order, pushing each down to clear the
-  // measured height of the previous entry. Unmeasured entries (height 0) stack at their mark top
-  // until measured.
-  const layout = computed((): Map<string, number> => {
-    const out = new Map<string, number>();
-    let prevBottom = -Infinity;
-    for (const { mark, markTop } of entries.value) {
-      const height = heights.value.get(mark.thread_id) ?? 0;
-      const top = Math.max(markTop, prevBottom + SIDENOTE_GAP);
-      out.set(mark.thread_id, top);
-      prevBottom = top + height;
-    }
-    return out;
+  // The measured input for one reflow: the marked blocks (inline margins included, sorted by visual
+  // top), the measured marks (resolved to their blocks), and the sidenote heights. Blocks and marks
+  // are written by one measure pass, so tops and margins share an epoch there.
+  const measured = computed((): Measured => {
+    const blocks = [...markedBlocks.value.entries()]
+      .map(([blockKey, block]) => ({
+        key: blockKey,
+        top: block.top,
+        height: block.height,
+        margin: block.margin,
+      }))
+      .toSorted((a, b) => a.top - b.top);
+    const marks = resolved.value
+      .flatMap(({ thread_id: threadId, offset }) => {
+        const markTop = positions.value.get(threadId);
+        const blockKey = markBlocks.value.get(threadId);
+        if (markTop === undefined || blockKey === undefined) return [];
+        return [{ threadId, blockKey, top: markTop, offset }];
+      })
+      .toSorted((a, b) => a.top - b.top || a.offset - b.offset);
+    return {
+      blocks,
+      marks: marks.map(({ threadId, blockKey, top }) => ({ threadId, blockKey, top })),
+      sidenotes: resolved.value.map((mark) => ({
+        threadId: mark.thread_id,
+        height: heights.value.get(mark.thread_id) ?? 0,
+      })),
+    };
   });
+
+  // The reflow: normalize the measured margins away, derive the block margins, then stack the
+  // notes. Sidenote tops feed the column; the block margins park here until the apply step lands.
+  const reflowed = computed((): Layout => new Layout(measured.value).normalize().reflow());
+  const layout = computed((): ReadonlyMap<string, number> => reflowed.value.sidenoteTops);
+  const margins = computed((): ReadonlyMap<NodeKey, number> => reflowed.value.margins);
 
   // Render slots: a slot per entry at its stacked top.
   const viewportLayout = computed((): SidenoteView[] =>
@@ -174,10 +199,13 @@ export const SidenotesModel = createModel((key: FileKey, deps: SidenotesDeps) =>
 
   return {
     positions,
+    markBlocks,
+    markedBlocks,
     heights,
     numbers,
     entries,
     layout,
+    margins,
     viewportLayout,
     topGhost,
     bottomGhost,

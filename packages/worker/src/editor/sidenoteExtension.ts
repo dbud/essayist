@@ -2,13 +2,23 @@ import type { Mark } from "@essayist/core";
 import { defineExtension } from "@lexical/extension";
 import { $isMarkNode, MarkNode } from "@lexical/mark";
 import type { ReadonlySignal, Signal } from "@preact/signals";
-import type { LexicalEditor } from "lexical";
-import { $getRoot } from "lexical";
+import { equal } from "@std/assert/equal";
+import type { LexicalEditor, LexicalNode, NodeKey } from "lexical";
+import { $getNodeByKey, $getRoot } from "lexical";
 
+import type { MarkedBlock } from "#/geometry/layout.ts";
 import type { Categories } from "#/models/categories.ts";
-import type { MarkBadge, MarkNumbers, MarkRect, SidenotePositions } from "#/models/sidenotes.ts";
+import type {
+  MarkBadge,
+  MarkBlocks,
+  MarkedBlocks,
+  MarkNumbers,
+  MarkRect,
+  SidenotePositions,
+} from "#/models/sidenotes.ts";
 import { editorStateToMarkdown } from "#/utils/markdown.ts";
 
+import { $leafBlockOf } from "./blocks.ts";
 import { getMeasureContext } from "./domMeasure.ts";
 import { computeMarkBadges } from "./markBadges.ts";
 import { assignBands } from "./markColors.ts";
@@ -20,10 +30,14 @@ interface SidenoteConfig {
   markNumbers: Signal<MarkNumbers>;
   markBadges: Signal<MarkBadge[]>;
   markRects: Signal<MarkRect[]>;
+  markedBlocks: Signal<MarkedBlocks>;
+  markBlocks: Signal<MarkBlocks>;
   resolved: ReadonlySignal<readonly Mark[]>;
   categories: Categories;
   fonts: ReadonlyArray<Signal<string>>;
 }
+
+const inlineMargin = (el: HTMLElement): number => Number.parseFloat(el.style.marginTop) || 0;
 
 // Publishes mark positions and ordinal badges. Non-empty marks are tracked as MarkNode fragments
 // (offsetTop); zero-length marks produce no MarkNode and are measured from a collapsed Range at
@@ -38,6 +52,8 @@ export const SidenoteExtension = defineExtension({
       markNumbers,
       markBadges,
       markRects,
+      markedBlocks,
+      markBlocks,
       resolved,
       categories,
       fonts,
@@ -76,27 +92,23 @@ export const SidenoteExtension = defineExtension({
             };
           });
       },
-      onFragments: (fragments) => {
+      onFragments: (fragments, points) => {
         const numbers = markNumbers.value;
         const ctx = getMeasureContext(editor.getRootElement());
         if (ctx === null) {
           if (markBadges.value.length > 0) markBadges.value = [];
           if (markRects.value.length > 0) markRects.value = [];
+          if (markedBlocks.value.size > 0) markedBlocks.value = new Map();
+          if (markBlocks.value.size > 0) markBlocks.value = new Map();
           return;
         }
         const { containerRect } = ctx;
         markBadges.value = computeMarkBadges(fragments, numbers, editor, ctx);
 
+        const marksById = new Map(resolved.value.map((m) => [m.thread_id, m] as const));
         const rects: MarkRect[] = [];
         for (const { el, ids } of fragments) {
-          // Banded highlights: a rect per visual line per covering id (in segment
-          // order: outer/earliest mark on top). Each rect carries the full line box plus
-          // `order`/`bandCount`; the renderer splits it.
-          const byThread = new Map(
-            // TODO -- move to model?
-            resolved.value.map((m) => [m.thread_id, m] as const),
-          );
-          const bands = assignBands(byThread, ids, categories);
+          const bands = assignBands(marksById, ids, categories);
           const bandCount = bands.length;
           if (bandCount > 0) {
             for (const rect of el.getClientRects()) {
@@ -105,21 +117,38 @@ export const SidenoteExtension = defineExtension({
               const width = rect.width;
               const height = rect.height;
               for (const { id, color, order } of bands) {
-                rects.push({
-                  id,
-                  color,
-                  left,
-                  top,
-                  width,
-                  height,
-                  order,
-                  bandCount,
-                });
+                rects.push({ id, color, left, top, width, height, order, bandCount });
               }
             }
           }
         }
         markRects.value = rects;
+
+        const blocks = new Map<NodeKey, MarkedBlock>();
+        const byThread = new Map<string, NodeKey>();
+        editor.getEditorState().read(() => {
+          const place = (node: LexicalNode | null, ids: readonly string[]) => {
+            const block = $leafBlockOf(node);
+            if (block === null) return;
+            const key = block.getKey();
+            if (blocks.has(key)) {
+              for (const id of ids) byThread.set(id, key);
+              return;
+            }
+            const el = editor.getElementByKey(key);
+            if (el === null) return;
+            blocks.set(key, {
+              top: el.offsetTop,
+              height: el.offsetHeight,
+              margin: inlineMargin(el),
+            });
+            for (const id of ids) byThread.set(id, key);
+          };
+          for (const { ids, key } of fragments) place($getNodeByKey(key), ids);
+          for (const { id, key } of points) place($getNodeByKey(key), [id]);
+        });
+        if (!equal(markedBlocks.value, blocks)) markedBlocks.value = blocks;
+        if (!equal(markBlocks.value, byThread)) markBlocks.value = byThread;
       },
     });
   },

@@ -11,7 +11,14 @@ import { configExtension, defineExtension } from "lexical";
 
 import { PartialUpdateExtension } from "#/editor/partialUpdateExtension.ts";
 import type { Categories } from "#/models/categories.ts";
-import type { MarkBadge, MarkNumbers, MarkRect, SidenotePositions } from "#/models/sidenotes.ts";
+import type {
+  MarkBadge,
+  MarkBlocks,
+  MarkedBlocks,
+  MarkNumbers,
+  MarkRect,
+  SidenotePositions,
+} from "#/models/sidenotes.ts";
 import type { EditorSelection } from "#/signals/editorSelection.ts";
 
 import { CaretExtension } from "./caretExtension.ts";
@@ -29,6 +36,8 @@ interface EditorDeps {
   markNumbers: Signal<MarkNumbers>;
   markBadges: Signal<MarkBadge[]>;
   markRects: Signal<MarkRect[]>;
+  markedBlocks: Signal<MarkedBlocks>;
+  markBlocks: Signal<MarkBlocks>;
   categories: Categories;
   fonts: ReadonlyArray<Signal<string>>;
   writable: boolean;
@@ -44,6 +53,8 @@ export function createEditorExtension(
     markNumbers,
     markBadges,
     markRects,
+    markedBlocks,
+    markBlocks,
     categories,
     fonts,
     writable,
@@ -79,6 +90,8 @@ export function createEditorExtension(
         markNumbers,
         markBadges,
         markRects,
+        markedBlocks,
+        markBlocks,
         resolved,
         categories,
         fonts,
