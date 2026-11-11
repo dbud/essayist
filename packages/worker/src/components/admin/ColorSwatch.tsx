@@ -5,12 +5,13 @@ const EMPTY: ReadonlySet<string> = new Set();
 const SWATCH_W = 64;
 const SWATCH_H = 24;
 
-// A color in the four candidate mark styles: wavy, wavy-inner, band, band-inner.
+// A category color in the four candidate mark styles: wavy, wavy-inner, band, band-inner. The
+// renderers resolve color by id, so the swatch supplies a one-entry map.
 export function ColorSwatch({ color }: { color: string }) {
   const id = "swatch";
+  const colorById = new Map([[id, color]]);
   const rect: MarkFragmentRect = {
     id,
-    color,
     left: 0,
     top: 0,
     width: SWATCH_W,
@@ -21,11 +22,11 @@ export function ColorSwatch({ color }: { color: string }) {
   return (
     <>
       <span class="relative inline-flex h-6 w-16 items-center justify-center">
-        <WavyRenderer rects={[rect]} activeIds={EMPTY} innerId={null} />
+        <WavyRenderer rects={[rect]} colorById={colorById} activeIds={EMPTY} innerId={null} />
         <span class="relative">text</span>
       </span>
       <span class="relative inline-flex h-6 w-16 items-center justify-center">
-        <WavyRenderer rects={[rect]} activeIds={EMPTY} innerId={id} />
+        <WavyRenderer rects={[rect]} colorById={colorById} activeIds={EMPTY} innerId={id} />
         <span class="relative">text</span>
       </span>
       <span class="relative inline-flex h-6 w-16 items-center justify-center">

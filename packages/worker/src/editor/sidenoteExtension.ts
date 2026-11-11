@@ -7,7 +7,6 @@ import type { LexicalEditor, NodeKey } from "lexical";
 import { $getNodeByKey, $getRoot, mergeRegister } from "lexical";
 
 import type { MarkedBlock } from "#/geometry/layout.ts";
-import type { Categories } from "#/models/categories.ts";
 import type {
   MarkFragmentBadge,
   MarkBlocks,
@@ -56,7 +55,6 @@ interface SidenoteConfig {
   markedBlocks: Signal<MarkedBlocks>;
   markBlocks: Signal<MarkBlocks>;
   resolved: ReadonlySignal<readonly Mark[]>;
-  categories: Categories;
   fonts: ReadonlyArray<Signal<string>>;
 }
 
@@ -76,7 +74,6 @@ export const SidenoteExtension = defineExtension({
       markedBlocks,
       markBlocks,
       resolved,
-      categories,
       fonts,
     }: SidenoteConfig,
   ) => {
@@ -118,7 +115,7 @@ export const SidenoteExtension = defineExtension({
       // Badges are overlay chips positioned here (not ::after on the mark) so that caret movement
       // and deletion at the mark boundary don't interfere with them.
       markFragmentBadges.value = computeMarkFragmentBadges(fragments, ordinals, ctx);
-      markFragmentRects.value = computeMarkFragmentRects(fragments, marks, categories, ctx);
+      markFragmentRects.value = computeMarkFragmentRects(fragments, ctx);
 
       const blocks = new Map<NodeKey, MarkedBlock>();
       const byThread = new Map<string, NodeKey>();
@@ -160,7 +157,7 @@ export const SidenoteExtension = defineExtension({
       disposeTrackNodeKeys,
       editor.registerUpdateListener(schedule),
       registerFontLoadObserver(schedule),
-      registerSignalsObserver([resolved, categories.byLabel, ...fonts], schedule),
+      registerSignalsObserver([resolved, ...fonts], schedule),
       disposeRafScheduler,
     );
   },

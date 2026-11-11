@@ -33,7 +33,7 @@ export default function Editor({
   className,
 }: EditorProps) {
   const { viewerFont } = usePreferences();
-  const { writable, resolvedMarks, categories, sidenotes, fileContents } = useEditorModels();
+  const { writable, resolvedMarks, sidenotes, fileContents } = useEditorModels();
   const file = fileContents.current.value;
   assertExists(file, "FileViewerBody mounts Editor only with a file");
   const markdown = file.markdown;
@@ -60,7 +60,6 @@ export default function Editor({
         markFragmentRects,
         markedBlocks,
         markBlocks,
-        categories,
         fonts: [viewerFont],
         writable: writable.value,
       }),
@@ -78,7 +77,6 @@ export default function Editor({
       resolved,
       markdown,
       selection,
-      categories,
       viewerFont,
       writable.value,
     ],

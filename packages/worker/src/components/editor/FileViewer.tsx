@@ -37,7 +37,7 @@ function FileViewerBody({ wsId, path, versionId }: FileKey) {
   const file = fileContents.current.value;
   const save = useSaveFile(file);
   const selection = getEditorSelection({ wsId, path, versionId });
-  const { markFragmentRects, markFragmentBadges } = sidenotes.current.value;
+  const { markFragmentRects, markFragmentBadges, colorById } = sidenotes.current.value;
   const scrollRef = useScrollViewport(sidenotes.scrollTop, sidenotes.viewportHeight);
 
   useKeydown((e) => {
@@ -109,6 +109,7 @@ function FileViewerBody({ wsId, path, versionId }: FileKey) {
                 />
                 <MarkHighlights
                   rects={markFragmentRects.value}
+                  colorById={colorById.value}
                   activeIds={selection.markIds.value}
                   innerId={selection.innerMarkId.value}
                 />

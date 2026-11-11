@@ -1,3 +1,5 @@
+import { FALLBACK_COLOR } from "#/editor/markColors.ts";
+
 import type { HighlightRendererProps } from "./types.ts";
 
 // Wavy underline beneath each marked line segment. Overlapping marks cascade downward by band
@@ -34,12 +36,13 @@ function wavePath(x0: number, y0: number, w: number, amp: number): string {
   return d;
 }
 
-export function WavyRenderer({ rects, activeIds, innerId }: HighlightRendererProps) {
+export function WavyRenderer({ rects, colorById, activeIds, innerId }: HighlightRendererProps) {
   return (
     <svg aria-hidden="true" class="mark-wavy">
-      {rects.map(({ id, color, left, width, top, height, order }, i) => {
+      {rects.map(({ id, left, width, top, height, order }, i) => {
         const inner = id === innerId;
         const active = inner || activeIds.has(id);
+        const color = colorById.get(id) ?? FALLBACK_COLOR;
         const y = top + height * BASELINE_RATIO + order * STACK_GAP;
         return (
           <path

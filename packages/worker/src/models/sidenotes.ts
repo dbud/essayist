@@ -3,7 +3,7 @@ import { type Signal, computed, createModel, signal } from "@preact/signals";
 import { sortBy } from "@std/collections";
 import type { NodeKey } from "lexical";
 
-import { colorForMark } from "#/editor/markColors.ts";
+import { FALLBACK_COLOR, colorForMark } from "#/editor/markColors.ts";
 import { Layout, type Measured, type MarkedBlock } from "#/geometry/layout.ts";
 import type { Categories } from "#/models/categories.ts";
 import { FileKey } from "#/models/fileSelection.ts";
@@ -26,11 +26,10 @@ export interface MarkFragmentBadge {
   ordinals: number[]; // ordinals of the marks covering this fragment, ascending
 }
 
-// A band of a marked segment on a single visual line. A segment carrying N ids yields N bands
-// stacked vertically within each of its line-rects.
+// A slice of colored highlight: a rect per mark id and line. Several marks can cover the same line,
+// each with its own slice. The renderer looks up the color by id.
 export interface MarkFragmentRect {
   id: string; // thread id this band belongs to
-  color: string; // category color or FALLBACK_COLOR (from markColors.ts)
   left: number; // editor-column-local
   top: number;
   width: number;
@@ -108,6 +107,12 @@ export const SidenotesModel = createModel((key: FileKey, deps: SidenotesDeps) =>
       ),
   );
 
+  // thread_id -> the category color for the mark's label (ink for label-less marks). Category edits
+  // recompute this without a measure pass; renderers resolve color by id, by mark.
+  const colorById = computed(
+    () => new Map(resolved.value.map((m) => [m.thread_id, colorForMark(m, categories)])),
+  );
+
   // Raw sidenotes: mark + ordinal + active flag + mark position, sorted by position. Independent of
   // measured heights.
   const entries = computed((): SidenoteEntry[] => {
@@ -120,7 +125,7 @@ export const SidenotesModel = createModel((key: FileKey, deps: SidenotesDeps) =>
         markTop,
         ordinal: markOrdinals.value.get(mark.thread_id) ?? 0,
         active: activeMarkIds.value.has(mark.thread_id),
-        color: colorForMark(mark, categories),
+        color: colorById.value.get(mark.thread_id) ?? FALLBACK_COLOR,
       });
     }
     return out.toSorted((a, b) => a.markTop - b.markTop || a.mark.offset - b.mark.offset);
@@ -203,6 +208,7 @@ export const SidenotesModel = createModel((key: FileKey, deps: SidenotesDeps) =>
     markedBlocks,
     heights,
     markOrdinals,
+    colorById,
     entries,
     layout,
     margins,
