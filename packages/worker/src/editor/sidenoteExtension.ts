@@ -39,13 +39,13 @@ export interface MarkFragment {
   badgeBlockKey: NodeKey; // this fragment's visual container, per $badgeBlockOf
 }
 
-// A zero-length mark's anchor: the TextNode key the mark points into and its measured line top in
-// editor-column coordinates. `top` is null when the point has no box; the key still feeds block
-// resolution then.
+// A zero-length mark's anchor: the TextNode key the mark points into and its measured line top
+// in editor-column coordinates. Only measured anchors exist; a point without a box contributes
+// nothing.
 interface ZeroLengthMarkAnchor {
   id: string;
   key: NodeKey;
-  top: number | null;
+  top: number;
 }
 
 interface SidenoteConfig {
@@ -87,9 +87,9 @@ export const SidenoteExtension = defineExtension({
       // Zero-length marks wrap no text and produce no MarkNode, so measure them from a collapsed
       // Range at their anchor. Resolve the anchor against the fresh committed tree (not a lagging
       // signal) so the position tracks the live editor; skip the work when there are no zero-length
-      // marks.
+      // marks. Like fragments, anchors exist only when measurable.
       const anchors: ZeroLengthMarkAnchor[] = [];
-      if (marks.some((m) => m.length === 0)) {
+      if (ctx !== null && marks.some((m) => m.length === 0)) {
         const state = editor.getEditorState();
         const content = editorStateToMarkdown(state);
         let spans: TextNodeSpan[] = [];
@@ -104,11 +104,10 @@ export const SidenoteExtension = defineExtension({
           const pos = findPosition(spans, m.offset);
           const key = pos?.key ?? fallbackKey;
           const el = editor.getElementByKey(key);
-          anchors.push({
-            id: m.thread_id,
-            key,
-            top: el !== null && ctx !== null ? textPointTop(ctx, el, pos?.offset ?? 0) : null,
-          });
+          if (el === null) continue;
+          const top = textPointTop(ctx, el, pos?.offset ?? 0);
+          if (top === null) continue;
+          anchors.push({ id: m.thread_id, key, top });
         }
       }
 
@@ -142,7 +141,7 @@ export const SidenoteExtension = defineExtension({
         }
       }
       for (const { id, top } of anchors) {
-        if (top !== null && !tops.has(id)) tops.set(id, top);
+        if (!tops.has(id)) tops.set(id, top);
       }
       if (!equal(sidenotePositions.value, tops)) sidenotePositions.value = tops;
 
