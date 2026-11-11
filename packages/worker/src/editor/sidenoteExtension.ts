@@ -19,7 +19,7 @@ import type {
 import { editorStateToMarkdown } from "#/utils/markdown.ts";
 
 import { $badgeBlockOf, $marginBlockOf } from "./blocks.ts";
-import { getMeasureContext, hasRect, textPointRect } from "./domMeasure.ts";
+import { getMeasureContext, textPointTop } from "./domMeasure.ts";
 import { assignBands } from "./markColors.ts";
 import { computeMarkFragmentBadges } from "./markFragmentBadges.ts";
 import {
@@ -39,10 +39,13 @@ export interface MarkFragment {
   badgeBlockKey: NodeKey; // this fragment's visual container, per $badgeBlockOf
 }
 
+// A zero-length mark's anchor: the TextNode key the mark points into and its measured line top in
+// editor-column coordinates. `top` is null when the point has no box; the key still feeds block
+// resolution then.
 interface ZeroLengthMarkAnchor {
   id: string;
   key: NodeKey;
-  offset: number;
+  top: number | null;
 }
 
 interface SidenoteConfig {
@@ -79,6 +82,7 @@ export const SidenoteExtension = defineExtension({
   ) => {
     const measure = () => {
       const marks = resolved.value;
+      const ctx = getMeasureContext(editor.getRootElement());
 
       // Zero-length marks wrap no text and produce no MarkNode, so measure them from a collapsed
       // Range at their anchor. Resolve the anchor against the fresh committed tree (not a lagging
@@ -98,10 +102,12 @@ export const SidenoteExtension = defineExtension({
         for (const m of marks) {
           if (m.length !== 0) continue;
           const pos = findPosition(spans, m.offset);
+          const key = pos?.key ?? fallbackKey;
+          const el = editor.getElementByKey(key);
           anchors.push({
             id: m.thread_id,
-            key: pos?.key ?? fallbackKey,
-            offset: pos?.offset ?? 0,
+            key,
+            top: el !== null && ctx !== null ? textPointTop(ctx, el, pos?.offset ?? 0) : null,
           });
         }
       }
@@ -135,11 +141,12 @@ export const SidenoteExtension = defineExtension({
           if (prev === undefined || top < prev) tops.set(id, top);
         }
       }
-      measureAnchors(editor, anchors, tops);
+      for (const { id, top } of anchors) {
+        if (top !== null && !tops.has(id)) tops.set(id, top);
+      }
       if (!equal(sidenotePositions.value, tops)) sidenotePositions.value = tops;
 
       const ordinals = markOrdinals.value;
-      const ctx = getMeasureContext(editor.getRootElement());
       if (ctx === null) {
         if (markFragmentBadges.value.length > 0) markFragmentBadges.value = [];
         if (markFragmentRects.value.length > 0) markFragmentRects.value = [];
@@ -221,29 +228,4 @@ export const SidenoteExtension = defineExtension({
 function byDocumentPosition(a: MarkFragment, b: MarkFragment): number {
   if (a.el === b.el) return 0;
   return a.el.compareDocumentPosition(b.el) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1;
-}
-
-/**
- * Measures zero-length mark anchors (marks with no MarkNode) into `tops`, in the same coordinate
- * space as fragment offsetTop: relative to the root element's offsetParent. Uses a collapsed Range
- * at the TextNode offset so the line top is correct even inside a multi-line paragraph (where the
- * TextNode element's own offsetTop would point at its first line).
- */
-function measureAnchors(
-  editor: LexicalEditor,
-  anchors: readonly ZeroLengthMarkAnchor[],
-  tops: Map<string, number>,
-) {
-  if (anchors.length === 0) return;
-  const ctx = getMeasureContext(editor.getRootElement());
-  if (ctx === null) return;
-  const { containerRect, doc } = ctx;
-  for (const { id, key, offset } of anchors) {
-    if (tops.has(id)) continue; // a MarkNode fragment already covers this id
-    const el = editor.getElementByKey(key);
-    if (el === null) continue;
-    const rect = textPointRect(el, offset, doc);
-    if (!hasRect(rect)) continue;
-    tops.set(id, rect.top - containerRect.top);
-  }
 }

@@ -124,3 +124,13 @@ export function textPointRect(el: HTMLElement, offset: number, doc: Document): D
   range.collapse(true);
   return range.getBoundingClientRect();
 }
+
+// Line top of the text point at `offset` in `el`, in the context's coordinate space: the rect of
+// the root's offsetParent, same space as offsetTop. Uses a collapsed range at the offset so the
+// line top is correct even inside a multi-line paragraph. null when the point has no box (collapsed
+// range over empty or unrendered content).
+export function textPointTop(ctx: MeasureContext, el: HTMLElement, offset: number): number | null {
+  const rect = textPointRect(el, offset, ctx.doc);
+  if (!hasRect(rect)) return null;
+  return rect.top - ctx.containerRect.top;
+}
