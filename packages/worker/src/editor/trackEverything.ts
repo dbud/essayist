@@ -10,7 +10,7 @@ import {
 } from "lexical";
 
 import { getMeasureContext, hasRect, textPointRect } from "./domMeasure.ts";
-import { createRafScheduler, registerRootObserver } from "./editorDom.ts";
+import { createRafScheduler, registerResizeObserver } from "./editorDom.ts";
 import { registerNodeKeyTracker } from "./nodeKeyTracker.ts";
 
 export interface TrackedFragment {
@@ -102,15 +102,10 @@ export function trackEverything<T extends LexicalNode>(
 
   output.value = new Map();
 
-  const removeRootObserver = registerRootObserver(editor, (root) => {
-    const ro = new ResizeObserver(scheduleMeasure);
-    ro.observe(root);
-    scheduleMeasure();
-    return () => ro.disconnect();
-  });
+  const removeResizeObserver = registerResizeObserver(editor, scheduleMeasure);
 
   const disposers = [
-    removeRootObserver,
+    removeResizeObserver,
     registerNodeKeyTracker(editor, nodeClass, nodeKeys, scheduleMeasure),
     editor.registerUpdateListener(scheduleMeasure),
   ];

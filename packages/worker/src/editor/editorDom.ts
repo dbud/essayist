@@ -27,6 +27,17 @@ export function createRafScheduler(fn: () => void): {
   };
 }
 
+// Observes the editor root element: calls schedule when the root is attached and whenever its size
+// changes, following root swaps.
+export function registerResizeObserver(editor: LexicalEditor, schedule: () => void): () => void {
+  return registerRootObserver(editor, (root) => {
+    const ro = new ResizeObserver(schedule);
+    ro.observe(root);
+    schedule();
+    return () => ro.disconnect();
+  });
+}
+
 // Attach root-scoped observers (ResizeObserver, event listeners) that must follow the root of the
 // editor across swaps. setup(root) returns a teardown run before the next root is set up and on
 // final cleanup. The initial root is set up synchronously.
