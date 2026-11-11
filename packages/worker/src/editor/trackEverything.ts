@@ -103,16 +103,16 @@ export function trackEverything<T extends LexicalNode>(
     onFragments?.(fragments, pointSpecs ?? []);
   };
 
-  const { schedule: scheduleMeasure, dispose } = createRafScheduler(measure);
+  const { schedule, dispose } = createRafScheduler(measure);
 
   output.value = new Map();
 
   const disposers = [
-    registerResizeObserver(editor, scheduleMeasure),
-    registerNodeKeyTracker(editor, nodeClass, nodeKeys, scheduleMeasure),
-    editor.registerUpdateListener(scheduleMeasure),
-    registerFontLoadObserver(scheduleMeasure),
-    registerSignalsObserver(remeasureOn ?? [], scheduleMeasure),
+    registerResizeObserver(editor, schedule),
+    registerNodeKeyTracker(editor, nodeClass, nodeKeys, schedule),
+    editor.registerUpdateListener(schedule),
+    registerFontLoadObserver(schedule),
+    registerSignalsObserver(remeasureOn ?? [], schedule),
   ];
 
   return mergeRegister(...disposers, dispose);
