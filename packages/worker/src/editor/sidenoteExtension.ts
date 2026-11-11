@@ -3,7 +3,7 @@ import { defineExtension } from "@lexical/extension";
 import { $isMarkNode, MarkNode } from "@lexical/mark";
 import type { ReadonlySignal, Signal } from "@preact/signals";
 import { equal } from "@std/assert/equal";
-import type { LexicalEditor, LexicalNode, NodeKey } from "lexical";
+import type { LexicalEditor, NodeKey } from "lexical";
 import { $getNodeByKey, $getRoot, mergeRegister } from "lexical";
 
 import type { MarkedBlock } from "#/geometry/layout.ts";
@@ -18,7 +18,7 @@ import type {
 } from "#/models/sidenotes.ts";
 import { editorStateToMarkdown } from "#/utils/markdown.ts";
 
-import { $leafBlockOf } from "./blocks.ts";
+import { $marginBlockOf } from "./blocks.ts";
 import { getMeasureContext, hasRect, textPointRect } from "./domMeasure.ts";
 import { computeMarkBadges } from "./markBadges.ts";
 import { assignBands } from "./markColors.ts";
@@ -164,25 +164,24 @@ export const SidenoteExtension = defineExtension({
       const blocks = new Map<NodeKey, MarkedBlock>();
       const byThread = new Map<string, NodeKey>();
       editor.getEditorState().read(() => {
-        const place = (node: LexicalNode | null, ids: readonly string[]) => {
-          const block = $leafBlockOf(node);
-          if (block === null) return;
-          const key = block.getKey();
-          if (blocks.has(key)) {
-            for (const id of ids) byThread.set(id, key);
+        const place = (key: NodeKey, ids: readonly string[]) => {
+          const blockKey = $marginBlockOf(key);
+          if (blockKey === null) return;
+          if (blocks.has(blockKey)) {
+            for (const id of ids) byThread.set(id, blockKey);
             return;
           }
-          const el = editor.getElementByKey(key);
+          const el = editor.getElementByKey(blockKey);
           if (el === null) return;
-          blocks.set(key, {
+          blocks.set(blockKey, {
             top: el.offsetTop,
             height: el.offsetHeight,
             margin: inlineMargin(el),
           });
-          for (const id of ids) byThread.set(id, key);
+          for (const id of ids) byThread.set(id, blockKey);
         };
-        for (const { ids, key } of fragments) place($getNodeByKey(key), ids);
-        for (const { id, key } of pointSpecs) place($getNodeByKey(key), [id]);
+        for (const { ids, key } of fragments) place(key, ids);
+        for (const { id, key } of pointSpecs) place(key, [id]);
       });
       if (!equal(markedBlocks.value, blocks)) markedBlocks.value = blocks;
       if (!equal(markBlocks.value, byThread)) markBlocks.value = byThread;

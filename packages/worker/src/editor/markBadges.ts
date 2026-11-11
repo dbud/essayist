@@ -1,7 +1,13 @@
 import { $isCodeNode } from "@lexical/code";
 import { $isListItemNode } from "@lexical/list";
 import { $isHeadingNode, $isQuoteNode } from "@lexical/rich-text";
-import { $getNodeByKey, $isParagraphNode, type LexicalEditor, type LexicalNode } from "lexical";
+import {
+  $getNodeByKey,
+  $isParagraphNode,
+  type LexicalEditor,
+  type LexicalNode,
+  type NodeKey,
+} from "lexical";
 
 import type { MarkBadge, MarkOrdinals } from "#/models/sidenotes.ts";
 
@@ -27,8 +33,7 @@ export function computeMarkBadges(
   // Pair each fragment with its block key, read from the live tree.
   const labeled = editor.getEditorState().read(() =>
     ordered.map((f) => {
-      const node = $getNodeByKey(f.key);
-      return { ids: f.ids, blockKey: node === null ? f.key : blockKeyOf(node) };
+      return { ids: f.ids, blockKey: $badgeBlockOf(f.key) };
     }),
   );
 
@@ -78,9 +83,16 @@ export function visibleBadgeOrdinals(
   return result;
 }
 
-// TODO -- perhaps unify parent block detection later?
-/** Block key of a node: nearest leaf block ancestor, else the node itself. */
-function blockKeyOf(node: LexicalNode): string {
+/**
+ * Badge block of a node: the key of the nearest paragraph, heading, quote container, code block, or
+ * list item. Quotes count as one badge block, so a mark crossing their inner paragraphs badges once
+ * at the quote's visible end. A gone key or unrecognized structure falls back to the fragment's own
+ * key, isolating it so dedup never suppresses across it. Badge dedup groups per visual container;
+ * margins use `$marginBlockOf`, which recurses through quote and list containers to inner blocks.
+ */
+function $badgeBlockOf(key: NodeKey): NodeKey {
+  const node = $getNodeByKey(key);
+  if (node === null) return key;
   let n: LexicalNode | null = node.getParent();
   while (n !== null) {
     if (

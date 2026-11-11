@@ -11,12 +11,13 @@ import {
   $isParagraphNode,
   type LexicalEditor,
   type LexicalNode,
+  type NodeKey,
 } from "lexical";
 import { test } from "vitest";
 
 import { bootstrapEditorExtension } from "#/editor/extension.ts";
 
-import { $leafBlockOf } from "./blocks.ts";
+import { $marginBlockOf } from "./blocks.ts";
 
 function createEditor(): LexicalEditor {
   return buildEditorFromExtensions({
@@ -28,6 +29,13 @@ function createEditor(): LexicalEditor {
 
 function firstChild(node: LexicalNode | null): LexicalNode | null {
   return $isElementNode(node) ? node.getFirstChild() : null;
+}
+
+// A mark sits as a child of its block, so the fixture feeds each block's first child's key.
+function firstChildKey(node: LexicalNode | null): NodeKey {
+  const child = firstChild(node);
+  assert(child !== null);
+  return child.getKey();
 }
 
 // The fixture: a paragraph, a quote with an inner paragraph, a list item whose text sits directly
@@ -62,7 +70,7 @@ function seed(editor: LexicalEditor): void {
   );
 }
 
-test("$leafBlockOf -- resolves the nearest eligible block through containers", () => {
+test("$marginBlockOf -- resolves the nearest eligible block through containers", () => {
   const editor = createEditor();
   seed(editor);
   editor.read(() => {
@@ -73,17 +81,20 @@ test("$leafBlockOf -- resolves the nearest eligible block through containers", (
     assert($isElementNode(quote));
     const p2 = firstChild(quote);
     assert($isParagraphNode(p2));
-    assert($isElementNode(list));
     const item = firstChild(list);
     assert($isListItemNode(item));
+    assert($isElementNode(code));
+    assert($isElementNode(heading));
 
-    assertEquals($leafBlockOf(firstChild(p1))?.getKey(), p1?.getKey());
+    assertEquals($marginBlockOf(firstChildKey(p1)), p1.getKey());
     // The quote recurses through: the mark resolves to the inner paragraph.
-    assertEquals($leafBlockOf(firstChild(p2))?.getKey(), p2?.getKey());
+    assertEquals($marginBlockOf(firstChildKey(p2)), p2.getKey());
     // The item's mark resolves to the item itself.
-    assertEquals($leafBlockOf(firstChild(item))?.getKey(), item?.getKey());
-    assertEquals($leafBlockOf(firstChild(code))?.getKey(), code?.getKey());
-    assertEquals($leafBlockOf(firstChild(heading))?.getKey(), heading?.getKey());
-    assertEquals($leafBlockOf($getRoot()), null);
+    assertEquals($marginBlockOf(firstChildKey(item)), item.getKey());
+    assertEquals($marginBlockOf(firstChildKey(code)), code.getKey());
+    assertEquals($marginBlockOf(firstChildKey(heading)), heading.getKey());
+    // The editor root is not a margin block, and a gone key resolves to null.
+    assertEquals($marginBlockOf($getRoot().getKey()), null);
+    assertEquals($marginBlockOf("dead"), null);
   });
 });
