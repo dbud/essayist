@@ -38,6 +38,14 @@ export function registerResizeObserver(editor: LexicalEditor, schedule: () => vo
   });
 }
 
+// Calls schedule once per completed batch of web font loads (document.fonts loadingdone): fonts
+// changing text metrics shifts line boxes. No-op where the FontFaceSet is unavailable.
+export function registerFontLoadObserver(schedule: () => void): () => void {
+  if (typeof document === "undefined" || !document.fonts) return () => {};
+  document.fonts.addEventListener("loadingdone", schedule);
+  return () => document.fonts.removeEventListener("loadingdone", schedule);
+}
+
 // Attach root-scoped observers (ResizeObserver, event listeners) that must follow the root of the
 // editor across swaps. setup(root) returns a teardown run before the next root is set up and on
 // final cleanup. The initial root is set up synchronously.

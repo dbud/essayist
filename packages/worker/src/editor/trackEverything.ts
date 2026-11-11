@@ -10,7 +10,11 @@ import {
 } from "lexical";
 
 import { getMeasureContext, hasRect, textPointRect } from "./domMeasure.ts";
-import { createRafScheduler, registerResizeObserver } from "./editorDom.ts";
+import {
+  createRafScheduler,
+  registerFontLoadObserver,
+  registerResizeObserver,
+} from "./editorDom.ts";
 import { registerNodeKeyTracker } from "./nodeKeyTracker.ts";
 
 export interface TrackedFragment {
@@ -102,18 +106,12 @@ export function trackEverything<T extends LexicalNode>(
 
   output.value = new Map();
 
-  const removeResizeObserver = registerResizeObserver(editor, scheduleMeasure);
-
   const disposers = [
-    removeResizeObserver,
+    registerResizeObserver(editor, scheduleMeasure),
     registerNodeKeyTracker(editor, nodeClass, nodeKeys, scheduleMeasure),
     editor.registerUpdateListener(scheduleMeasure),
+    registerFontLoadObserver(scheduleMeasure),
   ];
-  // re-measure when any font finishes loading
-  if (typeof document !== "undefined" && document.fonts) {
-    document.fonts.addEventListener("loadingdone", scheduleMeasure);
-    disposers.push(() => document.fonts.removeEventListener("loadingdone", scheduleMeasure));
-  }
   for (const s of remeasureOn ?? []) {
     disposers.push(
       effect(() => {
