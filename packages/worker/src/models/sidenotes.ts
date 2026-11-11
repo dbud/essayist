@@ -15,7 +15,7 @@ export type SidenotePositions = Map<string, number>;
 // thread_id -> rendered sidenote height (px).
 export type SidenoteHeights = Map<string, number>;
 // thread_id -> 1-based ordinal in document order (by mark.offset).
-export type MarkNumbers = Map<string, number>;
+export type MarkOrdinals = Map<string, number>;
 
 // A badge per MarkNode fragment: an ordinal label rendered at the end of the text of the fragment,
 // positioned over the editor (not in the contentEditable).
@@ -23,7 +23,7 @@ export interface MarkBadge {
   key: NodeKey;
   left: number; // end-x of the fragment's text, relative to the editor column
   top: number; // line top at that end, relative to the editor column
-  numbers: number[]; // ordinals of the marks covering this fragment, ascending
+  ordinals: number[]; // ordinals of the marks covering this fragment, ascending
 }
 
 // A band of a marked segment on a single visual line. A segment carrying N ids yields N bands
@@ -45,7 +45,7 @@ export type MarkBlocks = Map<string, NodeKey>;
 
 export interface SidenoteEntry {
   mark: Mark;
-  number: number;
+  ordinal: number;
   markTop: number; // raw mark position, before stacking
   active: boolean;
   color: string; // category color or fallback (markColors.ts)
@@ -97,10 +97,10 @@ export const SidenotesModel = createModel((key: FileKey, deps: SidenotesDeps) =>
   const { resolved } = resolvedMarks;
   const { markIds: activeMarkIds } = getEditorSelection(key);
 
-  // 1-based ordinal per thread id, in document order. Shared by the editor (data-number badges) and
-  // the sidenote column so the numbers always match.
-  const numbers = computed(
-    (): MarkNumbers =>
+  // 1-based ordinal per thread id, in document order. Shared by the editor's badges and the
+  // sidenote column so the ordinals always match.
+  const markOrdinals = computed(
+    (): MarkOrdinals =>
       new Map(
         sortBy(resolved.value, (mark) => mark.offset).map(
           (item, i) => [item.thread_id, i + 1] as const,
@@ -118,7 +118,7 @@ export const SidenotesModel = createModel((key: FileKey, deps: SidenotesDeps) =>
       out.push({
         mark,
         markTop,
-        number: numbers.value.get(mark.thread_id) ?? 0,
+        ordinal: markOrdinals.value.get(mark.thread_id) ?? 0,
         active: activeMarkIds.value.has(mark.thread_id),
         color: colorForMark(mark, categories),
       });
@@ -202,7 +202,7 @@ export const SidenotesModel = createModel((key: FileKey, deps: SidenotesDeps) =>
     markBlocks,
     markedBlocks,
     heights,
-    numbers,
+    markOrdinals,
     entries,
     layout,
     margins,

@@ -15,7 +15,7 @@ import type {
   MarkBadge,
   MarkBlocks,
   MarkedBlocks,
-  MarkNumbers,
+  MarkOrdinals,
   MarkRect,
   SidenotePositions,
 } from "#/models/sidenotes.ts";
@@ -33,7 +33,7 @@ interface EditorDeps {
   markdown: Signal<string>;
   selection: EditorSelection;
   sidenotePositions: Signal<SidenotePositions>;
-  markNumbers: Signal<MarkNumbers>;
+  markOrdinals: Signal<MarkOrdinals>;
   markBadges: Signal<MarkBadge[]>;
   markRects: Signal<MarkRect[]>;
   markedBlocks: Signal<MarkedBlocks>;
@@ -50,7 +50,7 @@ export function createEditorExtension(
     markdown,
     selection,
     sidenotePositions,
-    markNumbers,
+    markOrdinals,
     markBadges,
     markRects,
     markedBlocks,
@@ -87,7 +87,7 @@ export function createEditorExtension(
       }),
       configExtension(SidenoteExtension, {
         sidenotePositions,
-        markNumbers,
+        markOrdinals,
         markBadges,
         markRects,
         markedBlocks,

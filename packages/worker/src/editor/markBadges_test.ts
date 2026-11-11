@@ -1,13 +1,13 @@
 import { assertEquals } from "@std/assert";
 import { test } from "vitest";
 
-import type { MarkNumbers } from "#/models/sidenotes.ts";
+import type { MarkOrdinals } from "#/models/sidenotes.ts";
 
-import { visibleBadgeNumbers } from "./markBadges.ts";
+import { visibleBadgeOrdinals } from "./markBadges.ts";
 
-const numbers = (entries: [string, number][]): MarkNumbers => new Map(entries);
+const ordinals = (entries: [string, number][]): MarkOrdinals => new Map(entries);
 
-test("visibleBadgeNumbers -- contained mark keeps only the outer's end", () => {
+test("visibleBadgeOrdinals -- contained mark keeps only the outer's end", () => {
   // "abc ^1 def ^1,2 ghi ^1" -- mark 1 spans all, mark 2 spans "def".
   const ordered = [
     { ids: ["1"], blockKey: "p" },
@@ -15,9 +15,9 @@ test("visibleBadgeNumbers -- contained mark keeps only the outer's end", () => {
     { ids: ["1"], blockKey: "p" },
   ];
   assertEquals(
-    visibleBadgeNumbers(
+    visibleBadgeOrdinals(
       ordered,
-      numbers([
+      ordinals([
         ["1", 1],
         ["2", 2],
       ]),
@@ -26,15 +26,15 @@ test("visibleBadgeNumbers -- contained mark keeps only the outer's end", () => {
   );
 });
 
-test("visibleBadgeNumbers -- multi-paragraph mark badges each block", () => {
+test("visibleBadgeOrdinals -- multi-paragraph mark badges each block", () => {
   const ordered = [
     { ids: ["1"], blockKey: "p1" },
     { ids: ["1"], blockKey: "p2" },
   ];
-  assertEquals(visibleBadgeNumbers(ordered, numbers([["1", 1]])), [[1], [1]]);
+  assertEquals(visibleBadgeOrdinals(ordered, ordinals([["1", 1]])), [[1], [1]]);
 });
 
-test("visibleBadgeNumbers -- partial overlap, a badge per mark at its end", () => {
+test("visibleBadgeOrdinals -- partial overlap, a badge per mark at its end", () => {
   // "AAAAA{1} BBB{1,2} BB{2}" within a single paragraph.
   const ordered = [
     { ids: ["1"], blockKey: "p" },
@@ -42,9 +42,9 @@ test("visibleBadgeNumbers -- partial overlap, a badge per mark at its end", () =
     { ids: ["2"], blockKey: "p" },
   ];
   assertEquals(
-    visibleBadgeNumbers(
+    visibleBadgeOrdinals(
       ordered,
-      numbers([
+      ordinals([
         ["1", 1],
         ["2", 2],
       ]),
@@ -53,7 +53,7 @@ test("visibleBadgeNumbers -- partial overlap, a badge per mark at its end", () =
   );
 });
 
-test("visibleBadgeNumbers -- inner cut in first paragraph of a multi-paragraph mark", () => {
+test("visibleBadgeOrdinals -- inner cut in first paragraph of a multi-paragraph mark", () => {
   // mark 1 spans two paragraphs; mark 2 cuts the first.
   const ordered = [
     { ids: ["1"], blockKey: "p1" },
@@ -61,9 +61,9 @@ test("visibleBadgeNumbers -- inner cut in first paragraph of a multi-paragraph m
     { ids: ["1"], blockKey: "p2" },
   ];
   assertEquals(
-    visibleBadgeNumbers(
+    visibleBadgeOrdinals(
       ordered,
-      numbers([
+      ordinals([
         ["1", 1],
         ["2", 2],
       ]),
@@ -72,26 +72,26 @@ test("visibleBadgeNumbers -- inner cut in first paragraph of a multi-paragraph m
   );
 });
 
-test("visibleBadgeNumbers -- single fragment keeps its number", () => {
+test("visibleBadgeOrdinals -- single fragment keeps its ordinal", () => {
   const ordered = [{ ids: ["1"], blockKey: "p" }];
-  assertEquals(visibleBadgeNumbers(ordered, numbers([["1", 1]])), [[1]]);
+  assertEquals(visibleBadgeOrdinals(ordered, ordinals([["1", 1]])), [[1]]);
 });
 
-test("visibleBadgeNumbers -- ids without an ordinal are dropped", () => {
+test("visibleBadgeOrdinals -- ids without an ordinal are dropped", () => {
   const ordered = [{ ids: ["x", "1"], blockKey: "p" }];
-  assertEquals(visibleBadgeNumbers(ordered, numbers([["1", 1]])), [[1]]);
+  assertEquals(visibleBadgeOrdinals(ordered, ordinals([["1", 1]])), [[1]]);
 });
 
-test("visibleBadgeNumbers -- adjacent marks in the same block keep both", () => {
+test("visibleBadgeOrdinals -- adjacent marks in the same block keep both", () => {
   // "abc{1} def{2}" -- no overlap; each ends in the same block.
   const ordered = [
     { ids: ["1"], blockKey: "p" },
     { ids: ["2"], blockKey: "p" },
   ];
   assertEquals(
-    visibleBadgeNumbers(
+    visibleBadgeOrdinals(
       ordered,
-      numbers([
+      ordinals([
         ["1", 1],
         ["2", 2],
       ]),

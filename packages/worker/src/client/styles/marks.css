@@ -120,7 +120,7 @@
         calc(-1 * var(--panel-shadow-offset)) rgb(0 0 0 / var(--panel-shadow-alpha-down));
     }
   }
-  .sidenote-number {
+  .sidenote-ordinal {
     @apply w-4 shrink-0 font-semibold;
   }
 }

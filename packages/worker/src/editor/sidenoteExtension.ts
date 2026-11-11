@@ -12,7 +12,7 @@ import type {
   MarkBadge,
   MarkBlocks,
   MarkedBlocks,
-  MarkNumbers,
+  MarkOrdinals,
   MarkRect,
   SidenotePositions,
 } from "#/models/sidenotes.ts";
@@ -46,7 +46,7 @@ interface PointSpec {
 
 interface SidenoteConfig {
   sidenotePositions: Signal<SidenotePositions>;
-  markNumbers: Signal<MarkNumbers>;
+  markOrdinals: Signal<MarkOrdinals>;
   markBadges: Signal<MarkBadge[]>;
   markRects: Signal<MarkRect[]>;
   markedBlocks: Signal<MarkedBlocks>;
@@ -66,7 +66,7 @@ export const SidenoteExtension = defineExtension({
     editor: LexicalEditor,
     {
       sidenotePositions,
-      markNumbers,
+      markOrdinals,
       markBadges,
       markRects,
       markedBlocks,
@@ -128,7 +128,7 @@ export const SidenoteExtension = defineExtension({
       measurePoints(editor, pointSpecs, tops);
       if (!equal(sidenotePositions.value, tops)) sidenotePositions.value = tops;
 
-      const numbers = markNumbers.value;
+      const ordinals = markOrdinals.value;
       const ctx = getMeasureContext(editor.getRootElement());
       if (ctx === null) {
         if (markBadges.value.length > 0) markBadges.value = [];
@@ -140,7 +140,7 @@ export const SidenoteExtension = defineExtension({
       const { containerRect } = ctx;
       // Badges are overlay chips positioned here (not ::after on the mark) so that caret movement
       // and deletion at the mark boundary don't interfere with them.
-      markBadges.value = computeMarkBadges(fragments, numbers, editor, ctx);
+      markBadges.value = computeMarkBadges(fragments, ordinals, editor, ctx);
 
       const marksById = new Map(marks.map((m) => [m.thread_id, m] as const));
       const rects: MarkRect[] = [];
@@ -202,7 +202,7 @@ export const SidenoteExtension = defineExtension({
       disposeTrackNodeKeys,
       editor.registerUpdateListener(schedule),
       registerFontLoadObserver(schedule),
-      registerSignalsObserver([markNumbers, categories.byLabel, ...fonts], schedule),
+      registerSignalsObserver([resolved, categories.byLabel, ...fonts], schedule),
       disposeRafScheduler,
     );
   },

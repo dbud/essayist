@@ -7,8 +7,8 @@ export function MarkBadges({ badges }: { badges: MarkBadge[] }) {
   if (badges.length === 0) return null;
   return (
     <div class="pointer-events-none absolute inset-0">
-      {badges.map(({ key, left, top, numbers }) => {
-        const label = numbers.join(", ");
+      {badges.map(({ key, left, top, ordinals }) => {
+        const label = ordinals.join(", ");
         return (
           <span key={key} class="mark-badge absolute" style={{ left, top }}>
             <span aria-hidden class="mark-badge-stroke">

@@ -12,7 +12,7 @@ interface SidenoteProps {
 
 export default function Sidenote({ view, editor, hidden, color }: SidenoteProps) {
   const { entry, top } = view;
-  const { mark, number, active } = entry;
+  const { mark, ordinal, active } = entry;
   return (
     <button
       type="button"
@@ -23,7 +23,7 @@ export default function Sidenote({ view, editor, hidden, color }: SidenoteProps)
       onClick={() => editor?.dispatchCommand(SELECT_MARK_COMMAND, mark.thread_id)}
     >
       <div class="flex items-start gap-2">
-        <span class="sidenote-number">{number}</span>
+        <span class="sidenote-ordinal">{ordinal}</span>
         <div class="min-w-0 flex flex-col gap-1">
           <div class="text-ink">
             {mark.label && <span class="badge">{mark.label}</span>}

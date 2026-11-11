@@ -3,19 +3,19 @@ import { $isListItemNode } from "@lexical/list";
 import { $isHeadingNode, $isQuoteNode } from "@lexical/rich-text";
 import { $getNodeByKey, $isParagraphNode, type LexicalEditor, type LexicalNode } from "lexical";
 
-import type { MarkBadge, MarkNumbers } from "#/models/sidenotes.ts";
+import type { MarkBadge, MarkOrdinals } from "#/models/sidenotes.ts";
 
 import { contentEndRect, hasRect, type MeasureContext } from "./domMeasure.ts";
 import type { TrackedFragment } from "./sidenoteExtension.ts";
 
 /**
  * Ordinal badges for mark fragments, applying the rightmost-per-block rule: within a block, a
- * mark's number appears only on its last fragment there. A mark spanning multiple blocks still
+ * mark's ordinal appears only on its last fragment there. A mark spanning multiple blocks still
  * badges once per block.
  */
 export function computeMarkBadges(
   fragments: TrackedFragment[],
-  numbers: MarkNumbers,
+  ordinals: MarkOrdinals,
   editor: LexicalEditor,
   ctx: MeasureContext,
 ): MarkBadge[] {
@@ -32,7 +32,7 @@ export function computeMarkBadges(
     }),
   );
 
-  const visible = visibleBadgeNumbers(labeled, numbers);
+  const visible = visibleBadgeOrdinals(labeled, ordinals);
 
   const { containerRect, doc } = ctx;
   const badges: MarkBadge[] = [];
@@ -45,7 +45,7 @@ export function computeMarkBadges(
       key,
       left: rect.right - containerRect.left,
       top: rect.top - containerRect.top,
-      numbers: visible[i],
+      ordinals: visible[i],
     });
   }
   return badges;
@@ -56,9 +56,9 @@ export function computeMarkBadges(
  * order. A mark that continues into a same-block fragment is deferred to that later fragment; it's
  * kept on its last fragment per block. Ids without an ordinal are dropped.
  */
-export function visibleBadgeNumbers(
+export function visibleBadgeOrdinals(
   ordered: ReadonlyArray<{ ids: string[]; blockKey: string }>,
-  numbers: MarkNumbers,
+  ordinals: MarkOrdinals,
 ): number[][] {
   const result: number[][] = [];
   for (let i = 0; i < ordered.length; i++) {
@@ -69,7 +69,7 @@ export function visibleBadgeNumbers(
     const visible: number[] = [];
     for (const id of ids) {
       if (nextIds?.includes(id)) continue;
-      const n = numbers.get(id);
+      const n = ordinals.get(id);
       if (n !== undefined) visible.push(n);
     }
     visible.sort((a, b) => a - b);

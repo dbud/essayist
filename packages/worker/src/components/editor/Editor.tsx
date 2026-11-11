@@ -41,7 +41,7 @@ export default function Editor({
   const resolved = resolvedMarks.resolved;
   const {
     positions: sidenotePositions,
-    numbers: markNumbers,
+    markOrdinals,
     markBadges,
     markRects,
     markedBlocks,
@@ -55,7 +55,7 @@ export default function Editor({
         markdown,
         selection,
         sidenotePositions,
-        markNumbers,
+        markOrdinals,
         markBadges,
         markRects,
         markedBlocks,
@@ -70,7 +70,7 @@ export default function Editor({
       path,
       versionId,
       sidenotePositions,
-      markNumbers,
+      markOrdinals,
       markBadges,
       markRects,
       markedBlocks,

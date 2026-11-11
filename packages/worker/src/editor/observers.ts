@@ -1,4 +1,4 @@
-import { effect, type Signal } from "@preact/signals";
+import { effect, type ReadonlySignal } from "@preact/signals";
 import { mergeRegister, type LexicalEditor } from "lexical";
 
 // Coalesce many schedule() calls into a single fn() on the next animation frame; dispose() cancels
@@ -45,7 +45,7 @@ export function registerFontLoadObserver(schedule: () => void): () => void {
 // Calls schedule whenever any of the signals changes. The `void` read is the subscription:
 // schedule's deferred work runs outside the effect, so it tracks nothing extra.
 export function registerSignalsObserver(
-  signals: ReadonlyArray<Signal<unknown>>,
+  signals: ReadonlyArray<ReadonlySignal<unknown>>,
   schedule: () => void,
 ): () => void {
   const disposers = signals.map((s) =>
