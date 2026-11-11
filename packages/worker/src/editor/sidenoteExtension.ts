@@ -18,7 +18,7 @@ import type {
 } from "#/models/sidenotes.ts";
 import { editorStateToMarkdown } from "#/utils/markdown.ts";
 
-import { $marginBlockOf } from "./blocks.ts";
+import { $badgeBlockOf, $marginBlockOf } from "./blocks.ts";
 import { getMeasureContext, hasRect, textPointRect } from "./domMeasure.ts";
 import { computeMarkBadges } from "./markBadges.ts";
 import { assignBands } from "./markColors.ts";
@@ -36,6 +36,7 @@ export interface TrackedFragment {
   ids: string[];
   top: number;
   key: NodeKey;
+  badgeBlockKey: NodeKey; // this fragment's visual container, per $badgeBlockOf
 }
 
 interface PointSpec {
@@ -112,7 +113,13 @@ export const SidenoteExtension = defineExtension({
           if (!$isMarkNode(node)) continue;
           const el = editor.getElementByKey(key);
           if (el === null) continue;
-          collected.push({ el, ids: node.getIDs(), top: el.offsetTop, key });
+          collected.push({
+            el,
+            ids: node.getIDs(),
+            top: el.offsetTop,
+            key,
+            badgeBlockKey: $badgeBlockOf(key),
+          });
         }
       });
       // Key order follows the tracker's creation, not the document; fragments are canonically
@@ -143,7 +150,7 @@ export const SidenoteExtension = defineExtension({
       const { containerRect } = ctx;
       // Badges are overlay chips positioned here (not ::after on the mark) so that caret movement
       // and deletion at the mark boundary don't interfere with them.
-      markBadges.value = computeMarkBadges(fragments, ordinals, editor, ctx);
+      markBadges.value = computeMarkBadges(fragments, ordinals, ctx);
 
       const marksById = new Map(marks.map((m) => [m.thread_id, m] as const));
       const rects: MarkRect[] = [];

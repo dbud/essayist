@@ -1,38 +1,23 @@
-import { $isCodeNode } from "@lexical/code";
-import { $isListItemNode } from "@lexical/list";
-import { $isHeadingNode, $isQuoteNode } from "@lexical/rich-text";
-import {
-  $getNodeByKey,
-  $isParagraphNode,
-  type LexicalEditor,
-  type LexicalNode,
-  type NodeKey,
-} from "lexical";
-
 import type { MarkBadge, MarkOrdinals } from "#/models/sidenotes.ts";
 
 import { contentEndRect, hasRect, type MeasureContext } from "./domMeasure.ts";
 import type { TrackedFragment } from "./sidenoteExtension.ts";
 
 /**
- * Ordinal badges for mark fragments, applying the rightmost-per-block rule: within a block, a
- * mark's ordinal appears only on its last fragment there. A mark spanning multiple blocks still
- * badges once per block. Fragments arrive in document order, as the measure sweep guarantees.
+ * Ordinal badges for mark fragments, applying the rightmost-per-block rule: within a badge block,
+ * a mark's ordinal appears only on its last fragment there. A mark spanning multiple blocks still
+ * badges once per block. Fragments arrive in document order with their badge block keys resolved,
+ * as the measure sweep guarantees.
  */
 export function computeMarkBadges(
   fragments: TrackedFragment[],
   ordinals: MarkOrdinals,
-  editor: LexicalEditor,
   ctx: MeasureContext,
 ): MarkBadge[] {
   if (fragments.length === 0) return [];
 
-  // "Next fragment in the same block" is defined by that document order.
-  const labeled = editor.getEditorState().read(() =>
-    fragments.map((f) => {
-      return { ids: f.ids, blockKey: $badgeBlockOf(f.key) };
-    }),
-  );
+  // "Next fragment in the same badge block" is defined by that document order.
+  const labeled = fragments.map((f) => ({ ids: f.ids, blockKey: f.badgeBlockKey }));
 
   const visible = visibleBadgeOrdinals(labeled, ordinals);
 
@@ -78,31 +63,4 @@ export function visibleBadgeOrdinals(
     result.push(visible);
   }
   return result;
-}
-
-/**
- * Badge block of a node: the key of the nearest paragraph, heading, quote container, code block, or
- * list item. Quotes count as one badge block, so a mark crossing their inner paragraphs badges once
- * at the quote's visible end. A gone key or unrecognized structure falls back to the fragment's own
- * key, isolating it so dedup never suppresses across it. Badge dedup groups per visual container;
- * margins use `$marginBlockOf`, which recurses through quote and list containers to inner blocks.
- */
-function $badgeBlockOf(key: NodeKey): NodeKey {
-  const node = $getNodeByKey(key);
-  if (node === null) return key;
-  let n: LexicalNode | null = node.getParent();
-  while (n !== null) {
-    if (
-      $isParagraphNode(n) ||
-      $isHeadingNode(n) ||
-      $isQuoteNode(n) ||
-      $isCodeNode(n) ||
-      $isListItemNode(n)
-    ) {
-      return n.getKey();
-    }
-    n = n.getParent();
-  }
-  // Unrecognized structure: isolate so we never suppress across it.
-  return node.getKey();
 }
