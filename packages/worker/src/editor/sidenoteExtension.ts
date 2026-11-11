@@ -83,13 +83,22 @@ export const SidenoteExtension = defineExtension({
     const measure = () => {
       const marks = resolved.value;
       const ctx = getMeasureContext(editor.getRootElement());
+      // A pass that cannot measure retracts every measured publication.
+      if (ctx === null) {
+        if (sidenotePositions.value.size > 0) sidenotePositions.value = new Map();
+        if (markFragmentBadges.value.length > 0) markFragmentBadges.value = [];
+        if (markFragmentRects.value.length > 0) markFragmentRects.value = [];
+        if (markedBlocks.value.size > 0) markedBlocks.value = new Map();
+        if (markBlocks.value.size > 0) markBlocks.value = new Map();
+        return;
+      }
 
       // Zero-length marks wrap no text and produce no MarkNode, so measure them from a collapsed
       // Range at their anchor. Resolve the anchor against the fresh committed tree (not a lagging
       // signal) so the position tracks the live editor; skip the work when there are no zero-length
       // marks. Like fragments, anchors exist only when measurable.
       const anchors: ZeroLengthMarkAnchor[] = [];
-      if (ctx !== null && marks.some((m) => m.length === 0)) {
+      if (marks.some((m) => m.length === 0)) {
         const state = editor.getEditorState();
         const content = editorStateToMarkdown(state);
         let spans: TextNodeSpan[] = [];
@@ -146,13 +155,6 @@ export const SidenoteExtension = defineExtension({
       if (!equal(sidenotePositions.value, tops)) sidenotePositions.value = tops;
 
       const ordinals = markOrdinals.value;
-      if (ctx === null) {
-        if (markFragmentBadges.value.length > 0) markFragmentBadges.value = [];
-        if (markFragmentRects.value.length > 0) markFragmentRects.value = [];
-        if (markedBlocks.value.size > 0) markedBlocks.value = new Map();
-        if (markBlocks.value.size > 0) markBlocks.value = new Map();
-        return;
-      }
       const { containerRect } = ctx;
       // Badges are overlay chips positioned here (not ::after on the mark) so that caret movement
       // and deletion at the mark boundary don't interfere with them.
