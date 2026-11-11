@@ -12,11 +12,11 @@ import { configExtension, defineExtension } from "lexical";
 import { PartialUpdateExtension } from "#/editor/partialUpdateExtension.ts";
 import type { Categories } from "#/models/categories.ts";
 import type {
-  MarkBadge,
+  MarkFragmentBadge,
   MarkBlocks,
   MarkedBlocks,
   MarkOrdinals,
-  MarkRect,
+  MarkFragmentRect,
   SidenotePositions,
 } from "#/models/sidenotes.ts";
 import type { EditorSelection } from "#/signals/editorSelection.ts";
@@ -34,8 +34,8 @@ interface EditorDeps {
   selection: EditorSelection;
   sidenotePositions: Signal<SidenotePositions>;
   markOrdinals: Signal<MarkOrdinals>;
-  markBadges: Signal<MarkBadge[]>;
-  markRects: Signal<MarkRect[]>;
+  markFragmentBadges: Signal<MarkFragmentBadge[]>;
+  markFragmentRects: Signal<MarkFragmentRect[]>;
   markedBlocks: Signal<MarkedBlocks>;
   markBlocks: Signal<MarkBlocks>;
   categories: Categories;
@@ -51,8 +51,8 @@ export function createEditorExtension(
     selection,
     sidenotePositions,
     markOrdinals,
-    markBadges,
-    markRects,
+    markFragmentBadges,
+    markFragmentRects,
     markedBlocks,
     markBlocks,
     categories,
@@ -88,8 +88,8 @@ export function createEditorExtension(
       configExtension(SidenoteExtension, {
         sidenotePositions,
         markOrdinals,
-        markBadges,
-        markRects,
+        markFragmentBadges,
+        markFragmentRects,
         markedBlocks,
         markBlocks,
         resolved,

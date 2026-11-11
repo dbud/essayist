@@ -3,7 +3,7 @@ import Editor from "#/components/editor/Editor.tsx";
 import EditorToolbar from "#/components/editor/EditorToolbar.tsx";
 import FileStats from "#/components/editor/FileStats.tsx";
 import FontSelect from "#/components/editor/FontSelect.tsx";
-import { MarkBadges } from "#/components/editor/MarkBadges.tsx";
+import { MarkFragmentBadges } from "#/components/editor/MarkFragmentBadges.tsx";
 import { MarkHighlights } from "#/components/editor/MarkHighlights.tsx";
 import SidenoteControls from "#/components/editor/SidenoteControls.tsx";
 import Sidenotes from "#/components/editor/Sidenotes.tsx";
@@ -37,8 +37,7 @@ function FileViewerBody({ wsId, path, versionId }: FileKey) {
   const file = fileContents.current.value;
   const save = useSaveFile(file);
   const selection = getEditorSelection({ wsId, path, versionId });
-  const side = sidenotes.current.value;
-  const { markRects, markBadges } = side;
+  const { markFragmentRects, markFragmentBadges } = sidenotes.current.value;
   const scrollRef = useScrollViewport(sidenotes.scrollTop, sidenotes.viewportHeight);
 
   useKeydown((e) => {
@@ -109,11 +108,11 @@ function FileViewerBody({ wsId, path, versionId }: FileKey) {
                   className={`content-main pt-16 pb-32`}
                 />
                 <MarkHighlights
-                  rects={markRects.value}
+                  rects={markFragmentRects.value}
                   activeIds={selection.markIds.value}
                   innerId={selection.innerMarkId.value}
                 />
-                <MarkBadges badges={markBadges.value} />
+                <MarkFragmentBadges badges={markFragmentBadges.value} />
                 <Caret rect={selection.caretRect} />
               </>
             ) : (

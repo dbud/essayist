@@ -9,19 +9,19 @@ import { $getNodeByKey, $getRoot, mergeRegister } from "lexical";
 import type { MarkedBlock } from "#/geometry/layout.ts";
 import type { Categories } from "#/models/categories.ts";
 import type {
-  MarkBadge,
+  MarkFragmentBadge,
   MarkBlocks,
   MarkedBlocks,
   MarkOrdinals,
-  MarkRect,
+  MarkFragmentRect,
   SidenotePositions,
 } from "#/models/sidenotes.ts";
 import { editorStateToMarkdown } from "#/utils/markdown.ts";
 
 import { $badgeBlockOf, $marginBlockOf } from "./blocks.ts";
 import { getMeasureContext, hasRect, textPointRect } from "./domMeasure.ts";
-import { computeMarkBadges } from "./markBadges.ts";
 import { assignBands } from "./markColors.ts";
+import { computeMarkFragmentBadges } from "./markFragmentBadges.ts";
 import {
   createRafScheduler,
   registerFontLoadObserver,
@@ -31,7 +31,7 @@ import {
 import { $collectTextNodeSpans, findPosition, type TextNodeSpan } from "./textNodeSpans.ts";
 import { trackNodeKeys } from "./trackNodeKeys.ts";
 
-export interface TrackedFragment {
+export interface MarkFragment {
   el: HTMLElement;
   ids: string[];
   top: number;
@@ -39,7 +39,7 @@ export interface TrackedFragment {
   badgeBlockKey: NodeKey; // this fragment's visual container, per $badgeBlockOf
 }
 
-interface PointSpec {
+interface ZeroLengthMarkAnchor {
   id: string;
   key: NodeKey;
   offset: number;
@@ -48,8 +48,8 @@ interface PointSpec {
 interface SidenoteConfig {
   sidenotePositions: Signal<SidenotePositions>;
   markOrdinals: Signal<MarkOrdinals>;
-  markBadges: Signal<MarkBadge[]>;
-  markRects: Signal<MarkRect[]>;
+  markFragmentBadges: Signal<MarkFragmentBadge[]>;
+  markFragmentRects: Signal<MarkFragmentRect[]>;
   markedBlocks: Signal<MarkedBlocks>;
   markBlocks: Signal<MarkBlocks>;
   resolved: ReadonlySignal<readonly Mark[]>;
@@ -68,8 +68,8 @@ export const SidenoteExtension = defineExtension({
     {
       sidenotePositions,
       markOrdinals,
-      markBadges,
-      markRects,
+      markFragmentBadges,
+      markFragmentRects,
       markedBlocks,
       markBlocks,
       resolved,
@@ -84,7 +84,7 @@ export const SidenoteExtension = defineExtension({
       // Range at their anchor. Resolve the anchor against the fresh committed tree (not a lagging
       // signal) so the position tracks the live editor; skip the work when there are no zero-length
       // marks.
-      const pointSpecs: PointSpec[] = [];
+      const anchors: ZeroLengthMarkAnchor[] = [];
       if (marks.some((m) => m.length === 0)) {
         const state = editor.getEditorState();
         const content = editorStateToMarkdown(state);
@@ -98,7 +98,7 @@ export const SidenoteExtension = defineExtension({
         for (const m of marks) {
           if (m.length !== 0) continue;
           const pos = findPosition(spans, m.offset);
-          pointSpecs.push({
+          anchors.push({
             id: m.thread_id,
             key: pos?.key ?? fallbackKey,
             offset: pos?.offset ?? 0,
@@ -106,7 +106,7 @@ export const SidenoteExtension = defineExtension({
         }
       }
 
-      const collected: TrackedFragment[] = [];
+      const collected: MarkFragment[] = [];
       editor.getEditorState().read(() => {
         for (const key of nodeKeys) {
           const node = $getNodeByKey(key);
@@ -135,14 +135,14 @@ export const SidenoteExtension = defineExtension({
           if (prev === undefined || top < prev) tops.set(id, top);
         }
       }
-      measurePoints(editor, pointSpecs, tops);
+      measureAnchors(editor, anchors, tops);
       if (!equal(sidenotePositions.value, tops)) sidenotePositions.value = tops;
 
       const ordinals = markOrdinals.value;
       const ctx = getMeasureContext(editor.getRootElement());
       if (ctx === null) {
-        if (markBadges.value.length > 0) markBadges.value = [];
-        if (markRects.value.length > 0) markRects.value = [];
+        if (markFragmentBadges.value.length > 0) markFragmentBadges.value = [];
+        if (markFragmentRects.value.length > 0) markFragmentRects.value = [];
         if (markedBlocks.value.size > 0) markedBlocks.value = new Map();
         if (markBlocks.value.size > 0) markBlocks.value = new Map();
         return;
@@ -150,10 +150,10 @@ export const SidenoteExtension = defineExtension({
       const { containerRect } = ctx;
       // Badges are overlay chips positioned here (not ::after on the mark) so that caret movement
       // and deletion at the mark boundary don't interfere with them.
-      markBadges.value = computeMarkBadges(fragments, ordinals, ctx);
+      markFragmentBadges.value = computeMarkFragmentBadges(fragments, ordinals, ctx);
 
       const marksById = new Map(marks.map((m) => [m.thread_id, m] as const));
-      const rects: MarkRect[] = [];
+      const rects: MarkFragmentRect[] = [];
       for (const { el, ids } of fragments) {
         const bands = assignBands(marksById, ids, categories);
         const bandCount = bands.length;
@@ -169,7 +169,7 @@ export const SidenoteExtension = defineExtension({
           }
         }
       }
-      markRects.value = rects;
+      markFragmentRects.value = rects;
 
       const blocks = new Map<NodeKey, MarkedBlock>();
       const byThread = new Map<string, NodeKey>();
@@ -191,7 +191,7 @@ export const SidenoteExtension = defineExtension({
           for (const id of ids) byThread.set(id, blockKey);
         };
         for (const { ids, key } of fragments) place(key, ids);
-        for (const { id, key } of pointSpecs) place(key, [id]);
+        for (const { id, key } of anchors) place(key, [id]);
       });
       if (!equal(markedBlocks.value, blocks)) markedBlocks.value = blocks;
       if (!equal(markBlocks.value, byThread)) markBlocks.value = byThread;
@@ -218,27 +218,27 @@ export const SidenoteExtension = defineExtension({
 });
 
 // Document-order comparator for fragments, by their elements' DOM position.
-function byDocumentPosition(a: TrackedFragment, b: TrackedFragment): number {
+function byDocumentPosition(a: MarkFragment, b: MarkFragment): number {
   if (a.el === b.el) return 0;
   return a.el.compareDocumentPosition(b.el) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1;
 }
 
 /**
- * Measures point specs (ids with no MarkNode) into `tops`, in the same coordinate space as
- * fragment offsetTop: relative to the root element's offsetParent. Uses a collapsed Range at the
- * TextNode offset so the line top is correct even inside a multi-line paragraph (where the TextNode
- * element's own offsetTop would point at its first line).
+ * Measures zero-length mark anchors (marks with no MarkNode) into `tops`, in the same coordinate
+ * space as fragment offsetTop: relative to the root element's offsetParent. Uses a collapsed Range
+ * at the TextNode offset so the line top is correct even inside a multi-line paragraph (where the
+ * TextNode element's own offsetTop would point at its first line).
  */
-function measurePoints(
+function measureAnchors(
   editor: LexicalEditor,
-  points: readonly PointSpec[],
+  anchors: readonly ZeroLengthMarkAnchor[],
   tops: Map<string, number>,
 ) {
-  if (points.length === 0) return;
+  if (anchors.length === 0) return;
   const ctx = getMeasureContext(editor.getRootElement());
   if (ctx === null) return;
   const { containerRect, doc } = ctx;
-  for (const { id, key, offset } of points) {
+  for (const { id, key, offset } of anchors) {
     if (tops.has(id)) continue; // a MarkNode fragment already covers this id
     const el = editor.getElementByKey(key);
     if (el === null) continue;

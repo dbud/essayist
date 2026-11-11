@@ -19,7 +19,7 @@ export type MarkOrdinals = Map<string, number>;
 
 // A badge per MarkNode fragment: an ordinal label rendered at the end of the text of the fragment,
 // positioned over the editor (not in the contentEditable).
-export interface MarkBadge {
+export interface MarkFragmentBadge {
   key: NodeKey;
   left: number; // end-x of the fragment's text, relative to the editor column
   top: number; // line top at that end, relative to the editor column
@@ -28,7 +28,7 @@ export interface MarkBadge {
 
 // A band of a marked segment on a single visual line. A segment carrying N ids yields N bands
 // stacked vertically within each of its line-rects.
-export interface MarkRect {
+export interface MarkFragmentRect {
   id: string; // thread id this band belongs to
   color: string; // category color or FALLBACK_COLOR (from markColors.ts)
   left: number; // editor-column-local
@@ -89,8 +89,8 @@ export const SidenotesModel = createModel((key: FileKey, deps: SidenotesDeps) =>
   const { resolvedMarks, categories, scrollTop, viewportHeight } = deps;
   const positions = signal<SidenotePositions>(new Map());
   const heights = signal<SidenoteHeights>(new Map());
-  const markBadges = signal<MarkBadge[]>([]);
-  const markRects = signal<MarkRect[]>([]);
+  const markFragmentBadges = signal<MarkFragmentBadge[]>([]);
+  const markFragmentRects = signal<MarkFragmentRect[]>([]);
   const markedBlocks = signal<MarkedBlocks>(new Map());
   const markBlocks = signal<MarkBlocks>(new Map());
 
@@ -209,8 +209,8 @@ export const SidenotesModel = createModel((key: FileKey, deps: SidenotesDeps) =>
     viewportLayout,
     topGhost,
     bottomGhost,
-    markBadges,
-    markRects,
+    markFragmentBadges,
+    markFragmentRects,
   };
 });
 

@@ -3,13 +3,13 @@ import { test } from "vitest";
 
 import type { MarkOrdinals } from "#/models/sidenotes.ts";
 
-import { endingIds, ordinalsFor } from "./markBadges.ts";
-import type { TrackedFragment } from "./sidenoteExtension.ts";
+import { endingIds, ordinalsFor } from "./markFragmentBadges.ts";
+import type { MarkFragment } from "./sidenoteExtension.ts";
 
 const ordinals = (entries: [string, number][]): MarkOrdinals => new Map(entries);
 
 // endingIds reads only ids and badgeBlockKey, so fragments are stubbed without real DOM.
-const frag = (ids: string[], badgeBlockKey: string): TrackedFragment => ({
+const frag = (ids: string[], badgeBlockKey: string): MarkFragment => ({
   el: {} as HTMLElement,
   ids,
   top: 0,

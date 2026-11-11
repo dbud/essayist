@@ -1,5 +1,5 @@
 import { WavyRenderer } from "#/components/editor/highlights/WavyRenderer.tsx";
-import type { MarkRect } from "#/models/sidenotes.ts";
+import type { MarkFragmentRect } from "#/models/sidenotes.ts";
 
 const EMPTY: ReadonlySet<string> = new Set();
 const SWATCH_W = 64;
@@ -8,7 +8,7 @@ const SWATCH_H = 24;
 // A color in the four candidate mark styles: wavy, wavy-inner, band, band-inner.
 export function ColorSwatch({ color }: { color: string }) {
   const id = "swatch";
-  const rect: MarkRect = {
+  const rect: MarkFragmentRect = {
     id,
     color,
     left: 0,

@@ -1,24 +1,24 @@
-import type { MarkBadge, MarkOrdinals } from "#/models/sidenotes.ts";
+import type { MarkFragmentBadge, MarkOrdinals } from "#/models/sidenotes.ts";
 
 import { contentEndRect, hasRect, type MeasureContext } from "./domMeasure.ts";
-import type { TrackedFragment } from "./sidenoteExtension.ts";
+import type { MarkFragment } from "./sidenoteExtension.ts";
 
 /**
  * Ordinal badges for mark fragments, applying the rightmost-per-block rule: each fragment's badge
  * lists the ordinals of the marks that end there, ascending. Fragments arrive in document order
  * with their badge block keys resolved, as the measure sweep guarantees.
  */
-export function computeMarkBadges(
-  fragments: TrackedFragment[],
+export function computeMarkFragmentBadges(
+  fragments: MarkFragment[],
   ordinals: MarkOrdinals,
   ctx: MeasureContext,
-): MarkBadge[] {
+): MarkFragmentBadge[] {
   if (fragments.length === 0) return [];
 
   const fragmentEndingIds = endingIds(fragments);
 
   const { containerRect, doc } = ctx;
-  const badges: MarkBadge[] = [];
+  const badges: MarkFragmentBadge[] = [];
   for (let i = 0; i < fragments.length; i++) {
     const badgeOrdinals = ordinalsFor(fragmentEndingIds[i], ordinals);
     if (badgeOrdinals.length === 0) continue;
@@ -41,7 +41,7 @@ export function computeMarkBadges(
  * it. `fragments` must be in document order; same-mark fragments of a block are contiguous in that
  * order, so one neighbor step decides.
  */
-export function endingIds(fragments: ReadonlyArray<TrackedFragment>): string[][] {
+export function endingIds(fragments: ReadonlyArray<MarkFragment>): string[][] {
   const result: string[][] = [];
   for (let i = 0; i < fragments.length; i++) {
     const { ids, badgeBlockKey } = fragments[i];

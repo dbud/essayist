@@ -24,9 +24,9 @@ import {
 import { createRafScheduler, registerRootObserver } from "./observers.ts";
 import type { SelectionExtensionConfig } from "./toolbarStateExtension.ts";
 
-// Publishes the caret rect into `selection.caretRect` (editor-column coords, matching MarkBadges).
-// Hides on blur or non-range selection; on a text selection it stays at the focus so the caret
-// doesn't vanish.
+// Publishes the caret rect into `selection.caretRect` (editor-column coords, matching
+// MarkFragmentBadges). Hides on blur or non-range selection; on a text selection it stays at the
+// focus so the caret doesn't vanish.
 //
 // At a soft wrap, "end of the previous line" and "start of the next" share a single offset and the
 // collapsed range is always the end of the previous line. The side of the native caret is hidden
