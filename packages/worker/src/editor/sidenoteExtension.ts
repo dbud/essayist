@@ -7,6 +7,7 @@ import type { LexicalEditor, NodeKey } from "lexical";
 import { $getNodeByKey, $getRoot, mergeRegister } from "lexical";
 
 import type { MarkedBlock } from "#/geometry/layout.ts";
+import { markTops } from "#/geometry/tops.ts";
 import type {
   MarkFragmentBadge,
   MarkBlocks,
@@ -97,18 +98,7 @@ export const SidenoteExtension = defineExtension({
       );
       const fragments = collectFragments(editor, nodeKeys);
 
-      // A mark spanning a paragraph break yields several fragments sharing its ids; the minimum top
-      // aligns to the mark's first line.
-      const tops = new Map<string, number>();
-      for (const { ids, top } of fragments) {
-        for (const id of ids) {
-          const prev = tops.get(id);
-          if (prev === undefined || top < prev) tops.set(id, top);
-        }
-      }
-      for (const { id, top } of anchors) {
-        if (!tops.has(id)) tops.set(id, top);
-      }
+      const tops = markTops(fragments, anchors);
       if (!equal(sidenotePositions.value, tops)) sidenotePositions.value = tops;
 
       const ordinals = markOrdinals.value;
