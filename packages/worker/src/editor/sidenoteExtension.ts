@@ -105,16 +105,19 @@ export const SidenoteExtension = defineExtension({
         }
       }
 
-      const fragments: TrackedFragment[] = [];
+      const collected: TrackedFragment[] = [];
       editor.getEditorState().read(() => {
         for (const key of nodeKeys) {
           const node = $getNodeByKey(key);
           if (!$isMarkNode(node)) continue;
           const el = editor.getElementByKey(key);
           if (el === null) continue;
-          fragments.push({ el, ids: node.getIDs(), top: el.offsetTop, key });
+          collected.push({ el, ids: node.getIDs(), top: el.offsetTop, key });
         }
       });
+      // Key order follows the tracker's creation, not the document; fragments are canonically
+      // document-ordered here, which the badge rule relies on.
+      const fragments = collected.toSorted(byDocumentPosition);
 
       // A mark spanning a paragraph break yields several fragments sharing its ids; the minimum top
       // aligns to the mark's first line.
@@ -206,6 +209,12 @@ export const SidenoteExtension = defineExtension({
     );
   },
 });
+
+// Document-order comparator for fragments, by their elements' DOM position.
+function byDocumentPosition(a: TrackedFragment, b: TrackedFragment): number {
+  if (a.el === b.el) return 0;
+  return a.el.compareDocumentPosition(b.el) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1;
+}
 
 /**
  * Measures point specs (ids with no MarkNode) into `tops`, in the same coordinate space as

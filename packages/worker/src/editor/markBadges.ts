@@ -17,7 +17,7 @@ import type { TrackedFragment } from "./sidenoteExtension.ts";
 /**
  * Ordinal badges for mark fragments, applying the rightmost-per-block rule: within a block, a
  * mark's ordinal appears only on its last fragment there. A mark spanning multiple blocks still
- * badges once per block.
+ * badges once per block. Fragments arrive in document order, as the measure sweep guarantees.
  */
 export function computeMarkBadges(
   fragments: TrackedFragment[],
@@ -27,12 +27,9 @@ export function computeMarkBadges(
 ): MarkBadge[] {
   if (fragments.length === 0) return [];
 
-  // Sort to document order so "next fragment in the same block" is defined.
-  const ordered = fragments.toSorted(byDocumentPosition);
-
-  // Pair each fragment with its block key, read from the live tree.
+  // "Next fragment in the same block" is defined by that document order.
   const labeled = editor.getEditorState().read(() =>
-    ordered.map((f) => {
+    fragments.map((f) => {
       return { ids: f.ids, blockKey: $badgeBlockOf(f.key) };
     }),
   );
@@ -41,9 +38,9 @@ export function computeMarkBadges(
 
   const { containerRect, doc } = ctx;
   const badges: MarkBadge[] = [];
-  for (let i = 0; i < ordered.length; i++) {
+  for (let i = 0; i < fragments.length; i++) {
     if (visible[i].length === 0) continue;
-    const { el, key } = ordered[i];
+    const { el, key } = fragments[i];
     const rect = contentEndRect(el, doc);
     if (!hasRect(rect)) continue;
     badges.push({
@@ -108,9 +105,4 @@ function $badgeBlockOf(key: NodeKey): NodeKey {
   }
   // Unrecognized structure: isolate so we never suppress across it.
   return node.getKey();
-}
-
-function byDocumentPosition(a: TrackedFragment, b: TrackedFragment): number {
-  if (a.el === b.el) return 0;
-  return a.el.compareDocumentPosition(b.el) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1;
 }
