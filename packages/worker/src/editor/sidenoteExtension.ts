@@ -19,7 +19,7 @@ import type {
 import { editorStateToMarkdown } from "#/utils/markdown.ts";
 
 import { $badgeBlockOf, $marginBlockOf } from "./blocks.ts";
-import { getMeasureContext, textPointTop } from "./domMeasure.ts";
+import { getMeasureContext, textPointTop, type MeasureContext } from "./domMeasure.ts";
 import { assignBands } from "./markColors.ts";
 import { computeMarkFragmentBadges } from "./markFragmentBadges.ts";
 import {
@@ -93,52 +93,12 @@ export const SidenoteExtension = defineExtension({
         return;
       }
 
-      // Zero-length marks wrap no text and produce no MarkNode, so measure them from a collapsed
-      // Range at their anchor. Resolve the anchor against the fresh committed tree (not a lagging
-      // signal) so the position tracks the live editor; skip the work when there are no zero-length
-      // marks. Like fragments, anchors exist only when measurable.
-      const anchors: ZeroLengthMarkAnchor[] = [];
-      if (marks.some((m) => m.length === 0)) {
-        const state = editor.getEditorState();
-        const content = editorStateToMarkdown(state);
-        let spans: TextNodeSpan[] = [];
-        let fallbackKey = "";
-        state.read(() => {
-          spans = $collectTextNodeSpans(content);
-          if (spans.length === 0)
-            fallbackKey = $getRoot().getFirstChild()?.getKey() ?? $getRoot().getKey();
-        });
-        for (const m of marks) {
-          if (m.length !== 0) continue;
-          const pos = findPosition(spans, m.offset);
-          const key = pos?.key ?? fallbackKey;
-          const el = editor.getElementByKey(key);
-          if (el === null) continue;
-          const top = textPointTop(ctx, el, pos?.offset ?? 0);
-          if (top === null) continue;
-          anchors.push({ id: m.thread_id, key, top });
-        }
-      }
-
-      const collected: MarkFragment[] = [];
-      editor.getEditorState().read(() => {
-        for (const key of nodeKeys) {
-          const node = $getNodeByKey(key);
-          if (!$isMarkNode(node)) continue;
-          const el = editor.getElementByKey(key);
-          if (el === null) continue;
-          collected.push({
-            el,
-            ids: node.getIDs(),
-            top: el.offsetTop,
-            key,
-            badgeBlockKey: $badgeBlockOf(key),
-          });
-        }
-      });
-      // Key order follows the tracker's creation, not the document; fragments are canonically
-      // document-ordered here, which the badge rule relies on.
-      const fragments = collected.toSorted(byDocumentPosition);
+      const anchors = collectAnchors(
+        editor,
+        ctx,
+        marks.filter((m) => m.length === 0),
+      );
+      const fragments = collectFragments(editor, nodeKeys);
 
       // A mark spanning a paragraph break yields several fragments sharing its ids; the minimum top
       // aligns to the mark's first line.
@@ -229,4 +189,63 @@ export const SidenoteExtension = defineExtension({
 function byDocumentPosition(a: MarkFragment, b: MarkFragment): number {
   if (a.el === b.el) return 0;
   return a.el.compareDocumentPosition(b.el) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1;
+}
+
+/**
+ * Anchors for the file's zero-length marks. Their text position resolves against the fresh
+ * committed tree, not a lagging signal, so the position tracks the live editor, then measures to a
+ * line top against `ctx`. Like fragments, anchors exist only when measurable; empty when the file
+ * has no zero-length marks.
+ */
+function collectAnchors(
+  editor: LexicalEditor,
+  ctx: MeasureContext,
+  zeroMarks: ReadonlyArray<Mark>,
+): ZeroLengthMarkAnchor[] {
+  if (zeroMarks.length === 0) return [];
+  const state = editor.getEditorState();
+  const content = editorStateToMarkdown(state);
+  let spans: TextNodeSpan[] = [];
+  let fallbackKey = "";
+  state.read(() => {
+    spans = $collectTextNodeSpans(content);
+    if (spans.length === 0)
+      fallbackKey = $getRoot().getFirstChild()?.getKey() ?? $getRoot().getKey();
+  });
+  const anchors: ZeroLengthMarkAnchor[] = [];
+  for (const m of zeroMarks) {
+    const pos = findPosition(spans, m.offset);
+    const key = pos?.key ?? fallbackKey;
+    const el = editor.getElementByKey(key);
+    if (el === null) continue;
+    const top = textPointTop(ctx, el, pos?.offset ?? 0);
+    if (top === null) continue;
+    anchors.push({ id: m.thread_id, key, top });
+  }
+  return anchors;
+}
+
+/**
+ * Fragments for the editor's live MarkNodes, in canonical document order: the tracker's key order
+ * follows creation, not the document, and the badge rule relies on document order. Fragments exist
+ * only for mounted elements.
+ */
+function collectFragments(editor: LexicalEditor, nodeKeys: ReadonlySet<NodeKey>): MarkFragment[] {
+  const collected: MarkFragment[] = [];
+  editor.getEditorState().read(() => {
+    for (const key of nodeKeys) {
+      const node = $getNodeByKey(key);
+      if (!$isMarkNode(node)) continue;
+      const el = editor.getElementByKey(key);
+      if (el === null) continue;
+      collected.push({
+        el,
+        ids: node.getIDs(),
+        top: el.offsetTop,
+        key,
+        badgeBlockKey: $badgeBlockOf(key),
+      });
+    }
+  });
+  return collected.toSorted(byDocumentPosition);
 }
