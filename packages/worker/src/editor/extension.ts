@@ -10,10 +10,10 @@ import type { ReadonlySignal, Signal } from "@preact/signals";
 import { configExtension, defineExtension } from "lexical";
 
 import { PartialUpdateExtension } from "#/editor/partialUpdateExtension.ts";
+import type { MarkedBlock } from "#/geometry/layout.ts";
 import type {
   MarkFragmentBadge,
-  MarkBlocks,
-  MarkedBlocks,
+  MarkedBlockKeys,
   MarkOrdinals,
   MarkFragmentRect,
   SidenotePositions,
@@ -35,8 +35,8 @@ interface EditorDeps {
   markOrdinals: Signal<MarkOrdinals>;
   markFragmentBadges: Signal<MarkFragmentBadge[]>;
   markFragmentRects: Signal<MarkFragmentRect[]>;
-  markedBlocks: Signal<MarkedBlocks>;
-  markBlocks: Signal<MarkBlocks>;
+  markedBlocks: Signal<MarkedBlock[]>;
+  markedBlockKeys: Signal<MarkedBlockKeys>;
   fonts: ReadonlyArray<Signal<string>>;
   writable: boolean;
 }
@@ -52,7 +52,7 @@ export function createEditorExtension(
     markFragmentBadges,
     markFragmentRects,
     markedBlocks,
-    markBlocks,
+    markedBlockKeys,
     fonts,
     writable,
   }: EditorDeps,
@@ -88,7 +88,7 @@ export function createEditorExtension(
         markFragmentBadges,
         markFragmentRects,
         markedBlocks,
-        markBlocks,
+        markedBlockKeys,
         resolved,
         fonts,
       }),

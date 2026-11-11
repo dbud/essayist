@@ -38,9 +38,8 @@ export interface MarkFragmentRect {
   bandCount: number; // bands on this line
 }
 
-export type MarkedBlocks = Map<NodeKey, MarkedBlock>;
 // thread id -> the block key containing the mark's fragments.
-export type MarkBlocks = Map<string, NodeKey>;
+export type MarkedBlockKeys = Map<string, NodeKey>;
 
 export interface SidenoteEntry {
   mark: Mark;
@@ -90,8 +89,8 @@ export const SidenotesModel = createModel((key: FileKey, deps: SidenotesDeps) =>
   const heights = signal<SidenoteHeights>(new Map());
   const markFragmentBadges = signal<MarkFragmentBadge[]>([]);
   const markFragmentRects = signal<MarkFragmentRect[]>([]);
-  const markedBlocks = signal<MarkedBlocks>(new Map());
-  const markBlocks = signal<MarkBlocks>(new Map());
+  const markedBlocks = signal<MarkedBlock[]>([]);
+  const markedBlockKeys = signal<MarkedBlockKeys>(new Map());
 
   const { resolved } = resolvedMarks;
   const { markIds: activeMarkIds } = getEditorSelection(key);
@@ -135,18 +134,11 @@ export const SidenotesModel = createModel((key: FileKey, deps: SidenotesDeps) =>
   // top), the measured marks (resolved to their blocks), and the sidenote heights. Blocks and marks
   // are written by one measure pass, so tops and margins share an epoch there.
   const measured = computed((): Measured => {
-    const blocks = [...markedBlocks.value.entries()]
-      .map(([blockKey, block]) => ({
-        key: blockKey,
-        top: block.top,
-        height: block.height,
-        margin: block.margin,
-      }))
-      .toSorted((a, b) => a.top - b.top);
+    const blocks = markedBlocks.value.toSorted((a, b) => a.top - b.top);
     const marks = resolved.value
       .flatMap(({ thread_id: threadId, offset }) => {
         const markTop = positions.value.get(threadId);
-        const blockKey = markBlocks.value.get(threadId);
+        const blockKey = markedBlockKeys.value.get(threadId);
         if (markTop === undefined || blockKey === undefined) return [];
         return [{ threadId, blockKey, top: markTop, offset }];
       })
@@ -204,7 +196,7 @@ export const SidenotesModel = createModel((key: FileKey, deps: SidenotesDeps) =>
 
   return {
     positions,
-    markBlocks,
+    markedBlockKeys,
     markedBlocks,
     heights,
     markOrdinals,

@@ -10,8 +10,7 @@ import type { MarkedBlock } from "#/geometry/layout.ts";
 import { markTops } from "#/geometry/tops.ts";
 import type {
   MarkFragmentBadge,
-  MarkBlocks,
-  MarkedBlocks,
+  MarkedBlockKeys,
   MarkOrdinals,
   MarkFragmentRect,
   SidenotePositions,
@@ -39,9 +38,6 @@ export interface MarkFragment {
   badgeBlockKey: NodeKey; // this fragment's visual container, per $badgeBlockOf
 }
 
-// A zero-length mark's anchor: the TextNode key the mark points into and its measured line top
-// in editor-column coordinates. Only measured anchors exist; a point without a box contributes
-// nothing.
 interface ZeroLengthMarkAnchor {
   id: string;
   key: NodeKey;
@@ -53,16 +49,14 @@ interface SidenoteConfig {
   markOrdinals: Signal<MarkOrdinals>;
   markFragmentBadges: Signal<MarkFragmentBadge[]>;
   markFragmentRects: Signal<MarkFragmentRect[]>;
-  markedBlocks: Signal<MarkedBlocks>;
-  markBlocks: Signal<MarkBlocks>;
+  markedBlocks: Signal<MarkedBlock[]>;
+  markedBlockKeys: Signal<MarkedBlockKeys>;
   resolved: ReadonlySignal<readonly Mark[]>;
   fonts: ReadonlyArray<Signal<string>>;
 }
 
 const inlineMargin = (el: HTMLElement): number => Number.parseFloat(el.style.marginTop) || 0;
 
-// Publishes mark positions, badges, rect highlights, and marked-block geometry for the sidenote
-// column.
 export const SidenoteExtension = defineExtension({
   name: "sidenote",
   afterRegistration: (
@@ -73,7 +67,7 @@ export const SidenoteExtension = defineExtension({
       markFragmentBadges,
       markFragmentRects,
       markedBlocks,
-      markBlocks,
+      markedBlockKeys,
       resolved,
       fonts,
     }: SidenoteConfig,
@@ -86,8 +80,8 @@ export const SidenoteExtension = defineExtension({
         if (sidenotePositions.value.size > 0) sidenotePositions.value = new Map();
         if (markFragmentBadges.value.length > 0) markFragmentBadges.value = [];
         if (markFragmentRects.value.length > 0) markFragmentRects.value = [];
-        if (markedBlocks.value.size > 0) markedBlocks.value = new Map();
-        if (markBlocks.value.size > 0) markBlocks.value = new Map();
+        if (markedBlocks.value.length > 0) markedBlocks.value = [];
+        if (markedBlockKeys.value.size > 0) markedBlockKeys.value = new Map();
         return;
       }
 
@@ -102,35 +96,12 @@ export const SidenoteExtension = defineExtension({
       if (!equal(sidenotePositions.value, tops)) sidenotePositions.value = tops;
 
       const ordinals = markOrdinals.value;
-      // Badges are overlay chips positioned here (not ::after on the mark) so that caret movement
-      // and deletion at the mark boundary don't interfere with them.
       markFragmentBadges.value = computeMarkFragmentBadges(fragments, ordinals, ctx);
       markFragmentRects.value = computeMarkFragmentRects(fragments, ctx);
 
-      const blocks = new Map<NodeKey, MarkedBlock>();
-      const byThread = new Map<string, NodeKey>();
-      editor.getEditorState().read(() => {
-        const place = (key: NodeKey, ids: readonly string[]) => {
-          const blockKey = $marginBlockOf(key);
-          if (blockKey === null) return;
-          if (blocks.has(blockKey)) {
-            for (const id of ids) byThread.set(id, blockKey);
-            return;
-          }
-          const el = editor.getElementByKey(blockKey);
-          if (el === null) return;
-          blocks.set(blockKey, {
-            top: el.offsetTop,
-            height: el.offsetHeight,
-            margin: inlineMargin(el),
-          });
-          for (const id of ids) byThread.set(id, blockKey);
-        };
-        for (const { ids, key } of fragments) place(key, ids);
-        for (const { id, key } of anchors) place(key, [id]);
-      });
+      const [blocks, blocksByThread] = collectBlocks(editor, fragments, anchors);
       if (!equal(markedBlocks.value, blocks)) markedBlocks.value = blocks;
-      if (!equal(markBlocks.value, byThread)) markBlocks.value = byThread;
+      if (!equal(markedBlockKeys.value, blocksByThread)) markedBlockKeys.value = blocksByThread;
     };
 
     const [schedule, disposeRafScheduler] = createRafScheduler(measure);
@@ -139,9 +110,6 @@ export const SidenoteExtension = defineExtension({
 
     const [nodeKeys, disposeTrackNodeKeys] = trackNodeKeys(editor, MarkNode, schedule);
 
-    // Never re-measure on scroll: offsetTop is stable under scroll, and fragments are inline,
-    // so repositioning them never resizes the observed root, which keeps the resize trigger from
-    // looping.
     return mergeRegister(
       registerResizeObserver(editor, schedule),
       disposeTrackNodeKeys,
@@ -159,12 +127,6 @@ function byDocumentPosition(a: MarkFragment, b: MarkFragment): number {
   return a.el.compareDocumentPosition(b.el) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1;
 }
 
-/**
- * Anchors for the file's zero-length marks. Their text position resolves against the fresh
- * committed tree, not a lagging signal, so the position tracks the live editor, then measures to a
- * line top against `ctx`. Like fragments, anchors exist only when measurable; empty when the file
- * has no zero-length marks.
- */
 function collectAnchors(
   editor: LexicalEditor,
   ctx: MeasureContext,
@@ -174,6 +136,7 @@ function collectAnchors(
   const state = editor.getEditorState();
   const content = editorStateToMarkdown(state);
   let spans: TextNodeSpan[] = [];
+  // An empty file anchors its zero-length marks at the first block.
   let fallbackKey = "";
   state.read(() => {
     spans = $collectTextNodeSpans(content);
@@ -193,11 +156,6 @@ function collectAnchors(
   return anchors;
 }
 
-/**
- * Fragments for the editor's live MarkNodes, in canonical document order: the tracker's key order
- * follows creation, not the document, and the badge rule relies on document order. Fragments exist
- * only for mounted elements.
- */
 function collectFragments(editor: LexicalEditor, nodeKeys: ReadonlySet<NodeKey>): MarkFragment[] {
   const collected: MarkFragment[] = [];
   editor.getEditorState().read(() => {
@@ -216,4 +174,40 @@ function collectFragments(editor: LexicalEditor, nodeKeys: ReadonlySet<NodeKey>)
     }
   });
   return collected.toSorted(byDocumentPosition);
+}
+
+/**
+ * The geometry of every marked block (inline margins included) and, per thread, the block key its
+ * fragments resolve to. Fragments and anchors arrive in document order, so the pairing keeps each
+ * mark's last block; several marks can share one block, so blocks dedup per key.
+ */
+function collectBlocks(
+  editor: LexicalEditor,
+  fragments: ReadonlyArray<MarkFragment>,
+  anchors: ReadonlyArray<ZeroLengthMarkAnchor>,
+): [MarkedBlock[], MarkedBlockKeys] {
+  const blocksByKey = new Map<NodeKey, MarkedBlock>();
+  const byThread = new Map<string, NodeKey>();
+  editor.getEditorState().read(() => {
+    const place = (key: NodeKey, ids: readonly string[]) => {
+      const blockKey = $marginBlockOf(key);
+      if (blockKey === null) return;
+      if (blocksByKey.has(blockKey)) {
+        for (const id of ids) byThread.set(id, blockKey);
+        return;
+      }
+      const el = editor.getElementByKey(blockKey);
+      if (el === null) return;
+      blocksByKey.set(blockKey, {
+        key: blockKey,
+        top: el.offsetTop,
+        height: el.offsetHeight,
+        margin: inlineMargin(el),
+      });
+      for (const id of ids) byThread.set(id, blockKey);
+    };
+    for (const { ids, key } of fragments) place(key, ids);
+    for (const { id, key } of anchors) place(key, [id]);
+  });
+  return [[...blocksByKey.values()], byThread];
 }

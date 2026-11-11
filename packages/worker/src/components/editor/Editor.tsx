@@ -45,7 +45,7 @@ export default function Editor({
     markFragmentBadges,
     markFragmentRects,
     markedBlocks,
-    markBlocks,
+    markedBlockKeys,
   } = sidenotes.current.value;
 
   const extension = useMemo(
@@ -59,7 +59,7 @@ export default function Editor({
         markFragmentBadges,
         markFragmentRects,
         markedBlocks,
-        markBlocks,
+        markedBlockKeys,
         fonts: [viewerFont],
         writable: writable.value,
       }),
@@ -73,7 +73,7 @@ export default function Editor({
       markFragmentBadges,
       markFragmentRects,
       markedBlocks,
-      markBlocks,
+      markedBlockKeys,
       resolved,
       markdown,
       selection,
