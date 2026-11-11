@@ -20,8 +20,8 @@ import { editorStateToMarkdown } from "#/utils/markdown.ts";
 
 import { $badgeBlockOf, $marginBlockOf } from "./blocks.ts";
 import { getMeasureContext, textPointTop, type MeasureContext } from "./domMeasure.ts";
-import { assignBands } from "./markColors.ts";
 import { computeMarkFragmentBadges } from "./markFragmentBadges.ts";
+import { computeMarkFragmentRects } from "./markFragmentRects.ts";
 import {
   createRafScheduler,
   registerFontLoadObserver,
@@ -115,29 +115,10 @@ export const SidenoteExtension = defineExtension({
       if (!equal(sidenotePositions.value, tops)) sidenotePositions.value = tops;
 
       const ordinals = markOrdinals.value;
-      const { containerRect } = ctx;
       // Badges are overlay chips positioned here (not ::after on the mark) so that caret movement
       // and deletion at the mark boundary don't interfere with them.
       markFragmentBadges.value = computeMarkFragmentBadges(fragments, ordinals, ctx);
-
-      const marksById = new Map(marks.map((m) => [m.thread_id, m] as const));
-      const rects: MarkFragmentRect[] = [];
-      for (const { el, ids } of fragments) {
-        const bands = assignBands(marksById, ids, categories);
-        const bandCount = bands.length;
-        if (bandCount > 0) {
-          for (const rect of el.getClientRects()) {
-            const left = rect.left - containerRect.left;
-            const top = rect.top - containerRect.top;
-            const width = rect.width;
-            const height = rect.height;
-            for (const { id, color, order } of bands) {
-              rects.push({ id, color, left, top, width, height, order, bandCount });
-            }
-          }
-        }
-      }
-      markFragmentRects.value = rects;
+      markFragmentRects.value = computeMarkFragmentRects(fragments, marks, categories, ctx);
 
       const blocks = new Map<NodeKey, MarkedBlock>();
       const byThread = new Map<string, NodeKey>();
