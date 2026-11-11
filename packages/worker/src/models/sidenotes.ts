@@ -78,10 +78,10 @@ interface SidenotesDeps {
 
 /**
  * Sidenote presentation for a file. Owns the mark positions and marked-block geometry (written by
- * the editor extension via trackEverything) and heights (written by the FileViewer layout hook via
- * useElementHeights), and derives the ordinal per mark, the active flag, the raw sorted entries,
- * and the reflow (stacked tops plus block margins). Per (workspace, path, version) so each file and
- * view keeps its own measured state.
+ * the editor extension) and heights (written by the FileViewer layout hook via useElementHeights),
+ * and derives the ordinal per mark, the active flag, the raw sorted entries, and the reflow
+ * (stacked tops plus block margins). Per (workspace, path, version) so each file and view keeps its
+ * own measured state.
  *
  * `entries` is independent of `heights`; the reflow is the only reader of `heights`.
  */
