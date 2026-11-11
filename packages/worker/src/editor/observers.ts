@@ -1,4 +1,5 @@
-import type { LexicalEditor } from "lexical";
+import { effect, type Signal } from "@preact/signals";
+import { mergeRegister, type LexicalEditor } from "lexical";
 
 // Coalesce many schedule() calls into a single fn() on the next animation frame; dispose() cancels
 // a pending frame. For extensions that re-measure the DOM only after Lexical has reconciled. With
@@ -44,6 +45,21 @@ export function registerFontLoadObserver(schedule: () => void): () => void {
   if (typeof document === "undefined" || !document.fonts) return () => {};
   document.fonts.addEventListener("loadingdone", schedule);
   return () => document.fonts.removeEventListener("loadingdone", schedule);
+}
+
+// Calls schedule whenever any of the signals changes. The `void` read is the subscription:
+// schedule's deferred work runs outside the effect, so it tracks nothing extra.
+export function registerSignalsObserver(
+  signals: ReadonlyArray<Signal<unknown>>,
+  schedule: () => void,
+): () => void {
+  const disposers = signals.map((s) =>
+    effect(() => {
+      void s.value;
+      schedule();
+    }),
+  );
+  return mergeRegister(...disposers);
 }
 
 // Attach root-scoped observers (ResizeObserver, event listeners) that must follow the root of the

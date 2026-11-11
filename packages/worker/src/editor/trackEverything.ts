@@ -1,4 +1,4 @@
-import { effect, type Signal } from "@preact/signals";
+import type { Signal } from "@preact/signals";
 import { equal } from "@std/assert/equal";
 import {
   $getNodeByKey,
@@ -15,6 +15,7 @@ import {
   createRafScheduler,
   registerFontLoadObserver,
   registerResizeObserver,
+  registerSignalsObserver,
 } from "./observers.ts";
 
 export interface TrackedFragment {
@@ -111,15 +112,8 @@ export function trackEverything<T extends LexicalNode>(
     registerNodeKeyTracker(editor, nodeClass, nodeKeys, scheduleMeasure),
     editor.registerUpdateListener(scheduleMeasure),
     registerFontLoadObserver(scheduleMeasure),
+    registerSignalsObserver(remeasureOn ?? [], scheduleMeasure),
   ];
-  for (const s of remeasureOn ?? []) {
-    disposers.push(
-      effect(() => {
-        void s.value;
-        scheduleMeasure();
-      }),
-    );
-  }
 
   return mergeRegister(...disposers, dispose);
 }
