@@ -16,17 +16,36 @@ export interface MarkFragment {
   top: number;
   key: NodeKey;
   badgeBlockKey: NodeKey; // this fragment's visual container, per $badgeBlockOf
-  marginBlockKey: NodeKey | null; // the block $marginBlockOf would push, null outside any block
 }
 
 export interface ZeroLengthMarkAnchor {
   id: string;
   key: NodeKey;
   top: number;
-  marginBlockKey: NodeKey | null;
 }
 
 const inlineMargin = (el: HTMLElement): number => Number.parseFloat(el.style.marginTop) || 0;
+
+/**
+ * Per mark, the top of its anchored line: the smallest fragment top. A mark spanning paragraphs
+ * anchors at its first line. Zero-length anchors fill the marks without fragments.
+ */
+export function markTops(
+  fragments: ReadonlyArray<MarkFragment>,
+  anchors: ReadonlyArray<ZeroLengthMarkAnchor>,
+): Map<string, number> {
+  const tops = new Map<string, number>();
+  for (const { ids, top } of fragments) {
+    for (const id of ids) {
+      const pos = tops.get(id);
+      if (pos === undefined || top < pos) tops.set(id, top);
+    }
+  }
+  for (const { id, top } of anchors) {
+    if (!tops.has(id)) tops.set(id, top);
+  }
+  return tops;
+}
 
 // Document-order comparator for fragments, by their elements' DOM position.
 function byDocumentPosition(a: MarkFragment, b: MarkFragment): number {
@@ -58,12 +77,7 @@ export function collectAnchors(
     if (el === null) continue;
     const top = textPointTop(ctx, el, pos?.offset ?? 0);
     if (top === null) continue;
-    anchors.push({
-      id: m.thread_id,
-      key,
-      top,
-      marginBlockKey: $marginBlockOf(key),
-    });
+    anchors.push({ id: m.thread_id, key, top });
   }
   return anchors;
 }
@@ -85,7 +99,6 @@ export function collectFragments(
         top: el.offsetTop,
         key,
         badgeBlockKey: $badgeBlockOf(key),
-        marginBlockKey: $marginBlockOf(key),
       });
     }
   });
@@ -103,20 +116,21 @@ export function collectBlocks(
 ): MarkedBlock[] {
   const blocksByKey = new Map<NodeKey, MarkedBlock>();
   editor.getEditorState().read(() => {
-    const place = (marginBlockKey: NodeKey | null) => {
-      if (marginBlockKey === null) return;
-      if (blocksByKey.has(marginBlockKey)) return;
-      const el = editor.getElementByKey(marginBlockKey);
+    const place = (key: NodeKey) => {
+      const blockKey = $marginBlockOf(key);
+      if (blockKey === null) return;
+      if (blocksByKey.has(blockKey)) return;
+      const el = editor.getElementByKey(blockKey);
       if (el === null) return;
-      blocksByKey.set(marginBlockKey, {
-        key: marginBlockKey,
+      blocksByKey.set(blockKey, {
+        key: blockKey,
         top: el.offsetTop,
         height: el.offsetHeight,
         margin: inlineMargin(el),
       });
     };
-    for (const { marginBlockKey } of fragments) place(marginBlockKey);
-    for (const { marginBlockKey } of anchors) place(marginBlockKey);
+    for (const { key } of fragments) place(key);
+    for (const { key } of anchors) place(key);
   });
   return [...blocksByKey.values()];
 }

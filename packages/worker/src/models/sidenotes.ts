@@ -10,14 +10,9 @@ import { FileKey } from "#/models/fileSelection.ts";
 import type { ResolvedMarks } from "#/models/resolvedMarks.ts";
 import { getEditorSelection } from "#/signals/editorSelection.ts";
 
-// The position that anchors a thread's sidenote in the column: the mark's first-line top and that
-// line's block; the stacked top derives from it in layout.
-export interface SidenotePosition {
-  top: number;
-  blockKey: string | null;
-}
-// thread_id -> the anchored position of each thread's sidenote.
-export type SidenotePositions = Map<string, SidenotePosition>;
+// thread_id -> the mark's anchored-line top. Places the thread's sidenote as the pre-stack top; the
+// stacked top derives from it in layout.
+export type SidenotePositions = Map<string, number>;
 // thread_id -> rendered sidenote height (px).
 export type SidenoteHeights = Map<string, number>;
 // thread_id -> 1-based ordinal in document order (by mark.offset).
@@ -119,11 +114,11 @@ export const SidenotesModel = createModel((key: FileKey, deps: SidenotesDeps) =>
   const entries = computed((): SidenoteEntry[] => {
     const out: SidenoteEntry[] = [];
     for (const mark of resolved.value) {
-      const pos = positions.value.get(mark.thread_id);
-      if (pos === undefined) continue; // not yet measured
+      const markTop = positions.value.get(mark.thread_id);
+      if (markTop === undefined) continue; // not yet measured
       out.push({
         mark,
-        markTop: pos.top,
+        markTop,
         ordinal: markOrdinals.value.get(mark.thread_id) ?? 0,
         active: activeMarkIds.value.has(mark.thread_id),
         color: colorById.value.get(mark.thread_id) ?? FALLBACK_COLOR,
@@ -139,14 +134,14 @@ export const SidenotesModel = createModel((key: FileKey, deps: SidenotesDeps) =>
     const blocks = markedBlocks.value.toSorted((a, b) => a.top - b.top);
     const marks = resolved.value
       .flatMap(({ thread_id: threadId, offset }) => {
-        const pos = positions.value.get(threadId);
-        if (pos === undefined || pos.blockKey === null) return [];
-        return [{ threadId, blockKey: pos.blockKey, top: pos.top, offset }];
+        const markTop = positions.value.get(threadId);
+        if (markTop === undefined) return [];
+        return [{ threadId, top: markTop, offset }];
       })
       .toSorted((a, b) => a.top - b.top || a.offset - b.offset);
     return {
       blocks,
-      marks: marks.map(({ threadId, blockKey, top }) => ({ threadId, blockKey, top })),
+      marks: marks.map(({ threadId, top }) => ({ threadId, top })),
       sidenotes: resolved.value.map((mark) => ({
         threadId: mark.thread_id,
         height: heights.value.get(mark.thread_id) ?? 0,

@@ -15,7 +15,6 @@ const frag = (ids: string[], badgeBlockKey: string): MarkFragment => ({
   top: 0,
   key: ids.at(0) ?? "",
   badgeBlockKey,
-  marginBlockKey: null,
 });
 
 test("endingIds -- contained mark keeps only the outer's end", () => {

@@ -7,7 +7,6 @@ import type { LexicalEditor } from "lexical";
 import { mergeRegister } from "lexical";
 
 import type { MarkedBlock } from "#/geometry/layout.ts";
-import { markTops } from "#/geometry/tops.ts";
 import type {
   MarkFragmentBadge,
   MarkOrdinals,
@@ -18,7 +17,7 @@ import type {
 import { getMeasureContext } from "./domMeasure.ts";
 import { computeMarkFragmentBadges } from "./markFragmentBadges.ts";
 import { computeMarkFragmentRects } from "./markFragmentRects.ts";
-import { collectAnchors, collectBlocks, collectFragments } from "./markGeometry.ts";
+import { collectAnchors, collectBlocks, collectFragments, markTops } from "./markGeometry.ts";
 import {
   createRafScheduler,
   registerFontLoadObserver,

@@ -5,11 +5,11 @@ import { Layout, type Measured } from "./layout.ts";
 
 const measured = (
   blocks: [string, number, number, number][],
-  marks: [string, string, number][],
+  marks: [string, number][],
   sidenotes: [string, number][],
 ): Measured => ({
   blocks: blocks.map(([key, top, height, margin]) => ({ key, top, height, margin })),
-  marks: marks.map(([threadId, blockKey, top]) => ({ threadId, blockKey, top })),
+  marks: marks.map(([threadId, top]) => ({ threadId, top })),
   sidenotes: sidenotes.map(([threadId, height]) => ({ threadId, height })),
 });
 
@@ -24,9 +24,9 @@ test("reflow -- pushes blocks so first marks meet their stacked notes", () => {
         ["p3", 400, 20, 0],
       ],
       [
-        ["m1", "p1", 0],
-        ["m2", "p2", 32],
-        ["m3", "p3", 400],
+        ["m1", 0],
+        ["m2", 32],
+        ["m3", 400],
       ],
       [
         ["m1", 60],
@@ -51,8 +51,8 @@ test("reflow -- notes stack inside a block when its marks are close", () => {
     measured(
       [["p", 0, 100, 0]],
       [
-        ["m1", "p", 0],
-        ["m2", "p", 30],
+        ["m1", 0],
+        ["m2", 30],
       ],
       [
         ["m1", 60],
@@ -79,9 +79,9 @@ test("reflow -- inherited ceilings chain pushes to later blocks", () => {
         ["p3", 210, 10, 0],
       ],
       [
-        ["m1", "p1", 0],
-        ["m2", "p2", 195],
-        ["m3", "p3", 210],
+        ["m1", 0],
+        ["m2", 195],
+        ["m3", 210],
       ],
       [
         ["m1", 200],
@@ -116,8 +116,8 @@ test("reflow -- blocks without marks keep margin 0 and leave the cursor be", () 
         ["p3", 60, 10, 0],
       ],
       [
-        ["m1", "p1", 0],
-        ["m2", "p3", 60],
+        ["m1", 0],
+        ["m2", 60],
       ],
       [
         ["m1", 10],
@@ -140,9 +140,9 @@ test("reflow -- marks without measured sidenotes are skipped", () => {
     measured(
       [["p", 0, 100, 0]],
       [
-        ["m1", "p", 0],
-        ["m2", "p", 30],
-        ["m3", "p", 62],
+        ["m1", 0],
+        ["m2", 30],
+        ["m3", 62],
       ],
       [
         ["m1", 60],
@@ -169,9 +169,9 @@ test("reflow -- reproduces its output from the settled state", () => {
         ["p3", 400, 20, 0],
       ],
       [
-        ["m1", "p1", 0],
-        ["m2", "p2", 32],
-        ["m3", "p3", 400],
+        ["m1", 0],
+        ["m2", 32],
+        ["m3", 400],
       ],
       [
         ["m1", 60],
@@ -190,9 +190,9 @@ test("reflow -- reproduces its output from the settled state", () => {
         ["p3", 436, 20, 0],
       ],
       [
-        ["m1", "p1", 0],
-        ["m2", "p2", 68],
-        ["m3", "p3", 436],
+        ["m1", 0],
+        ["m2", 68],
+        ["m3", 436],
       ],
       [
         ["m1", 60],

@@ -10,7 +10,6 @@ export interface MarkedBlock {
 export interface Measured {
   readonly blocks: readonly MarkedBlock[];
   readonly marks: readonly {
-    readonly blockKey: string;
     readonly threadId: string;
     readonly top: number;
   }[];
@@ -46,13 +45,19 @@ export class Layout {
     this.#sidenotes = new Map<string, Sidenote>(
       measured.sidenotes.map(({ threadId, height }) => [threadId, { height, top: 0 }]),
     );
-    const byBlock = new Map<string, Mark[]>();
-    for (const { blockKey, threadId, top } of measured.marks) {
-      byBlock.getOrInsert(blockKey, []).push({ threadId, top });
+    // Marks attach to the block whose box contains their line top; a mark outside every marked
+    // block box is skipped. Blocks tile the column, so each top falls into exactly one block. TODO
+    // -- REFACTOR
+    const byBlock: Mark[][] = measured.blocks.map(() => []);
+    for (const { threadId, top } of measured.marks) {
+      const index = measured.blocks.findIndex(
+        (block) => block.top <= top && top < block.top + block.height,
+      );
+      if (index !== -1) byBlock[index].push({ threadId, top });
     }
-    this.#blocks = measured.blocks.map((block) => ({
+    this.#blocks = measured.blocks.map((block, i) => ({
       ...block,
-      marks: byBlock.get(block.key) ?? [],
+      marks: byBlock[i],
     }));
   }
 
