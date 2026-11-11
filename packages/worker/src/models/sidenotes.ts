@@ -10,8 +10,14 @@ import { FileKey } from "#/models/fileSelection.ts";
 import type { ResolvedMarks } from "#/models/resolvedMarks.ts";
 import { getEditorSelection } from "#/signals/editorSelection.ts";
 
-// thread_id -> min MarkNode.offsetTop (relative to the editor column).
-export type SidenotePositions = Map<string, number>;
+// The position that anchors a thread's sidenote in the column: the mark's first-line top and that
+// line's block; the stacked top derives from it in layout.
+export interface SidenotePosition {
+  top: number;
+  blockKey: string | null;
+}
+// thread_id -> the anchored position of each thread's sidenote.
+export type SidenotePositions = Map<string, SidenotePosition>;
 // thread_id -> rendered sidenote height (px).
 export type SidenoteHeights = Map<string, number>;
 // thread_id -> 1-based ordinal in document order (by mark.offset).
@@ -37,9 +43,6 @@ export interface MarkFragmentRect {
   order: number; // band index within the line (0 = topmost mark)
   bandCount: number; // bands on this line
 }
-
-// thread id -> the block key containing the mark's fragments.
-export type MarkedBlockKeys = Map<string, NodeKey>;
 
 export interface SidenoteEntry {
   mark: Mark;
@@ -90,7 +93,6 @@ export const SidenotesModel = createModel((key: FileKey, deps: SidenotesDeps) =>
   const markFragmentBadges = signal<MarkFragmentBadge[]>([]);
   const markFragmentRects = signal<MarkFragmentRect[]>([]);
   const markedBlocks = signal<MarkedBlock[]>([]);
-  const markedBlockKeys = signal<MarkedBlockKeys>(new Map());
 
   const { resolved } = resolvedMarks;
   const { markIds: activeMarkIds } = getEditorSelection(key);
@@ -117,11 +119,11 @@ export const SidenotesModel = createModel((key: FileKey, deps: SidenotesDeps) =>
   const entries = computed((): SidenoteEntry[] => {
     const out: SidenoteEntry[] = [];
     for (const mark of resolved.value) {
-      const markTop = positions.value.get(mark.thread_id);
-      if (markTop === undefined) continue; // not yet measured
+      const pos = positions.value.get(mark.thread_id);
+      if (pos === undefined) continue; // not yet measured
       out.push({
         mark,
-        markTop,
+        markTop: pos.top,
         ordinal: markOrdinals.value.get(mark.thread_id) ?? 0,
         active: activeMarkIds.value.has(mark.thread_id),
         color: colorById.value.get(mark.thread_id) ?? FALLBACK_COLOR,
@@ -137,10 +139,9 @@ export const SidenotesModel = createModel((key: FileKey, deps: SidenotesDeps) =>
     const blocks = markedBlocks.value.toSorted((a, b) => a.top - b.top);
     const marks = resolved.value
       .flatMap(({ thread_id: threadId, offset }) => {
-        const markTop = positions.value.get(threadId);
-        const blockKey = markedBlockKeys.value.get(threadId);
-        if (markTop === undefined || blockKey === undefined) return [];
-        return [{ threadId, blockKey, top: markTop, offset }];
+        const pos = positions.value.get(threadId);
+        if (pos === undefined || pos.blockKey === null) return [];
+        return [{ threadId, blockKey: pos.blockKey, top: pos.top, offset }];
       })
       .toSorted((a, b) => a.top - b.top || a.offset - b.offset);
     return {
@@ -196,7 +197,6 @@ export const SidenotesModel = createModel((key: FileKey, deps: SidenotesDeps) =>
 
   return {
     positions,
-    markedBlockKeys,
     markedBlocks,
     heights,
     markOrdinals,

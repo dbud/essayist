@@ -1,23 +1,33 @@
+import type { MarkFragment, ZeroLengthMarkAnchor } from "#/editor/markGeometry.ts";
+
 import type { Box } from "./span.ts";
 
+/** A mark's column position: the top of its anchored line and that line's block. */
+export interface MarkPosition {
+  top: number;
+  blockKey: string | null;
+}
+
 /**
- * The column position of each mark: the minimum fragment top per thread id (a mark spanning a
- * paragraph break yields several fragments sharing its ids; the minimum aligns to the mark's first
- * line), then zero-length anchors fill the ids without a fragment.
+ * Per mark, the position of its anchored line: the smallest fragment top and that fragment's block.
+ * A mark spanning paragraphs pairs with its first block, where its first line lives. Zero-length
+ * anchors fill the marks without fragments.
  */
 export function markTops(
-  fragments: ReadonlyArray<{ ids: ReadonlyArray<string>; top: number }>,
-  anchors: ReadonlyArray<{ id: string; top: number }>,
-): Map<string, number> {
-  const tops = new Map<string, number>();
-  for (const { ids, top } of fragments) {
+  fragments: ReadonlyArray<MarkFragment>,
+  anchors: ReadonlyArray<ZeroLengthMarkAnchor>,
+): Map<string, MarkPosition> {
+  const tops = new Map<string, MarkPosition>();
+  for (const { ids, top, marginBlockKey } of fragments) {
     for (const id of ids) {
-      const prev = tops.get(id);
-      if (prev === undefined || top < prev) tops.set(id, top);
+      const pos = tops.get(id);
+      if (pos === undefined || top < pos.top) {
+        tops.set(id, { top, blockKey: marginBlockKey });
+      }
     }
   }
-  for (const { id, top } of anchors) {
-    if (!tops.has(id)) tops.set(id, top);
+  for (const { id, top, marginBlockKey } of anchors) {
+    if (!tops.has(id)) tops.set(id, { top, blockKey: marginBlockKey });
   }
   return tops;
 }

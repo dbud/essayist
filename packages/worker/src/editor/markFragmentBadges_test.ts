@@ -4,7 +4,7 @@ import { test } from "vitest";
 import type { MarkOrdinals } from "#/models/sidenotes.ts";
 
 import { endingIds, ordinalsFor } from "./markFragmentBadges.ts";
-import type { MarkFragment } from "./sidenoteExtension.ts";
+import type { MarkFragment } from "./markGeometry.ts";
 
 const ordinals = (entries: [string, number][]): MarkOrdinals => new Map(entries);
 
@@ -15,6 +15,7 @@ const frag = (ids: string[], badgeBlockKey: string): MarkFragment => ({
   top: 0,
   key: ids.at(0) ?? "",
   badgeBlockKey,
+  marginBlockKey: null,
 });
 
 test("endingIds -- contained mark keeps only the outer's end", () => {

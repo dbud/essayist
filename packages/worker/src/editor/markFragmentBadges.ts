@@ -1,7 +1,7 @@
 import type { MarkFragmentBadge, MarkOrdinals } from "#/models/sidenotes.ts";
 
 import { contentEndRect, hasRect, type MeasureContext } from "./domMeasure.ts";
-import type { MarkFragment } from "./sidenoteExtension.ts";
+import type { MarkFragment } from "./markGeometry.ts";
 
 /**
  * Ordinal badges for mark fragments, applying the rightmost-per-block rule: each fragment's badge

@@ -1,7 +1,7 @@
 import type { MarkFragmentRect } from "#/models/sidenotes.ts";
 
 import type { MeasureContext } from "./domMeasure.ts";
-import type { MarkFragment } from "./sidenoteExtension.ts";
+import type { MarkFragment } from "./markGeometry.ts";
 
 /**
  * Highlight rects for mark fragments: every line box of a fragment gets one rect per id it carries,

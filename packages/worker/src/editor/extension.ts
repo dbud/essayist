@@ -13,7 +13,6 @@ import { PartialUpdateExtension } from "#/editor/partialUpdateExtension.ts";
 import type { MarkedBlock } from "#/geometry/layout.ts";
 import type {
   MarkFragmentBadge,
-  MarkedBlockKeys,
   MarkOrdinals,
   MarkFragmentRect,
   SidenotePositions,
@@ -36,7 +35,6 @@ interface EditorDeps {
   markFragmentBadges: Signal<MarkFragmentBadge[]>;
   markFragmentRects: Signal<MarkFragmentRect[]>;
   markedBlocks: Signal<MarkedBlock[]>;
-  markedBlockKeys: Signal<MarkedBlockKeys>;
   fonts: ReadonlyArray<Signal<string>>;
   writable: boolean;
 }
@@ -52,7 +50,6 @@ export function createEditorExtension(
     markFragmentBadges,
     markFragmentRects,
     markedBlocks,
-    markedBlockKeys,
     fonts,
     writable,
   }: EditorDeps,
@@ -88,7 +85,6 @@ export function createEditorExtension(
         markFragmentBadges,
         markFragmentRects,
         markedBlocks,
-        markedBlockKeys,
         resolved,
         fonts,
       }),
