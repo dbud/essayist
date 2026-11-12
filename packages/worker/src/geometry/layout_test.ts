@@ -16,13 +16,17 @@ const measured = (
     marksByBlock.getOrInsert(blockKey, []).push({ id, top, offset });
   }
   return {
-    blocks: blocks.map(([key, top, height, margin]) => ({
-      key,
-      top,
-      height,
-      margin,
-      marks: marksByBlock.get(key) ?? [],
-    })),
+    blocks: blocks
+      .map(([key, top, height, margin]) => ({
+        key,
+        top,
+        height,
+        margin,
+        marks: (marksByBlock.get(key) ?? []).toSorted(
+          (a, b) => a.top - b.top || a.offset - b.offset || (a.id < b.id ? -1 : 1),
+        ),
+      }))
+      .toSorted((a, b) => a.top - b.top),
     sidenotes: sidenotes.map(([id, height]) => ({ id, height })),
   };
 };

@@ -3,7 +3,7 @@ import { $isMarkNode } from "@lexical/mark";
 import type { LexicalEditor, NodeKey } from "lexical";
 import { $getNodeByKey, $getRoot } from "lexical";
 
-import type { MarkedBlock, MeasuredBlock, MeasuredMark } from "#/geometry/layout.ts";
+import type { MeasuredBlock } from "#/geometry/layout.ts";
 import { editorStateToMarkdown } from "#/utils/markdown.ts";
 
 import { $badgeBlockOf, $marginBlockOf } from "./blocks.ts";
@@ -86,8 +86,9 @@ export function collectFragments(
 
 /**
  * The measured blocks (inline margins included), each carrying the marks paired to it: per mark,
- * the block of its top-most line. The mark rows supply each mark's document offset. Block records
- * dedup per key; a mark with no resolvable block stays block-free.
+ * the block of its top-most line; the mark rows supply the offset. Blocks order by ascending top,
+ * each block's marks by top with the document offset, then id. Block records dedup per key; a mark
+ * with no resolvable block stays block-free.
  */
 export function collectBlocks(
   editor: LexicalEditor,
@@ -95,7 +96,7 @@ export function collectBlocks(
   anchors: ReadonlyArray<ZeroLengthMarkAnchor>,
   marks: ReadonlyArray<Mark>,
 ): MeasuredBlock[] {
-  const blocksByKey = new Map<NodeKey, MarkedBlock>();
+  const blocksByKey = new Map<NodeKey, Omit<MeasuredBlock, "marks">>();
   // mark id -> top-most block, with its line top and the mark's offset.
   const pairs = new Map<string, { top: number; offset: number; blockKey: NodeKey }>();
   const offsets = new Map(marks.map(({ id, offset }) => [id, offset]));
@@ -123,12 +124,16 @@ export function collectBlocks(
     for (const { ids, key, top } of fragments) place(ids, key, top);
     for (const { id, key, top } of anchors) place([id], key, top);
   });
-  const marksByBlock = new Map<NodeKey, MeasuredMark[]>();
+  const marksByBlock = new Map<NodeKey, { id: string; top: number; offset: number }[]>();
   for (const [id, { top, offset, blockKey }] of pairs) {
     marksByBlock.getOrInsert(blockKey, []).push({ id, top, offset });
   }
-  return [...blocksByKey.values()].map((block) => ({
-    ...block,
-    marks: marksByBlock.get(block.key) ?? [],
-  }));
+  return [...blocksByKey.values()]
+    .toSorted((a, b) => a.top - b.top)
+    .map((block) => ({
+      ...block,
+      marks: (marksByBlock.get(block.key) ?? [])
+        .toSorted((a, b) => a.top - b.top || a.offset - b.offset || (a.id < b.id ? -1 : 1))
+        .map(({ id, top }) => ({ id, top })),
+    }));
 }

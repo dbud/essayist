@@ -1,31 +1,29 @@
 const SIDENOTE_GAP = 8;
 
-export interface MarkedBlock {
+export interface MeasuredBlock {
   readonly key: string;
   readonly top: number;
   readonly height: number;
   readonly margin: number;
+  readonly marks: readonly MeasuredMark[]; // ordered
 }
 
 export interface MeasuredMark {
   readonly id: string;
   readonly top: number;
-  readonly offset: number; // document offset, the mark-order tiebreak
-}
-
-export interface MeasuredBlock extends MarkedBlock {
-  readonly marks: readonly MeasuredMark[]; // marks paired to this block by the measure pass
 }
 
 export interface MeasuredMarks {
-  readonly blocks: readonly MeasuredBlock[];
+  readonly blocks: readonly MeasuredBlock[]; // ordered
+}
+
+export interface MeasuredSidenote {
+  readonly id: string;
+  readonly height: number;
 }
 
 export interface MeasuredSidenotes {
-  readonly sidenotes: readonly {
-    readonly id: string;
-    readonly height: number;
-  }[];
+  readonly sidenotes: readonly MeasuredSidenote[];
 }
 
 export interface Measured extends MeasuredMarks, MeasuredSidenotes {}
@@ -43,9 +41,9 @@ interface Sidenote {
 interface Block {
   readonly key: string;
   top: number; // measured, then normalized, then laid out
-  readonly height: number; // measured
+  readonly height: number;
   margin: number; // measured inline margin, then the derived value
-  readonly marks: readonly Mark[]; // document order
+  readonly marks: readonly Mark[];
 }
 
 export class Layout {
@@ -56,15 +54,10 @@ export class Layout {
     this.#sidenotes = new Map<string, Sidenote>(
       measured.sidenotes.map(({ id, height }) => [id, { height, top: 0 }]),
     );
-    // The layout's ordering happens here once: blocks ascend by top (the normalize and reflow walks
-    // rely on it), each block's marks by top with the document offset, then id, breaking ties. Mark
-    // records are copied because normalize mutates their tops.
-    const blocks = measured.blocks.toSorted((a, b) => a.top - b.top);
-    this.#blocks = blocks.map((block) => ({
+    // Mark records are copied because normalize mutates their tops.
+    this.#blocks = measured.blocks.map((block) => ({
       ...block,
-      marks: block.marks
-        .toSorted((a, b) => a.top - b.top || a.offset - b.offset || (a.id < b.id ? -1 : 1))
-        .map(({ id, top }) => ({ id, top })),
+      marks: block.marks.map(({ id, top }) => ({ id, top })),
     }));
   }
 
