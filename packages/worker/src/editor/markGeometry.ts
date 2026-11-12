@@ -24,8 +24,10 @@ export interface ZeroLengthMarkAnchor {
   top: number;
 }
 
-const inlineSpacer = (el: HTMLElement): number =>
-  Number.parseFloat(el.style.getPropertyValue("--block-spacer")) || 0;
+const beforeSpacer = (el: HTMLElement): number =>
+  Number.parseFloat(el.style.getPropertyValue("--block-spacer-before")) || 0;
+const afterSpacer = (el: HTMLElement): number =>
+  Number.parseFloat(el.style.getPropertyValue("--block-spacer-after")) || 0;
 
 // Document-order comparator for fragments, by their elements' DOM position.
 function byDocumentPosition(a: MarkFragment, b: MarkFragment): number {
@@ -86,7 +88,7 @@ export function collectFragments(
 }
 
 /**
- * The measured blocks (inline margins included), each carrying the marks paired to it: per mark,
+ * The measured blocks (spacer heights included), each carrying the marks paired to it: per mark,
  * the block of its top-most line; the mark rows supply the offset. Blocks order by ascending top,
  * each block's marks by top with the document offset, then id. Block records dedup per key; a mark
  * with no resolvable block stays block-free.
@@ -112,7 +114,8 @@ export function collectBlocks(
           key: blockKey,
           top: el.offsetTop,
           height: el.offsetHeight,
-          margin: inlineSpacer(el),
+          before: beforeSpacer(el),
+          after: afterSpacer(el),
         });
       }
       for (const id of ids) {

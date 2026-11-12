@@ -149,12 +149,19 @@
   }
 }
 
-/* The block spacer: space above the block's text, set per block as --block-spacer. */
+/* The block spacers: in-flow space set per block as --block-spacer-before/after. */
 .editor-input :is(p, h1, h2, h3, h4, h5, h6, blockquote, pre, ul, ol, li)::before {
   content: "";
   display: block;
-  height: var(--block-spacer, 0px);
-  /* background: crimson; spacer visualization -- test */
+  height: var(--block-spacer-before, 0px);
+  background: crimson; /* spacer visualization -- test */
+}
+
+.editor-input :is(p, h1, h2, h3, h4, h5, h6, blockquote, pre, ul, ol, li)::after {
+  content: "";
+  display: block;
+  height: var(--block-spacer-after, 0px);
+  background: royalblue; /* spacer visualization -- test */
 }
 
 @utility code-wrap {

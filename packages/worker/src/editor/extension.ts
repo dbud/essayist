@@ -10,7 +10,7 @@ import type { ReadonlySignal, Signal } from "@preact/signals";
 import { configExtension, defineExtension, type NodeKey } from "lexical";
 
 import { PartialUpdateExtension } from "#/editor/partialUpdateExtension.ts";
-import type { MeasuredMarks } from "#/geometry/layout.ts";
+import type { MeasuredMarks, Spacer } from "#/geometry/layout.ts";
 import type { MarkFragmentBadge, MarkFragmentRect, MarkOrdinals } from "#/models/sidenotes.ts";
 import type { EditorSelection } from "#/signals/editorSelection.ts";
 
@@ -27,7 +27,7 @@ interface EditorDeps {
   markdown: Signal<string>;
   selection: EditorSelection;
   measuredMarks: Signal<MeasuredMarks>;
-  margins: ReadonlySignal<ReadonlyMap<NodeKey, number>>;
+  margins: ReadonlySignal<ReadonlyMap<NodeKey, Spacer>>;
   markOrdinals: ReadonlySignal<MarkOrdinals>;
   markFragmentBadges: Signal<MarkFragmentBadge[]>;
   markFragmentRects: Signal<MarkFragmentRect[]>;

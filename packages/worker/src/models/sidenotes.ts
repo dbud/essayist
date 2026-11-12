@@ -8,6 +8,7 @@ import {
   type Measured,
   type MeasuredMarks,
   type MeasuredSidenotes,
+  type Spacer,
 } from "#/geometry/layout.ts";
 import type { Categories } from "#/models/categories.ts";
 import { FileKey } from "#/models/fileSelection.ts";
@@ -119,7 +120,7 @@ export const SidenotesModel = createModel((key: FileKey, deps: SidenotesDeps) =>
 
   const layout = computed((): Layout => new Layout(measured.value));
   const sidenoteTops = deepComputed((): ReadonlyMap<string, number> => layout.value.sidenoteTops);
-  const margins = deepComputed((): ReadonlyMap<NodeKey, number> => layout.value.margins);
+  const margins = deepComputed((): ReadonlyMap<NodeKey, Spacer> => layout.value.margins);
 
   const entries = deepComputed((): SidenoteEntry[] => {
     const byId = new Map(resolved.value.map((mark) => [mark.id, mark]));

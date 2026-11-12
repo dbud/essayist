@@ -17,11 +17,12 @@ const measured = (
   }
   return {
     blocks: blocks
-      .map(([key, top, height, margin]) => ({
+      .map(([key, top, height, before]) => ({
         key,
         top,
         height,
-        margin,
+        before,
+        after: 0,
         marks: (marksByBlock.get(key) ?? []).toSorted(
           (a, b) => a.top - b.top || a.offset - b.offset || (a.id < b.id ? -1 : 1),
         ),
@@ -54,7 +55,7 @@ test("reflow -- pushes blocks so first marks meet their stacked notes", () => {
       { m1: "p1", m2: "p2", m3: "p3" },
     ),
   );
-  assertEquals(out.margins, new Map([["p2", 36]]));
+  assertEquals(out.margins, new Map([["p2", { before: 36, after: 0 }]]));
   assertEquals(
     out.sidenoteTops,
     new Map([
@@ -114,8 +115,8 @@ test("reflow -- inherited ceilings chain pushes to later blocks", () => {
   assertEquals(
     out.margins,
     new Map([
-      ["p2", 13],
-      ["p3", 3],
+      ["p2", { before: 13, after: 0 }],
+      ["p3", { before: 3, after: 0 }],
     ]),
   );
   assertEquals(
@@ -204,13 +205,13 @@ test("reflow -- reproduces its output from the settled state", () => {
       { m1: "p1", m2: "p2", m3: "p3" },
     ),
   );
-  // The applier wrote p2's margin: the next measurement sees the shifted tops and the written
-  // margin as its input.
+  // The applier wrote p2's spacer: the next measurement sees the grown block (the spacer is in-flow
+  // above its text) and the written spacer as its input; p3's top moved with it.
   const settled = reflowed(
     measured(
       [
         ["p1", 0, 20, 0],
-        ["p2", 68, 20, 36],
+        ["p2", 32, 56, 36],
         ["p3", 436, 20, 0],
       ],
       [
@@ -251,7 +252,7 @@ test("reflow -- unsorted blocks and marks order regardless of input order", () =
       { m1: "p1", m2: "p2", m3: "p3" },
     ),
   );
-  assertEquals(out.margins, new Map([["p2", 36]]));
+  assertEquals(out.margins, new Map([["p2", { before: 36, after: 0 }]]));
   assertEquals(
     out.sidenoteTops,
     new Map([

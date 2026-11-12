@@ -4,8 +4,14 @@ export interface MeasuredBlock {
   readonly key: string;
   readonly top: number;
   readonly height: number;
-  readonly margin: number;
+  readonly before: number;
+  readonly after: number;
   readonly marks: readonly MeasuredMark[]; // ordered
+}
+
+export interface Spacer {
+  readonly before: number; // space above the block's text (the block's push)
+  readonly after: number; // space below the block's text (hosting an overflowing stack)
 }
 
 export interface MeasuredMark {
@@ -42,7 +48,8 @@ interface Block {
   readonly key: string;
   top: number; // measured, then normalized, then laid out
   readonly height: number;
-  margin: number; // measured inline margin, then the derived value
+  before: number; // measured spacer, then the derived push
+  after: number; // measured spacer, then the derived value
   readonly marks: readonly Mark[];
 }
 
@@ -64,12 +71,13 @@ export class Layout {
   }
 
   #normalize(): void {
-    let offset = 0;
+    let offset = 0; // the spacer height of all blocks above
     for (const block of this.#blocks) {
-      offset += block.margin;
       block.top -= offset;
-      block.margin = 0;
-      for (const mark of block.marks) mark.top -= offset;
+      for (const mark of block.marks) mark.top -= offset + block.before;
+      offset += block.before + block.after;
+      block.before = 0;
+      block.after = 0;
     }
   }
 
@@ -79,8 +87,8 @@ export class Layout {
     for (const block of this.#blocks) {
       const first = block.marks[0];
       if (first !== undefined) {
-        block.margin = Math.max(0, cursor + SIDENOTE_GAP - (first.top + offset));
-        offset += block.margin;
+        block.before = Math.max(0, cursor + SIDENOTE_GAP - (first.top + offset));
+        offset += block.before;
       }
       for (const mark of block.marks) {
         const sidenote = this.#sidenotes.get(mark.id);
@@ -92,10 +100,10 @@ export class Layout {
     }
   }
 
-  get margins(): ReadonlyMap<string, number> {
-    const margins = new Map<string, number>();
-    for (const { key, margin } of this.#blocks) {
-      if (margin !== 0) margins.set(key, margin);
+  get margins(): ReadonlyMap<string, Spacer> {
+    const margins = new Map<string, Spacer>();
+    for (const { key, before, after } of this.#blocks) {
+      if (before !== 0 || after !== 0) margins.set(key, { before, after });
     }
     return margins;
   }
