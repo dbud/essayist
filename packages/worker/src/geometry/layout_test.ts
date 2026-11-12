@@ -4,7 +4,7 @@ import { test } from "vitest";
 import { Layout, type Measured } from "./layout.ts";
 
 const measured = (
-  blocks: [string, number, number, number][],
+  blocks: [string, number, number, number, number?][],
   marks: [string, number, number][],
   sidenotes: [string, number][],
   blocksByMarkId: Record<string, string>,
@@ -17,12 +17,12 @@ const measured = (
   }
   return {
     blocks: blocks
-      .map(([key, top, height, before]) => ({
+      .map(([key, top, height, before, after = 0]) => ({
         key,
         top,
         height,
         before,
-        after: 0,
+        after,
         marks: (marksByBlock.get(key) ?? []).toSorted(
           (a, b) => a.top - b.top || a.offset - b.offset || (a.id < b.id ? -1 : 1),
         ),
@@ -55,7 +55,7 @@ test("reflow -- pushes blocks so first marks meet their stacked notes", () => {
       { m1: "p1", m2: "p2", m3: "p3" },
     ),
   );
-  assertEquals(out.margins, new Map([["p2", { before: 36, after: 0 }]]));
+  assertEquals(out.margins, new Map([["p1", { before: 0, after: 36 }]]));
   assertEquals(
     out.sidenoteTops,
     new Map([
@@ -115,8 +115,8 @@ test("reflow -- inherited ceilings chain pushes to later blocks", () => {
   assertEquals(
     out.margins,
     new Map([
-      ["p2", { before: 13, after: 0 }],
-      ["p3", { before: 3, after: 0 }],
+      ["p1", { before: 0, after: 13 }],
+      ["p2", { before: 0, after: 3 }],
     ]),
   );
   assertEquals(
@@ -205,13 +205,13 @@ test("reflow -- reproduces its output from the settled state", () => {
       { m1: "p1", m2: "p2", m3: "p3" },
     ),
   );
-  // The applier wrote p2's spacer: the next measurement sees the grown block (the spacer is in-flow
-  // above its text) and the written spacer as its input; p3's top moved with it.
+  // The applier wrote p1's tail spacer: the next measurement sees p1 grown and p2/p3 pushed with
+  // it, and the written spacer as its input.
   const settled = reflowed(
     measured(
       [
-        ["p1", 0, 20, 0],
-        ["p2", 32, 56, 36],
+        ["p1", 0, 56, 0, 36],
+        ["p2", 68, 20, 0],
         ["p3", 436, 20, 0],
       ],
       [
@@ -252,7 +252,7 @@ test("reflow -- unsorted blocks and marks order regardless of input order", () =
       { m1: "p1", m2: "p2", m3: "p3" },
     ),
   );
-  assertEquals(out.margins, new Map([["p2", { before: 36, after: 0 }]]));
+  assertEquals(out.margins, new Map([["p1", { before: 0, after: 36 }]]));
   assertEquals(
     out.sidenoteTops,
     new Map([

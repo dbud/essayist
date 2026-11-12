@@ -10,8 +10,8 @@ export interface MeasuredBlock {
 }
 
 export interface Spacer {
-  readonly before: number; // space above the block's text (the block's push)
-  readonly after: number; // space below the block's text (hosting an overflowing stack)
+  readonly before: number; // space above the block's text
+  readonly after: number; // space below the block's text
 }
 
 export interface MeasuredMark {
@@ -49,7 +49,7 @@ interface Block {
   top: number; // measured, then normalized, then laid out
   readonly height: number;
   before: number; // measured spacer, then the derived push
-  after: number; // measured spacer, then the derived value
+  after: number; // measured spacer, cleared by normalize
   readonly marks: readonly Mark[];
 }
 
@@ -84,11 +84,20 @@ export class Layout {
   #reflow(): void {
     let cursor = Number.NEGATIVE_INFINITY;
     let offset = 0;
+    let previous: Block | undefined = undefined;
     for (const block of this.#blocks) {
       const first = block.marks[0];
-      if (first !== undefined) {
-        block.before = Math.max(0, cursor + SIDENOTE_GAP - (first.top + offset));
-        offset += block.before;
+      const needed =
+        first === undefined ? 0 : Math.max(0, cursor + SIDENOTE_GAP - (first.top + offset));
+      // The push goes to the end of the block above: same effect as a spacer over this block, and
+      // the void stays with the discussion that caused it. The first block has no block above, so
+      // the push goes above its own text.
+      if (previous === undefined) {
+        block.before = needed;
+        offset += needed;
+      } else {
+        previous.after = needed;
+        offset += needed;
       }
       for (const mark of block.marks) {
         const sidenote = this.#sidenotes.get(mark.id);
@@ -97,6 +106,7 @@ export class Layout {
         sidenote.top = top;
         cursor = top + sidenote.height;
       }
+      previous = block;
     }
   }
 
