@@ -7,17 +7,11 @@ import { ListExtension } from "@lexical/list";
 import { MarkExtension } from "@lexical/mark";
 import { RichTextExtension } from "@lexical/rich-text";
 import type { ReadonlySignal, Signal } from "@preact/signals";
-import { configExtension, defineExtension, type NodeKey } from "lexical";
+import { configExtension, defineExtension } from "lexical";
 
 import { PartialUpdateExtension } from "#/editor/partialUpdateExtension.ts";
-import type { MarkedBlock } from "#/geometry/layout.ts";
-import type {
-  MarkAnchorTop,
-  MarkFragmentBadge,
-  MarkFragmentRect,
-  MarkFragmentTop,
-  MarkOrdinals,
-} from "#/models/sidenotes.ts";
+import type { MeasuredMarks } from "#/geometry/layout.ts";
+import type { MarkFragmentBadge, MarkFragmentRect, MarkOrdinals } from "#/models/sidenotes.ts";
 import type { EditorSelection } from "#/signals/editorSelection.ts";
 
 import { CaretExtension } from "./caretExtension.ts";
@@ -31,13 +25,10 @@ interface EditorDeps {
   resolved: ReadonlySignal<readonly Mark[]>;
   markdown: Signal<string>;
   selection: EditorSelection;
-  markFragmentTops: Signal<ReadonlyArray<MarkFragmentTop>>;
-  markAnchorTops: Signal<ReadonlyArray<MarkAnchorTop>>;
+  measuredMarks: Signal<MeasuredMarks>;
   markOrdinals: ReadonlySignal<MarkOrdinals>;
   markFragmentBadges: Signal<MarkFragmentBadge[]>;
   markFragmentRects: Signal<MarkFragmentRect[]>;
-  markedBlocks: Signal<MarkedBlock[]>;
-  blocksByMarkId: Signal<ReadonlyMap<string, NodeKey>>;
   fonts: ReadonlyArray<Signal<string>>;
   writable: boolean;
 }
@@ -48,13 +39,10 @@ export function createEditorExtension(
     resolved,
     markdown,
     selection,
-    markFragmentTops,
-    markAnchorTops,
+    measuredMarks,
     markOrdinals,
     markFragmentBadges,
     markFragmentRects,
-    markedBlocks,
-    blocksByMarkId,
     fonts,
     writable,
   }: EditorDeps,
@@ -85,13 +73,10 @@ export function createEditorExtension(
         markdown,
       }),
       configExtension(SidenoteExtension, {
-        markFragmentTops,
-        markAnchorTops,
+        measuredMarks,
         markOrdinals,
         markFragmentBadges,
         markFragmentRects,
-        markedBlocks,
-        blocksByMarkId,
         resolved,
         fonts,
       }),

@@ -4,8 +4,12 @@ import { sortBy } from "@std/collections";
 import type { NodeKey } from "lexical";
 
 import { FALLBACK_COLOR, colorForMark } from "#/editor/markColors.ts";
-import { computeMarkTops } from "#/editor/markGeometry.ts";
-import { Layout, type Measured, type MarkedBlock } from "#/geometry/layout.ts";
+import {
+  Layout,
+  type Measured,
+  type MeasuredMarks,
+  type MeasuredSidenotes,
+} from "#/geometry/layout.ts";
 import type { Categories } from "#/models/categories.ts";
 import { FileKey } from "#/models/fileSelection.ts";
 import type { ResolvedMarks } from "#/models/resolvedMarks.ts";
@@ -80,20 +84,21 @@ interface SidenotesDeps {
 }
 
 /**
- * Sidenote presentation for a file. The editor extension writes the measured tops, block geometry,
- * badges, and rects; the Sidenotes column writes the heights; everything else derives here. Per
- * (workspace, path, version) so each file and view keeps its own measured state. `entries` only
+ * Sidenote presentation for a file. The editor extension writes the measured mark data, the
+ * badges, and the rects; the Sidenotes column writes the heights; everything else derives here.
+ * Per (workspace, path, version) so each file and view keeps its own measured state. `entries` only
  * includes measured marks.
  */
 export const SidenotesModel = createModel((key: FileKey, deps: SidenotesDeps) => {
   const { resolvedMarks, categories, scrollTop, viewportHeight } = deps;
-  const markFragmentTops = signal<ReadonlyArray<MarkFragmentTop>>([]);
-  const markAnchorTops = signal<ReadonlyArray<MarkAnchorTop>>([]);
+  const measuredMarks = signal<MeasuredMarks>({
+    blocks: [],
+    blocksByMarkId: new Map(),
+    marks: [],
+  });
   const heights = signal<SidenoteHeights>(new Map());
   const markFragmentBadges = signal<MarkFragmentBadge[]>([]);
   const markFragmentRects = signal<MarkFragmentRect[]>([]);
-  const markedBlocks = signal<MarkedBlock[]>([]);
-  const blocksByMarkId = signal<ReadonlyMap<string, NodeKey>>(new Map());
 
   const { resolved } = resolvedMarks;
   const { markIds: activeMarkIds } = getEditorSelection(key);
@@ -109,26 +114,22 @@ export const SidenotesModel = createModel((key: FileKey, deps: SidenotesDeps) =>
     () => new Map(resolved.value.map((m) => [m.id, colorForMark(m, categories)])),
   );
 
-  const markTops = deepComputed(() =>
-    computeMarkTops(markFragmentTops.value, markAnchorTops.value),
+  const markTops = deepComputed(
+    (): SidenotePositions => new Map(measuredMarks.value.marks.map(({ id, top }) => [id, top])),
   );
 
-  const measured = deepComputed((): Measured => {
-    const marks = resolved.value.flatMap(({ id, offset }) => {
-      const top = markTops.value.get(id);
-      if (top === undefined) return [];
-      return [{ id, top, offset }];
-    });
-    return {
-      blocks: markedBlocks.value,
-      blocksByMarkId: blocksByMarkId.value,
-      marks,
-      sidenotes: resolved.value.map(({ id }) => ({
-        id,
-        height: heights.value.get(id) ?? 0,
-      })),
-    };
-  });
+  // Unmeasured cards read 0, so a mark keeps its stacking slot until its height lands.
+  const measuredSidenotes = computed((): MeasuredSidenotes => ({
+    sidenotes: resolved.value.map(({ id }) => ({
+      id,
+      height: heights.value.get(id) ?? 0,
+    })),
+  }));
+
+  const measured = deepComputed((): Measured => ({
+    ...measuredMarks.value,
+    ...measuredSidenotes.value,
+  }));
 
   const reflowed = computed((): Layout => new Layout(measured.value).normalize().reflow());
   const layout = deepComputed((): ReadonlyMap<string, number> => reflowed.value.sidenoteTops);
@@ -186,10 +187,7 @@ export const SidenotesModel = createModel((key: FileKey, deps: SidenotesDeps) =>
   const bottomGhost = computed(() => edgeGhost("bottom"));
 
   return {
-    markFragmentTops,
-    markAnchorTops,
-    markedBlocks,
-    blocksByMarkId,
+    measuredMarks,
     heights,
     markOrdinals,
     colorById,

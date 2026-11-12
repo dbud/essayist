@@ -7,7 +7,7 @@ export interface MarkedBlock {
   readonly margin: number;
 }
 
-export interface Measured {
+export interface MeasuredMarks {
   readonly blocks: readonly MarkedBlock[];
   /** mark id -> the key of the containing block. */
   readonly blocksByMarkId: ReadonlyMap<string, string>;
@@ -16,11 +16,16 @@ export interface Measured {
     readonly top: number;
     readonly offset: number; // document offset, the mark-order tiebreak
   }[];
+}
+
+export interface MeasuredSidenotes {
   readonly sidenotes: readonly {
     readonly id: string;
     readonly height: number;
   }[];
 }
+
+export interface Measured extends MeasuredMarks, MeasuredSidenotes {}
 
 interface Mark {
   readonly id: string;

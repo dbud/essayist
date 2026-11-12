@@ -2,22 +2,21 @@ import type { Mark } from "@essayist/core";
 import { defineExtension } from "@lexical/extension";
 import { MarkNode } from "@lexical/mark";
 import type { ReadonlySignal, Signal } from "@preact/signals";
-import type { LexicalEditor, NodeKey } from "lexical";
+import type { LexicalEditor } from "lexical";
 import { mergeRegister } from "lexical";
 
-import type { MarkedBlock } from "#/geometry/layout.ts";
-import type {
-  MarkAnchorTop,
-  MarkFragmentBadge,
-  MarkFragmentRect,
-  MarkFragmentTop,
-  MarkOrdinals,
-} from "#/models/sidenotes.ts";
+import type { MeasuredMarks } from "#/geometry/layout.ts";
+import type { MarkFragmentBadge, MarkOrdinals, MarkFragmentRect } from "#/models/sidenotes.ts";
 
 import { getMeasureContext } from "./domMeasure.ts";
 import { computeMarkFragmentBadges } from "./markFragmentBadges.ts";
 import { computeMarkFragmentRects } from "./markFragmentRects.ts";
-import { collectAnchors, collectBlocks, collectFragments } from "./markGeometry.ts";
+import {
+  collectAnchors,
+  collectBlocks,
+  collectFragments,
+  computeMarkTops,
+} from "./markGeometry.ts";
 import {
   createRafScheduler,
   registerFontLoadObserver,
@@ -28,29 +27,25 @@ import { setIfChanged } from "./setIfChanged.ts";
 import { trackNodeKeys } from "./trackNodeKeys.ts";
 
 interface SidenoteConfig {
-  markFragmentTops: Signal<ReadonlyArray<MarkFragmentTop>>;
-  markAnchorTops: Signal<ReadonlyArray<MarkAnchorTop>>;
+  measuredMarks: Signal<MeasuredMarks>;
   markOrdinals: ReadonlySignal<MarkOrdinals>;
   markFragmentBadges: Signal<MarkFragmentBadge[]>;
   markFragmentRects: Signal<MarkFragmentRect[]>;
-  markedBlocks: Signal<MarkedBlock[]>;
-  blocksByMarkId: Signal<ReadonlyMap<string, NodeKey>>;
   resolved: ReadonlySignal<readonly Mark[]>;
   fonts: ReadonlyArray<Signal<string>>;
 }
+
+const EMPTY_MEASURED_MARKS: MeasuredMarks = { blocks: [], blocksByMarkId: new Map(), marks: [] };
 
 export const SidenoteExtension = defineExtension({
   name: "sidenote",
   afterRegistration: (
     editor: LexicalEditor,
     {
-      markFragmentTops,
-      markAnchorTops,
+      measuredMarks,
       markOrdinals,
       markFragmentBadges,
       markFragmentRects,
-      markedBlocks,
-      blocksByMarkId,
       resolved,
       fonts,
     }: SidenoteConfig,
@@ -60,12 +55,9 @@ export const SidenoteExtension = defineExtension({
       const ctx = getMeasureContext(editor.getRootElement());
       // A pass that cannot measure retracts every measured publication.
       if (ctx === null) {
-        setIfChanged(markFragmentTops, []);
-        setIfChanged(markAnchorTops, []);
+        setIfChanged(measuredMarks, EMPTY_MEASURED_MARKS);
         setIfChanged(markFragmentBadges, []);
         setIfChanged(markFragmentRects, []);
-        setIfChanged(markedBlocks, []);
-        setIfChanged(blocksByMarkId, new Map());
         return;
       }
 
@@ -75,25 +67,22 @@ export const SidenoteExtension = defineExtension({
         marks.filter((m) => m.length === 0),
       );
       const fragments = collectFragments(editor, nodeKeys);
-
-      setIfChanged(
-        markFragmentTops,
-        fragments.map(({ ids, top }) => ({ ids, top })),
-      );
-      setIfChanged(
-        markAnchorTops,
-        anchors.map(({ id, top }) => ({ id, top })),
-      );
+      const tops = computeMarkTops(fragments, anchors);
+      const { blocks, blocksByMarkId } = collectBlocks(editor, fragments, anchors);
+      setIfChanged(measuredMarks, {
+        blocks,
+        blocksByMarkId,
+        marks: marks.flatMap(({ id, offset }) => {
+          const top = tops.get(id);
+          return top === undefined ? [] : [{ id, top, offset }];
+        }),
+      });
 
       setIfChanged(
         markFragmentBadges,
         computeMarkFragmentBadges(fragments, markOrdinals.value, ctx),
       );
       setIfChanged(markFragmentRects, computeMarkFragmentRects(fragments, ctx));
-
-      const collected = collectBlocks(editor, fragments, anchors);
-      setIfChanged(markedBlocks, collected.blocks);
-      setIfChanged(blocksByMarkId, collected.blocksByMarkId);
     };
 
     const [schedule, disposeRafScheduler] = createRafScheduler(measure);
