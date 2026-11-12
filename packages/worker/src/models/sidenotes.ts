@@ -17,7 +17,7 @@ import { getEditorSelection } from "#/signals/editorSelection.ts";
 
 import { deepComputed } from "./utils/deepComputed.ts";
 
-// mark id -> the line top where the mark anchors. Layout derives the stacked sidenote tops from it.
+// mark id -> the line top where the mark anchors.
 export type SidenotePositions = Map<string, number>;
 // mark id -> rendered sidenote height (px).
 export type SidenoteHeights = Map<string, number>;
@@ -114,10 +114,6 @@ export const SidenotesModel = createModel((key: FileKey, deps: SidenotesDeps) =>
     () => new Map(resolved.value.map((m) => [m.id, colorForMark(m, categories)])),
   );
 
-  const markTops = deepComputed(
-    (): SidenotePositions => new Map(measuredMarks.value.marks.map(({ id, top }) => [id, top])),
-  );
-
   // Unmeasured cards read 0, so a mark keeps its stacking slot until its height lands.
   const measuredSidenotes = computed((): MeasuredSidenotes => ({
     sidenotes: resolved.value.map(({ id }) => ({
@@ -138,7 +134,7 @@ export const SidenotesModel = createModel((key: FileKey, deps: SidenotesDeps) =>
   const entries = deepComputed((): SidenoteEntry[] => {
     const out: SidenoteEntry[] = [];
     for (const mark of resolved.value) {
-      const markTop = markTops.value.get(mark.id);
+      const markTop = measuredMarks.value.marks.find((m) => m.id === mark.id)?.top;
       if (markTop === undefined) continue; // not yet measured
       out.push({
         mark,
