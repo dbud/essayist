@@ -149,6 +149,13 @@
   }
 }
 
+/* The margin applier owns block spacing in the editor: prose margin-top collapses to 0 so the
+   inline margin-top it writes is the only top margin and reads back exactly. Headings keep their
+   standoff in the read view only. */
+.editor-input :is(p, h1, h2, h3, h4, h5, h6, blockquote, pre, ul, ol, li) {
+  margin-top: 0;
+}
+
 @utility code-wrap {
   & pre {
     white-space: pre-wrap;
