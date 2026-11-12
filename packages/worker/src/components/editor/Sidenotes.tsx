@@ -2,6 +2,7 @@ import GhostSidenote from "#/components/editor/GhostSidenote.tsx";
 import Sidenote from "#/components/editor/Sidenote.tsx";
 import { useElementHeights } from "#/hooks/useElementHeights.ts";
 import type { ScrollContainerRef } from "#/hooks/useScrollViewport.ts";
+import { usePreferences } from "#/models/preferences.ts";
 import type { SidenoteView } from "#/models/sidenotes.ts";
 import { useEditorModels } from "#/pages/editor/models.ts";
 import { activeEditor } from "#/signals/activeEditor.ts";
@@ -14,17 +15,18 @@ interface SidenotesProps {
 
 export default function Sidenotes({ scrollContainerRef }: SidenotesProps) {
   const { sidenotes } = useEditorModels();
+  const { viewerFont } = usePreferences();
   const editor = activeEditor.value;
   const { scrollTop, viewportHeight } = sidenotes;
   const { heights, entries, viewportLayout, topGhost, bottomGhost } = sidenotes.current.value;
-  // Measure rendered sidenote heights for stacking. Re-measure when the entries change and on
-  // marks-column width changes. `entries` is independent of `heights`, so this can't cycle with its
-  // own output. Sidenotes stay visibility:hidden until measured so the unstacked first paint never
-  // shows overlap. Ghosts omit data-thread-id so they aren't measured.
+  // Measure rendered sidenote heights for stacking. Re-measure when the entries or the font change
+  // and on marks-column width changes. `entries` is independent of `heights`, so this can't cycle
+  // with its own output. Sidenotes stay visibility:hidden until measured so the unstacked first
+  // paint never shows overlap. Ghosts omit data-thread-id so they aren't measured.
   const innerRef = useElementHeights<HTMLDivElement>(heights, {
     selector: "[data-thread-id]",
     key: "threadId",
-    deps: [entries.value],
+    deps: [entries.value, viewerFont.value],
   });
 
   // Sidenotes stay invisible until measured, and whenever they extend past a viewport edge, where
