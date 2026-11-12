@@ -7,13 +7,14 @@ import { ListExtension } from "@lexical/list";
 import { MarkExtension } from "@lexical/mark";
 import { RichTextExtension } from "@lexical/rich-text";
 import type { ReadonlySignal, Signal } from "@preact/signals";
-import { configExtension, defineExtension } from "lexical";
+import { configExtension, defineExtension, type NodeKey } from "lexical";
 
 import { PartialUpdateExtension } from "#/editor/partialUpdateExtension.ts";
 import type { MeasuredMarks } from "#/geometry/layout.ts";
 import type { MarkFragmentBadge, MarkFragmentRect, MarkOrdinals } from "#/models/sidenotes.ts";
 import type { EditorSelection } from "#/signals/editorSelection.ts";
 
+import { ApplyBlockMarginExtension } from "./applyBlockMarginExtension.ts";
 import { CaretExtension } from "./caretExtension.ts";
 import { MarksExtension } from "./markExtension.ts";
 import { MarksAtCursorExtension } from "./marksAtCursorExtension.ts";
@@ -26,6 +27,7 @@ interface EditorDeps {
   markdown: Signal<string>;
   selection: EditorSelection;
   measuredMarks: Signal<MeasuredMarks>;
+  margins: ReadonlySignal<ReadonlyMap<NodeKey, number>>;
   markOrdinals: ReadonlySignal<MarkOrdinals>;
   markFragmentBadges: Signal<MarkFragmentBadge[]>;
   markFragmentRects: Signal<MarkFragmentRect[]>;
@@ -40,6 +42,7 @@ export function createEditorExtension(
     markdown,
     selection,
     measuredMarks,
+    margins,
     markOrdinals,
     markFragmentBadges,
     markFragmentRects,
@@ -80,6 +83,7 @@ export function createEditorExtension(
         resolved,
         fonts,
       }),
+      configExtension(ApplyBlockMarginExtension, { margins }),
       configExtension(ToolbarStateExtension, { selection }),
       configExtension(MarksAtCursorExtension, { selection }),
       configExtension(CaretExtension, { selection }),

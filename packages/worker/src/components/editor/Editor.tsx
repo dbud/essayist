@@ -39,7 +39,7 @@ export default function Editor({
   const markdown = file.markdown;
   const selection = getEditorSelection({ wsId, path, versionId });
   const resolved = resolvedMarks.resolved;
-  const { measuredMarks, markOrdinals, markFragmentBadges, markFragmentRects } =
+  const { measuredMarks, margins, markOrdinals, markFragmentBadges, markFragmentRects } =
     sidenotes.current.value;
 
   const extension = useMemo(
@@ -49,6 +49,7 @@ export default function Editor({
         markdown,
         selection,
         measuredMarks,
+        margins,
         markFragmentBadges,
         markFragmentRects,
         markOrdinals,
@@ -61,6 +62,7 @@ export default function Editor({
       path,
       versionId,
       measuredMarks,
+      margins,
       markOrdinals,
       markFragmentBadges,
       markFragmentRects,
