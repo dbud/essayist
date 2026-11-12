@@ -20,10 +20,7 @@ export function reanchorMarks(
   newContent: string,
 ): readonly Mark[] {
   if (newContent === oldContent) return marks;
-  return resolveMarks({ marks, oldContent, newContent }).map((mark, i) => ({
-    ...mark,
-    id: marks[i].id,
-  }));
+  return resolveMarks({ marks, oldContent, newContent }, { preserveIds: true });
 }
 
 /**
