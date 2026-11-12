@@ -18,7 +18,7 @@ export default function Sidenotes({ scrollContainerRef }: SidenotesProps) {
   const { viewerFont } = usePreferences();
   const editor = activeEditor.value;
   const { scrollTop, viewportHeight } = sidenotes;
-  const { heights, entries, viewportLayout, topGhost, bottomGhost } = sidenotes.current.value;
+  const { heights, entries, views, topGhost, bottomGhost } = sidenotes.current.value;
   // Measure rendered sidenote heights for stacking. Re-measure when the entries or the font change
   // and on marks-column width changes. `entries` is independent of `heights`, so this can't cycle
   // with its own output. Sidenotes stay visibility:hidden until measured so the unstacked first
@@ -56,7 +56,7 @@ export default function Sidenotes({ scrollContainerRef }: SidenotesProps) {
   // head of the bottom ghost, when it pokes above) to the last visible note (or the tail of the top
   // ghost, when it hangs below), and occludes the ghost parts in between. The edge-anchored parts
   // of the ghosts outside the panel stay visible.
-  const visible = viewportLayout.value.filter((v) => !isHidden(v));
+  const visible = views.value.filter((v) => !isHidden(v));
   const first = visible.at(0);
   const last = visible.at(-1);
   const panelTop = Math.min(first ? first.top : Number.POSITIVE_INFINITY, bottomGhostTop);
@@ -114,7 +114,7 @@ export default function Sidenotes({ scrollContainerRef }: SidenotesProps) {
           }}
         />
       )}
-      {viewportLayout.value.map((v) => (
+      {views.value.map((v) => (
         <Sidenote key={v.key} view={v} editor={editor} hidden={isHidden(v)} color={v.entry.color} />
       ))}
     </div>

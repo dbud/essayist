@@ -100,7 +100,7 @@ export const SidenotesModel = createModel((key: FileKey, deps: SidenotesDeps) =>
     () => new Map(resolved.value.map((m) => [m.id, colorForMark(m, categories)])),
   );
 
-  // Unmeasured cards read 0, so a mark keeps its stacking slot until its height lands.
+  // Unmeasured cards read 0, so a mark keeps its stacking slot until its height is measured.
   const measuredSidenotes = computed((): MeasuredSidenotes => ({
     sidenotes: resolved.value.map(({ id }) => ({
       id,
@@ -113,35 +113,34 @@ export const SidenotesModel = createModel((key: FileKey, deps: SidenotesDeps) =>
     ...measuredSidenotes.value,
   }));
 
-  const reflowed = computed((): Layout => new Layout(measured.value).normalize().reflow());
-  const layout = deepComputed((): ReadonlyMap<string, number> => reflowed.value.sidenoteTops);
-  const margins = deepComputed((): ReadonlyMap<NodeKey, number> => reflowed.value.margins);
+  const layout = computed((): Layout => new Layout(measured.value).normalize().reflow());
+  const sidenoteTops = deepComputed((): ReadonlyMap<string, number> => layout.value.sidenoteTops);
+  const margins = deepComputed((): ReadonlyMap<NodeKey, number> => layout.value.margins);
 
   const entries = deepComputed((): SidenoteEntry[] => {
     const byId = new Map(resolved.value.map((mark) => [mark.id, mark]));
-    const out: SidenoteEntry[] = [];
-    for (const block of measuredMarks.value.blocks) {
-      for (const { id, top } of block.marks) {
+    return measuredMarks.value.blocks
+      .flatMap((block) => block.marks)
+      .flatMap(({ id, top }) => {
         const mark = byId.get(id);
-        if (mark === undefined) continue;
-        out.push({
-          mark,
-          markTop: top,
-          ordinal: markOrdinals.value.get(id) ?? 0,
-          active: activeMarkIds.value.has(id),
-          color: colorById.value.get(id) ?? FALLBACK_COLOR,
-        });
-      }
-    }
-    return out.toSorted((a, b) => a.markTop - b.markTop || a.mark.offset - b.mark.offset);
+        if (mark === undefined) return [];
+        return [
+          {
+            mark,
+            markTop: top,
+            ordinal: markOrdinals.value.get(id) ?? 0,
+            active: activeMarkIds.value.has(id),
+            color: colorById.value.get(id) ?? FALLBACK_COLOR,
+          },
+        ];
+      });
   });
 
-  // Marks the layout did not pair with a block fall back to their own top.
-  const viewportLayout = deepComputed((): SidenoteView[] =>
-    entries.value.map((entry) => {
-      const top = layout.value.get(entry.mark.id) ?? entry.markTop;
-      const height = heights.value.get(entry.mark.id) ?? 0;
-      return { key: entry.mark.id, entry, top, height };
+  const views = deepComputed((): SidenoteView[] =>
+    entries.value.flatMap((entry) => {
+      const top = sidenoteTops.value.get(entry.mark.id);
+      if (top === undefined) return [];
+      return [{ key: entry.mark.id, entry, top, height: heights.value.get(entry.mark.id) ?? 0 }];
     }),
   );
 
@@ -153,11 +152,10 @@ export const SidenotesModel = createModel((key: FileKey, deps: SidenotesDeps) =>
     if (vh <= 0) return undefined;
     const vTop = scrollTop.value;
     const vBottom = vTop + vh;
-    const views = viewportLayout.value;
     const candidate =
       direction === "bottom"
-        ? views.find((v) => v.top + v.height > vBottom)
-        : views.findLast((v) => v.top < vTop);
+        ? views.value.find((v) => v.top + v.height > vBottom)
+        : views.value.findLast((v) => v.top < vTop);
     if (!candidate || candidate.height <= 0) return undefined;
     const { entry, top } = candidate;
     return {
@@ -177,9 +175,8 @@ export const SidenotesModel = createModel((key: FileKey, deps: SidenotesDeps) =>
     markOrdinals,
     colorById,
     entries,
-    layout,
     margins,
-    viewportLayout,
+    views,
     topGhost,
     bottomGhost,
     markFragmentBadges,
