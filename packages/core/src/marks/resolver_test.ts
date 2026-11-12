@@ -1,4 +1,4 @@
-import { assertEquals } from "@std/assert";
+import { assertEquals, assertNotEquals } from "@std/assert";
 import { assertObjectMatch } from "@std/assert/object-match";
 import { test } from "vitest";
 
@@ -1056,4 +1056,72 @@ test("resolveMarks -- resolved selected_text excludes surrounding whitespace", (
     length: 4,
     selected_text: "slow",
   });
+});
+
+// Id handling: re-derived marks keep their ids; a new version writes new rows with new ids.
+test("resolveMarks -- preserveIds keeps the input ids on unchanged content", () => {
+  const marks = [createMark({ id: "m1", selected_text: "quick", offset: 4 })];
+
+  const result = resolve(marks, "The quick brown fox", "The quick brown fox", {
+    preserveIds: true,
+  });
+
+  assertEquals(result[0].id, "m1");
+  assertEquals(result[0].thread_id, "thread_m1");
+});
+
+test("resolveMarks -- preserveIds keeps the input ids through exact mapping", () => {
+  const marks = [createMark({ id: "m1", selected_text: "quick", offset: 4 })];
+
+  const result = resolve(marks, "The quick brown fox", "The quick brown fox jumps", {
+    preserveIds: true,
+  });
+
+  assertEquals(result[0].id, "m1");
+});
+
+test("resolveMarks -- preserveIds keeps the input ids through fuzzy resolution", () => {
+  const oldContent = "The quick brown fox";
+  const newContent = "The qwick brown fox";
+  const marks = [
+    createMark({
+      id: "m1",
+      selected_text: "quick",
+      offset: 4,
+      before_context: "The ",
+      after_context: " brown",
+    }),
+  ];
+
+  const result = resolve(marks, oldContent, newContent, { preserveIds: true });
+
+  assertEquals(result[0].id, "m1");
+});
+
+test("resolveMarks -- preserveIds keeps the input ids on stale marks", () => {
+  const marks = [createMark({ id: "m1", selected_text: "world", offset: 6 })];
+
+  const result = resolve(marks, "hello world", "goodbye", { preserveIds: true });
+
+  assertEquals(result[0].id, "m1");
+  assertEquals(result[0].status, "stale");
+});
+
+test("resolveMarks -- preserveIds keeps the input ids on already-stale marks", () => {
+  const marks = [createMark({ id: "m1", selected_text: "gone", offset: 0, status: "stale" })];
+
+  const result = resolve(marks, "The quick brown fox", "The quick brown fox jumps", {
+    preserveIds: true,
+  });
+
+  assertEquals(result[0].id, "m1");
+});
+
+test("resolveMarks -- default resolves mint fresh ids and keep threads", () => {
+  const marks = [createMark({ id: "m1", selected_text: "quick", offset: 4 })];
+
+  const result = resolve(marks, "The quick brown fox", "The quick brown fox jumps");
+
+  assertEquals(result[0].thread_id, "thread_m1");
+  assertNotEquals(result[0].id, "m1");
 });

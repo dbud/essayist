@@ -1,5 +1,5 @@
 import { openKv } from "@deno/kv";
-import { assert, assertEquals, assertInstanceOf } from "@std/assert";
+import { assert, assertEquals, assertInstanceOf, assertNotEquals } from "@std/assert";
 import { assertObjectMatch } from "@std/assert/object-match";
 import { Effect, Layer, Result } from "effect";
 import { test } from "vitest";
@@ -641,6 +641,10 @@ test("Files.migrateMarks -- re-anchors marks added to an old version", async () 
         offset: 16,
         status: "resolved",
       });
+      // Migration writes a new row on the new version: new id, same thread.
+      const v1Marks = yield* files.getMarks("f.txt", v1);
+      assertEquals(marks[1].thread_id, v1Marks[1].thread_id);
+      assertNotEquals(marks[1].id, v1Marks[1].id);
     }),
   );
 });

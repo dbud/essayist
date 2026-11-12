@@ -26,6 +26,9 @@ export interface ResolveOptions {
   minSearchRadius?: number;
   /** The replacement id source for resolved marks. */
   newId?: () => string;
+  /** Keep each mark's id (takes precedence over newId): for re-derivations of the same rows. Rows
+   * written for a new file version get their own ids. */
+  preserveIds?: boolean;
 }
 
 /**
@@ -42,9 +45,11 @@ export function resolveMarks(
   { marks, newContent, oldContent }: ResolveInput,
   options?: ResolveOptions,
 ): Mark[] {
-  const newId = options?.newId ?? randomId;
+  const stampId: (mark: Mark) => string = options?.preserveIds
+    ? (mark) => mark.id
+    : () => (options?.newId ?? randomId)();
   if (oldContent === "" || oldContent === newContent) {
-    return marks.map((m) => ({ ...m, id: newId() }));
+    return marks.map((mark) => ({ ...mark, id: stampId(mark) }));
   }
   if (marks.length === 0) return [];
 
@@ -53,21 +58,21 @@ export function resolveMarks(
 
   return marks.map((mark) => {
     if (mark.status === "stale") {
-      return { ...mark, id: newId() };
+      return { ...mark, id: stampId(mark) };
     }
 
     const [exact, newOffset, newLength] = mapOffset(mark, hunks);
     if (exact) {
       return {
         ...mark,
-        id: newId(),
+        id: stampId(mark),
         offset: newOffset,
         length: newLength,
         selected_text: newContent.slice(newOffset, newOffset + newLength),
       };
     }
 
-    return fuzzyResolveMark(mark, tokenizedText, newOffset, newId, options);
+    return fuzzyResolveMark(mark, tokenizedText, newOffset, stampId, options);
   });
 }
 
@@ -124,7 +129,7 @@ function fuzzyResolveMark(
   mark: Mark,
   tt: TokenizedText,
   expectedNewOffset: number,
-  newId: () => string,
+  stampId: (mark: Mark) => string,
   options?: ResolveOptions,
 ): Mark {
   const {
@@ -148,7 +153,7 @@ function fuzzyResolveMark(
   if (selectedOffset !== null) {
     return {
       ...mark,
-      id: newId(),
+      id: stampId(mark),
       offset: selectedOffset,
       length: mark.selected_text.length,
       selected_text: mark.selected_text,
@@ -196,7 +201,7 @@ function fuzzyResolveMark(
   ) {
     return {
       ...mark,
-      id: newId(),
+      id: stampId(mark),
       status: "stale",
       offset: beforeResult?.nextOffset ?? afterResult?.startOffset ?? expectedNewOffset,
       length: 0,
@@ -211,7 +216,7 @@ function fuzzyResolveMark(
   if (beforeEnd != null && afterStart != null && afterStart < beforeEnd) {
     return {
       ...mark,
-      id: newId(),
+      id: stampId(mark),
       status: "stale",
       offset: beforeEnd,
       length: 0,
@@ -225,14 +230,14 @@ function fuzzyResolveMark(
   const nearestOffset = tt.findExactNear(mark.selected_text, expectedNewOffset);
   // Nothing found anywhere -- stale.
   if (!beforeResult && !afterResult && nearestOffset === null) {
-    return { ...mark, id: newId(), status: "stale", length: 0 };
+    return { ...mark, id: stampId(mark), status: "stale", length: 0 };
   }
 
   // Full-content scan found the text elsewhere -- resolve at nearest occurrence.
   if (nearestOffset !== null) {
     return {
       ...mark,
-      id: newId(),
+      id: stampId(mark),
       offset: nearestOffset,
       length: mark.selected_text.length,
       status: "resolved",
@@ -252,7 +257,7 @@ function fuzzyResolveMark(
   if (trimmed.text.length === 0 && !(beforeResult && afterResult)) {
     return {
       ...mark,
-      id: newId(),
+      id: stampId(mark),
       status: "stale",
       offset: start + trimmed.leading,
       length: 0,
@@ -260,7 +265,7 @@ function fuzzyResolveMark(
   }
   return {
     ...mark,
-    id: newId(),
+    id: stampId(mark),
     offset: start + trimmed.leading,
     length: trimmed.text.length,
     selected_text: trimmed.text,
