@@ -45,7 +45,7 @@ test("json paste middleware sanitizes and inserts", () => {
         children: [
           {
             type: "mark",
-            ids: ["thread-1"],
+            ids: ["mark-1"],
             children: [
               {
                 type: "text",

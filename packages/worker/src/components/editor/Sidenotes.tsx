@@ -22,10 +22,10 @@ export default function Sidenotes({ scrollContainerRef }: SidenotesProps) {
   // Measure rendered sidenote heights for stacking. Re-measure when the entries or the font change
   // and on marks-column width changes. `entries` is independent of `heights`, so this can't cycle
   // with its own output. Sidenotes stay visibility:hidden until measured so the unstacked first
-  // paint never shows overlap. Ghosts omit data-thread-id so they aren't measured.
+  // paint never shows overlap. Ghosts omit data-mark-id so they aren't measured.
   const innerRef = useElementHeights<HTMLDivElement>(heights, {
-    selector: "[data-thread-id]",
-    key: "threadId",
+    selector: "[data-mark-id]",
+    key: "markId",
     deps: [entries.value, viewerFont.value],
   });
 
@@ -33,17 +33,17 @@ export default function Sidenotes({ scrollContainerRef }: SidenotesProps) {
   // the pinned ghost takes over. At exact edge alignment the regular sidenote wins: visible, with
   // no ghost -- so a ghost click lands on the solid note.
   const isHidden = (v: SidenoteView) =>
-    !heights.value.has(v.entry.mark.thread_id) ||
+    !heights.value.has(v.entry.mark.id) ||
     (viewportHeight.value > 0 &&
       (v.top < scrollTop.value || v.top + v.height > scrollTop.value + viewportHeight.value));
 
   // Ghost boxes in content coordinates; absent ghosts fall outside the panel derivation via
   // infinities.
   const topGhostHeight = topGhost.value
-    ? (heights.value.get(topGhost.value.entry.mark.thread_id) ?? 0)
+    ? (heights.value.get(topGhost.value.entry.mark.id) ?? 0)
     : 0;
   const bottomGhostHeight = bottomGhost.value
-    ? (heights.value.get(bottomGhost.value.entry.mark.thread_id) ?? 0)
+    ? (heights.value.get(bottomGhost.value.entry.mark.id) ?? 0)
     : 0;
   const topGhostBottom = topGhost.value
     ? scrollTop.value + topGhostHeight

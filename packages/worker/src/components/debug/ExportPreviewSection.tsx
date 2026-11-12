@@ -98,8 +98,8 @@ function MarkdownPreview() {
 function buildSegments(markdown: string, marks: Mark[]): TextSegment[] {
   if (marks.length === 0) return [{ text: markdown, marks: [] }];
 
-  const byThread = new Map(marks.map((m) => [m.thread_id, m]));
-  const resolve = (ids: readonly string[]): Mark[] => mapNotNullish(ids, (id) => byThread.get(id));
+  const byMark = new Map(marks.map((m) => [m.id, m]));
+  const resolve = (ids: readonly string[]): Mark[] => mapNotNullish(ids, (id) => byMark.get(id));
 
   // Non-zero marks -> non-overlapping intervals via segmentMarks; zero-length marks -> point
   // intervals at their offset. Merge by offset and walk with a cursor, emitting gap segments

@@ -8,19 +8,19 @@ test("segmentMarks -- empty input", () => {
 });
 
 test("segmentMarks -- zero-length spans are dropped", () => {
-  assertEquals(segmentMarks([{ offset: 5, length: 0, thread_id: "z" }]), []);
+  assertEquals(segmentMarks([{ offset: 5, length: 0, id: "z" }]), []);
 });
 
 test("segmentMarks -- single mark yields one segment", () => {
-  assertEquals(segmentMarks([{ offset: 3, length: 4, thread_id: "a" }]), [
+  assertEquals(segmentMarks([{ offset: 3, length: 4, id: "a" }]), [
     { offset: 3, length: 4, ids: ["a"] },
   ]);
 });
 
 test("segmentMarks -- two non-overlapping marks keep a gap", () => {
   const segs = segmentMarks([
-    { offset: 0, length: 3, thread_id: "a" },
-    { offset: 5, length: 2, thread_id: "b" },
+    { offset: 0, length: 3, id: "a" },
+    { offset: 5, length: 2, id: "b" },
   ]);
   assertEquals(segs, [
     { offset: 0, length: 3, ids: ["a"] },
@@ -30,8 +30,8 @@ test("segmentMarks -- two non-overlapping marks keep a gap", () => {
 
 test("segmentMarks -- adjacent marks (touching, no overlap) stay separate", () => {
   const segs = segmentMarks([
-    { offset: 0, length: 3, thread_id: "a" },
-    { offset: 3, length: 2, thread_id: "b" },
+    { offset: 0, length: 3, id: "a" },
+    { offset: 3, length: 2, id: "b" },
   ]);
   assertEquals(segs, [
     { offset: 0, length: 3, ids: ["a"] },
@@ -42,8 +42,8 @@ test("segmentMarks -- adjacent marks (touching, no overlap) stay separate", () =
 test("segmentMarks -- partial overlap splits into three segments", () => {
   // a: [0,5), b: [3,8) -> overlap [3,5)
   const segs = segmentMarks([
-    { offset: 0, length: 5, thread_id: "a" },
-    { offset: 3, length: 5, thread_id: "b" },
+    { offset: 0, length: 5, id: "a" },
+    { offset: 3, length: 5, id: "b" },
   ]);
   assertEquals(segs, [
     { offset: 0, length: 3, ids: ["a"] },
@@ -55,8 +55,8 @@ test("segmentMarks -- partial overlap splits into three segments", () => {
 test("segmentMarks -- fully nested mark: outer first in id order", () => {
   // outer: [0,10), inner: [3,6)
   const segs = segmentMarks([
-    { offset: 0, length: 10, thread_id: "outer" },
-    { offset: 3, length: 3, thread_id: "inner" },
+    { offset: 0, length: 10, id: "outer" },
+    { offset: 3, length: 3, id: "inner" },
   ]);
   assertEquals(segs, [
     { offset: 0, length: 3, ids: ["outer"] },
@@ -67,8 +67,8 @@ test("segmentMarks -- fully nested mark: outer first in id order", () => {
 
 test("segmentMarks -- outer listed first regardless of input order", () => {
   const segs = segmentMarks([
-    { offset: 3, length: 3, thread_id: "inner" },
-    { offset: 0, length: 10, thread_id: "outer" },
+    { offset: 3, length: 3, id: "inner" },
+    { offset: 0, length: 10, id: "outer" },
   ]);
   assertEquals(segs[1].ids, ["outer", "inner"]);
 });
@@ -76,9 +76,9 @@ test("segmentMarks -- outer listed first regardless of input order", () => {
 test("segmentMarks -- two inner marks side by side under one outer", () => {
   // outer: [0,12), innerA: [2,5), innerB: [7,10)
   const segs = segmentMarks([
-    { offset: 0, length: 12, thread_id: "outer" },
-    { offset: 2, length: 3, thread_id: "a" },
-    { offset: 7, length: 3, thread_id: "b" },
+    { offset: 0, length: 12, id: "outer" },
+    { offset: 2, length: 3, id: "a" },
+    { offset: 7, length: 3, id: "b" },
   ]);
   assertEquals(segs, [
     { offset: 0, length: 2, ids: ["outer"] },
@@ -92,9 +92,9 @@ test("segmentMarks -- two inner marks side by side under one outer", () => {
 test("segmentMarks -- three-way overlap merges all three ids", () => {
   // a: [0,8), b: [3,10), c: [5,7)
   const segs = segmentMarks([
-    { offset: 0, length: 8, thread_id: "a" },
-    { offset: 3, length: 7, thread_id: "b" },
-    { offset: 5, length: 2, thread_id: "c" },
+    { offset: 0, length: 8, id: "a" },
+    { offset: 3, length: 7, id: "b" },
+    { offset: 5, length: 2, id: "c" },
   ]);
   assertEquals(segs, [
     { offset: 0, length: 3, ids: ["a"] },
@@ -108,8 +108,8 @@ test("segmentMarks -- three-way overlap merges all three ids", () => {
 test("segmentMarks -- identical spans dedupe ids", () => {
   // Two marks over the exact same range.
   const segs = segmentMarks([
-    { offset: 0, length: 4, thread_id: "a" },
-    { offset: 0, length: 4, thread_id: "b" },
+    { offset: 0, length: 4, id: "a" },
+    { offset: 0, length: 4, id: "b" },
   ]);
   assertEquals(segs, [{ offset: 0, length: 4, ids: ["a", "b"] }]);
 });

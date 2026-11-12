@@ -5,8 +5,8 @@ import type { MarkFragment } from "./markGeometry.ts";
 
 /**
  * Highlight rects for mark fragments: every line box of a fragment gets one rect per id it carries,
- * stacked by segment order, in column coordinates. Color resolution happens elsewhere, by thread
- * id. Fragments arrive in document order as the measure sweep guarantees.
+ * stacked by segment order, in column coordinates. Color resolution happens elsewhere, by mark id.
+ * Fragments arrive in document order as the measure sweep guarantees.
  */
 export function computeMarkFragmentRects(
   fragments: ReadonlyArray<MarkFragment>,

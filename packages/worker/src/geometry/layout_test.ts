@@ -9,8 +9,8 @@ const measured = (
   sidenotes: [string, number][],
 ): Measured => ({
   blocks: blocks.map(([key, top, height, margin]) => ({ key, top, height, margin })),
-  marks: marks.map(([threadId, top]) => ({ threadId, top })),
-  sidenotes: sidenotes.map(([threadId, height]) => ({ threadId, height })),
+  marks: marks.map(([id, top]) => ({ id, top })),
+  sidenotes: sidenotes.map(([id, height]) => ({ id, height })),
 });
 
 const reflowed = (input: Measured): Layout => new Layout(input).normalize().reflow();

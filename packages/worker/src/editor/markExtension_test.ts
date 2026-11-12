@@ -128,7 +128,7 @@ function collectMarkKeys(editor: LexicalEditor): Set<string> {
  */
 function applyAndCollect(
   editor: LexicalEditor,
-  marks: ReadonlyArray<{ offset: number; length: number; thread_id: string }>,
+  marks: ReadonlyArray<{ offset: number; length: number; id: string }>,
 ): MarkFragment[] {
   const content = exportMarkdown(editor);
   const spans = collectSpans(editor, content);
@@ -147,8 +147,8 @@ test("$applyMarks -- non-overlapping marks wrap separately", () => {
   setParagraph(editor, "AAAAABBBBBCCCCC");
   // "AAAAA" and "CCCCC", gap in the middle.
   const fragments = applyAndCollect(editor, [
-    { offset: 0, length: 5, thread_id: "a" },
-    { offset: 10, length: 5, thread_id: "c" },
+    { offset: 0, length: 5, id: "a" },
+    { offset: 10, length: 5, id: "c" },
   ]);
   assertEquals(fragments, [
     { ids: ["a"], text: "AAAAA" },
@@ -161,8 +161,8 @@ test("$applyMarks -- partial overlap produces a shared multi-id fragment", () =>
   setParagraph(editor, "AAAAABBBBBCCCCC");
   // a: [0,8) "AAAAABBB", b: [5,10) "BBBBB" -> overlap on "BBB" [5,8).
   const fragments = applyAndCollect(editor, [
-    { offset: 0, length: 8, thread_id: "a" },
-    { offset: 5, length: 5, thread_id: "b" },
+    { offset: 0, length: 8, id: "a" },
+    { offset: 5, length: 5, id: "b" },
   ]);
   assertEquals(fragments, [
     { ids: ["a"], text: "AAAAA" },
@@ -176,8 +176,8 @@ test("$applyMarks -- fully nested mark splits the outer into three fragments", (
   setParagraph(editor, "AAAAABBBBBCCCCC");
   // outer: [0,10) "AAAAABBBBB", inner: [5,10) "BBBBB" (fully inside outer).
   const fragments = applyAndCollect(editor, [
-    { offset: 0, length: 10, thread_id: "outer" },
-    { offset: 5, length: 5, thread_id: "inner" },
+    { offset: 0, length: 10, id: "outer" },
+    { offset: 5, length: 5, id: "inner" },
   ]);
   assertEquals(fragments, [
     { ids: ["outer"], text: "AAAAA" },
@@ -191,8 +191,8 @@ test("$applyMarks -- identical spans share one fragment with both ids", () => {
   const editor = createEditor();
   setParagraph(editor, "AAAAABBBBBCCCCC");
   const fragments = applyAndCollect(editor, [
-    { offset: 0, length: 5, thread_id: "a" },
-    { offset: 0, length: 5, thread_id: "b" },
+    { offset: 0, length: 5, id: "a" },
+    { offset: 0, length: 5, id: "b" },
   ]);
   assertEquals(fragments, [{ ids: ["a", "b"], text: "AAAAA" }]);
 });
@@ -202,7 +202,7 @@ test("$applyMarks -- multi-paragraph mark yields one fragment per paragraph", ()
   setParagraphs(editor, "Para one.", "Para two.");
   // exported markdown: "Para one.\n\nPara two." -> "Para one." at 0 (len 9), "Para two." at 11 (len
   // 9). Mark covers [0,20): both paragraphs.
-  const fragments = applyAndCollect(editor, [{ offset: 0, length: 20, thread_id: "m" }]);
+  const fragments = applyAndCollect(editor, [{ offset: 0, length: 20, id: "m" }]);
   assertEquals(fragments, [
     { ids: ["m"], text: "Para one." },
     { ids: ["m"], text: "Para two." },
@@ -215,8 +215,8 @@ test("$applyMarks -- overlap across a paragraph boundary", () => {
   // m1 spans both paragraphs [0,20); m2 sits in the first paragraph [0,5). Segments: [0,5){m1,m2},
   // [5,20){m1}. The second segment crosses into para 2 and produces two fragments.
   const fragments = applyAndCollect(editor, [
-    { offset: 0, length: 20, thread_id: "m1" },
-    { offset: 0, length: 5, thread_id: "m2" },
+    { offset: 0, length: 20, id: "m1" },
+    { offset: 0, length: 5, id: "m2" },
   ]);
   assertEquals(fragments, [
     { ids: ["m1", "m2"], text: "Para " },
@@ -228,9 +228,9 @@ test("$applyMarks -- overlap across a paragraph boundary", () => {
 test("$applyMarks -- re-applying unwraps previous marks before wrapping", () => {
   const editor = createEditor();
   setParagraph(editor, "AAAAABBBBBCCCCC");
-  applyAndCollect(editor, [{ offset: 0, length: 5, thread_id: "a" }]);
+  applyAndCollect(editor, [{ offset: 0, length: 5, id: "a" }]);
   // Apply again with a different mark set; the old "a" fragment must be gone.
-  const fragments = applyAndCollect(editor, [{ offset: 10, length: 5, thread_id: "c" }]);
+  const fragments = applyAndCollect(editor, [{ offset: 10, length: 5, id: "c" }]);
   assertEquals(fragments, [{ ids: ["c"], text: "CCCCC" }]);
 });
 
@@ -257,7 +257,7 @@ test("$restoreSelection -- collapsed caret keeps its toggled format across a re-
   editor.update(
     () => {
       const saved = $saveSelection(spans);
-      $applyMarks([{ offset: 10, length: 5, thread_id: "c" }], nodeKeys, spans);
+      $applyMarks([{ offset: 10, length: 5, id: "c" }], nodeKeys, spans);
       $restoreSelection(saved, content);
     },
     { discrete: true },

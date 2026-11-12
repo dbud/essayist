@@ -40,7 +40,7 @@ export default function GhostSidenote({
         }}
         title="Offscreen; jump to mark"
         onClick={() => {
-          editor?.dispatchCommand(SELECT_MARK_COMMAND, mark.thread_id);
+          editor?.dispatchCommand(SELECT_MARK_COMMAND, mark.id);
           // The scroll-into-view of the selection fires inside the dispatch; defer ours by a frame
           // so the jump target is the final position.
           requestAnimationFrame(() => {

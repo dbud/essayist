@@ -13,12 +13,11 @@ import { getEditorSelection } from "#/signals/editorSelection.ts";
 
 import { deepComputed } from "./utils/deepComputed.ts";
 
-// thread_id -> the line top where the mark anchors. Layout derives the stacked sidenote tops from
-// it.
+// mark id -> the line top where the mark anchors. Layout derives the stacked sidenote tops from it.
 export type SidenotePositions = Map<string, number>;
-// thread_id -> rendered sidenote height (px).
+// mark id -> rendered sidenote height (px).
 export type SidenoteHeights = Map<string, number>;
-// thread_id -> 1-based ordinal in document order (by mark.offset).
+// mark id -> 1-based ordinal in document order (by mark.offset).
 export type MarkOrdinals = Map<string, number>;
 
 export interface MarkFragmentTop {
@@ -40,7 +39,7 @@ export interface MarkFragmentBadge {
 
 // A highlight band for one mark id and line box. Overlapping ids each get their own band per line.
 export interface MarkFragmentRect {
-  id: string; // thread id this band belongs to
+  id: string; // mark id this band belongs to
   left: number; // relative to the editor column
   top: number; // relative to the editor column
   width: number;
@@ -101,12 +100,12 @@ export const SidenotesModel = createModel((key: FileKey, deps: SidenotesDeps) =>
   // Shared by the editor badges and the sidenote column.
   const markOrdinals = computed(
     (): MarkOrdinals =>
-      new Map(sortBy(resolved.value, (m) => m.offset).map((m, i) => [m.thread_id, i + 1] as const)),
+      new Map(sortBy(resolved.value, (m) => m.offset).map((m, i) => [m.id, i + 1] as const)),
   );
 
-  // thread_id -> the category color of each mark, for its label and highlight bands.
+  // mark id -> the category color of each mark, for its label and highlight bands.
   const colorById = computed(
-    () => new Map(resolved.value.map((m) => [m.thread_id, colorForMark(m, categories)])),
+    () => new Map(resolved.value.map((m) => [m.id, colorForMark(m, categories)])),
   );
 
   const markTops = deepComputed(() =>
@@ -116,18 +115,18 @@ export const SidenotesModel = createModel((key: FileKey, deps: SidenotesDeps) =>
   const measured = deepComputed((): Measured => {
     const blocks = markedBlocks.value.toSorted((a, b) => a.top - b.top);
     const marks = resolved.value
-      .flatMap(({ thread_id: threadId, offset }) => {
-        const markTop = markTops.value.get(threadId);
-        if (markTop === undefined) return [];
-        return [{ threadId, top: markTop, offset }];
+      .flatMap(({ id, offset }) => {
+        const top = markTops.value.get(id);
+        if (top === undefined) return [];
+        return [{ id, top, offset }];
       })
       .toSorted((a, b) => a.top - b.top || a.offset - b.offset);
     return {
       blocks,
-      marks: marks.map(({ threadId, top }) => ({ threadId, top })),
-      sidenotes: resolved.value.map((mark) => ({
-        threadId: mark.thread_id,
-        height: heights.value.get(mark.thread_id) ?? 0,
+      marks: marks.map(({ id, top }) => ({ id, top })),
+      sidenotes: resolved.value.map(({ id }) => ({
+        id,
+        height: heights.value.get(id) ?? 0,
       })),
     };
   });
@@ -139,14 +138,14 @@ export const SidenotesModel = createModel((key: FileKey, deps: SidenotesDeps) =>
   const entries = deepComputed((): SidenoteEntry[] => {
     const out: SidenoteEntry[] = [];
     for (const mark of resolved.value) {
-      const markTop = markTops.value.get(mark.thread_id);
+      const markTop = markTops.value.get(mark.id);
       if (markTop === undefined) continue; // not yet measured
       out.push({
         mark,
         markTop,
-        ordinal: markOrdinals.value.get(mark.thread_id) ?? 0,
-        active: activeMarkIds.value.has(mark.thread_id),
-        color: colorById.value.get(mark.thread_id) ?? FALLBACK_COLOR,
+        ordinal: markOrdinals.value.get(mark.id) ?? 0,
+        active: activeMarkIds.value.has(mark.id),
+        color: colorById.value.get(mark.id) ?? FALLBACK_COLOR,
       });
     }
     return out.toSorted((a, b) => a.markTop - b.markTop || a.mark.offset - b.mark.offset);
@@ -155,9 +154,9 @@ export const SidenotesModel = createModel((key: FileKey, deps: SidenotesDeps) =>
   // Marks the layout did not pair with a block fall back to their own top.
   const viewportLayout = deepComputed((): SidenoteView[] =>
     entries.value.map((entry) => {
-      const top = layout.value.get(entry.mark.thread_id) ?? entry.markTop;
-      const height = heights.value.get(entry.mark.thread_id) ?? 0;
-      return { key: entry.mark.thread_id, entry, top, height };
+      const top = layout.value.get(entry.mark.id) ?? entry.markTop;
+      const height = heights.value.get(entry.mark.id) ?? 0;
+      return { key: entry.mark.id, entry, top, height };
     }),
   );
 
@@ -177,7 +176,7 @@ export const SidenotesModel = createModel((key: FileKey, deps: SidenotesDeps) =>
     if (!candidate || candidate.height <= 0) return undefined;
     const { entry, top } = candidate;
     return {
-      key: `${entry.mark.thread_id}:ghost-${direction}`,
+      key: `${entry.mark.id}:ghost-${direction}`,
       entry,
       trueTop: top,
       ghost: direction,

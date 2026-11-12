@@ -72,7 +72,7 @@ test("unwraps marks and masks disallowed formats", () => {
       children: [
         {
           type: "mark",
-          ids: ["thread-1"],
+          ids: ["mark-1"],
           children: [text("hi", bold | highlight)],
         },
       ],

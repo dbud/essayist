@@ -28,7 +28,7 @@ import { trackNodeKeys } from "./trackNodeKeys.ts";
 
 export const MARK_RANGE_TAG = "mark-range";
 
-/** Dispatch with the thread id of a mark to place the caret at that mark. */
+/** Dispatch with the mark id to place the caret at that mark. */
 export const SELECT_MARK_COMMAND: LexicalCommand<string> = createCommand();
 
 export interface MarksExtensionConfig {
@@ -59,16 +59,16 @@ export const MarksExtension = defineExtension({
     return mergeRegister(
       disposeTrackNodeKeys,
 
-      // Jump-to-mark: find the MarkNode by thread id among the tracked keys and place the caret at
+      // Jump-to-mark: find the MarkNode by mark id among the tracked keys and place the caret at
       // its start.
       editor.registerCommand(
         SELECT_MARK_COMMAND,
-        (threadId: string) => {
+        (markId: string) => {
           editor.focus();
           editor.update(() => {
             for (const key of nodeKeys) {
               const node = $getNodeByKey(key);
-              if (node !== null && $isMarkNode(node) && node.getIDs().includes(threadId)) {
+              if (node !== null && $isMarkNode(node) && node.getIDs().includes(markId)) {
                 node.selectStart();
                 break;
               }

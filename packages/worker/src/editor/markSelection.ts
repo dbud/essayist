@@ -46,7 +46,7 @@ function $marksAtAnchor(): MarkNode[] {
   return marks;
 }
 
-/** Mark thread ids active at the selection anchor (empty when unset). */
+/** Mark ids active at the selection anchor (empty when unset). */
 export function $markIdsAtAnchor(): Set<string> {
   const ids = new Set<string>();
   for (const mark of $marksAtAnchor()) {
@@ -56,9 +56,9 @@ export function $markIdsAtAnchor(): Set<string> {
 }
 
 /**
- * The innermost mark thread id at the anchor, or null when none. Segments store ids outer-first /
- * inner-last (see `segmentMarks`), so the innermost mark is the last id on the innermost segment at
- * the anchor.
+ * The innermost mark id at the anchor, or null when none. Segments store ids outer-first / inner-
+ * last (see `segmentMarks`), so the innermost mark is the last id on the innermost segment at the
+ * anchor.
  */
 export function $innerMarkIdAtAnchor(): string | null {
   const [mark, _] = $marksAtAnchor();

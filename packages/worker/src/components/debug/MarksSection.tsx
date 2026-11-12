@@ -40,7 +40,7 @@ function MarkDetail({
           title="Go to mark in editor"
           disabled={editor === null}
           onClick={() => {
-            if (editor) editor.dispatchCommand(SELECT_MARK_COMMAND, mark.thread_id);
+            if (editor) editor.dispatchCommand(SELECT_MARK_COMMAND, mark.id);
           }}
         >
           <Crosshair size={14} />
@@ -83,7 +83,7 @@ export default function MarksSection() {
             key={mark.id}
             mark={mark}
             category={byLabel.get(mark.label ?? "")}
-            active={markIds.has(mark.thread_id)}
+            active={markIds.has(mark.id)}
             editor={editor}
           />
         ))}

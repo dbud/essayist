@@ -71,14 +71,14 @@ export function collectAnchors(
       fallbackKey = $getRoot().getFirstChild()?.getKey() ?? $getRoot().getKey();
   });
   const anchors: ZeroLengthMarkAnchor[] = [];
-  for (const m of zeroMarks) {
-    const pos = findPosition(spans, m.offset);
+  for (const { id, offset } of zeroMarks) {
+    const pos = findPosition(spans, offset);
     const key = pos?.key ?? fallbackKey;
     const el = editor.getElementByKey(key);
     if (el === null) continue;
     const top = textPointTop(ctx, el, pos?.offset ?? 0);
     if (top === null) continue;
-    anchors.push({ id: m.thread_id, key, top });
+    anchors.push({ id, key, top });
   }
   return anchors;
 }

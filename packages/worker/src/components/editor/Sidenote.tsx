@@ -16,11 +16,11 @@ export default function Sidenote({ view, editor, hidden, color }: SidenoteProps)
   return (
     <button
       type="button"
-      data-thread-id={mark.thread_id}
+      data-mark-id={mark.id}
       class={`sidenote ${active ? "is-active" : ""} ${hidden ? "invisible" : ""}`}
       style={{ "--mark-color": color, top }}
       title="Jump to mark in editor"
-      onClick={() => editor?.dispatchCommand(SELECT_MARK_COMMAND, mark.thread_id)}
+      onClick={() => editor?.dispatchCommand(SELECT_MARK_COMMAND, mark.id)}
     >
       <div class="flex items-start gap-2">
         <span class="sidenote-ordinal">{ordinal}</span>

@@ -10,17 +10,17 @@ export interface MarkedBlock {
 export interface Measured {
   readonly blocks: readonly MarkedBlock[];
   readonly marks: readonly {
-    readonly threadId: string;
+    readonly id: string;
     readonly top: number;
   }[];
   readonly sidenotes: readonly {
-    readonly threadId: string;
+    readonly id: string;
     readonly height: number;
   }[];
 }
 
 interface Mark {
-  readonly threadId: string;
+  readonly id: string;
   top: number; // normalized, then laid out
 }
 
@@ -43,17 +43,17 @@ export class Layout {
 
   constructor(measured: Measured) {
     this.#sidenotes = new Map<string, Sidenote>(
-      measured.sidenotes.map(({ threadId, height }) => [threadId, { height, top: 0 }]),
+      measured.sidenotes.map(({ id, height }) => [id, { height, top: 0 }]),
     );
     // Marks attach to the block whose box contains their line top; a mark outside every marked
     // block box is skipped. Blocks tile the column, so each top falls into exactly one block. TODO
     // -- REFACTOR
     const byBlock: Mark[][] = measured.blocks.map(() => []);
-    for (const { threadId, top } of measured.marks) {
+    for (const { id, top } of measured.marks) {
       const index = measured.blocks.findIndex(
         (block) => block.top <= top && top < block.top + block.height,
       );
-      if (index !== -1) byBlock[index].push({ threadId, top });
+      if (index !== -1) byBlock[index].push({ id, top });
     }
     this.#blocks = measured.blocks.map((block, i) => ({
       ...block,
@@ -82,7 +82,7 @@ export class Layout {
         offset += block.margin;
       }
       for (const mark of block.marks) {
-        const sidenote = this.#sidenotes.get(mark.threadId);
+        const sidenote = this.#sidenotes.get(mark.id);
         if (sidenote === undefined) continue;
         const top = Math.max(mark.top + offset, cursor + SIDENOTE_GAP);
         sidenote.top = top;
@@ -103,9 +103,9 @@ export class Layout {
   get sidenoteTops(): ReadonlyMap<string, number> {
     const sidenoteTops = new Map<string, number>();
     for (const { marks } of this.#blocks) {
-      for (const { threadId } of marks) {
-        const sidenote = this.#sidenotes.get(threadId);
-        if (sidenote !== undefined) sidenoteTops.set(threadId, sidenote.top);
+      for (const { id } of marks) {
+        const sidenote = this.#sidenotes.get(id);
+        if (sidenote !== undefined) sidenoteTops.set(id, sidenote.top);
       }
     }
     return sidenoteTops;
