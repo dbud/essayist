@@ -113,7 +113,7 @@ export const SidenotesModel = createModel((key: FileKey, deps: SidenotesDeps) =>
     ...measuredSidenotes.value,
   }));
 
-  const layout = computed((): Layout => new Layout(measured.value).normalize().reflow());
+  const layout = computed((): Layout => new Layout(measured.value));
   const sidenoteTops = deepComputed((): ReadonlyMap<string, number> => layout.value.sidenoteTops);
   const margins = deepComputed((): ReadonlyMap<NodeKey, number> => layout.value.margins);
 

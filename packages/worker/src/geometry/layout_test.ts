@@ -31,7 +31,7 @@ const measured = (
   };
 };
 
-const reflowed = (input: Measured): Layout => new Layout(input).normalize().reflow();
+const reflowed = (input: Measured): Layout => new Layout(input);
 
 test("reflow -- pushes blocks so first marks meet their stacked notes", () => {
   const out = reflowed(

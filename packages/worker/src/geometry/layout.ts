@@ -59,9 +59,11 @@ export class Layout {
       ...block,
       marks: block.marks.map(({ id, top }) => ({ id, top })),
     }));
+    this.#normalize();
+    this.#reflow();
   }
 
-  normalize(): this {
+  #normalize(): void {
     let offset = 0;
     for (const block of this.#blocks) {
       offset += block.margin;
@@ -69,10 +71,9 @@ export class Layout {
       block.margin = 0;
       for (const mark of block.marks) mark.top -= offset;
     }
-    return this;
   }
 
-  reflow(): this {
+  #reflow(): void {
     let cursor = Number.NEGATIVE_INFINITY;
     let offset = 0;
     for (const block of this.#blocks) {
@@ -89,7 +90,6 @@ export class Layout {
         cursor = top + sidenote.height;
       }
     }
-    return this;
   }
 
   get margins(): ReadonlyMap<string, number> {
