@@ -1,6 +1,5 @@
 import type { Mark } from "@essayist/core";
 import { type Signal, computed, createModel, signal } from "@preact/signals";
-import { sortBy } from "@std/collections";
 import type { NodeKey } from "lexical";
 
 import { FALLBACK_COLOR, colorForMark } from "#/editor/markColors.ts";
@@ -21,7 +20,7 @@ import { deepComputed } from "./utils/deepComputed.ts";
 export type SidenotePositions = Map<string, number>;
 // mark id -> rendered sidenote height (px).
 export type SidenoteHeights = Map<string, number>;
-// mark id -> 1-based ordinal in document order (by mark.offset).
+// mark id -> 1-based ordinal in the measured order.
 export type MarkOrdinals = Map<string, number>;
 
 export interface MarkFragmentBadge {
@@ -89,11 +88,16 @@ export const SidenotesModel = createModel((key: FileKey, deps: SidenotesDeps) =>
   const { resolved } = resolvedMarks;
   const { markIds: activeMarkIds } = getEditorSelection(key);
 
-  // Shared by the editor badges and the sidenote column.
-  const markOrdinals = computed(
-    (): MarkOrdinals =>
-      new Map(sortBy(resolved.value, (m) => m.offset).map((m, i) => [m.id, i + 1] as const)),
-  );
+  const marks = computed(() => measuredMarks.value.blocks.flatMap((block) => block.marks));
+
+  const markOrdinals = computed((): MarkOrdinals => {
+    const ordinals = new Map<string, number>();
+    let next = 1;
+    for (const { id } of marks.value) {
+      if (!ordinals.has(id)) ordinals.set(id, next++);
+    }
+    return ordinals;
+  });
 
   // mark id -> the category color of each mark, for its label and highlight bands.
   const colorById = computed(
@@ -119,21 +123,19 @@ export const SidenotesModel = createModel((key: FileKey, deps: SidenotesDeps) =>
 
   const entries = deepComputed((): SidenoteEntry[] => {
     const byId = new Map(resolved.value.map((mark) => [mark.id, mark]));
-    return measuredMarks.value.blocks
-      .flatMap((block) => block.marks)
-      .flatMap(({ id, top }) => {
-        const mark = byId.get(id);
-        if (mark === undefined) return [];
-        return [
-          {
-            mark,
-            markTop: top,
-            ordinal: markOrdinals.value.get(id) ?? 0,
-            active: activeMarkIds.value.has(id),
-            color: colorById.value.get(id) ?? FALLBACK_COLOR,
-          },
-        ];
-      });
+    return marks.value.flatMap(({ id, top }) => {
+      const mark = byId.get(id);
+      if (mark === undefined) return [];
+      return [
+        {
+          mark,
+          markTop: top,
+          ordinal: markOrdinals.value.get(id) ?? 0,
+          active: activeMarkIds.value.has(id),
+          color: colorById.value.get(id) ?? FALLBACK_COLOR,
+        },
+      ];
+    });
   });
 
   const views = deepComputed((): SidenoteView[] =>
