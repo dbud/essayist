@@ -149,19 +149,32 @@
   }
 }
 
-/* The block spacers: in-flow space set per block as --block-spacer-before/after. */
+:root {
+  --spacer-fade: 1.5rem;
+}
+
+@utility spacer-fade {
+  mask-image: linear-gradient(
+    to bottom,
+    transparent,
+    #000 min(var(--spacer-fade, 1rem), 50%),
+    #000 calc(100% - min(var(--spacer-fade, 1rem), 50%)),
+    transparent
+  );
+}
+
 .editor-input :is(p, h1, h2, h3, h4, h5, h6, blockquote, pre, ul, ol, li)::before {
   content: "";
   display: block;
   height: var(--block-spacer-before, 0px);
-  background: crimson; /* spacer visualization -- test */
+  @apply striped-3 spacer-fade;
 }
 
 .editor-input :is(p, h1, h2, h3, h4, h5, h6, blockquote, pre, ul, ol, li)::after {
   content: "";
   display: block;
   height: var(--block-spacer-after, 0px);
-  background: royalblue; /* spacer visualization -- test */
+  @apply striped-3 spacer-fade;
 }
 
 @utility code-wrap {
