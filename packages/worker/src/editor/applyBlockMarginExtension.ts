@@ -24,14 +24,14 @@ export const ApplyBlockMarginExtension = defineExtension({
         if (applied.get(key) === value) continue;
         const el = editor.getElementByKey(key);
         if (el === null) continue;
-        el.style.marginTop = `${value}px`;
+        el.style.setProperty("--block-spacer", `${value}px`);
         applied.set(key, value);
         touched = true;
       }
       for (const key of applied.keys()) {
         if (next.has(key)) continue;
         const el = editor.getElementByKey(key);
-        if (el !== null) el.style.marginTop = "";
+        if (el !== null) el.style.removeProperty("--block-spacer");
         applied.delete(key);
         touched = true;
       }
@@ -48,7 +48,7 @@ export const ApplyBlockMarginExtension = defineExtension({
       unregister();
       for (const key of applied.keys()) {
         const el = editor.getElementByKey(key);
-        if (el !== null) el.style.marginTop = "";
+        if (el !== null) el.style.removeProperty("--block-spacer");
       }
       applied.clear();
     };

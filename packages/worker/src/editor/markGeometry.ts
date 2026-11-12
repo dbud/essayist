@@ -24,7 +24,8 @@ export interface ZeroLengthMarkAnchor {
   top: number;
 }
 
-const inlineMargin = (el: HTMLElement): number => Number.parseFloat(el.style.marginTop) || 0;
+const inlineSpacer = (el: HTMLElement): number =>
+  Number.parseFloat(el.style.getPropertyValue("--block-spacer")) || 0;
 
 // Document-order comparator for fragments, by their elements' DOM position.
 function byDocumentPosition(a: MarkFragment, b: MarkFragment): number {
@@ -111,7 +112,7 @@ export function collectBlocks(
           key: blockKey,
           top: el.offsetTop,
           height: el.offsetHeight,
-          margin: inlineMargin(el),
+          margin: inlineSpacer(el),
         });
       }
       for (const id of ids) {
