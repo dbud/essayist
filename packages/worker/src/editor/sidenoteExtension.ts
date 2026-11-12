@@ -11,12 +11,7 @@ import type { MarkFragmentBadge, MarkOrdinals, MarkFragmentRect } from "#/models
 import { getMeasureContext } from "./domMeasure.ts";
 import { computeMarkFragmentBadges } from "./markFragmentBadges.ts";
 import { computeMarkFragmentRects } from "./markFragmentRects.ts";
-import {
-  collectAnchors,
-  collectBlocks,
-  collectFragments,
-  computeMarkTops,
-} from "./markGeometry.ts";
+import { collectAnchors, collectBlocks, collectFragments } from "./markGeometry.ts";
 import {
   createRafScheduler,
   registerFontLoadObserver,
@@ -35,7 +30,7 @@ interface SidenoteConfig {
   fonts: ReadonlyArray<Signal<string>>;
 }
 
-const EMPTY_MEASURED_MARKS: MeasuredMarks = { blocks: [], blocksByMarkId: new Map(), marks: [] };
+const EMPTY_MEASURED_MARKS: MeasuredMarks = { blocks: [] };
 
 export const SidenoteExtension = defineExtension({
   name: "sidenote",
@@ -67,16 +62,8 @@ export const SidenoteExtension = defineExtension({
         marks.filter((m) => m.length === 0),
       );
       const fragments = collectFragments(editor, nodeKeys);
-      const tops = computeMarkTops(fragments, anchors);
-      const { blocks, blocksByMarkId } = collectBlocks(editor, fragments, anchors);
-      setIfChanged(measuredMarks, {
-        blocks,
-        blocksByMarkId,
-        marks: marks.flatMap(({ id, offset }) => {
-          const top = tops.get(id);
-          return top === undefined ? [] : [{ id, top, offset }];
-        }),
-      });
+      const blocks = collectBlocks(editor, fragments, anchors, marks);
+      setIfChanged(measuredMarks, { blocks });
 
       setIfChanged(
         markFragmentBadges,

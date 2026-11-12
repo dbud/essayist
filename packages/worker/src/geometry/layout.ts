@@ -7,15 +7,18 @@ export interface MarkedBlock {
   readonly margin: number;
 }
 
+export interface MeasuredMark {
+  readonly id: string;
+  readonly top: number;
+  readonly offset: number; // document offset, the mark-order tiebreak
+}
+
+export interface MeasuredBlock extends MarkedBlock {
+  readonly marks: readonly MeasuredMark[]; // marks paired to this block by the measure pass
+}
+
 export interface MeasuredMarks {
-  readonly blocks: readonly MarkedBlock[];
-  /** mark id -> the key of the containing block. */
-  readonly blocksByMarkId: ReadonlyMap<string, string>;
-  readonly marks: readonly {
-    readonly id: string;
-    readonly top: number;
-    readonly offset: number; // document offset, the mark-order tiebreak
-  }[];
+  readonly blocks: readonly MeasuredBlock[];
 }
 
 export interface MeasuredSidenotes {
@@ -54,18 +57,15 @@ export class Layout {
       measured.sidenotes.map(({ id, height }) => [id, { height, top: 0 }]),
     );
     // The layout's ordering happens here once: blocks ascend by top (the normalize and reflow walks
-    // rely on it), marks by top with the document offset, then id, breaking ties. Each mark joins
-    // the block its measure pairing resolved.
+    // rely on it), each block's marks by top with the document offset, then id, breaking ties. Mark
+    // records are copied because normalize mutates their tops.
     const blocks = measured.blocks.toSorted((a, b) => a.top - b.top);
-    const marksByBlock = new Map<string, Mark[]>();
-    for (const { id, top } of measured.marks.toSorted(
-      (a, b) => a.top - b.top || a.offset - b.offset || (a.id < b.id ? -1 : 1),
-    )) {
-      const blockKey = measured.blocksByMarkId.get(id);
-      if (blockKey === undefined) continue;
-      marksByBlock.getOrInsert(blockKey, []).push({ id, top });
-    }
-    this.#blocks = blocks.map((block) => ({ ...block, marks: marksByBlock.get(block.key) ?? [] }));
+    this.#blocks = blocks.map((block) => ({
+      ...block,
+      marks: block.marks
+        .toSorted((a, b) => a.top - b.top || a.offset - b.offset || (a.id < b.id ? -1 : 1))
+        .map(({ id, top }) => ({ id, top })),
+    }));
   }
 
   normalize(): this {

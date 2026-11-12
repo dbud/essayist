@@ -3,7 +3,7 @@ import { $isMarkNode } from "@lexical/mark";
 import type { LexicalEditor, NodeKey } from "lexical";
 import { $getNodeByKey, $getRoot } from "lexical";
 
-import type { MarkedBlock } from "#/geometry/layout.ts";
+import type { MarkedBlock, MeasuredBlock, MeasuredMark } from "#/geometry/layout.ts";
 import type { MarkAnchorTop, MarkFragmentTop, SidenotePositions } from "#/models/sidenotes.ts";
 import { editorStateToMarkdown } from "#/utils/markdown.ts";
 
@@ -107,19 +107,20 @@ export function collectFragments(
 }
 
 /**
- * The geometry of every marked block (inline margins included) and the mark-to-block pairing: per
- * mark, the block of its min-top line. Several marks can share one block, one multi-paragraph mark
- * visits several of its blocks (block records dedup per key), and a mark with no resolvable block
- * pairs to nothing.
+ * The measured blocks (inline margins included), each carrying the marks paired to it: per mark,
+ * the block of its top-most line. The mark rows supply each mark's document offset. Block records
+ * dedup per key; a mark with no resolvable block stays block-free.
  */
 export function collectBlocks(
   editor: LexicalEditor,
   fragments: ReadonlyArray<MarkFragment>,
   anchors: ReadonlyArray<ZeroLengthMarkAnchor>,
-): { blocks: MarkedBlock[]; blocksByMarkId: Map<string, NodeKey> } {
+  marks: ReadonlyArray<Mark>,
+): MeasuredBlock[] {
   const blocksByKey = new Map<NodeKey, MarkedBlock>();
-  // mark id -> top-most block
-  const pairs = new Map<string, { top: number; blockKey: NodeKey }>();
+  // mark id -> top-most block, with its line top and the mark's offset.
+  const pairs = new Map<string, { top: number; offset: number; blockKey: NodeKey }>();
+  const offsets = new Map(marks.map(({ id, offset }) => [id, offset]));
   editor.getEditorState().read(() => {
     const place = (ids: readonly string[], key: NodeKey, top: number) => {
       const blockKey = $marginBlockOf(key);
@@ -136,14 +137,20 @@ export function collectBlocks(
       }
       for (const id of ids) {
         const prev = pairs.get(id);
-        if (prev === undefined || top < prev.top) pairs.set(id, { top, blockKey });
+        if (prev === undefined || top < prev.top) {
+          pairs.set(id, { top, offset: offsets.get(id) ?? 0, blockKey });
+        }
       }
     };
     for (const { ids, key, top } of fragments) place(ids, key, top);
     for (const { id, key, top } of anchors) place([id], key, top);
   });
-  return {
-    blocks: [...blocksByKey.values()],
-    blocksByMarkId: new Map([...pairs].map(([id, { blockKey }]) => [id, blockKey])),
-  };
+  const marksByBlock = new Map<NodeKey, MeasuredMark[]>();
+  for (const [id, { top, offset, blockKey }] of pairs) {
+    marksByBlock.getOrInsert(blockKey, []).push({ id, top, offset });
+  }
+  return [...blocksByKey.values()].map((block) => ({
+    ...block,
+    marks: marksByBlock.get(block.key) ?? [],
+  }));
 }

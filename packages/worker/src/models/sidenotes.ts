@@ -91,11 +91,7 @@ interface SidenotesDeps {
  */
 export const SidenotesModel = createModel((key: FileKey, deps: SidenotesDeps) => {
   const { resolvedMarks, categories, scrollTop, viewportHeight } = deps;
-  const measuredMarks = signal<MeasuredMarks>({
-    blocks: [],
-    blocksByMarkId: new Map(),
-    marks: [],
-  });
+  const measuredMarks = signal<MeasuredMarks>({ blocks: [] });
   const heights = signal<SidenoteHeights>(new Map());
   const markFragmentBadges = signal<MarkFragmentBadge[]>([]);
   const markFragmentRects = signal<MarkFragmentRect[]>([]);
@@ -132,17 +128,20 @@ export const SidenotesModel = createModel((key: FileKey, deps: SidenotesDeps) =>
   const margins = deepComputed((): ReadonlyMap<NodeKey, number> => reflowed.value.margins);
 
   const entries = deepComputed((): SidenoteEntry[] => {
+    const byId = new Map(resolved.value.map((mark) => [mark.id, mark]));
     const out: SidenoteEntry[] = [];
-    for (const mark of resolved.value) {
-      const markTop = measuredMarks.value.marks.find((m) => m.id === mark.id)?.top;
-      if (markTop === undefined) continue; // not yet measured
-      out.push({
-        mark,
-        markTop,
-        ordinal: markOrdinals.value.get(mark.id) ?? 0,
-        active: activeMarkIds.value.has(mark.id),
-        color: colorById.value.get(mark.id) ?? FALLBACK_COLOR,
-      });
+    for (const block of measuredMarks.value.blocks) {
+      for (const { id, top } of block.marks) {
+        const mark = byId.get(id);
+        if (mark === undefined) continue;
+        out.push({
+          mark,
+          markTop: top,
+          ordinal: markOrdinals.value.get(id) ?? 0,
+          active: activeMarkIds.value.has(id),
+          color: colorById.value.get(id) ?? FALLBACK_COLOR,
+        });
+      }
     }
     return out.toSorted((a, b) => a.markTop - b.markTop || a.mark.offset - b.mark.offset);
   });

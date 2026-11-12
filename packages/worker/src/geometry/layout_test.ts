@@ -8,12 +8,24 @@ const measured = (
   marks: [string, number, number][],
   sidenotes: [string, number][],
   blocksByMarkId: Record<string, string>,
-): Measured => ({
-  blocks: blocks.map(([key, top, height, margin]) => ({ key, top, height, margin })),
-  blocksByMarkId: new Map(Object.entries(blocksByMarkId)),
-  marks: marks.map(([id, top, offset]) => ({ id, top, offset })),
-  sidenotes: sidenotes.map(([id, height]) => ({ id, height })),
-});
+): Measured => {
+  const marksByBlock = new Map<string, { id: string; top: number; offset: number }[]>();
+  for (const [id, top, offset] of marks) {
+    const blockKey = blocksByMarkId[id];
+    if (blockKey === undefined) continue;
+    marksByBlock.getOrInsert(blockKey, []).push({ id, top, offset });
+  }
+  return {
+    blocks: blocks.map(([key, top, height, margin]) => ({
+      key,
+      top,
+      height,
+      margin,
+      marks: marksByBlock.get(key) ?? [],
+    })),
+    sidenotes: sidenotes.map(([id, height]) => ({ id, height })),
+  };
+};
 
 const reflowed = (input: Measured): Layout => new Layout(input).normalize().reflow();
 
