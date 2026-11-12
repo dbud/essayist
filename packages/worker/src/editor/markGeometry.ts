@@ -4,7 +4,6 @@ import type { LexicalEditor, NodeKey } from "lexical";
 import { $getNodeByKey, $getRoot } from "lexical";
 
 import type { MarkedBlock, MeasuredBlock, MeasuredMark } from "#/geometry/layout.ts";
-import type { MarkAnchorTop, MarkFragmentTop, SidenotePositions } from "#/models/sidenotes.ts";
 import { editorStateToMarkdown } from "#/utils/markdown.ts";
 
 import { $badgeBlockOf, $marginBlockOf } from "./blocks.ts";
@@ -26,27 +25,6 @@ export interface ZeroLengthMarkAnchor {
 }
 
 const inlineMargin = (el: HTMLElement): number => Number.parseFloat(el.style.marginTop) || 0;
-
-/**
- * Per mark, the top of its anchored line: the smallest fragment top. A mark spanning paragraphs
- * anchors at its first line. Zero-length anchors fill the marks without fragments.
- */
-export function computeMarkTops(
-  fragments: ReadonlyArray<MarkFragmentTop>,
-  anchors: ReadonlyArray<MarkAnchorTop>,
-): SidenotePositions {
-  const tops = new Map<string, number>();
-  for (const { ids, top } of fragments) {
-    for (const id of ids) {
-      const pos = tops.get(id);
-      if (pos === undefined || top < pos) tops.set(id, top);
-    }
-  }
-  for (const { id, top } of anchors) {
-    if (!tops.has(id)) tops.set(id, top);
-  }
-  return tops;
-}
 
 // Document-order comparator for fragments, by their elements' DOM position.
 function byDocumentPosition(a: MarkFragment, b: MarkFragment): number {

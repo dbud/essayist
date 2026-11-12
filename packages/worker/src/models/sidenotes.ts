@@ -24,16 +24,6 @@ export type SidenoteHeights = Map<string, number>;
 // mark id -> 1-based ordinal in document order (by mark.offset).
 export type MarkOrdinals = Map<string, number>;
 
-export interface MarkFragmentTop {
-  ids: ReadonlyArray<string>;
-  top: number;
-}
-
-export interface MarkAnchorTop {
-  id: string;
-  top: number;
-}
-
 export interface MarkFragmentBadge {
   key: NodeKey;
   left: number; // end-x of the fragment text, relative to the editor column
