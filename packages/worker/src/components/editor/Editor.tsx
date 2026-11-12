@@ -40,7 +40,8 @@ export default function Editor({
   const selection = getEditorSelection({ wsId, path, versionId });
   const resolved = resolvedMarks.resolved;
   const {
-    positions: sidenotePositions,
+    markFragmentTops,
+    markAnchorTops,
     markOrdinals,
     markFragmentBadges,
     markFragmentRects,
@@ -53,7 +54,8 @@ export default function Editor({
         resolved,
         markdown,
         selection,
-        sidenotePositions,
+        markFragmentTops,
+        markAnchorTops,
         markOrdinals,
         markFragmentBadges,
         markFragmentRects,
@@ -66,7 +68,8 @@ export default function Editor({
     [
       path,
       versionId,
-      sidenotePositions,
+      markFragmentTops,
+      markAnchorTops,
       markOrdinals,
       markFragmentBadges,
       markFragmentRects,

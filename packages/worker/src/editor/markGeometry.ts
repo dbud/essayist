@@ -4,6 +4,7 @@ import type { LexicalEditor, NodeKey } from "lexical";
 import { $getNodeByKey, $getRoot } from "lexical";
 
 import type { MarkedBlock } from "#/geometry/layout.ts";
+import type { MarkAnchorTop, MarkFragmentTop, SidenotePositions } from "#/models/sidenotes.ts";
 import { editorStateToMarkdown } from "#/utils/markdown.ts";
 
 import { $badgeBlockOf, $marginBlockOf } from "./blocks.ts";
@@ -30,10 +31,10 @@ const inlineMargin = (el: HTMLElement): number => Number.parseFloat(el.style.mar
  * Per mark, the top of its anchored line: the smallest fragment top. A mark spanning paragraphs
  * anchors at its first line. Zero-length anchors fill the marks without fragments.
  */
-export function markTops(
-  fragments: ReadonlyArray<MarkFragment>,
-  anchors: ReadonlyArray<ZeroLengthMarkAnchor>,
-): Map<string, number> {
+export function computeMarkTops(
+  fragments: ReadonlyArray<MarkFragmentTop>,
+  anchors: ReadonlyArray<MarkAnchorTop>,
+): SidenotePositions {
   const tops = new Map<string, number>();
   for (const { ids, top } of fragments) {
     for (const id of ids) {

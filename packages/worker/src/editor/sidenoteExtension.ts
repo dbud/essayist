@@ -2,33 +2,35 @@ import type { Mark } from "@essayist/core";
 import { defineExtension } from "@lexical/extension";
 import { MarkNode } from "@lexical/mark";
 import type { ReadonlySignal, Signal } from "@preact/signals";
-import { equal } from "@std/assert/equal";
 import type { LexicalEditor } from "lexical";
 import { mergeRegister } from "lexical";
 
 import type { MarkedBlock } from "#/geometry/layout.ts";
 import type {
+  MarkAnchorTop,
   MarkFragmentBadge,
-  MarkOrdinals,
   MarkFragmentRect,
-  SidenotePositions,
+  MarkFragmentTop,
+  MarkOrdinals,
 } from "#/models/sidenotes.ts";
 
 import { getMeasureContext } from "./domMeasure.ts";
 import { computeMarkFragmentBadges } from "./markFragmentBadges.ts";
 import { computeMarkFragmentRects } from "./markFragmentRects.ts";
-import { collectAnchors, collectBlocks, collectFragments, markTops } from "./markGeometry.ts";
+import { collectAnchors, collectBlocks, collectFragments } from "./markGeometry.ts";
 import {
   createRafScheduler,
   registerFontLoadObserver,
   registerResizeObserver,
   registerSignalsObserver,
 } from "./observers.ts";
+import { setIfChanged } from "./setIfChanged.ts";
 import { trackNodeKeys } from "./trackNodeKeys.ts";
 
 interface SidenoteConfig {
-  sidenotePositions: Signal<SidenotePositions>;
-  markOrdinals: Signal<MarkOrdinals>;
+  markFragmentTops: Signal<ReadonlyArray<MarkFragmentTop>>;
+  markAnchorTops: Signal<ReadonlyArray<MarkAnchorTop>>;
+  markOrdinals: ReadonlySignal<MarkOrdinals>;
   markFragmentBadges: Signal<MarkFragmentBadge[]>;
   markFragmentRects: Signal<MarkFragmentRect[]>;
   markedBlocks: Signal<MarkedBlock[]>;
@@ -41,7 +43,8 @@ export const SidenoteExtension = defineExtension({
   afterRegistration: (
     editor: LexicalEditor,
     {
-      sidenotePositions,
+      markFragmentTops,
+      markAnchorTops,
       markOrdinals,
       markFragmentBadges,
       markFragmentRects,
@@ -55,10 +58,11 @@ export const SidenoteExtension = defineExtension({
       const ctx = getMeasureContext(editor.getRootElement());
       // A pass that cannot measure retracts every measured publication.
       if (ctx === null) {
-        if (sidenotePositions.value.size > 0) sidenotePositions.value = new Map();
-        if (markFragmentBadges.value.length > 0) markFragmentBadges.value = [];
-        if (markFragmentRects.value.length > 0) markFragmentRects.value = [];
-        if (markedBlocks.value.length > 0) markedBlocks.value = [];
+        setIfChanged(markFragmentTops, []);
+        setIfChanged(markAnchorTops, []);
+        setIfChanged(markFragmentBadges, []);
+        setIfChanged(markFragmentRects, []);
+        setIfChanged(markedBlocks, []);
         return;
       }
 
@@ -69,20 +73,25 @@ export const SidenoteExtension = defineExtension({
       );
       const fragments = collectFragments(editor, nodeKeys);
 
-      const tops = markTops(fragments, anchors);
-      if (!equal(sidenotePositions.value, tops)) sidenotePositions.value = tops;
+      setIfChanged(
+        markFragmentTops,
+        fragments.map(({ ids, top }) => ({ ids, top })),
+      );
+      setIfChanged(
+        markAnchorTops,
+        anchors.map(({ id, top }) => ({ id, top })),
+      );
 
-      const ordinals = markOrdinals.value;
-      markFragmentBadges.value = computeMarkFragmentBadges(fragments, ordinals, ctx);
-      markFragmentRects.value = computeMarkFragmentRects(fragments, ctx);
+      setIfChanged(
+        markFragmentBadges,
+        computeMarkFragmentBadges(fragments, markOrdinals.value, ctx),
+      );
+      setIfChanged(markFragmentRects, computeMarkFragmentRects(fragments, ctx));
 
-      const blocks = collectBlocks(editor, fragments, anchors);
-      if (!equal(markedBlocks.value, blocks)) markedBlocks.value = blocks;
+      setIfChanged(markedBlocks, collectBlocks(editor, fragments, anchors));
     };
 
     const [schedule, disposeRafScheduler] = createRafScheduler(measure);
-
-    sidenotePositions.value = new Map();
 
     const [nodeKeys, disposeTrackNodeKeys] = trackNodeKeys(editor, MarkNode, schedule);
 
