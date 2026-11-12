@@ -2,7 +2,7 @@ import type { Mark } from "@essayist/core";
 import { defineExtension } from "@lexical/extension";
 import { MarkNode } from "@lexical/mark";
 import type { ReadonlySignal, Signal } from "@preact/signals";
-import type { LexicalEditor } from "lexical";
+import type { LexicalEditor, NodeKey } from "lexical";
 import { mergeRegister } from "lexical";
 
 import type { MarkedBlock } from "#/geometry/layout.ts";
@@ -34,6 +34,7 @@ interface SidenoteConfig {
   markFragmentBadges: Signal<MarkFragmentBadge[]>;
   markFragmentRects: Signal<MarkFragmentRect[]>;
   markedBlocks: Signal<MarkedBlock[]>;
+  blocksByMarkId: Signal<ReadonlyMap<string, NodeKey>>;
   resolved: ReadonlySignal<readonly Mark[]>;
   fonts: ReadonlyArray<Signal<string>>;
 }
@@ -49,6 +50,7 @@ export const SidenoteExtension = defineExtension({
       markFragmentBadges,
       markFragmentRects,
       markedBlocks,
+      blocksByMarkId,
       resolved,
       fonts,
     }: SidenoteConfig,
@@ -63,6 +65,7 @@ export const SidenoteExtension = defineExtension({
         setIfChanged(markFragmentBadges, []);
         setIfChanged(markFragmentRects, []);
         setIfChanged(markedBlocks, []);
+        setIfChanged(blocksByMarkId, new Map());
         return;
       }
 
@@ -88,7 +91,9 @@ export const SidenoteExtension = defineExtension({
       );
       setIfChanged(markFragmentRects, computeMarkFragmentRects(fragments, ctx));
 
-      setIfChanged(markedBlocks, collectBlocks(editor, fragments, anchors));
+      const collected = collectBlocks(editor, fragments, anchors);
+      setIfChanged(markedBlocks, collected.blocks);
+      setIfChanged(blocksByMarkId, collected.blocksByMarkId);
     };
 
     const [schedule, disposeRafScheduler] = createRafScheduler(measure);

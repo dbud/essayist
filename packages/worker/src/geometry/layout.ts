@@ -9,9 +9,12 @@ export interface MarkedBlock {
 
 export interface Measured {
   readonly blocks: readonly MarkedBlock[];
+  /** mark id -> the key of the containing block. */
+  readonly blocksByMarkId: ReadonlyMap<string, string>;
   readonly marks: readonly {
     readonly id: string;
     readonly top: number;
+    readonly offset: number; // document offset, the mark-order tiebreak
   }[];
   readonly sidenotes: readonly {
     readonly id: string;
@@ -45,20 +48,19 @@ export class Layout {
     this.#sidenotes = new Map<string, Sidenote>(
       measured.sidenotes.map(({ id, height }) => [id, { height, top: 0 }]),
     );
-    // Marks attach to the block whose box contains their line top; a mark outside every marked
-    // block box is skipped. Blocks tile the column, so each top falls into exactly one block. TODO
-    // -- REFACTOR
-    const byBlock: Mark[][] = measured.blocks.map(() => []);
-    for (const { id, top } of measured.marks) {
-      const index = measured.blocks.findIndex(
-        (block) => block.top <= top && top < block.top + block.height,
-      );
-      if (index !== -1) byBlock[index].push({ id, top });
+    // The layout's ordering happens here once: blocks ascend by top (the normalize and reflow walks
+    // rely on it), marks by top with the document offset, then id, breaking ties. Each mark joins
+    // the block its measure pairing resolved.
+    const blocks = measured.blocks.toSorted((a, b) => a.top - b.top);
+    const marksByBlock = new Map<string, Mark[]>();
+    for (const { id, top } of measured.marks.toSorted(
+      (a, b) => a.top - b.top || a.offset - b.offset || (a.id < b.id ? -1 : 1),
+    )) {
+      const blockKey = measured.blocksByMarkId.get(id);
+      if (blockKey === undefined) continue;
+      marksByBlock.getOrInsert(blockKey, []).push({ id, top });
     }
-    this.#blocks = measured.blocks.map((block, i) => ({
-      ...block,
-      marks: byBlock[i],
-    }));
+    this.#blocks = blocks.map((block) => ({ ...block, marks: marksByBlock.get(block.key) ?? [] }));
   }
 
   normalize(): this {

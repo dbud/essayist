@@ -7,7 +7,7 @@ import { ListExtension } from "@lexical/list";
 import { MarkExtension } from "@lexical/mark";
 import { RichTextExtension } from "@lexical/rich-text";
 import type { ReadonlySignal, Signal } from "@preact/signals";
-import { configExtension, defineExtension } from "lexical";
+import { configExtension, defineExtension, type NodeKey } from "lexical";
 
 import { PartialUpdateExtension } from "#/editor/partialUpdateExtension.ts";
 import type { MarkedBlock } from "#/geometry/layout.ts";
@@ -37,6 +37,7 @@ interface EditorDeps {
   markFragmentBadges: Signal<MarkFragmentBadge[]>;
   markFragmentRects: Signal<MarkFragmentRect[]>;
   markedBlocks: Signal<MarkedBlock[]>;
+  blocksByMarkId: Signal<ReadonlyMap<string, NodeKey>>;
   fonts: ReadonlyArray<Signal<string>>;
   writable: boolean;
 }
@@ -53,6 +54,7 @@ export function createEditorExtension(
     markFragmentBadges,
     markFragmentRects,
     markedBlocks,
+    blocksByMarkId,
     fonts,
     writable,
   }: EditorDeps,
@@ -89,6 +91,7 @@ export function createEditorExtension(
         markFragmentBadges,
         markFragmentRects,
         markedBlocks,
+        blocksByMarkId,
         resolved,
         fonts,
       }),

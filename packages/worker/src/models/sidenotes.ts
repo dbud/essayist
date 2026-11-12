@@ -93,6 +93,7 @@ export const SidenotesModel = createModel((key: FileKey, deps: SidenotesDeps) =>
   const markFragmentBadges = signal<MarkFragmentBadge[]>([]);
   const markFragmentRects = signal<MarkFragmentRect[]>([]);
   const markedBlocks = signal<MarkedBlock[]>([]);
+  const blocksByMarkId = signal<ReadonlyMap<string, NodeKey>>(new Map());
 
   const { resolved } = resolvedMarks;
   const { markIds: activeMarkIds } = getEditorSelection(key);
@@ -113,17 +114,15 @@ export const SidenotesModel = createModel((key: FileKey, deps: SidenotesDeps) =>
   );
 
   const measured = deepComputed((): Measured => {
-    const blocks = markedBlocks.value.toSorted((a, b) => a.top - b.top);
-    const marks = resolved.value
-      .flatMap(({ id, offset }) => {
-        const top = markTops.value.get(id);
-        if (top === undefined) return [];
-        return [{ id, top, offset }];
-      })
-      .toSorted((a, b) => a.top - b.top || a.offset - b.offset);
+    const marks = resolved.value.flatMap(({ id, offset }) => {
+      const top = markTops.value.get(id);
+      if (top === undefined) return [];
+      return [{ id, top, offset }];
+    });
     return {
-      blocks,
-      marks: marks.map(({ id, top }) => ({ id, top })),
+      blocks: markedBlocks.value,
+      blocksByMarkId: blocksByMarkId.value,
+      marks,
       sidenotes: resolved.value.map(({ id }) => ({
         id,
         height: heights.value.get(id) ?? 0,
@@ -190,6 +189,7 @@ export const SidenotesModel = createModel((key: FileKey, deps: SidenotesDeps) =>
     markFragmentTops,
     markAnchorTops,
     markedBlocks,
+    blocksByMarkId,
     heights,
     markOrdinals,
     colorById,

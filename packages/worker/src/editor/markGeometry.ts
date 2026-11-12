@@ -107,31 +107,43 @@ export function collectFragments(
 }
 
 /**
- * The geometry of every marked block (inline margins included). Several marks can share one block,
- * and one multi-paragraph mark visits several of its blocks, so records dedup per key.
+ * The geometry of every marked block (inline margins included) and the mark-to-block pairing: per
+ * mark, the block of its min-top line. Several marks can share one block, one multi-paragraph mark
+ * visits several of its blocks (block records dedup per key), and a mark with no resolvable block
+ * pairs to nothing.
  */
 export function collectBlocks(
   editor: LexicalEditor,
   fragments: ReadonlyArray<MarkFragment>,
   anchors: ReadonlyArray<ZeroLengthMarkAnchor>,
-): MarkedBlock[] {
+): { blocks: MarkedBlock[]; blocksByMarkId: Map<string, NodeKey> } {
   const blocksByKey = new Map<NodeKey, MarkedBlock>();
+  // mark id -> top-most block
+  const pairs = new Map<string, { top: number; blockKey: NodeKey }>();
   editor.getEditorState().read(() => {
-    const place = (key: NodeKey) => {
+    const place = (ids: readonly string[], key: NodeKey, top: number) => {
       const blockKey = $marginBlockOf(key);
       if (blockKey === null) return;
-      if (blocksByKey.has(blockKey)) return;
-      const el = editor.getElementByKey(blockKey);
-      if (el === null) return;
-      blocksByKey.set(blockKey, {
-        key: blockKey,
-        top: el.offsetTop,
-        height: el.offsetHeight,
-        margin: inlineMargin(el),
-      });
+      if (!blocksByKey.has(blockKey)) {
+        const el = editor.getElementByKey(blockKey);
+        if (el === null) return;
+        blocksByKey.set(blockKey, {
+          key: blockKey,
+          top: el.offsetTop,
+          height: el.offsetHeight,
+          margin: inlineMargin(el),
+        });
+      }
+      for (const id of ids) {
+        const prev = pairs.get(id);
+        if (prev === undefined || top < prev.top) pairs.set(id, { top, blockKey });
+      }
     };
-    for (const { key } of fragments) place(key);
-    for (const { key } of anchors) place(key);
+    for (const { ids, key, top } of fragments) place(ids, key, top);
+    for (const { id, key, top } of anchors) place([id], key, top);
   });
-  return [...blocksByKey.values()];
+  return {
+    blocks: [...blocksByKey.values()],
+    blocksByMarkId: new Map([...pairs].map(([id, { blockKey }]) => [id, blockKey])),
+  };
 }
