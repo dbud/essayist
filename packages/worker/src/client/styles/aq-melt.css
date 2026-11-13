@@ -1,9 +1,14 @@
+:root {
+  --aq-melt-s: url(#melt);
+  --aq-melt-w: url(#melt-wide);
+}
+
 @utility aq-melt {
-  filter: var(--aq-melt-s, url(#melt));
+  filter: var(--aq-melt-s) var(--aq-shadow);
 }
 
 @utility aq-melt-wide {
-  filter: var(--aq-melt-w, url(#melt-wide));
+  filter: var(--aq-melt-w) var(--aq-shadow);
 }
 
 /* Global preview switch: add class to html (or override the --aq-melt-* vars
