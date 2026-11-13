@@ -1,0 +1,14 @@
+@utility aq-melt {
+  filter: var(--aq-melt-s, url(#melt));
+}
+
+@utility aq-melt-wide {
+  filter: var(--aq-melt-w, url(#melt-wide));
+}
+
+/* Global preview switch: add class to html (or override the --aq-melt-* vars
+   in devtools) to see raw geometry, colors and motion without the melt. */
+html.aq-melt-off {
+  --aq-melt-s: none;
+  --aq-melt-w: none;
+}
