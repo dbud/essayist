@@ -4,14 +4,14 @@ interface MeltFilterProps {
   readonly bias?: number;
 }
 
-/** Filter region presets, in objectBoundingBox percentages: sizes are relative
- * to the container bbox. */
+/** Filter region presets, in objectBoundingBox percentages: sizes are
+    relative to the container bbox. */
 const MELT_PRESETS = [
   { id: "melt", x: -150, y: -150, width: 400, height: 400 },
   { id: "melt-wide", x: -400, y: -100, width: 900, height: 1000 },
 ] as const;
 
-export default function MeltFilter({ sigma = 12, gain = 18, bias = -6 }: MeltFilterProps) {
+export default function MeltFilter({ sigma = 6, gain = 18, bias = -6 }: MeltFilterProps) {
   const alphaRow = `0 0 0 ${gain} ${bias}`;
   return (
     <svg width="0" height="0" class="absolute" aria-hidden="true">
