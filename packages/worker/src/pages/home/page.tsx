@@ -1,18 +1,70 @@
-import { useAppState } from "#/state.ts";
+import { useSignal } from "@preact/signals";
+import { Bold, Code, Heart, Italic, Plus, Strikethrough } from "lucide-preact";
 
-import { useHomeModels } from "./models";
+import MeltFilter from "#/components/ui/MeltFilter.tsx";
 
-function HomePage() {
-  const { categories } = useHomeModels();
-  const { user } = useAppState();
+import { AqFiles, AqMenu } from "./aq";
+
+/** Lab furniture: toggles html.aq-melt-off. */
+function MeltToggle() {
+  const off = useSignal(false);
 
   return (
-    <main class="mx-auto max-w-2xl px-6 py-10 text-sm text-ink">
-      <h1 class="font-serif text-3xl text-ink">essayist</h1>
-      <p class="mt-3 text-ink/70">{user ? (user.name ?? user.email) : "anonymous"}</p>
-      <pre class="mt-6 max-w-lg overflow-x-auto text-xs leading-snug text-ink/70">
-        {JSON.stringify(categories.list.value, null, 2)}
-      </pre>
+    <button
+      type="button"
+      class="aq-lab__melt-toggle"
+      data-off={off.value ? "" : undefined}
+      onClick={() => {
+        off.value = !off.value;
+        document.documentElement.classList.toggle("aq-melt-off", off.value);
+      }}
+    >
+      melt: {off.value ? "off" : "on"}
+    </button>
+  );
+}
+
+function HomePage() {
+  return (
+    <main class="aq-lab">
+      <MeltFilter />
+      <MeltToggle />
+      <div class="aq-lab__row aq-melt">
+        <button type="button" class="aq-btn" disabled>
+          <Plus />
+          <span>New project</span>
+        </button>
+        <button type="button" class="aq-btn">
+          <Plus />
+          <span>New essay</span>
+        </button>
+        <div class="flex gap-4">
+          <button type="button" class="aq-btn">
+            <Bold />
+          </button>
+          <button type="button" class="aq-btn--accent">
+            <Italic />
+          </button>
+          <button type="button" class="aq-btn">
+            <Strikethrough />
+          </button>
+          <button type="button" class="aq-btn">
+            <Code />
+          </button>
+        </div>
+        <button type="button" class="aq-btn--accent">
+          <Heart />
+          <span>Review</span>
+        </button>
+      </div>
+      <div class="aq-lab__cols">
+        <div class="aq-lab__row">
+          <AqFiles />
+        </div>
+        <div class="aq-lab__row">
+          <AqMenu />
+        </div>
+      </div>
     </main>
   );
 }

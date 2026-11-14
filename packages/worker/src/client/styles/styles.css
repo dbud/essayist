@@ -9,6 +9,14 @@
 @import "./icons.css";
 @import "./input.css";
 @import "./layers.css";
+@import "./aq-button.css";
+@import "./aq.css";
+@import "./aq-dropdown.css";
+@import "./aq-melt.css";
+@import "./aq-menu.css";
+@import "./aq-motion.css";
+@import "./tmp.css";
+@import "./aq-webkit.css";
 @import "./logo.css";
 @import "./marks.css";
 @import "./motion.css";
@@ -31,6 +39,8 @@
     color-mix(in oklch, var(--color-ink) 60%, black)
   );
   --color-opposite: light-dark(black, white);
+  --color-float: oklch(15% 0.01 60);
+  --color-float-ink: oklch(95% 0.01 60);
   color-scheme: light dark;
 }
 
@@ -48,6 +58,8 @@
   --color-accent: var(--color-accent);
   --color-surface: var(--color-surface);
   --color-stroke: var(--color-stroke);
+  --color-float: var(--color-float);
+  --color-float-ink: var(--color-float-ink);
 }
 
 @theme {

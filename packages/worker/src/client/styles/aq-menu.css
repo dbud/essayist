@@ -1,0 +1,48 @@
+.aq-menu {
+  @apply bg-float rounded-lg;
+}
+
+.aq-menu-head {
+  padding: 0.3rem 0.8rem 1rem;
+}
+
+.aq-menu-name {
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.aq-menu-email {
+  font-size: 0.85rem;
+  color: var(--color-float-ink);
+}
+
+.aq-menu-rows {
+  display: flex;
+  flex-direction: column;
+}
+
+.aq-menu-row {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  width: 100%;
+  padding: 0.6rem 0.8rem;
+  border: none;
+  border-radius: 1rem;
+  background: transparent;
+  color: var(--color-float-ink);
+  font-size: 0.95rem;
+  cursor: pointer;
+  text-align: left;
+  transition: background calc(70ms * var(--aq-tempo)) ease-out;
+}
+
+.aq-menu-row:hover {
+  background: var(--color-float-hot);
+}
+
+.aq-menu-row svg {
+  width: 1.2rem;
+  height: 1.2rem;
+  color: var(--color-float-ink);
+}

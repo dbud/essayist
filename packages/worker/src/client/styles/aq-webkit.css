@@ -1,0 +1,112 @@
+/* WebKit drops url() filters while a composited transform/opacity transition
+   runs inside the filtered subtree. So transitions target registered custom
+   properties only (main-thread, nothing promotes) and transform/opacity just
+   read them. Numbers transition; <length> endpoints jump, and values behind
+   var() do not interpolate, so assignments are literal unitless numbers
+   (sync markers note which --aq-* token each mirrors). Each state rule
+   re-declares the var-driven transform/opacity or the Chromium rule's direct
+   value wins on specificity. Chromium skips the block. */
+@property --aq-panel-y {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 0;
+}
+@property --aq-panel-scale {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 0.16;
+}
+@property --aq-panel-fade {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 0;
+}
+@property --aq-item-lift {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 1.1;
+}
+@property --aq-item-scale {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 0.7;
+}
+@property --aq-item-fade {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 0;
+}
+@property --aq-chevron-t {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 0;
+}
+
+@supports (font: -apple-system-body) {
+  /* Panel: same grammar; the tuck differs per fixture, so the closed y is
+     owned by the fixture rule and the open value is 0 for both. */
+  .aq-dropdown {
+    transform: translateY(calc(var(--aq-panel-y) * 1rem)) scale(var(--aq-panel-scale));
+    opacity: var(--aq-panel-fade);
+    --aq-panel-y: 0;
+    --aq-panel-scale: 0.16;
+    transition:
+      --aq-panel-y var(--aq-close-tf) var(--aq-spring),
+      --aq-panel-scale var(--aq-close-tf) var(--aq-spring),
+      --aq-panel-fade var(--aq-close-op) ease-in,
+      visibility 0s linear var(--aq-close-tf);
+  }
+
+  .is-open .aq-dropdown {
+    transform: translateY(calc(var(--aq-panel-y) * 1rem)) scale(var(--aq-panel-scale));
+    opacity: var(--aq-panel-fade);
+    --aq-panel-y: 0;
+    --aq-panel-scale: 1;
+    --aq-panel-fade: 1;
+    transition:
+      --aq-panel-y var(--aq-open-tf) var(--aq-spring),
+      --aq-panel-scale var(--aq-open-tf) var(--aq-spring),
+      --aq-panel-fade var(--aq-open-op) ease-out,
+      visibility 0s;
+  }
+
+  /* Stagger cascade: the delay schedule comes through the inherited --aq-i
+     index; per-item values are set straight on the item. */
+  [data-aq-stagger] > * {
+    transform: translateY(calc(var(--aq-item-lift) * 1rem)) scale(var(--aq-item-scale));
+    opacity: var(--aq-item-fade);
+    --aq-item-lift: 1.1;
+    --aq-item-scale: 0.7;
+    --aq-item-fade: 0;
+    transition:
+      --aq-item-lift var(--aq-item-tf) var(--aq-spring) 0s,
+      --aq-item-scale var(--aq-item-tf) var(--aq-spring) 0s,
+      --aq-item-fade var(--aq-item-op) ease-in 0s;
+  }
+
+  .is-open [data-aq-stagger] > * {
+    transform: translateY(calc(var(--aq-item-lift) * 1rem)) scale(var(--aq-item-scale));
+    opacity: var(--aq-item-fade);
+    --aq-item-lift: 0;
+    --aq-item-scale: 1;
+    --aq-item-fade: 1;
+    transition:
+      --aq-item-lift var(--aq-item-tf) var(--aq-spring)
+        calc(var(--aq-stagger-base) + var(--aq-i, 0) * var(--aq-stagger-step)),
+      --aq-item-scale var(--aq-item-tf) var(--aq-spring)
+        calc(var(--aq-stagger-base) + var(--aq-i, 0) * var(--aq-stagger-step)),
+      --aq-item-fade var(--aq-item-op) ease-out
+        calc(var(--aq-stagger-base) + var(--aq-i, 0) * var(--aq-stagger-step));
+  }
+
+  .aq-chevron {
+    transform: rotate(calc(var(--aq-chevron-t) * 1deg));
+    transition: --aq-chevron-t var(--aq-close-tf) var(--aq-spring);
+  }
+
+  .is-open .aq-chevron {
+    transform: rotate(calc(var(--aq-chevron-t) * 1deg));
+    --aq-chevron-t: -180;
+    transition: --aq-chevron-t var(--aq-open-tf) var(--aq-spring);
+  }
+}

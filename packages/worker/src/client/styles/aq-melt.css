@@ -4,10 +4,12 @@
 }
 
 @utility aq-melt {
+  @apply relative;
   filter: var(--aq-melt-s) var(--aq-shadow);
 }
 
 @utility aq-melt-wide {
+  @apply relative;
   filter: var(--aq-melt-w) var(--aq-shadow);
 }
 
