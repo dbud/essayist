@@ -3,14 +3,11 @@ import type { ComponentChildren } from "preact";
 import { render } from "preact-render-to-string";
 
 import { env } from "#/env.ts";
-import {
-  type Preferences,
-  PreferencesProvider,
-  preferencesFromCookie,
-} from "#/models/preferences.ts";
+import { type Preferences, preferencesFromCookie } from "#/models/preferences.ts";
 import { clientScriptUrl, styleSheetUrl } from "#/pages/meta.ts";
-import { type AppState, AppStateProvider } from "#/state.ts";
+import { type AppState } from "#/state.ts";
 
+import { AppProviders } from "./providers";
 import { AppStateScript, PageDataScript } from "./seeds";
 
 export interface DocumentProps {
@@ -63,9 +60,9 @@ export function Document({
         {client !== undefined && <script type="module" src={clientScriptUrl(client)} />}
       </head>
       <body class="h-dvh flex flex-col">
-        <AppStateProvider value={state ?? {}}>
-          <PreferencesProvider value={preferences}>{children}</PreferencesProvider>
-        </AppStateProvider>
+        <AppProviders state={state ?? {}} preferences={preferences}>
+          {children}
+        </AppProviders>
       </body>
     </html>
   );

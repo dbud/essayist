@@ -3,9 +3,10 @@ import { assert } from "@std/assert";
 import type { ComponentChild } from "preact";
 import { hydrate } from "preact";
 
+import { AppProviders } from "#/app/providers.tsx";
 import { APP_STATE_SCRIPT_ID, PAGE_DATA_SCRIPT_ID } from "#/app/seeds.tsx";
-import { PreferencesProvider, preferencesFromCookie } from "#/models/preferences.ts";
-import { type AppState, AppStateProvider } from "#/state.ts";
+import { preferencesFromCookie } from "#/models/preferences.ts";
+import { type AppState } from "#/state.ts";
 
 function parseSeed<T>(id: string, fallback?: T): T {
   const text = document.getElementById(id)?.textContent;
@@ -31,9 +32,9 @@ export async function boot<Data>(page: (data: Data) => ComponentChild): Promise<
   const preferences = preferencesFromCookie(document.cookie, new URL(location.href));
 
   hydrate(
-    <AppStateProvider value={state}>
-      <PreferencesProvider value={preferences}>{page(data)}</PreferencesProvider>
-    </AppStateProvider>,
+    <AppProviders state={state} preferences={preferences}>
+      {page(data)}
+    </AppProviders>,
     document.body,
   );
 }
