@@ -26,15 +26,15 @@ export function AqMenu() {
       <div class="aq-dropdown aq-dropdown--origin-end">
         <div class="aq-menu">
           <div class="aq-menu-head">
-            <p class="aq-menu-name">Jane Doe</p>
-            <p class="aq-menu-email">jane@example.com</p>
+            <p class="text-base font-semibold">Jane Doe</p>
+            <p class="text-[0.85rem] text-float-ink">jane@example.com</p>
           </div>
           <ul class="aq-menu-rows" data-aq-stagger>
             {MENU_ROWS.map((row) => (
               <li>
-                <button type="button" class="aq-menu-row" onClick={close}>
+                <button type="button" class="aq-menu-btn" onClick={close}>
                   {row.icon}
-                  {row.label}
+                  <span>{row.label}</span>
                 </button>
               </li>
             ))}
@@ -45,7 +45,11 @@ export function AqMenu() {
   );
 }
 
-const FILE_ROWS = [{ name: "moby-dick.md" }, { name: "groceries.md" }, { name: "untitled.md" }];
+const FILE_ROWS: { name: string; selected?: boolean }[] = [
+  { name: "moby-dick.md" },
+  { name: "groceries.md", selected: true },
+  { name: "untitled.md" },
+];
 
 /** Dropdown composition: a menu of files with a floating action button after
     it, separated by the dropdown gap. */
@@ -62,13 +66,21 @@ export function AqFiles() {
       </button>
 
       <div class="aq-dropdown">
-        <div class="aq-menu" data-aq-stagger>
-          {FILE_ROWS.map((row) => (
-            <button type="button" class="aq-menu-row" onClick={close}>
-              <FileText />
-              {row.name}
-            </button>
-          ))}
+        <div class="aq-menu">
+          <ul class="aq-menu-rows" data-aq-stagger>
+            {FILE_ROWS.map((row) => (
+              <li>
+                <button
+                  type="button"
+                  class={`aq-menu-btn ${row.selected ? "is-selected" : ""}`}
+                  onClick={close}
+                >
+                  <FileText />
+                  <span>{row.name}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
         </div>
         <button type="button" class="aq-btn" onClick={close}>
           <Plus />

@@ -1,48 +1,27 @@
 .aq-menu {
-  @apply bg-float rounded-lg;
+  @apply bg-float rounded-lg py-2 px-2;
 }
 
 .aq-menu-head {
-  padding: 0.3rem 0.8rem 1rem;
-}
-
-.aq-menu-name {
-  font-size: 1rem;
-  font-weight: 600;
-}
-
-.aq-menu-email {
-  font-size: 0.85rem;
-  color: var(--color-float-ink);
+  @apply py-2 px-3;
 }
 
 .aq-menu-rows {
-  display: flex;
-  flex-direction: column;
+  @apply flex flex-col gap-2;
 }
 
-.aq-menu-row {
-  display: flex;
-  align-items: center;
-  gap: 0.8rem;
-  width: 100%;
-  padding: 0.6rem 0.8rem;
-  border: none;
-  border-radius: 1rem;
-  background: transparent;
-  color: var(--color-float-ink);
-  font-size: 0.95rem;
-  cursor: pointer;
-  text-align: left;
-  transition: background calc(70ms * var(--aq-tempo)) ease-out;
+.aq-menu-btn {
+  @apply aq-btn--base py-1.5 px-2 min-w-48 w-full rounded-sm;
+  @apply aq-melt;
+  --btn-bg: oklch(from var(--color-float) l c h / 0.6);
+  --aq-btn-ease: cubic-bezier(0.2, 0, 0, 1);
 }
 
-.aq-menu-row:hover {
-  background: var(--color-float-hot);
-}
+.aq-menu-btn.is-selected {
+  --btn-bg: var(--color-accent);
+  --btn-bg-hover: var(--aq-btn-accent-hover);
 
-.aq-menu-row svg {
-  width: 1.2rem;
-  height: 1.2rem;
-  color: var(--color-float-ink);
+  &:hover {
+    --btn-bg: var(--btn-bg-hover);
+  }
 }

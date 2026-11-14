@@ -1,5 +1,6 @@
 :root {
   --aq-btn-ease: cubic-bezier(0.4, -0.5, 0.55, 1.35);
+  --aq-btn-accent-hover: oklch(from var(--color-accent) l calc(c * 1.3) h);
 }
 
 @property --aq-btn-lifted {
@@ -23,7 +24,7 @@
     background-color calc(200ms * var(--aq-tempo, 1)) var(--aq-btn-ease),
     --aq-btn-lifted calc(240ms * var(--aq-tempo, 1)) var(--aq-btn-ease);
 
-  &:hover:where(:not(.is-open *)) {
+  &:hover:where(:not(.is-open > *)) {
     --btn-bg: var(--btn-bg-hover);
   }
 
@@ -61,5 +62,5 @@
 @utility aq-btn--accent {
   @apply aq-btn;
   --btn-bg: var(--color-accent);
-  --btn-bg-hover: oklch(from var(--color-accent) l calc(c * 1.3) h);
+  --btn-bg-hover: var(--aq-btn-accent-hover);
 }

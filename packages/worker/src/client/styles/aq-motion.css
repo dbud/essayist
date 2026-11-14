@@ -5,8 +5,8 @@
   --aq-open-op: calc(130ms * var(--aq-tempo));
   --aq-close-tf: calc(200ms * var(--aq-tempo));
   --aq-close-op: calc(170ms * var(--aq-tempo));
-  --aq-stagger-base: calc(100ms * var(--aq-tempo));
-  --aq-stagger-step: calc(30ms * var(--aq-tempo));
+  --aq-stagger-base: calc(50ms * var(--aq-tempo));
+  --aq-stagger-step: calc(20ms * var(--aq-tempo));
   --aq-item-tf: calc(100ms * var(--aq-tempo));
   --aq-item-op: calc(80ms * var(--aq-tempo));
   --aq-spring: cubic-bezier(0.3, 1.6, 0.45, 1);
