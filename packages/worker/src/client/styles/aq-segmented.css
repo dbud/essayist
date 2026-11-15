@@ -25,9 +25,9 @@
 }
 
 .aq-segmented--vertical {
-  @apply flex-col items-stretch;
+  @apply flex-col items-stretch min-w-0;
 
   & > button {
-    text-align: left;
+    @apply text-left whitespace-normal;
   }
 }

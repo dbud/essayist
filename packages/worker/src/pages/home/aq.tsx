@@ -26,8 +26,8 @@ const INTERVAL_OPTIONS = [
 ];
 
 const FONT_OPTIONS = [
-  { value: "vollkorn", label: "Vollkorn" },
-  { value: "plex", label: "Plex" },
+  { value: "atkinson", label: "Atkinson Hyperlegible" },
+  { value: "gothic", label: "Special Gothic" },
   { value: "system", label: "System" },
 ];
 
@@ -44,7 +44,7 @@ export function AqMenu() {
   const open = useSignal(false);
   const autosave = useSignal(true);
   const interval = useSignal(5);
-  const serifFont = useSignal("vollkorn");
+  const sansFont = useSignal("atkinson");
   const close = () => (open.value = false);
   const ref = useClickOutside(open.value ? close : undefined);
 
@@ -82,16 +82,6 @@ export function AqMenu() {
                 </div>
               </AqCollapse>
             </li>
-            <li class="aq-melt bg-float/60 flex items-start gap-2 px-2 pt-2">
-              <span class="shrink-0">Font</span>
-              <AqSegmented
-                value={serifFont}
-                options={FONT_OPTIONS}
-                label="Font"
-                class="flex-1"
-                vertical
-              />
-            </li>
             {MENU_ROWS.map((row) => (
               <li>
                 <button type="button" class="aq-menu-btn" onClick={close}>
@@ -100,6 +90,21 @@ export function AqMenu() {
                 </button>
               </li>
             ))}
+          </ul>
+        </div>
+        <div class="aq-menu">
+          <ul class="aq-menu-rows" data-aq-stagger>
+            <li class="flex flex-col gap-1">
+              <span class="shrink-0">Interface font</span>
+              <div class="aq-melt bg-float/60">
+                <AqSegmented
+                  value={sansFont}
+                  options={FONT_OPTIONS}
+                  label="Interface font"
+                  vertical
+                />
+              </div>
+            </li>
           </ul>
         </div>
       </div>

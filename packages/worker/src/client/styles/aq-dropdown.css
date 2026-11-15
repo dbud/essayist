@@ -31,8 +31,8 @@
   --aq-panel-origin-x: var(--aq-dropdown-origin-x);
   left: var(--aq-dropdown-x);
   top: calc(100% + var(--aq-panel-gap, var(--aq-gap)));
-  width: 100%;
-  align-items: flex-start;
+  width: max-content;
+  align-items: stretch;
   gap: var(--aq-dropdown-gap);
 
   &.is-open {
@@ -45,7 +45,7 @@
   --aq-dropdown-origin-x: 100%;
   left: auto;
   right: var(--aq-dropdown-x);
-  align-items: flex-end;
+  align-items: stretch;
 }
 
 @utility aq-dropdown--right {
