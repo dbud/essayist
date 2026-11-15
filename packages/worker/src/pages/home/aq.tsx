@@ -114,7 +114,9 @@ export function AqProjects() {
                   <Folder />
                   <span>{project.name}</span>
                 </button>
-                <div class={`aq-dropdown--right ${openProject.value === i ? "is-open" : ""}`}>
+                <div
+                  class={`aq-dropdown--right-bridged ${openProject.value === i ? "is-open" : ""}`}
+                >
                   <div class="aq-menu">
                     <ul class="aq-menu-rows" data-aq-stagger>
                       {project.files.map((file) => (
