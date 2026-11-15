@@ -1,16 +1,21 @@
 import { type Signal } from "@preact/signals";
 
-export default function AqSegmented({
+export default function AqSegmented<T extends number | string>({
   value,
   options,
   label,
+  vertical = false,
+  class: extra,
 }: {
-  value: Signal<number>;
-  options: { value: number; label: string }[];
+  value: Signal<T>;
+  options: { value: T; label: string }[];
   label: string;
+  vertical?: boolean;
+  class?: string;
 }) {
+  const classes = vertical ? "aq-segmented aq-segmented--vertical" : "aq-segmented";
   return (
-    <div class="aq-segmented" role="radiogroup" aria-label={label}>
+    <div class={extra ? `${classes} ${extra}` : classes} role="radiogroup" aria-label={label}>
       {options.map((option) => (
         <button
           type="button"

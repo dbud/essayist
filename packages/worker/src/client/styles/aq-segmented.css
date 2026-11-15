@@ -23,3 +23,11 @@
     transition: none;
   }
 }
+
+.aq-segmented--vertical {
+  @apply flex-col items-stretch;
+
+  & > button {
+    text-align: left;
+  }
+}

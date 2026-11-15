@@ -25,6 +25,12 @@ const INTERVAL_OPTIONS = [
   { value: 300, label: "5m" },
 ];
 
+const FONT_OPTIONS = [
+  { value: "vollkorn", label: "Vollkorn" },
+  { value: "plex", label: "Plex" },
+  { value: "system", label: "System" },
+];
+
 const MENU_ROWS = [
   { label: "Profile", icon: <User /> },
   { label: "Settings", icon: <Settings2 /> },
@@ -38,6 +44,7 @@ export function AqMenu() {
   const open = useSignal(false);
   const autosave = useSignal(true);
   const interval = useSignal(5);
+  const serifFont = useSignal("vollkorn");
   const close = () => (open.value = false);
   const ref = useClickOutside(open.value ? close : undefined);
 
@@ -74,6 +81,16 @@ export function AqMenu() {
                   <AqSegmented value={interval} options={INTERVAL_OPTIONS} label="Interval" />
                 </div>
               </AqCollapse>
+            </li>
+            <li class="aq-melt bg-float/60 flex items-start gap-2 px-2 pt-2">
+              <span class="shrink-0">Font</span>
+              <AqSegmented
+                value={serifFont}
+                options={FONT_OPTIONS}
+                label="Font"
+                class="flex-1"
+                vertical
+              />
             </li>
             {MENU_ROWS.map((row) => (
               <li>
