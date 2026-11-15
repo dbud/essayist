@@ -26,6 +26,7 @@ const MENU_ROWS = [
     at rest. */
 export function AqMenu() {
   const open = useSignal(false);
+  const autosave = useSignal(true);
   const close = () => (open.value = false);
   const ref = useClickOutside(open.value ? close : undefined);
 
@@ -47,6 +48,17 @@ export function AqMenu() {
             <p class="text-[0.85rem] text-float-ink">jane@example.com</p>
           </div>
           <ul class="aq-menu-rows" data-aq-stagger>
+            <li>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={autosave.value}
+                class={`aq-menu-btn aq-toggle-row ${autosave.value ? "is-on" : ""}`}
+                onClick={() => (autosave.value = !autosave.value)}
+              >
+                <span>Autosave</span>
+              </button>
+            </li>
             {MENU_ROWS.map((row) => (
               <li>
                 <button type="button" class="aq-menu-btn" onClick={close}>

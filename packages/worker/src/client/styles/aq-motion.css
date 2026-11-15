@@ -15,6 +15,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .aq-dropdown,
+  .aq-toggle::after,
   [data-aq-stagger] > * {
     transition: none;
   }
