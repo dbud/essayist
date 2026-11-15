@@ -9,7 +9,7 @@
   min-height: 100svh;
   display: grid;
   place-content: center;
-  justify-items: center;
+  justify-items: start;
   gap: 3rem;
   background: var(--aq-bg);
   color: var(--color-float-ink);
@@ -21,19 +21,7 @@
   gap: 1.4rem;
 }
 
-.aq-lab__cols {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  align-items: start;
-  gap: 2rem;
-  width: 100%;
-}
-
 /* Clearance under each fixture so the open panel never crosses the next one. */
-.aq-lab__row--menu {
-  margin-bottom: 13rem;
-}
-
 .aq-lab__note {
   font-size: 0.75rem;
   letter-spacing: 0.08em;

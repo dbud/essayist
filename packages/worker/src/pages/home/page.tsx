@@ -57,13 +57,9 @@ function HomePage() {
           <span>Review</span>
         </button>
       </div>
-      <div class="aq-lab__cols">
-        <div class="aq-lab__row">
-          <AqProjects />
-        </div>
-        <div class="aq-lab__row">
-          <AqMenu />
-        </div>
+      <div class="aq-lab__row">
+        <AqProjects />
+        <AqMenu />
       </div>
     </main>
   );

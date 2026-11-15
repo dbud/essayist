@@ -193,3 +193,10 @@
 .swappable-in {
   animation: var(--swap-in) var(--swap-duration, 200ms) ease-out forwards;
 }
+
+/* Width flip (fluid swappables): the transition applies only while the
+   measured width is locked, from JS. */
+.swappable[data-swap-width] {
+  transition: width var(--swap-duration, 200ms) ease-out;
+  overflow: visible;
+}
