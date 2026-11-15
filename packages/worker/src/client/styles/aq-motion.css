@@ -29,6 +29,7 @@
     opacity var(--aq-item-op) ease-in 0s;
 }
 
+[data-aq-stagger].is-open > *,
 .is-open > .aq-menu > [data-aq-stagger] > * {
   opacity: 1;
   transform: none;

@@ -88,6 +88,7 @@
       --aq-item-fade var(--aq-item-op) ease-in 0s;
   }
 
+  [data-aq-stagger].is-open > *,
   .is-open > .aq-menu > [data-aq-stagger] > * {
     transform: translateY(calc(var(--aq-item-lift) * 1rem)) scale(var(--aq-item-scale));
     opacity: var(--aq-item-fade);

@@ -38,7 +38,7 @@ export function AqMenu() {
         <span>Settings</span>
         <ChevronDown class="aq-chevron" />
       </button>
-      <div class={`aq-dropdown--origin-end ${open.value ? "is-open" : ""}`}>
+      <div class={`aq-dropdown--origin-end ${open.value ? "is-open" : ""}`} data-aq-stagger>
         <div class="aq-menu">
           <div class="aq-menu-head">
             <p class="text-base font-semibold">Jane Doe</p>
@@ -101,7 +101,7 @@ export function AqProjects() {
         <ChevronDown class="aq-chevron" />
       </button>
 
-      <div class={`aq-dropdown ${open.value ? "is-open" : ""}`}>
+      <div class={`aq-dropdown ${open.value ? "is-open" : ""}`} data-aq-stagger>
         <div class="aq-menu">
           <ul class="aq-menu-rows" data-aq-stagger>
             {PROJECTS.map((project, i) => (
@@ -116,6 +116,7 @@ export function AqProjects() {
                 </button>
                 <div
                   class={`aq-dropdown--right-bridged ${openProject.value === i ? "is-open" : ""}`}
+                  data-aq-stagger
                 >
                   <div class="aq-menu">
                     <ul class="aq-menu-rows" data-aq-stagger>
