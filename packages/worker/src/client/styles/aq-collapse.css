@@ -1,0 +1,32 @@
+.aq-collapse {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows var(--aq-item-tf) ease-out;
+
+  &[data-open] {
+    grid-template-rows: 1fr;
+  }
+
+  > .aq-collapse-clip {
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  &.aq-collapse-fade {
+    > .aq-collapse-clip {
+      opacity: 0;
+      transition: opacity var(--aq-item-op) ease;
+    }
+
+    &[data-open] > .aq-collapse-clip {
+      opacity: 1;
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aq-collapse,
+  .aq-collapse-fade > .aq-collapse-clip {
+    transition: none;
+  }
+}

@@ -1,4 +1,4 @@
-import { type Signal, useComputed, useSignal } from "@preact/signals";
+import { useComputed, useSignal } from "@preact/signals";
 import {
   ChevronDown,
   CreditCard,
@@ -12,6 +12,8 @@ import {
   User,
 } from "lucide-preact";
 
+import AqCollapse from "#/components/ui/AqCollapse.tsx";
+import AqSegmented from "#/components/ui/AqSegmented.tsx";
 import Swappable from "#/components/ui/Swappable.tsx";
 import { useClickOutside } from "#/hooks/useClickOutside.ts";
 
@@ -22,33 +24,6 @@ const INTERVAL_OPTIONS = [
   { value: 120, label: "2m" },
   { value: 300, label: "5m" },
 ];
-
-/** Standalone option pills in a radio group; the selected one paints accent. */
-export function AqSegmented({
-  value,
-  options,
-  label,
-}: {
-  value: Signal<number>;
-  options: { value: number; label: string }[];
-  label: string;
-}) {
-  return (
-    <div class="aq-segmented" role="radiogroup" aria-label={label}>
-      {options.map((option) => (
-        <button
-          type="button"
-          role="radio"
-          aria-checked={value.value === option.value}
-          class={option.value === value.value ? "is-selected" : ""}
-          onClick={() => (value.value = option.value)}
-        >
-          {option.label}
-        </button>
-      ))}
-    </div>
-  );
-}
 
 const MENU_ROWS = [
   { label: "Profile", icon: <User /> },
@@ -84,7 +59,7 @@ export function AqMenu() {
             <p class="text-[0.85rem] text-float-ink">jane@example.com</p>
           </div>
           <ul class="aq-menu-rows" data-aq-stagger>
-            <li>
+            <li class="flex flex-col min-w-52">
               <button
                 type="button"
                 role="switch"
@@ -94,9 +69,11 @@ export function AqMenu() {
               >
                 <span>Autosave</span>
               </button>
-            </li>
-            <li class="aq-melt bg-float/60">
-              <AqSegmented value={interval} options={INTERVAL_OPTIONS} label="Interval" />
+              <AqCollapse open={autosave.value} fade>
+                <div class="aq-melt bg-float/60 mt-1">
+                  <AqSegmented value={interval} options={INTERVAL_OPTIONS} label="Interval" />
+                </div>
+              </AqCollapse>
             </li>
             {MENU_ROWS.map((row) => (
               <li>
