@@ -1,0 +1,25 @@
+.aq-segmented {
+  @apply flex items-center gap-1 rounded-full cursor-pointer p-1;
+
+  & > button {
+    @apply rounded-full px-2 py-1 leading-none cursor-pointer appearance-none
+      border-0 select-none whitespace-nowrap text-sm;
+
+    background-color: transparent;
+    transition: background-color calc(120ms * var(--aq-tempo, 1)) ease;
+
+    &:hover {
+      background-color: color-mix(in oklch, var(--color-float), white 25%);
+    }
+
+    &.is-selected {
+      @apply bg-accent;
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aq-segmented > button {
+    transition: none;
+  }
+}

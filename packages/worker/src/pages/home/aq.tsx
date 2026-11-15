@@ -1,4 +1,4 @@
-import { useComputed, useSignal } from "@preact/signals";
+import { type Signal, useComputed, useSignal } from "@preact/signals";
 import {
   ChevronDown,
   CreditCard,
@@ -15,6 +15,41 @@ import {
 import Swappable from "#/components/ui/Swappable.tsx";
 import { useClickOutside } from "#/hooks/useClickOutside.ts";
 
+const INTERVAL_OPTIONS = [
+  { value: 5, label: "5s" },
+  { value: 15, label: "15s" },
+  { value: 30, label: "30s" },
+  { value: 120, label: "2m" },
+  { value: 300, label: "5m" },
+];
+
+/** Standalone option pills in a radio group; the selected one paints accent. */
+export function AqSegmented({
+  value,
+  options,
+  label,
+}: {
+  value: Signal<number>;
+  options: { value: number; label: string }[];
+  label: string;
+}) {
+  return (
+    <div class="aq-segmented" role="radiogroup" aria-label={label}>
+      {options.map((option) => (
+        <button
+          type="button"
+          role="radio"
+          aria-checked={value.value === option.value}
+          class={option.value === value.value ? "is-selected" : ""}
+          onClick={() => (value.value = option.value)}
+        >
+          {option.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 const MENU_ROWS = [
   { label: "Profile", icon: <User /> },
   { label: "Settings", icon: <Settings2 /> },
@@ -27,6 +62,7 @@ const MENU_ROWS = [
 export function AqMenu() {
   const open = useSignal(false);
   const autosave = useSignal(true);
+  const interval = useSignal(5);
   const close = () => (open.value = false);
   const ref = useClickOutside(open.value ? close : undefined);
 
@@ -58,6 +94,9 @@ export function AqMenu() {
               >
                 <span>Autosave</span>
               </button>
+            </li>
+            <li class="aq-melt bg-float/60">
+              <AqSegmented value={interval} options={INTERVAL_OPTIONS} label="Interval" />
             </li>
             {MENU_ROWS.map((row) => (
               <li>
