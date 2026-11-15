@@ -24,7 +24,7 @@
     background-color calc(200ms * var(--aq-tempo, 1)) var(--aq-btn-ease),
     --aq-btn-lifted calc(240ms * var(--aq-tempo, 1)) var(--aq-btn-ease);
 
-  &:hover:where(:not(.is-open > *)) {
+  &:hover:where(:not([aria-expanded="true"])) {
     --btn-bg: var(--btn-bg-hover);
   }
 

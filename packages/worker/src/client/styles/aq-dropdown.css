@@ -3,25 +3,21 @@
   --aq-dropdown-gap: 1rem;
   --aq-dropdown-origin-x: 50%;
   --aq-panel-gap: 0rem;
-  --aq-panel-tuck: 0rem;
+  --aq-panel-hidden-y: 0rem;
+  --aq-dropdown--right-x: 1rem;
 }
 
-.aq-dropdown {
+@utility aq-panel {
   @apply absolute z-1 flex flex-col opacity-0 invisible pointer-events-none;
-  left: var(--aq-dropdown-x);
-  top: calc(100% + var(--aq-panel-gap, var(--aq-gap)));
-  width: 100%;
-  align-items: flex-start;
-  gap: var(--aq-dropdown-gap);
-  transform-origin: var(--aq-dropdown-origin-x) top;
-  transform: translateY(calc(-1 * var(--aq-panel-tuck))) scale(0.16);
+  transform-origin: var(--aq-panel-origin-x, 50%) top;
+  transform: translateY(var(--aq-panel-hidden-y)) scale(0.16);
   transition:
     transform var(--aq-close-tf) var(--aq-spring),
     opacity var(--aq-close-op) ease-in,
     visibility 0s linear var(--aq-close-tf);
 }
 
-.is-open .aq-dropdown {
+@utility aq-panel-open {
   @apply opacity-100 visible pointer-events-auto;
   transform: translateY(0) scale(1);
   transition:
@@ -30,11 +26,34 @@
     visibility 0s;
 }
 
-.aq-dropdown--origin-end {
+@utility aq-dropdown {
+  @apply aq-panel;
+  --aq-panel-origin-x: var(--aq-dropdown-origin-x);
+  left: var(--aq-dropdown-x);
+  top: calc(100% + var(--aq-panel-gap, var(--aq-gap)));
+  width: 100%;
+  align-items: flex-start;
+  gap: var(--aq-dropdown-gap);
+
+  &.is-open {
+    @apply aq-panel-open;
+  }
+}
+
+@utility aq-dropdown--origin-end {
+  @apply aq-dropdown;
   --aq-dropdown-origin-x: 100%;
   left: auto;
   right: var(--aq-dropdown-x);
   align-items: flex-end;
+}
+
+@utility aq-dropdown--right {
+  @apply aq-dropdown;
+  --aq-panel-origin-x: 0%;
+  left: calc(100% + var(--aq-dropdown--right-x));
+  top: 0;
+  width: max-content;
 }
 
 .aq-chevron {
@@ -43,6 +62,6 @@
   transition: transform var(--aq-close-tf) var(--aq-spring);
 }
 
-.is-open .aq-chevron {
+[aria-expanded="true"] .aq-chevron {
   transform: rotate(-180deg);
 }

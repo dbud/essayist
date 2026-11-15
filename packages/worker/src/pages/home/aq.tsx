@@ -1,5 +1,15 @@
 import { useSignal } from "@preact/signals";
-import { ChevronDown, CreditCard, FileText, LogOut, Plus, Settings2, User } from "lucide-preact";
+import {
+  ChevronDown,
+  CreditCard,
+  FileInput,
+  FileText,
+  Folder,
+  LogOut,
+  Plus,
+  Settings2,
+  User,
+} from "lucide-preact";
 
 import { useClickOutside } from "#/hooks/useClickOutside.ts";
 
@@ -18,12 +28,17 @@ export function AqMenu() {
   const ref = useClickOutside(open.value ? close : undefined);
 
   return (
-    <div class={`aq-melt ${open.value ? "is-open" : ""}`} ref={ref}>
-      <button type="button" class="aq-btn" onClick={() => (open.value = !open.value)}>
+    <div class="aq-melt" ref={ref}>
+      <button
+        type="button"
+        class="aq-btn"
+        aria-expanded={open.value}
+        onClick={() => (open.value = !open.value)}
+      >
         <span>Settings</span>
         <ChevronDown class="aq-chevron" />
       </button>
-      <div class="aq-dropdown aq-dropdown--origin-end">
+      <div class={`aq-dropdown--origin-end ${open.value ? "is-open" : ""}`}>
         <div class="aq-menu">
           <div class="aq-menu-head">
             <p class="text-base font-semibold">Jane Doe</p>
@@ -45,46 +60,93 @@ export function AqMenu() {
   );
 }
 
-const FILE_ROWS: { name: string; selected?: boolean }[] = [
-  { name: "moby-dick.md" },
-  { name: "groceries.md", selected: true },
-  { name: "untitled.md" },
+const PROJECTS: { name: string; files: { name: string; selected?: boolean }[] }[] = [
+  {
+    name: "Moby Dick",
+    files: [
+      { name: "chapter-1.md" },
+      { name: "chapter-2.md", selected: true },
+      { name: "notes.md" },
+    ],
+  },
+  { name: "Groceries", files: [{ name: "list.md" }, { name: "recipes.md" }] },
+  { name: "Untitled", files: [{ name: "scratch.md" }] },
 ];
 
-/** Dropdown composition: a menu of files with a floating action button after
-    it, separated by the dropdown gap. */
-export function AqFiles() {
+export function AqProjects() {
   const open = useSignal(false);
-  const close = () => (open.value = false);
+  const openProject = useSignal(-1);
+  const close = () => {
+    open.value = false;
+    openProject.value = -1;
+  };
   const ref = useClickOutside(open.value ? close : undefined);
 
+  const toggleProject = (i: number) => {
+    openProject.value = openProject.value === i ? -1 : i;
+  };
+
   return (
-    <div class={`aq-melt ${open.value ? "is-open" : ""}`} ref={ref}>
-      <button type="button" class="aq-btn" onClick={() => (open.value = !open.value)}>
-        <span>Files</span>
+    <div class="aq-melt" ref={ref}>
+      <button
+        type="button"
+        class="aq-btn"
+        aria-expanded={open.value}
+        onClick={() => {
+          open.value = !open.value;
+          openProject.value = -1;
+        }}
+      >
+        <span>Projects</span>
         <ChevronDown class="aq-chevron" />
       </button>
 
-      <div class="aq-dropdown">
+      <div class={`aq-dropdown ${open.value ? "is-open" : ""}`}>
         <div class="aq-menu">
           <ul class="aq-menu-rows" data-aq-stagger>
-            {FILE_ROWS.map((row) => (
-              <li>
+            {PROJECTS.map((project, i) => (
+              <li class="relative">
                 <button
                   type="button"
-                  class={`aq-menu-btn ${row.selected ? "is-selected" : ""}`}
-                  onClick={close}
+                  class={`aq-menu-btn ${openProject.value === i ? "is-selected" : ""}`}
+                  onClick={() => toggleProject(i)}
                 >
-                  <FileText />
-                  <span>{row.name}</span>
+                  <Folder />
+                  <span>{project.name}</span>
                 </button>
+                <div class={`aq-dropdown--right ${openProject.value === i ? "is-open" : ""}`}>
+                  <div class="aq-menu">
+                    <ul class="aq-menu-rows" data-aq-stagger>
+                      {project.files.map((file) => (
+                        <li>
+                          <button
+                            type="button"
+                            class={`aq-menu-btn ${file.selected ? "is-selected" : ""}`}
+                            onClick={close}
+                          >
+                            <FileText />
+                            <span>{file.name}</span>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  <button type="button" class="aq-btn" onClick={close}>
+                    <Plus />
+                    <span>New file</span>
+                  </button>
+                  <button type="button" class="aq-btn" onClick={close}>
+                    <FileInput />
+                    <span>Import file</span>
+                  </button>
+                </div>
               </li>
             ))}
           </ul>
         </div>
         <button type="button" class="aq-btn" onClick={close}>
           <Plus />
-          <span>New file</span>
+          <span>New project</span>
         </button>
       </div>
     </div>

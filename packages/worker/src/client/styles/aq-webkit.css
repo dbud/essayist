@@ -45,7 +45,8 @@
 @supports (font: -apple-system-body) {
   /* Panel: same grammar; the tuck differs per fixture, so the closed y is
      owned by the fixture rule and the open value is 0 for both. */
-  .aq-dropdown {
+  .aq-dropdown,
+  .aq-dropdown--right {
     transform: translateY(calc(var(--aq-panel-y) * 1rem)) scale(var(--aq-panel-scale));
     opacity: var(--aq-panel-fade);
     --aq-panel-y: 0;
@@ -57,7 +58,8 @@
       visibility 0s linear var(--aq-close-tf);
   }
 
-  .is-open .aq-dropdown {
+  .aq-dropdown.is-open,
+  .aq-dropdown--right.is-open {
     transform: translateY(calc(var(--aq-panel-y) * 1rem)) scale(var(--aq-panel-scale));
     opacity: var(--aq-panel-fade);
     --aq-panel-y: 0;
