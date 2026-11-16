@@ -14,6 +14,7 @@ const HIGHLIGHT_STYLE_VALUES: readonly HighlightStyle[] = ["band", "wavy"];
 const SANS_FONT_VALUES: readonly SansFont[] = ["atkinson", "gothic", "system"];
 const SERIF_FONT_VALUES: readonly SerifFont[] = ["vollkorn", "plex", "system"];
 const ADMIN_TAB_VALUES: readonly AdminTab[] = ["passes", "graph", "pools", "prompts", "categories"];
+export const AUTO_SAVE_INTERVAL_VALUES: readonly number[] = [2, 5, 10, 15, 30, 60, 120];
 
 const DARK_QUERY = "(prefers-color-scheme: dark)";
 
@@ -33,6 +34,8 @@ export interface PreferenceValues {
   readonly serifFont: SerifFont;
   readonly highlightStyle: HighlightStyle;
   readonly adminTab: AdminTab;
+  readonly autoSave: boolean;
+  readonly autoSaveInterval: number;
 }
 
 function readBoolean(raw: unknown, fallback: boolean): boolean {
@@ -52,6 +55,10 @@ function readTheme(raw: unknown): Theme | null {
   return THEME_VALUES.has(raw as Theme) ? (raw as Theme) : null;
 }
 
+function readNumberOneOf(raw: unknown, values: readonly number[], fallback: number): number {
+  return typeof raw === "number" && values.includes(raw) ? raw : fallback;
+}
+
 /** The cookie payload is user-editable, so every value is validated. */
 function readValues(raw: Record<string, unknown>): PreferenceValues {
   return {
@@ -62,6 +69,8 @@ function readValues(raw: Record<string, unknown>): PreferenceValues {
     serifFont: readOneOf(raw.serifFont, SERIF_FONT_VALUES, "plex"),
     highlightStyle: readOneOf(raw.highlightStyle, HIGHLIGHT_STYLE_VALUES, "wavy"),
     adminTab: readOneOf(raw.adminTab, ADMIN_TAB_VALUES, "pools"),
+    autoSave: readBoolean(raw.autoSave, true),
+    autoSaveInterval: readNumberOneOf(raw.autoSaveInterval, AUTO_SAVE_INTERVAL_VALUES, 5),
   };
 }
 
@@ -74,6 +83,8 @@ export interface Preferences {
   readonly serifFont: Signal<SerifFont>;
   readonly highlightStyle: Signal<HighlightStyle>;
   readonly adminTab: Signal<AdminTab>;
+  readonly autoSave: Signal<boolean>;
+  readonly autoSaveInterval: Signal<number>;
   readonly toggleTheme: () => void;
 }
 
@@ -94,6 +105,8 @@ function createPreferences(values: PreferenceValues, url: URL): Preferences {
   const serifFont = signal(values.serifFont);
   const highlightStyle = signal(values.highlightStyle);
   const adminTab = signal(values.adminTab);
+  const autoSave = signal(values.autoSave);
+  const autoSaveInterval = signal(values.autoSaveInterval);
 
   const theme = computed<Theme>(() => themeOverride.value ?? (systemDark.value ? "dark" : "light"));
 
@@ -114,6 +127,8 @@ function createPreferences(values: PreferenceValues, url: URL): Preferences {
         serifFont: serifFont.value,
         highlightStyle: highlightStyle.value,
         adminTab: adminTab.value,
+        autoSave: autoSave.value,
+        autoSaveInterval: autoSaveInterval.value,
       };
       // The first run would write back the values that were just read.
       if (initial) {
@@ -148,6 +163,8 @@ function createPreferences(values: PreferenceValues, url: URL): Preferences {
     serifFont,
     highlightStyle,
     adminTab,
+    autoSave,
+    autoSaveInterval,
     toggleTheme,
   };
 }

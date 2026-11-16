@@ -10,9 +10,9 @@ import WaveBars from "#/components/ui/WaveBars.tsx";
 import { useBooting } from "#/hooks/useBooting.ts";
 import { useTick } from "#/hooks/useTick.ts";
 import { PENDING_VERSION_ID } from "#/models/fileContent.ts";
+import { usePreferences } from "#/models/preferences.ts";
 import { showToast } from "#/models/utils/toast.ts";
 import { useEditorModels } from "#/pages/editor/models.ts";
-import { autoSave } from "#/signals/preferences.ts";
 import { formatDateTime, formatRelativeTime } from "#/utils/format.ts";
 import { META_KEY } from "#/utils/platform.ts";
 
@@ -26,6 +26,7 @@ function useFileLoading(): boolean {
 function SaveStatus() {
   useTick(30_000);
   const pending = useFileLoading();
+  const { autoSave } = usePreferences();
   const file = useEditorModels().fileContents.current.value;
   assertExists(file, "VersionPicker renders SaveStatus only with a file");
   const { saving, saveError, dirty, draft, version } = file;

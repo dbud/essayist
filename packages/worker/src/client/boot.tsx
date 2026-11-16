@@ -5,7 +5,7 @@ import { hydrate } from "preact";
 
 import { AppProviders } from "#/app/providers.tsx";
 import { APP_STATE_SCRIPT_ID, PAGE_DATA_SCRIPT_ID } from "#/app/seeds.tsx";
-import { preferencesFromCookie } from "#/models/preferences.ts";
+import { type Preferences, preferencesFromCookie } from "#/models/preferences.ts";
 import { type AppState } from "#/state.ts";
 
 function parseSeed<T>(id: string, fallback?: T): T {
@@ -18,7 +18,9 @@ function parseSeed<T>(id: string, fallback?: T): T {
 }
 
 // oxlint-disable-next-line typescript/no-unnecessary-type-parameters -- the generic types the seed parse with the page's declared data type
-export async function boot<Data>(page: (data: Data) => ComponentChild): Promise<void> {
+export async function boot<Data>(
+  page: (data: Data, preferences: Preferences) => ComponentChild,
+): Promise<void> {
   if (import.meta.env.DEV) {
     await import("preact/debug");
     const ms = Number(new URLSearchParams(location.search).get("hydrationDelay"));
@@ -33,7 +35,7 @@ export async function boot<Data>(page: (data: Data) => ComponentChild): Promise<
 
   hydrate(
     <AppProviders state={state} preferences={preferences}>
-      {page(data)}
+      {page(data, preferences)}
     </AppProviders>,
     document.body,
   );

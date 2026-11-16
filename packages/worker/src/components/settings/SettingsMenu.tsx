@@ -19,26 +19,21 @@ import MarkStyleSelect from "#/components/settings/MarkStyleSelect.tsx";
 import AqCollapse from "#/components/ui/AqCollapse.tsx";
 import AqSegmented from "#/components/ui/AqSegmented.tsx";
 import { useClickOutside } from "#/hooks/useClickOutside.ts";
+import { AUTO_SAVE_INTERVAL_VALUES } from "#/models/preferences.ts";
 import { usePreferences } from "#/models/preferences.ts";
-import { autoSave, autoSaveInterval } from "#/signals/preferences.ts";
 import { clearPreferencesCookie } from "#/utils/preferencesCookie.ts";
 
 interface SettingsMenuProps {
   user: User;
 }
 
-const INTERVAL_OPTIONS = [
-  { value: 2, label: "2s" },
-  { value: 5, label: "5s" },
-  { value: 10, label: "10s" },
-  { value: 15, label: "15s" },
-  { value: 30, label: "30s" },
-  { value: 60, label: "1m" },
-  { value: 120, label: "2m" },
-];
+const INTERVAL_OPTIONS = AUTO_SAVE_INTERVAL_VALUES.map((seconds) => ({
+  value: seconds,
+  label: seconds >= 60 ? `${seconds / 60} min` : `${seconds}s`,
+}));
 
 export default function SettingsMenu({ user }: SettingsMenuProps) {
-  const { debugSidebarOpened, sansFont, serifFont } = usePreferences();
+  const { debugSidebarOpened, sansFont, serifFont, autoSave, autoSaveInterval } = usePreferences();
   const open = useSignal(false);
   const close = () => (open.value = false);
   const ref = useClickOutside(open.value ? close : undefined);
