@@ -17,6 +17,7 @@ test("reads the values from the cookie", () => {
       sansFont: "atkinson",
       serifFont: "vollkorn",
       highlightStyle: "band",
+      fileStatsSections: ["chars", "junk", "charsWithSpaces", "chars"],
     }),
     url,
   );
@@ -27,6 +28,7 @@ test("reads the values from the cookie", () => {
   expect(preferences.sansFont.value).toBe("atkinson");
   expect(preferences.serifFont.value).toBe("vollkorn");
   expect(preferences.highlightStyle.value).toBe("band");
+  expect(preferences.fileStatsSections.value).toEqual(["chars", "charsWithSpaces"]);
 });
 
 test("falls back to the defaults without a cookie", () => {
@@ -37,6 +39,7 @@ test("falls back to the defaults without a cookie", () => {
   expect(preferences.sansFont.value).toBe("gothic");
   expect(preferences.serifFont.value).toBe("plex");
   expect(preferences.highlightStyle.value).toBe("wavy");
+  expect(preferences.fileStatsSections.value).toEqual(["words", "chars"]);
 });
 
 test("falls back to the defaults for a malformed value", () => {
@@ -46,6 +49,7 @@ test("falls back to the defaults for a malformed value", () => {
       themeOverride: "neon",
       sansFont: "comic",
       highlightStyle: 3,
+      fileStatsSections: "nope",
     }),
     url,
   );
@@ -53,4 +57,5 @@ test("falls back to the defaults for a malformed value", () => {
   expect(preferences.themeOverride.value).toBe(null);
   expect(preferences.sansFont.value).toBe("gothic");
   expect(preferences.highlightStyle.value).toBe("wavy");
+  expect(preferences.fileStatsSections.value).toEqual(["words", "chars"]);
 });

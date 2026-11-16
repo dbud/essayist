@@ -4,8 +4,8 @@ import { ChevronDown } from "lucide-preact";
 
 import { useClickOutside } from "#/hooks/useClickOutside.ts";
 import { FileStatsModel } from "#/models/fileStats.ts";
+import { type FileStatSection, usePreferences } from "#/models/preferences.ts";
 import { useEditorModels } from "#/pages/editor/models.ts";
-import { type FileStatSection, fileStatsSections } from "#/signals/preferences.ts";
 import { formatCount } from "#/utils/format.ts";
 
 const STAT_OPTIONS: { value: FileStatSection; label: string }[] = [
@@ -18,6 +18,7 @@ export default function FileStats() {
   const file = useEditorModels().fileContents.current.value;
   assertExists(file, "FileViewerBody mounts FileStats only with a file");
   const stats = useModel(() => new FileStatsModel(file));
+  const { fileStatsSections } = usePreferences();
   const enabled = fileStatsSections.value;
   const open = useSignal(false);
   const close = () => (open.value = false);
