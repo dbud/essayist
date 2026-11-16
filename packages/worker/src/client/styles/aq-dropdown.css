@@ -48,6 +48,11 @@
   align-items: stretch;
 }
 
+@utility aq-dropdown--origin-start {
+  @apply aq-dropdown;
+  --aq-dropdown-origin-x: 0%;
+}
+
 @utility aq-dropdown--right {
   @apply aq-dropdown;
   --aq-panel-origin-x: 0%;

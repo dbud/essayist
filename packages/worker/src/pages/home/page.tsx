@@ -3,7 +3,7 @@ import { Bold, Code, Heart, Italic, Plus, Strikethrough } from "lucide-preact";
 
 import MeltFilter from "#/components/ui/MeltFilter.tsx";
 
-import { AqMenu, AqProjects } from "./aq";
+import { AqForm, AqMenu, AqProjects } from "./aq";
 
 /** Lab furniture: toggles html.aq-melt-off. */
 function MeltToggle() {
@@ -60,6 +60,9 @@ function HomePage() {
       <div class="aq-lab__row">
         <AqProjects />
         <AqMenu />
+      </div>
+      <div class="aq-lab__row">
+        <AqForm />
       </div>
     </main>
   );

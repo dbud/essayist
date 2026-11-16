@@ -1,0 +1,37 @@
+.aq-form {
+  --aq-underline-inset: 0.4rem;
+  --aq-underline-lift: 0.4rem;
+  --aq-underline-thickness: 1.5px;
+
+  @apply rounded-md p-2 min-w-96 w-full text-float-ink;
+
+  @apply grid items-stretch;
+  grid-template-columns: max-content minmax(0, 1fr);
+  @apply gap-x-5 gap-y-3;
+
+  & label {
+    @apply py-1.5;
+  }
+
+  & input,
+  & textarea {
+    @apply select-text outline-none min-w-0 pt-1.5 px-2 pb-2.5 bg-float text-float-ink rounded-xs;
+    caret-color: var(--color-accent);
+    background-image: linear-gradient(var(--color-accent), var(--color-accent));
+    background-position: var(--aq-underline-inset) calc(100% - var(--aq-underline-lift));
+    background-size: calc(100% - 2 * var(--aq-underline-inset)) var(--aq-underline-thickness);
+    background-repeat: no-repeat;
+
+    &::placeholder {
+      color: color-mix(in oklch, var(--color-float-ink) 50%, transparent);
+    }
+
+    &:focus {
+      background-color: color-mix(in oklch, var(--color-float), white 20%);
+    }
+  }
+
+  & textarea {
+    @apply resize-none;
+  }
+}

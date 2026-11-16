@@ -8,9 +8,10 @@
 
   min-height: 100svh;
   display: grid;
-  place-content: center;
+  place-content: start;
   justify-items: start;
   gap: 3rem;
+  padding: 2rem;
   background: var(--aq-bg);
   color: var(--color-float-ink);
   font-family: var(--font-sans);

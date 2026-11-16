@@ -11,6 +11,7 @@ import {
   Slash,
   User,
 } from "lucide-preact";
+import { useLayoutEffect } from "preact/hooks";
 
 import AqCollapse from "#/components/ui/AqCollapse.tsx";
 import AqSegmented from "#/components/ui/AqSegmented.tsx";
@@ -30,6 +31,64 @@ const FONT_OPTIONS = [
   { value: "gothic", label: "Special Gothic" },
   { value: "system", label: "System" },
 ];
+
+export function AqForm() {
+  const open = useSignal(false);
+  const name = useSignal("");
+  const close = () => (open.value = false);
+  const ref = useClickOutside(open.value ? close : undefined);
+
+  useLayoutEffect(() => {
+    if (open.value) {
+      document.getElementById("new-project-name")?.focus({ preventScroll: true });
+    }
+  }, [open.value]);
+
+  return (
+    <div class="aq-melt" ref={ref}>
+      <button
+        type="button"
+        class="aq-btn"
+        aria-expanded={open.value}
+        onClick={() => (open.value = !open.value)}
+      >
+        <Plus />
+        <span>New project</span>
+      </button>
+      <div class={`aq-dropdown--origin-start ${open.value ? "is-open" : ""}`}>
+        <div class="aq-menu">
+          <div class="aq-form" data-aq-stagger>
+            <label for="new-project-name">Name</label>
+            <input
+              id="new-project-name"
+              placeholder="Project name"
+              value={name.value}
+              onInput={(e) => (name.value = e.currentTarget.value)}
+            />
+            <label for="new-project-description">Description</label>
+            <textarea id="new-project-description" placeholder="Optional" rows={3} />
+          </div>
+        </div>
+        <div class="flex justify-end gap-4">
+          <button type="button" class="aq-btn" onClick={close}>
+            Cancel
+          </button>
+          <button
+            type="button"
+            class="aq-btn--accent"
+            onClick={() => {
+              name.value = "";
+              close();
+            }}
+            disabled={name.value.trim() === ""}
+          >
+            Create
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 const MENU_ROWS = [
   { label: "Profile", icon: <User /> },
