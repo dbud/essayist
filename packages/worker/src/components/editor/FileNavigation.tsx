@@ -67,6 +67,7 @@ function BreadcrumbsTrigger() {
     <Swappable
       swapKey={workspaces.loading.value ? "loading" : navigationOpened.value ? "open" : "closed"}
       class="swap-slide leading-none relative z-dropdown"
+      fluid
     >
       {workspaces.loading.value ? (
         <WaveBars class="h-10 text-ink/70 bg-surface" />

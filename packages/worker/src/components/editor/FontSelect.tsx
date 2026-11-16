@@ -22,12 +22,12 @@ export default function FontSelect() {
     <div class="aq-melt inline-flex" ref={ref}>
       <button
         type="button"
-        class="aq-btn @sm:w-24"
+        class="aq-btn"
         aria-expanded={open.value}
         data-tooltip="Reading font"
         onClick={() => (open.value = !open.value)}
       >
-        <Swappable swapKey={current.value} class="swap-shift">
+        <Swappable swapKey={current.value} class="swap-shift" fluid>
           <span class="inline-flex gap-1">
             <span>Aa</span>
             <span class="hidden @sm:inline">{current.label}</span>

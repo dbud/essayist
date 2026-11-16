@@ -1,13 +1,14 @@
+import { useSignal } from "@preact/signals";
 import { assertExists } from "@std/assert";
 import { sortBy } from "@std/collections";
 import { ChevronDown, CircleDashed, LockKeyhole } from "lucide-preact";
 import type { ComponentChild } from "preact";
 
-import Dropdown, { DropdownItem, DropdownMenu } from "#/components/ui/Dropdown.tsx";
 import { CircleCheckIcon } from "#/components/ui/icons.tsx";
 import Swappable from "#/components/ui/Swappable.tsx";
 import WaveBars from "#/components/ui/WaveBars.tsx";
 import { useBooting } from "#/hooks/useBooting.ts";
+import { useClickOutside } from "#/hooks/useClickOutside.ts";
 import { useTick } from "#/hooks/useTick.ts";
 import { PENDING_VERSION_ID } from "#/models/fileContent.ts";
 import { usePreferences } from "#/models/preferences.ts";
@@ -51,10 +52,10 @@ function SaveStatus() {
       label = autoSave.value ? (
         "Save pending..."
       ) : (
-        <>
+        <span class="inline-flex items-baseline gap-1">
           <kbd>{META_KEY}</kbd>
           <kbd>S</kbd> to save changes
-        </>
+        </span>
       );
     }
   }
@@ -62,17 +63,17 @@ function SaveStatus() {
   const saved = !pending && !saving.value && !dirty.value;
 
   return (
-    <span class="inline-flex items-start gap-1">
+    <span class="inline-flex items-center gap-1">
       {!pending && (
         <Swappable swapKey={saved ? "check" : "dashed"} class="swap-rotate shrink-0">
           {saved ? (
-            <CircleCheckIcon size={14} class="text-ink" />
+            <CircleCheckIcon class="text-float-ink" />
           ) : (
-            <CircleDashed size={14} class="text-accent animate-[spin_3s_linear_infinite]" />
+            <CircleDashed class="text-accent animate-[spin_3s_linear_infinite]" />
           )}
         </Swappable>
       )}
-      <Swappable swapKey={statusKey} class="swap-shift">
+      <Swappable swapKey={statusKey} class="swap-shift" fluid>
         {label}
       </Swappable>
     </span>
@@ -81,14 +82,18 @@ function SaveStatus() {
 
 function VersionChip({ timestamp, lock }: { timestamp: number; lock?: boolean }) {
   return (
-    <span class="inline-flex items-start gap-1">
-      {lock && <LockKeyhole size={14} />}
+    <span class="inline-flex items-center gap-1">
+      {lock && <LockKeyhole />}
       <span class="leading-none">{formatDateTime(timestamp)}</span>
     </span>
   );
 }
 
 export default function VersionPicker() {
+  const open = useSignal(false);
+  const close = () => (open.value = false);
+  const ref = useClickOutside(open.value ? close : undefined);
+
   const { fileContents, fileTrees, selected, fileVersions, writable } = useEditorModels();
   const file = fileContents.current.value;
   assertExists(file, "FileViewerBody mounts VersionPicker only with a file");
@@ -107,8 +112,8 @@ export default function VersionPicker() {
     selection?.versionId !== PENDING_VERSION_ID &&
     (file.draft.value !== null || file.dirty.value);
 
-  async function promoteDraft(close: () => void): Promise<void> {
-    close();
+  async function promoteDraft(dismiss: () => void): Promise<void> {
+    dismiss();
     assertExists(file, "the promoted file exists");
     const promoted = await file.promote();
     if (!promoted) {
@@ -120,45 +125,52 @@ export default function VersionPicker() {
   }
 
   return (
-    <Dropdown
-      // TODO -- the version history tooltip needs a rework
-      triggerClass="btn relative w-52 whitespace-nowrap"
-      trigger={
-        <>
-          <WaveBars fill amplitude={active ? 0.5 : 0} class="text-ink" />
-          <Swappable swapKey={writable.value ? "latest" : "pinned"} class="swap-shift self-start">
-            {!writable.value && selectedVersion ? (
-              <VersionChip timestamp={selectedVersion.timestamp} lock />
-            ) : (
-              <SaveStatus />
-            )}
-          </Swappable>
-          {!pending && <ChevronDown size={14} class="rotate-on-open" />}
-        </>
-      }
-    >
-      {(close) => (
-        <DropdownMenu class="dropdown-menu--full">
-          {import.meta.env.DEV && promotable ? (
-            <>
-              <DropdownItem onClick={() => void promoteDraft(close)}>Promote draft</DropdownItem>
-              <div class="separator" />
-            </>
-          ) : null}
-          {list.map((version) => (
-            <DropdownItem
-              key={version.version_id}
-              selected={version.version_id === versionId}
-              onClick={() => {
-                fileTrees.current.value?.selectVersion(version.version_id);
-                close();
-              }}
-            >
-              <VersionChip timestamp={version.timestamp} />
-            </DropdownItem>
-          ))}
-        </DropdownMenu>
-      )}
-    </Dropdown>
+    <div class="aq-melt inline-flex" ref={ref}>
+      <button
+        type="button"
+        class="aq-btn relative"
+        aria-expanded={open.value}
+        onClick={() => (open.value = !open.value)}
+      >
+        <WaveBars fill amplitude={active ? 0.5 : 0} class="text-float-ink" />
+        <Swappable
+          swapKey={writable.value ? "latest" : "pinned"}
+          class="swap-shift items-center h-[1em]"
+          fluid
+        >
+          {!writable.value && selectedVersion ? (
+            <VersionChip timestamp={selectedVersion.timestamp} lock />
+          ) : (
+            <SaveStatus />
+          )}
+        </Swappable>
+        {!pending && <ChevronDown class="aq-chevron" />}
+      </button>
+      <div class={`aq-dropdown ${open.value ? "is-open" : ""}`}>
+        <div class="aq-menu">
+          <ul class="aq-menu-rows" data-aq-stagger>
+            {list.map((version) => (
+              <li key={version.version_id}>
+                <button
+                  type="button"
+                  class={`aq-menu-btn ${version.version_id === versionId ? "is-selected" : ""}`}
+                  onClick={() => {
+                    fileTrees.current.value?.selectVersion(version.version_id);
+                    close();
+                  }}
+                >
+                  <VersionChip timestamp={version.timestamp} />
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+        {import.meta.env.DEV && promotable ? (
+          <button type="button" class="aq-btn" onClick={() => void promoteDraft(close)}>
+            Promote draft
+          </button>
+        ) : null}
+      </div>
+    </div>
   );
 }

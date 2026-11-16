@@ -49,7 +49,7 @@ export default function BlockTypeSelect({ block, onChange, disabled }: BlockType
     <div class="aq-melt" ref={ref}>
       <button
         type="button"
-        class="aq-btn @sm:w-36"
+        class="aq-btn"
         aria-expanded={open.value}
         data-tooltip="Paragraph style"
         disabled={disabled}
@@ -59,7 +59,7 @@ export default function BlockTypeSelect({ block, onChange, disabled }: BlockType
           {current.icon}
         </Swappable>
         <span class="hidden @sm:inline">
-          <Swappable swapKey={current.value} class="swap-shift">
+          <Swappable swapKey={current.value} class="swap-shift" fluid>
             {current.label}
           </Swappable>
         </span>

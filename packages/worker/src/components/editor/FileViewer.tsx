@@ -69,7 +69,7 @@ function FileViewerBody({ wsId, path, versionId }: FileKey) {
       <div class="z-toolbar flex flex-col bg-surface shadow-md">
         <div class="content-layout">
           <div class="content-main min-w-0">
-            <div class="flex w-fit items-center gap-4">
+            <div class="flex w-fit items-center gap-4 py-4">
               <FontSelect />
               <EditorToolbar
                 wsId={wsId}

@@ -26,13 +26,13 @@ export default function SidenoteControls() {
   }
 
   return (
-    <div class="relative flex min-w-72 flex-1 items-center stack stack--row">
+    <div class="relative flex min-w-72 flex-1 items-center">
       {loading.value ? (
         <div class="cell--data flex-1">Reviewing</div>
       ) : (
-        <button type="button" class="btn cell--accent" onClick={onReview}>
-          <Highlighter size={14} />
-          Review
+        <button type="button" class="aq-melt aq-btn--accent" onClick={onReview}>
+          <Highlighter />
+          <span>Review</span>
         </button>
       )}
       <div class="flex-1 self-stretch bg-surface" />

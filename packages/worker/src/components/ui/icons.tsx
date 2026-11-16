@@ -1,3 +1,5 @@
+import { useLucideContext } from "lucide-preact";
+
 interface ChoiceIconProps {
   size?: number;
   selected?: boolean;
@@ -10,12 +12,13 @@ interface IconProps {
 
 /** Circle outline with an oversized checkmark; matches the CircleDashed
     outline weight of lucide for pairing in status cells. */
-export function CircleCheckIcon({ size = 24, class: className }: IconProps) {
+export function CircleCheckIcon({ size, class: className }: IconProps) {
+  const width = size ?? useLucideContext().size ?? 24;
   return (
     <svg
       class={className}
-      width={size}
-      height={size}
+      width={width}
+      height={width}
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
@@ -31,11 +34,12 @@ export function CircleCheckIcon({ size = 24, class: className }: IconProps) {
 }
 
 /** Circle outline; filled disc inside when selected. */
-export function RadioIcon({ selected, size = 24 }: ChoiceIconProps) {
+export function RadioIcon({ selected, size }: ChoiceIconProps) {
+  const width = size ?? useLucideContext().size ?? 24;
   return (
     <svg
-      width={size}
-      height={size}
+      width={width}
+      height={width}
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
@@ -62,12 +66,13 @@ const VB_H = TRACK_H + STROKE;
 const LINE_HEIGHT = 1.1;
 
 /** Pill track; empty knob at the left end (off), filled at the right (on). */
-export function CheckboxIcon({ selected, size = 24 }: ChoiceIconProps) {
+export function CheckboxIcon({ selected, size }: ChoiceIconProps) {
+  const width = size ?? useLucideContext().size ?? 24;
   return (
     <svg
       class={`checkbox-icon${selected ? " is-selected" : ""}`}
-      width={(size * VB_W) / VB_H}
-      height={size}
+      width={(width * VB_W) / VB_H}
+      height={width}
       viewBox={`0 0 ${VB_W} ${VB_H * LINE_HEIGHT}`}
       fill="none"
       stroke="currentColor"
