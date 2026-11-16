@@ -1,3 +1,4 @@
+import { useSignal } from "@preact/signals";
 import {
   ChevronDown,
   CodeXml,
@@ -11,9 +12,9 @@ import {
 } from "lucide-preact";
 import type { ComponentChild } from "preact";
 
-import Dropdown, { DropdownItem, DropdownMenu } from "#/components/ui/Dropdown.tsx";
 import Swappable from "#/components/ui/Swappable.tsx";
-import type { BlockType } from "#/editor/blockFormat.ts";
+import { type BlockType } from "#/editor/blockFormat.ts";
+import { useClickOutside } from "#/hooks/useClickOutside.ts";
 
 interface BlockOption {
   value: BlockType;
@@ -22,14 +23,14 @@ interface BlockOption {
 }
 
 const OPTIONS: BlockOption[] = [
-  { value: "normal", label: "Paragraph", icon: <Pilcrow size={14} /> },
-  { value: "h1", label: "Heading 1", icon: <Heading1 size={14} /> },
-  { value: "h2", label: "Heading 2", icon: <Heading2 size={14} /> },
-  { value: "h3", label: "Heading 3", icon: <Heading3 size={14} /> },
-  { value: "quote", label: "Quote", icon: <Quote size={14} /> },
-  { value: "bullet", label: "Bullet list", icon: <List size={14} /> },
-  { value: "number", label: "Numbered list", icon: <ListOrdered size={14} /> },
-  { value: "code", label: "Code block", icon: <CodeXml size={14} /> },
+  { value: "normal", label: "Paragraph", icon: <Pilcrow /> },
+  { value: "h1", label: "Heading 1", icon: <Heading1 /> },
+  { value: "h2", label: "Heading 2", icon: <Heading2 /> },
+  { value: "h3", label: "Heading 3", icon: <Heading3 /> },
+  { value: "quote", label: "Quote", icon: <Quote /> },
+  { value: "bullet", label: "Bullet list", icon: <List /> },
+  { value: "number", label: "Numbered list", icon: <ListOrdered /> },
+  { value: "code", label: "Code block", icon: <CodeXml /> },
 ];
 
 interface BlockTypeSelectProps {
@@ -39,44 +40,52 @@ interface BlockTypeSelectProps {
 }
 
 export default function BlockTypeSelect({ block, onChange, disabled }: BlockTypeSelectProps) {
+  const open = useSignal(false);
+  const close = () => (open.value = false);
+  const ref = useClickOutside(open.value && !disabled ? close : undefined);
   const current = OPTIONS.find((o) => o.value === block) ?? OPTIONS[0];
 
   return (
-    <Dropdown
-      tooltip="Paragraph style"
-      triggerClass="btn @sm:w-36"
-      disabled={disabled}
-      trigger={
-        <>
-          <Swappable swapKey={current.value} class="swap-rotate">
-            {current.icon}
+    <div class="aq-melt" ref={ref}>
+      <button
+        type="button"
+        class="aq-btn @sm:w-36"
+        aria-expanded={open.value}
+        data-tooltip="Paragraph style"
+        disabled={disabled}
+        onClick={() => (open.value = !open.value)}
+      >
+        <Swappable swapKey={current.value} class="swap-rotate">
+          {current.icon}
+        </Swappable>
+        <span class="hidden @sm:inline">
+          <Swappable swapKey={current.value} class="swap-shift">
+            {current.label}
           </Swappable>
-          <span class="hidden @sm:inline">
-            <Swappable swapKey={current.value} class="swap-shift">
-              {current.label}
-            </Swappable>
-          </span>
-          <ChevronDown size={14} class="rotate-on-open" />
-        </>
-      }
-    >
-      {(close) => (
-        <DropdownMenu>
-          {OPTIONS.map((o) => (
-            <DropdownItem
-              key={o.value}
-              selected={o.value === block}
-              onClick={() => {
-                onChange(o.value);
-                close();
-              }}
-            >
-              {o.icon}
-              <span>{o.label}</span>
-            </DropdownItem>
-          ))}
-        </DropdownMenu>
-      )}
-    </Dropdown>
+        </span>
+        <ChevronDown class="aq-chevron" />
+      </button>
+      <div class={`aq-dropdown ${open.value ? "is-open" : ""}`}>
+        <div class="aq-menu">
+          <ul class="aq-menu-rows" data-aq-stagger>
+            {OPTIONS.map((o) => (
+              <li key={o.value}>
+                <button
+                  type="button"
+                  class={`aq-menu-btn ${o.value === block ? "is-selected" : ""}`}
+                  onClick={() => {
+                    onChange(o.value);
+                    close();
+                  }}
+                >
+                  {o.icon}
+                  <span>{o.label}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    </div>
   );
 }

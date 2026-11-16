@@ -64,17 +64,17 @@ export default function EditorToolbar({ wsId, path, versionId, disabled }: Edito
   const inlineDisabled = disabled || editor === null || sel.inCodeBlock.value;
 
   return (
-    <div class="flex stack">
+    <div class="flex items-center gap-2">
       <BlockTypeSelect block={sel.block.value} onChange={setBlock} disabled={disabled} />
       {INLINE_BUTTONS.map(({ fmt, tooltip, icon: Icon }) => (
         <button
           type="button"
-          class={`btn ${sel[fmt].value ? "cell--accent" : ""}`}
+          class={`aq-melt ${sel[fmt].value ? "aq-btn--accent" : "aq-btn"}`}
           disabled={inlineDisabled}
           data-tooltip={tooltip}
           onClick={() => format(fmt)}
         >
-          <Icon size={16} />
+          <Icon />
         </button>
       ))}
     </div>
