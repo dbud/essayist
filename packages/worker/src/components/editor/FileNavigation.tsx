@@ -1,12 +1,11 @@
 import { useSignal } from "@preact/signals";
-import { ArrowDownRight, ChevronDown, Plus, Slash } from "lucide-preact";
+import { ArrowDownRight, ChevronDown, ChevronRight, Plus, Slash } from "lucide-preact";
 import type { TargetedMouseEvent } from "preact";
 
 import CreateFileDialog from "#/components/editor/CreateFileDialog.tsx";
 import CreateWorkspaceDialog from "#/components/editor/CreateWorkspaceDialog.tsx";
 import FileUploader from "#/components/editor/FileUploader.tsx";
 import GoogleDocImporter from "#/components/editor/GoogleDocImporter.tsx";
-import Panel from "#/components/ui/Panel.tsx";
 import Swappable from "#/components/ui/Swappable.tsx";
 import WaveBars from "#/components/ui/WaveBars.tsx";
 import { useClickOutside } from "#/hooks/useClickOutside.ts";
@@ -69,28 +68,26 @@ function BreadcrumbsTrigger() {
       swapKey={workspaces.loading.value ? "loading" : navigationOpened.value ? "open" : "closed"}
       class="swap-slide leading-none relative z-dropdown"
     >
-      <div class="flex stack stack--row">
-        {workspaces.loading.value ? (
-          <WaveBars class="h-10 text-ink/70 bg-surface" />
-        ) : navigationOpened.value ? (
-          <div class="cell cell--ink w-48 relative">
-            <WaveBars fill amplitude={workspaces.loading.value ? 1 : 0} class="text-surface" />
-            <ArrowDownRight size={14} />
-            Projects
-          </div>
-        ) : (
-          <button type="button" class="btn max-w-lg" onClick={open}>
-            <span class="truncate min-w-0">{selectedWorkspace}</span>
-            {selectedPath !== null && (
-              <>
-                <Slash size={14} />
-                <span class="truncate min-w-0">{selectedPath}</span>
-              </>
-            )}
-            <ChevronDown size={14} />
-          </button>
-        )}
-      </div>
+      {workspaces.loading.value ? (
+        <WaveBars class="h-10 text-ink/70 bg-surface" />
+      ) : navigationOpened.value ? (
+        <div class="aq-btn inline-flex">
+          <WaveBars fill amplitude={workspaces.loading.value ? 1 : 0} class="text-surface" />
+          <ArrowDownRight />
+          <span>Projects</span>
+        </div>
+      ) : (
+        <button type="button" class="aq-btn max-w-lg" onClick={open}>
+          <span class="truncate min-w-0">{selectedWorkspace}</span>
+          {selectedPath !== null && (
+            <>
+              <Slash />
+              <span class="truncate min-w-0">{selectedPath}</span>
+            </>
+          )}
+          <ChevronDown />
+        </button>
+      )}
     </Swappable>
   );
 }
@@ -98,7 +95,6 @@ function BreadcrumbsTrigger() {
 export default function FileNavigation() {
   const createWorkspaceDialogOpen = useSignal(false);
   const createFileDialogOpen = useSignal(false);
-  const filesPanelOpen = useSignal(navigationOpened.value);
 
   const ref = useClickOutside(() => (navigationOpened.value = false));
 
@@ -108,72 +104,84 @@ export default function FileNavigation() {
   const fileEntries = buildFileEntries(files?.tree.value.children ?? [], selectedPath);
 
   const createFile = (
-    <>
-      <button
-        type="button"
-        class="btn"
-        onClick={() => (createFileDialogOpen.value = true)}
-        data-tooltip="Start writing from scratch"
-      >
-        <Plus size={14} />
-        New file&hellip;
-      </button>
-      <FileUploader />
-      <GoogleDocImporter />
-    </>
+    <div class="aq-menu">
+      <ul class="aq-menu-rows" data-aq-stagger>
+        <li>
+          <button
+            type="button"
+            class="aq-menu-btn"
+            onClick={() => (createFileDialogOpen.value = true)}
+            data-tooltip="Start writing from scratch"
+          >
+            <Plus />
+            <span>New file&hellip;</span>
+          </button>
+        </li>
+        <li>
+          <FileUploader />
+        </li>
+        <li>
+          <GoogleDocImporter />
+        </li>
+      </ul>
+    </div>
   );
 
   const filesList = (
-    <Panel
-      class="dropdown--like absolute left-full top-[-1px] z-dropdown min-w-72"
-      open={filesPanelOpen.value}
+    <div
+      class={`aq-dropdown--right-bridged aq-dropdown--fit ${navigationOpened.value ? "is-open" : ""}`}
     >
-      <div class="flex flex-col stack" data-stagger-children>
-        {fileEntries.map(({ path, parts, selected: fileSelected, name: fileName }) => (
-          <button
-            key={path}
-            type="button"
-            class={`group btn ${fileSelected ? "is-selected" : ""}`}
-            onClick={() => {
-              files?.select(path);
-              navigationOpened.value = false;
-            }}
-          >
-            {parts.map((p, i) => (
-              <span
-                key={i}
-                class={`transition-opacity ${p.redundant ? "opacity-50 group-hover:opacity-100" : ""}`}
-              >
-                {p.segment}
-                <span class="pl-1">/</span>
-              </span>
+      {fileEntries.length > 0 && (
+        <div class="aq-menu">
+          <ul class="aq-menu-rows --min-w-72" data-aq-stagger>
+            {fileEntries.map(({ path, parts, selected: fileSelected, name: fileName }) => (
+              <li key={path}>
+                <button
+                  type="button"
+                  class={`aq-menu-btn group ${fileSelected ? "is-selected" : ""}`}
+                  onClick={() => {
+                    files?.select(path);
+                    navigationOpened.value = false;
+                  }}
+                >
+                  {parts.map((p, i) => (
+                    <span
+                      key={i}
+                      class={`transition-opacity ${p.redundant ? "opacity-50 group-hover:opacity-100" : ""}`}
+                    >
+                      {p.segment}
+                      <span class="pl-1">/</span>
+                    </span>
+                  ))}
+                  <span class="break-all min-w-0">{fileName}</span>
+                </button>
+              </li>
             ))}
-            <span class="break-all min-w-0">{fileName}</span>
-          </button>
-        ))}
-        {(files?.files.value.length ?? 0) > 0 && <div class="separator" />}
-        {createFile}
-      </div>
-    </Panel>
+          </ul>
+        </div>
+      )}
+      {createFile}
+    </div>
   );
 
   const createWorkspace = (
-    <button type="button" class="btn" onClick={() => (createWorkspaceDialogOpen.value = true)}>
-      <Plus size={14} /> New project&hellip;
+    <button type="button" class="aq-btn" onClick={() => (createWorkspaceDialogOpen.value = true)}>
+      <Plus />
+      <span>New project&hellip;</span>
     </button>
   );
 
   const workspacesList = workspaces.list.value.map(({ id, name }) => {
     const isSelected = id === workspaces.selectedId.value;
     return (
-      <div class="relative flex" key={id}>
+      <li class="relative flex" key={id}>
         <button
           type="button"
-          class={`btn min-w-48 ${isSelected ? "is-selected" : ""}`}
+          class={`aq-menu-btn min-w-48 ${isSelected ? "is-selected" : ""}`}
           onClick={() => workspaces.select(id)}
         >
           {name}
-          {isSelected && <ArrowDownRight size={14} class="absolute right-1" />}
+          {isSelected && <ChevronRight class="absolute right-1" />}
           <WaveBars
             fill
             amplitude={isSelected && files?.loading.value ? 0.5 : 0}
@@ -181,26 +189,21 @@ export default function FileNavigation() {
           />
         </button>
         {isSelected && filesList}
-      </div>
+      </li>
     );
   });
 
   return (
-    <div ref={ref} class="relative inline-flex">
+    <div ref={ref} class="aq-melt inline-flex">
       <BreadcrumbsTrigger />
 
-      <div class="absolute top-full left-0 z-dropdown">
-        <Panel
-          class="dropdown--like"
-          open={navigationOpened.value}
-          onSettled={() => (filesPanelOpen.value = navigationOpened.value)}
-        >
-          <div class="flex flex-col stack min-w-48" data-stagger-children>
+      <div class={`aq-dropdown ${navigationOpened.value ? "is-open" : ""}`}>
+        <div class="aq-menu">
+          <ul class="aq-menu-rows" data-aq-stagger>
             {workspacesList}
-            {workspaces.list.value.length > 0 && <div class="separator" />}
-            {createWorkspace}
-          </div>
-        </Panel>
+          </ul>
+        </div>
+        {createWorkspace}
       </div>
 
       <CreateWorkspaceDialog open={createWorkspaceDialogOpen} />

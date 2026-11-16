@@ -71,15 +71,15 @@ export default function GoogleDocImporter() {
   return (
     <button
       type="button"
-      class="btn"
+      class="aq-menu-btn"
       onClick={handleImport}
       disabled={importing.value}
       title="Import from Google Docs"
       data-tooltip="Import documents from my Google Drive"
     >
-      <Download size={14} />
-      Import from Google Docs&hellip;
-      {!importing.value && <span class="note">opens in a new tab</span>}
+      <Download />
+      <span>Import from Google Docs&hellip;</span>
+      {/*{!importing.value && <span class="note">opens in a new tab</span>}*/}
       <WaveBars fill amplitude={importing.value ? 1 : 0} />
     </button>
   );

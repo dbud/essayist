@@ -59,9 +59,9 @@ export default function FileUploader() {
   }
 
   return (
-    <label class="btn" title="Upload files" data-tooltip="Upload a file from my computer">
-      <Upload size={14} />
-      Upload file&hellip;
+    <label class="aq-menu-btn" title="Upload files" data-tooltip="Upload a file from my computer">
+      <Upload />
+      <span>Upload file&hellip;</span>
       <input type="file" multiple class="hidden" onChange={onInputChange} />
     </label>
   );
