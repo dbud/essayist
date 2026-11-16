@@ -35,7 +35,6 @@ export default function SidenoteControls() {
           <span>Review</span>
         </button>
       )}
-      <div class="flex-1 self-stretch bg-surface" />
       <WaveBars fill amplitude={loading.value ? 1 : 0} class="pointer-events-none text-accent" />
     </div>
   );

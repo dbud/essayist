@@ -64,12 +64,12 @@ function FileViewerBody({ wsId, path, versionId }: FileKey) {
   const withSidePane = resolvedMarks.resolved.value.length > 0;
 
   return (
-    <div class="relative isolate flex-1 min-h-0 flex flex-col stack @container">
+    <div class="relative isolate flex-1 min-h-0 flex flex-col @container">
       <Overlay when={navigationOpened.value} local />
-      <div class="z-toolbar flex flex-col bg-surface shadow-md">
+      <div class="z-toolbar flex flex-col">
         <div class="content-layout">
           <div class="content-main min-w-0">
-            <div class="flex w-fit items-center gap-4 py-4">
+            <div class="flex w-fit items-start gap-4 py-2">
               <FontSelect />
               <EditorToolbar
                 wsId={wsId}
@@ -81,7 +81,7 @@ function FileViewerBody({ wsId, path, versionId }: FileKey) {
               <VersionPicker />
             </div>
           </div>
-          <div class="content-side flex items-center">
+          <div class="content-side flex items-start py-2">
             <SidenoteControls />
           </div>
         </div>
