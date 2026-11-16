@@ -16,13 +16,13 @@ export default function ThemeToggle() {
   return (
     <button
       type="button"
-      class="btn"
+      class="aq-btn aq-melt"
       aria-label={`Switch to ${dark ? "light" : "dark"} theme`}
       data-tooltip="Switch theme"
       onClick={toggleTheme}
     >
       <Swappable swapKey={String(dark)} class="swap-rotate">
-        {dark ? <Moon size={14} /> : <Sun size={14} />}
+        {dark ? <Moon /> : <Sun />}
       </Swappable>
     </button>
   );
