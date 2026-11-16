@@ -11,23 +11,32 @@ import {
 } from "lucide-preact";
 
 import Avatar from "#/components/Avatar.tsx";
-import AutoSaveIntervalSelect from "#/components/settings/AutoSaveIntervalSelect.tsx";
 import FontAxisSelect, {
   type FontAxis,
   SANS_FONT_OPTIONS,
   SERIF_FONT_OPTIONS,
 } from "#/components/settings/FontAxisSelect.tsx";
 import MarkStyleSelect from "#/components/settings/MarkStyleSelect.tsx";
-import { CheckboxIcon } from "#/components/ui/icons.tsx";
-import Panel from "#/components/ui/Panel.tsx";
+import AqCollapse from "#/components/ui/AqCollapse.tsx";
+import AqSegmented from "#/components/ui/AqSegmented.tsx";
 import { useClickOutside } from "#/hooks/useClickOutside.ts";
 import { usePreferences } from "#/models/preferences.ts";
-import { autoSave } from "#/signals/preferences.ts";
+import { autoSave, autoSaveInterval } from "#/signals/preferences.ts";
 import { clearPreferencesCookie } from "#/utils/preferencesCookie.ts";
 
 interface SettingsMenuProps {
   user: User;
 }
+
+const INTERVAL_OPTIONS = [
+  { value: 2, label: "2s" },
+  { value: 5, label: "5s" },
+  { value: 10, label: "10s" },
+  { value: 15, label: "15s" },
+  { value: 30, label: "30s" },
+  { value: 60, label: "1m" },
+  { value: 120, label: "2m" },
+];
 
 export default function SettingsMenu({ user }: SettingsMenuProps) {
   const { debugSidebarOpened, sansFont, serifFont } = usePreferences();
@@ -69,19 +78,25 @@ export default function SettingsMenu({ user }: SettingsMenuProps) {
                 <MarkStyleSelect />
               </div>
             </li>
-            <li class="flex w-full flex-col">
+            <li class="flex flex-col min-w-52">
               <button
                 type="button"
-                class="dropdown-item"
+                role="switch"
+                aria-checked={autoSave.value}
+                class={`aq-menu-btn aq-toggle-row ${autoSave.value ? "is-on" : ""}`}
                 onClick={() => (autoSave.value = !autoSave.value)}
               >
-                <CheckboxIcon selected={autoSave.value} size={15} />
-                Autosave {autoSave.value ? "on" : "off"}
+                <span>Autosave</span>
               </button>
-              <Panel open={autoSave.value}>
-                <div class="h-px bg-stroke" />
-                <AutoSaveIntervalSelect />
-              </Panel>
+              <AqCollapse open={autoSave.value} fade>
+                <div class="aq-melt bg-float/60 mt-1">
+                  <AqSegmented
+                    value={autoSaveInterval}
+                    options={INTERVAL_OPTIONS}
+                    label="Autosave interval"
+                  />
+                </div>
+              </AqCollapse>
             </li>
             <li>
               <button
