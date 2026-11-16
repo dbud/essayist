@@ -18,6 +18,7 @@ export default function AqSegmented<T extends number | string>({
     <div class={extra ? `${classes} ${extra}` : classes} role="radiogroup" aria-label={label}>
       {options.map((option) => (
         <button
+          key={String(option.value)}
           type="button"
           role="radio"
           aria-checked={value.value === option.value}

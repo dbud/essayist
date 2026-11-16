@@ -5,6 +5,7 @@ import ErrorBoundary from "#/components/ErrorBoundary.tsx";
 import Navigation from "#/components/Navigation.tsx";
 import { Toaster } from "#/components/Toaster.tsx";
 import Tooltip from "#/components/Tooltip.tsx";
+import MeltFilter from "#/components/ui/MeltFilter.tsx";
 import { useAppState } from "#/state.ts";
 
 function EditorPage() {
@@ -34,6 +35,7 @@ export default function Page() {
       </div>
       <Toaster />
       <Tooltip />
+      <MeltFilter />
     </>
   );
 }
