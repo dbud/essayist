@@ -12,7 +12,7 @@ interface NavigationProps {
 
 export default function Navigation({ user, children }: NavigationProps) {
   return (
-    <div class="relative z-panel shrink-0 bg-surface shadow-md">
+    <div class="relative z-panel flex py-4 bg-surface">
       <div class="content-layout content-layout--side relative">
         {/*<EssayistLogo class="absolute left-0 top-[-1px] h-[calc(2.5rem+1px)] w-5 items-start @[64rem]:w-10" />*/}
         <div class="content-main flex flex-col items-start">{children}</div>

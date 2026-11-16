@@ -12,7 +12,7 @@ function EditorPage() {
   const { user } = useAppState();
 
   return (
-    <main class="flex flex-1 flex-col min-h-0 @container text-ink stack stack--col">
+    <main class="flex flex-1 flex-col min-h-0 @container text-ink">
       <Navigation user={user}>
         <ErrorBoundary>
           <FileNavigation />
