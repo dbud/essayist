@@ -1,4 +1,5 @@
 import type { User } from "@essayist/core";
+import { useSignal } from "@preact/signals";
 import {
   ChevronDown,
   LogOut,
@@ -17,9 +18,10 @@ import FontAxisSelect, {
   SERIF_FONT_OPTIONS,
 } from "#/components/settings/FontAxisSelect.tsx";
 import MarkStyleSelect from "#/components/settings/MarkStyleSelect.tsx";
-import Dropdown, { DropdownItem, DropdownMenu } from "#/components/ui/Dropdown.tsx";
+import { DropdownItem, DropdownMenu } from "#/components/ui/Dropdown.tsx";
 import { CheckboxIcon } from "#/components/ui/icons.tsx";
 import Panel from "#/components/ui/Panel.tsx";
+import { useClickOutside } from "#/hooks/useClickOutside.ts";
 import { usePreferences } from "#/models/preferences.ts";
 import { autoSave } from "#/signals/preferences.ts";
 import { clearPreferencesCookie } from "#/utils/preferencesCookie.ts";
@@ -30,23 +32,27 @@ interface SettingsMenuProps {
 
 export default function SettingsMenu({ user }: SettingsMenuProps) {
   const { debugSidebarOpened, sansFont, serifFont } = usePreferences();
+  const open = useSignal(false);
+  const close = () => (open.value = false);
+  const ref = useClickOutside(open.value ? close : undefined);
   const sansAxis: FontAxis = { signal: sansFont, options: SANS_FONT_OPTIONS };
   const serifAxis: FontAxis = {
     signal: serifFont,
     options: SERIF_FONT_OPTIONS,
   };
   return (
-    <Dropdown
-      triggerClass="btn"
-      trigger={
-        <>
-          <Settings2 size={14} />
-          <span class="hidden @lg:inline">Settings</span>
-          <ChevronDown size={14} class="hidden @sm:inline rotate-on-open" />
-        </>
-      }
-    >
-      {(close) => (
+    <div class="aq-melt inline-flex" ref={ref}>
+      <button
+        type="button"
+        class="aq-btn"
+        aria-expanded={open.value}
+        onClick={() => (open.value = !open.value)}
+      >
+        <Settings2 size={14} />
+        <span class="hidden @lg:inline">Settings</span>
+        <ChevronDown size={14} class="hidden @sm:inline aq-chevron" />
+      </button>
+      <div class={`aq-dropdown--origin-end ${open.value ? "is-open" : ""}`}>
         <DropdownMenu end data-stagger-children>
           <li class="dropdown-item pointer-events-none flex gap-1 p-0">
             <span class="grid h-10 w-10">
@@ -112,7 +118,7 @@ export default function SettingsMenu({ user }: SettingsMenuProps) {
             Sign out
           </DropdownItem>
         </DropdownMenu>
-      )}
-    </Dropdown>
+      </div>
+    </div>
   );
 }
