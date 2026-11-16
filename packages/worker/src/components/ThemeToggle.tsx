@@ -21,7 +21,7 @@ export default function ThemeToggle() {
       data-tooltip="Switch theme"
       onClick={toggleTheme}
     >
-      <Swappable swapKey={String(dark)} class="swap-rotate">
+      <Swappable swapKey={String(dark)} class="swap-rotate icon">
         {dark ? <Moon /> : <Sun />}
       </Swappable>
     </button>

@@ -135,7 +135,7 @@ export default function VersionPicker() {
         <WaveBars fill amplitude={active ? 0.5 : 0} class="text-float-ink" />
         <Swappable
           swapKey={writable.value ? "latest" : "pinned"}
-          class="swap-shift items-center h-[1em]"
+          class="swap-shift items-center h-[1em] icon"
           fluid
         >
           {!writable.value && selectedVersion ? (

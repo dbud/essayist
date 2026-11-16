@@ -82,9 +82,10 @@ export default function WaveBars({
 
   if (!fill) return svg;
 
-  // anchor the wave at the bottom-right of the nearest positioned ancestor
+  // anchor the wave at the bottom-right of the nearest positioned ancestor aq-fill marks the
+  // decorative overlay so button edge rules skip it as content
   return (
-    <div class={`absolute inset-0 flex items-end justify-end overflow-hidden ${className}`}>
+    <div class={`aq-fill absolute inset-0 flex items-end justify-end overflow-hidden ${className}`}>
       {svg}
     </div>
   );

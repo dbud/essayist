@@ -55,7 +55,7 @@ export default function BlockTypeSelect({ block, onChange, disabled }: BlockType
         disabled={disabled}
         onClick={() => (open.value = !open.value)}
       >
-        <Swappable swapKey={current.value} class="swap-rotate">
+        <Swappable swapKey={current.value} class="swap-rotate icon">
           {current.icon}
         </Swappable>
         <span class="hidden @sm:inline">

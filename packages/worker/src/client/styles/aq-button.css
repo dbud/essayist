@@ -18,6 +18,7 @@
   @apply appearance-none border-0 select-none whitespace-nowrap leading-none;
   @apply cursor-pointer;
   @apply font-sans font-normal text-float-ink;
+  font-size: 0.85rem;
   background: var(--btn-bg);
   transform: scale(var(--aq-btn-lifted));
   transition:
@@ -36,16 +37,21 @@
 
 @utility aq-btn {
   @apply aq-btn--base;
-  @apply rounded-xl;
+  @apply rounded-sm;
 
-  @apply py-2 px-4.5;
-  & > svg {
-    &:first-child {
-      @apply -ml-2;
-    }
-    &:last-child {
-      @apply -mr-2;
-    }
+  @apply py-1.5 px-4;
+
+  & > .lucide:first-child,
+  & > .icon:first-child {
+    @apply -ml-2;
+  }
+  & > .lucide:last-child,
+  & > .icon:last-child {
+    @apply -mr-2;
+  }
+  & > .aq-fill:first-child + .lucide,
+  & > .aq-fill:first-child + .icon {
+    @apply -ml-2;
   }
 
   &:disabled {
