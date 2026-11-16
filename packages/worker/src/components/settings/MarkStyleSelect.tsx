@@ -1,4 +1,4 @@
-import { OptionsRow } from "#/components/ui/forms/OptionsRow.tsx";
+import AqSegmented from "#/components/ui/AqSegmented.tsx";
 import { type HighlightStyle, usePreferences } from "#/models/preferences.ts";
 
 const OPTIONS: { value: HighlightStyle; label: string }[] = [
@@ -6,19 +6,16 @@ const OPTIONS: { value: HighlightStyle; label: string }[] = [
   { value: "wavy", label: "Wavy" },
 ];
 
-/** Mark highlight style radio rows for the settings menu options grid. */
 export default function MarkStyleSelect() {
   const { highlightStyle } = usePreferences();
   return (
-    <OptionsRow
-      kind="radio"
-      name="mark-style"
-      label="Mark style"
-      options={OPTIONS}
-      values={[highlightStyle.value]}
-      onToggle={(v) => {
-        highlightStyle.value = v as HighlightStyle;
-      }}
-    />
+    <div class="aq-menu">
+      <ul class="aq-menu-rows" data-aq-stagger>
+        <li class="flex flex-col gap-1">
+          <span class="shrink-0 px-2">Mark style</span>
+          <AqSegmented value={highlightStyle} options={OPTIONS} label="Mark style" />
+        </li>
+      </ul>
+    </div>
   );
 }

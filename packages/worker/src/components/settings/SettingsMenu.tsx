@@ -12,7 +12,6 @@ import {
 
 import Avatar from "#/components/Avatar.tsx";
 import FontAxisSelect, {
-  type FontAxis,
   SANS_FONT_OPTIONS,
   SERIF_FONT_OPTIONS,
 } from "#/components/settings/FontAxisSelect.tsx";
@@ -43,8 +42,8 @@ export default function SettingsMenu({ user }: SettingsMenuProps) {
   const open = useSignal(false);
   const close = () => (open.value = false);
   const ref = useClickOutside(open.value ? close : undefined);
-  const sansAxis: FontAxis = { signal: sansFont, options: SANS_FONT_OPTIONS };
-  const serifAxis: FontAxis = {
+  const sansAxis = { signal: sansFont, options: SANS_FONT_OPTIONS };
+  const serifAxis = {
     signal: serifFont,
     options: SERIF_FONT_OPTIONS,
   };
@@ -71,13 +70,6 @@ export default function SettingsMenu({ user }: SettingsMenuProps) {
                 <div class="truncate">{user.name ?? user.email}</div>
               </div>
             </li>
-            <li class="flex w-full">
-              <div class="form-grid w-full">
-                <FontAxisSelect axis={sansAxis} name="sans-font" label="Interface font" />
-                <FontAxisSelect axis={serifAxis} name="serif-font" label="Serif font" />
-                <MarkStyleSelect />
-              </div>
-            </li>
             <li class="flex flex-col min-w-52">
               <button
                 type="button"
@@ -89,13 +81,12 @@ export default function SettingsMenu({ user }: SettingsMenuProps) {
                 <span>Autosave</span>
               </button>
               <AqCollapse open={autoSave.value} fade>
-                <div class="aq-melt bg-float/60 mt-1">
-                  <AqSegmented
-                    value={autoSaveInterval}
-                    options={INTERVAL_OPTIONS}
-                    label="Autosave interval"
-                  />
-                </div>
+                <AqSegmented
+                  value={autoSaveInterval}
+                  options={INTERVAL_OPTIONS}
+                  label="Autosave interval"
+                  class="mt-2"
+                />
               </AqCollapse>
             </li>
             <li>
@@ -142,6 +133,9 @@ export default function SettingsMenu({ user }: SettingsMenuProps) {
             </li>
           </ul>
         </div>
+        <FontAxisSelect axis={sansAxis} label="Interface font" />
+        <FontAxisSelect axis={serifAxis} label="Serif font" />
+        <MarkStyleSelect />
       </div>
     </div>
   );

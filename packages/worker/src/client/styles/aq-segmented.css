@@ -1,5 +1,6 @@
 .aq-segmented {
   @apply flex items-center gap-1 rounded-full cursor-pointer p-1;
+  @apply aq-melt bg-float/60;
 
   & > button {
     @apply rounded-full px-2 py-1 leading-none cursor-pointer appearance-none
