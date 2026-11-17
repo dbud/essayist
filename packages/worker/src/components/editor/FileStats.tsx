@@ -2,6 +2,7 @@ import { useModel, useSignal } from "@preact/signals";
 import { assertExists, unreachable } from "@std/assert";
 import { ChevronDown } from "lucide-preact";
 
+import AqSwap from "#/components/ui/AqSwap.tsx";
 import { useClickOutside } from "#/hooks/useClickOutside.ts";
 import { FileStatsModel } from "#/models/fileStats.ts";
 import { type FileStatSection, usePreferences } from "#/models/preferences.ts";
@@ -49,25 +50,27 @@ export default function FileStats() {
 
   return (
     <div class="aq-melt inline-flex" ref={ref}>
-      <button
-        type="button"
-        class="aq-btn items-start text-xs"
-        aria-expanded={open.value}
-        onClick={() => (open.value = !open.value)}
-      >
-        {rows.length > 0 ? (
-          <span class="flex flex-col items-start leading-none whitespace-nowrap text-[0.7rem]">
-            {rows.map((opt) => (
-              <span key={opt.value} title={opt.label}>
-                {statValue(opt.value)}
-              </span>
-            ))}
-          </span>
-        ) : (
-          <span>Stats</span>
-        )}
-        <ChevronDown class="aq-chevron" />
-      </button>
+      <AqSwap on={enabled.join(",")}>
+        <button
+          type="button"
+          class="aq-btn items-center text-xs"
+          aria-expanded={open.value}
+          onClick={() => (open.value = !open.value)}
+        >
+          {rows.length > 0 ? (
+            <span class="flex flex-col items-start leading-none whitespace-nowrap text-[0.7rem]">
+              {rows.map((opt) => (
+                <span key={opt.value} title={opt.label}>
+                  {statValue(opt.value)}
+                </span>
+              ))}
+            </span>
+          ) : (
+            <span>Stats</span>
+          )}
+          <ChevronDown class="aq-chevron" data-static />
+        </button>
+      </AqSwap>
       <div class={`aq-dropdown ${open.value ? "is-open" : ""}`}>
         <div class="aq-menu">
           <ul class="aq-menu-rows" data-aq-stagger>
