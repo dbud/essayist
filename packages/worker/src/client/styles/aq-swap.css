@@ -1,0 +1,31 @@
+@utility aq-swap {
+  --swap-duration: 140ms;
+
+  &[data-phase="out"] > :not([data-static]) {
+    animation: var(--swap-out, aq-swap-fade-out) var(--swap-duration) ease-in forwards;
+  }
+
+  &[data-phase="in"] > :not([data-static]) {
+    animation: var(--swap-in, aq-swap-fade-in) var(--swap-duration) ease-out forwards;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    --swap-duration: 0ms;
+
+    & > :not([data-static]) {
+      animation: none;
+    }
+  }
+}
+
+@keyframes aq-swap-fade-out {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes aq-swap-fade-in {
+  from {
+    opacity: 0;
+  }
+}

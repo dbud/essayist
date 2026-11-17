@@ -1,6 +1,6 @@
 import { Moon, Sun } from "lucide-preact";
 
-import Swappable from "#/components/ui/Swappable.tsx";
+import AqSwap from "#/components/ui/AqSwap.tsx";
 import { useBooting } from "#/hooks/useBooting.ts";
 import { usePreferences } from "#/models/preferences.ts";
 
@@ -14,16 +14,16 @@ export default function ThemeToggle() {
   // none. The first client render has to match it.
   const dark = booting.value ? themeOverride.value === "dark" : theme.value === "dark";
   return (
-    <button
-      type="button"
-      class="aq-btn aq-melt"
-      aria-label={`Switch to ${dark ? "light" : "dark"} theme`}
-      data-tooltip="Switch theme"
-      onClick={toggleTheme}
-    >
-      <Swappable swapKey={String(dark)} class="swap-rotate icon">
+    <AqSwap on={String(dark)}>
+      <button
+        type="button"
+        class="aq-btn aq-melt"
+        aria-label={`Switch to ${dark ? "light" : "dark"} theme`}
+        data-tooltip="Switch theme"
+        onClick={toggleTheme}
+      >
         {dark ? <Moon /> : <Sun />}
-      </Swappable>
-    </button>
+      </button>
+    </AqSwap>
   );
 }

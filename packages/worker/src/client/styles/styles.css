@@ -18,6 +18,7 @@
 @import "./aq-menu.css";
 @import "./aq-motion.css";
 @import "./aq-segmented.css";
+@import "./aq-swap.css";
 @import "./aq-toggle.css";
 @import "./tmp.css";
 @import "./aq-webkit.css";
@@ -43,7 +44,7 @@
     color-mix(in oklch, var(--color-ink) 60%, black)
   );
   --color-opposite: light-dark(black, white);
-  --color-float: oklch(15% 0.01 60);
+  --color-float: oklch(20% 0.01 60);
   --color-float-ink: oklch(95% 0.01 60);
   color-scheme: light dark;
 }
