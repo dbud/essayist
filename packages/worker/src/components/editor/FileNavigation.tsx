@@ -1,12 +1,12 @@
 import { useSignal } from "@preact/signals";
-import { ArrowDownRight, ChevronDown, ChevronRight, Plus, Slash } from "lucide-preact";
+import { ChevronDown, ChevronRight, Plus, Slash } from "lucide-preact";
 import type { TargetedMouseEvent } from "preact";
 
 import CreateFileDialog from "#/components/editor/CreateFileDialog.tsx";
 import CreateWorkspaceDialog from "#/components/editor/CreateWorkspaceDialog.tsx";
 import FileUploader from "#/components/editor/FileUploader.tsx";
 import GoogleDocImporter from "#/components/editor/GoogleDocImporter.tsx";
-import Swappable from "#/components/ui/Swappable.tsx";
+import AqSwap from "#/components/ui/AqSwap.tsx";
 import WaveBars from "#/components/ui/WaveBars.tsx";
 import { useClickOutside } from "#/hooks/useClickOutside.ts";
 import type { TreeNode } from "#/models/fileTree.ts";
@@ -64,32 +64,29 @@ function BreadcrumbsTrigger() {
   };
 
   return (
-    <Swappable
-      swapKey={workspaces.loading.value ? "loading" : navigationOpened.value ? "open" : "closed"}
-      class="swap-slide leading-none relative z-dropdown"
-      fluid
-    >
-      {workspaces.loading.value ? (
-        <WaveBars class="h-10 text-ink/70 bg-surface" />
-      ) : navigationOpened.value ? (
-        <div class="aq-btn inline-flex">
-          <WaveBars fill amplitude={workspaces.loading.value ? 1 : 0} class="text-surface" />
-          <ArrowDownRight />
-          <span>Projects</span>
-        </div>
-      ) : (
-        <button type="button" class="aq-btn max-w-lg" onClick={open}>
-          <span class="truncate min-w-0">{selectedWorkspace}</span>
-          {selectedPath !== null && (
-            <>
-              <Slash />
-              <span class="truncate min-w-0">{selectedPath}</span>
-            </>
-          )}
-          <ChevronDown />
-        </button>
-      )}
-    </Swappable>
+    <AqSwap on={`${selectedWorkspace}/${selectedPath}`}>
+      <button
+        type="button"
+        class="aq-btn max-w-lg"
+        aria-expanded={navigationOpened.value}
+        onClick={open}
+      >
+        <WaveBars
+          fill
+          amplitude={workspaces.loading.value ? 1 : 0}
+          class="text-surface"
+          data-static
+        />
+        <span class="truncate min-w-0">{selectedWorkspace}</span>
+        {selectedPath !== null && (
+          <>
+            <Slash />
+            <span class="truncate min-w-0">{selectedPath}</span>
+          </>
+        )}
+        <ChevronDown data-static />
+      </button>
+    </AqSwap>
   );
 }
 
@@ -105,7 +102,7 @@ export default function FileNavigation() {
   const fileEntries = buildFileEntries(files?.tree.value.children ?? [], selectedPath);
 
   const createFile = (
-    <div class="aq-menu">
+    <div class="aq-menu self-start">
       <ul class="aq-menu-rows" data-aq-stagger>
         <li>
           <button
