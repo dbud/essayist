@@ -195,7 +195,7 @@ export default function FileNavigation() {
     <div ref={ref} class="aq-melt inline-flex">
       <BreadcrumbsTrigger />
 
-      <div class={`aq-dropdown ${navigationOpened.value ? "is-open" : ""}`}>
+      <div class={`aq-dropdown aq-dropdown--detached ${navigationOpened.value ? "is-open" : ""}`}>
         <div class="aq-menu">
           <ul class="aq-menu-rows" data-aq-stagger>
             {workspacesList}

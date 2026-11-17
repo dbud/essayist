@@ -8,7 +8,7 @@
 }
 
 @utility aq-panel {
-  @apply absolute z-1 flex flex-col opacity-0 invisible pointer-events-none;
+  @apply absolute -z-1 flex flex-col opacity-0 invisible pointer-events-none;
   transform-origin: var(--aq-panel-origin-x, 50%) top;
   transform: translateY(var(--aq-panel-hidden-y)) scale(0.16);
   transition:
@@ -74,6 +74,12 @@
     height: 1.5rem;
     @apply bg-float -z-1;
   }
+}
+
+@utility aq-dropdown--detached {
+  --aq-panel-gap: 0.8rem;
+  --aq-panel-hidden-y: -0.8rem;
+  transform-origin: var(--aq-panel-origin-x, 50%) -0.8rem;
 }
 
 @utility aq-dropdown--fit {

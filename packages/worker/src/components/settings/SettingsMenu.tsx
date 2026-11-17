@@ -54,7 +54,7 @@ export default function SettingsMenu({ user }: SettingsMenuProps) {
         <span class="hidden @lg:inline">Settings</span>
         <ChevronDown class="hidden @sm:inline aq-chevron" />
       </button>
-      <div class={`aq-dropdown--origin-end ${open.value ? "is-open" : ""}`}>
+      <div class={`aq-dropdown--origin-end aq-dropdown--detached ${open.value ? "is-open" : ""}`}>
         <div class="aq-menu">
           <ul class="aq-menu-rows" data-aq-stagger>
             <li class="pointer-events-none flex gap-1">

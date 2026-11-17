@@ -15,7 +15,6 @@ import { useLayoutEffect } from "preact/hooks";
 
 import AqCollapse from "#/components/ui/AqCollapse.tsx";
 import AqSegmented from "#/components/ui/AqSegmented.tsx";
-import Swappable from "#/components/ui/Swappable.tsx";
 import { useClickOutside } from "#/hooks/useClickOutside.ts";
 
 const INTERVAL_OPTIONS = [
@@ -240,15 +239,11 @@ export function AqProjects() {
           }
         }}
       >
-        <Swappable swapKey={shownProject.value.name} class="swap-shift" fluid>
-          <span>{shownProject.value.name}</span>
-        </Swappable>
-        <Swappable swapKey={shownFile.value ?? "slash"} class="swap-shift" fluid>
-          <span class="inline-flex items-center gap-1">
-            <Slash size={14} />
-            {shownFile.value !== null && <span>{shownFile.value}</span>}
-          </span>
-        </Swappable>
+        <span>{shownProject.value.name}</span>
+        <span class="inline-flex items-center gap-1">
+          <Slash size={14} />
+          {shownFile.value !== null && <span>{shownFile.value}</span>}
+        </span>
         <ChevronDown class="aq-chevron" />
       </button>
 

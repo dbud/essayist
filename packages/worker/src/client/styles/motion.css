@@ -61,16 +61,10 @@
   animation-delay: var(--motion-stagger-cap);
 }
 
-/* Swappable: animated content swap via CSS grid stacking.
-   Wraps outgoing + incoming layers in a 1x1 grid so they overlap,
-   then plays a one-shot animation on each. Controlled by
-   the <Swappable> Preact component.
-
-   Choose the animation by adding a swap-* utility class:
-     <Swappable class="swap-rotate">
-     <Swappable class="swap-slide">  (default)
-
-   Override duration with --swap-duration on the container or any ancestor. */
+/* Swap animations for sequential content swaps (the useAqSwap hook). A
+   swap-* utility class picks the keyframes through --swap-out and
+   --swap-in: swap-slide, swap-rotate, swap-shift. Override the duration
+   with --swap-duration on the host or any ancestor. */
 
 @keyframes swap-slide-out {
   from {
@@ -172,31 +166,4 @@
 
 @utility pulse-accent-ink {
   animation: pulse-accent-ink 2s ease-in-out infinite;
-}
-
-.swappable {
-  display: inline-grid;
-  place-items: center;
-  overflow: clip;
-  overflow-clip-margin: 0.3em; /* for glyph descenders */
-}
-
-.swappable-out,
-.swappable-in {
-  grid-area: 1 / 1;
-}
-
-.swappable-out {
-  animation: var(--swap-out) var(--swap-duration, 200ms) ease-out forwards;
-}
-
-.swappable-in {
-  animation: var(--swap-in) var(--swap-duration, 200ms) ease-out forwards;
-}
-
-/* Width flip (fluid swappables): the transition applies only while the
-   measured width is locked, from JS. */
-.swappable[data-swap-width] {
-  transition: width var(--swap-duration, 200ms) ease-out;
-  overflow: visible;
 }
