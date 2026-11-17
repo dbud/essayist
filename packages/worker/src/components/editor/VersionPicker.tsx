@@ -2,10 +2,9 @@ import { useSignal } from "@preact/signals";
 import { assertExists } from "@std/assert";
 import { sortBy } from "@std/collections";
 import { ChevronDown, CircleDashed, LockKeyhole } from "lucide-preact";
-import type { ComponentChild } from "preact";
 
+import AqSwap from "#/components/ui/AqSwap.tsx";
 import { CircleCheckIcon } from "#/components/ui/icons.tsx";
-import Swappable from "#/components/ui/Swappable.tsx";
 import WaveBars from "#/components/ui/WaveBars.tsx";
 import { useBooting } from "#/hooks/useBooting.ts";
 import { useClickOutside } from "#/hooks/useClickOutside.ts";
@@ -22,62 +21,6 @@ function useFileLoading(): boolean {
   const file = useEditorModels().fileContents.current.value;
   assertExists(file, "FileViewerBody mounts VersionPicker only with a file");
   return file.loading.value || file.state.value === null || booting.value;
-}
-
-function SaveStatus() {
-  useTick(30_000);
-  const pending = useFileLoading();
-  const { autoSave } = usePreferences();
-  const file = useEditorModels().fileContents.current.value;
-  assertExists(file, "VersionPicker renders SaveStatus only with a file");
-  const { saving, saveError, dirty, draft, version } = file;
-
-  const savedAt = pending ? undefined : (draft.value?.timestamp ?? version.value?.timestamp);
-  const isPendingVersion = version.value?.version_id === PENDING_VERSION_ID;
-  const action = isPendingVersion ? "Created" : "Saved";
-
-  let label: ComponentChild | null = null;
-  let statusKey = "";
-  if (!pending) {
-    statusKey = action.toLowerCase();
-    label = savedAt === undefined ? action : `${action} ${formatRelativeTime(savedAt)}`;
-    if (saving.value) {
-      statusKey = "saving";
-      label = "Saving...";
-    } else if (dirty.value && saveError.value) {
-      statusKey = "failed";
-      label = "Save failed";
-    } else if (dirty.value) {
-      statusKey = "dirty";
-      label = autoSave.value ? (
-        "Save pending..."
-      ) : (
-        <span class="inline-flex items-baseline gap-1">
-          <kbd>{META_KEY}</kbd>
-          <kbd>S</kbd> to save changes
-        </span>
-      );
-    }
-  }
-
-  const saved = !pending && !saving.value && !dirty.value;
-
-  return (
-    <span class="inline-flex items-center gap-1">
-      {!pending && (
-        <Swappable swapKey={saved ? "check" : "dashed"} class="swap-rotate shrink-0">
-          {saved ? (
-            <CircleCheckIcon class="text-float-ink" />
-          ) : (
-            <CircleDashed class="text-accent animate-[spin_3s_linear_infinite]" />
-          )}
-        </Swappable>
-      )}
-      <Swappable swapKey={statusKey} class="swap-shift" fluid>
-        {label}
-      </Swappable>
-    </span>
-  );
 }
 
 function VersionChip({ timestamp, lock }: { timestamp: number; lock?: boolean }) {
@@ -105,7 +48,40 @@ export default function VersionPicker() {
   });
   const selectedVersion = versions?.byId(versionId);
   const pending = useFileLoading();
+  useTick(30_000);
+  const { autoSave } = usePreferences();
   const active = file.saving.value || pending;
+
+  const saving = file.saving.value;
+  const saveError = file.saveError.value;
+  const dirty = file.dirty.value;
+  const { draft, version: currentVersion } = file;
+  const savedAt = pending ? undefined : (draft.value?.timestamp ?? currentVersion.value?.timestamp);
+  const isPendingVersion = currentVersion.value?.version_id === PENDING_VERSION_ID;
+  const saved = !pending && !saving && !dirty;
+
+  const action = isPendingVersion ? "Created" : "Saved";
+  // The key doubles as the rendered label: a swap fires exactly when the pill text changes,
+  // relative time included.
+  const [saveState, label] = (() => {
+    if (pending) return ["pending", null] as const;
+    if (saving) return ["saving", "Saving..."] as const;
+    if (dirty && saveError) return ["failed", "Save failed"] as const;
+    if (dirty) {
+      return autoSave.value
+        ? (["dirty", "Save pending..."] as const)
+        : ([
+            "kbd",
+            <span class="inline-flex items-baseline gap-1">
+              <kbd>{META_KEY}</kbd>
+              <kbd>S</kbd> to save changes
+            </span>,
+          ] as const);
+    }
+    const text = savedAt === undefined ? action : `${action} ${formatRelativeTime(savedAt)}`;
+    return [text, text] as const;
+  })();
+  const state = writable.value ? saveState : `pinned-${versionId ?? ""}`;
 
   const promotable =
     writable.value &&
@@ -126,26 +102,33 @@ export default function VersionPicker() {
 
   return (
     <div class="aq-melt inline-flex" ref={ref}>
-      <button
-        type="button"
-        class="aq-btn relative"
-        aria-expanded={open.value}
-        onClick={() => (open.value = !open.value)}
-      >
-        <WaveBars fill amplitude={active ? 0.5 : 0} class="text-float-ink" />
-        <Swappable
-          swapKey={writable.value ? "latest" : "pinned"}
-          class="swap-shift items-center h-[1em] icon"
-          fluid
+      <AqSwap on={state}>
+        <button
+          type="button"
+          class="aq-btn relative min-h-8.5 min-w-36"
+          aria-expanded={open.value}
+          onClick={() => (open.value = !open.value)}
         >
+          <WaveBars fill amplitude={active ? 1 : 0} class="text-float-ink" data-static />
           {!writable.value && selectedVersion ? (
             <VersionChip timestamp={selectedVersion.timestamp} lock />
           ) : (
-            <SaveStatus />
+            <>
+              {!pending && (
+                <span class="swap-rotate">
+                  {saved ? (
+                    <CircleCheckIcon class="text-float-ink" />
+                  ) : (
+                    <CircleDashed class="text-accent animate-[spin_3s_linear_infinite]" />
+                  )}
+                </span>
+              )}
+              {!pending && label && <span>{label}</span>}
+            </>
           )}
-        </Swappable>
-        {!pending && <ChevronDown class="aq-chevron" />}
-      </button>
+          {!pending && <ChevronDown class="aq-chevron" data-static />}
+        </button>
+      </AqSwap>
       <div class={`aq-dropdown ${open.value ? "is-open" : ""}`}>
         <div class="aq-menu">
           <ul class="aq-menu-rows" data-aq-stagger>
