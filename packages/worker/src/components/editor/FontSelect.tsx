@@ -1,7 +1,7 @@
 import { useSignal } from "@preact/signals";
 import { ChevronDown } from "lucide-preact";
 
-import Swappable from "#/components/ui/Swappable.tsx";
+import AqSwap from "#/components/ui/AqSwap.tsx";
 import { useClickOutside } from "#/hooks/useClickOutside.ts";
 import { usePreferences } from "#/models/preferences.ts";
 
@@ -20,21 +20,21 @@ export default function FontSelect() {
 
   return (
     <div class="aq-melt inline-flex" ref={ref}>
-      <button
-        type="button"
-        class="aq-btn"
-        aria-expanded={open.value}
-        data-tooltip="Reading font"
-        onClick={() => (open.value = !open.value)}
-      >
-        <Swappable swapKey={current.value} class="swap-shift" fluid>
+      <AqSwap on={current.value}>
+        <button
+          type="button"
+          class="aq-btn"
+          aria-expanded={open.value}
+          data-tooltip="Reading font"
+          onClick={() => (open.value = !open.value)}
+        >
           <span class="inline-flex gap-1">
             <span>Aa</span>
             <span class="hidden @sm:inline">{current.label}</span>
           </span>
-        </Swappable>
-        <ChevronDown class="aq-chevron" />
-      </button>
+          <ChevronDown class="aq-chevron" data-static />
+        </button>
+      </AqSwap>
       <div class={`aq-dropdown ${open.value ? "is-open" : ""}`}>
         <div class="aq-menu">
           <ul class="aq-menu-rows" data-aq-stagger>

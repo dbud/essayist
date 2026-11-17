@@ -12,7 +12,7 @@ import {
 } from "lucide-preact";
 import type { ComponentChild } from "preact";
 
-import Swappable from "#/components/ui/Swappable.tsx";
+import AqSwap from "#/components/ui/AqSwap.tsx";
 import { type BlockType } from "#/editor/blockFormat.ts";
 import { useClickOutside } from "#/hooks/useClickOutside.ts";
 
@@ -47,24 +47,20 @@ export default function BlockTypeSelect({ block, onChange, disabled }: BlockType
 
   return (
     <div class="aq-melt" ref={ref}>
-      <button
-        type="button"
-        class="aq-btn"
-        aria-expanded={open.value}
-        data-tooltip="Paragraph style"
-        disabled={disabled}
-        onClick={() => (open.value = !open.value)}
-      >
-        <Swappable swapKey={current.value} class="swap-rotate icon">
-          {current.icon}
-        </Swappable>
-        <span class="hidden @sm:inline">
-          <Swappable swapKey={current.value} class="swap-shift" fluid>
-            {current.label}
-          </Swappable>
-        </span>
-        <ChevronDown class="aq-chevron" />
-      </button>
+      <AqSwap on={current.value}>
+        <button
+          type="button"
+          class="aq-btn"
+          aria-expanded={open.value}
+          data-tooltip="Paragraph style"
+          disabled={disabled}
+          onClick={() => (open.value = !open.value)}
+        >
+          <span class="swap-rotate">{current.icon}</span>
+          <span class="hidden @sm:inline">{current.label}</span>
+          <ChevronDown class="aq-chevron" data-static />
+        </button>
+      </AqSwap>
       <div class={`aq-dropdown ${open.value ? "is-open" : ""}`}>
         <div class="aq-menu">
           <ul class="aq-menu-rows" data-aq-stagger>
