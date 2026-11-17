@@ -29,8 +29,7 @@ export default function FontSelect() {
           onClick={() => (open.value = !open.value)}
         >
           <span class="inline-flex gap-1">
-            <span>Aa</span>
-            <span class="hidden @sm:inline">{current.label}</span>
+            <span class={current.value}>Aa</span>
           </span>
           <ChevronDown class="aq-chevron" data-static />
         </button>
