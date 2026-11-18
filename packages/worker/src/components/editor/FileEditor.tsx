@@ -9,7 +9,6 @@ import SidenoteControls from "#/components/editor/SidenoteControls.tsx";
 import Sidenotes from "#/components/editor/Sidenotes.tsx";
 import VersionPicker from "#/components/editor/VersionPicker.tsx";
 import ErrorBoundary from "#/components/ErrorBoundary.tsx";
-import Navigation from "#/components/Navigation.tsx";
 import Overlay from "#/components/ui/Overlay.tsx";
 import { useAutoSave } from "#/hooks/useAutoSave.ts";
 import { useKeydown } from "#/hooks/useKeydown.ts";
@@ -19,14 +18,12 @@ import type { FileKey } from "#/models/fileSelection.ts";
 import { useEditorModels } from "#/pages/editor/models.ts";
 import { getEditorSelection } from "#/signals/editorSelection.ts";
 import { navigationOpened } from "#/signals/navigation.ts";
-import { useAppState } from "#/state.ts";
 
 // Floating nav and toolbar rows over a full-height scroll area, content scrolling underneath. The
 // local dim paints above the toolbar and stats rows and the version pill, while the filenav cluster
 // rides z-panel above it so its dropdown keeps the pristine slot.
 export default function FileEditor() {
   const { selected, sidenotes, fileContents, writable } = useEditorModels();
-  const { user } = useAppState();
   const scrollRef = useScrollViewport(sidenotes.scrollTop, sidenotes.viewportHeight);
 
   const selection = selected.value !== null && selected.value.path !== null ? selected.value : null;
@@ -56,18 +53,20 @@ export default function FileEditor() {
         </div>
       </div>
       <div class="absolute inset-x-0 top-0 pointer-events-none">
-        <Navigation user={user}>
-          <ErrorBoundary>
-            <div class="flex gap-4">
-              <FileNavigation />
-              {file !== null && <VersionPicker />}
-            </div>
-          </ErrorBoundary>
-        </Navigation>
+        <div class="content-layout content-layout--side relative">
+          <div class="content-main flex flex-col items-start py-3">
+            <ErrorBoundary>
+              <div class="flex gap-4 pointer-events-auto">
+                <FileNavigation />
+                {file !== null && <VersionPicker />}
+              </div>
+            </ErrorBoundary>
+          </div>
+        </div>
         {selection !== null && file !== null && (
           <div class="content-layout z-toolbar">
-            <div class="content-main min-w-0">
-              <div class="pointer-events-auto flex w-fit items-start gap-4 py-2">
+            <div class="content-main flex items-start py-2">
+              <div class="pointer-events-auto flex w-fit items-start gap-4">
                 <EditorToolbar
                   wsId={selection.wsId}
                   path={selection.path}
@@ -76,7 +75,7 @@ export default function FileEditor() {
                 />
               </div>
             </div>
-            <div class="content-side pointer-events-auto flex items-start py-2">
+            <div class="content-side flex items-start py-2">
               <SidenoteControls />
             </div>
           </div>

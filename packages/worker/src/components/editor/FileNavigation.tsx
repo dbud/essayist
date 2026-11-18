@@ -52,22 +52,25 @@ function buildFileEntries(nodes: TreeNode[], selectedPath: string | null): FileE
   return result;
 }
 
-function BreadcrumbsTrigger() {
-  const { workspaces, selected } = useEditorModels();
-  const selectedWorkspace = workspaces.current.value?.name ?? null;
+export default function FileNavigation() {
+  const createWorkspaceDialogOpen = useSignal(false);
+  const createFileDialogOpen = useSignal(false);
+
+  const ref = useClickOutside(() => (navigationOpened.value = false));
+
+  const { workspaces, fileTrees, selected } = useEditorModels();
+  const files = fileTrees.current.value;
   const selectedPath = selected.value?.path ?? null;
+  const selectedWorkspace = workspaces.current.value?.name ?? null;
+  const fileEntries = buildFileEntries(files?.tree.value.children ?? [], selectedPath);
 
-  const open = () => {
-    navigationOpened.value = true;
-  };
-
-  return (
+  const breadcrumbsTrigger = (
     <AqSwap on={`${selectedWorkspace}/${selectedPath}`}>
       <button
         type="button"
         class="aq-btn max-w-lg"
         aria-expanded={navigationOpened.value}
-        onClick={open}
+        onClick={() => (navigationOpened.value = !navigationOpened.value)}
       >
         <WaveBars
           fill
@@ -86,18 +89,6 @@ function BreadcrumbsTrigger() {
       </button>
     </AqSwap>
   );
-}
-
-export default function FileNavigation() {
-  const createWorkspaceDialogOpen = useSignal(false);
-  const createFileDialogOpen = useSignal(false);
-
-  const ref = useClickOutside(() => (navigationOpened.value = false));
-
-  const { workspaces, fileTrees, selected } = useEditorModels();
-  const files = fileTrees.current.value;
-  const selectedPath = selected.value?.path ?? null;
-  const fileEntries = buildFileEntries(files?.tree.value.children ?? [], selectedPath);
 
   const createFile = (
     <div class="aq-menu self-start">
@@ -191,7 +182,7 @@ export default function FileNavigation() {
 
   return (
     <div ref={ref} class="aq-melt inline-flex z-panel">
-      <BreadcrumbsTrigger />
+      {breadcrumbsTrigger}
 
       <div class={`aq-dropdown aq-dropdown--detached ${navigationOpened.value ? "is-open" : ""}`}>
         <div class="aq-menu">

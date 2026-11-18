@@ -30,7 +30,7 @@ export default function SidenoteControls() {
       {loading.value ? (
         <div class="cell--data flex-1">Reviewing</div>
       ) : (
-        <button type="button" class="aq-melt aq-btn--accent" onClick={onReview}>
+        <button type="button" class="pointer-events-auto aq-melt aq-btn--accent" onClick={onReview}>
           <Highlighter />
           <span>Review</span>
         </button>
