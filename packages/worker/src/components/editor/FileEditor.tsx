@@ -23,7 +23,7 @@ import { navigationOpened } from "#/signals/navigation.ts";
 // local dim paints above the toolbar and stats rows and the version pill, while the filenav cluster
 // rides z-panel above it so its dropdown keeps the pristine slot.
 export default function FileEditor() {
-  const { selected, sidenotes, fileContents, writable } = useEditorModels();
+  const { selected, sidenotes, fileContents } = useEditorModels();
   const scrollRef = useScrollViewport(sidenotes.scrollTop, sidenotes.viewportHeight);
 
   const selection = selected.value !== null && selected.value.path !== null ? selected.value : null;
@@ -65,16 +65,7 @@ export default function FileEditor() {
         </div>
         {selection !== null && file !== null && (
           <div class="content-layout z-toolbar">
-            <div class="content-main flex items-start py-2">
-              <div class="pointer-events-auto flex w-fit items-start gap-4">
-                <EditorToolbar
-                  wsId={selection.wsId}
-                  path={selection.path}
-                  versionId={selection.versionId}
-                  disabled={!writable.value}
-                />
-              </div>
-            </div>
+            <div class="content-main" />
             <div class="content-side flex items-start py-2">
               <SidenoteControls />
             </div>
@@ -91,7 +82,7 @@ function FileSurface({
   versionId,
   scrollContainerRef,
 }: FileKey & { scrollContainerRef: ScrollContainerRef }) {
-  const { fileContents, resolvedMarks, sidenotes } = useEditorModels();
+  const { fileContents, resolvedMarks, sidenotes, writable } = useEditorModels();
   const file = fileContents.current.value;
   const save = useSaveFile(file);
   const selection = getEditorSelection({ wsId, path, versionId });
@@ -148,6 +139,12 @@ function FileSurface({
             />
             <MarkFragmentBadges badges={markFragmentBadges.value} />
             <Caret rect={selection.caretRect} />
+            <EditorToolbar
+              wsId={wsId}
+              path={path}
+              versionId={versionId}
+              disabled={!writable.value}
+            />
           </>
         ) : (
           <div class="content-main pt-28 pb-32">
