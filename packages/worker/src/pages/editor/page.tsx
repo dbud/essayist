@@ -1,5 +1,5 @@
 import RightSidebar from "#/components/debug/RightSidebar.tsx";
-import FileViewer from "#/components/editor/FileViewer.tsx";
+import FileEditor from "#/components/editor/FileEditor.tsx";
 import ErrorBoundary from "#/components/ErrorBoundary.tsx";
 import { Toaster } from "#/components/Toaster.tsx";
 import Tooltip from "#/components/Tooltip.tsx";
@@ -11,7 +11,7 @@ export default function Page() {
       <div class="flex flex-1 min-h-0">
         <main class="flex flex-1 flex-col min-h-0 @container text-ink">
           <ErrorBoundary>
-            <FileViewer />
+            <FileEditor />
           </ErrorBoundary>
         </main>
         <RightSidebar />

@@ -24,7 +24,7 @@ import { useAppState } from "#/state.ts";
 // Floating nav and toolbar rows over a full-height scroll area, content scrolling underneath. The
 // local dim paints above the toolbar and stats rows and the version pill, while the filenav cluster
 // rides z-panel above it so its dropdown keeps the pristine slot.
-export default function FileViewer() {
+export default function FileEditor() {
   const { selected, sidenotes, fileContents, writable } = useEditorModels();
   const { user } = useAppState();
   const scrollRef = useScrollViewport(sidenotes.scrollTop, sidenotes.viewportHeight);

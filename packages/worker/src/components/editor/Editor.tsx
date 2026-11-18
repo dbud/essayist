@@ -35,7 +35,7 @@ export default function Editor({
   const { viewerFont } = usePreferences();
   const { writable, resolvedMarks, sidenotes, fileContents } = useEditorModels();
   const file = fileContents.current.value;
-  assertExists(file, "FileViewerBody mounts Editor only with a file");
+  assertExists(file, "Editor mounts only with a file");
   const markdown = file.markdown;
   const selection = getEditorSelection({ wsId, path, versionId });
   const resolved = resolvedMarks.resolved;

@@ -17,7 +17,7 @@ const STAT_OPTIONS: { value: FileStatSection; label: string }[] = [
 
 export default function FileStats() {
   const file = useEditorModels().fileContents.current.value;
-  assertExists(file, "FileViewerBody mounts FileStats only with a file");
+  assertExists(file, "FileStats mounts only with a file");
   const stats = useModel(() => new FileStatsModel(file));
   const { fileStatsSections } = usePreferences();
   const enabled = fileStatsSections.value;

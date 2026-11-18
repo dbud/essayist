@@ -19,7 +19,7 @@ import { META_KEY } from "#/utils/platform.ts";
 function useFileLoading(): boolean {
   const booting = useBooting();
   const file = useEditorModels().fileContents.current.value;
-  assertExists(file, "FileViewerBody mounts VersionPicker only with a file");
+  assertExists(file, "VersionPicker mounts only with a file");
   return file.loading.value || file.state.value === null || booting.value;
 }
 
@@ -39,7 +39,7 @@ export default function VersionPicker() {
 
   const { fileContents, fileTrees, selected, fileVersions, writable } = useEditorModels();
   const file = fileContents.current.value;
-  assertExists(file, "FileViewerBody mounts VersionPicker only with a file");
+  assertExists(file, "VersionPicker mounts only with a file");
   const versions = fileVersions.current.value;
   const selection = selected.value;
   const versionId = selection?.versionId ?? null;
