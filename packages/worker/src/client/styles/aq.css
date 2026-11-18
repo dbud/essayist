@@ -1,4 +1,4 @@
 :root {
   --aq-gap: 0.5rem;
-  --aq-shadow: drop-shadow(0 0.7rem 1rem rgb(0 0 0 / 0.3));
+  --aq-shadow: drop-shadow(0 0.5rem 0.8rem rgb(0 0 0 / 0.2));
 }

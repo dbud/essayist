@@ -49,7 +49,7 @@ export default function FileStats() {
   const rows = STAT_OPTIONS.filter((opt) => enabled.includes(opt.value));
 
   return (
-    <div class="aq-melt inline-flex" ref={ref}>
+    <div class="aq-melt inline-flex pointer-events-auto" ref={ref}>
       <AqSwap on={enabled.join(",")}>
         <button
           type="button"
@@ -71,7 +71,7 @@ export default function FileStats() {
           <ChevronDown class="aq-chevron" data-static />
         </button>
       </AqSwap>
-      <div class={`aq-dropdown ${open.value ? "is-open" : ""}`}>
+      <div class={"aq-dropdown--origin-end aq-dropdown--up" + (open.value ? " is-open" : "")}>
         <div class="aq-menu">
           <ul class="aq-menu-rows" data-aq-stagger>
             {STAT_OPTIONS.map((opt) => (

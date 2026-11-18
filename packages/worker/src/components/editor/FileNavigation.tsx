@@ -1,6 +1,5 @@
 import { useSignal } from "@preact/signals";
 import { ChevronDown, ChevronRight, Plus, Slash } from "lucide-preact";
-import type { TargetedMouseEvent } from "preact";
 
 import CreateFileDialog from "#/components/editor/CreateFileDialog.tsx";
 import CreateWorkspaceDialog from "#/components/editor/CreateWorkspaceDialog.tsx";
@@ -58,8 +57,7 @@ function BreadcrumbsTrigger() {
   const selectedWorkspace = workspaces.current.value?.name ?? null;
   const selectedPath = selected.value?.path ?? null;
 
-  const open = (e: TargetedMouseEvent<HTMLButtonElement>) => {
-    e.stopPropagation();
+  const open = () => {
     navigationOpened.value = true;
   };
 
@@ -192,7 +190,7 @@ export default function FileNavigation() {
   });
 
   return (
-    <div ref={ref} class="aq-melt inline-flex">
+    <div ref={ref} class="aq-melt inline-flex z-panel">
       <BreadcrumbsTrigger />
 
       <div class={`aq-dropdown aq-dropdown--detached ${navigationOpened.value ? "is-open" : ""}`}>

@@ -101,11 +101,11 @@ export default function VersionPicker() {
   }
 
   return (
-    <div class="aq-melt inline-flex" ref={ref}>
+    <div class="aq-melt inline-flex z-toolbar" ref={ref}>
       <AqSwap on={state}>
         <button
           type="button"
-          class="aq-btn relative min-h-8.5 min-w-36"
+          class="aq-btn relative min-w-36"
           aria-expanded={open.value}
           onClick={() => (open.value = !open.value)}
         >
@@ -114,15 +114,13 @@ export default function VersionPicker() {
             <VersionChip timestamp={selectedVersion.timestamp} lock />
           ) : (
             <>
-              {!pending && (
-                <span class="swap-rotate">
-                  {saved ? (
-                    <CircleCheckIcon class="text-float-ink" />
-                  ) : (
-                    <CircleDashed class="text-accent animate-[spin_3s_linear_infinite]" />
-                  )}
-                </span>
-              )}
+              <span class={`swap-rotate${pending ? " invisible" : ""}`}>
+                {saved ? (
+                  <CircleCheckIcon class="text-float-ink" />
+                ) : (
+                  <CircleDashed class="text-accent animate-[spin_3s_linear_infinite]" />
+                )}
+              </span>
               {!pending && label && <span>{label}</span>}
             </>
           )}

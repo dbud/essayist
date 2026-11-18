@@ -5,6 +5,8 @@ import type { ComponentChildren } from "preact";
 import SettingsMenu from "#/components/settings/SettingsMenu.tsx";
 import ThemeToggle from "#/components/ThemeToggle.tsx";
 
+import FontSelect from "./editor/FontSelect";
+
 interface NavigationProps {
   user?: User;
   children?: ComponentChildren;
@@ -12,12 +14,13 @@ interface NavigationProps {
 
 export default function Navigation({ user, children }: NavigationProps) {
   return (
-    <div class="relative z-panel flex py-3">
+    <div class="flex py-3">
       <div class="content-layout content-layout--side relative">
         {/*<EssayistLogo class="absolute left-0 top-[-1px] h-[calc(2.5rem+1px)] w-5 items-start @[64rem]:w-10" />*/}
-        <div class="content-main flex flex-col items-start">{children}</div>
-        <div class="content-side flex items-center justify-end">
+        <div class="content-main pointer-events-auto flex flex-col items-start">{children}</div>
+        <div class="content-side relative z-panel pointer-events-auto flex items-center justify-end">
           <div class="flex gap-4">
+            <FontSelect />
             <ThemeToggle />
             {user && <SettingsMenu user={user} />}
           </div>

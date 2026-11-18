@@ -48,7 +48,8 @@
   .aq-dropdown,
   .aq-dropdown--right,
   .aq-dropdown--right-bridged,
-  .aq-dropdown--detached {
+  .aq-dropdown--detached,
+  .aq-dropdown--up {
     transform: translateY(calc(var(--aq-panel-y) * 1rem)) scale(var(--aq-panel-scale));
     opacity: var(--aq-panel-fade);
     --aq-panel-y: 0;
@@ -63,7 +64,8 @@
   .aq-dropdown.is-open,
   .aq-dropdown--right.is-open,
   .aq-dropdown--right-bridged.is-open,
-  .aq-dropdown--detached.is-open {
+  .aq-dropdown--detached.is-open,
+  .aq-dropdown--up.is-open {
     transform: translateY(calc(var(--aq-panel-y) * 1rem)) scale(var(--aq-panel-scale));
     opacity: var(--aq-panel-fade);
     --aq-panel-y: 0;

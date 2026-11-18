@@ -45,7 +45,6 @@
   --aq-dropdown-origin-x: 100%;
   left: auto;
   right: var(--aq-dropdown-x);
-  align-items: stretch;
 }
 
 @utility aq-dropdown--origin-start {
@@ -80,6 +79,12 @@
   --aq-panel-gap: 0.8rem;
   --aq-panel-hidden-y: -0.8rem;
   transform-origin: var(--aq-panel-origin-x, 50%) -0.8rem;
+}
+
+@utility aq-dropdown--up {
+  top: auto;
+  bottom: calc(100% + var(--aq-panel-gap, var(--aq-gap)));
+  transform-origin: var(--aq-panel-origin-x, 50%) bottom;
 }
 
 @utility aq-dropdown--fit {
