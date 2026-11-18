@@ -73,6 +73,7 @@ export default function EditorToolbar({ wsId, path, versionId, disabled }: Edito
   return (
     <div
       class="absolute"
+      onMouseDown={(e) => e.preventDefault()}
       style={{
         left: `${rect.left}px`,
         top: `${rect.top + rect.height + CARET_GAP_PX}px`,
