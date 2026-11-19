@@ -1,7 +1,7 @@
 import { useSignal } from "@preact/signals";
 import { assertExists } from "@std/assert";
 import { sortBy } from "@std/collections";
-import { ChevronDown, CircleDashed, LockKeyhole } from "lucide-preact";
+import { ChevronDown, CircleDashed, LockKeyhole, PencilLine } from "lucide-preact";
 
 import AqSwap from "#/components/ui/AqSwap.tsx";
 import { CircleCheckIcon, CountdownRingIcon } from "#/components/ui/icons.tsx";
@@ -151,7 +151,10 @@ export default function VersionPicker() {
                   }}
                 >
                   <span class="flex flex-col items-start leading-tight">
-                    <VersionChip timestamp={version.timestamp} />
+                    <span class="flex items-center gap-1">
+                      {i === 0 && <PencilLine class="size-3" />}
+                      <VersionChip timestamp={version.timestamp} />
+                    </span>
                     {i === 0 &&
                       draft.value !== null &&
                       draft.value.timestamp > version.timestamp + 60_000 && (
