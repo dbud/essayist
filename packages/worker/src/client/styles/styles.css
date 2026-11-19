@@ -221,6 +221,10 @@
   );
 }
 
+@utility fade {
+  mask-image: linear-gradient(to bottom, black 0%, transparent 100%);
+}
+
 @utility separator {
   @apply h-3 bg-surface/90 striped/5;
 }

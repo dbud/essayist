@@ -11,6 +11,7 @@ import SidenoteControls from "#/components/editor/SidenoteControls.tsx";
 import Sidenotes from "#/components/editor/Sidenotes.tsx";
 import VersionPicker from "#/components/editor/VersionPicker.tsx";
 import ErrorBoundary from "#/components/ErrorBoundary.tsx";
+import EssayistLogo from "#/components/logo/EssayistLogo.tsx";
 import Overlay from "#/components/ui/Overlay.tsx";
 import { useAutoSave } from "#/hooks/useAutoSave.ts";
 import { useKeydown } from "#/hooks/useKeydown.ts";
@@ -58,10 +59,14 @@ export default function FileEditor() {
         </div>
       </div>
       <div class="absolute inset-x-0 top-0 pointer-events-none" data-scroll-gap="top">
+        <div class="absolute inset-0 striped-8 fade" aria-hidden="true" />
         <div class="content-layout content-layout--side relative">
           <div class="content-main flex flex-col items-start py-3">
             <ErrorBoundary>
               <div class="flex gap-4 pointer-events-auto">
+                <div class="aq-melt self-stretch">
+                  <EssayistLogo class="h-full w-8" />
+                </div>
                 <FileNavigation open={navigationOpen} />
                 {file !== null && <VersionPicker />}
               </div>
