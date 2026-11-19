@@ -137,7 +137,7 @@ export default function VersionPicker() {
               {!pending && label && <span>{label}</span>}
             </>
           )}
-          {hasVersions && <ChevronDown class="aq-chevron" data-static />}
+          {!pending && hasVersions && <ChevronDown class="aq-chevron" data-static />}
         </button>
       </AqSwap>
       {hasVersions && (
