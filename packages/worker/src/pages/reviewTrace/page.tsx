@@ -24,8 +24,8 @@ import {
 } from "lucide-preact";
 import type { ComponentChildren } from "preact";
 
+import Navigation from "#/components/admin/Navigation.tsx";
 import MarkdownView from "#/components/MarkdownView.tsx";
-import Navigation from "#/components/Navigation.tsx";
 
 function statusBadge(status: ReviewRunStatus) {
   const classes =

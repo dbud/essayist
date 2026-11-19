@@ -1,7 +1,7 @@
 import { MoveLeft } from "lucide-preact";
 
 import AdminConfig from "#/components/admin/AdminConfig.tsx";
-import Navigation from "#/components/Navigation.tsx";
+import Navigation from "#/components/admin/Navigation.tsx";
 import { useAppState } from "#/state.ts";
 
 function AdminPage() {
@@ -12,7 +12,7 @@ function AdminPage() {
       <main class="flex flex-1 flex-col stack stack--col min-h-0 @container">
         <Navigation user={user}>
           <div class="flex stack stack--row">
-            <a href="/" class="btn">
+            <a href="/editor" class="btn">
               <MoveLeft size={16} />
             </a>
             <div class="cell">Control panel</div>
