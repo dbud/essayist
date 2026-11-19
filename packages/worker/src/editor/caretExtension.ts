@@ -19,9 +19,10 @@ import {
   charRectAt,
   elementRectFallback,
   getMeasureContext,
+  keepInView,
   resolveTextPoint,
 } from "./domMeasure.ts";
-import { createRafScheduler, registerRootObserver } from "./observers.ts";
+import { createRafScheduler, registerRootObserver, watchPointerDrags } from "./observers.ts";
 import type { SelectionExtensionConfig } from "./toolbarStateExtension.ts";
 
 // Publishes the caret rect into `selection.caretRect` (editor-column coords, matching
@@ -110,6 +111,7 @@ export const CaretExtension = defineExtension({
           selection.caretRect.value = null;
           return;
         }
+        if (!dragging.value) keepInView(root, rect);
         selection.caretRect.value = {
           left: rect.left - ctx.containerRect.left,
           top: rect.top - ctx.containerRect.top,
@@ -120,6 +122,7 @@ export const CaretExtension = defineExtension({
     };
 
     const [schedule, dispose] = createRafScheduler(measure);
+    const [dragging, disposeDragWatch] = watchPointerDrags();
 
     const removeRootObserver = registerRootObserver(editor, (root) => {
       const ro = new ResizeObserver(schedule);
@@ -145,6 +148,7 @@ export const CaretExtension = defineExtension({
     return mergeRegister(
       removeRootObserver,
       dispose,
+      disposeDragWatch,
       editor.registerUpdateListener(schedule),
       editor.registerCommand(
         SELECTION_CHANGE_COMMAND,

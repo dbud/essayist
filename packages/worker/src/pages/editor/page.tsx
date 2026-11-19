@@ -19,7 +19,10 @@ export default function Page() {
           <ErrorBoundary>
             <FileEditor />
           </ErrorBoundary>
-          <div class="content-layout z-panel absolute inset-x-0 top-0 pointer-events-none">
+          <div
+            class="content-layout z-panel absolute inset-x-0 top-0 pointer-events-none"
+            data-scroll-gap="top"
+          >
             <div class="col-start-2 content-side relative flex justify-end py-3">
               <div class="pointer-events-auto flex items-center gap-4">
                 <FontSelect />

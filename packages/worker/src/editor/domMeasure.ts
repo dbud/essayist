@@ -134,3 +134,43 @@ export function textPointTop(ctx: MeasureContext, el: HTMLElement, offset: numbe
   if (!hasRect(rect)) return null;
   return rect.top - ctx.containerRect.top;
 }
+
+// Nudges the scroll container so the caret rect stays below data-scroll-gap="top" bands and above
+// data-scroll-gap="bottom" bands; no-op without a scrollable ancestor.
+export function keepInView(root: HTMLElement, rect: DOMRect): void {
+  const doc = root.ownerDocument;
+  let safeTop = 0;
+  let safeBottom = doc.documentElement.clientHeight;
+  for (const el of doc.querySelectorAll<HTMLElement>("[data-scroll-gap]")) {
+    const box = el.getBoundingClientRect();
+    if (box.height === 0) continue;
+    if (el.dataset.scrollGap === "top") safeTop = Math.max(safeTop, box.bottom);
+    if (el.dataset.scrollGap === "bottom") safeBottom = Math.min(safeBottom, box.top);
+  }
+  let delta = 0;
+  if (rect.top < safeTop) delta = rect.top - safeTop;
+  else if (rect.bottom > safeBottom) delta = rect.bottom - safeBottom;
+  if (delta === 0) return;
+  let el: HTMLElement | null = root;
+  while (el !== null && el !== doc.body) {
+    const view = doc.defaultView;
+    if (view !== null) {
+      const overflowY = view.getComputedStyle(el).overflowY;
+      if (overflowY === "auto" || overflowY === "scroll") {
+        el.scrollTop += delta;
+        return;
+      }
+    }
+    el = el.parentElement;
+  }
+}
+
+// Vertical clearance a scroll target must add so it clears data-scroll-gap="top" bands.
+export function scrollGapTop(scroller: HTMLElement): number {
+  let gap = 0;
+  for (const el of scroller.ownerDocument.querySelectorAll<HTMLElement>("[data-scroll-gap]")) {
+    if (el.dataset.scrollGap !== "top") continue;
+    gap = Math.max(gap, el.getBoundingClientRect().bottom);
+  }
+  return Math.max(0, gap - scroller.getBoundingClientRect().top);
+}

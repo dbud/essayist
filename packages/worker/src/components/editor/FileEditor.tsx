@@ -45,14 +45,17 @@ export default function FileEditor() {
       </div>
       <Overlay when={navigationOpened.value} local />
       <Overlay when={file !== null && file.state.value === null} local capture />
-      <div class="content-layout z-toolbar absolute inset-x-0 bottom-0 pointer-events-none">
+      <div
+        class="content-layout z-toolbar absolute inset-x-0 bottom-0 pointer-events-none"
+        data-scroll-gap="bottom"
+      >
         <div class="content-main flex justify-end pb-4">
           {selection !== null && file !== null && (
             <FileStats key={`${selection.path}:${selection.versionId}`} />
           )}
         </div>
       </div>
-      <div class="absolute inset-x-0 top-0 pointer-events-none">
+      <div class="absolute inset-x-0 top-0 pointer-events-none" data-scroll-gap="top">
         <div class="content-layout content-layout--side relative">
           <div class="content-main flex flex-col items-start py-3">
             <ErrorBoundary>

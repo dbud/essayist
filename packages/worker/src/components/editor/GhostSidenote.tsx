@@ -1,6 +1,7 @@
 import type { LexicalEditor } from "lexical";
 import { MoveDown, MoveUp } from "lucide-preact";
 
+import { scrollGapTop } from "#/editor/domMeasure.ts";
 import { SELECT_MARK_COMMAND } from "#/editor/markExtension.ts";
 import { useMediaQuery } from "#/hooks/useMediaQuery.ts";
 import type { ScrollContainerRef } from "#/hooks/useScrollViewport.ts";
@@ -44,8 +45,10 @@ export default function GhostSidenote({
           // The scroll-into-view of the selection fires inside the dispatch; defer ours by a frame
           // so the jump target is the final position.
           requestAnimationFrame(() => {
-            scrollContainerRef.current?.scrollTo({
-              top: trueTop,
+            const scroller = scrollContainerRef.current;
+            if (scroller === null) return;
+            scroller.scrollTo({
+              top: trueTop + scrollGapTop(scroller),
               behavior: reducedMotion.value ? "instant" : "smooth",
             });
           });

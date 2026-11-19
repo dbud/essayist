@@ -1,4 +1,4 @@
-import { effect, type ReadonlySignal } from "@preact/signals";
+import { effect, type ReadonlySignal, signal } from "@preact/signals";
 import { mergeRegister, type LexicalEditor } from "lexical";
 
 // Coalesce many schedule() calls into a single fn() on the next animation frame; dispose() cancels
@@ -55,6 +55,48 @@ export function registerSignalsObserver(
     }),
   );
   return mergeRegister(...disposers);
+}
+
+// Pointer move distance past which a press counts as a drag, not a click.
+const DRAG_THRESHOLD_PX = 2;
+
+// Tracks pointer drags across the document so caret following can yield to native drag scrolling.
+// dragging.value turns on once the pointer moves with the button held; plain clicks do not count.
+export function watchPointerDrags(): [ReadonlySignal<boolean>, () => void] {
+  const dragging = signal(false);
+  let pointerDown: { x: number; y: number } | null = null;
+  if (typeof document === "undefined") return [dragging, () => {}];
+  const onDown = (e: PointerEvent) => {
+    dragging.value = false;
+    pointerDown = { x: e.clientX, y: e.clientY };
+  };
+  const onMove = (e: PointerEvent) => {
+    if (pointerDown === null) return;
+    if (
+      Math.abs(e.clientX - pointerDown.x) > DRAG_THRESHOLD_PX ||
+      Math.abs(e.clientY - pointerDown.y) > DRAG_THRESHOLD_PX
+    ) {
+      dragging.value = true;
+      pointerDown = null;
+    }
+  };
+  const onUp = () => {
+    pointerDown = null;
+    dragging.value = false;
+  };
+  document.addEventListener("pointerdown", onDown, { passive: true });
+  document.addEventListener("pointermove", onMove, { passive: true });
+  document.addEventListener("pointerup", onUp, { passive: true });
+  document.addEventListener("pointercancel", onUp, { passive: true });
+  return [
+    dragging,
+    () => {
+      document.removeEventListener("pointerdown", onDown);
+      document.removeEventListener("pointermove", onMove);
+      document.removeEventListener("pointerup", onUp);
+      document.removeEventListener("pointercancel", onUp);
+    },
+  ];
 }
 
 // Attach root-scoped observers (ResizeObserver, event listeners) that must follow the root of the
