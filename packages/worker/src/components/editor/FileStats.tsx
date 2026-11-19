@@ -68,7 +68,7 @@ export default function FileStats() {
           ) : (
             <span>Stats</span>
           )}
-          <ChevronDown class="aq-chevron" data-static />
+          <ChevronDown class="aq-chevron rotate-180" data-static />
         </button>
       </AqSwap>
       <div class={"aq-dropdown--origin-end aq-dropdown--up" + (open.value ? " is-open" : "")}>

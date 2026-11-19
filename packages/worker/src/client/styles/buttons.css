@@ -98,7 +98,7 @@
 
 @layer base {
   kbd {
-    @apply inline-block rounded-xs border border-float-ink pr-1 py-px min-w-5.5 font-sans
+    @apply inline-block rounded-xs border border-ink pr-1 py-px min-w-5.5 font-sans
       text-[0.65rem] leading-none shadow-md;
   }
 
