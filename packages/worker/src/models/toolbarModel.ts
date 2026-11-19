@@ -2,22 +2,23 @@ import { computed, createModel } from "@preact/signals";
 
 import type { CaretRect, EditorSelection } from "#/signals/editorSelection.ts";
 
+export type ToolbarMode = "selection" | "empty";
+
 export interface ToolbarDisplay {
-  state: string;
-  rect: CaretRect | null;
+  mode: ToolbarMode;
+  rect: CaretRect;
 }
 
 export const ToolbarModel = createModel((selection: EditorSelection) => {
-  const display = computed((): ToolbarDisplay => {
-    const state = selection.selectionActive.value
+  const display = computed((): ToolbarDisplay | null => {
+    const rect = selection.caretRect.value;
+    if (rect === null) return null;
+    const mode = selection.selectionActive.value
       ? "selection"
       : selection.emptyParagraph.value
         ? "empty"
-        : "hidden";
-    return {
-      state,
-      rect: state === "hidden" ? null : selection.caretRect.value,
-    };
+        : null;
+    return mode !== null ? { mode, rect } : null;
   });
   return { display };
 });

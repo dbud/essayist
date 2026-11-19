@@ -114,6 +114,7 @@ export const CaretExtension = defineExtension({
           left: rect.left - ctx.containerRect.left,
           top: rect.top - ctx.containerRect.top,
           height: rect.height,
+          above: !sel.isCollapsed() && sel.isBackward(),
         };
       });
     };

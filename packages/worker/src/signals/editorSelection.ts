@@ -7,6 +7,7 @@ export interface CaretRect {
   left: number;
   top: number;
   height: number;
+  above?: boolean;
 }
 
 /**

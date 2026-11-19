@@ -3,15 +3,16 @@ import {
   INSERT_UNORDERED_LIST_COMMAND,
   REMOVE_LIST_COMMAND,
 } from "@lexical/list";
-import { useModel } from "@preact/signals";
+import { useModel, useSignal } from "@preact/signals";
 import { FORMAT_TEXT_COMMAND } from "lexical";
 import type { LucideIcon } from "lucide-preact";
 import { Bold, Code, Italic, Strikethrough } from "lucide-preact";
+import { useLayoutEffect } from "preact/hooks";
 
 import BlockTypeSelect from "#/components/BlockTypeSelect.tsx";
 import { $setBlocksType, type BlockType } from "#/editor/blockFormat.ts";
 import type { FileKey } from "#/models/fileSelection.ts";
-import { ToolbarModel } from "#/models/toolbarModel.ts";
+import { type ToolbarDisplay, ToolbarModel } from "#/models/toolbarModel.ts";
 import { activeEditor } from "#/signals/activeEditor.ts";
 import { getEditorSelection } from "#/signals/editorSelection.ts";
 
@@ -40,8 +41,15 @@ export default function EditorToolbar({ wsId, path, versionId, disabled }: Edito
   const editor = activeEditor.value;
   const sel = getEditorSelection({ wsId, path, versionId });
   const toolbar = useModel(() => new ToolbarModel(sel));
-  const { state, rect } = toolbar.display.value;
-  if (rect === null || disabled) return null;
+  const current = toolbar.display.value;
+  const held = useSignal<ToolbarDisplay | null>(null);
+  useLayoutEffect(() => {
+    if (current !== null) held.value = current;
+  });
+  const shown = current !== null && !disabled;
+  const view = current ?? held.value;
+  if (view === null) return null;
+  const { mode, rect } = view;
 
   const format = (fmt: FormatType) => {
     if (!editor) return;
@@ -69,19 +77,18 @@ export default function EditorToolbar({ wsId, path, versionId, disabled }: Edito
   };
 
   const inlineDisabled = disabled || editor === null || sel.inCodeBlock.value;
+  const left = rect.left;
+  const top = rect.above ? rect.top - CARET_GAP_PX : rect.top + rect.height + CARET_GAP_PX;
 
   return (
     <div
-      class="absolute"
+      class={`floating-toolbar absolute z-panel${shown ? " is-open" : ""}`}
       onMouseDown={(e) => e.preventDefault()}
-      style={{
-        left: `${rect.left}px`,
-        top: `${rect.top + rect.height + CARET_GAP_PX}px`,
-      }}
+      style={{ left, top }}
     >
-      <div class="flex items-center gap-2">
+      <div class={`flex items-center gap-2${rect.above ? " -translate-y-full" : ""}`}>
         <BlockTypeSelect block={sel.block.value} onChange={setBlock} disabled={disabled} />
-        {state === "selection" &&
+        {mode === "selection" &&
           INLINE_BUTTONS.map(({ fmt, tooltip, icon: Icon }) => (
             <button
               type="button"
