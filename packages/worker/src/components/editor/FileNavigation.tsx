@@ -111,11 +111,11 @@ export default function FileNavigation() {
 
   const filesList = (
     <div
-      class={`aq-dropdown--right-bridged aq-dropdown--fit ${navigationOpened.value ? "is-open" : ""}`}
+      class={`aq-dropdown--right-bridged aq-dropdown--fit max-w-96 ${navigationOpened.value ? "is-open" : ""}`}
     >
       {fileEntries.length > 0 && (
-        <div class="aq-menu">
-          <ul class="aq-menu-rows --min-w-72" data-aq-stagger>
+        <div class="aq-menu aq-menu--wrap">
+          <ul class="aq-menu-rows" data-aq-stagger>
             {fileEntries.map(({ path, parts, selected: fileSelected, name: fileName }) => (
               <li key={path}>
                 <button
@@ -135,7 +135,7 @@ export default function FileNavigation() {
                       <span class="pl-1">/</span>
                     </span>
                   ))}
-                  <span class="break-all min-w-0">{fileName}</span>
+                  <span class="break-words min-w-0">{fileName}</span>
                 </button>
               </li>
             ))}
