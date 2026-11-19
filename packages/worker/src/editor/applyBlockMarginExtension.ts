@@ -18,8 +18,9 @@ export const ApplyBlockMarginExtension = defineExtension({
     const applied = new Map<NodeKey, Spacer>();
     let unsettled = 0;
 
+    let warned = false;
+
     const apply = () => {
-      if (unsettled > SETTLE_LIMIT) return;
       const next = margins.value;
       let touched = false;
       for (const [key, spacer] of next) {
@@ -43,8 +44,11 @@ export const ApplyBlockMarginExtension = defineExtension({
         touched = true;
       }
       unsettled = touched ? unsettled + 1 : 0;
-      if (unsettled > SETTLE_LIMIT) {
-        console.warn("[applyBlockMargins]: block margins failed to settle");
+      if (unsettled > SETTLE_LIMIT && !warned) {
+        warned = true;
+        console.warn("[applyBlockMargins]: block margins changed for", unsettled, "rounds");
+      } else if (unsettled === 0) {
+        warned = false;
       }
     };
 

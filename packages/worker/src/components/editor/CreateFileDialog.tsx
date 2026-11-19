@@ -57,7 +57,7 @@ export default function CreateFileDialog({ open, onCreated }: CreateFileDialogPr
         <button type="button" class="aq-btn" onClick={() => (open.value = false)}>
           Cancel
         </button>
-        <button type="submit" class="aq-btn--accent w-30" disabled={!name.value.trim()}>
+        <button type="submit" class="aq-btn--accent" disabled={!name.value.trim()}>
           Create
         </button>
       </div>

@@ -79,7 +79,7 @@ export default function CreateWorkspaceDialog({ open, onCreated }: CreateWorkspa
         </button>
         <button
           type="submit"
-          class="aq-btn--accent relative w-30"
+          class="aq-btn--accent relative"
           disabled={submitting.value || !name.value.trim()}
         >
           {submitting.value ? "Creating…" : "Create"}
