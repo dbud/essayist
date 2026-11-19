@@ -101,7 +101,7 @@ export default function VersionPicker() {
     assertExists(file, "the promoted file exists");
     const promoted = await file.promote();
     if (!promoted) {
-      showToast(file.promoteError.value || "Promote failed", "error");
+      showToast(file.promoteError.value || "Failed to save version", "error");
       return;
     }
     void fileTrees.current.value?.load();
@@ -140,7 +140,7 @@ export default function VersionPicker() {
       <div class={`aq-dropdown ${open.value ? "is-open" : ""}`}>
         <div class="aq-menu">
           <ul class="aq-menu-rows" data-aq-stagger>
-            {list.map((version) => (
+            {list.map((version, i) => (
               <li key={version.version_id}>
                 <button
                   type="button"
@@ -150,7 +150,16 @@ export default function VersionPicker() {
                     close();
                   }}
                 >
-                  <VersionChip timestamp={version.timestamp} />
+                  <span class="flex flex-col items-start leading-tight">
+                    <VersionChip timestamp={version.timestamp} />
+                    {i === 0 &&
+                      draft.value !== null &&
+                      draft.value.timestamp > version.timestamp + 60_000 && (
+                        <span class="text-xs">
+                          draft saved {formatRelativeTime(draft.value.timestamp)}
+                        </span>
+                      )}
+                  </span>
                 </button>
               </li>
             ))}
@@ -158,7 +167,7 @@ export default function VersionPicker() {
         </div>
         {import.meta.env.DEV && promotable ? (
           <button type="button" class="aq-btn" onClick={() => void promoteDraft(close)}>
-            Promote draft
+            Save version
           </button>
         ) : null}
       </div>
