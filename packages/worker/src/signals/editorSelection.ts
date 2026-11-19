@@ -25,6 +25,8 @@ export const EditorSelectionModel = createModel((_key: FileKey) => {
   const markIds = signal<Set<string>>(new Set());
   const innerMarkId = signal<string | null>(null);
   const caretRect = signal<CaretRect | null>(null);
+  const selectionActive = signal(false);
+  const emptyParagraph = signal(false);
   return {
     block,
     bold,
@@ -35,6 +37,8 @@ export const EditorSelectionModel = createModel((_key: FileKey) => {
     markIds,
     innerMarkId,
     caretRect,
+    selectionActive,
+    emptyParagraph,
   };
 });
 

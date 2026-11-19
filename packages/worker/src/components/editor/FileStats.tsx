@@ -53,7 +53,7 @@ export default function FileStats() {
       <AqSwap on={enabled.join(",")}>
         <button
           type="button"
-          class="aq-btn items-center text-xs"
+          class="aq-btn aq-btn--idle items-center text-xs"
           aria-expanded={open.value}
           onClick={() => (open.value = !open.value)}
         >

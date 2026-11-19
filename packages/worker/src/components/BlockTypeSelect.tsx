@@ -50,7 +50,7 @@ export default function BlockTypeSelect({ block, onChange, disabled }: BlockType
       <AqSwap on={current.value}>
         <button
           type="button"
-          class="aq-btn"
+          class="aq-btn--small"
           aria-expanded={open.value}
           data-tooltip="Paragraph style"
           disabled={disabled}
@@ -62,7 +62,7 @@ export default function BlockTypeSelect({ block, onChange, disabled }: BlockType
         </button>
       </AqSwap>
       <div class={`aq-dropdown ${open.value ? "is-open" : ""}`}>
-        <div class="aq-menu">
+        <div class="aq-menu aq-menu--small">
           <ul class="aq-menu-rows" data-aq-stagger>
             {OPTIONS.map((o) => (
               <li key={o.value}>

@@ -25,3 +25,20 @@
     --btn-bg: var(--btn-bg-hover);
   }
 }
+
+.aq-menu--small {
+  @apply rounded-md py-1 px-1.5;
+
+  & .aq-menu-rows {
+    @apply gap-1;
+  }
+
+  & .aq-menu-btn {
+    @apply py-1 px-1.5 min-w-36;
+    font-size: 0.8rem;
+
+    & .lucide {
+      @apply size-3;
+    }
+  }
+}

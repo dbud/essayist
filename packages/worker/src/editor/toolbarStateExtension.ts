@@ -33,10 +33,15 @@ export const ToolbarStateExtension = defineExtension({
           selection.strikethrough.value = false;
           selection.code.value = false;
           selection.inCodeBlock.value = false;
+          selection.selectionActive.value = false;
+          selection.emptyParagraph.value = false;
           return;
         }
         const anchor = sel.anchor.getNode();
         selection.block.value = $getBlockType();
+        selection.selectionActive.value = !sel.isCollapsed();
+        const block = anchor.getTopLevelElement();
+        selection.emptyParagraph.value = block?.getTextContent().length === 0;
         selection.bold.value = sel.hasFormat("bold");
         selection.italic.value = sel.hasFormat("italic");
         selection.strikethrough.value = sel.hasFormat("strikethrough");

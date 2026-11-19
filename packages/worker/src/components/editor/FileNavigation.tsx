@@ -72,12 +72,7 @@ export default function FileNavigation() {
         aria-expanded={navigationOpened.value}
         onClick={() => (navigationOpened.value = !navigationOpened.value)}
       >
-        <WaveBars
-          fill
-          amplitude={workspaces.loading.value ? 1 : 0}
-          class="text-surface"
-          data-static
-        />
+        <WaveBars fill amplitude={workspaces.loading.value ? 1 : 0} data-static />
         <span class="truncate min-w-0">{selectedWorkspace}</span>
         {selectedPath !== null && (
           <>

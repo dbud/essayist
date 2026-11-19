@@ -40,8 +40,8 @@ export default function EditorToolbar({ wsId, path, versionId, disabled }: Edito
   const editor = activeEditor.value;
   const sel = getEditorSelection({ wsId, path, versionId });
   const toolbar = useModel(() => new ToolbarModel(sel));
-  const rect = toolbar.display.value.rect;
-  if (rect === null) return null;
+  const { state, rect } = toolbar.display.value;
+  if (rect === null || disabled) return null;
 
   const format = (fmt: FormatType) => {
     if (!editor) return;
@@ -81,17 +81,18 @@ export default function EditorToolbar({ wsId, path, versionId, disabled }: Edito
     >
       <div class="flex items-center gap-2">
         <BlockTypeSelect block={sel.block.value} onChange={setBlock} disabled={disabled} />
-        {INLINE_BUTTONS.map(({ fmt, tooltip, icon: Icon }) => (
-          <button
-            type="button"
-            class={`aq-melt ${sel[fmt].value ? "aq-btn--accent" : "aq-btn"}`}
-            disabled={inlineDisabled}
-            data-tooltip={tooltip}
-            onClick={() => format(fmt)}
-          >
-            <Icon />
-          </button>
-        ))}
+        {state === "selection" &&
+          INLINE_BUTTONS.map(({ fmt, tooltip, icon: Icon }) => (
+            <button
+              type="button"
+              class={`aq-melt aq-btn--small -translate-y-px ${sel[fmt].value ? "aq-btn--accent" : "aq-btn"}`}
+              disabled={inlineDisabled}
+              data-tooltip={tooltip}
+              onClick={() => format(fmt)}
+            >
+              <Icon />
+            </button>
+          ))}
       </div>
     </div>
   );

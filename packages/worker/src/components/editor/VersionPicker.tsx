@@ -105,20 +105,20 @@ export default function VersionPicker() {
       <AqSwap on={state}>
         <button
           type="button"
-          class="aq-btn relative min-w-36"
+          class="aq-btn aq-btn--idle relative min-w-36"
           aria-expanded={open.value}
           onClick={() => (open.value = !open.value)}
         >
-          <WaveBars fill amplitude={active ? 1 : 0} class="text-float-ink" data-static />
+          <WaveBars fill amplitude={active ? 1 : 0} data-static />
           {!writable.value && selectedVersion ? (
             <VersionChip timestamp={selectedVersion.timestamp} lock />
           ) : (
             <>
               <span class={`swap-rotate${pending ? " invisible" : ""}`}>
                 {saved ? (
-                  <CircleCheckIcon class="text-float-ink" />
+                  <CircleCheckIcon />
                 ) : (
-                  <CircleDashed class="text-accent animate-[spin_3s_linear_infinite]" />
+                  <CircleDashed class="text-(--btn-accent-ink) animate-[spin_3s_linear_infinite]" />
                 )}
               </span>
               {!pending && label && <span>{label}</span>}

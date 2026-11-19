@@ -8,10 +8,17 @@ export interface ToolbarDisplay {
 }
 
 export const ToolbarModel = createModel((selection: EditorSelection) => {
-  const display = computed((): ToolbarDisplay => ({
-    state: "caret",
-    rect: selection.caretRect.value,
-  }));
+  const display = computed((): ToolbarDisplay => {
+    const state = selection.selectionActive.value
+      ? "selection"
+      : selection.emptyParagraph.value
+        ? "empty"
+        : "hidden";
+    return {
+      state,
+      rect: state === "hidden" ? null : selection.caretRect.value,
+    };
+  });
   return { display };
 });
 

@@ -1,6 +1,27 @@
 :root {
   --aq-btn-ease: cubic-bezier(0.4, -0.5, 0.55, 1.35);
   --aq-btn-accent-hover: oklch(from var(--color-accent) l calc(c * 1.3) h);
+  --aq-btn-font-size: 0.85rem;
+  --aq-btn-px: 0.625rem;
+  --aq-btn-py: 0.375rem;
+
+  --aq-btn-float-bg: var(--color-float);
+  --aq-btn-float-bg-hover: color-mix(in oklch, var(--color-float), white 25%);
+  --aq-btn-float-ink: var(--color-float-ink);
+  --aq-btn-float-ink-hover: var(--color-float-ink);
+  --aq-btn-idle-bg: var(--color-surface);
+  --aq-btn-idle-bg-hover: var(--color-float);
+  --aq-btn-idle-ink: var(--color-ink);
+  --aq-btn-idle-ink-hover: var(--color-float-ink);
+  --aq-btn-accent-bg: var(--color-accent);
+  --aq-btn-accent-bg-hover: var(--aq-btn-accent-hover);
+  --aq-btn-accent-ink: var(--color-float-ink);
+
+  --btn-bg: var(--aq-btn-float-bg);
+  --btn-bg-hover: var(--aq-btn-float-bg-hover);
+  --btn-ink: var(--aq-btn-float-ink);
+  --btn-ink-hover: var(--aq-btn-float-ink-hover);
+  --btn-accent-ink: var(--color-accent);
 }
 
 @property --aq-btn-lifted {
@@ -10,23 +31,29 @@
 }
 
 @utility aq-btn--base {
-  --btn-bg: var(--color-float);
-  --btn-bg-hover: color-mix(in oklch, var(--color-float), white 25%);
-
   @apply relative inline-flex isolate;
   @apply items-center gap-1;
   @apply appearance-none border-0 select-none whitespace-nowrap leading-none;
   @apply cursor-pointer;
-  @apply font-sans font-normal text-float-ink;
-  font-size: 0.85rem;
+  @apply font-sans font-normal;
+  color: var(--btn-ink);
+  font-size: var(--aq-btn-font-size);
+  padding: var(--aq-btn-py) var(--aq-btn-px);
   background: var(--btn-bg);
   transform: scale(var(--aq-btn-lifted));
   transition:
     background-color calc(200ms * var(--aq-tempo, 1)) var(--aq-btn-ease),
+    color calc(200ms * var(--aq-tempo, 1)) var(--aq-btn-ease),
     --aq-btn-lifted calc(240ms * var(--aq-tempo, 1)) var(--aq-btn-ease);
 
-  &:hover:where(:not([aria-expanded="true"])) {
+  &:hover {
     --btn-bg: var(--btn-bg-hover);
+    --btn-ink: var(--btn-ink-hover);
+  }
+
+  &[aria-expanded="true"] {
+    --btn-bg: var(--aq-btn-float-bg);
+    --btn-ink: var(--aq-btn-float-ink);
   }
 
   &:not(:disabled):active {
@@ -38,8 +65,6 @@
 @utility aq-btn {
   @apply aq-btn--base;
   @apply rounded-sm;
-
-  @apply py-1.5 px-2.5;
 
   &:disabled {
     @apply pointer-events-none striped;
@@ -54,6 +79,31 @@
 
 @utility aq-btn--accent {
   @apply aq-btn;
-  --btn-bg: var(--color-accent);
-  --btn-bg-hover: var(--aq-btn-accent-hover);
+  --btn-bg: var(--aq-btn-accent-bg);
+  --btn-bg-hover: var(--aq-btn-accent-bg-hover);
+  --btn-ink: var(--aq-btn-accent-ink);
+  --btn-ink-hover: var(--aq-btn-accent-ink);
+}
+
+@utility aq-btn--small {
+  @apply aq-btn;
+  --aq-btn-px: 0.3rem;
+  --aq-btn-py: 0.25rem;
+  --aq-btn-font-size: 0.75rem;
+
+  & .lucide {
+    @apply size-3.5;
+  }
+}
+
+.aq-btn--small .aq-chevron {
+  @apply size-3;
+}
+
+@utility aq-btn--idle {
+  @apply aq-btn;
+  --btn-bg: var(--aq-btn-idle-bg);
+  --btn-bg-hover: var(--aq-btn-idle-bg-hover);
+  --btn-ink: var(--aq-btn-idle-ink);
+  --btn-ink-hover: var(--aq-btn-idle-ink-hover);
 }
