@@ -4,6 +4,7 @@
   --aq-underline-thickness: 1.5px;
 
   @apply rounded-md p-2 min-w-96 w-full text-float-ink;
+  font-size: var(--aq-btn-font-size);
 
   @apply grid items-stretch;
   grid-template-columns: max-content minmax(0, 1fr);
@@ -16,6 +17,7 @@
   & input,
   & textarea {
     @apply select-text outline-none min-w-0 pt-1.5 px-2 pb-2.5 bg-float text-float-ink rounded-xs;
+    font-size: inherit;
     caret-color: var(--color-accent);
     background-image: linear-gradient(var(--color-accent), var(--color-accent));
     background-position: var(--aq-underline-inset) calc(100% - var(--aq-underline-lift));

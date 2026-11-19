@@ -4,7 +4,7 @@
   --aq-open-tf: calc(250ms * var(--aq-tempo));
   --aq-open-op: calc(130ms * var(--aq-tempo));
   --aq-close-tf: calc(200ms * var(--aq-tempo));
-  --aq-close-op: calc(170ms * var(--aq-tempo));
+  --aq-close-op: calc(80ms * var(--aq-tempo));
   --aq-stagger-base: calc(50ms * var(--aq-tempo));
   --aq-stagger-step: calc(20ms * var(--aq-tempo));
   --aq-item-tf: calc(100ms * var(--aq-tempo));
