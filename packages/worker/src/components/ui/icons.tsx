@@ -54,6 +54,41 @@ export function RadioIcon({ selected, size }: ChoiceIconProps) {
   );
 }
 
+interface CountdownRingProps extends IconProps {
+  fraction: number;
+}
+
+/** Countdown ring: stroke track with an accent arc spanning `fraction` of the circle,
+    draining clockwise from 12 o'clock. */
+export function CountdownRingIcon({ fraction, class: className, size }: CountdownRingProps) {
+  const width = size ?? useLucideContext().size ?? 24;
+  const length = 2 * Math.PI * 10;
+  return (
+    <svg
+      class={className}
+      width={width}
+      height={width}
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true"
+    >
+      <circle cx="12" cy="12" r="10" stroke="var(--color-stroke)" stroke-width="2" />
+      {fraction > 0 && (
+        <circle
+          cx="12"
+          cy="12"
+          r="10"
+          stroke="var(--color-accent)"
+          stroke-width="2.5"
+          stroke-linecap="round"
+          stroke-dasharray={`${fraction * length} ${2 * length}`}
+          transform="rotate(-90 12 12)"
+        />
+      )}
+    </svg>
+  );
+}
+
 const KNOB_R1 = 5;
 const TRACK_R2 = 8;
 const KNOB_TRAVEL = 12;

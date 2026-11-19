@@ -4,12 +4,13 @@ import { sortBy } from "@std/collections";
 import { ChevronDown, CircleDashed, LockKeyhole } from "lucide-preact";
 
 import AqSwap from "#/components/ui/AqSwap.tsx";
-import { CircleCheckIcon } from "#/components/ui/icons.tsx";
+import { CircleCheckIcon, CountdownRingIcon } from "#/components/ui/icons.tsx";
 import WaveBars from "#/components/ui/WaveBars.tsx";
 import { useBooting } from "#/hooks/useBooting.ts";
 import { useClickOutside } from "#/hooks/useClickOutside.ts";
+import { useCountdown } from "#/hooks/useCountdown.ts";
 import { useTick } from "#/hooks/useTick.ts";
-import { PENDING_VERSION_ID } from "#/models/fileContent.ts";
+import { PENDING_VERSION_ID, type FileContent } from "#/models/fileContent.ts";
 import { usePreferences } from "#/models/preferences.ts";
 import { showToast } from "#/models/utils/toast.ts";
 import { useEditorModels } from "#/pages/editor/models.ts";
@@ -32,6 +33,13 @@ function VersionChip({ timestamp, lock }: { timestamp: number; lock?: boolean })
   );
 }
 
+// Counts down to the scheduled autosave: the ring drains with the time remaining since the last
+// edit, reaching empty as the save fires. The dashed spinner takes over when autosave is off.
+function SaveArc({ file, intervalSeconds }: { file: FileContent; intervalSeconds: number }) {
+  const fraction = useCountdown(file.markdown, intervalSeconds);
+  return <CountdownRingIcon fraction={fraction.value} />;
+}
+
 export default function VersionPicker() {
   const open = useSignal(false);
   const close = () => (open.value = false);
@@ -49,7 +57,7 @@ export default function VersionPicker() {
   const selectedVersion = versions?.byId(versionId);
   const pending = useFileLoading();
   useTick(30_000);
-  const { autoSave } = usePreferences();
+  const { autoSave, autoSaveInterval } = usePreferences();
   const active = file.saving.value || pending;
 
   const saving = file.saving.value;
@@ -117,6 +125,8 @@ export default function VersionPicker() {
               <span class={`swap-rotate${pending ? " invisible" : ""}`}>
                 {saved ? (
                   <CircleCheckIcon />
+                ) : autoSave.value ? (
+                  <SaveArc file={file} intervalSeconds={autoSaveInterval.value} />
                 ) : (
                   <CircleDashed class="text-(--btn-accent-ink) animate-[spin_3s_linear_infinite]" />
                 )}
