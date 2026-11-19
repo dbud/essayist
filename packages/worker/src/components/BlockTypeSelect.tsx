@@ -61,7 +61,7 @@ export default function BlockTypeSelect({ block, onChange, disabled }: BlockType
           <ChevronDown class="aq-chevron" data-static />
         </button>
       </AqSwap>
-      <div class={`aq-dropdown ${open.value ? "is-open" : ""}`}>
+      <div class={`aq-dropdown aq-dropdown--origin-start ${open.value ? "is-open" : ""}`}>
         <div class="aq-menu aq-menu--small">
           <ul class="aq-menu-rows" data-aq-stagger>
             {OPTIONS.map((o) => (

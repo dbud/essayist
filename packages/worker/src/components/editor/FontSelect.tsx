@@ -23,7 +23,7 @@ export default function FontSelect() {
       <AqSwap on={current.value}>
         <button
           type="button"
-          class="aq-btn"
+          class="aq-btn aq-btn--idle"
           aria-expanded={open.value}
           data-tooltip="Reading font"
           onClick={() => (open.value = !open.value)}
@@ -34,7 +34,7 @@ export default function FontSelect() {
           <ChevronDown class="aq-chevron" data-static />
         </button>
       </AqSwap>
-      <div class={`aq-dropdown ${open.value ? "is-open" : ""}`}>
+      <div class={`aq-dropdown aq-dropdown--origin-start ${open.value ? "is-open" : ""}`}>
         <div class="aq-menu">
           <ul class="aq-menu-rows" data-aq-stagger>
             {OPTIONS.map((o) => (
