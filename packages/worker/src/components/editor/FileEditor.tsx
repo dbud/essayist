@@ -112,7 +112,7 @@ function FileSurface({
 
   return (
     <div
-      class={`isolate content-layout bg-paper min-h-full${
+      class={`isolate content-layout relative bg-paper min-h-full${
         withSidePane ? " content-layout--side" : ""
       }`}
     >
@@ -139,12 +139,6 @@ function FileSurface({
             />
             <MarkFragmentBadges badges={markFragmentBadges.value} />
             <Caret rect={selection.caretRect} />
-            <EditorToolbar
-              wsId={wsId}
-              path={path}
-              versionId={versionId}
-              disabled={!writable.value}
-            />
           </>
         ) : (
           <div class="content-main pt-28 pb-32">
@@ -155,6 +149,7 @@ function FileSurface({
       <div class="content-side">
         <Sidenotes scrollContainerRef={scrollContainerRef} />
       </div>
+      <EditorToolbar wsId={wsId} path={path} versionId={versionId} disabled={!writable.value} />
     </div>
   );
 }
