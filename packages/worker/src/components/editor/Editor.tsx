@@ -101,7 +101,7 @@ export default function Editor({
         }
         class={`prose whitespace-pre-wrap editor-input outline-none max-w-none ${className}`}
         placeholder={
-          <span class="absolute left-4 top-16 @[64rem]:left-16 text-ink/40 pointer-events-none prose pl-1">
+          <span class="absolute left-6 @[64rem]:left-11 top-28 text-ink/40 pointer-events-none prose">
             {writable.value ? "Start writing..." : "No content"}
           </span>
         }

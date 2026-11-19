@@ -54,6 +54,7 @@ export default function VersionPicker() {
   const list = sortBy(versions?.versions.value ?? [], (version) => version.timestamp, {
     order: "desc",
   });
+  const hasVersions = list.length > 0;
   const selectedVersion = versions?.byId(versionId);
   const pending = useFileLoading();
   useTick(30_000);
@@ -114,8 +115,10 @@ export default function VersionPicker() {
         <button
           type="button"
           class="aq-btn aq-btn--idle relative min-w-36"
-          aria-expanded={open.value}
-          onClick={() => (open.value = !open.value)}
+          aria-expanded={hasVersions ? open.value : false}
+          onClick={() => {
+            if (hasVersions) open.value = !open.value;
+          }}
         >
           <WaveBars fill amplitude={active ? 1 : 0} data-static />
           {!writable.value && selectedVersion ? (
@@ -134,46 +137,48 @@ export default function VersionPicker() {
               {!pending && label && <span>{label}</span>}
             </>
           )}
-          {!pending && <ChevronDown class="aq-chevron" data-static />}
+          {hasVersions && <ChevronDown class="aq-chevron" data-static />}
         </button>
       </AqSwap>
-      <div class={`aq-dropdown ${open.value ? "is-open" : ""}`}>
-        <div class="aq-menu">
-          <ul class="aq-menu-rows" data-aq-stagger>
-            {list.map((version, i) => (
-              <li key={version.version_id}>
-                <button
-                  type="button"
-                  class={`aq-menu-btn ${version.version_id === versionId ? "is-selected" : ""}`}
-                  onClick={() => {
-                    fileTrees.current.value?.selectVersion(version.version_id);
-                    close();
-                  }}
-                >
-                  <span class="flex flex-col items-start leading-tight">
-                    <span class="flex items-center gap-1">
-                      {i === 0 && <PencilLine class="size-3" />}
-                      <VersionChip timestamp={version.timestamp} />
+      {hasVersions && (
+        <div class={`aq-dropdown ${open.value ? "is-open" : ""}`}>
+          <div class="aq-menu">
+            <ul class="aq-menu-rows" data-aq-stagger>
+              {list.map((version, i) => (
+                <li key={version.version_id}>
+                  <button
+                    type="button"
+                    class={`aq-menu-btn ${version.version_id === versionId ? "is-selected" : ""}`}
+                    onClick={() => {
+                      fileTrees.current.value?.selectVersion(version.version_id);
+                      close();
+                    }}
+                  >
+                    <span class="flex flex-col items-start leading-tight">
+                      <span class="flex items-center gap-1">
+                        {i === 0 && <PencilLine class="size-3" />}
+                        <VersionChip timestamp={version.timestamp} />
+                      </span>
+                      {i === 0 &&
+                        draft.value !== null &&
+                        draft.value.timestamp > version.timestamp + 60_000 && (
+                          <span class="text-xs">
+                            draft saved {formatRelativeTime(draft.value.timestamp)}
+                          </span>
+                        )}
                     </span>
-                    {i === 0 &&
-                      draft.value !== null &&
-                      draft.value.timestamp > version.timestamp + 60_000 && (
-                        <span class="text-xs">
-                          draft saved {formatRelativeTime(draft.value.timestamp)}
-                        </span>
-                      )}
-                  </span>
-                </button>
-              </li>
-            ))}
-          </ul>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+          {import.meta.env.DEV && promotable ? (
+            <button type="button" class="aq-btn" onClick={() => void promoteDraft(close)}>
+              Save version
+            </button>
+          ) : null}
         </div>
-        {import.meta.env.DEV && promotable ? (
-          <button type="button" class="aq-btn" onClick={() => void promoteDraft(close)}>
-            Save version
-          </button>
-        ) : null}
-      </div>
+      )}
     </div>
   );
 }
