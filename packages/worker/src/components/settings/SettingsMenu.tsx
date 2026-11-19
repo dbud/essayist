@@ -46,7 +46,7 @@ export default function SettingsMenu({ user }: SettingsMenuProps) {
     <div class="aq-melt inline-flex" ref={ref}>
       <button
         type="button"
-        class="aq-btn"
+        class="aq-btn aq-btn--idle"
         aria-expanded={open.value}
         onClick={() => (open.value = !open.value)}
       >

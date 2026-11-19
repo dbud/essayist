@@ -14,16 +14,18 @@ export default function ThemeToggle() {
   // none. The first client render has to match it.
   const dark = booting.value ? themeOverride.value === "dark" : theme.value === "dark";
   return (
-    <AqSwap on={String(dark)}>
-      <button
-        type="button"
-        class="aq-btn aq-melt"
-        aria-label={`Switch to ${dark ? "light" : "dark"} theme`}
-        data-tooltip="Switch theme"
-        onClick={toggleTheme}
-      >
-        {dark ? <Moon class="swap-rotate" /> : <Sun class="swap-rotate" />}
-      </button>
-    </AqSwap>
+    <div class="aq-melt">
+      <AqSwap on={String(dark)}>
+        <button
+          type="button"
+          class="aq-btn aq-btn--idle"
+          aria-label={`Switch to ${dark ? "light" : "dark"} theme`}
+          data-tooltip="Switch theme"
+          onClick={toggleTheme}
+        >
+          {dark ? <Moon class="swap-rotate" /> : <Sun class="swap-rotate" />}
+        </button>
+      </AqSwap>
+    </div>
   );
 }
