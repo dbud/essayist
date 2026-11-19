@@ -91,6 +91,10 @@
   min-width: 100%;
 }
 
+.aq-melt:has(> [aria-expanded="true"]) {
+  z-index: var(--z-dropdown);
+}
+
 .aq-chevron {
   width: 1rem;
   height: 1rem;
