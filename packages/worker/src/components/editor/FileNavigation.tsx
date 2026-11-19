@@ -1,4 +1,4 @@
-import { useSignal } from "@preact/signals";
+import { type Signal, useSignal } from "@preact/signals";
 import { ChevronDown, ChevronRight, Plus, Slash } from "lucide-preact";
 
 import CreateFileDialog from "#/components/editor/CreateFileDialog.tsx";
@@ -10,7 +10,6 @@ import WaveBars from "#/components/ui/WaveBars.tsx";
 import { useClickOutside } from "#/hooks/useClickOutside.ts";
 import type { TreeNode } from "#/models/fileTree.ts";
 import { useEditorModels } from "#/pages/editor/models.ts";
-import { navigationOpened } from "#/signals/navigation.ts";
 
 interface PathPart {
   segment: string;
@@ -52,25 +51,36 @@ function buildFileEntries(nodes: TreeNode[], selectedPath: string | null): FileE
   return result;
 }
 
-export default function FileNavigation() {
+interface FileNavigationProps {
+  open: Signal<boolean>;
+}
+
+export default function FileNavigation({ open }: FileNavigationProps) {
   const createWorkspaceDialogOpen = useSignal(false);
   const createFileDialogOpen = useSignal(false);
 
-  const ref = useClickOutside(() => (navigationOpened.value = false));
+  const close = () => {
+    open.value = false;
+    createFileDialogOpen.value = false;
+    createWorkspaceDialogOpen.value = false;
+  };
+
+  const ref = useClickOutside(close);
 
   const { workspaces, fileTrees, selected } = useEditorModels();
   const files = fileTrees.current.value;
   const selectedPath = selected.value?.path ?? null;
   const selectedWorkspace = workspaces.current.value?.name ?? null;
   const fileEntries = buildFileEntries(files?.tree.value.children ?? [], selectedPath);
+  const showNav = open.value && !createFileDialogOpen.value && !createWorkspaceDialogOpen.value;
 
   const breadcrumbsTrigger = (
     <AqSwap on={`${selectedWorkspace}/${selectedPath}`}>
       <button
         type="button"
         class="aq-btn max-w-lg"
-        aria-expanded={navigationOpened.value}
-        onClick={() => (navigationOpened.value = !navigationOpened.value)}
+        aria-expanded={open.value}
+        onClick={() => (open.value = !open.value)}
       >
         <WaveBars fill amplitude={workspaces.loading.value ? 1 : 0} data-static />
         <span class="truncate min-w-0">{selectedWorkspace}</span>
@@ -103,16 +113,14 @@ export default function FileNavigation() {
           <FileUploader />
         </li>
         <li>
-          <GoogleDocImporter />
+          <GoogleDocImporter onImported={close} />
         </li>
       </ul>
     </div>
   );
 
   const filesList = (
-    <div
-      class={`aq-dropdown--right-bridged aq-dropdown--fit max-w-96 ${navigationOpened.value ? "is-open" : ""}`}
-    >
+    <div class={`aq-dropdown--right-bridged aq-dropdown--fit max-w-96 ${showNav ? "is-open" : ""}`}>
       {fileEntries.length > 0 && (
         <div class="aq-menu aq-menu--wrap">
           <ul class="aq-menu-rows" data-aq-stagger>
@@ -123,7 +131,7 @@ export default function FileNavigation() {
                   class={`aq-menu-btn group ${fileSelected ? "is-selected" : ""}`}
                   onClick={() => {
                     files?.select(path);
-                    navigationOpened.value = false;
+                    close();
                   }}
                 >
                   {parts.map((p, i) => (
@@ -179,7 +187,7 @@ export default function FileNavigation() {
     <div ref={ref} class="aq-melt inline-flex z-panel">
       {breadcrumbsTrigger}
 
-      <div class={`aq-dropdown aq-dropdown--detached ${navigationOpened.value ? "is-open" : ""}`}>
+      <div class={`aq-dropdown aq-dropdown--detached ${showNav ? "is-open" : ""}`}>
         <div class="aq-menu">
           <ul class="aq-menu-rows" data-aq-stagger>
             {workspacesList}
@@ -189,10 +197,7 @@ export default function FileNavigation() {
       </div>
 
       <CreateWorkspaceDialog open={createWorkspaceDialogOpen} />
-      <CreateFileDialog
-        open={createFileDialogOpen}
-        onCreated={() => (navigationOpened.value = false)}
-      />
+      <CreateFileDialog open={createFileDialogOpen} onCreated={close} />
     </div>
   );
 }

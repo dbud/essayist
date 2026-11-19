@@ -1,3 +1,5 @@
+import { useSignal } from "@preact/signals";
+
 import { Caret } from "#/components/Caret.tsx";
 import Editor from "#/components/editor/Editor.tsx";
 import EditorToolbar from "#/components/editor/EditorToolbar.tsx";
@@ -17,7 +19,6 @@ import { useScrollViewport, type ScrollContainerRef } from "#/hooks/useScrollVie
 import type { FileKey } from "#/models/fileSelection.ts";
 import { useEditorModels } from "#/pages/editor/models.ts";
 import { getEditorSelection } from "#/signals/editorSelection.ts";
-import { navigationOpened } from "#/signals/navigation.ts";
 
 // Floating nav and toolbar rows over a full-height scroll area, content scrolling underneath. The
 // local dim paints above the toolbar and stats rows and the version pill, while the filenav cluster
@@ -25,6 +26,7 @@ import { navigationOpened } from "#/signals/navigation.ts";
 export default function FileEditor() {
   const { selected, sidenotes, fileContents } = useEditorModels();
   const scrollRef = useScrollViewport(sidenotes.scrollTop, sidenotes.viewportHeight);
+  const navigationOpen = useSignal(false);
 
   const selection = selected.value !== null && selected.value.path !== null ? selected.value : null;
   const file =
@@ -43,7 +45,7 @@ export default function FileEditor() {
           />
         )}
       </div>
-      <Overlay when={navigationOpened.value} local />
+      <Overlay when={navigationOpen.value} local />
       <Overlay when={file !== null && file.state.value === null} local capture />
       <div
         class="content-layout z-toolbar absolute inset-x-0 bottom-0 pointer-events-none"
@@ -60,7 +62,7 @@ export default function FileEditor() {
           <div class="content-main flex flex-col items-start py-3">
             <ErrorBoundary>
               <div class="flex gap-4 pointer-events-auto">
-                <FileNavigation />
+                <FileNavigation open={navigationOpen} />
                 {file !== null && <VersionPicker />}
               </div>
             </ErrorBoundary>

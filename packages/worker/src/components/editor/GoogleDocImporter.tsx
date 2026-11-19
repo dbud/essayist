@@ -7,7 +7,6 @@ import type { FileTree, PickerDoc } from "#/models/fileTree.ts";
 import { batchFailureMessage, formatBatchResult } from "#/models/utils/batch.ts";
 import { showToast, showTaskToast } from "#/models/utils/toast.ts";
 import { useEditorModels } from "#/pages/editor/models.ts";
-import { navigationOpened } from "#/signals/navigation.ts";
 import { formatCount } from "#/utils/format.ts";
 
 interface PickedMessage {
@@ -15,7 +14,11 @@ interface PickedMessage {
   docs: PickerDoc[];
 }
 
-export default function GoogleDocImporter() {
+interface GoogleDocImporterProps {
+  onImported?: () => void;
+}
+
+export default function GoogleDocImporter({ onImported }: GoogleDocImporterProps) {
   const importing = useSignal(false);
   const treeRef = useRef<FileTree | null>(null);
   const { fileTrees } = useEditorModels();
@@ -41,7 +44,7 @@ export default function GoogleDocImporter() {
       );
       task.settle(formatBatchResult("Imported", result, "document"), result.failed.length === 0);
       if (docs.length === 1 && result.ok === 1) {
-        navigationOpened.value = false;
+        onImported?.();
       }
     } catch (err) {
       task.settle(batchFailureMessage(err, "Imported", "document"), false);

@@ -1,18 +1,24 @@
 import { type Signal, useSignal } from "@preact/signals";
+import { useLayoutEffect } from "preact/hooks";
 
-import Dialog from "#/components/ui/Dialog.tsx";
 import WaveBars from "#/components/ui/WaveBars.tsx";
 import { useEditorModels } from "#/pages/editor/models.ts";
 
 interface CreateWorkspaceDialogProps {
   open: Signal<boolean>;
+  onCreated?: () => void;
 }
 
-export default function CreateWorkspaceDialog({ open }: CreateWorkspaceDialogProps) {
+/** Create-form panel in the navigation melt slot: the menus yield its place while open. */
+export default function CreateWorkspaceDialog({ open, onCreated }: CreateWorkspaceDialogProps) {
   const { workspaces } = useEditorModels();
   const name = useSignal("");
   const error = useSignal<string | null>(null);
   const submitting = useSignal(false);
+
+  useLayoutEffect(() => {
+    if (open.value) document.getElementById("create-project-name")?.focus({ preventScroll: true });
+  }, [open.value]);
 
   async function onSubmit(e: Event) {
     e.preventDefault();
@@ -24,6 +30,7 @@ export default function CreateWorkspaceDialog({ open }: CreateWorkspaceDialogPro
       await workspaces.create(trimmed);
       name.value = "";
       open.value = false;
+      onCreated?.();
     } catch (err) {
       error.value = err instanceof Error ? err.message : "Failed to create project";
     } finally {
@@ -32,49 +39,53 @@ export default function CreateWorkspaceDialog({ open }: CreateWorkspaceDialogPro
   }
 
   return (
-    <Dialog open={open}>
-      <form onSubmit={onSubmit} class="flex flex-col">
-        <div class="cell cell--ink">New project</div>
-        <div class="form-grid stack--row">
-          <label class="cell" htmlFor="workspace-name">
-            Name
-          </label>
+    <form
+      class={`aq-dropdown aq-dropdown--detached ${open.value ? "is-open" : ""}`}
+      autocomplete="off"
+      onSubmit={onSubmit}
+      onKeyDown={(e) => {
+        if (e.key === "Escape" && open.value) {
+          e.stopPropagation();
+          open.value = false;
+        }
+      }}
+    >
+      <div class="aq-menu">
+        <div class="aq-form" data-aq-stagger>
+          <div class="col-span-2">New project</div>
+          <label for="create-project-name">Name</label>
           <input
-            id="workspace-name"
+            id="create-project-name"
             type="text"
             placeholder="Project name"
             value={name.value}
             onInput={(e) => (name.value = e.currentTarget.value)}
-            disabled={submitting.value}
-            autofocus
-            class="input-text"
           />
           {error.value && (
-            <div role="alert" class="cell col-span-2 text-red-500">
+            <div class="col-span-2 text-[0.8rem] text-red-400" role="alert">
               {error.value}
             </div>
           )}
-          <div class="col-span-2 separator" />
-          <div class="form-actions">
-            <button
-              type="button"
-              class="btn"
-              onClick={() => (open.value = false)}
-              disabled={submitting.value}
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              class="btn cell--accent relative w-30"
-              disabled={submitting.value || !name.value.trim()}
-            >
-              {submitting.value ? "Creating…" : "Create"}
-              <WaveBars fill amplitude={submitting.value ? 1 : 0} />
-            </button>
-          </div>
         </div>
-      </form>
-    </Dialog>
+      </div>
+      <div class="flex justify-end gap-4">
+        <button
+          type="button"
+          class="aq-btn"
+          onClick={() => (open.value = false)}
+          disabled={submitting.value}
+        >
+          Cancel
+        </button>
+        <button
+          type="submit"
+          class="aq-btn--accent relative w-30"
+          disabled={submitting.value || !name.value.trim()}
+        >
+          {submitting.value ? "Creating…" : "Create"}
+          <WaveBars fill amplitude={submitting.value ? 1 : 0} />
+        </button>
+      </div>
+    </form>
   );
 }
