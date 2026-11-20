@@ -17,10 +17,15 @@ function parseSeed<T>(id: string, fallback?: T): T {
   return JSON.parse(text) as T;
 }
 
+/** Inputs for a page to set up its app before hydration, when no context is available yet. */
+export interface BootInput<Data> {
+  readonly data: Data;
+  readonly preferences: Preferences;
+  readonly state: AppState;
+}
+
 // oxlint-disable-next-line typescript/no-unnecessary-type-parameters -- the generic types the seed parse with the page's declared data type
-export async function boot<Data>(
-  page: (data: Data, preferences: Preferences) => ComponentChild,
-): Promise<void> {
+export async function boot<Data>(page: (input: BootInput<Data>) => ComponentChild): Promise<void> {
   if (import.meta.env.DEV) {
     await import("preact/debug");
     const ms = Number(new URLSearchParams(location.search).get("hydrationDelay"));
@@ -35,7 +40,7 @@ export async function boot<Data>(
 
   hydrate(
     <AppProviders state={state} preferences={preferences}>
-      {page(data, preferences)}
+      {page({ data, preferences, state })}
     </AppProviders>,
     document.body,
   );
