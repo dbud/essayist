@@ -3,14 +3,15 @@ import { Effect } from "effect";
 import {
   type ConfigInvalidError,
   type ConfigMissingError,
-  resolveActiveReviewPass,
+  resolveReviewPass,
 } from "#/config/resolve.ts";
-import type { ReviewConfig } from "#/config/service.ts";
+import { ReviewConfig } from "#/config/service.ts";
 import type { Files } from "#/files/service.ts";
 import type { Marks } from "#/marks/service.ts";
 import type { ModelClient } from "#/model/service.ts";
 import type { MissingChunksError } from "#/persistence/chunked_values.ts";
 import type { ConcurrentModificationError, PersistenceError } from "#/persistence/mod.ts";
+import { tolerate } from "#/reviews/observer/tolerate.ts";
 import type { ReviewObserver } from "#/reviews/observer/types.ts";
 import type { ReviewPacing } from "#/reviews/pacing.ts";
 import { resumeReviewRun } from "#/reviews/runner.ts";
@@ -49,13 +50,18 @@ export function driveReviewRun(
     const runs = yield* ReviewRuns;
     const run = yield* runs.getRun(runId);
     if (run.status !== "running") return true;
-    const pass = yield* resolveActiveReviewPass;
-    if (pass === undefined) {
-      yield* Effect.logWarning("review run parked: no active pass is configured", {
+    // The run keeps the pass it was started with. A deleted pass can never finish the run.
+    const config = yield* ReviewConfig;
+    const stored = yield* config.getReviewPass(run.reviewPassId);
+    if (stored === undefined) {
+      const failed = yield* runs.failRun(
         runId,
-      });
-      return false;
+        `Review pass "${run.reviewPassId}" no longer exists`,
+      );
+      yield* tolerate(observer).onSettled(failed);
+      return true;
     }
+    const pass = yield* resolveReviewPass(stored);
     yield* resumeReviewRun(pass, runId, observer);
     return true;
   }).pipe(

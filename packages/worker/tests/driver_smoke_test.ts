@@ -1,7 +1,7 @@
 import { ReviewRuns, TraceEvents, WorkspaceId } from "@essayist/core";
 import { KV_D1_SCHEMA } from "@essayist/core/kv_d1";
 import { env } from "cloudflare:workers";
-import { Effect } from "effect";
+import { Effect, Option } from "effect";
 import { beforeEach, expect, test, vi } from "vitest";
 
 import { env as makeEnv } from "#/env.ts";
@@ -34,7 +34,7 @@ test("a woken run settles and clears its alarm", async () => {
   );
 });
 
-test("a woken run without an active pass stays parked with its alarm armed", async () => {
+test("a woken run whose pass is gone fails and clears its alarm", async () => {
   const e = makeEnv(env);
   const run = await runtime(e).runPromise(
     Effect.gen(function* () {
@@ -51,8 +51,7 @@ test("a woken run without an active pass stays parked with its alarm armed", asy
   await driver.wake({ runId: run.id, wsId: run.wsId });
   await vi.waitFor(
     async () => {
-      const alarmAt = await driver.alarmAt();
-      expect(alarmAt ?? 0).toBeGreaterThan(Date.now() + 60_000);
+      expect(await driver.alarmAt()).toBeNull();
     },
     { timeout: 5_000 },
   );
@@ -63,7 +62,8 @@ test("a woken run without an active pass stays parked with its alarm armed", asy
       return yield* runs.getRun(run.id);
     }).pipe(Effect.provideService(WorkspaceId, { wsId: run.wsId })),
   );
-  expect(stored?.status).toBe("running");
+  expect(stored.status).toBe("failed");
+  expect(Option.getOrUndefined(stored.error)).toBe('Review pass "none" no longer exists');
 });
 
 test("the janitor resumes a run that never got a driver", async () => {
@@ -84,10 +84,16 @@ test("the janitor resumes a run that never got a driver", async () => {
 
   await runtime(e).runPromise(janitorJob);
 
+  // Its pass is gone, so the resumed drive settles it as failed.
   await vi.waitFor(
     async () => {
-      const alarmAt = await driver.alarmAt();
-      expect(alarmAt ?? 0).toBeGreaterThan(Date.now() + 60_000);
+      const stored = await runtime(e).runPromise(
+        Effect.gen(function* () {
+          const runs = yield* ReviewRuns;
+          return yield* runs.getRun(run.id);
+        }).pipe(Effect.provideService(WorkspaceId, { wsId: run.wsId })),
+      );
+      expect(stored.status).toBe("failed");
     },
     { timeout: 5_000 },
   );
