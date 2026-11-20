@@ -1,8 +1,9 @@
 import { assertEquals, assertInstanceOf } from "@std/assert";
-import { Effect, Result } from "effect";
+import { Effect, Layer, Result } from "effect";
 import { test } from "vitest";
 
-import { testLayer } from "#/persistence/testing/kv.ts";
+import { Persistence } from "#/persistence/mod.ts";
+import { layerKvMemory, testLayer } from "#/persistence/testing/kv.ts";
 
 import { Workspaces } from "./service.ts";
 import { LastOwnerError, UserEmailTakenError, type WorkspaceMember } from "./types.ts";
@@ -252,6 +253,68 @@ test("Workspaces -- an owner can be removed when another owner exists", async ()
     assertEquals(yield* store.removeMember(ws.id, a.id), true);
     assertEquals(yield* store.getMembership(ws.id, a.id), undefined);
     assertEquals((yield* store.getMembership(ws.id, b.id))?.role, "owner");
+  });
+  await Effect.runPromise(Effect.provide(program, testLayer(Workspaces.layerNoDeps)));
+});
+
+test("Workspaces -- deleteWorkspace hides the workspace from listings and access", async () => {
+  const program = Effect.gen(function* () {
+    const store = yield* Workspaces;
+    const owner = yield* store.createUser({ email: "owner@example.com" });
+    const editor = yield* store.createUser({ email: "editor@example.com" });
+    const kept = yield* store.createWorkspace("Kept", owner.id);
+    const gone = yield* store.createWorkspace("Gone", owner.id);
+    yield* store.addMember(gone.id, editor.id, "editor");
+
+    assertEquals(yield* store.deleteWorkspace(gone.id, owner.id), true);
+
+    assertEquals(
+      (yield* store.listWorkspacesForUser(owner.id)).map((ws) => ws.id),
+      [kept.id],
+    );
+    assertEquals(yield* store.listWorkspacesForUser(editor.id), []);
+    assertEquals(yield* store.hasAccess(gone.id, owner.id), false);
+    assertEquals(yield* store.hasAccess(gone.id, editor.id), false);
+    assertEquals(yield* store.hasAccess(kept.id, owner.id, "owner"), true);
+
+    // the record and memberships stay for a restore
+    const record = yield* store.getWorkspace(gone.id);
+    assertEquals(record?.deletedBy, owner.id);
+    assertEquals(typeof record?.deletedAt, "number");
+    assertEquals((yield* store.getMembers(gone.id)).length, 2);
+  });
+  await Effect.runPromise(Effect.provide(program, testLayer(Workspaces.layerNoDeps)));
+});
+
+test("Workspaces -- deleteWorkspace writes the deletion index", async () => {
+  const program = Effect.gen(function* () {
+    const store = yield* Workspaces;
+    const persistence = yield* Persistence;
+    const owner = yield* store.createUser({ email: "owner@example.com" });
+    const ws = yield* store.createWorkspace("Gone", owner.id);
+
+    yield* store.deleteWorkspace(ws.id, owner.id);
+
+    const deletedAt = (yield* store.getWorkspace(ws.id))?.deletedAt ?? 0;
+    const { entries } = yield* persistence.list(["workspaces_deleted"]);
+    assertEquals(
+      entries.map((entry) => entry.key),
+      [["workspaces_deleted", new Date(deletedAt).toISOString(), ws.id]],
+    );
+  });
+  const layer = Layer.provideMerge(Workspaces.layerNoDeps, layerKvMemory());
+  await Effect.runPromise(Effect.provide(program, layer));
+});
+
+test("Workspaces -- deleteWorkspace is false for a missing or already deleted workspace", async () => {
+  const program = Effect.gen(function* () {
+    const store = yield* Workspaces;
+    const owner = yield* store.createUser({ email: "owner@example.com" });
+    const ws = yield* store.createWorkspace("Gone", owner.id);
+
+    assertEquals(yield* store.deleteWorkspace("nope", owner.id), false);
+    assertEquals(yield* store.deleteWorkspace(ws.id, owner.id), true);
+    assertEquals(yield* store.deleteWorkspace(ws.id, owner.id), false);
   });
   await Effect.runPromise(Effect.provide(program, testLayer(Workspaces.layerNoDeps)));
 });

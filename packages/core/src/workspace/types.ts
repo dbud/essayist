@@ -31,12 +31,17 @@ export interface UserInput extends UserProfile {
  */
 export type Role = "owner" | "editor";
 
-/** A named collection of files owned by a user, shareable with others. */
+/**
+ * A named collection of files owned by a user, shareable with others. A deleted workspace keeps its
+ * record, memberships, and data; `deletedAt` hides it from listings and access checks.
+ */
 export const Workspace = Schema.Struct({
   id: Schema.String,
   name: Schema.String,
   ownerId: Schema.String,
   createdAt: Schema.Number,
+  deletedAt: Schema.optionalKey(Schema.Number),
+  deletedBy: Schema.optionalKey(Schema.String),
 });
 export type Workspace = Schema.Schema.Type<typeof Workspace>;
 

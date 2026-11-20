@@ -36,12 +36,14 @@ import { LastOwnerError, UserEmailTakenError } from "./types.ts";
 //   ["workspaces_by_owner", ownerId, wsId]   -> true
 //   ["members_by_ws", wsId, userId]          -> WorkspaceMember
 //   ["members_by_user", userId, wsId]        -> true
+//   ["workspaces_deleted", deletedAtIso, wsId] -> true  (oldest first, for the retention cleanup)
 const USERS = "users";
 const USER_EMAILS = "user_emails";
 const WORKSPACES = "workspaces";
 const WORKSPACES_BY_OWNER = "workspaces_by_owner";
 const MEMBERS_BY_WS = "members_by_ws";
 const MEMBERS_BY_USER = "members_by_user";
+const WORKSPACES_DELETED = "workspaces_deleted";
 
 /**
  * The Workspace service contract. Batch writes surfaced an optimistic conflict wherever checks are
@@ -70,8 +72,18 @@ export interface Interface {
     name: string,
     ownerId: string,
   ): Effect.Effect<Workspace, PersistenceError | ConcurrentModificationError>;
+  /** Get a workspace, including a deleted one; check `deletedAt`. */
   getWorkspace(id: string): Effect.Effect<Workspace | undefined, PersistenceError>;
-  /** List all workspaces a user belongs to (any role). */
+  /**
+   * Soft-delete a workspace: hide it from listings and access checks, keeping its data for a later
+   * restore or retention cleanup. Ownership is the caller's check. `false` when the workspace is
+   * missing or already deleted.
+   */
+  deleteWorkspace(
+    wsId: string,
+    deletedBy: string,
+  ): Effect.Effect<boolean, PersistenceError | ConcurrentModificationError>;
+  /** List the workspaces a user belongs to (any role), without deleted ones. */
   listWorkspacesForUser(userId: string): Effect.Effect<Workspace[], PersistenceError>;
   /** Add a member, or update their role if already a member (upsert). */
   addMember(
@@ -95,7 +107,7 @@ export interface Interface {
     userId: string,
   ): Effect.Effect<WorkspaceMember | undefined, PersistenceError>;
   /** Whether `userId` can access `wsId`, optionally requiring a role.
-   * `owner` satisfies an `editor` requirement (owner >= editor). */
+   * `owner` satisfies an `editor` requirement (owner >= editor). False for a deleted workspace. */
   hasAccess(wsId: string, userId: string, role?: Role): Effect.Effect<boolean, PersistenceError>;
 }
 
@@ -212,6 +224,27 @@ export class Workspaces extends Context.Service<Workspaces, Interface>()(
       const getWorkspace = (id: string) =>
         persistence.get<Workspace>([WORKSPACES, id]).pipe(Effect.map((entry) => entry?.value));
 
+      const deleteWorkspace = (wsId: string, deletedBy: string) =>
+        Effect.gen(function* () {
+          const key: Key = [WORKSPACES, wsId];
+          const entry = yield* persistence.get<Workspace>(key);
+          if (entry === undefined || entry.value.deletedAt !== undefined) return false;
+          const deletedAt = yield* Clock.currentTimeMillis;
+          const workspace: Workspace = { ...entry.value, deletedAt, deletedBy };
+          yield* persistence.batch(
+            [
+              { type: "set", key, value: workspace },
+              {
+                type: "set",
+                key: [WORKSPACES_DELETED, new Date(deletedAt).toISOString(), wsId],
+                value: true,
+              },
+            ],
+            { checks: [{ key, versionstamp: entry.versionstamp }] },
+          );
+          return true;
+        });
+
       const listWorkspacesForUser = (userId: string) =>
         Effect.gen(function* () {
           const { entries } = yield* persistence.list([MEMBERS_BY_USER, userId]);
@@ -220,7 +253,7 @@ export class Workspaces extends Context.Service<Workspaces, Interface>()(
             wsIds.map((id) => [WORKSPACES, id]),
           );
           return sortBy(
-            mapNotNullish(results, (r) => r?.value),
+            mapNotNullish(results, (r) => r?.value).filter((ws) => ws.deletedAt === undefined),
             (workspace) => workspace.createdAt,
           );
         });
@@ -313,6 +346,8 @@ export class Workspaces extends Context.Service<Workspaces, Interface>()(
 
       const hasAccess = (wsId: string, userId: string, role?: Role) =>
         Effect.gen(function* () {
+          const workspace = yield* getWorkspace(wsId);
+          if (!workspace || workspace.deletedAt !== undefined) return false;
           const membership = yield* getMembership(wsId, userId);
           if (!membership) return false;
           if (!role) return true;
@@ -329,6 +364,7 @@ export class Workspaces extends Context.Service<Workspaces, Interface>()(
         isAdmin,
         createWorkspace,
         getWorkspace,
+        deleteWorkspace,
         listWorkspacesForUser,
         addMember,
         removeMember,
