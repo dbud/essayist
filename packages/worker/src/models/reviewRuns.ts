@@ -1,11 +1,11 @@
-import type { CleanupResult } from "@essayist/core";
-import { createModel, signal } from "@preact/signals";
+import type { CleanupResult, ReviewProgress } from "@essayist/core";
+import { computed, createModel, effect, signal } from "@preact/signals";
 
 import createAsyncState from "#/models/utils/asyncState.ts";
 import { deleteJson, getJson, postJson } from "#/models/utils/http.ts";
 
 import type { ReviewRunData, ReviewRunsData, ReviewStreamDetail } from "./reviewRuns.data.ts";
-import { observeReviewRun } from "./reviewStream.ts";
+import { type ReviewRunStream, ReviewRunStreamModel } from "./reviewRunStream.ts";
 
 export const ReviewRunsModel = createModel(
   (wsId: string, path: string, detail: ReviewStreamDetail, data?: ReviewRunsData) => {
@@ -13,11 +13,37 @@ export const ReviewRunsModel = createModel(
 
     const [runLoad, { loading: historyLoading, error: historyError }] = createAsyncState();
 
-    const observeRunning = (values: ReviewRunsData) => {
-      for (const run of values) {
-        if (run.status === "running") observeReviewRun(wsId, run.id, detail);
-      }
+    // The stream of the running run. A file has at most a single running run.
+    const following = signal<{ runId: string; stream: ReviewRunStream } | null>(null);
+
+    const follow = (run: ReviewRunData) => {
+      if (import.meta.env.SSR || run.status !== "running") return;
+      if (following.peek()?.runId === run.id) return;
+      following.value = { runId: run.id, stream: new ReviewRunStreamModel(wsId, run.id, detail) };
     };
+
+    const followRunning = (values: readonly ReviewRunData[]) => {
+      const running = values.find((run) => run.status === "running");
+      if (running !== undefined) follow(running);
+    };
+
+    // A settled run replaces its running entry, and its stream is let go.
+    effect(() => {
+      const current = following.value;
+      if (current === null) return;
+      const run = current.stream.settled.value;
+      if (run === null) return;
+      runs.value = runs.peek().map((entry) => (entry.id === run.id ? run : entry));
+      following.value = null;
+      current.stream[Symbol.dispose]();
+    });
+
+    const active = computed((): { runId: string; progress: ReviewProgress | null } | null => {
+      const current = following.value;
+      return current === null
+        ? null
+        : { runId: current.runId, progress: current.stream.progress.value };
+    });
 
     async function load(): Promise<void> {
       const params = new URLSearchParams({ wsId, path });
@@ -26,13 +52,13 @@ export const ReviewRunsModel = createModel(
       );
       if (fresh) {
         runs.value = fresh;
-        observeRunning(fresh);
+        followRunning(fresh);
       }
     }
 
     if (!import.meta.env.SSR) {
       if (data === undefined) void load();
-      else observeRunning(data);
+      else followRunning(data);
     }
 
     const [runSubmit, { loading, error }] = createAsyncState();
@@ -42,8 +68,8 @@ export const ReviewRunsModel = createModel(
         postJson<ReviewRunData>("/api/workspaces/files/review", { wsId, path }),
       );
       if (result !== undefined) {
+        follow(result);
         void load();
-        observeReviewRun(wsId, result.id, detail);
       }
       return result;
     }
@@ -69,6 +95,7 @@ export const ReviewRunsModel = createModel(
 
     return {
       runs,
+      active,
       loading,
       error,
       historyLoading,
