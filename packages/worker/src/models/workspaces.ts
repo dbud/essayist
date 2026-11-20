@@ -2,7 +2,7 @@ import type { Workspace } from "@essayist/core";
 import { computed, createModel, signal } from "@preact/signals";
 
 import createAsyncState from "#/models/utils/asyncState.ts";
-import { getJson, postJson } from "#/models/utils/http.ts";
+import { deleteJson, getJson, postJson } from "#/models/utils/http.ts";
 
 import type { WorkspacesData } from "./workspaces.data";
 
@@ -32,7 +32,13 @@ export const WorkspacesModel = createModel((data: WorkspacesData) => {
     select(workspace.id);
   }
 
-  return { list, selectedId, current, select, refresh, create, loading, error };
+  async function remove(id: string): Promise<void> {
+    const params = new URLSearchParams({ wsId: id });
+    await deleteJson(`/api/workspaces?${params}`);
+    await refresh();
+  }
+
+  return { list, selectedId, current, select, refresh, create, remove, loading, error };
 });
 
 export type Workspaces = InstanceType<typeof WorkspacesModel>;

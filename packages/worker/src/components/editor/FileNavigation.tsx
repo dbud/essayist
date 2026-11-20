@@ -1,8 +1,9 @@
 import { type Signal, useSignal } from "@preact/signals";
-import { ChevronDown, ChevronRight, Plus, Slash } from "lucide-preact";
+import { ChevronDown, ChevronRight, Plus, Slash, Trash2 } from "lucide-preact";
 
 import CreateFileDialog from "#/components/editor/CreateFileDialog.tsx";
 import CreateWorkspaceDialog from "#/components/editor/CreateWorkspaceDialog.tsx";
+import DeleteWorkspaceDialog from "#/components/editor/DeleteWorkspaceDialog.tsx";
 import FileUploader from "#/components/editor/FileUploader.tsx";
 import GoogleDocImporter from "#/components/editor/GoogleDocImporter.tsx";
 import AqSwap from "#/components/ui/AqSwap.tsx";
@@ -10,6 +11,7 @@ import WaveBars from "#/components/ui/WaveBars.tsx";
 import { useClickOutside } from "#/hooks/useClickOutside.ts";
 import type { TreeNode } from "#/models/fileTree.ts";
 import { useEditorModels } from "#/pages/editor/models.ts";
+import { useAppState } from "#/state.ts";
 
 interface PathPart {
   segment: string;
@@ -58,21 +60,29 @@ interface FileNavigationProps {
 export default function FileNavigation({ open }: FileNavigationProps) {
   const createWorkspaceDialogOpen = useSignal(false);
   const createFileDialogOpen = useSignal(false);
+  const deleteWorkspaceDialogOpen = useSignal(false);
 
   const close = () => {
     open.value = false;
     createFileDialogOpen.value = false;
     createWorkspaceDialogOpen.value = false;
+    deleteWorkspaceDialogOpen.value = false;
   };
 
   const ref = useClickOutside(close);
 
+  const { user } = useAppState();
   const { workspaces, fileTrees, selected } = useEditorModels();
   const files = fileTrees.current.value;
   const selectedPath = selected.value?.path ?? null;
   const selectedWorkspace = workspaces.current.value?.name ?? null;
   const fileEntries = buildFileEntries(files?.tree.value.children ?? [], selectedPath);
-  const showNav = open.value && !createFileDialogOpen.value && !createWorkspaceDialogOpen.value;
+  const showNav =
+    open.value &&
+    !createFileDialogOpen.value &&
+    !createWorkspaceDialogOpen.value &&
+    !deleteWorkspaceDialogOpen.value;
+  const ownsSelected = user !== undefined && workspaces.current.value?.ownerId === user.id;
 
   const breadcrumbsTrigger = (
     <AqSwap on={`${selectedWorkspace}/${selectedPath}`}>
@@ -119,6 +129,17 @@ export default function FileNavigation({ open }: FileNavigationProps) {
     </div>
   );
 
+  const deleteWorkspace = ownsSelected && (
+    <button
+      type="button"
+      class="aq-btn self-start"
+      onClick={() => (deleteWorkspaceDialogOpen.value = true)}
+    >
+      <Trash2 />
+      <span>Delete project&hellip;</span>
+    </button>
+  );
+
   const filesList = (
     <div class={`aq-dropdown--right-bridged aq-dropdown--fit max-w-96 ${showNav ? "is-open" : ""}`}>
       {fileEntries.length > 0 && (
@@ -151,6 +172,7 @@ export default function FileNavigation({ open }: FileNavigationProps) {
         </div>
       )}
       {createFile}
+      {deleteWorkspace}
     </div>
   );
 
@@ -197,6 +219,7 @@ export default function FileNavigation({ open }: FileNavigationProps) {
       </div>
 
       <CreateWorkspaceDialog open={createWorkspaceDialogOpen} />
+      <DeleteWorkspaceDialog open={deleteWorkspaceDialogOpen} onDeleted={close} />
       <CreateFileDialog open={createFileDialogOpen} onCreated={close} />
     </div>
   );
