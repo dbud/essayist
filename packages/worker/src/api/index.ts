@@ -12,6 +12,7 @@ import {
   type PersistenceError,
   resolveActiveReviewPass,
   resolveReviewPass,
+  ReviewCleanup,
   ReviewConfig,
   ReviewPacing,
   ReviewRuns,
@@ -281,6 +282,8 @@ const adminHandlers = HttpApiBuilder.group(
   "admin",
   Effect.fn(function* (handlers) {
     const config = yield* ReviewConfig;
+    const cleanup = yield* ReviewCleanup;
+    const workspacesStore = yield* Workspaces;
     const OK = { ok: true as const };
     // Persistence and concurrent-write faults are defects per the worker convention; every config
     // store call fails with exactly this pair (or the Persistence-only reads, caught pointwise).
@@ -290,6 +293,15 @@ const adminHandlers = HttpApiBuilder.group(
       Effect.catchTags(self, {
         PersistenceError: Effect.die,
         ConcurrentModificationError: Effect.die,
+      });
+
+    const requireAccess = (wsId: string) =>
+      Effect.gen(function* () {
+        const { user } = yield* UserSession;
+        const allowed = yield* Effect.orDie(workspacesStore.hasAccess(wsId, user.id));
+        if (!allowed) {
+          return yield* Effect.fail(new HttpApiError.Forbidden());
+        }
       });
 
     return handlers.handleAll({
@@ -345,6 +357,39 @@ const adminHandlers = HttpApiBuilder.group(
           }
           yield* config.setActiveReviewPass(reviewPassId).pipe(diePersist);
           return { activeReviewPassId: reviewPassId };
+        }),
+      deleteReviewRun: (req) =>
+        Effect.gen(function* () {
+          const { wsId } = req.query;
+          yield* requireAccess(wsId);
+          return yield* cleanup.deleteRun(req.params.id).pipe(
+            Effect.provideService(WorkspaceId, { wsId }),
+            Effect.catchTags({
+              PersistenceError: Effect.die,
+              ConcurrentModificationError: Effect.die,
+              ReviewRunMissingError: () => Effect.fail(new HttpApiError.NotFound()),
+              ReviewRunActiveError: (err) =>
+                Effect.fail(new ApiBadRequest({ message: err.message })),
+            }),
+          );
+        }),
+      clearReviewRuns: (req) =>
+        Effect.gen(function* () {
+          const { wsId, path, versionId } = req.query;
+          yield* requireAccess(wsId);
+          const cleared =
+            versionId === undefined
+              ? cleanup.clearFile(path)
+              : cleanup.clearVersion(path, versionId);
+          return yield* cleared.pipe(
+            Effect.provideService(WorkspaceId, { wsId }),
+            Effect.catchTags({
+              PersistenceError: Effect.die,
+              ConcurrentModificationError: Effect.die,
+              ReviewRunActiveError: (err) =>
+                Effect.fail(new ApiBadRequest({ message: err.message })),
+            }),
+          );
         }),
       getPassGraph: (req) =>
         Effect.gen(function* () {

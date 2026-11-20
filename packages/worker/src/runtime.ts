@@ -10,6 +10,7 @@ import {
   Marks,
   ModelClient,
   type PersistenceError,
+  ReviewCleanup,
   ReviewConfig,
   ReviewJanitor,
   ReviewPacing,
@@ -27,6 +28,7 @@ import { logLayer } from "#/log.ts";
 import { RunDrivers } from "#/reviews/runDrivers.ts";
 
 export type WorkerServices =
+  | ReviewCleanup
   | ReviewConfig
   | ReviewJanitor
   | ReviewRuns
@@ -66,12 +68,17 @@ function cell(env: WorkerEnv): RuntimeCell {
       Effect.gen(function* () {
         const client = yield* D1Client.make({ db: e.db });
         const storage = layerKvD1(client);
+        // Services the Marks and ReviewCleanup layers are built on.
+        const base = Layer.mergeAll(
+          Files.layerNoDeps,
+          layerReviewRunsD1(client),
+          layerTraceEventsD1(client),
+        );
         return Layer.mergeAll(
+          Layer.provideMerge(Layer.mergeAll(Marks.layerNoDeps, ReviewCleanup.layerNoDeps), base),
           ReviewConfig.layerNoDeps,
           UserState.layerNoDeps,
-          Files.layerNoDeps,
           Workspaces.layerNoDeps,
-          layerReviewRunsD1(client),
           layerReviewJanitorD1(client),
           Layer.succeed(
             ModelClient,
@@ -81,8 +88,6 @@ function cell(env: WorkerEnv): RuntimeCell {
             }),
           ),
           RunDrivers.layerOf(e.runDriver),
-          layerTraceEventsD1(client),
-          Layer.provide(Marks.layerNoDeps, Files.layerNoDeps),
           Layer.succeed(ReviewPacing, {
             heartbeatMs: e.driverHeartbeatMs,
             staleMs: e.driverStaleMs,

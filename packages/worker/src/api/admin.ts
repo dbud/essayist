@@ -146,6 +146,26 @@ const getPassGraph = HttpApiEndpoint.get("getPassGraph", "/admin/review-passes/:
   error: [HttpApiError.NotFound, ApiBadRequest],
 });
 
+const CleanupResult = Schema.Struct({ runs: Schema.Number, marks: Schema.Number });
+
+const deleteReviewRun = HttpApiEndpoint.delete("deleteReviewRun", "/admin/review-runs/:id", {
+  params: IdParam,
+  query: Schema.Struct({ wsId: Schema.NonEmptyString }),
+  success: CleanupResult,
+  error: [HttpApiError.Forbidden, HttpApiError.NotFound, ApiBadRequest],
+});
+
+// Without versionId, clears the whole file.
+const clearReviewRuns = HttpApiEndpoint.delete("clearReviewRuns", "/admin/review-runs", {
+  query: Schema.Struct({
+    wsId: Schema.NonEmptyString,
+    path: Schema.NonEmptyString,
+    versionId: Schema.optional(Schema.NonEmptyString),
+  }),
+  success: CleanupResult,
+  error: [HttpApiError.Forbidden, ApiBadRequest],
+});
+
 export const adminGroup = HttpApiGroup.make("admin")
   .add(getAdminConfig)
   .add(createCategory)
@@ -162,4 +182,6 @@ export const adminGroup = HttpApiGroup.make("admin")
   .add(deleteReviewPass)
   .add(setActiveReviewPass)
   .add(getPassGraph)
+  .add(deleteReviewRun)
+  .add(clearReviewRuns)
   .middleware(AdminMiddleware);
