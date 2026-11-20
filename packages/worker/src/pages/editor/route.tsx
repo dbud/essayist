@@ -47,7 +47,7 @@ export default new Hono<{ Bindings: Cloudflare.Env }>().get("/", async (c) => {
   });
   const data = await runtime(env(c.env)).runPromise(seed);
   return c.render(
-    <EditorModelsProvider value={createModels(data)}>
+    <EditorModelsProvider value={createModels(data, user)}>
       <Page />
     </EditorModelsProvider>,
     {

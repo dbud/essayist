@@ -8,8 +8,8 @@ import Page from "#/pages/editor/page.tsx";
 
 import { setupSelectionPersist, setupUnloadGuard } from "./editor/persist.ts";
 
-void boot<EditorData>(({ data, preferences }) => {
-  const models = createModels(data);
+void boot<EditorData>(({ data, preferences, state }) => {
+  const models = createModels(data, state.user);
   const { selected, workspaces, fileTrees, fileContents } = models;
 
   setupSelectionPersist(selected);

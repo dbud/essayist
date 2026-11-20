@@ -18,6 +18,9 @@ export const streamRoutes = new Hono<{ Bindings: Cloudflare.Env }>()
 
     const allowed = await rt.runPromise(Workspaces.use((store) => store.hasAccess(wsId, user.id)));
     if (!allowed) return c.text("forbidden", 403);
+    // The raw trace holds prompts, model output, and reasoning; admins only.
+    const detail = c.req.query("detail") === "trace" ? "trace" : "progress";
+    if (detail === "trace" && user.role !== "admin") return c.text("forbidden", 403);
 
     const run = await rt.runPromise(
       ReviewRuns.use((store) => store.getRun(runId)).pipe(
@@ -33,7 +36,7 @@ export const streamRoutes = new Hono<{ Bindings: Cloudflare.Env }>()
 
     let body: ReadableStream<Uint8Array>;
     try {
-      body = await e.runDriver.getByName(runId).stream({ wsId, runId }, lastSeq);
+      body = await e.runDriver.getByName(runId).stream({ wsId, runId }, lastSeq, detail);
     } catch {
       return c.text("the run driver could not open the stream", 500);
     }

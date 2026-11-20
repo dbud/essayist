@@ -3,6 +3,7 @@ import { DurableObject } from "cloudflare:workers";
 import { Effect } from "effect";
 
 import { env } from "#/env.ts";
+import type { ReviewStreamDetail } from "#/models/reviewRuns.data.ts";
 import { StreamHub } from "#/reviews/streamHub.ts";
 import { runtime, type WorkerRuntime } from "#/runtime.ts";
 
@@ -45,8 +46,12 @@ export class ReviewRunDriver extends DurableObject {
     return this.#rt.runPromise(storageEffect(() => this.ctx.storage.getAlarm()));
   }
 
-  async stream(ref: RunRef, lastSeq: number): Promise<ReadableStream<Uint8Array>> {
-    return this.#hub.stream(ref, lastSeq);
+  async stream(
+    ref: RunRef,
+    lastSeq: number,
+    detail: ReviewStreamDetail,
+  ): Promise<ReadableStream<Uint8Array>> {
+    return this.#hub.stream(ref, lastSeq, detail);
   }
 
   override async alarm(): Promise<void> {

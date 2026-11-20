@@ -2,18 +2,24 @@ import { computed, createModel, type ReadonlySignal, signal } from "@preact/sign
 
 import { PENDING_VERSION_ID } from "./fileContent.ts";
 import type { FileSelection } from "./fileSelection.ts";
-import type { ReviewRunsData } from "./reviewRuns.data.ts";
+import type { ReviewRunsData, ReviewStreamDetail } from "./reviewRuns.data.ts";
 import { type ReviewRuns, ReviewRunsModel } from "./reviewRuns.ts";
 
 export const ReviewRunsByPathModel = createModel(
-  (selected: ReadonlySignal<FileSelection | null>, data?: ReviewRunsData | null) => {
+  (
+    selected: ReadonlySignal<FileSelection | null>,
+    detail: ReviewStreamDetail,
+    data?: ReviewRunsData | null,
+  ) => {
     const models = signal(new Map<string, Map<string, ReviewRuns>>());
 
     {
       const selection = selected.value;
       if (data != null && selection?.path) {
         const { wsId, path } = selection;
-        models.value = new Map([[wsId, new Map([[path, new ReviewRunsModel(wsId, path, data)]])]]);
+        models.value = new Map([
+          [wsId, new Map([[path, new ReviewRunsModel(wsId, path, detail, data)]])],
+        ]);
       }
     }
 
@@ -29,7 +35,7 @@ export const ReviewRunsByPathModel = createModel(
       const { wsId, path } = selection;
       return models.value
         .getOrInsertComputed(wsId, () => new Map())
-        .getOrInsertComputed(path, () => new ReviewRunsModel(wsId, path));
+        .getOrInsertComputed(path, () => new ReviewRunsModel(wsId, path, detail));
     });
 
     return { current };

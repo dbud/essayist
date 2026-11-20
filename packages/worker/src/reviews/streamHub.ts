@@ -14,6 +14,7 @@ import {
 } from "@essayist/core";
 import { Effect, Fiber, Option, Queue, Schema, Semaphore } from "effect";
 
+import type { ReviewStreamDetail } from "#/models/reviewRuns.data.ts";
 import type { WorkerRuntime } from "#/runtime.ts";
 
 const KEEPALIVE_MS = 15_000;
@@ -25,6 +26,7 @@ const frameEncoder = new TextEncoder();
 const CLOSE_FRAME = "\u0000";
 
 interface Sink {
+  readonly detail: ReviewStreamDetail;
   readonly queue: Queue.Queue<string>;
   readonly drainFiber: Fiber.Fiber<void, PersistenceError>;
   readonly pingFiber: Fiber.Fiber<void, PersistenceError>;
@@ -38,14 +40,19 @@ export class StreamHub {
 
   constructor(private readonly rt: WorkerRuntime) {}
 
-  /** Open a stream for the run: replay its trace past lastSeq, then live until the run settles,
-   * the connection caps, or the client goes away. */
-  async stream(ref: RunRef, lastSeq: number): Promise<ReadableStream<Uint8Array>> {
+  /** Open a stream for the run. A trace stream first replays the trace past lastSeq; every stream
+   * then gets a progress snapshot and live frames until the run settles, the connection caps, or
+   * the client goes away. */
+  async stream(
+    ref: RunRef,
+    lastSeq: number,
+    detail: ReviewStreamDetail,
+  ): Promise<ReadableStream<Uint8Array>> {
     const sinkId = this.#nextSinkId++;
     return new ReadableStream<Uint8Array>({
       start: (controller) =>
         this.rt.runPromise(
-          this.#attach(sinkId, controller, ref, lastSeq).pipe(
+          this.#attach(sinkId, controller, ref, lastSeq, detail).pipe(
             // A storage fault during attach leaves the stream hanging; drop the sink and close it.
             Effect.catchTag("PersistenceError", () =>
               Effect.sync(() => {
@@ -93,7 +100,7 @@ export class StreamHub {
   #onTrace(event: TraceEvent): Effect.Effect<void> {
     return this.#mutex.withPermits(1)(
       Effect.gen({ self: this }, function* () {
-        yield* this.#offerAll(this.#traceFrame(event));
+        yield* this.#offerAll(this.#traceFrame(event), "trace");
         if (this.#feed === undefined) return;
         const next = feedTraceEvent(this.#feed, event);
         if (next.progress !== this.#feed.progress) {
@@ -104,11 +111,10 @@ export class StreamHub {
     );
   }
 
-  /** Callers hold the mutex. */
-  #offerAll(frame: string): Effect.Effect<void> {
-    return Effect.forEach(this.#sinks.values(), (sink) => Queue.offer(sink.queue, frame), {
-      discard: true,
-    });
+  /** Callers hold the mutex. With `only`, the frame reaches only streams of that detail. */
+  #offerAll(frame: string, only?: ReviewStreamDetail): Effect.Effect<void> {
+    const sinks = this.#sinks.values().filter((sink) => only === undefined || sink.detail === only);
+    return Effect.forEach(sinks, (sink) => Queue.offer(sink.queue, frame), { discard: true });
   }
 
   /** Holds the mutex, so no live frame can interleave with the replay. */
@@ -117,6 +123,7 @@ export class StreamHub {
     controller: ReadableStreamDefaultController<Uint8Array>,
     { wsId, runId }: RunRef,
     lastSeq: number,
+    detail: ReviewStreamDetail,
   ): Effect.Effect<void, PersistenceError, TraceEvents | ReviewRuns | ReviewConfig> {
     return this.#mutex.withPermits(1)(
       Effect.gen({ self: this }, function* () {
@@ -124,15 +131,17 @@ export class StreamHub {
         // Forked on the runtime's root scope, so the fibers outlive this program.
         const drainFiber = this.rt.runFork(this.#drain(queue, controller));
         const pingFiber = this.rt.runFork(this.#keepalive(queue));
-        const sink: Sink = { queue, drainFiber, pingFiber };
+        const sink: Sink = { detail, queue, drainFiber, pingFiber };
         this.#sinks.set(sinkId, sink);
 
-        const traces = yield* TraceEvents;
-        const events = yield* Effect.provideService(traces.get(runId, lastSeq), WorkspaceId, {
-          wsId,
-        });
-        for (const event of events) {
-          yield* Queue.offer(sink.queue, this.#traceFrame(event));
+        if (detail === "trace") {
+          const traces = yield* TraceEvents;
+          const events = yield* Effect.provideService(traces.get(runId, lastSeq), WorkspaceId, {
+            wsId,
+          });
+          for (const event of events) {
+            yield* Queue.offer(sink.queue, this.#traceFrame(event));
+          }
         }
 
         const runs = yield* ReviewRuns;

@@ -123,7 +123,7 @@ test("a stream replays the trace past its cursor and stays open while the run ru
   );
 
   const driver = env.RUN_DRIVER.getByName(run.id);
-  const reader = (await driver.stream({ wsId: "smoke-ws", runId: run.id }, 0)).getReader();
+  const reader = (await driver.stream({ wsId: "smoke-ws", runId: run.id }, 0, "trace")).getReader();
   const replayed = await readFrames(reader, 3);
   for (const seq of [1, 2, 3]) {
     expect(replayed).toContain(`event: trace`);
@@ -134,7 +134,9 @@ test("a stream replays the trace past its cursor and stays open while the run ru
   await reader.cancel();
 
   // A late attach resumes past its cursor instead of replaying from the top.
-  const resumed = (await driver.stream({ wsId: "smoke-ws", runId: run.id }, 2)).getReader();
+  const resumed = (
+    await driver.stream({ wsId: "smoke-ws", runId: run.id }, 2, "trace")
+  ).getReader();
   const tail = await readFrames(resumed, 1);
   expect(tail).toContain(`id: 3`);
   expect(tail).not.toContain(`id: 2`);
@@ -157,7 +159,9 @@ test("a stream ends with a done frame once the run settles", async () => {
   );
 
   const driver = env.RUN_DRIVER.getByName(run.id);
-  const reader = (await driver.stream({ wsId: "smoke-ws", runId: run.id }, 0)).getReader();
+  const reader = (
+    await driver.stream({ wsId: "smoke-ws", runId: run.id }, 0, "progress")
+  ).getReader();
   const frames = await readFrames(reader, 2);
   expect(frames).toContain("event: progress");
   expect(frames).toContain("event: done");
@@ -167,7 +171,7 @@ test("a stream ends with a done frame once the run settles", async () => {
   expect(end.done).toBe(true);
 });
 
-test("a stream sends a progress snapshot folded from the stored trace", async () => {
+test("a progress stream sends a snapshot of the stored trace and none of its text", async () => {
   const e = makeEnv(env);
   const run = await runtime(e).runPromise(
     Effect.gen(function* () {
@@ -204,8 +208,12 @@ test("a stream sends a progress snapshot folded from the stored trace", async ()
   );
 
   const driver = env.RUN_DRIVER.getByName(run.id);
-  const reader = (await driver.stream({ wsId: "smoke-ws", runId: run.id }, 2)).getReader();
+  const reader = (
+    await driver.stream({ wsId: "smoke-ws", runId: run.id }, -1, "progress")
+  ).getReader();
   const frames = await readFrames(reader, 1);
+  expect(frames).not.toContain("event: trace");
+  expect(frames).not.toContain("thinking out loud");
   // The pass "none" doesn't exist, so the plan has no units; placed marks still count.
   expect(frames).toContain("event: progress");
   expect(frames).toContain('"units":[]');
