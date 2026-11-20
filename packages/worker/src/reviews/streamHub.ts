@@ -1,9 +1,13 @@
 import {
+  feedTraceEvent,
+  loadProgressFeed,
   ReviewRun,
   ReviewRuns,
   TraceEvents,
   WorkspaceId,
   type PersistenceError,
+  type ProgressFeed,
+  type ReviewConfig,
   type ReviewObserver,
   type RunRef,
   type TraceEvent,
@@ -30,6 +34,7 @@ export class StreamHub {
   #mutex = Semaphore.makeUnsafe(1);
   #sinks = new Map<number, Sink>();
   #nextSinkId = 1;
+  #feed: ProgressFeed | undefined;
 
   constructor(private readonly rt: WorkerRuntime) {}
 
@@ -57,7 +62,7 @@ export class StreamHub {
   /** The drive reports into the hub: frames reach attached streams, and a settle ends them. */
   observer(): ReviewObserver {
     return {
-      onTrace: (event) => this.#publish(this.#traceFrame(event)),
+      onTrace: (event) => this.#onTrace(event),
       onSettled: (run) =>
         Effect.gen({ self: this }, function* () {
           yield* this.#publish(this.#doneFrame(run));
@@ -70,6 +75,10 @@ export class StreamHub {
     return `event: trace\ndata: ${JSON.stringify(event)}\nid: ${event.seq}\n\n`;
   }
 
+  #progressFrame({ progress, seq }: ProgressFeed): string {
+    return `event: progress\ndata: ${JSON.stringify(progress)}\nid: ${seq}\n\n`;
+  }
+
   #doneFrame(run: ReviewRun): string {
     const encoded = Schema.encodeSync(ReviewRun)(run);
     return `event: done\ndata: ${JSON.stringify(encoded)}\n\n`;
@@ -77,11 +86,29 @@ export class StreamHub {
 
   /** Under the mutex, so replay and live frames land on each stream in seq order. */
   #publish(frame: string): Effect.Effect<void> {
+    return this.#mutex.withPermits(1)(this.#offerAll(frame));
+  }
+
+  /** Sends the trace frame, and a progress frame when the event changes the progress. */
+  #onTrace(event: TraceEvent): Effect.Effect<void> {
     return this.#mutex.withPermits(1)(
-      Effect.forEach(this.#sinks.values(), (sink) => Queue.offer(sink.queue, frame), {
-        discard: true,
+      Effect.gen({ self: this }, function* () {
+        yield* this.#offerAll(this.#traceFrame(event));
+        if (this.#feed === undefined) return;
+        const next = feedTraceEvent(this.#feed, event);
+        if (next.progress !== this.#feed.progress) {
+          yield* this.#offerAll(this.#progressFrame(next));
+        }
+        this.#feed = next;
       }),
     );
+  }
+
+  /** Callers hold the mutex. */
+  #offerAll(frame: string): Effect.Effect<void> {
+    return Effect.forEach(this.#sinks.values(), (sink) => Queue.offer(sink.queue, frame), {
+      discard: true,
+    });
   }
 
   /** Holds the mutex, so no live frame can interleave with the replay. */
@@ -90,7 +117,7 @@ export class StreamHub {
     controller: ReadableStreamDefaultController<Uint8Array>,
     { wsId, runId }: RunRef,
     lastSeq: number,
-  ): Effect.Effect<void, PersistenceError, TraceEvents | ReviewRuns> {
+  ): Effect.Effect<void, PersistenceError, TraceEvents | ReviewRuns | ReviewConfig> {
     return this.#mutex.withPermits(1)(
       Effect.gen({ self: this }, function* () {
         const queue = yield* Queue.unbounded<string>();
@@ -109,23 +136,22 @@ export class StreamHub {
         }
 
         const runs = yield* ReviewRuns;
-        return yield* runs.getRun(runId).pipe(
+        const run = yield* runs.getRun(runId).pipe(
           Effect.provideService(WorkspaceId, { wsId }),
           Effect.map(Option.some),
           Effect.catchTag("ReviewRunMissingError", () => Effect.succeed(Option.none<ReviewRun>())),
-          Effect.flatMap((run) =>
-            Option.match(run, {
-              onNone: () => Queue.offer(sink.queue, CLOSE_FRAME),
-              onSome: (settled) =>
-                settled.status === "running"
-                  ? Effect.void
-                  : Effect.andThen(
-                      Queue.offer(sink.queue, this.#doneFrame(settled)),
-                      Queue.offer(sink.queue, CLOSE_FRAME),
-                    ),
-            }),
-          ),
         );
+        if (Option.isNone(run)) {
+          yield* Queue.offer(sink.queue, CLOSE_FRAME);
+          return;
+        }
+
+        this.#feed ??= yield* loadProgressFeed(run.value);
+        yield* Queue.offer(sink.queue, this.#progressFrame(this.#feed));
+        if (run.value.status !== "running") {
+          yield* Queue.offer(sink.queue, this.#doneFrame(run.value));
+          yield* Queue.offer(sink.queue, CLOSE_FRAME);
+        }
       }),
     );
   }

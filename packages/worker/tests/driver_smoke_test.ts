@@ -158,12 +158,60 @@ test("a stream ends with a done frame once the run settles", async () => {
 
   const driver = env.RUN_DRIVER.getByName(run.id);
   const reader = (await driver.stream({ wsId: "smoke-ws", runId: run.id }, 0)).getReader();
-  const frames = await readFrames(reader, 1);
+  const frames = await readFrames(reader, 2);
+  expect(frames).toContain("event: progress");
   expect(frames).toContain("event: done");
   expect(frames).toContain('"status":"completed"');
   expect(frames).toContain("All good.");
   const end = await reader.read();
   expect(end.done).toBe(true);
+});
+
+test("a stream sends a progress snapshot folded from the stored trace", async () => {
+  const e = makeEnv(env);
+  const run = await runtime(e).runPromise(
+    Effect.gen(function* () {
+      const runs = yield* ReviewRuns;
+      const traces = yield* TraceEvents;
+      const created = yield* runs.createRun({
+        path: "progress-smoke.md",
+        versionId: "v1",
+        reviewPassId: "none",
+      });
+      yield* traces.append(created.id, {
+        seq: 1,
+        at: 1,
+        type: "custom",
+        nodeId: "mechanics.apply",
+        event: {
+          type: "applied",
+          attempts: [
+            { selected_text: "a", comment: "c", marked: true },
+            { selected_text: "b", comment: "c", marked: true },
+            { selected_text: "x", comment: "c", marked: false },
+          ],
+        },
+      });
+      yield* traces.append(created.id, {
+        seq: 2,
+        at: 2,
+        type: "custom",
+        nodeId: "mechanics.propose",
+        event: { type: "reasoning", text: "thinking out loud" },
+      });
+      return created;
+    }).pipe(Effect.provideService(WorkspaceId, { wsId: "smoke-ws" })),
+  );
+
+  const driver = env.RUN_DRIVER.getByName(run.id);
+  const reader = (await driver.stream({ wsId: "smoke-ws", runId: run.id }, 2)).getReader();
+  const frames = await readFrames(reader, 1);
+  // The pass "none" doesn't exist, so the plan has no units; placed marks still count.
+  expect(frames).toContain("event: progress");
+  expect(frames).toContain('"units":[]');
+  expect(frames).toContain('"marksPlaced":2');
+  expect(frames).toContain("id: 2");
+  await reader.cancel();
 });
 
 /** Reads until the stream has delivered enough frames to cover the asked count. */

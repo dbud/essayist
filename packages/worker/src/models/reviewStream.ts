@@ -6,7 +6,7 @@ export function observeReviewRun(wsId: string, runId: string): void {
   observed.add(key);
   const source = new EventSource(`/api/streams/review-runs/${wsId}/${runId}`);
 
-  for (const type of ["trace", "done"] as const) {
+  for (const type of ["trace", "progress", "done"] as const) {
     source.addEventListener(type, (event) => {
       console.log(`[review-stream] ${key} ${type} (id ${event.lastEventId})`, event.data);
       if (type === "done") {
