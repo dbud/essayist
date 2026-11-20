@@ -1,19 +1,18 @@
 import { useSignal } from "@preact/signals";
-import { Bold, Code, Heart, Italic, Plus, Strikethrough } from "lucide-preact";
+import { useEffect } from "preact/hooks";
 
+import { Toaster } from "#/components/Toaster.tsx";
 import MeltFilter from "#/components/ui/MeltFilter.tsx";
+import { showTaskToast, showToast } from "#/models/utils/toast.ts";
 
-import { AqForm, AqMenu, AqProjects } from "./aq";
-
-/** Lab furniture: toggles html.aq-melt-off. */
+/** Toggles html.aq-melt-off to preview the raw geometry. */
 function MeltToggle() {
   const off = useSignal(false);
 
   return (
     <button
       type="button"
-      class="aq-lab__melt-toggle"
-      data-off={off.value ? "" : undefined}
+      class="aq-btn"
       onClick={() => {
         off.value = !off.value;
         document.documentElement.classList.toggle("aq-melt-off", off.value);
@@ -24,46 +23,62 @@ function MeltToggle() {
   );
 }
 
+function runTask() {
+  const task = showTaskToast("Reviewing essay");
+  const total = 8;
+  let done = 0;
+  const timer = setInterval(() => {
+    done++;
+    if (done < total) {
+      task.step(`Reviewing paragraph ${done + 1} of ${total}`, { done, total });
+    } else {
+      clearInterval(timer);
+      task.settle(`Reviewed ${total} paragraphs`, true);
+    }
+  }, 600);
+}
+
+function seedToasts() {
+  showToast("Saved");
+  showToast("Imported 3 files from Google Docs", "success");
+  showToast("Could not reach the server. Your changes are kept locally.", "error");
+  showToast("Uploading images", "info", { done: 2, total: 5 });
+}
+
 function HomePage() {
+  useEffect(seedToasts, []);
+
   return (
-    <main class="aq-lab">
+    <main class="min-h-svh">
+      <div class="aq-melt  flex flex-wrap items-start gap-4 p-8">
+        <button type="button" class="aq-btn" onClick={() => showToast("Saved")}>
+          Info
+        </button>
+        <button
+          type="button"
+          class="aq-btn"
+          onClick={() => showToast("Imported 3 files from Google Docs", "success")}
+        >
+          Success
+        </button>
+        <button
+          type="button"
+          class="aq-btn"
+          onClick={() => showToast("Could not reach the server", "error")}
+        >
+          Error
+        </button>
+        <button type="button" class="aq-btn" onClick={runTask}>
+          Task
+        </button>
+        <button type="button" class="aq-btn" onClick={seedToasts}>
+          All
+        </button>
+        <MeltToggle />
+      </div>
+
       <MeltFilter />
-      <MeltToggle />
-      <div class="aq-lab__row aq-melt">
-        <button type="button" class="aq-btn" disabled>
-          <Plus />
-          <span>New project</span>
-        </button>
-        <button type="button" class="aq-btn">
-          <Plus />
-          <span>New essay</span>
-        </button>
-        <div class="flex gap-4">
-          <button type="button" class="aq-btn">
-            <Bold />
-          </button>
-          <button type="button" class="aq-btn--accent">
-            <Italic />
-          </button>
-          <button type="button" class="aq-btn">
-            <Strikethrough />
-          </button>
-          <button type="button" class="aq-btn">
-            <Code />
-          </button>
-        </div>
-        <button type="button" class="aq-btn--accent">
-          <Heart />
-          <span>Review</span>
-        </button>
-      </div>
-      <div class="aq-lab__row">
-        <AqProjects />
-        <AqMenu />
-      </div>
-      <div class="aq-lab__row">
-        <AqForm />
-      </div>
+      <Toaster />
     </main>
   );
 }
