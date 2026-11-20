@@ -2,8 +2,16 @@ import type { Category, ResolvedReviewPass, ResolvedReviewUnit } from "#/config/
 import type { ForwardSpec, PassWhenSpec } from "#/flow/helpers.ts";
 import type { FlowGraph, FlowNodeOf } from "#/flow/types.ts";
 import type { ReviewTypes } from "#/reviews/graph.ts";
+import type { ReviewPlan } from "#/reviews/progress.ts";
 
 const CONTENT = "content";
+
+/** Binds a graph to a run over one file version. */
+export interface ReviewPin {
+  runId: string;
+  path: string;
+  versionId: string;
+}
 
 /** Decompose a resolved review pass into a flow graph: a model-call node
  * per unit, with attempt units unrolling their mark subgraph behind gates. Unit inputs stay
@@ -12,8 +20,7 @@ const CONTENT = "content";
  * version; a preview graph (pin omitted) carries an inert pin. */
 export function buildReviewGraph(
   pass: ResolvedReviewPass,
-  runId: string,
-  pin?: { path: string; versionId: string },
+  pin?: ReviewPin,
 ): FlowGraph<ReviewTypes> {
   const nodes: FlowNodeOf<ReviewTypes>[] = [
     {
@@ -28,7 +35,7 @@ export function buildReviewGraph(
   ];
   const terminals = new Map<string, string>();
   for (const unit of pass.units) {
-    const built = unitNodes(unit, runId, pin);
+    const built = unitNodes(unit, pin);
     nodes.push(...built.nodes);
     terminals.set(unit.id, built.terminalId);
   }
@@ -40,14 +47,18 @@ export function buildReviewGraph(
   };
 }
 
+/** The units of a pass with the graph nodes each one runs, in unit order. */
+export function reviewPlan(pass: ResolvedReviewPass): ReviewPlan {
+  return new Map(pass.units.map((unit) => [unit.id, unitNodes(unit).nodes.map((node) => node.id)]));
+}
+
 /** The nodes of one unit and the node standing for the finished unit. */
 function unitNodes(
   unit: ResolvedReviewUnit,
-  runId: string,
-  pin?: { path: string; versionId: string },
+  pin?: ReviewPin,
 ): { nodes: FlowNodeOf<ReviewTypes>[]; terminalId: string } {
   if (unit.attempt) {
-    return markNodes(unit, unit.attempt, runId, pin);
+    return markNodes(unit, unit.attempt, pin);
   }
   const kind = unit.summary ? "synthesize" : "analyze";
   return {
@@ -68,14 +79,13 @@ function unitNodes(
 function markNodes(
   unit: ResolvedReviewUnit,
   attempt: { categories: Category[]; repairRounds: number },
-  runId: string,
-  pin?: { path: string; versionId: string },
+  pin?: ReviewPin,
 ): { nodes: FlowNodeOf<ReviewTypes>[]; terminalId: string } {
   const applyPayload = {
     path: pin?.path ?? "",
     versionId: pin?.versionId ?? "",
     allowedLabels: attempt.categories.map((category) => category.label),
-    provenance: { runId, unitId: unit.id },
+    provenance: { runId: pin?.runId ?? "", unitId: unit.id },
   };
   const gatePayload: PassWhenSpec<ReviewTypes> = {
     when: (inputs) => inputs.of("mark.failed").length > 0,

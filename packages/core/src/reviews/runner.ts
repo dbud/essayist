@@ -148,7 +148,11 @@ function execute(
     const { heartbeatMs, staleMs } = yield* ReviewPacing;
     const owner = yield* claim(runs, run.id, staleMs);
     const completed = foldCompleted(priorTrace);
-    const graph = buildReviewGraph(pass, run.id, { path: run.path, versionId: run.versionId });
+    const graph = buildReviewGraph(pass, {
+      runId: run.id,
+      path: run.path,
+      versionId: run.versionId,
+    });
 
     const settled = (
       done: ReviewRun,

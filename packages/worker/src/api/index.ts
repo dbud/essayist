@@ -420,7 +420,7 @@ const adminHandlers = HttpApiBuilder.group(
             ),
             Effect.catchTag("PersistenceError", Effect.die),
           );
-          const graph = buildReviewGraph(resolved, "preview");
+          const graph = buildReviewGraph(resolved);
           return {
             name: pass.name,
             nodes: graph.nodes.map((node) => ({ id: node.id, kind: node.kind })),

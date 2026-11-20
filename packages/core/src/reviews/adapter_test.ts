@@ -61,7 +61,8 @@ test("buildReviewGraph -- decomposes a pass into nodes", () => {
     }),
     unitFixture({ id: "summary", summary: true, inputs: ["analyze"] }),
   ]);
-  const graph = buildReviewGraph(pass, "r", {
+  const graph = buildReviewGraph(pass, {
+    runId: "r",
     path: "essay.txt",
     versionId: "v1",
   });
@@ -94,8 +95,7 @@ test("buildReviewGraph -- unrolls two repair rounds in a chain", () => {
         attempt: { allowedCategoryIds: ["grammar"], repairRounds: 2 },
       }),
     ]),
-    "r",
-    { path: "essay.txt", versionId: "v1" },
+    { runId: "r", path: "essay.txt", versionId: "v1" },
   );
 
   assertEquals(
@@ -127,8 +127,7 @@ test("buildReviewGraph -- a zero budget has no repair nodes", () => {
         attempt: { allowedCategoryIds: ["grammar"], repairRounds: 0 },
       }),
     ]),
-    "r",
-    { path: "essay.txt", versionId: "v1" },
+    { runId: "r", path: "essay.txt", versionId: "v1" },
   );
 
   assertEquals(
@@ -146,8 +145,7 @@ test("buildReviewGraph -- a unit input resolves to the unit's collect node", () 
       }),
       unitFixture({ id: "summary", summary: true, inputs: ["mechanics"] }),
     ]),
-    "r",
-    { path: "essay.txt", versionId: "v1" },
+    { runId: "r", path: "essay.txt", versionId: "v1" },
   );
 
   const summary = graph.nodes.find((node) => node.id === "summary");
@@ -163,8 +161,7 @@ test("buildReviewGraph -- artifact references pass through as deps", () => {
         inputs: ["analyze", "ghost"],
       }),
     ]),
-    "r",
-    { path: "essay.txt", versionId: "v1" },
+    { runId: "r", path: "essay.txt", versionId: "v1" },
   );
 
   assertEquals(
