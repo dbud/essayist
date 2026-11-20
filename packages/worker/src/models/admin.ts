@@ -6,7 +6,7 @@ import { computed, createModel, signal } from "@preact/signals";
 import { FALLBACK_COLOR } from "#/editor/markColors.ts";
 import type { AdminConfigData } from "#/models/admin.data.ts";
 import createAsyncState from "#/models/utils/asyncState.ts";
-import { requestJson } from "#/models/utils/http.ts";
+import { getJson, requestJson } from "#/models/utils/http.ts";
 import { showToast } from "#/models/utils/toast.ts";
 
 export type ModelPoolInput = Omit<ModelPool, "id">;
@@ -58,13 +58,7 @@ export const AdminConfigModel = createModel((data: AdminConfigData) => {
   });
 
   async function load() {
-    const result = await run(async () => {
-      const res = await requestJson<AdminConfigData>("GET", "/api/admin/config");
-      if (!res.ok || res.data === undefined) {
-        throw new Error(res.message ?? `config load failed with ${res.status}`);
-      }
-      return res.data;
-    });
+    const result = await run(() => getJson<AdminConfigData>("/api/admin/config"));
     if (result) {
       modelPools.value = result.modelPools;
       prompts.value = result.prompts;

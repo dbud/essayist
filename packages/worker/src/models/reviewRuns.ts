@@ -2,7 +2,7 @@ import type { CleanupResult } from "@essayist/core";
 import { createModel, signal } from "@preact/signals";
 
 import createAsyncState from "#/models/utils/asyncState.ts";
-import { getJson, postJson, requestJson } from "#/models/utils/http.ts";
+import { deleteJson, getJson, postJson } from "#/models/utils/http.ts";
 
 import type { ReviewRunData, ReviewRunsData } from "./reviewRuns.data.ts";
 import { observeReviewRun } from "./reviewStream.ts";
@@ -47,14 +47,11 @@ export const ReviewRunsModel = createModel((wsId: string, path: string, data?: R
     return result;
   }
 
-  // Admin-only development cleanup. Throws with the server's reason on failure.
+  // Admin-only development cleanup.
   async function cleanup(url: string): Promise<CleanupResult> {
-    const res = await requestJson<CleanupResult>("DELETE", url);
-    if (!res.ok || res.data === undefined) {
-      throw new Error(res.message ?? `cleanup failed with ${res.status}`);
-    }
+    const result = await deleteJson<CleanupResult>(url);
     void load();
-    return res.data;
+    return result;
   }
 
   function deleteRun(runId: string): Promise<CleanupResult> {

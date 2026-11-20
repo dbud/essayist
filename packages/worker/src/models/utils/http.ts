@@ -60,20 +60,29 @@ export async function patchJson<T = void>(
 ): Promise<T> {
   const res = await requestJson<T>("PATCH", path, body, options);
   if (!res.ok) {
-    throw transportError("PATCH", path, res.status);
+    throw transportError("PATCH", path, res);
   }
   return res.status === 204 ? (undefined as T) : requireData(res, "PATCH", path);
 }
 
+/** DELETE; a 204 resolves without a body. */
+export async function deleteJson<T = void>(path: string): Promise<T> {
+  const res = await requestJson<T>("DELETE", path);
+  if (!res.ok) {
+    throw transportError("DELETE", path, res);
+  }
+  return res.status === 204 ? (undefined as T) : requireData(res, "DELETE", path);
+}
+
 async function requireData<T>(res: JsonResponse<T>, method: string, path: string): Promise<T> {
   if (!res.ok || res.data === undefined) {
-    throw transportError(method, path, res.status);
+    throw transportError(method, path, res);
   }
   return res.data;
 }
 
-function transportError(method: string, path: string, status: number): Error {
-  return new Error(`transport: ${method} ${path} failed with ${status}`);
+function transportError(method: string, path: string, res: JsonResponse<unknown>): Error {
+  return new Error(res.message ?? `transport: ${method} ${path} failed with ${res.status}`);
 }
 
 function parseBody(text: string): unknown {
