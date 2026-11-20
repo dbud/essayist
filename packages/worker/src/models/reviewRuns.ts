@@ -14,12 +14,13 @@ export const ReviewRunsModel = createModel(
     const [runLoad, { loading: historyLoading, error: historyError }] = createAsyncState();
 
     // The stream of the running run. A file has at most a single running run.
-    const following = signal<{ runId: string; stream: ReviewRunStream } | null>(null);
+    const following = signal<{ run: ReviewRunData; stream: ReviewRunStream } | null>(null);
+    const lastSettled = signal<ReviewRunData | null>(null);
 
     const follow = (run: ReviewRunData) => {
       if (import.meta.env.SSR || run.status !== "running") return;
-      if (following.peek()?.runId === run.id) return;
-      following.value = { runId: run.id, stream: new ReviewRunStreamModel(wsId, run.id, detail) };
+      if (following.peek()?.run.id === run.id) return;
+      following.value = { run, stream: new ReviewRunStreamModel(wsId, run.id, detail) };
     };
 
     const followRunning = (values: readonly ReviewRunData[]) => {
@@ -34,15 +35,16 @@ export const ReviewRunsModel = createModel(
       const run = current.stream.settled.value;
       if (run === null) return;
       runs.value = runs.peek().map((entry) => (entry.id === run.id ? run : entry));
+      lastSettled.value = run;
       following.value = null;
       current.stream[Symbol.dispose]();
     });
 
-    const active = computed((): { runId: string; progress: ReviewProgress | null } | null => {
+    const active = computed((): { run: ReviewRunData; progress: ReviewProgress | null } | null => {
       const current = following.value;
       return current === null
         ? null
-        : { runId: current.runId, progress: current.stream.progress.value };
+        : { run: current.run, progress: current.stream.progress.value };
     });
 
     async function load(): Promise<void> {
@@ -96,6 +98,7 @@ export const ReviewRunsModel = createModel(
     return {
       runs,
       active,
+      lastSettled,
       loading,
       error,
       historyLoading,

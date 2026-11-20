@@ -60,11 +60,11 @@ test("follows the running run and exposes its progress", () => {
   expect(FakeEventSource.opened.map((source) => source.url)).toEqual([
     "/api/streams/review-runs/ws/run-1",
   ]);
-  expect(model.active.value).toEqual({ runId: "run-1", progress: null });
+  expect(model.active.value).toEqual({ run: run(), progress: null });
 
   const progress = { units: [{ id: "analyze", state: "running" }], marksPlaced: 2 };
   FakeEventSource.opened[0].emit("progress", progress);
-  expect(model.active.value).toEqual({ runId: "run-1", progress });
+  expect(model.active.value).toEqual({ run: run(), progress });
 });
 
 test("a settled run replaces its running entry and its stream closes", () => {
@@ -72,9 +72,11 @@ test("a settled run replaces its running entry and its stream closes", () => {
   const model = new ReviewRunsModel("ws", "essay.md", "progress", [run(), older]);
   const source = FakeEventSource.opened[0];
 
-  source.emit("done", run({ status: "completed", completedAt: 5, summary: "All good." }));
+  const settled = run({ status: "completed", completedAt: 5, summary: "All good." });
+  source.emit("done", settled);
 
   expect(model.active.value).toBeNull();
+  expect(model.lastSettled.value).toEqual(settled);
   expect(model.runs.value.map((entry) => [entry.id, entry.status])).toEqual([
     ["run-1", "completed"],
     ["run-0", "completed"],
@@ -84,7 +86,7 @@ test("a settled run replaces its running entry and its stream closes", () => {
 
 test("asks for the trace stream with the trace detail", () => {
   const model = new ReviewRunsModel("ws", "essay.md", "trace", [run()]);
-  expect(model.active.value?.runId).toBe("run-1");
+  expect(model.active.value?.run.id).toBe("run-1");
   expect(FakeEventSource.opened[0].url).toBe("/api/streams/review-runs/ws/run-1?detail=trace");
 });
 
@@ -94,4 +96,5 @@ test("opens no stream without a running run", () => {
   ]);
   expect(FakeEventSource.opened).toEqual([]);
   expect(model.active.value).toBeNull();
+  expect(model.lastSettled.value).toBeNull();
 });
