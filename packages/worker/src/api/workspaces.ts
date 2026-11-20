@@ -40,6 +40,12 @@ const createWorkspace = HttpApiEndpoint.post("createWorkspace", "/workspaces", {
   success: Workspace,
 });
 
+// Soft delete, owner only.
+const deleteWorkspace = HttpApiEndpoint.delete("deleteWorkspace", "/workspaces", {
+  query: SelectPayload,
+  error: [HttpApiError.Forbidden, HttpApiError.NotFound],
+});
+
 const getFiles = HttpApiEndpoint.get("getFiles", "/workspaces/files", {
   query: FilesQuery,
   success: FileTreeData,
@@ -180,6 +186,7 @@ export const workspaceGroup = HttpApiGroup.make("workspaces")
   .add(getWorkspaces)
   .add(selectWorkspace)
   .add(createWorkspace)
+  .add(deleteWorkspace)
   .add(getFiles)
   .add(selectFile)
   .add(getFileContent)

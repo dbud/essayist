@@ -11,6 +11,7 @@ import {
   nextId,
   type PersistenceError,
   resolveActiveReviewPass,
+  type Role,
   resolveReviewPass,
   ReviewCleanup,
   ReviewConfig,
@@ -74,9 +75,9 @@ const workspaceHandlers = HttpApiBuilder.group(
     const userState = yield* UserState;
     const files = yield* Files;
 
-    const requireAccess = (wsId: string, userId: string) =>
+    const requireAccess = (wsId: string, userId: string, role?: Role) =>
       Effect.gen(function* () {
-        const allowed = yield* Effect.orDie(workspacesStore.hasAccess(wsId, userId));
+        const allowed = yield* Effect.orDie(workspacesStore.hasAccess(wsId, userId, role));
         if (!allowed) {
           return yield* Effect.fail(new HttpApiError.Forbidden());
         }
@@ -114,6 +115,16 @@ const workspaceHandlers = HttpApiBuilder.group(
           return yield* Effect.orDie(
             workspacesStore.createWorkspace(req.payload.name, user.id).pipe(Effect.provide(stores)),
           );
+        }),
+      deleteWorkspace: (req) =>
+        Effect.gen(function* () {
+          const { user } = yield* UserSession;
+          const { wsId } = req.query;
+          yield* requireAccess(wsId, user.id, "owner");
+          const deleted = yield* Effect.orDie(workspacesStore.deleteWorkspace(wsId, user.id));
+          if (!deleted) {
+            return yield* Effect.fail(new HttpApiError.NotFound());
+          }
         }),
       getFiles: (req) =>
         Effect.gen(function* () {
