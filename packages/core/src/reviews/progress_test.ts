@@ -4,7 +4,13 @@ import { test } from "vitest";
 import type { ResolvedReviewPass, ResolvedReviewUnit } from "#/config/types.ts";
 
 import { reviewPlan } from "./adapter.ts";
-import { applyTraceEvent, initialProgress, progressOf, type ReviewProgress } from "./progress.ts";
+import {
+  applyTraceEvent,
+  feedTraceEvent,
+  initialProgress,
+  progressFeed,
+  type ReviewProgress,
+} from "./progress.ts";
 import type { TraceEvent } from "./trace/types.ts";
 
 function unit(partial: Partial<ResolvedReviewUnit> & Pick<ResolvedReviewUnit, "id">) {
@@ -146,8 +152,8 @@ test("progress -- events a reader does not see return the same object", () => {
   );
 });
 
-test("progressOf -- folds a stored trace", () => {
-  const progress = progressOf(plan, [
+test("progressFeed -- folds a stored trace", () => {
+  const { progress } = progressFeed(plan, [
     start("mechanics.collect"),
     applied("mechanics.apply", 2),
     completed("mechanics.collect"),
@@ -155,4 +161,34 @@ test("progressOf -- folds a stored trace", () => {
   ]);
   assertEquals(states(progress), ["completed", "running"]);
   assertEquals(progress.marksPlaced, 2);
+});
+
+test("progressFeed -- remembers the seq of the last stored event", () => {
+  const first = start("mechanics.propose");
+  const second = applied("mechanics.apply", 1);
+  const feed = progressFeed(plan, [first, second]);
+  assertEquals(feed.seq, second.seq);
+  assertEquals(feed.progress.marksPlaced, 1);
+  assertEquals(progressFeed(plan, []).seq, -1);
+});
+
+test("feedTraceEvent -- an event the feed already includes counts once", () => {
+  const event = applied("mechanics.apply", 2);
+  const feed = progressFeed(plan, [event]);
+  assertStrictEquals(feedTraceEvent(feed, event), feed);
+  assertEquals(feedTraceEvent(feed, event).progress.marksPlaced, 2);
+});
+
+test("feedTraceEvent -- advances the seq, keeping progress when nothing a user sees changed", () => {
+  const feed = progressFeed(plan, [start("mechanics.propose")]);
+
+  const quiet = start("mechanics.apply");
+  const afterQuiet = feedTraceEvent(feed, quiet);
+  assertEquals(afterQuiet.seq, quiet.seq);
+  assertStrictEquals(afterQuiet.progress, feed.progress);
+
+  const placed = applied("mechanics.apply", 1);
+  const afterPlaced = feedTraceEvent(afterQuiet, placed);
+  assertEquals(afterPlaced.seq, placed.seq);
+  assertEquals(afterPlaced.progress.marksPlaced, 1);
 });

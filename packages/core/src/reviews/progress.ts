@@ -81,9 +81,30 @@ function nextState(
   return status === "completed" ? "running" : state;
 }
 
-export function progressOf(plan: ReviewPlan, trace: readonly TraceEvent[]): ReviewProgress {
-  return trace.reduce(
-    (progress, event) => applyTraceEvent(plan, progress, event),
+/** The progress of a run with the seq of the last trace event it includes. */
+export interface ProgressFeed {
+  readonly plan: ReviewPlan;
+  readonly progress: ReviewProgress;
+  readonly seq: number;
+}
+
+export function progressFeed(plan: ReviewPlan, trace: readonly TraceEvent[]): ProgressFeed {
+  const progress = trace.reduce(
+    (current, event) => applyTraceEvent(plan, current, event),
     initialProgress(plan),
   );
+  return { plan, progress, seq: trace.at(-1)?.seq ?? -1 };
+}
+
+/**
+ * Skips an event the feed already includes, so a live event that was also in the stored trace
+ * counts once. `progress` stays the same object when the event doesn't change it.
+ */
+export function feedTraceEvent(feed: ProgressFeed, event: TraceEvent): ProgressFeed {
+  if (event.seq <= feed.seq) return feed;
+  return {
+    ...feed,
+    progress: applyTraceEvent(feed.plan, feed.progress, event),
+    seq: event.seq,
+  };
 }

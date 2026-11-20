@@ -70,7 +70,7 @@ export {
   type ReadOptions as AdapterReadOptions,
   type WriteOp,
 } from "#/persistence/mod.ts";
-export { buildReviewGraph, reviewPlan } from "#/reviews/adapter.ts";
+export { buildReviewGraph } from "#/reviews/adapter.ts";
 export { agentflowDefinition } from "#/reviews/agentflow.ts";
 export type { ReviewObserver } from "#/reviews/observer/types.ts";
 export { noopObserver } from "#/reviews/observer/noop.ts";
@@ -85,13 +85,9 @@ export {
 export { ReviewJanitor } from "#/reviews/janitor.ts";
 export { layerReviewJanitorD1 } from "#/reviews/janitor_d1.ts";
 export { ReviewPacing } from "#/reviews/pacing.ts";
-export type { ReviewPlan } from "#/reviews/progress.ts";
-export {
-  applyTraceEvent,
-  initialProgress,
-  progressOf,
-  ReviewProgress,
-} from "#/reviews/progress.ts";
+export type { ProgressFeed } from "#/reviews/progress.ts";
+export { feedTraceEvent, ReviewProgress } from "#/reviews/progress.ts";
+export { loadProgressFeed } from "#/reviews/progress_feed.ts";
 export { layerReviewRunsD1 } from "#/reviews/runs_d1.ts";
 export type { CleanupResult } from "#/reviews/cleanup.ts";
 export { ReviewCleanup } from "#/reviews/cleanup.ts";
