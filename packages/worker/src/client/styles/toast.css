@@ -2,22 +2,21 @@
   --toast-duration: 200ms;
   @apply fixed flex flex-col-reverse isolate right-5 bottom-5 w-96 z-toast gap-5;
   max-width: calc(100vw - 2rem);
+  filter: var(--aq-melt-s) var(--aq-shadow);
 }
 
 @utility alert {
-  filter: drop-shadow(3px 3px 5px color-mix(in oklch, var(--color-ink), transparent 70%));
-}
-
-@utility alert-inner {
-  --alert-notch: 0.5rem;
-  @apply flex flex-col leading-none min-h-15;
+  @apply relative flex flex-col leading-none min-h-12 overflow-hidden;
   font-size: 0.8rem;
   background-color: var(--alert-color, var(--color-surface));
-  clip-path: polygon(var(--alert-notch) 0, 100% 0, 100% 100%, 0 100%, 0 var(--alert-notch));
   transition: background-color var(--toast-duration) ease-out;
+}
 
-  & .btn--ghost:hover {
-    color: white;
+@utility toast-close {
+  @apply flex shrink-0 cursor-pointer opacity-70;
+
+  &:hover {
+    @apply opacity-100;
   }
 }
 
@@ -38,7 +37,7 @@
 }
 
 .toast-progress {
-  @apply h-10 w-full striped overflow-hidden mt-auto;
+  @apply absolute inset-x-2 bottom-2 h-2 striped overflow-hidden rounded-full;
   background-color: color-mix(in oklch, currentColor 20%, transparent);
 }
 .toast-progress-fill {

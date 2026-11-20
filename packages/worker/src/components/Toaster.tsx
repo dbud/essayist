@@ -19,37 +19,36 @@ function ToastView({ toast }: { toast: Signal<Toast> }) {
   const Icon = ICONS[type];
   const pct = progress && progress.total > 0 ? (progress.done / progress.total) * 100 : 0;
   return (
-    <div class={`alert ${alertClass}`} role="alert">
-      <div
-        class={`alert-inner ${dismissing ? "toast-leave" : "toast-enter"}`}
-        onAnimationEnd={(e) => {
-          if (e.animationName === "toast-out") removeToast(toast);
-        }}
-      >
-        <div class="flex p-2 gap-2">
-          <Icon size={14} class="shrink-0" />
-          <span>{message}</span>
-          <button
-            type="button"
-            class="btn--ghost ms-auto"
-            onClick={() => dismissToast(toast)}
-            aria-label="Dismiss"
-          >
-            <X size={16} />
-          </button>
-        </div>
-        {progress && (
-          <div
-            class="toast-progress"
-            role="progressbar"
-            aria-valuenow={progress.done}
-            aria-valuemax={progress.total}
-            aria-label="Progress"
-          >
-            <div class="toast-progress-fill" style={{ width: `${pct}%` }} />
-          </div>
-        )}
+    <div
+      class={`alert ${alertClass} ${dismissing ? "toast-leave" : "toast-enter"}`}
+      role="alert"
+      onAnimationEnd={(e) => {
+        if (e.animationName === "toast-out") removeToast(toast);
+      }}
+    >
+      <div class="flex items-start p-2 gap-2 leading-4">
+        <Icon size={16} class="shrink-0" />
+        <span class="flex-1">{message}</span>
+        <button
+          type="button"
+          class="toast-close"
+          onClick={() => dismissToast(toast)}
+          aria-label="Dismiss"
+        >
+          <X size={16} />
+        </button>
       </div>
+      {progress && (
+        <div
+          class="toast-progress"
+          role="progressbar"
+          aria-valuenow={progress.done}
+          aria-valuemax={progress.total}
+          aria-label="Progress"
+        >
+          <div class="toast-progress-fill" style={{ width: `${pct}%` }} />
+        </div>
+      )}
     </div>
   );
 }
