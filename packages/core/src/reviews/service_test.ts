@@ -1,8 +1,8 @@
 import { DatabaseSync } from "node:sqlite";
 
 import * as D1Client from "@effect/sql-d1/D1Client";
-import { assert, assertEquals, assertRejects } from "@std/assert";
-import { Clock, Duration, Effect, Option } from "effect";
+import { assert, assertEquals, assertInstanceOf, assertRejects } from "@std/assert";
+import { Clock, Duration, Effect, Option, Result } from "effect";
 import * as Reactivity from "effect/reactivity/Reactivity";
 import { TestClock } from "effect/testing";
 import { test } from "vitest";
@@ -12,10 +12,14 @@ import type { PersistenceError } from "#/persistence/mod.ts";
 import { WorkspaceId } from "#/workspace/WorkspaceId.ts";
 
 import { layerReviewRunsD1 } from "./runs_d1.ts";
-import { ReviewRunMissingError, ReviewRuns } from "./service.ts";
+import { ReviewRunActiveError, ReviewRunMissingError, ReviewRuns } from "./service.ts";
 
 const run = <A>(
-  program: Effect.Effect<A, PersistenceError | ReviewRunMissingError, ReviewRuns | WorkspaceId>,
+  program: Effect.Effect<
+    A,
+    PersistenceError | ReviewRunMissingError | ReviewRunActiveError,
+    ReviewRuns | WorkspaceId
+  >,
   onClock: boolean = false,
 ): Promise<A> => {
   const db = new DatabaseSync(":memory:");
@@ -38,7 +42,7 @@ const run = <A>(
 
 /** Like run, with the program clock under the test clock. */
 const runOnClock = <A>(
-  program: Effect.Effect<A, PersistenceError, ReviewRuns | WorkspaceId>,
+  program: Effect.Effect<A, PersistenceError | ReviewRunActiveError, ReviewRuns | WorkspaceId>,
 ): Promise<A> => run(program, true);
 
 test("ReviewRuns -- createRun + getRun", async () => {
@@ -86,6 +90,37 @@ test("ReviewRuns.listRuns -- newest first", async () => {
   );
 });
 
+test("ReviewRuns.createRun -- refuses a second running run on a file, naming the first", async () => {
+  await run(
+    Effect.gen(function* () {
+      const runs = yield* ReviewRuns;
+      const first = yield* runs.createRun({ path: "a.txt", versionId: "v1", reviewPassId: "pass" });
+
+      const second = yield* Effect.result(
+        runs.createRun({ path: "a.txt", versionId: "v2", reviewPassId: "pass" }),
+      );
+      assert(Result.isFailure(second));
+      assertInstanceOf(second.failure, ReviewRunActiveError);
+      assertEquals(second.failure.id, first.id);
+      assertEquals((yield* runs.listRuns("a.txt")).length, 1);
+    }),
+  );
+});
+
+test("ReviewRuns.createRun -- another file, or the same file once settled, can start", async () => {
+  await run(
+    Effect.gen(function* () {
+      const runs = yield* ReviewRuns;
+      const first = yield* runs.createRun({ path: "a.txt", versionId: "v1", reviewPassId: "pass" });
+      yield* runs.createRun({ path: "b.txt", versionId: "v1", reviewPassId: "pass" });
+
+      yield* runs.failRun(first.id, "boom");
+      const again = yield* runs.createRun({ path: "a.txt", versionId: "v2", reviewPassId: "pass" });
+      assertEquals(again.status, "running");
+    }),
+  );
+});
+
 test("ReviewRuns.listRuns -- filters by path", async () => {
   await run(
     Effect.gen(function* () {
@@ -102,6 +137,7 @@ test("ReviewRuns.listRuns -- filters by path", async () => {
         reviewPassId: "pass",
         startedAt: 200,
       });
+      yield* runs.completeRun(a.id, "done");
       const a2 = yield* runs.createRun({
         path: "a.txt",
         versionId: "v1",

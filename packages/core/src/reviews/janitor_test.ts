@@ -14,14 +14,14 @@ import { WorkspaceId } from "#/workspace/WorkspaceId.ts";
 import { ReviewJanitor } from "./janitor.ts";
 import { layerReviewJanitorD1 } from "./janitor_d1.ts";
 import { layerReviewRunsD1 } from "./runs_d1.ts";
-import { ReviewRunMissingError, ReviewRuns } from "./service.ts";
+import { type ReviewRunActiveError, ReviewRunMissingError, ReviewRuns } from "./service.ts";
 
 const STALE_MS = 15 * 60_000;
 
 const run = <A>(
   program: Effect.Effect<
     A,
-    PersistenceError | ReviewRunMissingError,
+    PersistenceError | ReviewRunMissingError | ReviewRunActiveError,
     ReviewRuns | ReviewJanitor | WorkspaceId
   >,
 ): Promise<A> => {

@@ -7,7 +7,7 @@ import type { ClaimOptions } from "#/persistence/mod.ts";
 import { PersistenceError } from "#/persistence/service.ts";
 import { WorkspaceId } from "#/workspace/WorkspaceId.ts";
 
-import { ReviewRunMissingError, ReviewRuns } from "./service.ts";
+import { ReviewRunActiveError, ReviewRunMissingError, ReviewRuns } from "./service.ts";
 import { ReviewRun, ReviewRunStatus } from "./types.ts";
 
 const backendFault = (cause: unknown) => new PersistenceError({ cause });
@@ -39,6 +39,9 @@ export function layerReviewRunsD1(
         // a global sweep for runs in progress, for the stale-run janitor
         client`CREATE INDEX IF NOT EXISTS review_runs_stale ON review_runs (heartbeatAt)
           WHERE status = 'running'`,
+        // a single running review per file
+        client`CREATE UNIQUE INDEX IF NOT EXISTS review_runs_active ON review_runs (wsId, path)
+          WHERE status = 'running'`,
       ]),
   });
 
@@ -61,6 +64,14 @@ export function layerReviewRunsD1(
     execute: ({ wsId, id }) =>
       client`SELECT * FROM review_runs
         WHERE wsId = ${wsId} AND id = ${id}`,
+  });
+
+  const findActiveRunRow = SqlSchema.findOneOption({
+    Request: Schema.Struct({ wsId: Schema.String, path: Schema.String }),
+    Result: ReviewRun,
+    execute: ({ wsId, path }) =>
+      client`SELECT * FROM review_runs
+        WHERE wsId = ${wsId} AND path = ${path} AND status = 'running'`,
   });
 
   const findRunRows = SqlSchema.findAll({
@@ -146,7 +157,7 @@ export function layerReviewRunsD1(
     versionId: string;
     reviewPassId: string;
     startedAt?: number;
-  }): Effect.Effect<ReviewRun, PersistenceError, WorkspaceId> =>
+  }): Effect.Effect<ReviewRun, PersistenceError | ReviewRunActiveError, WorkspaceId> =>
     Effect.gen(function* () {
       const { wsId } = yield* WorkspaceId;
       const ids = yield* Ids;
@@ -164,7 +175,19 @@ export function layerReviewRunsD1(
         leaseOwner: Option.none(),
         heartbeatAt: Option.none(),
       });
-      yield* Effect.mapError(insertRun(run), backendFault);
+      // D1 reports every failure the same way, so a running review on the file tells a conflict
+      // with review_runs_active apart from a backend fault.
+      yield* insertRun(run).pipe(
+        Effect.catch((cause) =>
+          Effect.gen(function* () {
+            const active = yield* Effect.mapError(findActiveRunRow({ wsId, path }), backendFault);
+            if (Option.isSome(active)) {
+              return yield* Effect.fail(new ReviewRunActiveError({ id: active.value.id }));
+            }
+            return yield* Effect.fail(backendFault(cause));
+          }),
+        ),
+      );
       return run;
     });
 

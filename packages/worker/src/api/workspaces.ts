@@ -8,7 +8,7 @@ import { FileVersionsData } from "#/models/fileVersions.data.ts";
 import { MarksData } from "#/models/marks.data.ts";
 import { WorkspacesData } from "#/models/workspaces.data.ts";
 
-import { ApiFailure } from "./errors";
+import { ApiConflict, ApiFailure } from "./errors";
 import { SessionMiddleware } from "./sessionMiddleware";
 
 const ListQuery = Schema.Struct({ wsId: Schema.optional(Schema.String) });
@@ -179,7 +179,7 @@ const accepted = <S extends Schema.Top>(schema: S) => HttpApiSchema.status(202)(
 const startReview = HttpApiEndpoint.post("startReview", "/workspaces/files/review", {
   payload: StartReviewPayload,
   success: accepted(ReviewRun),
-  error: [HttpApiError.Forbidden, HttpApiError.NotFound, ApiFailure],
+  error: [HttpApiError.Forbidden, HttpApiError.NotFound, ApiFailure, ApiConflict],
 });
 
 export const workspaceGroup = HttpApiGroup.make("workspaces")

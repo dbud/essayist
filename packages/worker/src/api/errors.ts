@@ -17,3 +17,10 @@ export class ApiBadRequest extends Schema.TaggedError<ApiBadRequest>()(
   { message: Schema.String },
   { description: "ApiBadRequest", httpApiStatus: 400 },
 ) {}
+
+// A request that conflicts with work in progress, such as a second review on a file.
+export class ApiConflict extends Schema.TaggedError<ApiConflict>()(
+  "ApiConflict",
+  { message: Schema.String },
+  { description: "ApiConflict", httpApiStatus: 409 },
+) {}

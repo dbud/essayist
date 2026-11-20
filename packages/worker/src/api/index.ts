@@ -36,9 +36,11 @@ import { workspacesLoader } from "#/models/workspaces.loader.ts";
 import { RunDrivers } from "#/reviews/runDrivers.ts";
 
 import { adminGroup } from "./admin";
-import { ApiBadRequest, ApiFailure } from "./errors";
+import { ApiBadRequest, ApiConflict, ApiFailure } from "./errors";
 import { userGroup } from "./user";
 import { workspaceGroup } from "./workspaces";
+
+const ALREADY_REVIEWING = "A review is already running on this file.";
 
 const api = HttpApi.make("api").add(userGroup).add(workspaceGroup).add(adminGroup).prefix("/api");
 
@@ -259,6 +261,17 @@ const workspaceHandlers = HttpApiBuilder.group(
           const { user } = yield* UserSession;
           const { wsId, path } = req.payload;
           yield* requireAccess(wsId, user.id);
+          // Refuse before promoting the draft, so a refused request writes no version. createRun
+          // still guards against a concurrent start.
+          const runs = yield* Effect.orDie(
+            ReviewRuns.use((store) => store.listRuns(path)).pipe(
+              Effect.provideService(WorkspaceId, { wsId }),
+              Effect.provide(stores),
+            ),
+          );
+          if (runs.some((run) => run.status === "running")) {
+            return yield* Effect.fail(new ApiConflict({ message: ALREADY_REVIEWING }));
+          }
           // Promote the pending draft first: the review reads the latest checkpoint.
           const { version } = yield* files
             .promoteDraft(path)
@@ -269,14 +282,20 @@ const workspaceHandlers = HttpApiBuilder.group(
               new ApiFailure({ message: "No active review pass configured." }),
             );
           }
-          const run = yield* Effect.orDie(
-            ReviewRuns.use((runs) =>
-              runs.createRun({
-                path,
-                reviewPassId: pass.pass.id,
-                versionId: version.version_id,
-              }),
-            ).pipe(Effect.provideService(WorkspaceId, { wsId }), Effect.provide(stores)),
+          const run = yield* ReviewRuns.use((store) =>
+            store.createRun({
+              path,
+              reviewPassId: pass.pass.id,
+              versionId: version.version_id,
+            }),
+          ).pipe(
+            Effect.provideService(WorkspaceId, { wsId }),
+            Effect.provide(stores),
+            Effect.catchTags({
+              PersistenceError: Effect.die,
+              ReviewRunActiveError: () =>
+                Effect.fail(new ApiConflict({ message: ALREADY_REVIEWING })),
+            }),
           );
           yield* Effect.gen(function* () {
             const runDrivers = yield* RunDrivers;
@@ -379,8 +398,7 @@ const adminHandlers = HttpApiBuilder.group(
               PersistenceError: Effect.die,
               ConcurrentModificationError: Effect.die,
               ReviewRunMissingError: () => Effect.fail(new HttpApiError.NotFound()),
-              ReviewRunActiveError: (err) =>
-                Effect.fail(new ApiBadRequest({ message: err.message })),
+              ReviewRunActiveError: (err) => Effect.fail(new ApiConflict({ message: err.message })),
             }),
           );
         }),
@@ -397,8 +415,7 @@ const adminHandlers = HttpApiBuilder.group(
             Effect.catchTags({
               PersistenceError: Effect.die,
               ConcurrentModificationError: Effect.die,
-              ReviewRunActiveError: (err) =>
-                Effect.fail(new ApiBadRequest({ message: err.message })),
+              ReviewRunActiveError: (err) => Effect.fail(new ApiConflict({ message: err.message })),
             }),
           );
         }),

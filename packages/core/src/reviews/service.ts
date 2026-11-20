@@ -21,7 +21,7 @@ export class ReviewRunMissingError extends Schema.TaggedError<ReviewRunMissingEr
   }
 }
 
-/** A cleanup was refused because a run in its scope is still running. */
+/** A run is still running: a second run on its file, or a cleanup in its scope, is refused. */
 export class ReviewRunActiveError extends Schema.TaggedError<ReviewRunActiveError>()(
   "ReviewRunActiveError",
   { id: Schema.String },
@@ -32,13 +32,16 @@ export class ReviewRunActiveError extends Schema.TaggedError<ReviewRunActiveErro
 }
 
 export interface Interface {
-  /** Create a run in the "running" state. */
+  /**
+   * Create a run in the "running" state. Fails with ReviewRunActiveError, naming the running run,
+   * when the file already has one.
+   */
   createRun(input: {
     path: string;
     versionId: string;
     reviewPassId: string;
     startedAt?: number;
-  }): Effect.Effect<ReviewRun, PersistenceError, WorkspaceId>;
+  }): Effect.Effect<ReviewRun, PersistenceError | ReviewRunActiveError, WorkspaceId>;
   /** Get a run. Fails with ReviewRunMissingError when absent. */
   getRun(
     id: string,

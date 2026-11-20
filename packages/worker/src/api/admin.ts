@@ -10,7 +10,7 @@ import {
 import { Schema } from "effect";
 import { HttpApiEndpoint, HttpApiError, HttpApiGroup, HttpApiSchema } from "effect/http-api";
 
-import { ApiBadRequest } from "./errors";
+import { ApiBadRequest, ApiConflict } from "./errors";
 import { AdminMiddleware } from "./sessionMiddleware";
 
 const AdminConfigData = Schema.Struct({
@@ -152,7 +152,7 @@ const deleteReviewRun = HttpApiEndpoint.delete("deleteReviewRun", "/admin/review
   params: IdParam,
   query: Schema.Struct({ wsId: Schema.NonEmptyString }),
   success: CleanupResult,
-  error: [HttpApiError.Forbidden, HttpApiError.NotFound, ApiBadRequest],
+  error: [HttpApiError.Forbidden, HttpApiError.NotFound, ApiConflict],
 });
 
 // Without versionId, clears the whole file.
@@ -163,7 +163,7 @@ const clearReviewRuns = HttpApiEndpoint.delete("clearReviewRuns", "/admin/review
     versionId: Schema.optional(Schema.NonEmptyString),
   }),
   success: CleanupResult,
-  error: [HttpApiError.Forbidden, ApiBadRequest],
+  error: [HttpApiError.Forbidden, ApiConflict],
 });
 
 export const adminGroup = HttpApiGroup.make("admin")
