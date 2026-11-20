@@ -1,7 +1,8 @@
+import type { CleanupResult } from "@essayist/core";
 import { createModel, signal } from "@preact/signals";
 
 import createAsyncState from "#/models/utils/asyncState.ts";
-import { getJson, postJson } from "#/models/utils/http.ts";
+import { getJson, postJson, requestJson } from "#/models/utils/http.ts";
 
 import type { ReviewRunData, ReviewRunsData } from "./reviewRuns.data.ts";
 import { observeReviewRun } from "./reviewStream.ts";
@@ -46,7 +47,39 @@ export const ReviewRunsModel = createModel((wsId: string, path: string, data?: R
     return result;
   }
 
-  return { runs, loading, error, historyLoading, historyError, load, submit };
+  // Admin-only development cleanup. Throws with the server's reason on failure.
+  async function cleanup(url: string): Promise<CleanupResult> {
+    const res = await requestJson<CleanupResult>("DELETE", url);
+    if (!res.ok || res.data === undefined) {
+      throw new Error(res.message ?? `cleanup failed with ${res.status}`);
+    }
+    void load();
+    return res.data;
+  }
+
+  function deleteRun(runId: string): Promise<CleanupResult> {
+    const params = new URLSearchParams({ wsId });
+    return cleanup(`/api/admin/review-runs/${encodeURIComponent(runId)}?${params}`);
+  }
+
+  /** Clear a version, or the whole file without a versionId. */
+  function clear(versionId?: string): Promise<CleanupResult> {
+    const params = new URLSearchParams({ wsId, path });
+    if (versionId !== undefined) params.set("versionId", versionId);
+    return cleanup(`/api/admin/review-runs?${params}`);
+  }
+
+  return {
+    runs,
+    loading,
+    error,
+    historyLoading,
+    historyError,
+    load,
+    submit,
+    deleteRun,
+    clear,
+  };
 });
 
 export type ReviewRuns = InstanceType<typeof ReviewRunsModel>;

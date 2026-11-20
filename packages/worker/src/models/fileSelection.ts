@@ -17,6 +17,11 @@ export namespace FileKey {
   export function cacheKey(key: FileKey): string {
     return `${key.wsId}:${key.path}:${key.versionId}`;
   }
+
+  /** Shared by every version of a file. */
+  export function fileCacheKey(key: Pick<FileKey, "wsId" | "path">): string {
+    return `${key.wsId}:${key.path}`;
+  }
 }
 
 export type FileSelection = { wsId: string; path: null; versionId: null } | FileKey;

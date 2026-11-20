@@ -7,12 +7,18 @@ import type { MarksData } from "./marks.data.ts";
 
 export const FileMarksByPathModel = createModel(
   (selected: ReadonlySignal<FileSelection | null>, data?: MarksData) => {
-    const marks = signal(new Map<string, FileMarks>());
+    // file key -> version id -> marks
+    const marks = signal(new Map<string, Map<string, FileMarks>>());
 
     {
       const selection = selected.value;
       if (data !== undefined && selection !== null && selection.path !== null) {
-        marks.value = new Map([[FileKey.cacheKey(selection), new FileMarksModel(selection, data)]]);
+        marks.value = new Map([
+          [
+            FileKey.fileCacheKey(selection),
+            new Map([[selection.versionId, new FileMarksModel(selection, data)]]),
+          ],
+        ]);
       }
     }
 
@@ -25,13 +31,19 @@ export const FileMarksByPathModel = createModel(
       ) {
         return null;
       }
-      return marks.value.getOrInsertComputed(
-        FileKey.cacheKey(selection),
-        () => new FileMarksModel(selection),
-      );
+      return marks.value
+        .getOrInsertComputed(FileKey.fileCacheKey(selection), () => new Map())
+        .getOrInsertComputed(selection.versionId, () => new FileMarksModel(selection));
     });
 
-    return { current };
+    /** Drop the cached marks of every version of a file; the current version reloads. */
+    function invalidate(file: Pick<FileKey, "wsId" | "path">): void {
+      const next = new Map(marks.value);
+      next.delete(FileKey.fileCacheKey(file));
+      marks.value = next;
+    }
+
+    return { current, invalidate };
   },
 );
 
