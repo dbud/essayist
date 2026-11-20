@@ -6,6 +6,7 @@ export {
   ConfigMissingError,
   resolveActiveReviewPass,
   resolveReviewPass,
+  resolveReviewPassById,
 } from "#/config/resolve.ts";
 export { ReviewConfig } from "#/config/service.ts";
 export { extractVariables } from "#/config/template.ts";

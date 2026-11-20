@@ -54,12 +54,22 @@ export const resolveActiveReviewPass: Effect.Effect<
   const activeId = yield* config.getActiveReviewPassId();
   if (!activeId) return undefined;
 
-  const pass = yield* config.getReviewPass(activeId);
+  const pass = yield* resolveReviewPassById(activeId);
   if (!pass) {
     return yield* Effect.fail(new ConfigMissingError({ what: `review pass "${activeId}"` }));
   }
-  return yield* resolveReviewPass(pass);
+  return pass;
 });
+
+/** Resolve a stored review pass by id; `undefined` when no pass has that id. */
+export const resolveReviewPassById = (
+  id: string,
+): Effect.Effect<ResolvedReviewPass | undefined, ResolveError, ReviewConfig> =>
+  Effect.gen(function* () {
+    const config = yield* ReviewConfig;
+    const pass = yield* config.getReviewPass(id);
+    return pass === undefined ? undefined : yield* resolveReviewPass(pass);
+  });
 
 /**
  * Resolve a pass's units in order: render the shared system prompt and each unit's prompts with

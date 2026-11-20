@@ -3,9 +3,9 @@ import { Effect } from "effect";
 import {
   type ConfigInvalidError,
   type ConfigMissingError,
-  resolveReviewPass,
+  resolveReviewPassById,
 } from "#/config/resolve.ts";
-import { ReviewConfig } from "#/config/service.ts";
+import type { ReviewConfig } from "#/config/service.ts";
 import type { Files } from "#/files/service.ts";
 import type { Marks } from "#/marks/service.ts";
 import type { ModelClient } from "#/model/service.ts";
@@ -51,9 +51,8 @@ export function driveReviewRun(
     const run = yield* runs.getRun(runId);
     if (run.status !== "running") return true;
     // The run keeps the pass it was started with. A deleted pass can never finish the run.
-    const config = yield* ReviewConfig;
-    const stored = yield* config.getReviewPass(run.reviewPassId);
-    if (stored === undefined) {
+    const pass = yield* resolveReviewPassById(run.reviewPassId);
+    if (pass === undefined) {
       const failed = yield* runs.failRun(
         runId,
         `Review pass "${run.reviewPassId}" no longer exists`,
@@ -61,7 +60,6 @@ export function driveReviewRun(
       yield* tolerate(observer).onSettled(failed);
       return true;
     }
-    const pass = yield* resolveReviewPass(stored);
     yield* resumeReviewRun(pass, runId, observer);
     return true;
   }).pipe(
