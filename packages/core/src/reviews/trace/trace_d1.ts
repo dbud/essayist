@@ -51,6 +51,13 @@ export function layerTraceEventsD1(
         ORDER BY seq`,
   });
 
+  const deleteEventRows = SqlSchema.void({
+    Request: Schema.Struct({ wsId: Schema.String, runId: Schema.String }),
+    execute: ({ wsId, runId }) =>
+      client`DELETE FROM review_trace_events
+        WHERE wsId = ${wsId} AND runId = ${runId}`,
+  });
+
   const append = (
     runId: string,
     event: TraceEvent,
@@ -70,10 +77,16 @@ export function layerTraceEventsD1(
       return rows.map((row) => row.event);
     });
 
+  const deleteRun = (runId: string): Effect.Effect<void, PersistenceError, WorkspaceId> =>
+    Effect.gen(function* () {
+      const { wsId } = yield* WorkspaceId;
+      yield* Effect.mapError(deleteEventRows({ wsId, runId }), backendFault);
+    });
+
   return Layer.unwrap(
     Effect.gen(function* () {
       yield* Effect.mapError(ensureSchema(), backendFault);
-      return Layer.succeed(TraceEvents, TraceEvents.of({ append, get }));
+      return Layer.succeed(TraceEvents, TraceEvents.of({ append, get, deleteRun }));
     }),
   );
 }

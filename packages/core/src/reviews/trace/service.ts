@@ -10,6 +10,8 @@ export interface Interface {
   append(runId: string, event: TraceEvent): Effect.Effect<void, PersistenceError, WorkspaceId>;
   /** The trace of a run in seq order, oldest first; with afterSeq, only the events past it. */
   get(runId: string, afterSeq?: number): Effect.Effect<TraceEvent[], PersistenceError, WorkspaceId>;
+  /** Delete every event of a run. */
+  deleteRun(runId: string): Effect.Effect<void, PersistenceError, WorkspaceId>;
 }
 
 export class TraceEvents extends Context.Service<TraceEvents, Interface>()(

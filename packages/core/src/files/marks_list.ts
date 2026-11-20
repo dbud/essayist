@@ -12,6 +12,7 @@ import type {
   ConcurrentModificationError,
   Persistence,
   PersistenceError,
+  WriteOp,
 } from "#/persistence/mod.ts";
 import { WorkspaceId } from "#/workspace/WorkspaceId.ts";
 
@@ -47,24 +48,38 @@ export function makeMarkLists(
       }),
     );
 
-  const deleteMark = (
+  /** Remove the marks matching the predicate from a version's list; returns the removed count. */
+  const deleteMarksWhere = (
     path: string,
     versionId: string,
-    markId: string,
-  ): Effect.Effect<boolean, PersistenceError | ConcurrentModificationError, WorkspaceId> =>
+    predicate: (mark: Mark) => boolean,
+  ): Effect.Effect<number, PersistenceError | ConcurrentModificationError, WorkspaceId> =>
     retryConcurrency(
       Effect.gen(function* () {
         const { wsId } = yield* WorkspaceId;
         const key = marksKey(wsId, path, versionId);
         const entry = yield* persistence.get<Mark[]>(key);
-        const marks = entry?.value ?? [];
-        const filtered = marks.filter((m) => m.id !== markId);
-        if (filtered.length === marks.length) return false;
-        yield* persistence.batch([{ type: "set", key, value: filtered }], {
-          checks: [{ key, versionstamp: entry?.versionstamp ?? null }],
+        if (!entry) return 0;
+        const kept = entry.value.filter((m) => !predicate(m));
+        const removed = entry.value.length - kept.length;
+        if (removed === 0) return 0;
+        const op: WriteOp =
+          kept.length === 0 ? { type: "delete", key } : { type: "set", key, value: kept };
+        yield* persistence.batch([op], {
+          checks: [{ key, versionstamp: entry.versionstamp }],
         });
-        return true;
+        return removed;
       }),
+    );
+
+  const deleteMark = (
+    path: string,
+    versionId: string,
+    markId: string,
+  ): Effect.Effect<boolean, PersistenceError | ConcurrentModificationError, WorkspaceId> =>
+    Effect.map(
+      deleteMarksWhere(path, versionId, (m) => m.id === markId),
+      (removed) => removed > 0,
     );
 
   const migrateMarks = (
@@ -128,6 +143,7 @@ export function makeMarkLists(
     getMarks,
     saveMark,
     deleteMark,
+    deleteMarksWhere,
     migrateMarks,
   };
 }

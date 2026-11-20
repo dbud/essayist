@@ -21,6 +21,16 @@ export class ReviewRunMissingError extends Schema.TaggedError<ReviewRunMissingEr
   }
 }
 
+/** A cleanup was refused because a run in its scope is still running. */
+export class ReviewRunActiveError extends Schema.TaggedError<ReviewRunActiveError>()(
+  "ReviewRunActiveError",
+  { id: Schema.String },
+) {
+  override get message() {
+    return `Run ${this.id} is still running`;
+  }
+}
+
 export interface Interface {
   /** Create a run in the "running" state. */
   createRun(input: {
@@ -60,6 +70,8 @@ export interface Interface {
    * won the race.
    */
   heartbeatRun(id: string, owner: string): Effect.Effect<boolean, PersistenceError, WorkspaceId>;
+  /** Delete a run row. False when absent. */
+  deleteRun(id: string): Effect.Effect<boolean, PersistenceError, WorkspaceId>;
 }
 
 /** Review run storage as an Effect service. */

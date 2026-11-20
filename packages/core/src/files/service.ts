@@ -133,6 +133,12 @@ export interface Interface {
     versionId: string,
     markId: string,
   ): Effect.Effect<boolean, PersistenceError | ConcurrentModificationError, WorkspaceId>;
+  /** Remove the marks matching the predicate from a version's list; returns the removed count. */
+  deleteMarksWhere(
+    path: string,
+    versionId: string,
+    predicate: (mark: Mark) => boolean,
+  ): Effect.Effect<number, PersistenceError | ConcurrentModificationError, WorkspaceId>;
   /**
    * Re-anchor a version's marks onto the latest version. Marks whose thread_id is already on the
    * latest are skipped; text that no longer resolves becomes stale. No-op when the given version is

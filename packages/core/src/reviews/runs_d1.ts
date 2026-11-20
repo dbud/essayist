@@ -127,6 +127,15 @@ export function layerReviewRunsD1(
         RETURNING *`,
   });
 
+  const deleteRunRow = SqlSchema.findOneOption({
+    Request: Schema.Struct({ wsId: Schema.String, id: Schema.String }),
+    Result: Schema.Struct({ id: Schema.String }),
+    execute: ({ wsId, id }) =>
+      client`DELETE FROM review_runs
+        WHERE wsId = ${wsId} AND id = ${id}
+        RETURNING id`,
+  });
+
   const createRun = ({
     path,
     versionId,
@@ -235,6 +244,13 @@ export function layerReviewRunsD1(
       return Option.isSome(renewed);
     });
 
+  const deleteRun = (id: string): Effect.Effect<boolean, PersistenceError, WorkspaceId> =>
+    Effect.gen(function* () {
+      const { wsId } = yield* WorkspaceId;
+      const deleted = yield* Effect.mapError(deleteRunRow({ wsId, id }), backendFault);
+      return Option.isSome(deleted);
+    });
+
   return Layer.unwrap(
     Effect.gen(function* () {
       yield* Effect.mapError(ensureSchema(), backendFault);
@@ -248,6 +264,7 @@ export function layerReviewRunsD1(
           failRun,
           claimRun,
           heartbeatRun,
+          deleteRun,
         }),
       );
     }),
