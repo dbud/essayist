@@ -21,13 +21,13 @@ export default function createModels(data: EditorData, user: User | undefined) {
   const selected = createFileSelection(workspaces, fileTrees);
   const fileContents = new FileContentsModel(selected, data.fileView?.content);
   const fileVersions = new FileVersionsByPathModel(selected, data.fileView?.versions);
-  const marks = new FileMarksByPathModel(selected, data.fileView?.marks);
   const streamDetail = user?.role === "admin" ? "trace" : "progress";
   const reviewRuns = new ReviewRunsByPathModel(
     selected,
     streamDetail,
     data.reviewRuns ?? undefined,
   );
+  const marks = new FileMarksByPathModel(selected, reviewRuns.current, data.fileView?.marks);
   const categories = new CategoriesModel(data.categories);
   const writable = createFileWritability(selected, fileVersions);
   const resolvedMarks = createResolvedMarks(fileContents, marks);
