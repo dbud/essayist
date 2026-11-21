@@ -6,6 +6,15 @@
 @utility aq-melt {
   @apply relative;
   filter: var(--aq-melt-s) var(--aq-shadow);
+
+  /* Safari renders a melt inside another melt slowly and not quite right, so only the outer one
+     melts there. With the melt off, the filter is invalid and computes to none. */
+  @supports (font: -apple-system-body) {
+    & > * {
+      --aq-melt-s: none;
+      --aq-melt-w: none;
+    }
+  }
 }
 
 .aq-melt:has(.aq-btn--idle) {
