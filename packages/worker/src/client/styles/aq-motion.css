@@ -11,6 +11,10 @@
   --aq-item-op: calc(80ms * var(--aq-tempo));
   --aq-spring: cubic-bezier(0.3, 1.6, 0.45, 1);
   --aq-absorb-ease: cubic-bezier(0.4, -0.5, 0.55, 1.35);
+  /* The lift in rem and the scale of a hidden menu item. Plain numbers, so Safari can transition
+     them in aq-webkit.css. */
+  --aq-item-hidden-lift: 1.1;
+  --aq-item-hidden-scale: 0.7;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -24,7 +28,7 @@
 /* Staggered cascade for panel contents. */
 [data-aq-stagger] > * {
   opacity: 0;
-  transform: translateY(1.1rem) scale(0.7);
+  transform: translateY(calc(var(--aq-item-hidden-lift) * 1rem)) scale(var(--aq-item-hidden-scale));
   transition:
     transform var(--aq-item-tf) var(--aq-spring) 0s,
     opacity var(--aq-item-op) ease-in 0s;

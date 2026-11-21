@@ -3,14 +3,17 @@
   --aq-dropdown-gap: 1rem;
   --aq-dropdown-origin-x: 50%;
   --aq-panel-gap: 0rem;
-  --aq-panel-hidden-y: 0rem;
+  /* The offset in rem and the scale of a closed panel. Plain numbers, so Safari can transition
+     them in aq-webkit.css. */
+  --aq-panel-hidden-y: 0;
+  --aq-panel-hidden-scale: 0.16;
   --aq-dropdown--right-x: 1rem;
 }
 
 @utility aq-panel {
   @apply absolute -z-1 flex flex-col opacity-0 invisible pointer-events-none;
   transform-origin: var(--aq-panel-origin-x, 50%) top;
-  transform: translateY(var(--aq-panel-hidden-y)) scale(0.16);
+  transform: translateY(calc(var(--aq-panel-hidden-y) * 1rem)) scale(var(--aq-panel-hidden-scale));
   transition:
     transform var(--aq-close-tf) var(--aq-spring),
     opacity var(--aq-close-op) ease-in,
@@ -77,8 +80,8 @@
 
 @utility aq-dropdown--detached {
   --aq-panel-gap: 0.8rem;
-  --aq-panel-hidden-y: -0.8rem;
-  transform-origin: var(--aq-panel-origin-x, 50%) -0.8rem;
+  --aq-panel-hidden-y: -0.8;
+  transform-origin: var(--aq-panel-origin-x, 50%) calc(var(--aq-panel-hidden-y) * 1rem);
 }
 
 @utility aq-dropdown--up {
