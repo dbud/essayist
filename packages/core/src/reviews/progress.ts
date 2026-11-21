@@ -69,12 +69,6 @@ export function applyTraceEvent(
   return { ...progress, units };
 }
 
-/** Counts the units that have ended: completed, failed, or skipped. */
-export function unitsEnded(progress: ReviewProgress): number {
-  return progress.units.filter((unit) => unit.state !== "pending" && unit.state !== "running")
-    .length;
-}
-
 function nextState(
   state: UnitState,
   event: Extract<TraceEvent, { type: "node_start" | "node_end" }>,

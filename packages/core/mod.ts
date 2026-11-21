@@ -86,7 +86,7 @@ export { ReviewJanitor } from "#/reviews/janitor.ts";
 export { layerReviewJanitorD1 } from "#/reviews/janitor_d1.ts";
 export { ReviewPacing } from "#/reviews/pacing.ts";
 export type { ProgressFeed } from "#/reviews/progress.ts";
-export { feedTraceEvent, ReviewProgress, unitsEnded } from "#/reviews/progress.ts";
+export { feedTraceEvent, ReviewProgress } from "#/reviews/progress.ts";
 export { loadProgressFeed } from "#/reviews/progress_feed.ts";
 export { layerReviewRunsD1 } from "#/reviews/runs_d1.ts";
 export type { CleanupResult } from "#/reviews/cleanup.ts";

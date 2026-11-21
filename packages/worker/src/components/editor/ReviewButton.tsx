@@ -1,4 +1,4 @@
-import { type ReviewProgress, unitsEnded } from "@essayist/core";
+import type { ReviewProgress } from "@essayist/core";
 import { useSignal } from "@preact/signals";
 import { ChevronDown, Highlighter } from "lucide-preact";
 
@@ -101,5 +101,8 @@ function segment(state: UnitState): RingSegment {
 
 function progressLabel(progress: ReviewProgress | null): string {
   if (progress === null) return "Review in progress";
-  return `Review in progress: ${unitsEnded(progress)} of ${progress.units.length}`;
+  const ended = progress.units.filter(
+    (unit) => unit.state !== "pending" && unit.state !== "running",
+  ).length;
+  return `Review in progress: ${ended} of ${progress.units.length}`;
 }
