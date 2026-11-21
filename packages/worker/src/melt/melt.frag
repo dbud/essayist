@@ -3,12 +3,12 @@ precision highp float;
 
 // Each shape spreads a soft field. The field is the box of the shape smoothed with a Gaussian of
 // width sigma: it is 1 deep inside the box and falls to 0 a few sigma outside. The fields of the
-// shapes on a layer add up, and a pixel is inside the melted outline where the sum passes a
+// shapes in a group add up, and a pixel is inside the melted outline where the sum passes a
 // threshold, so close shapes join where their fields overlap. Within the outline, each shape keeps
 // its own colour, and the space between shapes takes the average colour of the shapes nearby.
-// Layers stack in order. Lengths are in device pixels.
+// Groups are drawn in order, each over the ones before. Lengths are in device pixels.
 
-// MAX_SHAPES and MAX_LAYERS come from renderer.ts.
+// MAX_SHAPES and MAX_GROUPS come from renderer.ts.
 
 uniform vec2 u_size;
 uniform float u_sigma;
@@ -18,8 +18,8 @@ uniform float u_bias;
 uniform vec4 u_box[MAX_SHAPES];
 uniform vec4 u_color[MAX_SHAPES];
 uniform float u_radius[MAX_SHAPES];
-uniform int u_layerEnd[MAX_LAYERS];
-uniform int u_layers;
+uniform int u_groupEnd[MAX_GROUPS];
+uniform int u_groups;
 
 out vec4 outColor;
 
@@ -69,9 +69,9 @@ void main() {
   vec4 result = vec4(0.0);
   int start = 0;
 
-  for (int layer = 0; layer < MAX_LAYERS; layer++) {
-    if (layer >= u_layers) break;
-    int end = u_layerEnd[layer];
+  for (int group = 0; group < MAX_GROUPS; group++) {
+    if (group >= u_groups) break;
+    int end = u_groupEnd[group];
     // Both are premultiplied colours. field adds up the field of each shape weighted by its colour,
     // so its alpha is the total field, with each shape counted by its opacity. shapes draws the
     // shapes themselves, each later shape over the earlier ones.
@@ -96,8 +96,8 @@ void main() {
     vec4 around = vec4(average * outline, outline);
     // Each shape keeps its own colour, the space around the shapes takes their average colour, and
     // both are cut to the outline.
-    vec4 layerColor = shapes * outline + around * (1.0 - shapes.a);
-    result = layerColor + result * (1.0 - layerColor.a);
+    vec4 groupColor = shapes * outline + around * (1.0 - shapes.a);
+    result = groupColor + result * (1.0 - groupColor.a);
   }
 
   outColor = result;

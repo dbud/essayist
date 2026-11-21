@@ -8,8 +8,9 @@
 @utility alert {
   @apply relative flex flex-col leading-none min-h-12 overflow-hidden;
   font-size: 0.8rem;
-  background-color: var(--alert-color, var(--color-surface));
-  transition: background-color var(--toast-duration) ease-out;
+  @apply melt-shape;
+  --melt-fill: var(--alert-color, var(--color-surface));
+  transition: --melt-fill var(--toast-duration) ease-out;
 }
 
 @utility toast-close {

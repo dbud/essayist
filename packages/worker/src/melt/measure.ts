@@ -8,7 +8,7 @@ export function measure(root: HTMLElement, nodes: readonly ShapeNode[]): Measure
   const setting = (name: string) => parseFloat(rootStyle.getPropertyValue(`--melt-${name}`));
   const opacities = new Map<Element, number>([[root, 1]]);
 
-  const shapes = nodes.map(({ element, parent }): MeasuredShape => {
+  const shapes = nodes.map(({ element, group }): MeasuredShape => {
     const style = getComputedStyle(element);
     return {
       rect: toBox(element.getBoundingClientRect()),
@@ -17,7 +17,7 @@ export function measure(root: HTMLElement, nodes: readonly ShapeNode[]): Measure
       fill: parseColor(style.getPropertyValue("--melt-fill")),
       opacity: opacityOf(element, opacities),
       visible: style.visibility !== "hidden",
-      parent,
+      group,
     };
   });
 

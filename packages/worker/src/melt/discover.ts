@@ -1,17 +1,20 @@
 export interface ShapeNode {
   readonly element: HTMLElement;
   /** As in MeasuredShape. */
-  readonly parent: number;
+  readonly group: number;
 }
 
-/** Finds the shapes of a group, the root included, in document order. */
+/** Finds the shapes under a root, the root included, in document order. The root starts group 0,
+    and every element marked by the aq-melt utility under it starts a group of its own. */
 export function findShapes(root: HTMLElement): ShapeNode[] {
-  const indices = new Map<Element, number>();
+  const groups = new Map<Element, number>([[root, 0]]);
   const nodes: ShapeNode[] = [];
   for (const element of [root, ...root.querySelectorAll<HTMLElement>("*")]) {
-    if (getComputedStyle(element).getPropertyValue("--melt-shape").trim() !== "1") continue;
-    indices.set(element, nodes.length);
-    nodes.push({ element, parent: closestShape(element, root, indices) });
+    const style = getComputedStyle(element);
+    if (element !== root && marked(style, "--melt-group")) groups.set(element, groups.size);
+    if (marked(style, "--melt-shape")) {
+      nodes.push({ element, group: closestGroup(element, groups) });
+    }
   }
   return nodes;
 }
@@ -25,12 +28,14 @@ export function watchShapes(root: HTMLElement, onChange: (nodes: ShapeNode[]) =>
   return () => observer.disconnect();
 }
 
-function closestShape(element: Element, root: Element, indices: Map<Element, number>): number {
-  if (element === root) return -1;
-  for (let parent = element.parentElement; parent !== null; parent = parent.parentElement) {
-    const index = indices.get(parent);
-    if (index !== undefined) return index;
-    if (parent === root) break;
+function marked(style: CSSStyleDeclaration, property: string): boolean {
+  return style.getPropertyValue(property).trim() === "1";
+}
+
+function closestGroup(element: Element, groups: Map<Element, number>): number {
+  for (let current: Element | null = element; current !== null; current = current.parentElement) {
+    const group = groups.get(current);
+    if (group !== undefined) return group;
   }
-  return -1;
+  return 0;
 }

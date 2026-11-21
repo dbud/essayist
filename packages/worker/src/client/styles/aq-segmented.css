@@ -1,20 +1,22 @@
 .aq-segmented {
   @apply flex items-center gap-1 rounded-full cursor-pointer p-1;
-  @apply aq-melt bg-float/60;
+  @apply aq-melt melt-shape;
+  --melt-fill: color-mix(in oklab, var(--color-float) 60%, transparent);
 
   & > button {
     @apply rounded-full px-2 py-1 leading-none cursor-pointer appearance-none
       border-0 select-none whitespace-nowrap text-sm;
 
-    background-color: transparent;
-    transition: background-color calc(120ms * var(--aq-tempo, 1)) ease;
+    @apply melt-shape;
+    --melt-fill: transparent;
+    transition: --melt-fill calc(120ms * var(--aq-tempo, 1)) ease;
 
     &:hover {
-      background-color: color-mix(in oklch, var(--color-float), white 25%);
+      --melt-fill: color-mix(in oklch, var(--color-float), white 25%);
     }
 
     &.is-selected {
-      @apply bg-accent;
+      --melt-fill: var(--color-accent);
     }
   }
 }

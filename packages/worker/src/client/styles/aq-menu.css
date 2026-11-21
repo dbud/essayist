@@ -1,5 +1,6 @@
 .aq-menu {
-  @apply bg-float rounded-lg py-2 px-2 text-float-ink;
+  @apply melt-shape rounded-lg py-2 px-2 text-float-ink;
+  --melt-fill: var(--color-float);
 }
 
 .aq-menu-head {

@@ -1,6 +1,6 @@
 import FRAGMENT from "./melt.frag?raw";
 import VERTEX from "./melt.vert?raw";
-import { MAX_LAYERS, MAX_SHAPES, type PackedFrame } from "./pack.ts";
+import { MAX_GROUPS, MAX_SHAPES, type PackedFrame } from "./pack.ts";
 
 export interface MeltRenderer {
   draw(frame: PackedFrame): void;
@@ -24,8 +24,8 @@ export function createMeltRenderer(canvas: HTMLCanvasElement): MeltRenderer | nu
     box: at("u_box"),
     color: at("u_color"),
     radius: at("u_radius"),
-    layerEnd: at("u_layerEnd"),
-    layers: at("u_layers"),
+    groupEnd: at("u_groupEnd"),
+    groups: at("u_groups"),
   };
 
   function draw(frame: PackedFrame) {
@@ -44,8 +44,8 @@ export function createMeltRenderer(canvas: HTMLCanvasElement): MeltRenderer | nu
     gl.uniform4fv(uniforms.box, frame.box);
     gl.uniform4fv(uniforms.color, frame.color);
     gl.uniform1fv(uniforms.radius, frame.radius);
-    gl.uniform1iv(uniforms.layerEnd, frame.layerEnd);
-    gl.uniform1i(uniforms.layers, frame.layers);
+    gl.uniform1iv(uniforms.groupEnd, frame.groupEnd);
+    gl.uniform1i(uniforms.groups, frame.groups);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
   }
 
@@ -66,7 +66,7 @@ function linkProgram(gl: WebGL2RenderingContext): WebGLProgram | null {
   ] as const) {
     const shader = gl.createShader(type);
     if (shader === null) return null;
-    gl.shaderSource(shader, withDefines(source, { MAX_SHAPES, MAX_LAYERS }));
+    gl.shaderSource(shader, withDefines(source, { MAX_SHAPES, MAX_GROUPS }));
     gl.compileShader(shader);
     if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
       console.error("melt shader:", gl.getShaderInfoLog(shader));

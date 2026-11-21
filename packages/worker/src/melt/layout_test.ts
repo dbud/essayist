@@ -17,7 +17,7 @@ const shape = (fields: Partial<MeasuredShape> = {}): MeasuredShape => ({
   fill: BLACK,
   opacity: 1,
   visible: true,
-  parent: -1,
+  group: 0,
   ...fields,
 });
 
@@ -51,11 +51,19 @@ test("a shape scaled by a transform has its radius scaled too", () => {
   expect(layoutFrame(measurement([scaled]))?.shapes[0].radius).toBe(4);
 });
 
-test("layers count the shapes that contain a shape, and the frame is sorted by them", () => {
+test("shapes are sorted by group and keep their document order within it", () => {
   const frame = layoutFrame(
-    measurement([shape(), shape({ parent: 0 }), shape({ parent: 1 }), shape()]),
+    measurement([
+      shape({ group: 0, radius: 1 }),
+      shape({ group: 1, radius: 2 }),
+      shape({ group: 0, radius: 3 }),
+    ]),
   );
-  expect(frame?.shapes.map(({ layer }) => layer)).toEqual([0, 0, 1, 2]);
+  expect(frame?.shapes.map(({ group, radius }) => [group, radius])).toEqual([
+    [0, 1],
+    [0, 3],
+    [1, 2],
+  ]);
 });
 
 test("the opacity of a shape goes into the alpha of its colour", () => {
@@ -63,17 +71,17 @@ test("the opacity of a shape goes into the alpha of its colour", () => {
   expect(frame?.shapes[0].color).toEqual([1, 0, 0, 0.25]);
 });
 
-test("hidden, transparent and empty shapes are left out, and their children keep their layer", () => {
+test("hidden, transparent and empty shapes are left out", () => {
   const frame = layoutFrame(
     measurement([
       shape({ visible: false }),
-      shape({ parent: 0 }),
+      shape({ group: 1 }),
       shape({ fill: [0, 0, 0, 0] }),
       shape({ opacity: 0 }),
       shape({ rect: { left: 0, top: 0, width: 0, height: 10 } }),
     ]),
   );
-  expect(frame?.shapes.map(({ layer }) => layer)).toEqual([1]);
+  expect(frame?.shapes.map(({ group }) => group)).toEqual([1]);
 });
 
 test("a frame with nothing to draw is null", () => {

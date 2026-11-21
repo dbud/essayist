@@ -18,6 +18,13 @@
   initial-value: 0;
 }
 
+/* Marks the elements that start a group of shapes. Shapes merge only within their group. */
+@property --melt-group {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 0;
+}
+
 /* A shape of the melt: set --melt-fill and apply this. The element paints its fill as its
    background, unless the canvas of its group draws it. */
 @utility melt-shape {
@@ -27,6 +34,7 @@
 
 @utility aq-melt {
   @apply relative;
+  --melt-group: 1;
   filter: var(--aq-melt-s) var(--aq-shadow);
 
   /* The canvas draws the shapes, so the shapes have no backgrounds and the root has no SVG melt. */

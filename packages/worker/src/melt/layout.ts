@@ -27,8 +27,8 @@ export interface MeasuredShape {
   /** Multiplied by the opacity of the ancestors. */
   readonly opacity: number;
   readonly visible: boolean;
-  /** The index of the closest shape that contains this one, or -1. Parents come first. */
-  readonly parent: number;
+  /** Shapes merge only with shapes of the same group. Groups are numbered in document order. */
+  readonly group: number;
 }
 
 export interface Measurement {
@@ -47,14 +47,14 @@ export interface MeltShape {
   readonly radius: number;
   /** With the opacity of the element and of its ancestors in the alpha. */
   readonly color: Rgba;
-  /** How many shapes contain this one. Shapes merge only with shapes on the same layer. */
-  readonly layer: number;
+  /** As in MeasuredShape. */
+  readonly group: number;
 }
 
 /** In CSS pixels relative to the border box of the root. */
 export interface MeltFrame extends Box {
   readonly settings: MeltSettings;
-  /** Sorted by layer. */
+  /** Sorted by group, and in document order within a group. */
   readonly shapes: readonly MeltShape[];
 }
 
@@ -71,25 +71,23 @@ export function resolveSettings(settings: MeltSettings): MeltSettings {
 export function layoutFrame(measurement: Measurement): MeltFrame | null {
   const settings = resolveSettings(measurement.settings);
 
-  const layers: number[] = [];
-  const drawn: { shape: MeasuredShape; layer: number }[] = [];
-  measurement.shapes.forEach((shape, i) => {
-    layers[i] = shape.parent === -1 ? 0 : layers[shape.parent] + 1;
-    const alpha = shape.fill[3] * shape.opacity;
-    if (shape.visible && alpha > 0 && shape.rect.width > 0 && shape.rect.height > 0) {
-      drawn.push({ shape, layer: layers[i] });
-    }
-  });
+  const drawn = measurement.shapes.filter(
+    (shape) =>
+      shape.visible &&
+      shape.fill[3] * shape.opacity > 0 &&
+      shape.rect.width > 0 &&
+      shape.rect.height > 0,
+  );
   if (drawn.length === 0) return null;
 
   const margin = settings.sigma * FIELD_SIGMAS;
-  const left = Math.min(...drawn.map(({ shape }) => shape.rect.left)) - margin;
-  const top = Math.min(...drawn.map(({ shape }) => shape.rect.top)) - margin;
-  const right = Math.max(...drawn.map(({ shape }) => shape.rect.left + shape.rect.width)) + margin;
-  const bottom = Math.max(...drawn.map(({ shape }) => shape.rect.top + shape.rect.height)) + margin;
+  const left = Math.min(...drawn.map(({ rect }) => rect.left)) - margin;
+  const top = Math.min(...drawn.map(({ rect }) => rect.top)) - margin;
+  const right = Math.max(...drawn.map(({ rect }) => rect.left + rect.width)) + margin;
+  const bottom = Math.max(...drawn.map(({ rect }) => rect.top + rect.height)) + margin;
 
   const shapes = drawn
-    .map(({ shape, layer }): MeltShape => {
+    .map((shape): MeltShape => {
       const { rect, fill } = shape;
       const scale = shape.layoutWidth > 0 ? rect.width / shape.layoutWidth : 1;
       return {
@@ -99,10 +97,10 @@ export function layoutFrame(measurement: Measurement): MeltFrame | null {
         halfHeight: rect.height / 2,
         radius: shape.radius * scale,
         color: [fill[0], fill[1], fill[2], fill[3] * shape.opacity],
-        layer,
+        group: shape.group,
       };
     })
-    .toSorted((a, b) => a.layer - b.layer);
+    .toSorted((a, b) => a.group - b.group);
 
   return {
     left: left - measurement.root.left,
