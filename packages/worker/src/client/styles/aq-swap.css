@@ -2,14 +2,6 @@
    --swap-x, --swap-y, --swap-turn and --swap-scale, and the new content moves in from the mirrored
    values. */
 
-/* Safari runs the swap from this progress number instead of opacity and transform keyframes;
-   aq-dropdown.css explains why. */
-@property --aq-swap-t {
-  syntax: "<number>";
-  inherits: false;
-  initial-value: 0;
-}
-
 @utility aq-swap {
   --swap-duration: 140ms;
 
@@ -19,28 +11,6 @@
 
   &[data-phase="in"] > :not([data-static]) {
     animation: aq-swap-in var(--swap-duration) ease-out forwards;
-  }
-
-  @supports (font: -apple-system-body) {
-    &[data-phase] > :not([data-static]) {
-      opacity: calc(1 - var(--aq-swap-t));
-      transform: translate(
-          calc(var(--aq-swap-t) * var(--aq-swap-sign) * var(--swap-x, 0px)),
-          calc(var(--aq-swap-t) * var(--aq-swap-sign) * var(--swap-y, 0px))
-        )
-        rotate(calc(var(--aq-swap-t) * var(--aq-swap-sign) * var(--swap-turn, 0deg)))
-        scale(calc(1 - var(--aq-swap-t) * (1 - var(--swap-scale, 1))));
-    }
-
-    &[data-phase="out"] > :not([data-static]) {
-      --aq-swap-sign: 1;
-      animation-name: aq-swap-out-t;
-    }
-
-    &[data-phase="in"] > :not([data-static]) {
-      --aq-swap-sign: -1;
-      animation-name: aq-swap-in-t;
-    }
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -65,18 +35,6 @@
     opacity: 0;
     transform: translate(calc(-1 * var(--swap-x, 0px)), calc(-1 * var(--swap-y, 0px)))
       rotate(calc(-1 * var(--swap-turn, 0deg))) scale(var(--swap-scale, 1));
-  }
-}
-
-@keyframes aq-swap-out-t {
-  to {
-    --aq-swap-t: 1;
-  }
-}
-
-@keyframes aq-swap-in-t {
-  from {
-    --aq-swap-t: 1;
   }
 }
 

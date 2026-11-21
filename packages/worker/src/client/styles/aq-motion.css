@@ -19,20 +19,13 @@
   }
 }
 
-/* Staggered cascade for panel contents. Safari shows the items as they are, since animating each
-   item repaints the melt around it on every frame. */
+/* Staggered cascade for panel contents. */
 [data-aq-stagger] > * {
   opacity: 0;
   transform: translateY(1.1rem) scale(0.7);
   transition:
     transform var(--aq-item-tf) var(--aq-spring) 0s,
     opacity var(--aq-item-op) ease-in 0s;
-
-  @supports (font: -apple-system-body) {
-    opacity: 1;
-    transform: none;
-    transition: none;
-  }
 
   @media (prefers-reduced-motion: reduce) {
     transition: none;
@@ -48,10 +41,6 @@
       calc(var(--aq-stagger-base) + var(--aq-i, 0) * var(--aq-stagger-step)),
     opacity var(--aq-item-op) ease-out
       calc(var(--aq-stagger-base) + var(--aq-i, 0) * var(--aq-stagger-step));
-
-  @supports (font: -apple-system-body) {
-    transition: none;
-  }
 
   @media (prefers-reduced-motion: reduce) {
     transition: none;
