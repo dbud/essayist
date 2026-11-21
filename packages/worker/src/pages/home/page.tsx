@@ -3,6 +3,7 @@ import { useEffect } from "preact/hooks";
 
 import { Toaster } from "#/components/Toaster.tsx";
 import MeltFilter from "#/components/ui/MeltFilter.tsx";
+import { useMeltCanvas } from "#/melt/useMeltCanvas.ts";
 import { showTaskToast, showToast } from "#/models/utils/toast.ts";
 
 /** Toggles html.aq-melt-off to preview the raw geometry. */
@@ -45,11 +46,35 @@ function seedToasts() {
   showToast("Uploading images", "info", { done: 2, total: 5 });
 }
 
+/** Buttons close together, so the shader and the SVG filter can be compared where they merge. */
+function MeltSample({ drawn }: { drawn: boolean }) {
+  const melt = useMeltCanvas<HTMLDivElement>();
+  return (
+    <div ref={drawn ? melt : undefined} class="aq-melt flex items-center gap-1 px-8 py-4">
+      <span class="w-28 text-sm opacity-60">{drawn ? "shader" : "svg filter"}</span>
+      <button type="button" class="aq-btn">
+        Settings
+      </button>
+      <button type="button" class="aq-btn--accent">
+        Review
+      </button>
+      <button type="button" class="aq-btn--idle">
+        Saved
+      </button>
+      <button type="button" class="aq-btn--small">
+        B
+      </button>
+    </div>
+  );
+}
+
 function HomePage() {
   useEffect(seedToasts, []);
 
   return (
     <main class="min-h-svh">
+      <MeltSample drawn />
+      <MeltSample drawn={false} />
       <div class="aq-melt  flex flex-wrap items-start gap-4 p-8">
         <button type="button" class="aq-btn" onClick={() => showToast("Saved")}>
           Info

@@ -39,10 +39,11 @@
   color: var(--btn-ink);
   font-size: var(--aq-btn-font-size);
   padding: var(--aq-btn-py) var(--aq-btn-px);
-  background: var(--btn-bg);
+  --melt-fill: var(--btn-bg);
+  background: var(--melt-background, var(--melt-fill));
   transform: scale(var(--aq-btn-lifted));
   transition:
-    background-color calc(200ms * var(--aq-tempo, 1)) var(--aq-btn-ease),
+    --melt-fill calc(200ms * var(--aq-tempo, 1)) var(--aq-btn-ease),
     color calc(200ms * var(--aq-tempo, 1)) var(--aq-btn-ease),
     --aq-btn-lifted calc(240ms * var(--aq-tempo, 1)) var(--aq-btn-ease);
 

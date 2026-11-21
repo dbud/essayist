@@ -3,9 +3,26 @@
   --aq-melt-w: url(#melt-wide);
 }
 
+/* The fill of a shape for the melt canvas. It is registered, so it transitions and reads back as a
+   resolved colour. */
+@property --melt-fill {
+  syntax: "<color>";
+  inherits: false;
+  initial-value: transparent;
+}
+
 @utility aq-melt {
   @apply relative;
   filter: var(--aq-melt-s) var(--aq-shadow);
+
+  /* The canvas draws the shapes, so the shapes have no backgrounds and the root has no SVG melt. */
+  &[data-melt-drawn] {
+    isolation: isolate;
+    filter: var(--aq-shadow);
+    --melt-background: transparent;
+    --aq-melt-s: none;
+    --aq-melt-w: none;
+  }
 
   /* Safari renders a melt inside another melt slowly and not quite right, so only the outer one
      melts there. With the melt off, the filter is invalid and computes to none. */
@@ -31,4 +48,10 @@
 html.aq-melt-off {
   --aq-melt-s: none;
   --aq-melt-w: none;
+}
+
+.melt-canvas {
+  position: absolute;
+  z-index: -1;
+  pointer-events: none;
 }
