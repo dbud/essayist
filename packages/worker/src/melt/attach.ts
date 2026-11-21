@@ -1,9 +1,10 @@
 import { acquireMeltContext } from "./context.ts";
-import { type ShapeNode, watchShapes } from "./discover.ts";
+import { findShapes, type ShapeNode } from "./discover.ts";
 import { layoutFrame, type MeltFrame } from "./layout.ts";
+import { createFrameLoop } from "./loop.ts";
 import { measure } from "./measure.ts";
+import { shapesMoving, watchMotion } from "./motion.ts";
 import { packFrame } from "./pack.ts";
-import { createFrameLoop, shapesMoving, watchMotion } from "./scheduler.ts";
 
 /** Draws the melt of a group root on a canvas behind its content, and returns a function to stop.
     While the canvas draws, the root has the data-melt-drawn attribute, which turns off the
@@ -15,7 +16,7 @@ export function attachMelt(root: HTMLElement): () => void {
   const target = canvas.getContext("2d");
   if (target === null) return () => {};
 
-  // Writes only on a change, as every attribute write wakes the loop through watchMotion.
+  // Writes only on a change, as every attribute write wakes the loop through the observer below.
   const drawn = (on: boolean) => {
     canvas.hidden = !on;
     if (on === "meltDrawn" in root.dataset) return;
@@ -44,17 +45,29 @@ export function attachMelt(root: HTMLElement): () => void {
     },
     () => shapesMoving(root, elements()),
   );
-  const motion = watchMotion(root, canvas, loop.wake);
-  const stopShapes = watchShapes(root, (found) => {
-    nodes = found;
+  const motion = watchMotion(root, loop.wake);
+  const discover = () => {
+    nodes = findShapes(root);
     motion.track(elements());
+  };
+  discover();
+
+  // An attribute can change how a shape looks. New elements or classes can add or remove shapes, so
+  // they are found again. The canvas changes its own attributes on every draw.
+  const mutations = new MutationObserver((records) => {
+    const changes = records.filter((record) => record.target !== canvas);
+    if (changes.length === 0) return;
+    if (changes.some((record) => record.type === "childList" || record.attributeName === "class")) {
+      discover();
+    }
     loop.wake();
   });
+  mutations.observe(root, { childList: true, attributes: true, subtree: true });
   // Attached before the first paint, so the group never shows unmelted.
   loop.drawNow();
 
   return () => {
-    stopShapes();
+    mutations.disconnect();
     motion.dispose();
     loop.dispose();
     drawn(false);

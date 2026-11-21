@@ -25,15 +25,6 @@ export function findShapes(root: HTMLElement): ShapeNode[] {
   return nodes;
 }
 
-/** Calls onChange with the shapes now, and again whenever the elements or classes under the root
-    change. Returns a function to stop watching. */
-export function watchShapes(root: HTMLElement, onChange: (nodes: ShapeNode[]) => void): () => void {
-  onChange(findShapes(root));
-  const observer = new MutationObserver(() => onChange(findShapes(root)));
-  observer.observe(root, { childList: true, subtree: true, attributeFilter: ["class"] });
-  return () => observer.disconnect();
-}
-
 function marked(style: CSSStyleDeclaration, property: string): boolean {
   return style.getPropertyValue(property).trim() === "1";
 }

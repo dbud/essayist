@@ -57,8 +57,8 @@ export interface MeltFrame extends Box {
   readonly shapes: readonly MeltShape[];
 }
 
-// The field of a shape fades out within three sigma.
-const FIELD_SIGMAS = 3;
+/** The field of a shape is close to 0 more than this many sigma away from it. */
+export const FIELD_REACH = 3;
 
 export function resolveSettings(settings: MeltSettings): MeltSettings {
   const pick = (name: keyof MeltSettings) =>
@@ -79,7 +79,7 @@ export function layoutFrame(measurement: Measurement): MeltFrame | null {
   );
   if (drawn.length === 0) return null;
 
-  const margin = settings.sigma * FIELD_SIGMAS;
+  const margin = settings.sigma * FIELD_REACH;
   const left = Math.min(...drawn.map(({ rect }) => rect.left)) - margin;
   const top = Math.min(...drawn.map(({ rect }) => rect.top)) - margin;
   const right = Math.max(...drawn.map(({ rect }) => rect.left + rect.width)) + margin;

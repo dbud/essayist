@@ -1,3 +1,4 @@
+import { FIELD_REACH } from "./layout.ts";
 import FRAGMENT from "./melt.frag?raw";
 import VERTEX from "./melt.vert?raw";
 import { MAX_GROUPS, MAX_SHAPES, type PackedFrame } from "./pack.ts";
@@ -61,7 +62,7 @@ function linkProgram(gl: WebGL2RenderingContext): WebGLProgram | null {
   ] as const) {
     const shader = gl.createShader(type);
     if (shader === null) return null;
-    gl.shaderSource(shader, withDefines(source, { MAX_SHAPES, MAX_GROUPS }));
+    gl.shaderSource(shader, withDefines(source, { MAX_SHAPES, MAX_GROUPS, FIELD_REACH }));
     gl.compileShader(shader);
     if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
       console.error("melt shader:", gl.getShaderInfoLog(shader));

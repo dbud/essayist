@@ -8,7 +8,7 @@ precision highp float;
 // shape keeps its own colour, and the space between shapes takes the average colour of the shapes
 // nearby. Groups are drawn in order, each over the ones before. Lengths are in device pixels.
 
-// MAX_SHAPES and MAX_GROUPS come from renderer.ts.
+// MAX_SHAPES, MAX_GROUPS and FIELD_REACH come from renderer.ts.
 
 uniform vec2 u_size;
 uniform float u_sigma;
@@ -40,8 +40,8 @@ float erf(float x) {
 const float INV_SQRT2 = 0.70710678;
 const float SQRT_2PI = 2.50662827;
 const float HALF_PIXEL = 0.5;
-// The field of a shape is close to 0 more than three sigma away from it.
-const float FIELD_REACH = 3.0;
+// FIELD_REACH as a float, as GLSL does not convert int to float.
+const float REACH = float(FIELD_REACH);
 const int FIELD_SAMPLES = 8;
 
 // The signed distance to a rounded box: negative inside, positive outside.
@@ -64,7 +64,7 @@ float rowField(float x, float y, vec2 half_size, float radius) {
 // Gaussian of the vertical distance to each row. Only rows within reach of p count, and their sum
 // is taken at evenly spaced samples.
 float shapeField(vec2 p, vec2 half_size, float radius) {
-  float reach = FIELD_REACH * u_sigma;
+  float reach = REACH * u_sigma;
   float from = clamp(p.y - reach, -half_size.y, half_size.y);
   float to = clamp(p.y + reach, -half_size.y, half_size.y);
   float spacing = (to - from) / float(FIELD_SAMPLES);
@@ -97,7 +97,7 @@ void main() {
       vec2 half_size = u_box[i].zw;
       float radius = min(u_radius[i], min(half_size.x, half_size.y));
       float toEdge = roundBox(local, half_size, radius);
-      if (toEdge > FIELD_REACH * u_sigma) continue;
+      if (toEdge > REACH * u_sigma) continue;
       vec4 color = vec4(u_color[i].rgb * u_color[i].a, u_color[i].a);
       field += color * shapeField(local, half_size, radius);
       // The fraction of this pixel inside the shape: 1 more than half a pixel inside the edge, 0
