@@ -13,7 +13,7 @@
 
 .aq-menu-btn {
   @apply aq-btn--base py-1.5 px-2 min-w-48 w-full rounded-sm;
-  @apply aq-melt;
+  @apply melt-group;
   --btn-bg: oklch(from var(--color-float) l c h / 0.6);
   --aq-btn-ease: cubic-bezier(0.2, 0, 0, 1);
 }

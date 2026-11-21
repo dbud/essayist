@@ -6,8 +6,8 @@ import { packFrame } from "./pack.ts";
 import { createFrameLoop, shapesMoving, watchMotion } from "./scheduler.ts";
 
 /** Draws the melt of a group root on a canvas behind its content, and returns a function to stop.
-    While the canvas draws, the root has the data-melt-drawn attribute, which turns off the SVG
-    filter and the backgrounds of the shapes in it. */
+    While the canvas draws, the root has the data-melt-drawn attribute, which turns off the
+    backgrounds of the shapes in it. */
 export function attachMelt(root: HTMLElement): () => void {
   const canvas = document.createElement("canvas");
   canvas.className = "melt-canvas";

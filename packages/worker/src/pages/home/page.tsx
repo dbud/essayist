@@ -1,29 +1,8 @@
-import { useSignal } from "@preact/signals";
-
 import { Toaster } from "#/components/Toaster.tsx";
 import Melt from "#/components/ui/Melt.tsx";
-import MeltFilter from "#/components/ui/MeltFilter.tsx";
 import { showTaskToast, showToast } from "#/models/utils/toast.ts";
 
 import MeltDemo from "./MeltDemo.tsx";
-
-/** Toggles html.aq-melt-off to preview the raw geometry. */
-function MeltToggle() {
-  const off = useSignal(false);
-
-  return (
-    <button
-      type="button"
-      class="aq-btn"
-      onClick={() => {
-        off.value = !off.value;
-        document.documentElement.classList.toggle("aq-melt-off", off.value);
-      }}
-    >
-      melt: {off.value ? "off" : "on"}
-    </button>
-  );
-}
 
 function runTask() {
   const task = showTaskToast("Reviewing essay");
@@ -77,10 +56,8 @@ function HomePage() {
         <button type="button" class="aq-btn" onClick={seedToasts}>
           All
         </button>
-        <MeltToggle />
       </Melt>
 
-      <MeltFilter />
       <Toaster />
     </main>
   );

@@ -154,7 +154,7 @@
   min-width: 100%;
 }
 
-.aq-melt:has(> [aria-expanded="true"]) {
+.melt-root:has(> [aria-expanded="true"]) {
   z-index: var(--z-dropdown);
 }
 

@@ -5,7 +5,7 @@ export interface ShapeNode {
 }
 
 /** Finds the shapes under a root, the root included, in document order. The root starts group 0,
-    and every element marked by the aq-melt utility under it starts a group of its own. */
+    and every element marked by the melt-group utility under it starts a group of its own. */
 export function findShapes(root: HTMLElement): ShapeNode[] {
   const groups = new Map<Element, number>([[root, 0]]);
   const nodes: ShapeNode[] = [];

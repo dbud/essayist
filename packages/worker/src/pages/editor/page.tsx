@@ -6,7 +6,6 @@ import SettingsMenu from "#/components/settings/SettingsMenu.tsx";
 import ThemeToggle from "#/components/ThemeToggle.tsx";
 import { Toaster } from "#/components/Toaster.tsx";
 import Tooltip from "#/components/Tooltip.tsx";
-import MeltFilter from "#/components/ui/MeltFilter.tsx";
 import { useAppState } from "#/state.ts";
 
 export default function Page() {
@@ -36,7 +35,6 @@ export default function Page() {
       </div>
       <Toaster />
       <Tooltip />
-      <MeltFilter />
     </>
   );
 }

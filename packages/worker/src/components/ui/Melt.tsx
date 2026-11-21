@@ -26,7 +26,7 @@ export default function Melt({ class: extra, ref, children }: MeltProps) {
   }, [enabled, root]);
 
   return (
-    <div ref={root} class={extra === undefined ? "aq-melt" : `aq-melt ${extra}`}>
+    <div ref={root} class={extra === undefined ? "melt-root" : `melt-root ${extra}`}>
       {children}
     </div>
   );

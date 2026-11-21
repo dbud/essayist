@@ -1,0 +1,60 @@
+/* The fill of a shape for the melt canvas. It is registered, so it transitions and reads back as a
+   resolved colour. */
+@property --melt-fill {
+  syntax: "<color>";
+  inherits: false;
+  initial-value: transparent;
+}
+
+/* Marks the shapes of a group, so the canvas finds them even while their fill is transparent. */
+@property --melt-shape {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 0;
+}
+
+/* Marks the elements that start a group of shapes. Shapes merge only within their group. */
+@property --melt-group {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 0;
+}
+
+/* A shape of the melt: set --melt-fill and apply this. The element paints its fill as its
+   background, unless the canvas of its group draws it. */
+@utility melt-shape {
+  --melt-shape: 1;
+  background: var(--melt-background, var(--melt-fill));
+}
+
+@utility melt-group {
+  --melt-group: 1;
+}
+
+/* The root of a melt group, rendered by the Melt component. While its canvas draws, its shapes
+   have no backgrounds of their own. */
+@utility melt-root {
+  @apply relative isolate melt-group;
+  filter: var(--aq-shadow);
+  transition: filter calc(200ms * var(--aq-tempo, 1)) ease-out;
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+  }
+
+  &[data-melt-drawn] {
+    --melt-background: transparent;
+  }
+}
+
+/* A group with an idle button has a light shadow, unless the button is hovered or its dropdown is
+   open. */
+.melt-root:has(.aq-btn--idle:not(:hover, [aria-expanded="true"])) {
+  --aq-shadow: drop-shadow(0 2px 1px rgb(0 0 0 / 0.1));
+}
+
+.melt-canvas {
+  position: absolute;
+  z-index: -1;
+  pointer-events: none;
+}
