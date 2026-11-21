@@ -7,10 +7,9 @@ export interface MeltRenderer {
   dispose(): void;
 }
 
-export function createMeltRenderer(canvas: HTMLCanvasElement): MeltRenderer | null {
-  const context = canvas.getContext("webgl2", { premultipliedAlpha: true, antialias: false });
-  if (context === null) return null;
-  const gl: WebGL2RenderingContext = context;
+/** Draws each frame into the lower left corner of the canvas of gl, which has to be at least as
+    large as the frame. */
+export function createMeltRenderer(gl: WebGL2RenderingContext): MeltRenderer | null {
   const program = linkProgram(gl);
   if (program === null) return null;
 
@@ -29,9 +28,6 @@ export function createMeltRenderer(canvas: HTMLCanvasElement): MeltRenderer | nu
   };
 
   function draw(frame: PackedFrame) {
-    if (canvas.width !== frame.width) canvas.width = frame.width;
-    if (canvas.height !== frame.height) canvas.height = frame.height;
-
     gl.viewport(0, 0, frame.width, frame.height);
     gl.clearColor(0, 0, 0, 0);
     gl.clear(gl.COLOR_BUFFER_BIT);
@@ -52,7 +48,6 @@ export function createMeltRenderer(canvas: HTMLCanvasElement): MeltRenderer | nu
   function dispose() {
     gl.deleteVertexArray(vertexArray);
     gl.deleteProgram(program);
-    gl.getExtension("WEBGL_lose_context")?.loseContext();
   }
 
   return { draw, dispose };

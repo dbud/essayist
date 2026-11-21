@@ -4,6 +4,7 @@ import type { ComponentChildren } from "preact";
 
 import AqSegmented from "#/components/ui/AqSegmented.tsx";
 import AqSwap from "#/components/ui/AqSwap.tsx";
+import { simulateContextLoss } from "#/melt/context.ts";
 import { useMeltCanvas } from "#/melt/useMeltCanvas.ts";
 
 /** A group root, melted by the shader when drawn, and by the SVG filter otherwise. */
@@ -204,7 +205,12 @@ export default function MeltDemo() {
   return (
     <section class="grid grid-cols-[6rem_1fr_1fr] gap-x-8 px-8 py-4 text-sm">
       <span />
-      <span class="opacity-60">shader</span>
+      <span class="flex items-center gap-4 opacity-60">
+        shader
+        <button type="button" class="underline" onClick={() => simulateContextLoss()}>
+          lose context for 2s
+        </button>
+      </span>
       <span class="opacity-60">svg filter</span>
       {SAMPLES.map(({ name, Sample, height }) => (
         <div key={name} class="contents">
