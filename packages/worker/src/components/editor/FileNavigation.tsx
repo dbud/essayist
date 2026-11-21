@@ -158,7 +158,7 @@ export default function FileNavigation({ open }: FileNavigationProps) {
                   {parts.map((p, i) => (
                     <span
                       key={i}
-                      class={`transition-opacity ${p.redundant ? "opacity-50 group-hover:opacity-100" : ""}`}
+                      class={`transition-colors ${p.redundant ? "text-current/50 group-hover:text-current" : ""}`}
                     >
                       {p.segment}
                       <span class="pl-1">/</span>
