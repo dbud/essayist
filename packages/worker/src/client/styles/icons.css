@@ -30,6 +30,7 @@
    ends sweeps to full. */
 
 .segmented-ring {
+  /* TODO -- adapt the creep to how long the units that ended took on this run */
   --ring-creep: 30s;
   --ring-sweep: 400ms;
 }

@@ -50,6 +50,8 @@ export const FileMarksByPathModel = createModel(
 
     // Marks reload as the review of the selected file places them. The last placed marks reach the
     // stream before the run settles, so the final reload needs no settle event.
+    //
+    // TODO -- reload marks for a review running on a file that isn't selected
     const marksPlaced = computed(() => reviewRuns.value?.active.value?.progress?.marksPlaced ?? 0);
     const reloadSelected = () => {
       const selection = selected.peek();
