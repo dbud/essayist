@@ -39,8 +39,8 @@
   color: var(--btn-ink);
   font-size: var(--aq-btn-font-size);
   padding: var(--aq-btn-py) var(--aq-btn-px);
+  @apply melt-shape;
   --melt-fill: var(--btn-bg);
-  background: var(--melt-background, var(--melt-fill));
   transform: scale(var(--aq-btn-lifted));
   transition:
     --melt-fill calc(200ms * var(--aq-tempo, 1)) var(--aq-btn-ease),

@@ -11,6 +11,20 @@
   initial-value: transparent;
 }
 
+/* Marks the shapes of a group, so the canvas finds them even while their fill is transparent. */
+@property --melt-shape {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 0;
+}
+
+/* A shape of the melt: set --melt-fill and apply this. The element paints its fill as its
+   background, unless the canvas of its group draws it. */
+@utility melt-shape {
+  --melt-shape: 1;
+  background: var(--melt-background, var(--melt-fill));
+}
+
 @utility aq-melt {
   @apply relative;
   filter: var(--aq-melt-s) var(--aq-shadow);
