@@ -219,9 +219,10 @@ function execute(
       return yield* settled(yield* runs.failRun(run.id, result.errors.join("; ")));
     }
 
-    // A pass with no summary unit commits none, and `one` throws. TODO -- once a pass can carry
-    // several summary units, add a node taking those `summary` artifacts and producing one
-    // `writeup` artifact, so the run yields a single value here.
+    // A pass with no summary unit commits none, and `one` throws.
+    //
+    // TODO -- once a pass can carry several summary units, add a node taking those `summary`
+    // artifacts and producing one `writeup` artifact, so the run yields a single value here.
     const tail = yield* Effect.result(
       Effect.gen(function* () {
         const summary = yield* Effect.try({
