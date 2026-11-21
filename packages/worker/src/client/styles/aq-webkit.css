@@ -113,7 +113,7 @@
     transition: --aq-chevron-t var(--aq-close-tf) var(--aq-spring);
   }
 
-  .is-open .aq-chevron {
+  [aria-expanded="true"] .aq-chevron {
     transform: rotate(calc(var(--aq-chevron-t) * 1deg));
     --aq-chevron-t: -180;
     transition: --aq-chevron-t var(--aq-open-tf) var(--aq-spring);
