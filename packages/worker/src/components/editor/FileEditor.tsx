@@ -7,6 +7,7 @@ import FileNavigation from "#/components/editor/FileNavigation.tsx";
 import FileStats from "#/components/editor/FileStats.tsx";
 import { MarkFragmentBadges } from "#/components/editor/MarkFragmentBadges.tsx";
 import { MarkHighlights } from "#/components/editor/MarkHighlights.tsx";
+import ReviewButton from "#/components/editor/ReviewButton.tsx";
 import SidenoteControls from "#/components/editor/SidenoteControls.tsx";
 import Sidenotes from "#/components/editor/Sidenotes.tsx";
 import VersionPicker from "#/components/editor/VersionPicker.tsx";
@@ -68,6 +69,7 @@ export default function FileEditor() {
                   <EssayistLogo class="h-full w-8" />
                 </div>
                 <FileNavigation open={navigationOpen} />
+                {file !== null && <ReviewButton />}
                 {file !== null && <VersionPicker />}
               </div>
             </ErrorBoundary>
