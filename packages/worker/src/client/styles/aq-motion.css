@@ -11,18 +11,33 @@
   --aq-item-op: calc(80ms * var(--aq-tempo));
   --aq-spring: cubic-bezier(0.3, 1.6, 0.45, 1);
   --aq-absorb-ease: cubic-bezier(0.4, -0.5, 0.55, 1.35);
-  /* The lift in rem and the scale of a hidden menu item. Plain numbers, so Safari can transition
-     them in aq-webkit.css. */
+  /* The lift in rem and the scale of a hidden menu item. Plain numbers, so the Safari overrides
+     can transition them. */
   --aq-item-hidden-lift: 1.1;
   --aq-item-hidden-scale: 0.7;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .aq-dropdown,
-  .aq-toggle::after,
-  [data-aq-stagger] > * {
+  .aq-toggle::after {
     transition: none;
   }
+}
+
+/* Registered for the Safari overrides below; aq-dropdown.css explains why. */
+@property --aq-item-lift {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 0;
+}
+@property --aq-item-scale {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 0;
+}
+@property --aq-item-fade {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 0;
 }
 
 /* Staggered cascade for panel contents. */
@@ -32,6 +47,22 @@
   transition:
     transform var(--aq-item-tf) var(--aq-spring) 0s,
     opacity var(--aq-item-op) ease-in 0s;
+
+  @supports (font: -apple-system-body) {
+    transform: translateY(calc(var(--aq-item-lift) * 1rem)) scale(var(--aq-item-scale));
+    opacity: var(--aq-item-fade);
+    --aq-item-lift: var(--aq-item-hidden-lift);
+    --aq-item-scale: var(--aq-item-hidden-scale);
+    --aq-item-fade: 0;
+    transition:
+      --aq-item-lift var(--aq-item-tf) var(--aq-spring) 0s,
+      --aq-item-scale var(--aq-item-tf) var(--aq-spring) 0s,
+      --aq-item-fade var(--aq-item-op) ease-in 0s;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+  }
 }
 
 [data-aq-stagger].is-open > *,
@@ -43,6 +74,25 @@
       calc(var(--aq-stagger-base) + var(--aq-i, 0) * var(--aq-stagger-step)),
     opacity var(--aq-item-op) ease-out
       calc(var(--aq-stagger-base) + var(--aq-i, 0) * var(--aq-stagger-step));
+
+  @supports (font: -apple-system-body) {
+    transform: translateY(calc(var(--aq-item-lift) * 1rem)) scale(var(--aq-item-scale));
+    opacity: var(--aq-item-fade);
+    --aq-item-lift: 0;
+    --aq-item-scale: 1;
+    --aq-item-fade: 1;
+    transition:
+      --aq-item-lift var(--aq-item-tf) var(--aq-spring)
+        calc(var(--aq-stagger-base) + var(--aq-i, 0) * var(--aq-stagger-step)),
+      --aq-item-scale var(--aq-item-tf) var(--aq-spring)
+        calc(var(--aq-stagger-base) + var(--aq-i, 0) * var(--aq-stagger-step)),
+      --aq-item-fade var(--aq-item-op) ease-out
+        calc(var(--aq-stagger-base) + var(--aq-i, 0) * var(--aq-stagger-step));
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+  }
 }
 
 /* --aq-i is the child index consumed by the delay schedule above. */

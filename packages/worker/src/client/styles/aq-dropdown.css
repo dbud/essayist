@@ -3,11 +3,36 @@
   --aq-dropdown-gap: 1rem;
   --aq-dropdown-origin-x: 50%;
   --aq-panel-gap: 0rem;
-  /* The offset in rem and the scale of a closed panel. Plain numbers, so Safari can transition
-     them in aq-webkit.css. */
+  /* The offset in rem and the scale of a closed panel. Plain numbers, so the Safari overrides can
+     transition them. */
   --aq-panel-hidden-y: 0;
   --aq-panel-hidden-scale: 0.16;
   --aq-dropdown--right-x: 1rem;
+}
+
+/* Safari moves transform and opacity transitions to the GPU, where it skips url() filters such as
+   the melt until the transition ends. The Safari overrides below transition these registered
+   numbers instead, which Safari runs on the main thread, and build transform and opacity from
+   them. */
+@property --aq-panel-y {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 0;
+}
+@property --aq-panel-scale {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 0;
+}
+@property --aq-panel-fade {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 0;
+}
+@property --aq-chevron-t {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 0;
 }
 
 @utility aq-panel {
@@ -18,6 +43,23 @@
     transform var(--aq-close-tf) var(--aq-spring),
     opacity var(--aq-close-op) ease-in,
     visibility 0s linear var(--aq-close-tf);
+
+  @supports (font: -apple-system-body) {
+    transform: translateY(calc(var(--aq-panel-y) * 1rem)) scale(var(--aq-panel-scale));
+    opacity: var(--aq-panel-fade);
+    --aq-panel-y: var(--aq-panel-hidden-y);
+    --aq-panel-scale: var(--aq-panel-hidden-scale);
+    --aq-panel-fade: 0;
+    transition:
+      --aq-panel-y var(--aq-close-tf) var(--aq-spring),
+      --aq-panel-scale var(--aq-close-tf) var(--aq-spring),
+      --aq-panel-fade var(--aq-close-op) ease-in,
+      visibility 0s linear var(--aq-close-tf);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+  }
 }
 
 @utility aq-panel-open {
@@ -27,6 +69,23 @@
     transform var(--aq-open-tf) var(--aq-spring),
     opacity var(--aq-open-op) ease-out,
     visibility 0s;
+
+  @supports (font: -apple-system-body) {
+    transform: translateY(calc(var(--aq-panel-y) * 1rem)) scale(var(--aq-panel-scale));
+    opacity: var(--aq-panel-fade);
+    --aq-panel-y: 0;
+    --aq-panel-scale: 1;
+    --aq-panel-fade: 1;
+    transition:
+      --aq-panel-y var(--aq-open-tf) var(--aq-spring),
+      --aq-panel-scale var(--aq-open-tf) var(--aq-spring),
+      --aq-panel-fade var(--aq-open-op) ease-out,
+      visibility 0s;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+  }
 }
 
 @utility aq-dropdown {
@@ -102,8 +161,19 @@
   width: 1rem;
   height: 1rem;
   transition: transform var(--aq-close-tf) var(--aq-spring);
+
+  @supports (font: -apple-system-body) {
+    transform: rotate(calc(var(--aq-chevron-t) * 1deg));
+    transition: --aq-chevron-t var(--aq-close-tf) var(--aq-spring);
+  }
 }
 
 [aria-expanded="true"] .aq-chevron {
   transform: rotate(-180deg);
+
+  @supports (font: -apple-system-body) {
+    transform: rotate(calc(var(--aq-chevron-t) * 1deg));
+    --aq-chevron-t: -180;
+    transition: --aq-chevron-t var(--aq-open-tf) var(--aq-spring);
+  }
 }
