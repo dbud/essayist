@@ -2,6 +2,7 @@ import { type ReviewProgress, unitsEnded } from "@essayist/core";
 import { Highlighter } from "lucide-preact";
 
 import AqSwap from "#/components/ui/AqSwap.tsx";
+import { type RingSegment, SegmentedRingIcon } from "#/components/ui/icons.tsx";
 import WaveBars from "#/components/ui/WaveBars.tsx";
 import { showToast } from "#/models/utils/toast.ts";
 import { useEditorModels } from "#/pages/editor/models.ts";
@@ -42,10 +43,14 @@ export default function ReviewButton() {
           type="button"
           class={busy ? "aq-btn--idle" : "aq-btn--accent"}
           aria-disabled={busy}
+          aria-label={busy ? progressLabel(active.value?.progress ?? null) : undefined}
           onClick={busy ? undefined : onReview}
         >
           {busy ? (
-            <span class="pr-16">{progressLabel(active.value?.progress ?? null)}</span>
+            <>
+              <SegmentedRingIcon segments={ringSegments(active.value?.progress ?? null)} />
+              <span class="pr-16">Review in progress</span>
+            </>
           ) : (
             <>
               <Highlighter />
@@ -57,6 +62,14 @@ export default function ReviewButton() {
       </AqSwap>
     </div>
   );
+}
+
+function ringSegments(progress: ReviewProgress | null): RingSegment[] {
+  return (progress?.units ?? []).map(({ state }) => {
+    if (state === "running") return "active";
+    if (state === "completed") return "done";
+    return state;
+  });
 }
 
 function progressLabel(progress: ReviewProgress | null): string {

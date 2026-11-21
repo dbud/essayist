@@ -24,3 +24,65 @@
     transition: none;
   }
 }
+
+/* SegmentedRingIcon: the fill of a segment is a dash of --fill times its length. A change of
+   state transitions the dash, so an active segment creeps over --ring-creep and a segment that
+   ends sweeps to full. */
+
+.segmented-ring {
+  --ring-creep: 30s;
+  --ring-sweep: 400ms;
+}
+
+.ring-segment {
+  --fill: 0;
+  stroke: var(--color-accent);
+  stroke-dasharray: calc(var(--fill) * var(--segment-length)) var(--ring-length);
+  transition: stroke-dasharray var(--ring-sweep) ease-out;
+
+  &.is-active {
+    --fill: 0.75;
+    transition-duration: var(--ring-creep);
+    transition-timing-function: cubic-bezier(0.1, 0.6, 0.2, 1);
+    animation: ring-pulse 1.2s ease-in-out infinite alternate;
+
+    @starting-style {
+      stroke-dasharray: 0 var(--ring-length);
+    }
+  }
+
+  &.is-done,
+  &.is-failed,
+  &.is-skipped {
+    --fill: 1;
+  }
+
+  &.is-failed {
+    stroke: currentColor;
+  }
+
+  &.is-skipped {
+    stroke: color-mix(in oklch, var(--color-accent), transparent 60%);
+  }
+}
+
+@keyframes ring-pulse {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0.4;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ring-segment {
+    transition: none;
+    animation: none;
+
+    &.is-active {
+      --fill: 0.5;
+      animation: none;
+    }
+  }
+}

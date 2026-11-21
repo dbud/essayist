@@ -89,6 +89,57 @@ export function CountdownRingIcon({ fraction, class: className, size }: Countdow
   );
 }
 
+export type RingSegment = "pending" | "active" | "done" | "failed" | "skipped";
+
+interface SegmentedRingProps extends IconProps {
+  segments: readonly RingSegment[];
+}
+
+// A segment is a stroke as wide as the band between the two radii, drawn along its middle.
+const RING_R_MIN = 3;
+const RING_R_MAX = 11;
+const RING_R = (RING_R_MIN + RING_R_MAX) / 2;
+const RING_LENGTH = 2 * Math.PI * RING_R;
+const RING_GAP_DEG = 10;
+
+/** A ring with a segment per step, clockwise from 12 o'clock. An active segment slowly fills
+    toward three quarters while it pulses; a segment that ends fills the rest of the way. */
+export function SegmentedRingIcon({ segments, class: className, size }: SegmentedRingProps) {
+  const width = size ?? useLucideContext().size ?? 24;
+  const step = 360 / segments.length;
+  const length = ((step - RING_GAP_DEG) / 360) * RING_LENGTH;
+  return (
+    <svg
+      class={["segmented-ring", className].filter(Boolean).join(" ")}
+      width={width}
+      height={width}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke-width={RING_R_MAX - RING_R_MIN}
+      style={{ "--segment-length": length, "--ring-length": RING_LENGTH }}
+      aria-hidden="true"
+    >
+      {segments.length === 0 && <circle cx="12" cy="12" r={RING_R} stroke="var(--color-stroke)" />}
+      {segments.map((state, i) => {
+        const angle = -90 + i * step + RING_GAP_DEG / 2;
+        const transform = `rotate(${angle} 12 12)`;
+        return (
+          <g key={i} transform={transform}>
+            <circle
+              cx="12"
+              cy="12"
+              r={RING_R}
+              stroke="var(--color-stroke)"
+              stroke-dasharray={`${length} ${RING_LENGTH}`}
+            />
+            <circle class={`ring-segment is-${state}`} cx="12" cy="12" r={RING_R} />
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
 const KNOB_R1 = 5;
 const TRACK_R2 = 8;
 const KNOB_TRAVEL = 12;
