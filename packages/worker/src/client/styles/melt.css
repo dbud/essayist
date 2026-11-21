@@ -36,10 +36,16 @@
 @utility melt-root {
   @apply relative isolate melt-group;
   filter: var(--aq-shadow);
-  transition: filter calc(200ms * var(--aq-tempo, 1)) ease-out;
+  transition:
+    filter calc(200ms * var(--aq-tempo, 1)) ease-in,
+    opacity calc(300ms * var(--aq-tempo, 1)) ease-in;
 
   @media (prefers-reduced-motion: reduce) {
     transition: none;
+  }
+
+  &[data-melt-pending] {
+    opacity: 0;
   }
 
   &[data-melt-drawn] {
