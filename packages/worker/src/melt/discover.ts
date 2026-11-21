@@ -1,15 +1,21 @@
+/** The class of a group root, which the Melt component renders. */
+export const MELT_ROOT = "melt-root";
+
 export interface ShapeNode {
   readonly element: HTMLElement;
   /** As in MeasuredShape. */
   readonly group: number;
 }
 
-/** Finds the shapes under a root, the root included, in document order. The root starts group 0,
-    and every element marked by the melt-group utility under it starts a group of its own. */
+/** Finds the shapes under a root with the MELT_ROOT class, the root included, in document order.
+    The root starts group 0, and every element marked by the melt-group utility under it starts a
+    group of its own. */
 export function findShapes(root: HTMLElement): ShapeNode[] {
   const groups = new Map<Element, number>([[root, 0]]);
   const nodes: ShapeNode[] = [];
   for (const element of [root, ...root.querySelectorAll<HTMLElement>("*")]) {
+    // A root inside this one draws its own shapes.
+    if (element.closest(`.${MELT_ROOT}`) !== root) continue;
     const style = getComputedStyle(element);
     if (element !== root && marked(style, "--melt-group")) groups.set(element, groups.size);
     if (marked(style, "--melt-shape")) {

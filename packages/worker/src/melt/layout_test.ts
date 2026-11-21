@@ -22,7 +22,6 @@ const shape = (fields: Partial<MeasuredShape> = {}): MeasuredShape => ({
 });
 
 const measurement = (shapes: MeasuredShape[], sigma = 5): Measurement => ({
-  root: { left: 90, top: 80, width: 200, height: 50 },
   settings: { sigma, gain: 18, bias: -6 },
   shapes,
 });
@@ -34,7 +33,7 @@ test("unset settings fall back to the defaults", () => {
   });
 });
 
-test("the frame spans the shapes and three sigma around them, relative to the root", () => {
+test("the frame spans the shapes and three sigma around them", () => {
   const frame = layoutFrame(
     measurement([
       shape(),
@@ -42,7 +41,7 @@ test("the frame spans the shapes and three sigma around them, relative to the ro
     ]),
   );
   // Shapes span x 100..180 and y 100..140; the margin is 15.
-  expect(frame).toMatchObject({ left: -5, top: 5, width: 110, height: 70 });
+  expect(frame).toMatchObject({ left: 85, top: 85, width: 110, height: 70 });
   expect(frame?.shapes[0]).toMatchObject({ x: 35, y: 25, halfWidth: 20, halfHeight: 10 });
 });
 

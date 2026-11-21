@@ -1,8 +1,9 @@
 import { signal } from "@preact/signals";
 import type { ComponentChildren, RefObject } from "preact";
-import { useEffect, useRef } from "preact/hooks";
+import { useLayoutEffect, useRef } from "preact/hooks";
 
 import { attachMelt } from "#/melt/attach.ts";
+import { MELT_ROOT } from "#/melt/discover.ts";
 
 /** Turns the melt canvas on or off for the whole page. */
 export const meltEnabled = signal(true);
@@ -20,13 +21,13 @@ export default function Melt({ class: extra, ref, children }: MeltProps) {
   const root = ref ?? own;
   const enabled = meltEnabled.value;
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!enabled || root.current === null) return;
     return attachMelt(root.current);
   }, [enabled, root]);
 
   return (
-    <div ref={root} class={extra === undefined ? "melt-root" : `melt-root ${extra}`}>
+    <div ref={root} class={extra === undefined ? MELT_ROOT : `${MELT_ROOT} ${extra}`}>
       {children}
     </div>
   );

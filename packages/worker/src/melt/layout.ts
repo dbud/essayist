@@ -15,9 +15,9 @@ export interface MeltSettings {
 
 export const DEFAULT_SETTINGS: MeltSettings = { sigma: 6, gain: 18, bias: -6 };
 
-/** In viewport coordinates. */
 export interface MeasuredShape {
-  /** With transforms applied. */
+  /** In CSS pixels of the root, relative to its border box, with the transforms between the root
+      and the shape applied. */
   readonly rect: Box;
   /** Without transforms, to tell how much the shape is scaled. */
   readonly layoutWidth: number;
@@ -32,7 +32,6 @@ export interface MeasuredShape {
 }
 
 export interface Measurement {
-  readonly root: Box;
   /** NaN where the root leaves a setting unset. */
   readonly settings: MeltSettings;
   readonly shapes: readonly MeasuredShape[];
@@ -103,8 +102,8 @@ export function layoutFrame(measurement: Measurement): MeltFrame | null {
     .toSorted((a, b) => a.group - b.group);
 
   return {
-    left: left - measurement.root.left,
-    top: top - measurement.root.top,
+    left,
+    top,
     width: right - left,
     height: bottom - top,
     settings,

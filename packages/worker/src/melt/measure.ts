@@ -4,6 +4,17 @@ import type { Box, MeasuredShape, Measurement } from "./layout.ts";
 
 /** Reads the current geometry, fill and opacity of each shape, and the settings of the root. */
 export function measure(root: HTMLElement, nodes: readonly ShapeNode[]): Measurement {
+  // Rects are measured in the viewport, with every transform applied. The canvas sits inside the
+  // root, so the transforms of the root and its ancestors apply to it as well; dividing them out
+  // leaves the CSS pixels of the root.
+  const origin = root.getBoundingClientRect();
+  const scale = root.offsetWidth > 0 ? origin.width / root.offsetWidth : 1;
+  const local = (rect: DOMRect): Box => ({
+    left: (rect.left - origin.left) / scale,
+    top: (rect.top - origin.top) / scale,
+    width: rect.width / scale,
+    height: rect.height / scale,
+  });
   const rootStyle = getComputedStyle(root);
   const setting = (name: string) => parseFloat(rootStyle.getPropertyValue(`--melt-${name}`));
   const opacities = new Map<Element, number>([[root, 1]]);
@@ -11,7 +22,7 @@ export function measure(root: HTMLElement, nodes: readonly ShapeNode[]): Measure
   const shapes = nodes.map(({ element, group }): MeasuredShape => {
     const style = getComputedStyle(element);
     return {
-      rect: toBox(element.getBoundingClientRect()),
+      rect: local(element.getBoundingClientRect()),
       layoutWidth: element.offsetWidth,
       radius: parseRadius(style.borderTopLeftRadius, element.offsetWidth),
       fill: parseColor(style.getPropertyValue("--melt-fill")),
@@ -22,7 +33,6 @@ export function measure(root: HTMLElement, nodes: readonly ShapeNode[]): Measure
   });
 
   return {
-    root: toBox(root.getBoundingClientRect()),
     settings: { sigma: setting("sigma"), gain: setting("gain"), bias: setting("bias") },
     shapes,
   };
@@ -37,10 +47,6 @@ function opacityOf(element: Element, known: Map<Element, number>): number {
   const opacity = inherited * parseFloat(getComputedStyle(element).opacity);
   known.set(element, opacity);
   return opacity;
-}
-
-function toBox(rect: DOMRect): Box {
-  return { left: rect.left, top: rect.top, width: rect.width, height: rect.height };
 }
 
 function parseRadius(value: string, width: number): number {

@@ -39,7 +39,7 @@ export function attachMelt(root: HTMLElement): () => void {
         return;
       }
       const packed = packFrame(frame, devicePixelRatio);
-      placeCanvas(canvas, frame, packed);
+      placeCanvas(canvas, frame, packed, devicePixelRatio);
       drawn(context.render(packed, target));
     },
     () => shapesMoving(root, elements()),
@@ -50,6 +50,8 @@ export function attachMelt(root: HTMLElement): () => void {
     motion.track(elements());
     loop.wake();
   });
+  // Attached before the first paint, so the group never shows unmelted.
+  loop.drawNow();
 
   return () => {
     stopShapes();
@@ -61,15 +63,17 @@ export function attachMelt(root: HTMLElement): () => void {
   };
 }
 
+// The CSS size follows the rounded pixel size, so the canvas is never scaled.
 function placeCanvas(
   canvas: HTMLCanvasElement,
   frame: MeltFrame,
   size: { width: number; height: number },
+  pixelRatio: number,
 ) {
   if (canvas.width !== size.width) canvas.width = size.width;
   if (canvas.height !== size.height) canvas.height = size.height;
   canvas.style.left = `${frame.left}px`;
   canvas.style.top = `${frame.top}px`;
-  canvas.style.width = `${frame.width}px`;
-  canvas.style.height = `${frame.height}px`;
+  canvas.style.width = `${size.width / pixelRatio}px`;
+  canvas.style.height = `${size.height / pixelRatio}px`;
 }
