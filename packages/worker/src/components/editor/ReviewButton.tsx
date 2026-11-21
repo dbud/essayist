@@ -1,9 +1,11 @@
 import { type ReviewProgress, unitsEnded } from "@essayist/core";
-import { Highlighter } from "lucide-preact";
+import { useSignal } from "@preact/signals";
+import { ChevronDown, Highlighter } from "lucide-preact";
 
 import AqSwap from "#/components/ui/AqSwap.tsx";
 import { type RingSegment, SegmentedRingIcon } from "#/components/ui/icons.tsx";
 import WaveBars from "#/components/ui/WaveBars.tsx";
+import { useClickOutside } from "#/hooks/useClickOutside.ts";
 import { showToast } from "#/models/utils/toast.ts";
 import { useEditorModels } from "#/pages/editor/models.ts";
 import { formatCount } from "#/utils/format.ts";
@@ -11,13 +13,20 @@ import { formatCount } from "#/utils/format.ts";
 export default function ReviewButton() {
   const { writable, reviewRuns, fileTrees, fileVersions } = useEditorModels();
   const review = reviewRuns.current.value;
+  const open = useSignal(false);
+  const close = () => (open.value = false);
+  const ref = useClickOutside(open.value ? close : undefined);
   // A snapshot has no controls; a pending buffer resolves to no runs model.
   if (!writable.value || review === null) return null;
   const { loading, error, active, submit, whenSettled } = review;
   // A run is active from the moment it's submitted until it settles.
   const busy = loading.value || active.value !== null;
+  const progress = active.value?.progress ?? null;
+  // The menu lists the units of the active run, so it closes as the run settles.
+  const expanded = busy && open.value;
 
   async function onReview() {
+    close();
     const started = await submit();
     // Undefined with no error when a submit is already in flight.
     if (started === undefined) {
@@ -37,19 +46,22 @@ export default function ReviewButton() {
   }
 
   return (
-    <div class="pointer-events-auto inline-flex aq-melt">
+    <div class="pointer-events-auto inline-flex aq-melt z-toolbar" ref={ref}>
       <AqSwap on={busy ? "busy" : "idle"}>
         <button
           type="button"
           class={busy ? "aq-btn--idle" : "aq-btn--accent"}
-          aria-disabled={busy}
-          aria-label={busy ? progressLabel(active.value?.progress ?? null) : undefined}
-          onClick={busy ? undefined : onReview}
+          aria-expanded={busy ? expanded : undefined}
+          aria-label={busy ? progressLabel(progress) : undefined}
+          onClick={busy ? () => (open.value = !open.value) : onReview}
         >
           {busy ? (
             <>
-              <SegmentedRingIcon segments={ringSegments(active.value?.progress ?? null)} />
-              <span class="pr-16">Review in progress</span>
+              <SegmentedRingIcon
+                segments={progress?.units.map(({ state }) => segment(state)) ?? []}
+              />
+              <span>Review in progress</span>
+              <ChevronDown class="aq-chevron ms-10" />
             </>
           ) : (
             <>
@@ -60,16 +72,31 @@ export default function ReviewButton() {
           <WaveBars fill amplitude={busy ? 0.5 : 0} class="pointer-events-none text-accent" />
         </button>
       </AqSwap>
+      {progress !== null && progress.units.length > 0 && (
+        <div class={`aq-dropdown ${expanded ? "is-open" : ""}`}>
+          <div class="aq-menu aq-menu--small">
+            <ul class="aq-menu-rows" data-aq-stagger>
+              {progress.units.map(({ id, state }) => (
+                <li key={id} class="flex items-center gap-2 text-sm p-1">
+                  <SegmentedRingIcon segments={[segment(state)]} size={14} />
+                  <span>{id}</span>
+                  <span class="ms-auto ps-4 opacity-60">{state}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
-function ringSegments(progress: ReviewProgress | null): RingSegment[] {
-  return (progress?.units ?? []).map(({ state }) => {
-    if (state === "running") return "active";
-    if (state === "completed") return "done";
-    return state;
-  });
+type UnitState = ReviewProgress["units"][number]["state"];
+
+function segment(state: UnitState): RingSegment {
+  if (state === "running") return "active";
+  if (state === "completed") return "done";
+  return state;
 }
 
 function progressLabel(progress: ReviewProgress | null): string {
