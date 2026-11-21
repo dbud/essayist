@@ -125,16 +125,17 @@
 @utility aq-dropdown--right-bridged {
   @apply aq-dropdown--right;
   --aq-dropdown--right-x: 1.5rem;
+}
 
-  &::before {
-    content: "";
-    position: absolute;
-    right: 100%;
-    top: 0.25rem;
-    width: calc(var(--aq-dropdown--right-x) - 0.5rem);
-    height: 1.5rem;
-    @apply bg-float;
-  }
+/* Joins a right-bridged panel to the menu it opens from. An element rather than a pseudo-element,
+   so the melt canvas can measure it. */
+@utility aq-dropdown-bridge {
+  @apply absolute melt-shape;
+  --melt-fill: var(--color-float);
+  right: 100%;
+  top: 0.25rem;
+  width: calc(var(--aq-dropdown--right-x) - 0.5rem);
+  height: 1.5rem;
 }
 
 @utility aq-dropdown--detached {

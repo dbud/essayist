@@ -142,6 +142,7 @@ function BridgedDropdown({ drawn, state }: { drawn: boolean; state: DemoState })
                 </button>
                 {i === 0 && (
                   <div class={`aq-dropdown--right-bridged ${open ? "is-open" : ""}`}>
+                    <span class="aq-dropdown-bridge" aria-hidden="true" />
                     <div class="aq-menu">
                       <ul class="aq-menu-rows" data-aq-stagger>
                         {FILES.map((file, j) => (

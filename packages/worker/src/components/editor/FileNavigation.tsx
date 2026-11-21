@@ -142,6 +142,7 @@ export default function FileNavigation({ open }: FileNavigationProps) {
 
   const filesList = (
     <div class={`aq-dropdown--right-bridged aq-dropdown--fit max-w-96 ${showNav ? "is-open" : ""}`}>
+      <span class="aq-dropdown-bridge" aria-hidden="true" />
       {fileEntries.length > 0 && (
         <div class="aq-menu aq-menu--wrap">
           <ul class="aq-menu-rows" data-aq-stagger>
