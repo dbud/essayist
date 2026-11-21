@@ -2,6 +2,7 @@ import { useSignal } from "@preact/signals";
 import { ChevronDown } from "lucide-preact";
 
 import AqSwap from "#/components/ui/AqSwap.tsx";
+import Melt from "#/components/ui/Melt.tsx";
 import { useClickOutside } from "#/hooks/useClickOutside.ts";
 import { usePreferences } from "#/models/preferences.ts";
 
@@ -19,7 +20,7 @@ export default function FontSelect() {
   const current = OPTIONS.find((o) => o.value === viewerFont.value) ?? OPTIONS[0];
 
   return (
-    <div class="aq-melt inline-flex" ref={ref}>
+    <Melt class="inline-flex" ref={ref}>
       <AqSwap on={current.value}>
         <button
           type="button"
@@ -55,6 +56,6 @@ export default function FontSelect() {
           </ul>
         </div>
       </div>
-    </div>
+    </Melt>
   );
 }

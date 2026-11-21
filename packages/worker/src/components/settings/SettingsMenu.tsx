@@ -18,6 +18,7 @@ import FontAxisSelect, {
 import MarkStyleSelect from "#/components/settings/MarkStyleSelect.tsx";
 import AqCollapse from "#/components/ui/AqCollapse.tsx";
 import AqSegmented from "#/components/ui/AqSegmented.tsx";
+import Melt from "#/components/ui/Melt.tsx";
 import { useClickOutside } from "#/hooks/useClickOutside.ts";
 import { AUTO_SAVE_INTERVAL_VALUES } from "#/models/preferences.ts";
 import { usePreferences } from "#/models/preferences.ts";
@@ -43,7 +44,7 @@ export default function SettingsMenu({ user }: SettingsMenuProps) {
     options: SERIF_FONT_OPTIONS,
   };
   return (
-    <div class="aq-melt inline-flex" ref={ref}>
+    <Melt class="inline-flex" ref={ref}>
       <button
         type="button"
         class="aq-btn aq-btn--idle"
@@ -132,6 +133,6 @@ export default function SettingsMenu({ user }: SettingsMenuProps) {
         <FontAxisSelect axis={serifAxis} label="Serif font" />
         <MarkStyleSelect />
       </div>
-    </div>
+    </Melt>
   );
 }

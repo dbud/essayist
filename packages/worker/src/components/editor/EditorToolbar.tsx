@@ -10,6 +10,7 @@ import { Bold, Code, Italic, Strikethrough } from "lucide-preact";
 import { useLayoutEffect } from "preact/hooks";
 
 import BlockTypeSelect from "#/components/BlockTypeSelect.tsx";
+import Melt from "#/components/ui/Melt.tsx";
 import { $setBlocksType, type BlockType } from "#/editor/blockFormat.ts";
 import type { FileKey } from "#/models/fileSelection.ts";
 import { type ToolbarDisplay, ToolbarModel } from "#/models/toolbarModel.ts";
@@ -90,15 +91,17 @@ export default function EditorToolbar({ wsId, path, versionId, disabled }: Edito
         <BlockTypeSelect block={sel.block.value} onChange={setBlock} disabled={disabled} />
         {mode === "selection" &&
           INLINE_BUTTONS.map(({ fmt, tooltip, icon: Icon }) => (
-            <button
-              type="button"
-              class={`aq-melt aq-btn--small -translate-y-px ${sel[fmt].value ? "aq-btn--accent" : "aq-btn"}`}
-              disabled={inlineDisabled}
-              data-tooltip={tooltip}
-              onClick={() => format(fmt)}
-            >
-              <Icon />
-            </button>
+            <Melt class="-translate-y-px">
+              <button
+                type="button"
+                class={`aq-btn--small ${sel[fmt].value ? "aq-btn--accent" : "aq-btn"}`}
+                disabled={inlineDisabled}
+                data-tooltip={tooltip}
+                onClick={() => format(fmt)}
+              >
+                <Icon />
+              </button>
+            </Melt>
           ))}
       </div>
     </div>

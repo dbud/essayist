@@ -13,6 +13,7 @@ import {
 import type { ComponentChild } from "preact";
 
 import AqSwap from "#/components/ui/AqSwap.tsx";
+import Melt from "#/components/ui/Melt.tsx";
 import { type BlockType } from "#/editor/blockFormat.ts";
 import { useClickOutside } from "#/hooks/useClickOutside.ts";
 
@@ -46,7 +47,7 @@ export default function BlockTypeSelect({ block, onChange, disabled }: BlockType
   const current = OPTIONS.find((o) => o.value === block) ?? OPTIONS[0];
 
   return (
-    <div class="aq-melt" ref={ref}>
+    <Melt ref={ref}>
       <AqSwap on={current.value}>
         <button
           type="button"
@@ -82,6 +83,6 @@ export default function BlockTypeSelect({ block, onChange, disabled }: BlockType
           </ul>
         </div>
       </div>
-    </div>
+    </Melt>
   );
 }

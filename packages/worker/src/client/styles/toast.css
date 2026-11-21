@@ -1,8 +1,7 @@
 @utility toast {
   --toast-duration: 200ms;
-  @apply fixed flex flex-col-reverse isolate right-5 bottom-5 w-96 z-toast gap-5;
+  @apply fixed isolate right-5 bottom-5 w-96 z-toast;
   max-width: calc(100vw - 2rem);
-  filter: var(--aq-melt-s) var(--aq-shadow);
 }
 
 @utility alert {

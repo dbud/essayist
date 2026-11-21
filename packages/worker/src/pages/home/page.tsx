@@ -1,6 +1,7 @@
 import { useSignal } from "@preact/signals";
 
 import { Toaster } from "#/components/Toaster.tsx";
+import Melt from "#/components/ui/Melt.tsx";
 import MeltFilter from "#/components/ui/MeltFilter.tsx";
 import { showTaskToast, showToast } from "#/models/utils/toast.ts";
 
@@ -52,7 +53,7 @@ function HomePage() {
   return (
     <main class="min-h-svh">
       <MeltDemo />
-      <div class="aq-melt  flex flex-wrap items-start gap-4 p-8">
+      <Melt class="flex flex-wrap items-start gap-4 p-8">
         <button type="button" class="aq-btn" onClick={() => showToast("Saved")}>
           Info
         </button>
@@ -77,7 +78,7 @@ function HomePage() {
           All
         </button>
         <MeltToggle />
-      </div>
+      </Melt>
 
       <MeltFilter />
       <Toaster />

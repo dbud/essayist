@@ -4,6 +4,7 @@ import { ChevronDown, Highlighter } from "lucide-preact";
 
 import AqSwap from "#/components/ui/AqSwap.tsx";
 import { type RingSegment, SegmentedRingIcon } from "#/components/ui/icons.tsx";
+import Melt from "#/components/ui/Melt.tsx";
 import WaveBars from "#/components/ui/WaveBars.tsx";
 import { useClickOutside } from "#/hooks/useClickOutside.ts";
 import { showToast } from "#/models/utils/toast.ts";
@@ -46,7 +47,7 @@ export default function ReviewButton() {
   }
 
   return (
-    <div class="pointer-events-auto inline-flex aq-melt z-toolbar" ref={ref}>
+    <Melt class="pointer-events-auto inline-flex z-toolbar" ref={ref}>
       <AqSwap on={busy ? "busy" : "idle"}>
         <button
           type="button"
@@ -87,7 +88,7 @@ export default function ReviewButton() {
           </div>
         </div>
       )}
-    </div>
+    </Melt>
   );
 }
 

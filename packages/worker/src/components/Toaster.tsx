@@ -1,6 +1,7 @@
 import type { Signal } from "@preact/signals";
 import { CircleCheckBig, Info, TriangleAlert, X } from "lucide-preact";
 
+import Melt from "#/components/ui/Melt.tsx";
 import { dismissToast, removeToast, type Toast, toasts } from "#/models/utils/toast.ts";
 
 const ICONS = {
@@ -56,9 +57,11 @@ function ToastView({ toast }: { toast: Signal<Toast> }) {
 export function Toaster() {
   return (
     <div class="toast">
-      {toasts.value.map((toast) => (
-        <ToastView key={toast.value.id} toast={toast} />
-      ))}
+      <Melt class="flex flex-col-reverse gap-5">
+        {toasts.value.map((toast) => (
+          <ToastView key={toast.value.id} toast={toast} />
+        ))}
+      </Melt>
     </div>
   );
 }

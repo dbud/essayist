@@ -3,6 +3,7 @@ import { assertExists, unreachable } from "@std/assert";
 import { ChevronDown } from "lucide-preact";
 
 import AqSwap from "#/components/ui/AqSwap.tsx";
+import Melt from "#/components/ui/Melt.tsx";
 import { useClickOutside } from "#/hooks/useClickOutside.ts";
 import { FileStatsModel } from "#/models/fileStats.ts";
 import { type FileStatSection, usePreferences } from "#/models/preferences.ts";
@@ -49,7 +50,7 @@ export default function FileStats() {
   const rows = STAT_OPTIONS.filter((opt) => enabled.includes(opt.value));
 
   return (
-    <div class="aq-melt inline-flex pointer-events-auto" ref={ref}>
+    <Melt class="inline-flex pointer-events-auto" ref={ref}>
       <AqSwap on={enabled.join(",")}>
         <button
           type="button"
@@ -90,6 +91,6 @@ export default function FileStats() {
           </ul>
         </div>
       </div>
-    </div>
+    </Melt>
   );
 }

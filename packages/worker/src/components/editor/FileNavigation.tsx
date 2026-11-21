@@ -7,6 +7,7 @@ import DeleteWorkspaceDialog from "#/components/editor/DeleteWorkspaceDialog.tsx
 import FileUploader from "#/components/editor/FileUploader.tsx";
 import GoogleDocImporter from "#/components/editor/GoogleDocImporter.tsx";
 import AqSwap from "#/components/ui/AqSwap.tsx";
+import Melt from "#/components/ui/Melt.tsx";
 import WaveBars from "#/components/ui/WaveBars.tsx";
 import { useClickOutside } from "#/hooks/useClickOutside.ts";
 import type { TreeNode } from "#/models/fileTree.ts";
@@ -207,7 +208,7 @@ export default function FileNavigation({ open }: FileNavigationProps) {
   });
 
   return (
-    <div ref={ref} class="aq-melt inline-flex z-panel">
+    <Melt class="inline-flex z-panel" ref={ref}>
       {breadcrumbsTrigger}
 
       <div class={`aq-dropdown aq-dropdown--detached ${showNav ? "is-open" : ""}`}>
@@ -222,6 +223,6 @@ export default function FileNavigation({ open }: FileNavigationProps) {
       <CreateWorkspaceDialog open={createWorkspaceDialogOpen} />
       <DeleteWorkspaceDialog open={deleteWorkspaceDialogOpen} onDeleted={close} />
       <CreateFileDialog open={createFileDialogOpen} onCreated={close} />
-    </div>
+    </Melt>
   );
 }
