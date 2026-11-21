@@ -1,12 +1,12 @@
 #version 300 es
 precision highp float;
 
-// Each shape spreads a soft field. The field is the box of the shape smoothed with a Gaussian of
-// width sigma: it is 1 deep inside the box and falls to 0 a few sigma outside. The fields of the
-// shapes in a group add up, and a pixel is inside the melted outline where the sum passes a
-// threshold, so close shapes join where their fields overlap. Within the outline, each shape keeps
-// its own colour, and the space between shapes takes the average colour of the shapes nearby.
-// Groups are drawn in order, each over the ones before. Lengths are in device pixels.
+// Each shape spreads a soft field. The field is the rounded box of the shape smoothed with a
+// Gaussian of width sigma: it is 1 deep inside the box and falls to 0 a few sigma outside. The
+// fields of the shapes in a group add up, and a pixel is inside the melted outline where the sum
+// passes a threshold, so close shapes join where their fields overlap. Within the outline, each
+// shape keeps its own colour, and the space between shapes takes the average colour of the shapes
+// nearby. Groups are drawn in order, each over the ones before. Lengths are in device pixels.
 
 // MAX_SHAPES and MAX_GROUPS come from renderer.ts.
 
@@ -37,40 +37,44 @@ float erf(float x) {
   return sign(x) * (1.0 - t * poly * exp(-x * x));
 }
 
-vec2 erf2(vec2 v) {
-  return vec2(erf(v.x), erf(v.y));
-}
-
 const float INV_SQRT2 = 0.70710678;
+const float SQRT_2PI = 2.50662827;
 const float HALF_PIXEL = 0.5;
-
-// The field of a box at p, measured from the centre of the box. Smoothing a step with a Gaussian
-// gives an erf curve, so smoothing a span from -h to h gives the difference of two of them, halved.
-// The box is a span along each axis, so its field is the product of the two.
-float boxField(vec2 p, vec2 half_size) {
-  // erf takes the distance in units of sigma times the square root of 2.
-  vec2 s = vec2(INV_SQRT2 / u_sigma);
-  vec2 lo = erf2((p + half_size) * s);
-  vec2 hi = erf2((p - half_size) * s);
-  vec2 f = 0.5 * (lo - hi);
-  return f.x * f.y;
-}
+// The field of a shape is close to 0 more than three sigma away from it.
+const float FIELD_REACH = 3.0;
+const int FIELD_SAMPLES = 8;
 
 // The signed distance to a rounded box: negative inside, positive outside.
 float roundBox(vec2 p, vec2 half_size, float radius) {
-  radius = min(radius, min(half_size.x, half_size.y));
   vec2 q = abs(p) - half_size + radius;
   return length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - radius;
 }
 
-// The field of a rounded box, from two estimates that are each exact in some places and too high
-// elsewhere, so the smaller one is closer. The field of the plain box is exact where the corners
-// are square, and too high where they are rounded off. The field of the half-plane at the nearest
-// edge is exact along straight edges, and too high outside the box everywhere else, as the box
-// lies inside that half-plane.
+// The field at x of the row of a rounded box at height y. A row is a span, narrower inside the
+// rounded corners, and smoothing a span from -w to w with a Gaussian gives the difference of two
+// erf curves, halved. erf takes the distance in units of sigma times the square root of 2.
+float rowField(float x, float y, vec2 half_size, float radius) {
+  float into = max(abs(y) - (half_size.y - radius), 0.0);
+  float w = half_size.x - radius + sqrt(max(radius * radius - into * into, 0.0));
+  float s = INV_SQRT2 / u_sigma;
+  return 0.5 * (erf((x + w) * s) - erf((x - w) * s));
+}
+
+// The field of a rounded box at p, measured from its centre: the fields of its rows, weighted by a
+// Gaussian of the vertical distance to each row. Only rows within reach of p count, and their sum
+// is taken at evenly spaced samples.
 float shapeField(vec2 p, vec2 half_size, float radius) {
-  float edge = 0.5 - 0.5 * erf(roundBox(p, half_size, radius) * INV_SQRT2 / u_sigma);
-  return min(boxField(p, half_size), edge);
+  float reach = FIELD_REACH * u_sigma;
+  float from = clamp(p.y - reach, -half_size.y, half_size.y);
+  float to = clamp(p.y + reach, -half_size.y, half_size.y);
+  float spacing = (to - from) / float(FIELD_SAMPLES);
+  float sum = 0.0;
+  for (int k = 0; k < FIELD_SAMPLES; k++) {
+    float y = from + (float(k) + 0.5) * spacing;
+    float dy = (p.y - y) / u_sigma;
+    sum += rowField(p.x, y, half_size, radius) * exp(-0.5 * dy * dy);
+  }
+  return sum * spacing / (SQRT_2PI * u_sigma);
 }
 
 void main() {
@@ -90,11 +94,15 @@ void main() {
 
     for (int i = start; i < end; i++) {
       vec2 local = p - u_box[i].xy;
+      vec2 half_size = u_box[i].zw;
+      float radius = min(u_radius[i], min(half_size.x, half_size.y));
+      float toEdge = roundBox(local, half_size, radius);
+      if (toEdge > FIELD_REACH * u_sigma) continue;
       vec4 color = vec4(u_color[i].rgb * u_color[i].a, u_color[i].a);
-      field += color * shapeField(local, u_box[i].zw, u_radius[i]);
+      field += color * shapeField(local, half_size, radius);
       // The fraction of this pixel inside the shape: 1 more than half a pixel inside the edge, 0
       // more than half a pixel outside, and linear in between.
-      float coverage = clamp(HALF_PIXEL - roundBox(local, u_box[i].zw, u_radius[i]), 0.0, 1.0);
+      float coverage = clamp(HALF_PIXEL - toEdge, 0.0, 1.0);
       shapes = color * coverage + shapes * (1.0 - coverage * color.a);
     }
     start = end;
