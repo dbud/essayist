@@ -63,6 +63,16 @@ float roundBox(vec2 p, vec2 half_size, float radius) {
   return length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - radius;
 }
 
+// The field of a rounded box, from two estimates that are each exact in some places and too high
+// elsewhere, so the smaller one is closer. The field of the plain box is exact where the corners
+// are square, and too high where they are rounded off. The field of the half-plane at the nearest
+// edge is exact along straight edges, and too high outside the box everywhere else, as the box
+// lies inside that half-plane.
+float shapeField(vec2 p, vec2 half_size, float radius) {
+  float edge = 0.5 - 0.5 * erf(roundBox(p, half_size, radius) * INV_SQRT2 / u_sigma);
+  return min(boxField(p, half_size), edge);
+}
+
 void main() {
   // gl_FragCoord counts from the bottom, and the boxes count from the top.
   vec2 p = vec2(gl_FragCoord.x, u_size.y - gl_FragCoord.y);
@@ -81,7 +91,7 @@ void main() {
     for (int i = start; i < end; i++) {
       vec2 local = p - u_box[i].xy;
       vec4 color = vec4(u_color[i].rgb * u_color[i].a, u_color[i].a);
-      field += color * boxField(local, u_box[i].zw);
+      field += color * shapeField(local, u_box[i].zw, u_radius[i]);
       // The fraction of this pixel inside the shape: 1 more than half a pixel inside the edge, 0
       // more than half a pixel outside, and linear in between.
       float coverage = clamp(HALF_PIXEL - roundBox(local, u_box[i].zw, u_radius[i]), 0.0, 1.0);
