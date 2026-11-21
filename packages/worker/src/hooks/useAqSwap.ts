@@ -56,16 +56,20 @@ export function useAqSwap(on: string | number | null | undefined): AqSwapState {
     await animationsSettled(partAnimations(node));
 
     // Handover: release the hold, wait for the patch this triggers, then measure the natural size
-    // of the new content.
+    // of the new content. The node keeps its old size until the flip takes over, so no frame shows
+    // the new content at its natural size first, where the melt canvas would draw it.
+    const lockSize = (width: string, height: string) => {
+      node.style.width = width;
+      node.style.height = height;
+    };
+    lockSize(`${fromW}px`, `${fromH}px`);
     held.value = null;
     await nextFrame();
 
-    node.style.width = "max-content";
-    node.style.height = "max-content";
+    lockSize("max-content", "max-content");
     const toW = node.offsetWidth;
     const toH = node.offsetHeight;
-    node.style.width = "";
-    node.style.height = "";
+    lockSize(`${fromW}px`, `${fromH}px`);
 
     // The flip runs at the duration and easing of the phase animation.
     let flip: Animation | undefined;
@@ -90,6 +94,7 @@ export function useAqSwap(on: string | number | null | undefined): AqSwapState {
 
     await Promise.allSettled([flip?.finished, animationsSettled(anims)]);
 
+    lockSize("", "");
     delete node.dataset.phase;
     running.current = false;
   }
