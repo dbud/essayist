@@ -49,11 +49,12 @@ export const ReviewRunsModel = createModel(
       current.stream[Symbol.dispose]();
     });
 
+    // A running run in the data is active before its stream opens, so the server renders it too.
     const active = computed((): { run: ReviewRunData; progress: ReviewProgress | null } | null => {
       const current = following.value;
-      return current === null
-        ? null
-        : { run: current.run, progress: current.stream.progress.value };
+      if (current !== null) return { run: current.run, progress: current.stream.progress.value };
+      const running = runs.value.find((run) => run.status === "running");
+      return running === undefined ? null : { run: running, progress: null };
     });
 
     /** Resolves when the followed run settles */

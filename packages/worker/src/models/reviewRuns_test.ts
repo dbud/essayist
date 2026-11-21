@@ -104,6 +104,13 @@ test("asks for the trace stream with the trace detail", () => {
   expect(FakeEventSource.opened[0].url).toBe("/api/streams/review-runs/ws/run-1?detail=trace");
 });
 
+test("a running run is active on the server, where no stream opens", () => {
+  vi.stubEnv("SSR", true);
+  const model = new ReviewRunsModel("ws", "essay.md", "progress", [run()]);
+  expect(FakeEventSource.opened).toEqual([]);
+  expect(model.active.value).toEqual({ run: run(), progress: null });
+});
+
 test("opens no stream without a running run", () => {
   const model = new ReviewRunsModel("ws", "essay.md", "progress", [
     run({ status: "completed", completedAt: 1 }),

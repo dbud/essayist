@@ -10,6 +10,7 @@ import {
   initialProgress,
   progressFeed,
   type ReviewProgress,
+  unitsEnded,
 } from "./progress.ts";
 import type { TraceEvent } from "./trace/types.ts";
 
@@ -118,6 +119,20 @@ test("progress -- a unit runs until its last node completes", () => {
 
   const done = fold([start("mechanics.collect"), completed("mechanics.collect")], midway);
   assertEquals(states(done), ["completed", "pending"]);
+});
+
+test("unitsEnded -- counts completed, failed, and skipped units", () => {
+  const progress: ReviewProgress = {
+    units: [
+      { id: "a", state: "completed" },
+      { id: "b", state: "failed" },
+      { id: "c", state: "skipped" },
+      { id: "d", state: "running" },
+      { id: "e", state: "pending" },
+    ],
+    marksPlaced: 0,
+  };
+  assertEquals(unitsEnded(progress), 3);
 });
 
 test("progress -- counts placed marks across apply and repair rounds", () => {
