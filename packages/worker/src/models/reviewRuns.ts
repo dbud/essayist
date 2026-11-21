@@ -7,6 +7,11 @@ import { deleteJson, getJson, postJson } from "#/models/utils/http.ts";
 import type { ReviewRunData, ReviewRunsData, ReviewStreamDetail } from "./reviewRuns.data.ts";
 import { type ReviewRunStream, ReviewRunStreamModel } from "./reviewRunStream.ts";
 
+export interface SettledReview {
+  readonly run: ReviewRunData;
+  readonly marksPlaced: number;
+}
+
 export const ReviewRunsModel = createModel(
   (wsId: string, path: string, detail: ReviewStreamDetail, data?: ReviewRunsData) => {
     const runs = signal<readonly ReviewRunData[]>(data ?? []);
@@ -15,7 +20,10 @@ export const ReviewRunsModel = createModel(
 
     // The stream of the running run. A file has at most a single running run.
     const following = signal<{ run: ReviewRunData; stream: ReviewRunStream } | null>(null);
-    const lastSettled = signal<ReviewRunData | null>(null);
+    // Kept per run, so a caller can ask before or after the run settles.
+    const settlements = new Map<string, PromiseWithResolvers<SettledReview>>();
+    const settlement = (runId: string) =>
+      settlements.getOrInsertComputed(runId, () => Promise.withResolvers<SettledReview>());
 
     const follow = (run: ReviewRunData) => {
       if (import.meta.env.SSR || run.status !== "running") return;
@@ -35,7 +43,8 @@ export const ReviewRunsModel = createModel(
       const run = current.stream.settled.value;
       if (run === null) return;
       runs.value = runs.peek().map((entry) => (entry.id === run.id ? run : entry));
-      lastSettled.value = run;
+      const marksPlaced = current.stream.progress.peek()?.marksPlaced ?? 0;
+      settlement(run.id).resolve({ run, marksPlaced });
       following.value = null;
       current.stream[Symbol.dispose]();
     });
@@ -46,6 +55,11 @@ export const ReviewRunsModel = createModel(
         ? null
         : { run: current.run, progress: current.stream.progress.value };
     });
+
+    /** Resolves when the followed run settles */
+    function whenSettled(runId: string): Promise<SettledReview> {
+      return settlement(runId).promise;
+    }
 
     async function load(): Promise<void> {
       const params = new URLSearchParams({ wsId, path });
@@ -98,7 +112,7 @@ export const ReviewRunsModel = createModel(
     return {
       runs,
       active,
-      lastSettled,
+      whenSettled,
       loading,
       error,
       historyLoading,

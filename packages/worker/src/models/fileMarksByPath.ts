@@ -9,7 +9,7 @@ import type { ReviewRuns } from "./reviewRuns.ts";
 export const FileMarksByPathModel = createModel(
   (
     selected: ReadonlySignal<FileSelection | null>,
-    reviewRuns: ReadonlySignal<Pick<ReviewRuns, "active" | "lastSettled"> | null>,
+    reviewRuns: ReadonlySignal<Pick<ReviewRuns, "active"> | null>,
     data?: MarksData,
   ) => {
     // file key -> version id -> marks
@@ -48,18 +48,15 @@ export const FileMarksByPathModel = createModel(
       marks.value = next;
     }
 
-    // Marks reload as the review of the selected file places them, and once more when it settles.
+    // Marks reload as the review of the selected file places them. The last placed marks reach the
+    // stream before the run settles, so the final reload needs no settle event.
     const marksPlaced = computed(() => reviewRuns.value?.active.value?.progress?.marksPlaced ?? 0);
-    const settledRunId = computed(() => reviewRuns.value?.lastSettled.value?.id ?? null);
     const reloadSelected = () => {
       const selection = selected.peek();
       if (selection !== null && selection.path !== null) invalidate(selection);
     };
     effect(() => {
       if (marksPlaced.value > 0) reloadSelected();
-    });
-    effect(() => {
-      if (settledRunId.value !== null) reloadSelected();
     });
 
     return { current, invalidate };

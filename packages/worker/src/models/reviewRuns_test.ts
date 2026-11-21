@@ -76,12 +76,26 @@ test("a settled run replaces its running entry and its stream closes", () => {
   source.emit("done", settled);
 
   expect(model.active.value).toBeNull();
-  expect(model.lastSettled.value).toEqual(settled);
+
   expect(model.runs.value.map((entry) => [entry.id, entry.status])).toEqual([
     ["run-1", "completed"],
     ["run-0", "completed"],
   ]);
   expect(source.closed).toBe(true);
+});
+
+test("whenSettled resolves with the run and the marks it placed", async () => {
+  const model = new ReviewRunsModel("ws", "essay.md", "progress", [run()]);
+  const source = FakeEventSource.opened[0];
+  const waiting = model.whenSettled("run-1");
+
+  source.emit("progress", { units: [], marksPlaced: 4 });
+  const settled = run({ status: "completed", completedAt: 5 });
+  source.emit("done", settled);
+
+  expect(await waiting).toEqual({ run: settled, marksPlaced: 4 });
+  // Asking after the run settled gets the same answer.
+  expect(await model.whenSettled("run-1")).toEqual({ run: settled, marksPlaced: 4 });
 });
 
 test("asks for the trace stream with the trace detail", () => {
@@ -96,5 +110,4 @@ test("opens no stream without a running run", () => {
   ]);
   expect(FakeEventSource.opened).toEqual([]);
   expect(model.active.value).toBeNull();
-  expect(model.lastSettled.value).toBeNull();
 });

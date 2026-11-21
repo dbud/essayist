@@ -3,26 +3,32 @@ import { Highlighter } from "lucide-preact";
 import WaveBars from "#/components/ui/WaveBars.tsx";
 import { showToast } from "#/models/utils/toast.ts";
 import { useEditorModels } from "#/pages/editor/models.ts";
+import { formatCount } from "#/utils/format.ts";
 
 export default function SidenoteControls() {
   const { writable, reviewRuns, fileTrees, fileVersions } = useEditorModels();
   const review = reviewRuns.current.value;
   // A snapshot has no controls; a pending buffer resolves to no runs model.
   if (!writable.value || review === null) return null;
-  const { loading, error, submit } = review;
+  const { loading, error, submit, whenSettled } = review;
 
   async function onReview() {
-    const result = await submit();
-    if (error.value) {
-      showToast(error.value, "error");
+    const started = await submit();
+    // Undefined with no error when a submit is already in flight.
+    if (started === undefined) {
+      if (error.value) showToast(error.value, "error");
       return;
     }
-    // TODO -- receive promoted version and reviewRun in progress
+    // Starting a review saves the draft as a version.
     void fileTrees.current.value?.load();
     void fileVersions.current.value?.load();
-    if (result?.status === "running") showToast("Review started", "success");
-    else if (result?.status === "completed") showToast("Review complete", "success");
-    else showToast(result?.error ?? "Review failed", "error");
+
+    const { run, marksPlaced } = await whenSettled(started.id);
+    if (run.status === "completed") {
+      showToast(`Review complete · ${formatCount(marksPlaced, "mark")}`, "success");
+    } else {
+      showToast(run.error ?? "Review failed", "error");
+    }
   }
 
   return (

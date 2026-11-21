@@ -41,15 +41,14 @@ afterEach(() => {
 
 function setup() {
   const active = signal<{ run: ReviewRunData; progress: ReviewProgress | null } | null>(null);
-  const lastSettled = signal<ReviewRunData | null>(null);
-  const reviewRuns = signal({ active, lastSettled });
+  const reviewRuns = signal({ active });
   const model = new FileMarksByPathModel(signal(selection), reviewRuns, []);
   // Reading current rebuilds a dropped version, as the editor does through resolved marks.
   const reloads = () => {
     void model.current.value;
     return fetchMock.mock.calls.length;
   };
-  return { active, lastSettled, reloads };
+  return { active, reloads };
 }
 
 test("reloads the marks as the running review places them", () => {
@@ -69,14 +68,4 @@ test("reloads the marks as the running review places them", () => {
 
   active.value = { run: run(), progress: progress(3) };
   expect(reloads()).toBe(2);
-});
-
-test("reloads the marks once when the review settles", () => {
-  const { lastSettled, reloads } = setup();
-
-  lastSettled.value = run({ status: "completed", completedAt: 5 });
-  expect(reloads()).toBe(1);
-
-  lastSettled.value = run({ status: "completed", completedAt: 5 });
-  expect(reloads()).toBe(1);
 });
