@@ -54,7 +54,7 @@ function MarkdownPreview() {
 
   return (
     <>
-      <pre class="text-ink font-mono text-[0.7rem] whitespace-pre-wrap break-words bg-paper p-2 rounded">
+      <pre class="font-mono text-[0.7rem] whitespace-pre-wrap break-words bg-black/20 p-2 rounded-md">
         {segments.map((seg, i) => {
           if (seg.marks.length === 0) {
             return <span key={i}>{visualizeWhitespace(seg.text)}</span>;
@@ -64,7 +64,7 @@ function MarkdownPreview() {
             .join(" | ");
           const cls = AMBER_BY_COUNT[Math.min(seg.marks.length, 8)] ?? "";
           return (
-            <span key={i} class={cls} title={title}>
+            <span key={i} class={`${cls} text-black`} title={title}>
               {seg.text ? visualizeWhitespace(seg.text) : "\u250A"}
             </span>
           );
@@ -72,10 +72,10 @@ function MarkdownPreview() {
       </pre>
       {stale.length > 0 && (
         <div class="mt-2 text-xs">
-          <div class="font-semibold text-ink/70 mb-1">Stale Marks</div>
+          <div class="font-semibold text-current/70 mb-1">Stale Marks</div>
           <ul class="flex flex-col gap-1">
             {stale.map((mark) => (
-              <li key={mark.id} class="text-ink/60">
+              <li key={mark.id} class="text-current/60">
                 <span class="font-medium">{mark.label || "Mark"}</span>
                 <span class="ml-2">offset: {mark.offset}</span>
                 <span class="ml-1">length: {mark.length}</span>
