@@ -3,6 +3,7 @@ import { assertExists, unreachable } from "@std/assert";
 import { ChevronDown } from "lucide-preact";
 
 import AqSwap from "#/components/ui/AqSwap.tsx";
+import AqToggle from "#/components/ui/AqToggle.tsx";
 import Melt from "#/components/ui/Melt.tsx";
 import { useClickOutside } from "#/hooks/useClickOutside.ts";
 import { FileStatsModel } from "#/models/fileStats.ts";
@@ -85,6 +86,7 @@ export default function FileStats() {
                   onClick={() => toggleSection(opt.value)}
                 >
                   <span>{opt.label}</span>
+                  <AqToggle />
                 </button>
               </li>
             ))}

@@ -6,41 +6,45 @@
 
 .aq-toggle-row {
   @apply pr-12;
-  --aq-toggle-width: 2rem;
+  --aq-toggle-width: 2.2rem;
   --aq-toggle-right: 0.5rem;
-  --aq-toggle-knob: 0.8rem;
-  --aq-toggle-inset: 0.125rem;
-
-  &::before {
-    content: "";
-    @apply absolute top-1/2 -translate-y-1/2 rounded-full bg-surface/50;
-    right: var(--aq-toggle-right);
-    height: calc(var(--aq-toggle-knob) + 2 * var(--aq-toggle-inset));
-    width: var(--aq-toggle-width);
-    transition: background-color calc(120ms * var(--aq-tempo, 1)) ease;
-  }
-
-  &::after {
-    content: "";
-    @apply absolute top-1/2 -translate-y-1/2 rounded-full bg-float size-[var(--aq-toggle-knob)];
-    right: calc(
-      var(--aq-toggle-right) + var(--aq-toggle-inset) + (1 - var(--aq-toggle-x)) *
-        (var(--aq-toggle-width) - var(--aq-toggle-knob) - 2 * var(--aq-toggle-inset))
-    );
-    transition:
-      --aq-toggle-x calc(180ms * var(--aq-tempo, 1)) var(--aq-spring),
-      background-color calc(120ms * var(--aq-tempo, 1)) ease;
-  }
+  --aq-toggle-knob: 0.85rem;
+  --aq-toggle-inset: 0.14rem;
 
   &.is-on {
     --aq-toggle-x: 1;
+  }
+}
 
-    &::before {
-      @apply bg-accent/30;
-    }
+/* The track and the knob each start a melt group of their own, so the knob is drawn over the track
+   without bleeding into it, which would make the track look lopsided. */
+.aq-toggle {
+  @apply absolute top-1/2 -translate-y-1/2 rounded-full melt-group melt-shape;
+  --melt-fill: color-mix(in oklch, var(--color-float), white 12%);
+  right: var(--aq-toggle-right);
+  width: var(--aq-toggle-width);
+  height: calc(var(--aq-toggle-knob) + 2 * var(--aq-toggle-inset));
+}
 
-    &::after {
-      @apply bg-accent;
-    }
+.aq-toggle-knob {
+  @apply absolute rounded-full melt-group melt-shape size-[var(--aq-toggle-knob)];
+  --melt-fill: color-mix(in oklch, var(--color-float), white 45%);
+  top: var(--aq-toggle-inset);
+  left: calc(
+    var(--aq-toggle-inset) + var(--aq-toggle-x) *
+      (var(--aq-toggle-width) - var(--aq-toggle-knob) - 2 * var(--aq-toggle-inset))
+  );
+  transition:
+    --aq-toggle-x calc(180ms * var(--aq-tempo, 1)) var(--aq-spring),
+    --melt-fill calc(120ms * var(--aq-tempo, 1)) ease,
+    --melt-glow calc(120ms * var(--aq-tempo, 1)) ease;
+
+  .is-on & {
+    @apply melt-glow-30;
+    --melt-fill: var(--color-accent);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
   }
 }

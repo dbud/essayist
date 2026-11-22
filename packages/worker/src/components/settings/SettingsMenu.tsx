@@ -18,6 +18,7 @@ import FontAxisSelect, {
 import MarkStyleSelect from "#/components/settings/MarkStyleSelect.tsx";
 import AqCollapse from "#/components/ui/AqCollapse.tsx";
 import AqSegmented from "#/components/ui/AqSegmented.tsx";
+import AqToggle from "#/components/ui/AqToggle.tsx";
 import Melt from "#/components/ui/Melt.tsx";
 import { useClickOutside } from "#/hooks/useClickOutside.ts";
 import { AUTO_SAVE_INTERVAL_VALUES } from "#/models/preferences.ts";
@@ -75,6 +76,7 @@ export default function SettingsMenu({ user }: SettingsMenuProps) {
                 onClick={() => (autoSave.value = !autoSave.value)}
               >
                 <span>Autosave</span>
+                <AqToggle />
               </button>
               <AqCollapse open={autoSave.value} fade>
                 <AqSegmented

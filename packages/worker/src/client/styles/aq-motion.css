@@ -13,12 +13,6 @@
   --aq-absorb-ease: cubic-bezier(0.4, -0.5, 0.55, 1.35);
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .aq-toggle::after {
-    transition: none;
-  }
-}
-
 /* Staggered cascade for panel contents. */
 [data-aq-stagger] > * {
   opacity: 0;
