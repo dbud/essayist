@@ -78,7 +78,7 @@
 /* Joins a right-bridged panel to the menu it opens from. An element rather than a pseudo-element,
    so the melt canvas can measure it. */
 @utility aq-dropdown-bridge {
-  @apply absolute melt-shape;
+  @apply absolute melt-shape melt-shadow;
   --melt-fill: var(--color-float);
   right: 100%;
   top: 0.25rem;

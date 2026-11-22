@@ -39,13 +39,16 @@
   color: var(--btn-ink);
   font-size: var(--aq-btn-font-size);
   padding: var(--aq-btn-py) var(--aq-btn-px);
-  @apply melt-shape melt-rim-white/80;
+  @apply melt-shape melt-rim-white/80 melt-shadow;
   --melt-fill: var(--btn-bg);
   transform: scale(var(--aq-btn-lifted));
   transition:
     --melt-fill calc(200ms * var(--aq-tempo, 1)) var(--aq-btn-ease),
     --melt-stroke calc(200ms * var(--aq-tempo, 1)) var(--aq-btn-ease),
     --melt-rim calc(200ms * var(--aq-tempo, 1)) var(--aq-btn-ease),
+    --melt-shadow calc(200ms * var(--aq-tempo, 1)) var(--aq-btn-ease),
+    --melt-shadow-y calc(200ms * var(--aq-tempo, 1)) var(--aq-btn-ease),
+    --melt-shadow-blur calc(200ms * var(--aq-tempo, 1)) var(--aq-btn-ease),
     color calc(200ms * var(--aq-tempo, 1)) var(--aq-btn-ease),
     --aq-btn-lifted calc(240ms * var(--aq-tempo, 1)) var(--aq-btn-ease);
 
@@ -111,6 +114,6 @@
   --btn-ink-hover: var(--aq-btn-idle-ink-hover);
 
   &:not(:hover, [aria-expanded="true"]) {
-    @apply melt-stroke-stroke;
+    @apply melt-stroke-stroke melt-shadow-sm;
   }
 }

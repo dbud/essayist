@@ -32,6 +32,47 @@
   initial-value: 0;
 }
 
+@property --melt-shadow {
+  syntax: "<color>";
+  inherits: false;
+  initial-value: transparent;
+}
+
+@property --melt-shadow-x {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+
+@property --melt-shadow-y {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+
+@property --melt-shadow-blur {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+
+/* The shadow of a shape, like a CSS drop-shadow. Touching shapes cast a single shadow. */
+@utility melt-shadow {
+  --melt-shadow: rgb(0 0 0 / 0.3);
+  --melt-shadow-y: 0.3rem;
+  --melt-shadow-blur: 1.4rem;
+}
+
+@utility melt-shadow-sm {
+  --melt-shadow: rgb(0 0 0 / 0.1);
+  --melt-shadow-y: 2px;
+  --melt-shadow-blur: 5px;
+}
+
+@utility melt-shadow-none {
+  --melt-shadow: transparent;
+}
+
 /* melt-stroke-stroke uses --color-stroke, melt-stroke-white/40 white at 40% opacity,
    melt-stroke-transparent turns it off, and melt-stroke-[...] takes any colour. The rim takes the
    same values. */
@@ -72,10 +113,14 @@
 }
 
 /* A shape of the melt: set --melt-fill and apply this. The element paints its fill as its
-   background, unless the canvas of its group draws it. */
+   background, and its shadow as a box shadow, unless the canvas of its group draws them. */
 @utility melt-shape {
   --melt-shape: 1;
   background: var(--melt-background, var(--melt-fill));
+  box-shadow: var(
+    --melt-box-shadow,
+    var(--melt-shadow-x) var(--melt-shadow-y) var(--melt-shadow-blur) var(--melt-shadow)
+  );
 }
 
 @utility melt-group {
@@ -86,10 +131,7 @@
    have no backgrounds of their own. */
 @utility melt-root {
   @apply relative isolate melt-group;
-  filter: var(--aq-shadow);
-  transition:
-    filter calc(150ms * var(--aq-tempo, 1)) ease-in,
-    opacity calc(150ms * var(--aq-tempo, 1)) ease-in;
+  transition: opacity calc(150ms * var(--aq-tempo, 1)) ease-in;
 
   @media (prefers-reduced-motion: reduce) {
     transition: none;
@@ -101,13 +143,8 @@
 
   &[data-melt-drawn] {
     --melt-background: transparent;
+    --melt-box-shadow: none;
   }
-}
-
-/* A group with an idle button has a light shadow, unless the button is hovered or its dropdown is
-   open. */
-.melt-root:has(.aq-btn--idle:not(:hover, [aria-expanded="true"])) {
-  --aq-shadow: drop-shadow(0 2px 1px rgb(0 0 0 / 0.1));
 }
 
 .melt-canvas {

@@ -25,6 +25,11 @@ export interface MeltEffects {
   readonly rim: Rgba;
   /** The opacity of a halo outside the edge, in the colour of the shapes nearby. */
   readonly glow: number;
+  /** A shadow like the CSS drop-shadow, with lengths in CSS pixels. */
+  readonly shadow: Rgba;
+  readonly shadowX: number;
+  readonly shadowY: number;
+  readonly shadowBlur: number;
 }
 
 export interface MeasuredShape {
@@ -94,11 +99,22 @@ export function layoutFrame(measurement: Measurement): MeltFrame | null {
   );
   if (drawn.length === 0) return null;
 
-  const margin = settings.sigma * FIELD_REACH;
-  const left = Math.min(...drawn.map(({ rect }) => rect.left)) - margin;
-  const top = Math.min(...drawn.map(({ rect }) => rect.top)) - margin;
-  const right = Math.max(...drawn.map(({ rect }) => rect.left + rect.width)) + margin;
-  const bottom = Math.max(...drawn.map(({ rect }) => rect.top + rect.height)) + margin;
+  // The frame covers the field of each shape and its shadow, whichever reaches further. A blur of b
+  // is a Gaussian of width b / 2, as in CSS.
+  const margin = ({ effects }: MeasuredShape) =>
+    Math.max(
+      settings.sigma * FIELD_REACH,
+      Math.max(Math.abs(effects.shadowX), Math.abs(effects.shadowY)) +
+        (effects.shadowBlur / 2) * FIELD_REACH,
+    );
+  const left = Math.min(...drawn.map((shape) => shape.rect.left - margin(shape)));
+  const top = Math.min(...drawn.map((shape) => shape.rect.top - margin(shape)));
+  const right = Math.max(
+    ...drawn.map((shape) => shape.rect.left + shape.rect.width + margin(shape)),
+  );
+  const bottom = Math.max(
+    ...drawn.map((shape) => shape.rect.top + shape.rect.height + margin(shape)),
+  );
 
   const shapes = drawn
     .map((shape): MeltShape => {
@@ -121,6 +137,15 @@ export function layoutFrame(measurement: Measurement): MeltFrame | null {
           strokeWidth: effects.strokeWidth,
           rim: [effects.rim[0], effects.rim[1], effects.rim[2], effects.rim[3] * opacity],
           glow: effects.glow * opacity,
+          shadow: [
+            effects.shadow[0],
+            effects.shadow[1],
+            effects.shadow[2],
+            effects.shadow[3] * opacity,
+          ],
+          shadowX: effects.shadowX,
+          shadowY: effects.shadowY,
+          shadowBlur: effects.shadowBlur,
         },
         group: shape.group,
       };

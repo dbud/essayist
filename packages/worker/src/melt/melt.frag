@@ -20,6 +20,9 @@ uniform vec4 u_box[MAX_SHAPES];
 uniform vec4 u_color[MAX_SHAPES];
 uniform vec4 u_stroke[MAX_SHAPES];
 uniform vec4 u_rim[MAX_SHAPES];
+uniform vec4 u_shadow[MAX_SHAPES];
+// The shadow offset in xy and its Gaussian width in z.
+uniform vec4 u_shadowShape[MAX_SHAPES];
 // The corner radius, stroke width and glow.
 uniform vec4 u_shape[MAX_SHAPES];
 uniform int u_groupEnd[MAX_GROUPS];
@@ -61,28 +64,28 @@ float roundBox(vec2 p, vec2 half_size, float radius) {
 // The field at x of the row of a rounded box at height y. A row is a span, narrower inside the
 // rounded corners, and smoothing a span from -w to w with a Gaussian gives the difference of two
 // erf curves, halved. erf takes the distance in units of sigma times the square root of 2.
-float rowField(float x, float y, vec2 half_size, float radius) {
+float rowField(float x, float y, vec2 half_size, float radius, float sigma) {
   float into = max(abs(y) - (half_size.y - radius), 0.0);
   float w = half_size.x - radius + sqrt(max(radius * radius - into * into, 0.0));
-  float s = INV_SQRT2 / u_sigma;
+  float s = INV_SQRT2 / sigma;
   return 0.5 * (erf((x + w) * s) - erf((x - w) * s));
 }
 
 // The field of a rounded box at p, measured from its centre: the fields of its rows, weighted by a
 // Gaussian of the vertical distance to each row. Only rows within reach of p count, and their sum
 // is taken at evenly spaced samples.
-float shapeField(vec2 p, vec2 half_size, float radius) {
-  float reach = REACH * u_sigma;
+float shapeField(vec2 p, vec2 half_size, float radius, float sigma) {
+  float reach = REACH * sigma;
   float from = clamp(p.y - reach, -half_size.y, half_size.y);
   float to = clamp(p.y + reach, -half_size.y, half_size.y);
   float spacing = (to - from) / float(FIELD_SAMPLES);
   float sum = 0.0;
   for (int k = 0; k < FIELD_SAMPLES; k++) {
     float y = from + (float(k) + 0.5) * spacing;
-    float dy = (p.y - y) / u_sigma;
-    sum += rowField(p.x, y, half_size, radius) * exp(-0.5 * dy * dy);
+    float dy = (p.y - y) / sigma;
+    sum += rowField(p.x, y, half_size, radius, sigma) * exp(-0.5 * dy * dy);
   }
-  return sum * spacing / (SQRT_2PI * u_sigma);
+  return sum * spacing / (SQRT_2PI * sigma);
 }
 
 void main() {
@@ -104,15 +107,37 @@ void main() {
     vec4 strokes = vec4(0.0);
     vec4 rims = vec4(0.0);
     vec2 effects = vec2(0.0);
+    // A shadow has two estimates. A tight one follows the melted outline, shifted by the offset of
+    // each shape: shadowField is the field of the shifted shapes, and the shadow blurs across its
+    // edge. A soft one blurs the shifted boxes themselves: shadowBox adds up their coverage, which
+    // is exact once the blur is wider than the melt and the outline no longer matters. Both are
+    // weighted like field.a, and so are the colours and blurs of the shadows.
+    float shadowField = 0.0;
+    float shadowBox = 0.0;
+    vec4 shadowColors = vec4(0.0);
+    float shadowSigmas = 0.0;
 
     for (int i = start; i < end; i++) {
       vec2 local = p - u_box[i].xy;
       vec2 half_size = u_box[i].zw;
       float radius = min(u_shape[i].x, min(half_size.x, half_size.y));
+      if (u_shadow[i].a > 0.0) {
+        vec2 shadowLocal = local - u_shadowShape[i].xy;
+        float blur = max(u_shadowShape[i].z, HALF_PIXEL);
+        float width = sqrt(u_sigma * u_sigma + blur * blur);
+        if (roundBox(shadowLocal, half_size, radius) < REACH * width) {
+          float w = u_color[i].a * shapeField(shadowLocal, half_size, radius, width);
+          shadowField += w;
+          shadowBox += u_color[i].a * shapeField(shadowLocal, half_size, radius, blur);
+          shadowColors += vec4(u_shadow[i].rgb * u_shadow[i].a, u_shadow[i].a) * w;
+          shadowSigmas += blur * w;
+        }
+      }
+
       float toEdge = roundBox(local, half_size, radius);
       if (toEdge > REACH * u_sigma) continue;
       vec4 color = vec4(u_color[i].rgb * u_color[i].a, u_color[i].a);
-      float f = shapeField(local, half_size, radius);
+      float f = shapeField(local, half_size, radius, u_sigma);
       field += color * f;
       float w = color.a * f;
       strokes += vec4(u_stroke[i].rgb * u_stroke[i].a, u_stroke[i].a) * w;
@@ -161,6 +186,17 @@ void main() {
     // The glow sits under the group, and fades with the field from the edge outwards.
     float glow = glowStrength * clamp(field.a / edgeField, 0.0, 1.0);
     groupColor += vec4(average * glow, glow) * (1.0 - groupColor.a);
+
+    // The shadow sits under the group and its glow. The tight estimate blurs across the edge of the
+    // shifted outline; the soft one takes over as the blur grows past the melt.
+    float shadowSlope = max(length(vec2(dFdx(shadowField), dFdy(shadowField))), 1e-6);
+    float shadowInside = (shadowField - edgeField) / shadowSlope;
+    float shadowBlur = shadowField > 0.0 ? shadowSigmas / shadowField : HALF_PIXEL;
+    float tight = 0.5 + 0.5 * erf(shadowInside * INV_SQRT2 / shadowBlur);
+    float soft = min(shadowBox, 1.0);
+    float shadowCover = mix(tight, soft, smoothstep(0.25 * u_sigma, 0.75 * u_sigma, shadowBlur));
+    vec4 shadow = shadowField > 0.0 ? shadowColors / shadowField * shadowCover : vec4(0.0);
+    groupColor += shadow * (1.0 - groupColor.a);
 
     result = groupColor + result * (1.0 - groupColor.a);
   }

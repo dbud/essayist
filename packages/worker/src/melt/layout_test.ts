@@ -9,7 +9,16 @@ import {
 } from "./layout.ts";
 
 const BLACK = [0, 0, 0, 1] as const;
-const NO_EFFECTS = { stroke: [0, 0, 0, 0], strokeWidth: 1, rim: [0, 0, 0, 0], glow: 0 } as const;
+const NO_EFFECTS = {
+  stroke: [0, 0, 0, 0],
+  strokeWidth: 1,
+  rim: [0, 0, 0, 0],
+  glow: 0,
+  shadow: [0, 0, 0, 0],
+  shadowX: 0,
+  shadowY: 0,
+  shadowBlur: 0,
+} as const;
 
 const shape = (fields: Partial<MeasuredShape> = {}): MeasuredShape => ({
   rect: { left: 100, top: 100, width: 40, height: 20 },
@@ -47,6 +56,17 @@ test("the frame spans the shapes and three sigma around them", () => {
   expect(frame?.shapes[0]).toMatchObject({ x: 35, y: 25, halfWidth: 20, halfHeight: 10 });
 });
 
+test("the frame reaches past a shape for its shadow", () => {
+  const effects = { ...NO_EFFECTS, shadowY: 8, shadowBlur: 12 };
+  // The shadow reaches 8 + 3 * 6 = 26 past the shape, further than the field at 3 * 5.
+  expect(layoutFrame(measurement([shape({ effects })]))).toMatchObject({
+    left: 74,
+    top: 74,
+    width: 92,
+    height: 72,
+  });
+});
+
 test("a shape scaled by a transform has its radius scaled too", () => {
   const scaled = shape({ rect: { left: 100, top: 100, width: 20, height: 10 }, radius: 8 });
   expect(layoutFrame(measurement([scaled]))?.shapes[0].radius).toBe(4);
@@ -68,7 +88,14 @@ test("shapes are sorted by group and keep their document order within it", () =>
 });
 
 test("the opacity of a shape goes into the alpha of its colour and of its effects", () => {
-  const effects = { stroke: [0, 0, 1, 1], strokeWidth: 2, rim: [1, 1, 1, 0.4], glow: 0.2 } as const;
+  const effects = {
+    ...NO_EFFECTS,
+    stroke: [0, 0, 1, 1],
+    strokeWidth: 2,
+    rim: [1, 1, 1, 0.4],
+    glow: 0.2,
+    shadow: [0, 0, 0, 0.6],
+  } as const;
   const frame = layoutFrame(measurement([shape({ fill: [1, 0, 0, 0.5], effects, opacity: 0.5 })]));
   expect(frame?.shapes[0].color).toEqual([1, 0, 0, 0.25]);
   expect(frame?.shapes[0].effects).toEqual({
@@ -76,6 +103,10 @@ test("the opacity of a shape goes into the alpha of its colour and of its effect
     strokeWidth: 2,
     rim: [1, 1, 1, 0.2],
     glow: 0.1,
+    shadow: [0, 0, 0, 0.3],
+    shadowX: 0,
+    shadowY: 0,
+    shadowBlur: 0,
   });
 });
 

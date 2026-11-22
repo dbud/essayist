@@ -1,6 +1,6 @@
 .aq-segmented {
   @apply flex items-center gap-1 rounded-full cursor-pointer p-1;
-  @apply relative melt-group melt-shape;
+  @apply relative melt-group melt-shape melt-shadow;
   --melt-fill: color-mix(in oklab, var(--color-float) 60%, transparent);
 
   & > button {
