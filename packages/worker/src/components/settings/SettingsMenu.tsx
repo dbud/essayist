@@ -19,7 +19,7 @@ import MarkStyleSelect from "#/components/settings/MarkStyleSelect.tsx";
 import AqCollapse from "#/components/ui/AqCollapse.tsx";
 import AqSegmented from "#/components/ui/AqSegmented.tsx";
 import AqToggle from "#/components/ui/AqToggle.tsx";
-import Melt from "#/components/ui/Melt.tsx";
+import Melt, { meltEnabled } from "#/components/ui/Melt.tsx";
 import { useClickOutside } from "#/hooks/useClickOutside.ts";
 import { AUTO_SAVE_INTERVAL_VALUES } from "#/models/preferences.ts";
 import { usePreferences } from "#/models/preferences.ts";
@@ -101,12 +101,26 @@ export default function SettingsMenu({ user }: SettingsMenuProps) {
               </button>
             </li>
             {user.role === "admin" && (
-              <li>
-                <a href="/admin" class="aq-menu-btn" onClick={close}>
-                  <SlidersVertical />
-                  Control panel
-                </a>
-              </li>
+              <>
+                <li>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={meltEnabled.value}
+                    class={`aq-menu-btn aq-toggle-row ${meltEnabled.value ? "is-on" : ""}`}
+                    onClick={() => (meltEnabled.value = !meltEnabled.value)}
+                  >
+                    <span>Melt shader</span>
+                    <AqToggle />
+                  </button>
+                </li>
+                <li>
+                  <a href="/admin" class="aq-menu-btn" onClick={close}>
+                    <SlidersVertical />
+                    Control panel
+                  </a>
+                </li>
+              </>
             )}
             <li>
               <button
