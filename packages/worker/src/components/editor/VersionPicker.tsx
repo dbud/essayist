@@ -115,7 +115,7 @@ export default function VersionPicker() {
       <AqSwap on={state}>
         <button
           type="button"
-          class="aq-btn aq-btn--idle relative min-w-36"
+          class="aq-btn--idle relative min-w-36"
           aria-expanded={hasVersions ? open.value : false}
           onClick={() => {
             if (hasVersions) open.value = !open.value;

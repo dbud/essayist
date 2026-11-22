@@ -51,7 +51,7 @@ export default function BlockTypeSelect({ block, onChange, disabled }: BlockType
       <AqSwap on={current.value}>
         <button
           type="button"
-          class="aq-btn--small"
+          class="aq-btn aq-btn--small"
           aria-expanded={open.value}
           data-tooltip="Paragraph style"
           disabled={disabled}

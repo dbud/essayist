@@ -24,7 +24,7 @@ export default function FontSelect() {
       <AqSwap on={current.value}>
         <button
           type="button"
-          class="aq-btn aq-btn--idle"
+          class="aq-btn--idle"
           aria-expanded={open.value}
           data-tooltip="Reading font"
           onClick={() => (open.value = !open.value)}

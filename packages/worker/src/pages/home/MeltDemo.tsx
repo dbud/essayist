@@ -18,7 +18,7 @@ function Buttons() {
       <button type="button" class="aq-btn--idle">
         Saved
       </button>
-      <button type="button" class="aq-btn--small">
+      <button type="button" class="aq-btn aq-btn--small">
         B
       </button>
     </Melt>

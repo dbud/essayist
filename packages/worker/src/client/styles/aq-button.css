@@ -88,8 +88,8 @@
   --btn-ink-hover: var(--aq-btn-accent-ink);
 }
 
+/* A size modifier for a button utility, such as aq-btn or aq-btn--accent. */
 @utility aq-btn--small {
-  @apply aq-btn;
   --aq-btn-px: 0.3rem;
   --aq-btn-py: 0.25rem;
   --aq-btn-font-size: 0.75rem;
