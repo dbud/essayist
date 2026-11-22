@@ -60,16 +60,16 @@ interface FileNavigationProps {
 }
 
 export default function FileNavigation({ open }: FileNavigationProps) {
-  const createWorkspaceDialogOpen = useSignal(false);
-  const createFileDialogOpen = useSignal(false);
-  const deleteWorkspaceDialogOpen = useSignal(false);
+  const creatingWorkspace = useSignal(false);
+  const creatingFile = useSignal(false);
+  const deletingWorkspace = useSignal(false);
   const removingPath = useSignal<string | null>(null);
 
   const close = () => {
     open.value = false;
-    createFileDialogOpen.value = false;
-    createWorkspaceDialogOpen.value = false;
-    deleteWorkspaceDialogOpen.value = false;
+    creatingFile.value = false;
+    creatingWorkspace.value = false;
+    deletingWorkspace.value = false;
     removingPath.value = null;
   };
 
@@ -83,9 +83,9 @@ export default function FileNavigation({ open }: FileNavigationProps) {
   const fileEntries = buildFileEntries(files?.tree.value.children ?? [], selectedPath);
   const showNav =
     open.value &&
-    !createFileDialogOpen.value &&
-    !createWorkspaceDialogOpen.value &&
-    !deleteWorkspaceDialogOpen.value &&
+    !creatingFile.value &&
+    !creatingWorkspace.value &&
+    !deletingWorkspace.value &&
     removingPath.value === null;
   const ownsSelected = user !== undefined && workspaces.current.value?.ownerId === user.id;
 
@@ -117,7 +117,7 @@ export default function FileNavigation({ open }: FileNavigationProps) {
           <button
             type="button"
             class="aq-menu-btn"
-            onClick={() => (createFileDialogOpen.value = true)}
+            onClick={() => (creatingFile.value = true)}
             data-tooltip="Start writing from scratch"
           >
             <Plus />
@@ -138,7 +138,7 @@ export default function FileNavigation({ open }: FileNavigationProps) {
     <button
       type="button"
       class="aq-btn self-start"
-      onClick={() => (deleteWorkspaceDialogOpen.value = true)}
+      onClick={() => (deletingWorkspace.value = true)}
     >
       <Trash2 />
       <span>Delete project&hellip;</span>
@@ -191,7 +191,7 @@ export default function FileNavigation({ open }: FileNavigationProps) {
   );
 
   const createWorkspace = (
-    <button type="button" class="aq-btn" onClick={() => (createWorkspaceDialogOpen.value = true)}>
+    <button type="button" class="aq-btn" onClick={() => (creatingWorkspace.value = true)}>
       <Plus />
       <span>New project&hellip;</span>
     </button>
@@ -232,10 +232,10 @@ export default function FileNavigation({ open }: FileNavigationProps) {
         {createWorkspace}
       </div>
 
-      <CreateWorkspaceDialog open={createWorkspaceDialogOpen} />
-      <DeleteWorkspaceDialog open={deleteWorkspaceDialogOpen} onDeleted={close} />
+      <CreateWorkspaceDialog open={creatingWorkspace} />
+      <DeleteWorkspaceDialog open={deletingWorkspace} onDeleted={close} />
       <RemoveFileDialog path={removingPath} onRemoved={close} />
-      <CreateFileDialog open={createFileDialogOpen} onCreated={close} />
+      <CreateFileDialog open={creatingFile} onCreated={close} />
     </Melt>
   );
 }
