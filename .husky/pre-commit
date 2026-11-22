@@ -10,10 +10,6 @@ if [ -n "$staged_rs" ]; then
   git add -u crates/wasm/pkg/
 fi
 
-staged=$(git diff --cached --name-only --diff-filter=ACMR)
-pnpm fmt
-if [ -n "$staged" ]; then
-  git add -u -- $staged
-fi
-
-pnpm check
+# Formats and lints the staged files only. lint-staged sets unstaged changes aside while it runs,
+# so a partly staged file commits as staged. The full check runs before a push.
+pnpm exec lint-staged

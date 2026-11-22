@@ -7,3 +7,6 @@ while read -r local_ref local_sha remote_ref remote_sha; do
     exit 1
   fi
 done
+
+# The full check: formatting across the repo, the type-aware lint and the type checks.
+pnpm check

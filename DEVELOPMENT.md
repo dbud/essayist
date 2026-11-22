@@ -104,9 +104,8 @@ wasm diff worker returns with ESS-90.
 
 The `.husky/pre-commit` hook runs `cargo fmt --check` and `cargo clippy --all-targets -- -D
 warnings` (plus a `wasm-pack` rebuild and re-staging of `crates/wasm/pkg/`) when Rust files are
-staged, then `pnpm check` before every commit. Every commit also runs `pnpm fmt` (oxfmt plus comment
-reflow) and restages the staged files before `pnpm check`; files reformatted outside the commit keep
-the changes in the worktree, uncommitted. The formatting step assumes a full staged set: partial
-(`pathspec`) commits run the hook against a temporary index, so its reflow lands there and the real
-index keeps whatever was staged before. Restage the touched files right after when a partial commit
-is unavoidable.
+staged, then lint-staged on the staged files: oxfmt, the comment reflow and oxlint, as configured
+under `lint-staged` in the root `package.json`. lint-staged sets unstaged changes aside while it
+runs, so a partly staged file commits exactly as staged, and files outside the commit are never
+touched. Comment wrapping needs no care while editing; the hook reflows it. The `.husky/pre-push`
+hook runs the full `pnpm check`, with the type checks, before every push.

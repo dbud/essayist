@@ -15,11 +15,26 @@
   "devDependencies": {
     "@types/node": "catalog:",
     "husky": "^9.1.7",
+    "lint-staged": "^17.6.1",
     "oxfmt": "catalog:",
     "oxlint": "catalog:",
     "oxlint-tsgolint": "^7.0.2007",
     "typescript": "catalog:",
     "vitest": "catalog:"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,jsx,mjs,cjs}": [
+      "oxfmt --no-error-on-unmatched-pattern",
+      "scripts/fmt-comments.sh",
+      "oxlint --deny-warnings"
+    ],
+    "*.md": [
+      "oxfmt --no-error-on-unmatched-pattern",
+      "scripts/fmt-comments.sh"
+    ],
+    "*.sh": "scripts/fmt-comments.sh",
+    "*.{json,jsonc,css}": "oxfmt --no-error-on-unmatched-pattern",
+    "!(pnpm-lock).{yml,yaml}": "oxfmt --no-error-on-unmatched-pattern"
   },
   "packageManager": "pnpm@12.11.2"
 }

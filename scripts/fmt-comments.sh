@@ -4,6 +4,14 @@
 # rewrites this file in place while sh still reads it: keep the file at parfit's canonical wrap.
 command -v parfit >/dev/null 2>&1 || exit 0
 
+# With file arguments, as from lint-staged, reflow those files alone.
+if [ "$#" -gt 0 ]; then
+  exec parfit -w 100 "$@" \
+    --skip '^\s*//\s*oxlint-disable' \
+    --skip '^\s*(?://|\*|#)\s*TODO\b' \
+    --skip '^\s*(?://|\*|#)\s*parfit-ignore\s*$'
+fi
+
 # The -r walk respects .gitignore, so dist/, tmp/ and crates/*/pkg drop out of the roots unlisted.
 # Verbatim: oxlint suppression lines, TODO lines so neighbouring comments don't merge into them, and
 # parfit-ignore directives above blocks like the KV key layout tables.
