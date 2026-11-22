@@ -44,6 +44,7 @@
   transform: scale(var(--aq-btn-lifted));
   transition:
     --melt-fill calc(200ms * var(--aq-tempo, 1)) var(--aq-btn-ease),
+    --melt-stroke calc(200ms * var(--aq-tempo, 1)) var(--aq-btn-ease),
     color calc(200ms * var(--aq-tempo, 1)) var(--aq-btn-ease),
     --aq-btn-lifted calc(240ms * var(--aq-tempo, 1)) var(--aq-btn-ease);
 
@@ -107,4 +108,8 @@
   --btn-bg-hover: var(--aq-btn-idle-bg-hover);
   --btn-ink: var(--aq-btn-idle-ink);
   --btn-ink-hover: var(--aq-btn-idle-ink-hover);
+
+  &:not(:hover, [aria-expanded="true"]) {
+    @apply melt-stroke-stroke;
+  }
 }
