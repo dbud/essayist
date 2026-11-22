@@ -54,7 +54,7 @@
 }
 
 .logo-e {
-  @apply melt-shape melt-shadow;
+  @apply melt-shape melt-rim-white/50 melt-shadow;
   --melt-fill: var(--color-ink);
   --logo-period: 30s;
 }

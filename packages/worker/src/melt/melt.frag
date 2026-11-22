@@ -179,17 +179,24 @@ void main() {
     float edgeField = (0.5 - u_bias) / u_gain;
     float inside = (field.a - edgeField) / steepness;
 
-    // The rim is drawn over the group, fading over RIM_WIDTH inside the edge. The field falls
-    // towards the outside, so the edge faces up where the slope points down.
+    // The rim and the shade start where the outline turns fully opaque, so their strongest part
+    // lands on solid colour however wide the soft edge is. The rim is a line RIM_WIDTH wide from
+    // there, antialiased on its inner side; the shade fades inwards. Both mix into the colour
+    // without changing its opacity, so the soft edge keeps its coverage and blends from the
+    // background into them. The field falls towards the outside, so the edge faces up where the
+    // slope points down.
+    float solid = (field.a - (1.0 - u_bias) / u_gain) / steepness;
     float facingUp = clamp(-slope.y / steepness, 0.0, 1.0);
-    float rim = exp(-max(inside, 0.0) / RIM_WIDTH) * mix(RIM_BASE, 1.0, facingUp) * groupColor.a;
-    groupColor = rimColor * rim + groupColor * (1.0 - rimColor.a * rim);
+    float rimLine = clamp(RIM_WIDTH + HALF_PIXEL - max(solid, 0.0), 0.0, 1.0);
+    float rim = rimLine * mix(RIM_BASE, 1.0, facingUp) * rimColor.a;
+    groupColor.rgb = mix(groupColor.rgb, rimColor.rgb / max(rimColor.a, 1e-6) * groupColor.a, rim);
 
     // The shade mirrors the rim along the edges that face down, over a wider band.
     float facingDown = clamp(slope.y / steepness, 0.0, 1.0);
     float shade =
-        exp(-max(inside, 0.0) / SHADE_WIDTH) * mix(RIM_BASE, 1.0, facingDown) * groupColor.a;
-    groupColor = shadeColor * shade + groupColor * (1.0 - shadeColor.a * shade);
+      exp(-max(solid, 0.0) / SHADE_WIDTH) * mix(RIM_BASE, 1.0, facingDown) * shadeColor.a;
+    groupColor.rgb =
+      mix(groupColor.rgb, shadeColor.rgb / max(shadeColor.a, 1e-6) * groupColor.a, shade);
 
     // The stroke covers the band from the edge to the stroke width inside it.
     float band = clamp(inside + HALF_PIXEL, 0.0, 1.0)
