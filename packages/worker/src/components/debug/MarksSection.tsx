@@ -1,6 +1,5 @@
 import type { Category, Mark } from "@essayist/core";
 import type { LexicalEditor } from "lexical";
-import { Crosshair } from "lucide-preact";
 
 import Section from "#/components/debug/Section.tsx";
 import { SELECT_MARK_COMMAND } from "#/editor/markExtension.ts";
@@ -20,43 +19,38 @@ function MarkDetail({
   editor: LexicalEditor | null;
 }) {
   return (
-    <div class="flex flex-col stack">
-      <div class="flex stack shadow-md">
-        <div class={`cell flex-1 gap-3 ${active ? "is-selected" : ""}`}>
-          {category?.color !== undefined && (
-            <span class="size-3 shrink-0" style={{ backgroundColor: category.color }} />
-          )}
-          <span>{mark.label || "Mark"}</span>
-          <span
-            class={`self-start
-              ${mark.status === "resolved" ? "badge" : "badge badge--warning"}`}
-          >
-            {mark.status}
+    <li>
+      <button
+        type="button"
+        class={`aq-menu-btn ${active ? "is-selected" : ""}`}
+        title="Go to mark in editor"
+        disabled={editor === null}
+        onClick={() => editor?.dispatchCommand(SELECT_MARK_COMMAND, mark.id)}
+      >
+        <span class="flex flex-col items-start gap-1 min-w-0 whitespace-normal text-start">
+          <span class="flex items-center gap-2">
+            {category?.color !== undefined && (
+              <span
+                class="size-3 shrink-0 rounded-xs"
+                style={{ backgroundColor: category.color }}
+              />
+            )}
+            <span>{mark.label || "Mark"}</span>
+            <span class={mark.status === "resolved" ? "badge" : "badge badge--warning"}>
+              {mark.status}
+            </span>
           </span>
-        </div>
-        <button
-          type="button"
-          class="btn ml-auto"
-          title="Go to mark in editor"
-          disabled={editor === null}
-          onClick={() => {
-            if (editor) editor.dispatchCommand(SELECT_MARK_COMMAND, mark.id);
-          }}
-        >
-          <Crosshair size={14} />
-        </button>
-      </div>
-      <div class="cell--data flex-col gap-2">
-        <div class="italic">&ldquo;{mark.selected_text}&rdquo;</div>
-        <div class="">{mark.comment}</div>
-        <div class="flex gap-2 text-ink/60 font-mono">
-          <span>offset: {mark.offset}</span>
-          <span>length: {mark.length}</span>
-          <span>id: {mark.id}</span>
-          <span>thread_id: {mark.thread_id}</span>
-        </div>
-      </div>
-    </div>
+          <span class="italic">&ldquo;{mark.selected_text}&rdquo;</span>
+          <span class="text-sm">{mark.comment}</span>
+          <span class="flex flex-wrap gap-x-2 font-mono text-[0.7rem] text-current/60">
+            <span>offset: {mark.offset}</span>
+            <span>length: {mark.length}</span>
+            <span class="break-all">id: {mark.id}</span>
+            <span class="break-all">thread_id: {mark.thread_id}</span>
+          </span>
+        </span>
+      </button>
+    </li>
   );
 }
 
@@ -77,7 +71,7 @@ export default function MarksSection() {
 
   return (
     <Section title="Marks">
-      <div class="flex flex-col stack">
+      <ul class="aq-menu-rows">
         {current.marks.value.map((mark) => (
           <MarkDetail
             key={mark.id}
@@ -87,7 +81,7 @@ export default function MarksSection() {
             editor={editor}
           />
         ))}
-      </div>
+      </ul>
     </Section>
   );
 }
