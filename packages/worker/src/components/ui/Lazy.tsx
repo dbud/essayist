@@ -1,6 +1,8 @@
 import type { ComponentChildren, ComponentType } from "preact";
 import { useEffect, useState } from "preact/hooks";
 
+import { whenIdle } from "#/utils/whenIdle.ts";
+
 export interface LazyProps {
   active: boolean;
   idlePrefetch?: boolean;
@@ -18,8 +20,7 @@ export default function Lazy({
 
   useEffect(() => {
     if (!idlePrefetch) return;
-    const id = requestIdleCallback(() => void loader());
-    return () => cancelIdleCallback(id);
+    return whenIdle(() => void loader());
   }, [idlePrefetch, loader]);
 
   useEffect(() => {
