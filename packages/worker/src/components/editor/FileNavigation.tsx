@@ -161,16 +161,18 @@ export default function FileNavigation({ open }: FileNavigationProps) {
                     close();
                   }}
                 >
-                  {parts.map((p, i) => (
-                    <span
-                      key={i}
-                      class={`transition-colors ${p.redundant ? "text-current/50 group-hover:text-current" : ""}`}
-                    >
-                      {p.segment}
-                      <span class="pl-1">/</span>
-                    </span>
-                  ))}
-                  <span class="break-words min-w-0">{fileName}</span>
+                  <span class="flex gap-1">
+                    {parts.map((p, i) => (
+                      <span
+                        key={i}
+                        class={`shrink-0 whitespace-nowrap transition-colors ${p.redundant ? "text-current/50 group-hover:text-current" : ""}`}
+                      >
+                        {p.segment}
+                        <span class="pl-1">/</span>
+                      </span>
+                    ))}
+                    <span class="break-words min-w-0">{fileName}</span>
+                  </span>
                 </button>
                 <button
                   type="button"
