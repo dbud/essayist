@@ -23,6 +23,8 @@ export interface MeltEffects {
   readonly strokeWidth: number;
   /** A band just inside the edge that fades inwards, strongest where the edge faces up. */
   readonly rim: Rgba;
+  /** The same, strongest where the edge faces down, and a little wider. */
+  readonly shade: Rgba;
   /** The opacity of a halo outside the edge, in the colour of the shapes nearby. */
   readonly glow: number;
   /** A shadow like the CSS drop-shadow, with lengths in CSS pixels. */
@@ -136,6 +138,7 @@ export function layoutFrame(measurement: Measurement): MeltFrame | null {
           ],
           strokeWidth: effects.strokeWidth,
           rim: [effects.rim[0], effects.rim[1], effects.rim[2], effects.rim[3] * opacity],
+          shade: [effects.shade[0], effects.shade[1], effects.shade[2], effects.shade[3] * opacity],
           glow: effects.glow * opacity,
           shadow: [
             effects.shadow[0],

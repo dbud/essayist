@@ -14,6 +14,7 @@ const shape = (group: number, x = 10): MeltShape => ({
     stroke: [0, 0, 1, 0.5],
     strokeWidth: 1,
     rim: [1, 1, 1, 0.3],
+    shade: [0, 0, 0, 0.2],
     glow: 0.2,
     shadow: [0, 0, 0, 0.2],
     shadowX: 1,
@@ -39,6 +40,7 @@ test("lengths are scaled to device pixels, and the size is rounded", () => {
   expect(Array.from(packed.color.subarray(0, 4))).toEqual([1, 0.5, 0, 1]);
   expect(Array.from(packed.stroke.subarray(0, 4))).toEqual([0, 0, 1, 0.5]);
   expect(Array.from(packed.rim.subarray(0, 4))).toEqual([1, 1, 1, 0.3].map(Math.fround));
+  expect(Array.from(packed.shade.subarray(0, 4))).toEqual([0, 0, 0, 0.2].map(Math.fround));
   expect(Array.from(packed.shadow.subarray(0, 4))).toEqual([0, 0, 0, 0.2].map(Math.fround));
   // The shadow offset and Gaussian width, half the blur, are lengths.
   expect(Array.from(packed.shadowShape.subarray(0, 3))).toEqual([2, 16, 12]);

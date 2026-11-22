@@ -30,6 +30,7 @@ export function measure(root: HTMLElement, nodes: readonly ShapeNode[]): Measure
         stroke: parseColor(style.getPropertyValue("--melt-stroke")),
         strokeWidth: parseFloat(style.getPropertyValue("--melt-stroke-width")) || 0,
         rim: parseColor(style.getPropertyValue("--melt-rim")),
+        shade: parseColor(style.getPropertyValue("--melt-shade")),
         glow: parseFloat(style.getPropertyValue("--melt-glow")) || 0,
         shadow: parseColor(style.getPropertyValue("--melt-shadow")),
         shadowX: parseFloat(style.getPropertyValue("--melt-shadow-x")) || 0,

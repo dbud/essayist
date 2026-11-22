@@ -20,6 +20,7 @@ uniform vec4 u_box[MAX_SHAPES];
 uniform vec4 u_color[MAX_SHAPES];
 uniform vec4 u_stroke[MAX_SHAPES];
 uniform vec4 u_rim[MAX_SHAPES];
+uniform vec4 u_shade[MAX_SHAPES];
 uniform vec4 u_shadow[MAX_SHAPES];
 // The shadow offset in xy and its Gaussian width in z.
 uniform vec4 u_shadowShape[MAX_SHAPES];
@@ -52,8 +53,11 @@ const float REACH = float(FIELD_REACH);
 const int FIELD_SAMPLES = 8;
 // The width of the rim, in device pixels.
 const float RIM_WIDTH = 0.75;
-// How much of the rim shows where the edge doesn't face up.
+// How much of the rim shows where the edge doesn't face up, and of the shade where it doesn't face
+// down.
 const float RIM_BASE = 0.2;
+// The width of the shade, in device pixels.
+const float SHADE_WIDTH = 3.0;
 
 // The signed distance to a rounded box: negative inside, positive outside.
 float roundBox(vec2 p, vec2 half_size, float radius) {
@@ -106,6 +110,7 @@ void main() {
     // shapes nearby and field.a divides them out. effects holds the stroke width and glow.
     vec4 strokes = vec4(0.0);
     vec4 rims = vec4(0.0);
+    vec4 shades = vec4(0.0);
     vec2 effects = vec2(0.0);
     // A shadow has two estimates. A tight one follows the melted outline, shifted by the offset of
     // each shape: shadowField is the field of the shifted shapes, and the shadow blurs across its
@@ -142,6 +147,7 @@ void main() {
       float w = color.a * f;
       strokes += vec4(u_stroke[i].rgb * u_stroke[i].a, u_stroke[i].a) * w;
       rims += vec4(u_rim[i].rgb * u_rim[i].a, u_rim[i].a) * w;
+      shades += vec4(u_shade[i].rgb * u_shade[i].a, u_shade[i].a) * w;
       effects += u_shape[i].yz * w;
       // The fraction of this pixel inside the shape: 1 more than half a pixel inside the edge, 0
       // more than half a pixel outside, and linear in between.
@@ -161,6 +167,7 @@ void main() {
 
     vec4 stroke = field.a > 0.0 ? strokes / field.a : vec4(0.0);
     vec4 rimColor = field.a > 0.0 ? rims / field.a : vec4(0.0);
+    vec4 shadeColor = field.a > 0.0 ? shades / field.a : vec4(0.0);
     vec2 effect = field.a > 0.0 ? effects / field.a : vec2(0.0);
     float strokeWidth = effect.x;
     float glowStrength = effect.y;
@@ -177,6 +184,12 @@ void main() {
     float facingUp = clamp(-slope.y / steepness, 0.0, 1.0);
     float rim = exp(-max(inside, 0.0) / RIM_WIDTH) * mix(RIM_BASE, 1.0, facingUp) * groupColor.a;
     groupColor = rimColor * rim + groupColor * (1.0 - rimColor.a * rim);
+
+    // The shade mirrors the rim along the edges that face down, over a wider band.
+    float facingDown = clamp(slope.y / steepness, 0.0, 1.0);
+    float shade =
+        exp(-max(inside, 0.0) / SHADE_WIDTH) * mix(RIM_BASE, 1.0, facingDown) * groupColor.a;
+    groupColor = shadeColor * shade + groupColor * (1.0 - shadeColor.a * shade);
 
     // The stroke covers the band from the edge to the stroke width inside it.
     float band = clamp(inside + HALF_PIXEL, 0.0, 1.0)

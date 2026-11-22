@@ -26,6 +26,12 @@
   initial-value: transparent;
 }
 
+@property --melt-shade {
+  syntax: "<color>";
+  inherits: false;
+  initial-value: transparent;
+}
+
 @property --melt-glow {
   syntax: "<number>";
   inherits: false;
@@ -64,9 +70,9 @@
 }
 
 @utility melt-shadow-sm {
-  --melt-shadow: rgb(0 0 0 / 0.1);
+  --melt-shadow: rgb(0 0 0 / 0.08);
   --melt-shadow-y: 2px;
-  --melt-shadow-blur: 5px;
+  --melt-shadow-blur: 10px;
 }
 
 @utility melt-shadow-none {
@@ -74,8 +80,8 @@
 }
 
 /* melt-stroke-stroke uses --color-stroke, melt-stroke-white/40 white at 40% opacity,
-   melt-stroke-transparent turns it off, and melt-stroke-[...] takes any colour. The rim takes the
-   same values. */
+   melt-stroke-transparent turns it off, and melt-stroke-[...] takes any colour. The rim and the
+   shade take the same values. */
 @utility melt-stroke-* {
   --melt-stroke: --value(--color-*, [color], "transparent");
   --melt-stroke: color-mix(
@@ -88,6 +94,15 @@
 @utility melt-rim-* {
   --melt-rim: --value(--color-*, [color], "transparent");
   --melt-rim: color-mix(
+    in oklab,
+    --value(--color-*, [color]) calc(--modifier(integer) * 1%),
+    transparent
+  );
+}
+
+@utility melt-shade-* {
+  --melt-shade: --value(--color-*, [color], "transparent");
+  --melt-shade: color-mix(
     in oklab,
     --value(--color-*, [color]) calc(--modifier(integer) * 1%),
     transparent

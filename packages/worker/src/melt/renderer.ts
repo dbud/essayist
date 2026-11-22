@@ -25,6 +25,7 @@ export function createMeltRenderer(gl: WebGL2RenderingContext): MeltRenderer | n
     color: at("u_color"),
     stroke: at("u_stroke"),
     rim: at("u_rim"),
+    shade: at("u_shade"),
     shadow: at("u_shadow"),
     shadowShape: at("u_shadowShape"),
     shape: at("u_shape"),
@@ -46,6 +47,7 @@ export function createMeltRenderer(gl: WebGL2RenderingContext): MeltRenderer | n
     gl.uniform4fv(uniforms.color, frame.color);
     gl.uniform4fv(uniforms.stroke, frame.stroke);
     gl.uniform4fv(uniforms.rim, frame.rim);
+    gl.uniform4fv(uniforms.shade, frame.shade);
     gl.uniform4fv(uniforms.shadow, frame.shadow);
     gl.uniform4fv(uniforms.shadowShape, frame.shadowShape);
     gl.uniform4fv(uniforms.shape, frame.shape);
