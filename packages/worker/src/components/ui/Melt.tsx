@@ -8,6 +8,9 @@ import { MELT_ROOT } from "#/melt/discover.ts";
 /** Turns the melt canvas on or off for the whole page. */
 export const meltEnabled = signal(true);
 
+/** Outlines the measured box of every shape on the melt canvas. */
+export const meltDebug = signal(false);
+
 interface MeltProps {
   class?: string;
   ref?: RefObject<HTMLDivElement | null>;
@@ -20,14 +23,15 @@ export default function Melt({ class: extra, ref, children }: MeltProps) {
   const own = useRef<HTMLDivElement>(null);
   const root = ref ?? own;
   const enabled = meltEnabled.value;
+  const debug = meltDebug.value;
 
   useLayoutEffect(() => {
     const node = root.current;
     if (node === null) return;
-    const detach = enabled ? attachMelt(node) : undefined;
+    const detach = enabled ? attachMelt(node, { debug }) : undefined;
     delete node.dataset.meltPending;
     return detach;
-  }, [enabled, root]);
+  }, [enabled, debug, root]);
 
   // The server renders the root pending, hidden until the canvas can draw it after hydration, so
   // the page never shows its shapes unmelted first. Hydration keeps the attribute of the server,

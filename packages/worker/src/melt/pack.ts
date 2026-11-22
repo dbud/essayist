@@ -31,10 +31,12 @@ export interface PackedFrame {
   /** Group n runs from groupEnd[n - 1], or 0 for the first group, up to groupEnd[n]. */
   readonly groupEnd: Int32Array;
   readonly groups: number;
+  /** Outlines the measured box of each shape over the melt. */
+  readonly debug: boolean;
 }
 
 /** Packs a frame for the shader. Shapes past the limits are left out. */
-export function packFrame(frame: MeltFrame, pixelRatio: number): PackedFrame {
+export function packFrame(frame: MeltFrame, pixelRatio: number, debug = false): PackedFrame {
   const box = new Float32Array(MAX_SHAPES * 4);
   const color = new Float32Array(MAX_SHAPES * 4);
   const stroke = new Float32Array(MAX_SHAPES * 4);
@@ -93,5 +95,6 @@ export function packFrame(frame: MeltFrame, pixelRatio: number): PackedFrame {
     shape: shapeData,
     groupEnd,
     groups,
+    debug,
   };
 }

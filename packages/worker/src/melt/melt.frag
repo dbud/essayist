@@ -30,6 +30,7 @@ uniform int u_groupEnd[MAX_GROUPS];
 uniform int u_groups;
 // Towards the light, with y pointing up.
 uniform vec2 u_light;
+uniform bool u_debug;
 
 out vec4 outColor;
 
@@ -218,6 +219,19 @@ void main() {
     groupColor += shadow * (1.0 - groupColor.a);
 
     result = groupColor + result * (1.0 - groupColor.a);
+  }
+
+  // Outlines the measured box of every shape, to compare the geometry with the melt. Cyan doesn't
+  // appear in the design.
+  if (u_debug) {
+    int count = u_groups > 0 ? u_groupEnd[u_groups - 1] : 0;
+    for (int i = 0; i < MAX_SHAPES; i++) {
+      if (i >= count) break;
+      vec2 half_size = u_box[i].zw;
+      float radius = min(u_shape[i].x, min(half_size.x, half_size.y));
+      float line = clamp(1.0 - abs(roundBox(p - u_box[i].xy, half_size, radius)), 0.0, 1.0);
+      result = mix(result, vec4(0.0, 1.0, 1.0, 1.0), line);
+    }
   }
 
   outColor = result;

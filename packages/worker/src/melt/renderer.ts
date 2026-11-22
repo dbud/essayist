@@ -32,6 +32,7 @@ export function createMeltRenderer(gl: WebGL2RenderingContext): MeltRenderer | n
     shape: at("u_shape"),
     groupEnd: at("u_groupEnd"),
     groups: at("u_groups"),
+    debug: at("u_debug"),
   };
 
   function draw(frame: PackedFrame) {
@@ -55,6 +56,7 @@ export function createMeltRenderer(gl: WebGL2RenderingContext): MeltRenderer | n
     gl.uniform4fv(uniforms.shape, frame.shape);
     gl.uniform1iv(uniforms.groupEnd, frame.groupEnd);
     gl.uniform1i(uniforms.groups, frame.groups);
+    gl.uniform1i(uniforms.debug, frame.debug ? 1 : 0);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
   }
 
