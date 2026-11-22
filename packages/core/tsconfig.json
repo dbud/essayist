@@ -2,6 +2,7 @@
   "compilerOptions": {
     "allowImportingTsExtensions": true,
     "forceConsistentCasingInFileNames": true,
+    "incremental": true,
     "isolatedModules": true,
     "lib": ["dom", "esnext", "esnext.iterator"],
     "module": "esnext",
@@ -9,7 +10,8 @@
     "noEmit": true,
     "skipLibCheck": true,
     "strict": true,
-    "target": "es2024"
+    "target": "es2024",
+    "tsBuildInfoFile": "node_modules/.cache/tsc/app.tsbuildinfo"
   },
   "exclude": ["src/diff/diff_wasm_glue.ts", "src/diff/diff_wasm_test.ts"],
   "include": ["mod.ts", "src", "vitest.config.ts"]

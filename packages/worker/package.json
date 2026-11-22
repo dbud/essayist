@@ -8,7 +8,7 @@
   },
   "scripts": {
     "build": "vite build",
-    "check": "tsc --noEmit && tsc --noEmit -p src/client",
+    "check": "tsc --noEmit & app=$!; tsc --noEmit -p src/client; client=$?; wait $app && exit $client",
     "deploy": "vite build && wrangler deploy",
     "dev": "vite dev",
     "favicon": "node scripts/favicon.ts",

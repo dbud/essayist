@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "tsBuildInfoFile": "../../node_modules/.cache/tsc/client.tsbuildinfo",
     "types": ["vite/client", "google.accounts", "gapi", "google.picker"]
   },
   "exclude": [],
