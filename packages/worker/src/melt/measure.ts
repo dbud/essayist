@@ -6,16 +6,18 @@ import type { Box, MeasuredShape, Measurement } from "./layout.ts";
 export function measure(root: HTMLElement, nodes: readonly ShapeNode[]): Measurement {
   // Rects are measured in the viewport, with every transform applied. The canvas sits inside the
   // root, so the transforms of the root and its ancestors apply to it as well; dividing them out
-  // leaves the CSS pixels of the root.
+  // leaves the CSS pixels of the root. The computed width keeps its fraction, unlike offsetWidth,
+  // whose rounding would scale every position by a little and shift shapes far from the root.
   const origin = root.getBoundingClientRect();
-  const scale = root.offsetWidth > 0 ? origin.width / root.offsetWidth : 1;
+  const rootStyle = getComputedStyle(root);
+  const layoutWidth = parseFloat(rootStyle.width) || root.offsetWidth;
+  const scale = layoutWidth > 0 ? origin.width / layoutWidth : 1;
   const local = (rect: DOMRect): Box => ({
     left: (rect.left - origin.left) / scale,
     top: (rect.top - origin.top) / scale,
     width: rect.width / scale,
     height: rect.height / scale,
   });
-  const rootStyle = getComputedStyle(root);
   const setting = (name: string) => parseFloat(rootStyle.getPropertyValue(`--melt-${name}`));
   const opacities = new Map<Element, number>([[root, 1]]);
 
