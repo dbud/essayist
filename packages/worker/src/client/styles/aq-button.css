@@ -115,6 +115,6 @@
   --btn-ink-hover: var(--aq-btn-idle-ink-hover);
 
   &:not(:hover, [aria-expanded="true"]) {
-    @apply melt-stroke-stroke/90 melt-shade-black/10 melt-shadow-sm;
+    @apply melt-rim-stroke/50 melt-shade-black/15 melt-shadow-sm;
   }
 }

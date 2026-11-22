@@ -57,7 +57,7 @@ const float RIM_WIDTH = 0.75;
 // down.
 const float RIM_BASE = 0.2;
 // The width of the shade, in device pixels.
-const float SHADE_WIDTH = 3.0;
+const float SHADE_WIDTH = 1.5;
 
 // The signed distance to a rounded box: negative inside, positive outside.
 float roundBox(vec2 p, vec2 half_size, float radius) {
