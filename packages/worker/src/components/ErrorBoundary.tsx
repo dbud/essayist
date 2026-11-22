@@ -1,6 +1,8 @@
-import { TriangleAlert } from "lucide-preact";
+import { RotateCcw, TriangleAlert } from "lucide-preact";
 import type { ComponentChildren } from "preact";
 import { useEffect, useErrorBoundary } from "preact/hooks";
+
+import Melt from "#/components/ui/Melt.tsx";
 
 interface ErrorBoundaryProps {
   children?: ComponentChildren;
@@ -18,24 +20,27 @@ export default function ErrorBoundary({ children }: ErrorBoundaryProps) {
 
   if (error) {
     return (
-      <div class="flex flex-1 min-h-0 striped bg-paper">
-        <div class="m-auto w-full max-w-128 flex flex-col stack stack--row stack--col shadow-md">
-          <div class="cell cell--ink flex gap-1">
-            <TriangleAlert size={14} />
-            Something went wrong
+      <div class="flex flex-1 min-h-0 h-full items-center justify-center p-6 bg-paper striped pointer-events-auto">
+        <Melt class="flex flex-col items-end gap-4 w-full max-w-128">
+          <div class="aq-menu flex flex-col gap-2 self-stretch">
+            <div class="flex items-center gap-2">
+              <TriangleAlert size={16} class="text-accent" />
+              <span>Something went wrong</span>
+            </div>
+            <pre class="font-mono text-xs opacity-70 whitespace-pre-wrap break-all max-h-48 overflow-y-auto">
+              {error instanceof Error ? error.message : String(error)}
+            </pre>
           </div>
-          <div class="cell--data font-mono text-xs min-w-0 overflow-y-auto break-all whitespace-pre-wrap">
-            {error instanceof Error ? error.message : String(error)}
-          </div>
-          <div class="form-actions">
-            <button type="button" class="btn" onClick={resetError}>
+          <div class="flex gap-4">
+            <button type="button" class="aq-btn" onClick={resetError}>
               Try again
             </button>
-            <button type="button" class="btn" onClick={() => location.reload()}>
-              Reload
+            <button type="button" class="aq-btn" onClick={() => location.reload()}>
+              <RotateCcw />
+              <span>Reload</span>
             </button>
           </div>
-        </div>
+        </Melt>
       </div>
     );
   }
