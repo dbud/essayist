@@ -59,7 +59,7 @@ export default function SettingsMenu({ user }: SettingsMenuProps) {
       <div class={`aq-dropdown--origin-end ${open.value ? "is-open" : ""}`}>
         <div class="aq-menu">
           <ul class="aq-menu-rows" data-aq-stagger>
-            <li class="pointer-events-none flex gap-1">
+            <li class="pointer-events-none flex gap-2">
               <span class="grid h-10 w-10">
                 <Avatar user={user} />
               </span>

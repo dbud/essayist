@@ -23,6 +23,16 @@
   }
 }
 
+.aq-avatar {
+  @apply relative w-full h-full rounded-md;
+  @apply melt-group melt-shape melt-rim-white/70 melt-shadow-none;
+  --melt-fill: var(--color-float);
+}
+
+.aq-avatar-picture {
+  @apply absolute -inset-px grid place-items-center rounded-[13px] overflow-hidden text-float-ink;
+}
+
 .aq-menu-btn.is-selected {
   @apply melt-rim-white/70;
   --btn-bg: var(--color-accent);
