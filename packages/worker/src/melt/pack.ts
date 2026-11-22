@@ -61,6 +61,7 @@ export function packFrame(frame: MeltFrame, pixelRatio: number): PackedFrame {
     rim.set(effects.rim, i * 4);
     shade.set(effects.shade, i * 4);
     shadow.set(effects.shadow, i * 4);
+    // TODO -- cast the shadow away from the page light angle instead of straight down
     shadowShape.set(
       [effects.shadowX, effects.shadowY, effects.shadowBlur / 2].map((value) => value * pixelRatio),
       i * 4,
