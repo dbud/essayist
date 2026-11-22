@@ -1,0 +1,44 @@
+import type { Signal } from "@preact/signals";
+
+interface RemoveFileDialogProps {
+  path: Signal<string | null>;
+  onRemoved?: () => void;
+}
+
+export default function RemoveFileDialog({ path, onRemoved }: RemoveFileDialogProps) {
+  const open = path.value !== null;
+
+  function onSubmit(e: Event) {
+    e.preventDefault();
+    // TODO -- remove the file once soft delete lands
+    path.value = null;
+    onRemoved?.();
+  }
+
+  return (
+    <form
+      class={`aq-dropdown aq-dropdown--detached ${open ? "is-open" : ""}`}
+      onSubmit={onSubmit}
+      onKeyDown={(e) => {
+        if (e.key === "Escape" && open) {
+          e.stopPropagation();
+          path.value = null;
+        }
+      }}
+    >
+      <div class="aq-menu">
+        <div class="aq-form" data-aq-stagger>
+          <div class="col-span-2">Remove &ldquo;{path.value}&rdquo;?</div>
+        </div>
+      </div>
+      <div class="flex justify-end gap-4">
+        <button type="button" class="aq-btn" onClick={() => (path.value = null)}>
+          Cancel
+        </button>
+        <button type="submit" class="aq-btn--accent">
+          Remove
+        </button>
+      </div>
+    </form>
+  );
+}

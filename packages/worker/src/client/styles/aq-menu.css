@@ -23,6 +23,21 @@
   }
 }
 
+/* Icon buttons next to a row, like remove or rename. Outranks .aq-menu--wrap. */
+li > .aq-menu-btn.aq-menu-action {
+  @apply grid place-items-center self-center w-auto min-w-0 shrink-0 px-2;
+}
+
+/* Hidden until the row is hovered, focused or selected. */
+li:not(:hover, :focus-within) > .aq-menu-btn:not(.is-selected) ~ .aq-menu-action {
+  --btn-bg: transparent;
+  --btn-ink: transparent;
+}
+
+li > .aq-menu-btn:has(~ .aq-menu-action) {
+  @apply flex-1 min-w-0;
+}
+
 .aq-avatar {
   @apply relative w-full h-full rounded-md;
   @apply melt-group melt-shape melt-rim-white/70 melt-shadow-none;

@@ -6,6 +6,7 @@ import CreateWorkspaceDialog from "#/components/editor/CreateWorkspaceDialog.tsx
 import DeleteWorkspaceDialog from "#/components/editor/DeleteWorkspaceDialog.tsx";
 import FileUploader from "#/components/editor/FileUploader.tsx";
 import GoogleDocImporter from "#/components/editor/GoogleDocImporter.tsx";
+import RemoveFileDialog from "#/components/editor/RemoveFileDialog.tsx";
 import AqSwap from "#/components/ui/AqSwap.tsx";
 import Melt from "#/components/ui/Melt.tsx";
 import WaveBars from "#/components/ui/WaveBars.tsx";
@@ -62,12 +63,14 @@ export default function FileNavigation({ open }: FileNavigationProps) {
   const createWorkspaceDialogOpen = useSignal(false);
   const createFileDialogOpen = useSignal(false);
   const deleteWorkspaceDialogOpen = useSignal(false);
+  const removingPath = useSignal<string | null>(null);
 
   const close = () => {
     open.value = false;
     createFileDialogOpen.value = false;
     createWorkspaceDialogOpen.value = false;
     deleteWorkspaceDialogOpen.value = false;
+    removingPath.value = null;
   };
 
   const ref = useClickOutside(close);
@@ -82,7 +85,8 @@ export default function FileNavigation({ open }: FileNavigationProps) {
     open.value &&
     !createFileDialogOpen.value &&
     !createWorkspaceDialogOpen.value &&
-    !deleteWorkspaceDialogOpen.value;
+    !deleteWorkspaceDialogOpen.value &&
+    removingPath.value === null;
   const ownsSelected = user !== undefined && workspaces.current.value?.ownerId === user.id;
 
   const breadcrumbsTrigger = (
@@ -148,7 +152,7 @@ export default function FileNavigation({ open }: FileNavigationProps) {
         <div class="aq-menu aq-menu--wrap">
           <ul class="aq-menu-rows" data-aq-stagger>
             {fileEntries.map(({ path, parts, selected: fileSelected, name: fileName }) => (
-              <li key={path}>
+              <li key={path} class="flex gap-2">
                 <button
                   type="button"
                   class={`aq-menu-btn group ${fileSelected ? "is-selected" : ""}`}
@@ -167,6 +171,14 @@ export default function FileNavigation({ open }: FileNavigationProps) {
                     </span>
                   ))}
                   <span class="break-words min-w-0">{fileName}</span>
+                </button>
+                <button
+                  type="button"
+                  class="aq-menu-btn aq-menu-action"
+                  aria-label={`Remove ${path}`}
+                  onClick={() => (removingPath.value = path)}
+                >
+                  <Trash2 />
                 </button>
               </li>
             ))}
@@ -222,6 +234,7 @@ export default function FileNavigation({ open }: FileNavigationProps) {
 
       <CreateWorkspaceDialog open={createWorkspaceDialogOpen} />
       <DeleteWorkspaceDialog open={deleteWorkspaceDialogOpen} onDeleted={close} />
+      <RemoveFileDialog path={removingPath} onRemoved={close} />
       <CreateFileDialog open={createFileDialogOpen} onCreated={close} />
     </Melt>
   );
