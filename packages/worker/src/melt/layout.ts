@@ -11,9 +11,11 @@ export interface MeltSettings {
   readonly sigma: number;
   readonly gain: number;
   readonly bias: number;
+  /** In degrees clockwise from straight up. */
+  readonly lightAngle: number;
 }
 
-export const DEFAULT_SETTINGS: MeltSettings = { sigma: 6, gain: 18, bias: -6 };
+export const DEFAULT_SETTINGS: MeltSettings = { sigma: 6, gain: 18, bias: -6, lightAngle: 0 };
 
 /** The effects of a shape along the melted edge. */
 export interface MeltEffects {
@@ -85,7 +87,12 @@ export const FIELD_REACH = 3;
 export function resolveSettings(settings: MeltSettings): MeltSettings {
   const pick = (name: keyof MeltSettings) =>
     Number.isFinite(settings[name]) ? settings[name] : DEFAULT_SETTINGS[name];
-  return { sigma: pick("sigma"), gain: pick("gain"), bias: pick("bias") };
+  return {
+    sigma: pick("sigma"),
+    gain: pick("gain"),
+    bias: pick("bias"),
+    lightAngle: pick("lightAngle"),
+  };
 }
 
 /** Lays out the visible shapes of a measurement, or returns null when there are none. */

@@ -44,7 +44,12 @@ export function measure(root: HTMLElement, nodes: readonly ShapeNode[]): Measure
   });
 
   return {
-    settings: { sigma: setting("sigma"), gain: setting("gain"), bias: setting("bias") },
+    settings: {
+      sigma: setting("sigma"),
+      gain: setting("gain"),
+      bias: setting("bias"),
+      lightAngle: setting("light-angle"),
+    },
     shapes,
   };
 }

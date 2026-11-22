@@ -28,6 +28,8 @@ uniform vec4 u_shadowShape[MAX_SHAPES];
 uniform vec4 u_shape[MAX_SHAPES];
 uniform int u_groupEnd[MAX_GROUPS];
 uniform int u_groups;
+// Towards the light, with y pointing up.
+uniform vec2 u_light;
 
 out vec4 outColor;
 
@@ -53,8 +55,7 @@ const float REACH = float(FIELD_REACH);
 const int FIELD_SAMPLES = 8;
 // The width of the rim, in device pixels.
 const float RIM_WIDTH = 0.75;
-// How much of the rim shows where the edge doesn't face up, and of the shade where it doesn't face
-// down.
+// How much of the rim and the shade wraps round to the other edges.
 const float RIM_BASE = 0.2;
 // The width of the shade, in device pixels.
 const float SHADE_WIDTH = 1.5;
@@ -179,22 +180,20 @@ void main() {
     float edgeField = (0.5 - u_bias) / u_gain;
     float inside = (field.a - edgeField) / steepness;
 
-    // The rim and the shade start where the outline turns fully opaque, so their strongest part
-    // lands on solid colour however wide the soft edge is. The rim is a line RIM_WIDTH wide from
-    // there, antialiased on its inner side; the shade fades inwards. Both mix into the colour
-    // without changing its opacity, so the soft edge keeps its coverage and blends from the
-    // background into them. The field falls towards the outside, so the edge faces up where the
-    // slope points down.
+    // The rim and the shade start where the outline turns opaque, so they land on solid colour.
+    // The rim is a line RIM_WIDTH wide, antialiased on its inner side; the shade fades inwards.
+    // Both change the colour but not the opacity, so the soft edge keeps its coverage. An edge
+    // faces against the slope of the field.
     float solid = (field.a - (1.0 - u_bias) / u_gain) / steepness;
-    float facingUp = clamp(-slope.y / steepness, 0.0, 1.0);
+    float facingLight = clamp(dot(-slope / steepness, u_light), 0.0, 1.0);
     float rimLine = clamp(RIM_WIDTH + HALF_PIXEL - max(solid, 0.0), 0.0, 1.0);
-    float rim = rimLine * mix(RIM_BASE, 1.0, facingUp) * rimColor.a;
+    float rim = rimLine * mix(RIM_BASE, 1.0, facingLight) * rimColor.a;
     groupColor.rgb = mix(groupColor.rgb, rimColor.rgb / max(rimColor.a, 1e-6) * groupColor.a, rim);
 
-    // The shade mirrors the rim along the edges that face down, over a wider band.
-    float facingDown = clamp(slope.y / steepness, 0.0, 1.0);
+    // The shade mirrors the rim, on the edges facing away from the light.
+    float facingAway = clamp(dot(slope / steepness, u_light), 0.0, 1.0);
     float shade =
-      exp(-max(solid, 0.0) / SHADE_WIDTH) * mix(RIM_BASE, 1.0, facingDown) * shadeColor.a;
+      exp(-max(solid, 0.0) / SHADE_WIDTH) * mix(RIM_BASE, 1.0, facingAway) * shadeColor.a;
     groupColor.rgb =
       mix(groupColor.rgb, shadeColor.rgb / max(shadeColor.a, 1e-6) * groupColor.a, shade);
 

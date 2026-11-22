@@ -39,7 +39,8 @@ const measurement = (shapes: MeasuredShape[], sigma = 5): Measurement => ({
 });
 
 test("unset settings fall back to the defaults", () => {
-  expect(resolveSettings({ sigma: Number.NaN, gain: 10, bias: Number.NaN })).toEqual({
+  const unset = { sigma: Number.NaN, gain: 10, bias: Number.NaN, lightAngle: Number.NaN };
+  expect(resolveSettings(unset)).toEqual({
     ...DEFAULT_SETTINGS,
     gain: 10,
   });

@@ -21,6 +21,7 @@ export function createMeltRenderer(gl: WebGL2RenderingContext): MeltRenderer | n
     sigma: at("u_sigma"),
     gain: at("u_gain"),
     bias: at("u_bias"),
+    light: at("u_light"),
     box: at("u_box"),
     color: at("u_color"),
     stroke: at("u_stroke"),
@@ -43,6 +44,7 @@ export function createMeltRenderer(gl: WebGL2RenderingContext): MeltRenderer | n
     gl.uniform1f(uniforms.sigma, frame.sigma);
     gl.uniform1f(uniforms.gain, frame.gain);
     gl.uniform1f(uniforms.bias, frame.bias);
+    gl.uniform2fv(uniforms.light, frame.light);
     gl.uniform4fv(uniforms.box, frame.box);
     gl.uniform4fv(uniforms.color, frame.color);
     gl.uniform4fv(uniforms.stroke, frame.stroke);

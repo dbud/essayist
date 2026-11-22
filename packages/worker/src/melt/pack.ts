@@ -13,6 +13,8 @@ export interface PackedFrame {
   readonly sigma: number;
   readonly gain: number;
   readonly bias: number;
+  /** Towards the light, with y pointing up. */
+  readonly light: readonly [number, number];
   /** The centre and half size of each shape, four numbers per shape. */
   readonly box: Float32Array;
   readonly color: Float32Array;
@@ -76,6 +78,10 @@ export function packFrame(frame: MeltFrame, pixelRatio: number): PackedFrame {
     sigma: Math.max(frame.settings.sigma * pixelRatio, MIN_SIGMA),
     gain: frame.settings.gain,
     bias: frame.settings.bias,
+    light: [
+      Math.sin((frame.settings.lightAngle * Math.PI) / 180),
+      Math.cos((frame.settings.lightAngle * Math.PI) / 180),
+    ],
     box,
     color,
     stroke,

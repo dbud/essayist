@@ -6,6 +6,14 @@
   initial-value: transparent;
 }
 
+/* The angle of the light on the page, clockwise from straight up. Rims face it, shades face
+   away. */
+@property --melt-light-angle {
+  syntax: "<angle>";
+  inherits: true;
+  initial-value: 0deg;
+}
+
 /* The effects of a shape along the melted edge, off by default. They don't inherit, so each shape
    sets its own, and they transition like the fill. */
 @property --melt-stroke {

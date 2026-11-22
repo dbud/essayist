@@ -61,6 +61,14 @@ test("shapes past the limit are left out", () => {
   expect(packed.groupEnd[MAX_SHAPES - 1]).toBe(MAX_SHAPES);
 });
 
+test("the light angle becomes a direction, from straight up and clockwise", () => {
+  const lit = (lightAngle: number) =>
+    packFrame({ ...frame([shape(0)]), settings: { ...DEFAULT_SETTINGS, lightAngle } }, 1).light;
+  expect(lit(0)).toEqual([0, 1]);
+  expect(lit(90)[0]).toBeCloseTo(1);
+  expect(lit(90)[1]).toBeCloseTo(0);
+});
+
 test("a sigma of 0 stays above 0", () => {
   const packed = packFrame(
     { ...frame([shape(0)]), settings: { ...DEFAULT_SETTINGS, sigma: 0 } },
