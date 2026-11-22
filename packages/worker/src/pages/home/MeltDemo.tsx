@@ -169,13 +169,13 @@ function Effects() {
       <button type="button" class="aq-btn">
         Float
       </button>
-      <button type="button" class="aq-btn melt-rim-35">
+      <button type="button" class="aq-btn melt-rim-white/35">
         Rim
       </button>
       <button type="button" class="aq-btn--accent melt-glow-40">
         Glow
       </button>
-      <button type="button" class="aq-btn melt-rim-35 melt-stroke-[rgb(255_255_255/0.2)]">
+      <button type="button" class="aq-btn melt-rim-white/35 melt-stroke-[rgb(255_255_255/0.2)]">
         Rim and stroke
       </button>
     </Melt>

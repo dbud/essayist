@@ -21,8 +21,8 @@ export interface MeltEffects {
   readonly stroke: Rgba;
   /** In CSS pixels. */
   readonly strokeWidth: number;
-  /** The opacity of a white rim just inside the edge, brightest where the edge faces up. */
-  readonly rim: number;
+  /** A band just inside the edge that fades inwards, strongest where the edge faces up. */
+  readonly rim: Rgba;
   /** The opacity of a halo outside the edge, in the colour of the shapes nearby. */
   readonly glow: number;
 }
@@ -119,7 +119,7 @@ export function layoutFrame(measurement: Measurement): MeltFrame | null {
             effects.stroke[3] * opacity,
           ],
           strokeWidth: effects.strokeWidth,
-          rim: effects.rim * opacity,
+          rim: [effects.rim[0], effects.rim[1], effects.rim[2], effects.rim[3] * opacity],
           glow: effects.glow * opacity,
         },
         group: shape.group,

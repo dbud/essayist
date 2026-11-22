@@ -29,7 +29,7 @@ export function measure(root: HTMLElement, nodes: readonly ShapeNode[]): Measure
       effects: {
         stroke: parseColor(style.getPropertyValue("--melt-stroke")),
         strokeWidth: parseFloat(style.getPropertyValue("--melt-stroke-width")) || 0,
-        rim: parseFloat(style.getPropertyValue("--melt-rim")) || 0,
+        rim: parseColor(style.getPropertyValue("--melt-rim")),
         glow: parseFloat(style.getPropertyValue("--melt-glow")) || 0,
       },
       opacity: opacityOf(element, opacities),

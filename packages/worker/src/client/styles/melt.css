@@ -21,9 +21,9 @@
 }
 
 @property --melt-rim {
-  syntax: "<number>";
+  syntax: "<color>";
   inherits: false;
-  initial-value: 0;
+  initial-value: transparent;
 }
 
 @property --melt-glow {
@@ -32,14 +32,25 @@
   initial-value: 0;
 }
 
-/* melt-stroke-stroke uses --color-stroke; melt-stroke-[...] takes any colour. */
+/* melt-stroke-stroke uses --color-stroke, melt-stroke-white/40 white at 40% opacity,
+   melt-stroke-transparent turns it off, and melt-stroke-[...] takes any colour. The rim takes the
+   same values. */
 @utility melt-stroke-* {
-  --melt-stroke: --value(--color-*, [color]);
+  --melt-stroke: --value(--color-*, [color], "transparent");
+  --melt-stroke: color-mix(
+    in oklab,
+    --value(--color-*, [color]) calc(--modifier(integer) * 1%),
+    transparent
+  );
 }
 
-/* melt-rim-35 is a rim at 35% opacity. */
 @utility melt-rim-* {
-  --melt-rim: calc(--value(integer) / 100);
+  --melt-rim: --value(--color-*, [color], "transparent");
+  --melt-rim: color-mix(
+    in oklab,
+    --value(--color-*, [color]) calc(--modifier(integer) * 1%),
+    transparent
+  );
 }
 
 @utility melt-glow-* {

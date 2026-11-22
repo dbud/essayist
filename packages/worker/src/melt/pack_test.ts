@@ -10,7 +10,7 @@ const shape = (group: number, x = 10): MeltShape => ({
   halfHeight: 4,
   radius: 2,
   color: [1, 0.5, 0, 1],
-  effects: { stroke: [0, 0, 1, 0.5], strokeWidth: 1, rim: 0.3, glow: 0.2 },
+  effects: { stroke: [0, 0, 1, 0.5], strokeWidth: 1, rim: [1, 1, 1, 0.3], glow: 0.2 },
   group,
 });
 
@@ -29,8 +29,9 @@ test("lengths are scaled to device pixels, and the size is rounded", () => {
   expect(Array.from(packed.box.subarray(0, 4))).toEqual([20, 40, 10, 8]);
   expect(Array.from(packed.color.subarray(0, 4))).toEqual([1, 0.5, 0, 1]);
   expect(Array.from(packed.stroke.subarray(0, 4))).toEqual([0, 0, 1, 0.5]);
-  // The radius and the stroke width are lengths; the rim and the glow are not.
-  expect(Array.from(packed.shape.subarray(0, 4))).toEqual([4, 2, 0.3, 0.2].map(Math.fround));
+  expect(Array.from(packed.rim.subarray(0, 4))).toEqual([1, 1, 1, 0.3].map(Math.fround));
+  // The radius and the stroke width are lengths; the glow is not.
+  expect(Array.from(packed.shape.subarray(0, 3))).toEqual([4, 2, 0.2].map(Math.fround));
 });
 
 test("groups are numbered again from 0, and each ends after its last shape", () => {

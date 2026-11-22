@@ -19,7 +19,8 @@ uniform vec4 u_box[MAX_SHAPES];
 // The colours are not premultiplied.
 uniform vec4 u_color[MAX_SHAPES];
 uniform vec4 u_stroke[MAX_SHAPES];
-// The corner radius, stroke width, rim and glow.
+uniform vec4 u_rim[MAX_SHAPES];
+// The corner radius, stroke width and glow.
 uniform vec4 u_shape[MAX_SHAPES];
 uniform int u_groupEnd[MAX_GROUPS];
 uniform int u_groups;
@@ -99,9 +100,10 @@ void main() {
     vec4 field = vec4(0.0);
     vec4 shapes = vec4(0.0);
     // The effects of the shapes, weighted like the colours, so the edge takes the effects of the
-    // shapes nearby and field.a divides them out. effects holds the stroke width, rim and glow.
+    // shapes nearby and field.a divides them out. effects holds the stroke width and glow.
     vec4 strokes = vec4(0.0);
-    vec3 effects = vec3(0.0);
+    vec4 rims = vec4(0.0);
+    vec2 effects = vec2(0.0);
 
     for (int i = start; i < end; i++) {
       vec2 local = p - u_box[i].xy;
@@ -114,7 +116,8 @@ void main() {
       field += color * f;
       float w = color.a * f;
       strokes += vec4(u_stroke[i].rgb * u_stroke[i].a, u_stroke[i].a) * w;
-      effects += u_shape[i].yzw * w;
+      rims += vec4(u_rim[i].rgb * u_rim[i].a, u_rim[i].a) * w;
+      effects += u_shape[i].yz * w;
       // The fraction of this pixel inside the shape: 1 more than half a pixel inside the edge, 0
       // more than half a pixel outside, and linear in between.
       float coverage = clamp(HALF_PIXEL - toEdge, 0.0, 1.0);
@@ -132,10 +135,10 @@ void main() {
     vec4 groupColor = shapes * outline + around * (1.0 - shapes.a);
 
     vec4 stroke = field.a > 0.0 ? strokes / field.a : vec4(0.0);
-    vec3 effect = field.a > 0.0 ? effects / field.a : vec3(0.0);
+    vec4 rimColor = field.a > 0.0 ? rims / field.a : vec4(0.0);
+    vec2 effect = field.a > 0.0 ? effects / field.a : vec2(0.0);
     float strokeWidth = effect.x;
-    float rimStrength = effect.y;
-    float glowStrength = effect.z;
+    float glowStrength = effect.y;
 
     // The slope of the field, in window coordinates, where y points up. Dividing the field by it
     // gives the distance to the melted edge, where the outline is half opaque, in device pixels.
@@ -144,11 +147,11 @@ void main() {
     float edgeField = (0.5 - u_bias) / u_gain;
     float inside = (field.a - edgeField) / steepness;
 
-    // The rim fades over RIM_WIDTH inside the edge. The field falls towards the outside, so the
-    // edge faces up where the slope points down.
+    // The rim is drawn over the group, fading over RIM_WIDTH inside the edge. The field falls
+    // towards the outside, so the edge faces up where the slope points down.
     float facingUp = clamp(-slope.y / steepness, 0.0, 1.0);
-    float rim = rimStrength * exp(-max(inside, 0.0) / RIM_WIDTH) * mix(RIM_BASE, 1.0, facingUp);
-    groupColor.rgb = min(groupColor.rgb + rim * groupColor.a, groupColor.a);
+    float rim = exp(-max(inside, 0.0) / RIM_WIDTH) * mix(RIM_BASE, 1.0, facingUp) * groupColor.a;
+    groupColor = rimColor * rim + groupColor * (1.0 - rimColor.a * rim);
 
     // The stroke covers the band from the edge to the stroke width inside it.
     float band = clamp(inside + HALF_PIXEL, 0.0, 1.0)

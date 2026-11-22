@@ -39,7 +39,7 @@
   color: var(--btn-ink);
   font-size: var(--aq-btn-font-size);
   padding: var(--aq-btn-py) var(--aq-btn-px);
-  @apply melt-shape melt-rim-90;
+  @apply melt-shape melt-rim-white/80;
   --melt-fill: var(--btn-bg);
   transform: scale(var(--aq-btn-lifted));
   transition:
@@ -81,7 +81,7 @@
 }
 
 @utility aq-btn--accent {
-  @apply aq-btn melt-rim-50;
+  @apply aq-btn melt-rim-white/80;
   --btn-bg: var(--aq-btn-accent-bg);
   --btn-bg-hover: var(--aq-btn-accent-bg-hover);
   --btn-ink: var(--aq-btn-accent-ink);

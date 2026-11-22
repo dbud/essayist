@@ -27,7 +27,7 @@
 }
 
 .aq-toggle-knob {
-  @apply absolute rounded-full melt-group melt-shape size-[var(--aq-toggle-knob)];
+  @apply absolute rounded-full melt-group melt-shape melt-rim-white/70 size-[var(--aq-toggle-knob)];
   --melt-fill: color-mix(in oklch, var(--color-float), white 45%);
   top: var(--aq-toggle-inset);
   left: calc(

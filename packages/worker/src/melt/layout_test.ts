@@ -9,7 +9,7 @@ import {
 } from "./layout.ts";
 
 const BLACK = [0, 0, 0, 1] as const;
-const NO_EFFECTS = { stroke: [0, 0, 0, 0], strokeWidth: 1, rim: 0, glow: 0 } as const;
+const NO_EFFECTS = { stroke: [0, 0, 0, 0], strokeWidth: 1, rim: [0, 0, 0, 0], glow: 0 } as const;
 
 const shape = (fields: Partial<MeasuredShape> = {}): MeasuredShape => ({
   rect: { left: 100, top: 100, width: 40, height: 20 },
@@ -68,13 +68,13 @@ test("shapes are sorted by group and keep their document order within it", () =>
 });
 
 test("the opacity of a shape goes into the alpha of its colour and of its effects", () => {
-  const effects = { stroke: [0, 0, 1, 1], strokeWidth: 2, rim: 0.4, glow: 0.2 } as const;
+  const effects = { stroke: [0, 0, 1, 1], strokeWidth: 2, rim: [1, 1, 1, 0.4], glow: 0.2 } as const;
   const frame = layoutFrame(measurement([shape({ fill: [1, 0, 0, 0.5], effects, opacity: 0.5 })]));
   expect(frame?.shapes[0].color).toEqual([1, 0, 0, 0.25]);
   expect(frame?.shapes[0].effects).toEqual({
     stroke: [0, 0, 1, 0.5],
     strokeWidth: 2,
-    rim: 0.2,
+    rim: [1, 1, 1, 0.2],
     glow: 0.1,
   });
 });

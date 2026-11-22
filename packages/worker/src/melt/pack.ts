@@ -17,7 +17,9 @@ export interface PackedFrame {
   readonly box: Float32Array;
   readonly color: Float32Array;
   readonly stroke: Float32Array;
-  /** The corner radius, stroke width, rim and glow of each shape, four numbers per shape. */
+  readonly rim: Float32Array;
+  /** The corner radius, stroke width and glow of each shape, four numbers per shape with the last
+      unused. */
   readonly shape: Float32Array;
   /** Group n runs from groupEnd[n - 1], or 0 for the first group, up to groupEnd[n]. */
   readonly groupEnd: Int32Array;
@@ -29,6 +31,7 @@ export function packFrame(frame: MeltFrame, pixelRatio: number): PackedFrame {
   const box = new Float32Array(MAX_SHAPES * 4);
   const color = new Float32Array(MAX_SHAPES * 4);
   const stroke = new Float32Array(MAX_SHAPES * 4);
+  const rim = new Float32Array(MAX_SHAPES * 4);
   const shapeData = new Float32Array(MAX_SHAPES * 4);
   const groupEnd = new Int32Array(MAX_GROUPS);
 
@@ -45,8 +48,9 @@ export function packFrame(frame: MeltFrame, pixelRatio: number): PackedFrame {
     color.set(shape.color, i * 4);
     const { effects } = shape;
     stroke.set(effects.stroke, i * 4);
+    rim.set(effects.rim, i * 4);
     shapeData.set(
-      [shape.radius * pixelRatio, effects.strokeWidth * pixelRatio, effects.rim, effects.glow],
+      [shape.radius * pixelRatio, effects.strokeWidth * pixelRatio, effects.glow],
       i * 4,
     );
     groupEnd[groups - 1] = i + 1;
@@ -61,6 +65,7 @@ export function packFrame(frame: MeltFrame, pixelRatio: number): PackedFrame {
     box,
     color,
     stroke,
+    rim,
     shape: shapeData,
     groupEnd,
     groups,
