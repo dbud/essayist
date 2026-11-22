@@ -200,9 +200,6 @@
 }
 
 @utility striped-* {
-  --sqrt2: 1.4142135624;
-  --stripe-line: calc(1 * var(--sqrt2) * 1px);
-  --stripe-period: calc(4 * var(--sqrt2) * 1px);
   --stripe-opacity: --value(integer, --default(10));
   --stripe-opacity: --modifier(integer);
   --stripe-color: color-mix(
@@ -210,13 +207,14 @@
     var(--color-ink),
     transparent calc(100% - var(--stripe-opacity) * 1%)
   );
-  background-image: repeating-linear-gradient(
+  background-image: linear-gradient(
     -45deg,
-    var(--stripe-color) 0,
-    var(--stripe-color) var(--stripe-line),
-    transparent var(--stripe-line),
-    transparent var(--stripe-period)
+    var(--stripe-color) 0 12.5%,
+    transparent 12.5% 50%,
+    var(--stripe-color) 50% 62.5%,
+    transparent 62.5%
   );
+  background-size: 8px 8px;
 }
 
 @utility fade {
