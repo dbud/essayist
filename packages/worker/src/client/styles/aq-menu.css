@@ -1,5 +1,5 @@
 .aq-menu {
-  @apply melt-shape rounded-lg py-2 px-2 text-float-ink;
+  @apply melt-shape melt-rim-20 rounded-lg py-2 px-2 text-float-ink;
   --melt-fill: var(--color-float);
 }
 
@@ -16,9 +16,14 @@
   @apply melt-group;
   --btn-bg: oklch(from var(--color-float) l c h / 0.6);
   --aq-btn-ease: cubic-bezier(0.2, 0, 0, 1);
+
+  &:hover {
+    @apply melt-rim-20;
+  }
 }
 
 .aq-menu-btn.is-selected {
+  @apply melt-rim-60;
   --btn-bg: var(--color-accent);
   --btn-bg-hover: var(--aq-btn-accent-hover);
 
