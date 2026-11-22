@@ -159,37 +159,55 @@ function Segmented() {
   );
 }
 
+/** Each effect on a single button, with a neighbour to melt into. */
+function Effects() {
+  return (
+    <Melt class="flex items-center gap-1">
+      <button type="button" class="aq-btn--idle">
+        Idle
+      </button>
+      <button type="button" class="aq-btn">
+        Float
+      </button>
+      <button type="button" class="aq-btn melt-rim-35">
+        Rim
+      </button>
+      <button type="button" class="aq-btn--accent melt-glow-40">
+        Glow
+      </button>
+      <button type="button" class="aq-btn melt-rim-35 melt-stroke-[rgb(255_255_255/0.2)]">
+        Rim and stroke
+      </button>
+    </Melt>
+  );
+}
+
 const SAMPLES = [
   { name: "buttons", Sample: Buttons, height: "h-16" },
   { name: "swap", Sample: Swap, height: "h-16" },
   { name: "dropdown", Sample: Dropdown, height: "h-52" },
   { name: "bridged", Sample: BridgedDropdown, height: "h-72" },
   { name: "segmented", Sample: Segmented, height: "h-16" },
+  { name: "effects", Sample: Effects, height: "h-16" },
 ];
 
-/** Switches the shader for the whole page. Without it, shapes show their plain backgrounds. */
-function ShaderControls() {
-  return (
-    <span class="flex items-center gap-4 opacity-60">
-      <button
-        type="button"
-        class="underline"
-        onClick={() => (meltEnabled.value = !meltEnabled.value)}
-      >
-        shader: {meltEnabled.value ? "on" : "off"}
-      </button>
-      <button type="button" class="underline" onClick={() => simulateContextLoss()}>
-        lose context for 2s
-      </button>
-    </span>
-  );
-}
-
+/** Switches the shader for the whole page. */
 export default function MeltDemo() {
   return (
     <section class="grid grid-cols-[6rem_1fr] gap-x-8 px-8 py-4 text-sm">
       <span />
-      <ShaderControls />
+      <span class="flex items-center gap-4 opacity-60">
+        <button
+          type="button"
+          class="underline"
+          onClick={() => (meltEnabled.value = !meltEnabled.value)}
+        >
+          shader: {meltEnabled.value ? "on" : "off"}
+        </button>
+        <button type="button" class="underline" onClick={() => simulateContextLoss()}>
+          lose context for 2s
+        </button>
+      </span>
       {SAMPLES.map(({ name, Sample, height }) => (
         <div key={name} class="contents">
           <span class={`${height} pt-2 opacity-60`}>{name}</span>

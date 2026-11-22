@@ -15,6 +15,18 @@ export interface MeltSettings {
 
 export const DEFAULT_SETTINGS: MeltSettings = { sigma: 6, gain: 18, bias: -6 };
 
+/** The effects of a shape along the melted edge. */
+export interface MeltEffects {
+  /** A line just inside the edge. */
+  readonly stroke: Rgba;
+  /** In CSS pixels. */
+  readonly strokeWidth: number;
+  /** The opacity of a white rim just inside the edge, brightest where the edge faces up. */
+  readonly rim: number;
+  /** The opacity of a halo outside the edge, in the colour of the shapes nearby. */
+  readonly glow: number;
+}
+
 export interface MeasuredShape {
   /** In CSS pixels of the root, relative to its border box, with the transforms between the root
       and the shape applied. */
@@ -24,6 +36,7 @@ export interface MeasuredShape {
   /** Without transforms. */
   readonly radius: number;
   readonly fill: Rgba;
+  readonly effects: MeltEffects;
   /** Multiplied by the opacity of the ancestors. */
   readonly opacity: number;
   readonly visible: boolean;
@@ -46,6 +59,8 @@ export interface MeltShape {
   readonly radius: number;
   /** With the opacity of the element and of its ancestors in the alpha. */
   readonly color: Rgba;
+  /** With the same opacity in the alpha of the stroke, the rim and the glow. */
+  readonly effects: MeltEffects;
   /** As in MeasuredShape. */
   readonly group: number;
 }
@@ -87,7 +102,7 @@ export function layoutFrame(measurement: Measurement): MeltFrame | null {
 
   const shapes = drawn
     .map((shape): MeltShape => {
-      const { rect, fill } = shape;
+      const { rect, fill, effects, opacity } = shape;
       const scale = shape.layoutWidth > 0 ? rect.width / shape.layoutWidth : 1;
       return {
         x: rect.left + rect.width / 2 - left,
@@ -95,7 +110,18 @@ export function layoutFrame(measurement: Measurement): MeltFrame | null {
         halfWidth: rect.width / 2,
         halfHeight: rect.height / 2,
         radius: shape.radius * scale,
-        color: [fill[0], fill[1], fill[2], fill[3] * shape.opacity],
+        color: [fill[0], fill[1], fill[2], fill[3] * opacity],
+        effects: {
+          stroke: [
+            effects.stroke[0],
+            effects.stroke[1],
+            effects.stroke[2],
+            effects.stroke[3] * opacity,
+          ],
+          strokeWidth: effects.strokeWidth,
+          rim: effects.rim * opacity,
+          glow: effects.glow * opacity,
+        },
         group: shape.group,
       };
     })

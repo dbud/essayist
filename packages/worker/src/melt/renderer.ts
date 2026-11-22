@@ -23,7 +23,8 @@ export function createMeltRenderer(gl: WebGL2RenderingContext): MeltRenderer | n
     bias: at("u_bias"),
     box: at("u_box"),
     color: at("u_color"),
-    radius: at("u_radius"),
+    stroke: at("u_stroke"),
+    shape: at("u_shape"),
     groupEnd: at("u_groupEnd"),
     groups: at("u_groups"),
   };
@@ -40,7 +41,8 @@ export function createMeltRenderer(gl: WebGL2RenderingContext): MeltRenderer | n
     gl.uniform1f(uniforms.bias, frame.bias);
     gl.uniform4fv(uniforms.box, frame.box);
     gl.uniform4fv(uniforms.color, frame.color);
-    gl.uniform1fv(uniforms.radius, frame.radius);
+    gl.uniform4fv(uniforms.stroke, frame.stroke);
+    gl.uniform4fv(uniforms.shape, frame.shape);
     gl.uniform1iv(uniforms.groupEnd, frame.groupEnd);
     gl.uniform1i(uniforms.groups, frame.groups);
     gl.drawArrays(gl.TRIANGLES, 0, 3);

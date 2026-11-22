@@ -26,6 +26,12 @@ export function measure(root: HTMLElement, nodes: readonly ShapeNode[]): Measure
       layoutWidth: element.offsetWidth,
       radius: parseRadius(style.borderTopLeftRadius, element.offsetWidth),
       fill: parseColor(style.getPropertyValue("--melt-fill")),
+      effects: {
+        stroke: parseColor(style.getPropertyValue("--melt-stroke")),
+        strokeWidth: parseFloat(style.getPropertyValue("--melt-stroke-width")) || 0,
+        rim: parseFloat(style.getPropertyValue("--melt-rim")) || 0,
+        glow: parseFloat(style.getPropertyValue("--melt-glow")) || 0,
+      },
       opacity: opacityOf(element, opacities),
       visible: style.visibility !== "hidden",
       group,

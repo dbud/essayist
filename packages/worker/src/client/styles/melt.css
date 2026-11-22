@@ -6,6 +6,46 @@
   initial-value: transparent;
 }
 
+/* The effects of a shape along the melted edge, off by default. They don't inherit, so each shape
+   sets its own, and they transition like the fill. */
+@property --melt-stroke {
+  syntax: "<color>";
+  inherits: false;
+  initial-value: transparent;
+}
+
+@property --melt-stroke-width {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 1px;
+}
+
+@property --melt-rim {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 0;
+}
+
+@property --melt-glow {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 0;
+}
+
+/* melt-stroke-stroke uses --color-stroke; melt-stroke-[...] takes any colour. */
+@utility melt-stroke-* {
+  --melt-stroke: --value(--color-*, [color]);
+}
+
+/* melt-rim-35 is a rim at 35% opacity. */
+@utility melt-rim-* {
+  --melt-rim: calc(--value(integer) / 100);
+}
+
+@utility melt-glow-* {
+  --melt-glow: calc(--value(integer) / 100);
+}
+
 /* Marks the shapes of a group, so the canvas finds them even while their fill is transparent. */
 @property --melt-shape {
   syntax: "<number>";
@@ -37,8 +77,8 @@
   @apply relative isolate melt-group;
   filter: var(--aq-shadow);
   transition:
-    filter calc(200ms * var(--aq-tempo, 1)) ease-in,
-    opacity calc(300ms * var(--aq-tempo, 1)) ease-in;
+    filter calc(150ms * var(--aq-tempo, 1)) ease-in,
+    opacity calc(150ms * var(--aq-tempo, 1)) ease-in;
 
   @media (prefers-reduced-motion: reduce) {
     transition: none;

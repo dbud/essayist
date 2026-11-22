@@ -16,8 +16,11 @@ uniform float u_gain;
 uniform float u_bias;
 // The centre in xy and the half size in zw.
 uniform vec4 u_box[MAX_SHAPES];
+// The colours are not premultiplied.
 uniform vec4 u_color[MAX_SHAPES];
-uniform float u_radius[MAX_SHAPES];
+uniform vec4 u_stroke[MAX_SHAPES];
+// The corner radius, stroke width, rim and glow.
+uniform vec4 u_shape[MAX_SHAPES];
 uniform int u_groupEnd[MAX_GROUPS];
 uniform int u_groups;
 
@@ -43,6 +46,10 @@ const float HALF_PIXEL = 0.5;
 // FIELD_REACH as a float, as GLSL does not convert int to float.
 const float REACH = float(FIELD_REACH);
 const int FIELD_SAMPLES = 8;
+// The width of the rim, in device pixels.
+const float RIM_WIDTH = 0.75;
+// How much of the rim shows where the edge doesn't face up.
+const float RIM_BASE = 0.2;
 
 // The signed distance to a rounded box: negative inside, positive outside.
 float roundBox(vec2 p, vec2 half_size, float radius) {
@@ -91,15 +98,23 @@ void main() {
     // shapes themselves, each later shape over the earlier ones.
     vec4 field = vec4(0.0);
     vec4 shapes = vec4(0.0);
+    // The effects of the shapes, weighted like the colours, so the edge takes the effects of the
+    // shapes nearby and field.a divides them out. effects holds the stroke width, rim and glow.
+    vec4 strokes = vec4(0.0);
+    vec3 effects = vec3(0.0);
 
     for (int i = start; i < end; i++) {
       vec2 local = p - u_box[i].xy;
       vec2 half_size = u_box[i].zw;
-      float radius = min(u_radius[i], min(half_size.x, half_size.y));
+      float radius = min(u_shape[i].x, min(half_size.x, half_size.y));
       float toEdge = roundBox(local, half_size, radius);
       if (toEdge > REACH * u_sigma) continue;
       vec4 color = vec4(u_color[i].rgb * u_color[i].a, u_color[i].a);
-      field += color * shapeField(local, half_size, radius);
+      float f = shapeField(local, half_size, radius);
+      field += color * f;
+      float w = color.a * f;
+      strokes += vec4(u_stroke[i].rgb * u_stroke[i].a, u_stroke[i].a) * w;
+      effects += u_shape[i].yzw * w;
       // The fraction of this pixel inside the shape: 1 more than half a pixel inside the edge, 0
       // more than half a pixel outside, and linear in between.
       float coverage = clamp(HALF_PIXEL - toEdge, 0.0, 1.0);
@@ -115,6 +130,35 @@ void main() {
     // Each shape keeps its own colour, the space around the shapes takes their average colour, and
     // both are cut to the outline.
     vec4 groupColor = shapes * outline + around * (1.0 - shapes.a);
+
+    vec4 stroke = field.a > 0.0 ? strokes / field.a : vec4(0.0);
+    vec3 effect = field.a > 0.0 ? effects / field.a : vec3(0.0);
+    float strokeWidth = effect.x;
+    float rimStrength = effect.y;
+    float glowStrength = effect.z;
+
+    // The slope of the field, in window coordinates, where y points up. Dividing the field by it
+    // gives the distance to the melted edge, where the outline is half opaque, in device pixels.
+    vec2 slope = vec2(dFdx(field.a), dFdy(field.a));
+    float steepness = max(length(slope), 1e-6);
+    float edgeField = (0.5 - u_bias) / u_gain;
+    float inside = (field.a - edgeField) / steepness;
+
+    // The rim fades over RIM_WIDTH inside the edge. The field falls towards the outside, so the
+    // edge faces up where the slope points down.
+    float facingUp = clamp(-slope.y / steepness, 0.0, 1.0);
+    float rim = rimStrength * exp(-max(inside, 0.0) / RIM_WIDTH) * mix(RIM_BASE, 1.0, facingUp);
+    groupColor.rgb = min(groupColor.rgb + rim * groupColor.a, groupColor.a);
+
+    // The stroke covers the band from the edge to the stroke width inside it.
+    float band = clamp(inside + HALF_PIXEL, 0.0, 1.0)
+        - clamp(inside - strokeWidth + HALF_PIXEL, 0.0, 1.0);
+    groupColor = stroke * band + groupColor * (1.0 - stroke.a * band);
+
+    // The glow sits under the group, and fades with the field from the edge outwards.
+    float glow = glowStrength * clamp(field.a / edgeField, 0.0, 1.0);
+    groupColor += vec4(average * glow, glow) * (1.0 - groupColor.a);
+
     result = groupColor + result * (1.0 - groupColor.a);
   }
 
