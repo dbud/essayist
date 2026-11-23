@@ -6,6 +6,8 @@ import { measure } from "./measure.ts";
 import { shapesMoving, watchMotion } from "./motion.ts";
 import { packFrame } from "./pack.ts";
 
+const LEFT_OUT = "data-melt-left-out";
+
 /** Draws the melt of a group root on a canvas behind its content, and returns a function to stop.
     While the canvas draws, the root has the data-melt-drawn attribute, which turns off the
     backgrounds of the shapes in it. With debug, the canvas also outlines the measured box of each
@@ -33,9 +35,18 @@ export function attachMelt(root: HTMLElement, { debug = false } = {}): () => voi
 
   let nodes: ShapeNode[] = [];
   const elements = () => nodes.map(({ element }) => element);
+  // Shapes the canvas can't fit keep their own background. Writes only on a change, like drawn.
+  const markLeftOut = (indexes: readonly number[]) => {
+    const leftOut = new Set(indexes);
+    nodes.forEach(({ element }, i) => {
+      const out = leftOut.has(i);
+      if (out !== element.hasAttribute(LEFT_OUT)) element.toggleAttribute(LEFT_OUT, out);
+    });
+  };
   const loop = createFrameLoop(
     () => {
       const frame = layoutFrame(measure(root, nodes));
+      markLeftOut(frame?.leftOut ?? []);
       if (frame === null) {
         canvas.hidden = true;
         return;
@@ -71,6 +82,7 @@ export function attachMelt(root: HTMLElement, { debug = false } = {}): () => voi
     mutations.disconnect();
     motion.dispose();
     loop.dispose();
+    markLeftOut([]);
     drawn(false);
     canvas.remove();
     context.release();

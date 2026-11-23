@@ -1,6 +1,6 @@
-import type { MeltFrame } from "./layout.ts";
+import { type MeltFrame, MAX_SHAPES } from "./layout.ts";
 
-export const MAX_SHAPES = 32;
+export { MAX_SHAPES };
 // A group can hold a single shape, such as a menu row.
 export const MAX_GROUPS = MAX_SHAPES;
 // Keeps the shader from dividing by zero when sigma is set to 0.

@@ -3,6 +3,7 @@ import { expect, test } from "vitest";
 import {
   DEFAULT_SETTINGS,
   layoutFrame,
+  MAX_SHAPES,
   type MeasuredShape,
   type Measurement,
   resolveSettings,
@@ -36,6 +37,16 @@ const shape = (fields: Partial<MeasuredShape> = {}): MeasuredShape => ({
 const measurement = (shapes: MeasuredShape[], sigma = 5): Measurement => ({
   settings: { ...DEFAULT_SETTINGS, sigma },
   shapes,
+});
+
+test("shapes past the limit are left out of the frame and its bounds", () => {
+  const row = (i: number) =>
+    shape({ rect: { left: i * 50, top: 0, width: 40, height: 20 }, group: i });
+  const frame = layoutFrame(measurement(Array.from({ length: MAX_SHAPES + 2 }, (_, i) => row(i))));
+  expect(frame?.shapes).toHaveLength(MAX_SHAPES);
+  expect(frame?.leftOut).toEqual([MAX_SHAPES, MAX_SHAPES + 1]);
+  // The last drawn shape ends at x = 31 * 50 + 40; the margin is 15.
+  expect(frame?.width).toBe((MAX_SHAPES - 1) * 50 + 40 + 2 * 15);
 });
 
 test("unset settings fall back to the defaults", () => {

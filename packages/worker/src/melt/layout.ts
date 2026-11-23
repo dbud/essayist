@@ -79,10 +79,15 @@ export interface MeltFrame extends Box {
   readonly settings: MeltSettings;
   /** Sorted by group, and in document order within a group. */
   readonly shapes: readonly MeltShape[];
+  /** The indexes in the measurement of the visible shapes past MAX_SHAPES, which aren't drawn. */
+  readonly leftOut: readonly number[];
 }
 
 /** The field of a shape is close to 0 more than this many sigma away from it. */
 export const FIELD_REACH = 3;
+
+/** The most shapes a frame draws, as the shader takes arrays of this size. */
+export const MAX_SHAPES = 32;
 
 export function resolveSettings(settings: MeltSettings): MeltSettings {
   const pick = (name: keyof MeltSettings) =>
@@ -99,14 +104,19 @@ export function resolveSettings(settings: MeltSettings): MeltSettings {
 export function layoutFrame(measurement: Measurement): MeltFrame | null {
   const settings = resolveSettings(measurement.settings);
 
-  const drawn = measurement.shapes.filter(
-    (shape) =>
-      shape.visible &&
-      shape.fill[3] * shape.opacity > 0 &&
-      shape.rect.width > 0 &&
-      shape.rect.height > 0,
-  );
-  if (drawn.length === 0) return null;
+  const visible = measurement.shapes
+    .map((shape, index) => ({ shape, index }))
+    .filter(
+      ({ shape }) =>
+        shape.visible &&
+        shape.fill[3] * shape.opacity > 0 &&
+        shape.rect.width > 0 &&
+        shape.rect.height > 0,
+    )
+    .toSorted((a, b) => a.shape.group - b.shape.group);
+  if (visible.length === 0) return null;
+  const drawn = visible.slice(0, MAX_SHAPES).map(({ shape }) => shape);
+  const leftOut = visible.slice(MAX_SHAPES).map(({ index }) => index);
 
   // The frame covers the field of each shape and its shadow, whichever reaches further. A blur of b
   // is a Gaussian of width b / 2, as in CSS.
@@ -125,42 +135,40 @@ export function layoutFrame(measurement: Measurement): MeltFrame | null {
     ...drawn.map((shape) => shape.rect.top + shape.rect.height + margin(shape)),
   );
 
-  const shapes = drawn
-    .map((shape): MeltShape => {
-      const { rect, fill, effects, opacity } = shape;
-      const scale = shape.layoutWidth > 0 ? rect.width / shape.layoutWidth : 1;
-      return {
-        x: rect.left + rect.width / 2 - left,
-        y: rect.top + rect.height / 2 - top,
-        halfWidth: rect.width / 2,
-        halfHeight: rect.height / 2,
-        radius: shape.radius * scale,
-        color: [fill[0], fill[1], fill[2], fill[3] * opacity],
-        effects: {
-          stroke: [
-            effects.stroke[0],
-            effects.stroke[1],
-            effects.stroke[2],
-            effects.stroke[3] * opacity,
-          ],
-          strokeWidth: effects.strokeWidth,
-          rim: [effects.rim[0], effects.rim[1], effects.rim[2], effects.rim[3] * opacity],
-          shade: [effects.shade[0], effects.shade[1], effects.shade[2], effects.shade[3] * opacity],
-          glow: effects.glow * opacity,
-          shadow: [
-            effects.shadow[0],
-            effects.shadow[1],
-            effects.shadow[2],
-            effects.shadow[3] * opacity,
-          ],
-          shadowX: effects.shadowX,
-          shadowY: effects.shadowY,
-          shadowBlur: effects.shadowBlur,
-        },
-        group: shape.group,
-      };
-    })
-    .toSorted((a, b) => a.group - b.group);
+  const shapes = drawn.map((shape): MeltShape => {
+    const { rect, fill, effects, opacity } = shape;
+    const scale = shape.layoutWidth > 0 ? rect.width / shape.layoutWidth : 1;
+    return {
+      x: rect.left + rect.width / 2 - left,
+      y: rect.top + rect.height / 2 - top,
+      halfWidth: rect.width / 2,
+      halfHeight: rect.height / 2,
+      radius: shape.radius * scale,
+      color: [fill[0], fill[1], fill[2], fill[3] * opacity],
+      effects: {
+        stroke: [
+          effects.stroke[0],
+          effects.stroke[1],
+          effects.stroke[2],
+          effects.stroke[3] * opacity,
+        ],
+        strokeWidth: effects.strokeWidth,
+        rim: [effects.rim[0], effects.rim[1], effects.rim[2], effects.rim[3] * opacity],
+        shade: [effects.shade[0], effects.shade[1], effects.shade[2], effects.shade[3] * opacity],
+        glow: effects.glow * opacity,
+        shadow: [
+          effects.shadow[0],
+          effects.shadow[1],
+          effects.shadow[2],
+          effects.shadow[3] * opacity,
+        ],
+        shadowX: effects.shadowX,
+        shadowY: effects.shadowY,
+        shadowBlur: effects.shadowBlur,
+      },
+      group: shape.group,
+    };
+  });
 
   return {
     left,
@@ -169,5 +177,6 @@ export function layoutFrame(measurement: Measurement): MeltFrame | null {
     height: bottom - top,
     settings,
     shapes,
+    leftOut,
   };
 }

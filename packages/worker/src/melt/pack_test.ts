@@ -31,6 +31,7 @@ const frame = (shapes: MeltShape[]): MeltFrame => ({
   height: 50,
   settings: DEFAULT_SETTINGS,
   shapes,
+  leftOut: [],
 });
 
 test("lengths are scaled to device pixels, and the size is rounded", () => {

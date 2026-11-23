@@ -168,6 +168,12 @@
     --melt-background: transparent;
     --melt-box-shadow: none;
   }
+
+  /* Shapes past the limit of the canvas keep their own background and shadow. */
+  &[data-melt-drawn] [data-melt-left-out] {
+    --melt-background: initial;
+    --melt-box-shadow: initial;
+  }
 }
 
 .melt-canvas {
