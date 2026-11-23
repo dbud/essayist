@@ -1,7 +1,7 @@
 import { FIELD_REACH } from "./layout.ts";
 import FRAGMENT from "./melt.frag?raw";
 import VERTEX from "./melt.vert?raw";
-import { MAX_GROUPS, MAX_SHAPES, type PackedFrame } from "./pack.ts";
+import { type PackedFrame, ROW, ROWS } from "./pack.ts";
 
 export interface MeltRenderer {
   draw(frame: PackedFrame): void;
@@ -22,18 +22,20 @@ export function createMeltRenderer(gl: WebGL2RenderingContext): MeltRenderer | n
     gain: at("u_gain"),
     bias: at("u_bias"),
     light: at("u_light"),
-    box: at("u_box"),
-    color: at("u_color"),
-    stroke: at("u_stroke"),
-    rim: at("u_rim"),
-    shade: at("u_shade"),
-    shadow: at("u_shadow"),
-    shadowShape: at("u_shadowShape"),
-    shape: at("u_shape"),
-    groupEnd: at("u_groupEnd"),
+    shapes: at("u_shapes"),
     groups: at("u_groups"),
     debug: at("u_debug"),
   };
+
+  // The shapes are a float texture read with texelFetch, so it needs no filtering and no extension.
+  // It is allocated again only when the number of shapes changes.
+  const shapes = gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D, shapes);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  let columns = 0;
 
   function draw(frame: PackedFrame) {
     gl.viewport(0, 0, frame.width, frame.height);
@@ -41,26 +43,39 @@ export function createMeltRenderer(gl: WebGL2RenderingContext): MeltRenderer | n
     gl.clear(gl.COLOR_BUFFER_BIT);
     gl.useProgram(program);
     gl.bindVertexArray(vertexArray);
+
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, shapes);
+    if (frame.count === columns) {
+      gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, frame.count, ROWS, gl.RGBA, gl.FLOAT, frame.shapes);
+    } else {
+      gl.texImage2D(
+        gl.TEXTURE_2D,
+        0,
+        gl.RGBA32F,
+        frame.count,
+        ROWS,
+        0,
+        gl.RGBA,
+        gl.FLOAT,
+        frame.shapes,
+      );
+      columns = frame.count;
+    }
+
     gl.uniform2f(uniforms.size, frame.width, frame.height);
     gl.uniform1f(uniforms.sigma, frame.sigma);
     gl.uniform1f(uniforms.gain, frame.gain);
     gl.uniform1f(uniforms.bias, frame.bias);
     gl.uniform2fv(uniforms.light, frame.light);
-    gl.uniform4fv(uniforms.box, frame.box);
-    gl.uniform4fv(uniforms.color, frame.color);
-    gl.uniform4fv(uniforms.stroke, frame.stroke);
-    gl.uniform4fv(uniforms.rim, frame.rim);
-    gl.uniform4fv(uniforms.shade, frame.shade);
-    gl.uniform4fv(uniforms.shadow, frame.shadow);
-    gl.uniform4fv(uniforms.shadowShape, frame.shadowShape);
-    gl.uniform4fv(uniforms.shape, frame.shape);
-    gl.uniform1iv(uniforms.groupEnd, frame.groupEnd);
+    gl.uniform1i(uniforms.shapes, 0);
     gl.uniform1i(uniforms.groups, frame.groups);
     gl.uniform1i(uniforms.debug, frame.debug ? 1 : 0);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
   }
 
   function dispose() {
+    gl.deleteTexture(shapes);
     gl.deleteVertexArray(vertexArray);
     gl.deleteProgram(program);
   }
@@ -69,6 +84,7 @@ export function createMeltRenderer(gl: WebGL2RenderingContext): MeltRenderer | n
 }
 
 function linkProgram(gl: WebGL2RenderingContext): WebGLProgram | null {
+  const rows = Object.fromEntries(Object.entries(ROW).map(([name, row]) => [`ROW_${name}`, row]));
   const program = gl.createProgram();
   for (const [type, source] of [
     [gl.VERTEX_SHADER, VERTEX],
@@ -76,7 +92,7 @@ function linkProgram(gl: WebGL2RenderingContext): WebGLProgram | null {
   ] as const) {
     const shader = gl.createShader(type);
     if (shader === null) return null;
-    gl.shaderSource(shader, withDefines(source, { MAX_SHAPES, MAX_GROUPS, FIELD_REACH }));
+    gl.shaderSource(shader, withDefines(source, { FIELD_REACH, ...rows }));
     gl.compileShader(shader);
     if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
       console.error("melt shader:", gl.getShaderInfoLog(shader));

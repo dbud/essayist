@@ -1,10 +1,28 @@
 import { type MeltFrame, MAX_SHAPES } from "./layout.ts";
 
 export { MAX_SHAPES };
-// A group can hold a single shape, such as a menu row.
-export const MAX_GROUPS = MAX_SHAPES;
 // Keeps the shader from dividing by zero when sigma is set to 0.
 const MIN_SIGMA = 0.001;
+
+/** The rows of the shape texture. Each shape is a column, with four numbers in each row; the
+    groups row holds in column n the number of shapes up to the end of group n. The shader gets
+    these as ROW_BOX and so on. */
+export const ROW = {
+  /** The centre and half size. */
+  BOX: 0,
+  COLOR: 1,
+  STROKE: 2,
+  RIM: 3,
+  SHADE: 4,
+  SHADOW: 5,
+  /** The shadow offset in x and y and its Gaussian width, with the last unused. */
+  SHADOW_SHAPE: 6,
+  /** The corner radius, stroke width and glow, with the last unused. */
+  SHAPE: 7,
+  GROUPS: 8,
+} as const;
+
+export const ROWS = Object.keys(ROW).length;
 
 /** In device pixels. */
 export interface PackedFrame {
@@ -15,68 +33,51 @@ export interface PackedFrame {
   readonly bias: number;
   /** Towards the light, with y pointing up. */
   readonly light: readonly [number, number];
-  /** The centre and half size of each shape, four numbers per shape. */
-  readonly box: Float32Array;
-  readonly color: Float32Array;
-  readonly stroke: Float32Array;
-  readonly rim: Float32Array;
-  readonly shade: Float32Array;
-  readonly shadow: Float32Array;
-  /** The shadow offset in x and y and its Gaussian width, four numbers per shape with the last
-      unused. */
-  readonly shadowShape: Float32Array;
-  /** The corner radius, stroke width and glow of each shape, four numbers per shape with the last
-      unused. */
-  readonly shape: Float32Array;
-  /** Group n runs from groupEnd[n - 1], or 0 for the first group, up to groupEnd[n]. */
-  readonly groupEnd: Int32Array;
+  /** The shape texture, ROWS rows of count texels of four numbers. */
+  readonly shapes: Float32Array;
+  readonly count: number;
   readonly groups: number;
   /** Outlines the measured box of each shape over the melt. */
   readonly debug: boolean;
 }
 
-/** Packs a frame for the shader. Shapes past the limits are left out. */
+/** The four numbers of a shape in a row of the shape texture. */
+export function texel(frame: PackedFrame, row: number, column: number): number[] {
+  const start = (row * frame.count + column) * 4;
+  return Array.from(frame.shapes.subarray(start, start + 4));
+}
+
+/** Packs a frame for the shader. Shapes past the limit are left out. */
 export function packFrame(
   frame: MeltFrame,
   pixelRatio: number,
   { debug = false }: { debug?: boolean } = {},
 ): PackedFrame {
-  const box = new Float32Array(MAX_SHAPES * 4);
-  const color = new Float32Array(MAX_SHAPES * 4);
-  const stroke = new Float32Array(MAX_SHAPES * 4);
-  const rim = new Float32Array(MAX_SHAPES * 4);
-  const shade = new Float32Array(MAX_SHAPES * 4);
-  const shadow = new Float32Array(MAX_SHAPES * 4);
-  const shadowShape = new Float32Array(MAX_SHAPES * 4);
-  const shapeData = new Float32Array(MAX_SHAPES * 4);
-  const groupEnd = new Int32Array(MAX_GROUPS);
+  const drawn = frame.shapes.slice(0, MAX_SHAPES);
+  // At least one column, as a texture can't be empty.
+  const count = Math.max(drawn.length, 1);
+  const shapes = new Float32Array(ROWS * count * 4);
+  const put = (row: number, column: number, values: readonly number[]) =>
+    shapes.set(values, (row * count + column) * 4);
+  const lengths = (values: readonly number[]) => values.map((value) => value * pixelRatio);
 
   // Groups are numbered again from 0, as the frame leaves out groups with nothing to draw.
   let groups = 0;
   let previous: number | null = null;
-  frame.shapes.slice(0, MAX_SHAPES).forEach((shape, i) => {
+  drawn.forEach((shape, i) => {
     if (shape.group !== previous) groups++;
     previous = shape.group;
-    box.set(
-      [shape.x, shape.y, shape.halfWidth, shape.halfHeight].map((value) => value * pixelRatio),
-      i * 4,
-    );
-    color.set(shape.color, i * 4);
     const { effects } = shape;
-    stroke.set(effects.stroke, i * 4);
-    rim.set(effects.rim, i * 4);
-    shade.set(effects.shade, i * 4);
-    shadow.set(effects.shadow, i * 4);
+    put(ROW.BOX, i, lengths([shape.x, shape.y, shape.halfWidth, shape.halfHeight]));
+    put(ROW.COLOR, i, shape.color);
+    put(ROW.STROKE, i, effects.stroke);
+    put(ROW.RIM, i, effects.rim);
+    put(ROW.SHADE, i, effects.shade);
+    put(ROW.SHADOW, i, effects.shadow);
     // TODO -- cast the shadow away from the page light angle instead of straight down
-    shadowShape.set(
-      [effects.shadowX, effects.shadowY, effects.shadowBlur / 2].map((value) => value * pixelRatio),
-      i * 4,
-    );
-    shapeData.set(
-      [shape.radius * pixelRatio, effects.strokeWidth * pixelRatio, effects.glow],
-      i * 4,
-    );
-    groupEnd[groups - 1] = i + 1;
+    put(ROW.SHADOW_SHAPE, i, lengths([effects.shadowX, effects.shadowY, effects.shadowBlur / 2]));
+    put(ROW.SHAPE, i, [shape.radius * pixelRatio, effects.strokeWidth * pixelRatio, effects.glow]);
+    put(ROW.GROUPS, groups - 1, [i + 1]);
   });
 
   return {
@@ -89,15 +90,8 @@ export function packFrame(
       Math.sin((frame.settings.lightAngle * Math.PI) / 180),
       Math.cos((frame.settings.lightAngle * Math.PI) / 180),
     ],
-    box,
-    color,
-    stroke,
-    rim,
-    shade,
-    shadow,
-    shadowShape,
-    shape: shapeData,
-    groupEnd,
+    shapes,
+    count,
     groups,
     debug,
   };

@@ -8,25 +8,17 @@ precision highp float;
 // shape keeps its own colour, and the space between shapes takes the average colour of the shapes
 // nearby. Groups are drawn in order, each over the ones before. Lengths are in device pixels.
 
-// MAX_SHAPES, MAX_GROUPS and FIELD_REACH come from renderer.ts.
+// FIELD_REACH and the ROW_ numbers of the shape texture come from renderer.ts.
 
 uniform vec2 u_size;
 uniform float u_sigma;
 uniform float u_gain;
 uniform float u_bias;
-// The centre in xy and the half size in zw.
-uniform vec4 u_box[MAX_SHAPES];
-// The colours are not premultiplied.
-uniform vec4 u_color[MAX_SHAPES];
-uniform vec4 u_stroke[MAX_SHAPES];
-uniform vec4 u_rim[MAX_SHAPES];
-uniform vec4 u_shade[MAX_SHAPES];
-uniform vec4 u_shadow[MAX_SHAPES];
-// The shadow offset in xy and its Gaussian width in z.
-uniform vec4 u_shadowShape[MAX_SHAPES];
-// The corner radius, stroke width and glow.
-uniform vec4 u_shape[MAX_SHAPES];
-uniform int u_groupEnd[MAX_GROUPS];
+// A column per shape, with a row for each of its values, as ROW in pack.ts: the centre and half
+// size, the colours (not premultiplied), the shadow offset and Gaussian width, and the corner
+// radius, stroke width and glow. The groups row holds the end of each group. A float texture is
+// only exact with full precision, which samplers don't get by default.
+uniform highp sampler2D u_shapes;
 uniform int u_groups;
 // Towards the light, with y pointing up.
 uniform vec2 u_light;
@@ -60,6 +52,16 @@ const float RIM_WIDTH = 0.75;
 const float RIM_BASE = 0.2;
 // The width of the shade, in device pixels.
 const float SHADE_WIDTH = 1.5;
+
+// A value of shape i, as a row of the shape texture.
+vec4 shapeValue(int i, int row) {
+  return texelFetch(u_shapes, ivec2(i, row), 0);
+}
+
+// The number of shapes up to the end of group g.
+int groupEnd(int g) {
+  return int(shapeValue(g, ROW_GROUPS).x);
+}
 
 // The signed distance to a rounded box: negative inside, positive outside.
 float roundBox(vec2 p, vec2 half_size, float radius) {
@@ -100,9 +102,8 @@ void main() {
   vec4 result = vec4(0.0);
   int start = 0;
 
-  for (int group = 0; group < MAX_GROUPS; group++) {
-    if (group >= u_groups) break;
-    int end = u_groupEnd[group];
+  for (int group = 0; group < u_groups; group++) {
+    int end = groupEnd(group);
     // Both are premultiplied colours. field adds up the field of each shape weighted by its colour,
     // so its alpha is the total field, with each shape counted by its opacity. shapes draws the
     // shapes themselves, each later shape over the earlier ones.
@@ -125,12 +126,19 @@ void main() {
     float shadowSigmas = 0.0;
 
     for (int i = start; i < end; i++) {
-      vec2 local = p - u_box[i].xy;
-      vec2 half_size = u_box[i].zw;
-      float radius = min(u_shape[i].x, min(half_size.x, half_size.y));
-      if (u_shadow[i].a > 0.0) {
-        vec2 shadowLocal = local - u_shadowShape[i].xy;
-        float blur = max(u_shadowShape[i].z, HALF_PIXEL);
+      // What decides whether the shape reaches this pixel is read first; the effects only once it
+      // does, as every read is a texture fetch.
+      vec4 box = shapeValue(i, ROW_BOX);
+      vec4 sizes = shapeValue(i, ROW_SHAPE);
+      vec4 fill = shapeValue(i, ROW_COLOR);
+      vec4 shadowColor = shapeValue(i, ROW_SHADOW);
+      vec2 local = p - box.xy;
+      vec2 half_size = box.zw;
+      float radius = min(sizes.x, min(half_size.x, half_size.y));
+      if (shadowColor.a > 0.0) {
+        vec4 shadowShape = shapeValue(i, ROW_SHADOW_SHAPE);
+        vec2 shadowLocal = local - shadowShape.xy;
+        float blur = max(shadowShape.z, HALF_PIXEL);
         float width = sqrt(u_sigma * u_sigma + blur * blur);
         float toShadow = roundBox(shadowLocal, half_size, radius);
         if (toShadow < REACH * width) {
@@ -141,27 +149,30 @@ void main() {
           float softField = toShadow < -REACH * blur
             ? 1.0
             : shapeField(shadowLocal, half_size, radius, blur);
-          float w = u_color[i].a * tightField;
+          float w = fill.a * tightField;
           shadowField += w;
-          shadowBox += u_color[i].a * softField;
-          shadowColors += vec4(u_shadow[i].rgb * u_shadow[i].a, u_shadow[i].a) * w;
+          shadowBox += fill.a * softField;
+          shadowColors += vec4(shadowColor.rgb * shadowColor.a, shadowColor.a) * w;
           shadowSigmas += blur * w;
         }
       }
 
       float toEdge = roundBox(local, half_size, radius);
       if (toEdge > REACH * u_sigma) continue;
-      vec4 color = vec4(u_color[i].rgb * u_color[i].a, u_color[i].a);
+      vec4 color = vec4(fill.rgb * fill.a, fill.a);
+      vec4 shapeStroke = shapeValue(i, ROW_STROKE);
+      vec4 shapeRim = shapeValue(i, ROW_RIM);
+      vec4 shapeShade = shapeValue(i, ROW_SHADE);
       // More than the reach inside the edge, the blurred box is flat at 1 (within about 0.1%), so
       // the integral is skipped. The rest still runs here, as the derivatives below need every
       // pixel to take the same path.
       float f = toEdge < -REACH * u_sigma ? 1.0 : shapeField(local, half_size, radius, u_sigma);
       field += color * f;
       float w = color.a * f;
-      strokes += vec4(u_stroke[i].rgb * u_stroke[i].a, u_stroke[i].a) * w;
-      rims += vec4(u_rim[i].rgb * u_rim[i].a, u_rim[i].a) * w;
-      shades += vec4(u_shade[i].rgb * u_shade[i].a, u_shade[i].a) * w;
-      effects += u_shape[i].yz * w;
+      strokes += vec4(shapeStroke.rgb * shapeStroke.a, shapeStroke.a) * w;
+      rims += vec4(shapeRim.rgb * shapeRim.a, shapeRim.a) * w;
+      shades += vec4(shapeShade.rgb * shapeShade.a, shapeShade.a) * w;
+      effects += sizes.yz * w;
       // The fraction of this pixel inside the shape: 1 more than half a pixel inside the edge, 0
       // more than half a pixel outside, and linear in between.
       float coverage = clamp(HALF_PIXEL - toEdge, 0.0, 1.0);
@@ -235,12 +246,12 @@ void main() {
   // Outlines the measured box of every shape, to compare the geometry with the melt. Cyan doesn't
   // appear in the design.
   if (u_debug) {
-    int count = u_groups > 0 ? u_groupEnd[u_groups - 1] : 0;
-    for (int i = 0; i < MAX_SHAPES; i++) {
-      if (i >= count) break;
-      vec2 half_size = u_box[i].zw;
-      float radius = min(u_shape[i].x, min(half_size.x, half_size.y));
-      float line = clamp(1.0 - abs(roundBox(p - u_box[i].xy, half_size, radius)), 0.0, 1.0);
+    int count = u_groups > 0 ? groupEnd(u_groups - 1) : 0;
+    for (int i = 0; i < count; i++) {
+      vec4 box = shapeValue(i, ROW_BOX);
+      vec2 half_size = box.zw;
+      float radius = min(shapeValue(i, ROW_SHAPE).x, min(half_size.x, half_size.y));
+      float line = clamp(1.0 - abs(roundBox(p - box.xy, half_size, radius)), 0.0, 1.0);
       result = mix(result, vec4(0.0, 1.0, 1.0, 1.0), line);
     }
   }

@@ -77,12 +77,17 @@ Each root runs a small pipeline on every frame in which something moves:
 
 1. `discover.ts` finds the shapes and groups under the root, again whenever children or classes
    change.
+
 2. `measure.ts` reads their rects, radii, fills, effects and opacity, in the CSS pixels of the
    root, so transforms on the root or its ancestors apply to the canvas like to the content.
-3. `layout.ts` turns them into a frame: the area to draw and the shapes in it, sorted by group. 4.
-   `pack.ts` packs the frame into the arrays the shader reads, in device pixels. 5. `renderer.ts`
-   draws it with `melt.frag`, through a single WebGL context that every root shares (`context.ts`),
-   and each root copies the result into its own 2D canvas.
+
+3. `layout.ts` turns them into a frame: the area to draw and the shapes in it, sorted by group.
+
+4. `pack.ts` packs the frame into a float texture the shader reads, in device pixels: a column per
+   shape, a row per value, and a row with the end of each group.
+
+5. `renderer.ts` draws it with `melt.frag`, through a single WebGL context that every root shares
+   (`context.ts`), and each root copies the result into its own 2D canvas.
 
 `loop.ts` and `motion.ts` keep drawing while a transition or animation moves a shape, and stop once
 everything is still. `attach.ts` wires the pipeline to a root.
@@ -93,7 +98,7 @@ their fields overlap. The rim, shade and stroke are measured from that outline.
 
 ## Limits
 
-- At most 32 shapes per root are drawn. The shader takes eight arrays of 32 vectors, more than
-  the WebGL minimum but well within what browsers report.
+- At most 256 shapes per root are drawn (`MAX_SHAPES` in `layout.ts`); the rest keep their own
+  background and shadow. Every pixel loops over the shapes of its root, so the cost grows with each.
 - A rotated root isn't supported; scaled and translated roots are.
 - A `<Melt>` inside another draws its own shapes; the outer one skips them.

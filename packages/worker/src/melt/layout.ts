@@ -86,8 +86,9 @@ export interface MeltFrame extends Box {
 /** The field of a shape is close to 0 more than this many sigma away from it. */
 export const FIELD_REACH = 3;
 
-/** The most shapes a frame draws, as the shader takes arrays of this size. */
-export const MAX_SHAPES = 32;
+/** The most shapes a frame draws. The shape texture has no practical limit, but every pixel loops
+    over the shapes of the frame, so the cost grows with each one. */
+export const MAX_SHAPES = 256;
 
 export function resolveSettings(settings: MeltSettings): MeltSettings {
   const pick = (name: keyof MeltSettings) =>

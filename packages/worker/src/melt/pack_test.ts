@@ -1,7 +1,7 @@
 import { expect, test } from "vitest";
 
 import { DEFAULT_SETTINGS, type MeltFrame, type MeltShape } from "./layout.ts";
-import { MAX_SHAPES, packFrame } from "./pack.ts";
+import { MAX_SHAPES, packFrame, ROW, ROWS, texel } from "./pack.ts";
 
 const shape = (group: number, x = 10): MeltShape => ({
   x,
@@ -37,29 +37,42 @@ const frame = (shapes: MeltShape[]): MeltFrame => ({
 test("lengths are scaled to device pixels, and the size is rounded", () => {
   const packed = packFrame(frame([shape(0)]), 2);
   expect([packed.width, packed.height, packed.sigma]).toEqual([201, 100, 12]);
-  expect(Array.from(packed.box.subarray(0, 4))).toEqual([20, 40, 10, 8]);
-  expect(Array.from(packed.color.subarray(0, 4))).toEqual([1, 0.5, 0, 1]);
-  expect(Array.from(packed.stroke.subarray(0, 4))).toEqual([0, 0, 1, 0.5]);
-  expect(Array.from(packed.rim.subarray(0, 4))).toEqual([1, 1, 1, 0.3].map(Math.fround));
-  expect(Array.from(packed.shade.subarray(0, 4))).toEqual([0, 0, 0, 0.2].map(Math.fround));
-  expect(Array.from(packed.shadow.subarray(0, 4))).toEqual([0, 0, 0, 0.2].map(Math.fround));
+  expect(texel(packed, ROW.BOX, 0)).toEqual([20, 40, 10, 8]);
+  expect(texel(packed, ROW.COLOR, 0)).toEqual([1, 0.5, 0, 1]);
+  expect(texel(packed, ROW.STROKE, 0)).toEqual([0, 0, 1, 0.5]);
+  expect(texel(packed, ROW.RIM, 0)).toEqual([1, 1, 1, 0.3].map(Math.fround));
+  expect(texel(packed, ROW.SHADE, 0)).toEqual([0, 0, 0, 0.2].map(Math.fround));
+  expect(texel(packed, ROW.SHADOW, 0)).toEqual([0, 0, 0, 0.2].map(Math.fround));
   // The shadow offset and Gaussian width, half the blur, are lengths.
-  expect(Array.from(packed.shadowShape.subarray(0, 3))).toEqual([2, 16, 12]);
+  expect(texel(packed, ROW.SHADOW_SHAPE, 0).slice(0, 3)).toEqual([2, 16, 12]);
   // The radius and the stroke width are lengths; the glow is not.
-  expect(Array.from(packed.shape.subarray(0, 3))).toEqual([4, 2, 0.2].map(Math.fround));
+  expect(texel(packed, ROW.SHAPE, 0).slice(0, 3)).toEqual([4, 2, 0.2].map(Math.fround));
+});
+
+test("the texture has a column per shape and a row per value", () => {
+  const packed = packFrame(frame([shape(0), shape(1), shape(2)]), 1);
+  expect(packed.count).toBe(3);
+  expect(packed.shapes).toHaveLength(3 * ROWS * 4);
+  expect(texel(packed, ROW.BOX, 2)[0]).toBe(10);
 });
 
 test("groups are numbered again from 0, and each ends after its last shape", () => {
   const packed = packFrame(frame([shape(0), shape(0), shape(3), shape(7)]), 1);
   expect(packed.groups).toBe(3);
-  expect(Array.from(packed.groupEnd.subarray(0, 3))).toEqual([2, 3, 4]);
+  expect([0, 1, 2].map((g) => texel(packed, ROW.GROUPS, g)[0])).toEqual([2, 3, 4]);
 });
 
 test("shapes past the limit are left out", () => {
   const many = frame(Array.from({ length: MAX_SHAPES + 3 }, (_, i) => shape(i, i)));
   const packed = packFrame(many, 1);
+  expect(packed.count).toBe(MAX_SHAPES);
   expect(packed.groups).toBe(MAX_SHAPES);
-  expect(packed.groupEnd[MAX_SHAPES - 1]).toBe(MAX_SHAPES);
+  expect(texel(packed, ROW.GROUPS, MAX_SHAPES - 1)[0]).toBe(MAX_SHAPES);
+});
+
+test("a frame with no shapes still has a column", () => {
+  const packed = packFrame(frame([]), 1);
+  expect([packed.count, packed.groups]).toEqual([1, 0]);
 });
 
 test("the light angle becomes a direction, from straight up and clockwise", () => {
