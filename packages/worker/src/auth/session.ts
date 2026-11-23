@@ -94,11 +94,16 @@ export const resolveSession: MiddlewareHandler = async (c, next) => {
   await next();
 };
 
+/** The melt demo at the root, open in dev so other devices on the network can load it. */
+function isPublicInDev(path: string): boolean {
+  return import.meta.env.DEV && path === "/";
+}
+
 /** Anonymous browser requests redirect to /login with their target
  * preserved. */
 export const requireUser: MiddlewareHandler = async (c, next) => {
   const url = new URL(c.req.url);
-  if (!isAuthRoute(url.pathname)) {
+  if (!isAuthRoute(url.pathname) && !isPublicInDev(url.pathname)) {
     if (c.get("auth-user") === undefined) {
       const redirectTo = `${url.pathname}${url.search}`;
       return c.redirect(`/login?next=${encodeURIComponent(redirectTo)}`, 303);

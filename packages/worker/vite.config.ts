@@ -92,4 +92,6 @@ export default defineConfig({
       "react-dom": "preact/compat",
     },
   },
+  // Listens on the local network too, so a phone can open the dev server.
+  server: { host: true },
 });
