@@ -1,4 +1,5 @@
 import { FIELD_REACH, type MeltFrame, type MeltShape, MAX_SHAPES } from "./layout.ts";
+import { FIELD_SCALE } from "./targets.ts";
 
 export { MAX_SHAPES };
 // Keeps the shader from dividing by zero when sigma is set to 0.
@@ -43,6 +44,8 @@ export interface PackedFrame {
   readonly debug: boolean;
   /** Draws with the multi-pass renderer where the device supports it. */
   readonly multiPass: boolean;
+  /** The fraction of the canvas resolution the field passes of the multi-pass renderer draw at. */
+  readonly fieldScale: number;
 }
 
 /** A group of a packed frame: its shapes, from start up to end, and the area they reach, in whole
@@ -79,7 +82,11 @@ export function reachOf(shape: MeltShape, sigma: number, pixelRatio: number): nu
 export function packFrame(
   frame: MeltFrame,
   pixelRatio: number,
-  { debug = false, multiPass = false }: { debug?: boolean; multiPass?: boolean } = {},
+  {
+    debug = false,
+    multiPass = false,
+    fieldScale = FIELD_SCALE,
+  }: { debug?: boolean; multiPass?: boolean; fieldScale?: number } = {},
 ): PackedFrame {
   const drawn = frame.shapes.slice(0, MAX_SHAPES);
   // At least one column, as a texture can't be empty.
@@ -154,5 +161,6 @@ export function packFrame(
     groupList,
     debug,
     multiPass,
+    fieldScale,
   };
 }

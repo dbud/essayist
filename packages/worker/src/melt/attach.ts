@@ -18,8 +18,9 @@ export function attachMelt(
   {
     debug = false,
     multiPass = false,
+    fieldScale,
     pixelRatio,
-  }: { debug?: boolean; multiPass?: boolean; pixelRatio?: number } = {},
+  }: { debug?: boolean; multiPass?: boolean; fieldScale?: number; pixelRatio?: number } = {},
 ): () => void {
   const canvas = document.createElement("canvas");
   canvas.className = "melt-canvas";
@@ -82,7 +83,7 @@ export function attachMelt(
       }
       timed("draw", () => {
         const ratio = pixelRatio ?? devicePixelRatio;
-        const packed = packFrame(frame, ratio, { debug, multiPass });
+        const packed = packFrame(frame, ratio, { debug, multiPass, fieldScale });
         placeCanvas(canvas, frame, packed, ratio);
         drawn(context.render(packed, target));
       });

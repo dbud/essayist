@@ -8,11 +8,14 @@ import RESOLVE_FRAGMENT from "./resolve.frag?raw";
 import RESOLVE_VERTEX from "./resolve.vert?raw";
 import SHAPE from "./shape.vert?raw";
 import { createShapeTexture } from "./shapeTexture.ts";
-import { FIELD_SCALE, type MeltTargets, type Target } from "./targets.ts";
+import { fieldSize, type MeltTargets, type Target } from "./targets.ts";
 
 const VERSION = "#version 300 es";
 const vertexSource = (body: string) => [VERSION, COMMON, body].join("\n");
 const fragmentSource = (body: string) => [VERSION, COMMON, FRAGMENT, body].join("\n");
+
+// The texels cleared round a group in the field targets, past what the resolve pass reads there.
+const FIELD_MARGIN = 2;
 
 // The texture units: the shapes on 0, and the targets the resolve pass reads after them.
 const SHAPES_UNIT = 0;
@@ -75,31 +78,45 @@ export function createMultiPassRenderer(
     return at;
   }
 
-  /** Binds a target and limits drawing to the area of a group, at the scale of the target, which
-      counts from the bottom left. Clears that area of every texture of the target. */
+  /** Binds a target, draws into size pixels of it, which span the frame, and limits drawing to the
+      area of a group there, counting from the bottom left. Clears that area of every texture of
+      the target. */
   function clearArea(
     target: Target,
     group: PackedGroup,
     size: readonly [number, number],
-    scale: number,
+    frame: PackedFrame,
+    margin = 0,
   ) {
     gl.bindFramebuffer(gl.FRAMEBUFFER, target.framebuffer);
     gl.viewport(0, 0, size[0], size[1]);
-    const left = Math.floor(group.left * scale);
-    const right = Math.ceil(group.right * scale);
-    const bottom = Math.max(0, Math.floor(size[1] - group.bottom * scale));
-    const top = Math.min(size[1], Math.ceil(size[1] - group.top * scale));
-    gl.scissor(left, bottom, right - left, top - bottom);
+    const [scaleX, scaleY] = [size[0] / frame.width, size[1] / frame.height];
+    const left = Math.floor(group.left * scaleX);
+    const right = Math.ceil(group.right * scaleX);
+    const bottom = Math.floor(size[1] - group.bottom * scaleY);
+    const top = Math.ceil(size[1] - group.top * scaleY);
+    // The margin is cleared too, but not drawn into. Clearing only follows the scissor, so it can
+    // reach past the frame, into the rest of the target left over from a larger frame.
+    const area = {
+      left: Math.max(0, left - margin),
+      right: Math.min(target.width, right + margin),
+      bottom: Math.max(0, bottom - margin),
+      top: Math.min(target.height, top + margin),
+    };
+    gl.scissor(area.left, area.bottom, area.right - area.left, area.top - area.bottom);
     target.textures.forEach((_, i) => gl.clearBufferfv(gl.COLOR, i, [0, 0, 0, 0]));
+    gl.scissor(
+      left,
+      Math.max(0, bottom),
+      right - left,
+      Math.min(size[1], top) - Math.max(0, bottom),
+    );
   }
 
   function draw(frame: PackedFrame) {
-    targets.ensure(frame.width, frame.height);
+    targets.ensure(frame.width, frame.height, frame.fieldScale);
     const full = [frame.width, frame.height] as const;
-    const field = [
-      Math.ceil(frame.width * FIELD_SCALE),
-      Math.ceil(frame.height * FIELD_SCALE),
-    ] as const;
+    const field = fieldSize(frame.width, frame.height, frame.fieldScale);
 
     gl.bindVertexArray(vertexArray);
     shapes.upload(frame, SHAPES_UNIT);
@@ -122,7 +139,9 @@ export function createMultiPassRenderer(
         [programs.fieldA, targets.fieldA],
         [programs.fieldB, targets.fieldB],
       ] as const) {
-        clearArea(target, group, field, FIELD_SCALE);
+        // The resolve pass reads the field filtered, and a device pixel to each side for the
+        // slopes, so at the edge of the group it reaches into the texels around it.
+        clearArea(target, group, field, frame, FIELD_MARGIN);
         const at = useProgram(program, frame, field);
         gl.uniform1i(at("u_start"), group.start);
         gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, count);
@@ -130,7 +149,7 @@ export function createMultiPassRenderer(
 
       // The fill pass draws each shape over the ones before it.
       gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
-      clearArea(targets.fill, group, full, 1);
+      clearArea(targets.fill, group, full, frame);
       const fillAt = useProgram(programs.fill, frame, full);
       gl.uniform1i(fillAt("u_start"), group.start);
       gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, count);
@@ -149,7 +168,8 @@ export function createMultiPassRenderer(
       });
       const at = useProgram(programs.resolve, frame, full);
       gl.uniform2f(at("u_fieldSize"), targets.fieldA.width, targets.fieldA.height);
-      gl.uniform1f(at("u_fieldScale"), FIELD_SCALE);
+      // The exact ratio of the field to the frame, as its size is rounded up to whole pixels.
+      gl.uniform2f(at("u_fieldScale"), field[0] / frame.width, field[1] / frame.height);
       gl.uniform1f(at("u_gain"), frame.gain);
       gl.uniform1f(at("u_bias"), frame.bias);
       gl.uniform2fv(at("u_light"), frame.light);

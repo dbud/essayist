@@ -1,7 +1,11 @@
-/** The field passes draw at this fraction of the canvas resolution: the field is a blur, so it
-    scales up without visible loss. */
-// TODO -- lower to 1/2, then 1/4, once the passes match the single-pass shader at full resolution
-export const FIELD_SCALE = 1;
+/** The field passes draw at this fraction of the canvas resolution by default: the field is a blur,
+    so it scales up without visible loss. */
+export const FIELD_SCALE = 0.5;
+
+/** The size in pixels of the field of a frame of a size, at a scale. */
+export function fieldSize(width: number, height: number, scale: number): [number, number] {
+  return [Math.ceil(width * scale), Math.ceil(height * scale)];
+}
 
 /** The textures each pass draws into, as in the README. */
 const FIELD_A_TARGETS = 4;
@@ -33,8 +37,8 @@ export interface MeltTargets {
   readonly fieldB: Target;
   readonly fill: Target;
   /** Makes the targets at least the size of a frame in device pixels, the field ones scaled down
-      by FIELD_SCALE. They only grow, so roots of different sizes don't reallocate them. */
-  ensure(width: number, height: number): void;
+      to fieldSize at a scale. They only grow, so roots of different sizes don't reallocate them. */
+  ensure(width: number, height: number, scale: number): void;
   dispose(): void;
 }
 
@@ -64,9 +68,8 @@ export function createMeltTargets(gl: WebGL2RenderingContext): MeltTargets {
     get fill() {
       return fill;
     },
-    ensure(width, height) {
-      const fieldWidth = Math.ceil(width * FIELD_SCALE);
-      const fieldHeight = Math.ceil(height * FIELD_SCALE);
+    ensure(width, height, scale) {
+      const [fieldWidth, fieldHeight] = fieldSize(width, height, scale);
       fieldA = grown(gl, fieldA, FIELD_A_TARGETS, field, fieldWidth, fieldHeight);
       fieldB = grown(gl, fieldB, FIELD_B_TARGETS, field, fieldWidth, fieldHeight);
       fill = grown(gl, fill, 1, colour, width, height);

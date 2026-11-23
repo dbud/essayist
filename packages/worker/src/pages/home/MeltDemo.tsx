@@ -7,6 +7,7 @@ import AqSwap from "#/components/ui/AqSwap.tsx";
 import Melt, {
   meltDebug,
   meltEnabled,
+  meltFieldScale,
   meltMultiPass,
   meltPixelRatio,
 } from "#/components/ui/Melt.tsx";
@@ -254,11 +255,21 @@ function FrameStats() {
       >
         renderer: {meltMultiPass.value ? "multi-pass" : "single-pass"}
       </button>
+      {meltMultiPass.value && (
+        <button
+          type="button"
+          class="text-left underline opacity-70"
+          onClick={() => (meltFieldScale.value = next(FIELD_SCALES, meltFieldScale.value))}
+        >
+          field: {meltFieldScale.value === undefined ? "default (1/2)" : `${meltFieldScale.value}×`}
+        </button>
+      )}
     </div>
   );
 }
 
 const PIXEL_RATIOS = [undefined, 1, 0.5] as const;
+const FIELD_SCALES = [undefined, 1, 0.25] as const;
 const BUTTON_COUNTS = [48, 12, 24, 32] as const;
 
 /** The next value after current in a list, wrapping round. */

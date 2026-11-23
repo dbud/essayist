@@ -56,7 +56,7 @@ export function acquireMeltContext(listener: MeltContextListener): MeltContext |
       if (current.canvas.height < frame.height) current.canvas.height = frame.height;
       if ((frame.debug || frame.multiPass) && current.floatSupport !== null) {
         current.targets ??= createMeltTargets(current.gl);
-        current.targets.ensure(frame.width, frame.height);
+        current.targets.ensure(frame.width, frame.height, frame.fieldScale);
       }
       // TODO -- draw only with the multi-pass renderer, and fall back to CSS without it
       const renderer = frame.multiPass

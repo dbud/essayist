@@ -18,6 +18,9 @@ export const meltPixelRatio = signal<number | undefined>(undefined);
 /** Draws with the multi-pass renderer where the device supports it, to compare the two. */
 export const meltMultiPass = signal(false);
 
+/** The fraction of the canvas resolution the multi-pass field draws at; the default when unset. */
+export const meltFieldScale = signal<number | undefined>(undefined);
+
 interface MeltProps {
   class?: string;
   ref?: RefObject<HTMLDivElement | null>;
@@ -33,14 +36,17 @@ export default function Melt({ class: extra, ref, children }: MeltProps) {
   const debug = meltDebug.value;
   const pixelRatio = meltPixelRatio.value;
   const multiPass = meltMultiPass.value;
+  const fieldScale = meltFieldScale.value;
 
   useLayoutEffect(() => {
     const node = root.current;
     if (node === null) return;
-    const detach = enabled ? attachMelt(node, { debug, multiPass, pixelRatio }) : undefined;
+    const detach = enabled
+      ? attachMelt(node, { debug, multiPass, fieldScale, pixelRatio })
+      : undefined;
     delete node.dataset.meltPending;
     return detach;
-  }, [enabled, debug, multiPass, pixelRatio, root]);
+  }, [enabled, debug, multiPass, fieldScale, pixelRatio, root]);
 
   // The server renders the root pending, hidden until the canvas can draw it after hydration, so
   // the page never shows its shapes unmelted first. Hydration keeps the attribute of the server,

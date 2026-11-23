@@ -12,9 +12,10 @@ uniform highp sampler2D u_shadowColor;
 uniform highp sampler2D u_shadowBlur;
 // The fill pass, at the resolution of the canvas.
 uniform highp sampler2D u_fill;
-// The allocated size of the field targets, and how many of their pixels a device pixel spans.
+// The allocated size of the field targets, and how many of their pixels a device pixel spans in x
+// and y.
 uniform vec2 u_fieldSize;
-uniform float u_fieldScale;
+uniform vec2 u_fieldScale;
 uniform float u_gain;
 uniform float u_bias;
 // Towards the light, with y pointing up.
@@ -33,8 +34,8 @@ void main() {
   // The field targets and the canvas both count from the bottom left, so a pixel of the canvas maps
   // to the field by its scale. A device pixel apart in x and y, for the slopes.
   vec2 at = gl_FragCoord.xy * u_fieldScale / u_fieldSize;
-  vec2 dx = vec2(u_fieldScale / u_fieldSize.x, 0.0);
-  vec2 dy = vec2(0.0, u_fieldScale / u_fieldSize.y);
+  vec2 dx = vec2(u_fieldScale.x / u_fieldSize.x, 0.0);
+  vec2 dy = vec2(0.0, u_fieldScale.y / u_fieldSize.y);
 
   vec4 field = texture(u_field, at);
   vec4 rims = texture(u_rim, at);
