@@ -39,7 +39,7 @@
   color: var(--btn-ink);
   font-size: var(--aq-btn-font-size);
   padding: var(--aq-btn-py) var(--aq-btn-px);
-  @apply melt-shape melt-rim-white/50 melt-shadow;
+  @apply melt-shape melt-rim-white/30 melt-shadow;
   --melt-fill: var(--btn-bg);
   transform: scale(var(--aq-btn-lifted));
   transition:
