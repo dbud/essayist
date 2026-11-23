@@ -101,13 +101,11 @@ export function measure(
 
 /** The opacity of an element multiplied by the opacity of its ancestors up to the root. */
 function opacityOf(element: Element, known: Map<Element, number>): number {
-  const cached = known.get(element);
-  if (cached !== undefined) return cached;
-  const parent = element.parentElement;
-  const inherited = parent === null ? 1 : opacityOf(parent, known);
-  const opacity = inherited * parseFloat(getComputedStyle(element).opacity);
-  known.set(element, opacity);
-  return opacity;
+  return known.getOrInsertComputed(element, () => {
+    const parent = element.parentElement;
+    const inherited = parent === null ? 1 : opacityOf(parent, known);
+    return inherited * parseFloat(getComputedStyle(element).opacity);
+  });
 }
 
 function parseRadius(value: string, width: number): number {
