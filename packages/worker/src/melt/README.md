@@ -96,6 +96,73 @@ In the shader, each shape spreads a soft field: its rounded box smoothed with a 
 of a group add up, and the outline is where the sum passes a threshold, so close shapes join where
 their fields overlap. The rim, shade and stroke are measured from that outline.
 
+## Multi-pass rendering (planned)
+
+Today every pixel of a canvas loops over every shape of its root, so the cost is pixels times
+shapes, redrawn whole on every frame. The plan draws each shape only where it reaches, and the
+expensive field at a lower resolution, while the edges stay sharp.
+
+### Passes
+
+For each group in order, in the area of the group only (its shapes, their reach, scissored):
+
+1. Field passes, at a fraction of the canvas resolution (1/2 to start, 1/4 to try). Each shape is a
+   quad over its box and its reach (`reachOf`), drawn instanced, with additive blending into 16-bit
+   float targets. Its fragments add what the shape loop adds now:
+
+   - pass A, four targets: the field weighted by colour (`field`), and the rim, shade and stroke
+     colours weighted by it.
+   - pass B, three targets: the stroke width and glow weighted by the field, the two shadow fields
+     (tight and soft), the shadow colours, and the shadow blur.
+
+   Four targets is the most WebGL2 guarantees in one pass, so the values take two passes.
+
+2. Fill pass, at full resolution: each shape is a quad over its box, drawn instanced with ordinary
+   blending, later shapes over earlier ones, into a colour target (`shapes`). These are the crisp
+   edges, so they can't be drawn at the lower resolution.
+
+3. Resolve pass, at full resolution: a quad over the group reads the field targets (filtered, so
+   they scale up smoothly) and the fills, and does what the end of the group loop does now: the
+   outline, the bridge colour, rim, shade, stroke, glow and shadow. It draws the group over the
+   groups before it on the canvas.
+
+### What changes in how it's worked out
+
+- The slope of the field comes from the field target around the pixel instead of `dFdx`, which
+  isn't reliable inside branches. The field is smooth, so this costs nothing in accuracy.
+- The interior shortcut and the early-skip go: a shape is only drawn where it reaches, and the
+  resolve pass can skip pixels deep inside a group or far outside it.
+- Rim, shade, stroke and glow still blend between shapes where they melt, as now.
+
+### Targets and support
+
+The field targets are RGBA16F, which can be blended on every platform that renders to float,
+including iOS, where 32-bit float can't be blended. The fill target is RGBA8. Like the shared
+canvas, they belong to the single WebGL context and only grow, so roots of different sizes don't
+reallocate them. A browser without WebGL2 or without float render targets (`EXT_color_buffer_float`
+or `EXT_color_buffer_half_float`) gets the CSS fallback described above; the single-pass shader
+is removed.
+
+### Cost
+
+- Field passes: the area each shape reaches, at a quarter of the pixels (at 1/2), times two passes.
+- Fill pass: the area of the boxes.
+- Resolve pass: the area of the groups.
+
+Nothing multiplies pixels by shapes any more. A menu with many rows costs about its area, and a
+large panel about its area, at full resolution once and at a lower one for the field.
+
+### Steps
+
+1. Support check and the render targets, with the current look.
+
+2. Field, fill and resolve passes at full resolution, compared side by side with the current shader
+   until they match.
+
+3. The field at 1/2, then 1/4, judged on the phone.
+
+4. Remove the single-pass shader.
+
 ## Limits
 
 - At most 256 shapes per root are drawn (`MAX_SHAPES` in `layout.ts`); the rest keep their own
