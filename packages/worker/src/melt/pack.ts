@@ -1,4 +1,4 @@
-import { type MeltFrame, MAX_SHAPES } from "./layout.ts";
+import { FIELD_REACH, type MeltFrame, type MeltShape, MAX_SHAPES } from "./layout.ts";
 
 export { MAX_SHAPES };
 // Keeps the shader from dividing by zero when sigma is set to 0.
@@ -17,7 +17,7 @@ export const ROW = {
   SHADOW: 5,
   /** The shadow offset in x and y and its Gaussian width, with the last unused. */
   SHADOW_SHAPE: 6,
-  /** The corner radius, stroke width and glow, with the last unused. */
+  /** The corner radius, stroke width, glow, and reach, as reachOf. */
   SHAPE: 7,
   GROUPS: 8,
 } as const;
@@ -47,6 +47,19 @@ export function texel(frame: PackedFrame, row: number, column: number): number[]
   return Array.from(frame.shapes.subarray(start, start + 4));
 }
 
+/** How far from its box a shape draws anything, in device pixels: its field, or its shadow, which
+    is offset and blurred further. Past it, the shader skips the shape. */
+export function reachOf(shape: MeltShape, sigma: number, pixelRatio: number): number {
+  const field = FIELD_REACH * sigma;
+  const { shadow, shadowX, shadowY, shadowBlur } = shape.effects;
+  if (shadow[3] <= 0) return field;
+  // As in melt.frag: the Gaussian width of the shadow is half its blur, and never under half a
+  // pixel, and the tight estimate blurs it with sigma as well.
+  const blur = Math.max((shadowBlur / 2) * pixelRatio, 0.5);
+  const offset = Math.hypot(shadowX, shadowY) * pixelRatio;
+  return Math.max(field, offset + FIELD_REACH * Math.hypot(sigma, blur));
+}
+
 /** Packs a frame for the shader. Shapes past the limit are left out. */
 export function packFrame(
   frame: MeltFrame,
@@ -60,6 +73,7 @@ export function packFrame(
   const put = (row: number, column: number, values: readonly number[]) =>
     shapes.set(values, (row * count + column) * 4);
   const lengths = (values: readonly number[]) => values.map((value) => value * pixelRatio);
+  const sigma = Math.max(frame.settings.sigma * pixelRatio, MIN_SIGMA);
 
   // Groups are numbered again from 0, as the frame leaves out groups with nothing to draw.
   let groups = 0;
@@ -76,14 +90,19 @@ export function packFrame(
     put(ROW.SHADOW, i, effects.shadow);
     // TODO -- cast the shadow away from the page light angle instead of straight down
     put(ROW.SHADOW_SHAPE, i, lengths([effects.shadowX, effects.shadowY, effects.shadowBlur / 2]));
-    put(ROW.SHAPE, i, [shape.radius * pixelRatio, effects.strokeWidth * pixelRatio, effects.glow]);
+    put(ROW.SHAPE, i, [
+      shape.radius * pixelRatio,
+      effects.strokeWidth * pixelRatio,
+      effects.glow,
+      reachOf(shape, sigma, pixelRatio),
+    ]);
     put(ROW.GROUPS, groups - 1, [i + 1]);
   });
 
   return {
     width: Math.max(1, Math.round(frame.width * pixelRatio)),
     height: Math.max(1, Math.round(frame.height * pixelRatio)),
-    sigma: Math.max(frame.settings.sigma * pixelRatio, MIN_SIGMA),
+    sigma,
     gain: frame.settings.gain,
     bias: frame.settings.bias,
     light: [

@@ -1,7 +1,7 @@
 import { expect, test } from "vitest";
 
-import { DEFAULT_SETTINGS, type MeltFrame, type MeltShape } from "./layout.ts";
-import { MAX_SHAPES, packFrame, ROW, ROWS, texel } from "./pack.ts";
+import { DEFAULT_SETTINGS, FIELD_REACH, type MeltFrame, type MeltShape } from "./layout.ts";
+import { MAX_SHAPES, packFrame, reachOf, ROW, ROWS, texel } from "./pack.ts";
 
 const shape = (group: number, x = 10): MeltShape => ({
   x,
@@ -47,6 +47,20 @@ test("lengths are scaled to device pixels, and the size is rounded", () => {
   expect(texel(packed, ROW.SHADOW_SHAPE, 0).slice(0, 3)).toEqual([2, 16, 12]);
   // The radius and the stroke width are lengths; the glow is not.
   expect(texel(packed, ROW.SHAPE, 0).slice(0, 3)).toEqual([4, 2, 0.2].map(Math.fround));
+});
+
+test("the reach covers the field, or the offset and blurred shadow when it reaches further", () => {
+  const sigma = 6;
+  const plain = { ...shape(0), effects: { ...shape(0).effects, shadow: [0, 0, 0, 0] as const } };
+  expect(reachOf(plain, sigma, 1)).toBe(FIELD_REACH * sigma);
+  // An offset of 3, 4 is 5 long, and the Gaussian width of the shadow is half its blur of 16.
+  const shadowed = {
+    ...shape(0),
+    effects: { ...shape(0).effects, shadowX: 3, shadowY: 4, shadowBlur: 16 },
+  };
+  expect(reachOf(shadowed, sigma, 1)).toBeCloseTo(5 + FIELD_REACH * Math.hypot(sigma, 8));
+  // Lengths are scaled to device pixels, but sigma already is.
+  expect(reachOf(shadowed, sigma, 2)).toBeCloseTo(10 + FIELD_REACH * Math.hypot(sigma, 16));
 });
 
 test("the texture has a column per shape and a row per value", () => {

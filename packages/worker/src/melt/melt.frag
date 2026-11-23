@@ -126,15 +126,17 @@ void main() {
     float shadowSigmas = 0.0;
 
     for (int i = start; i < end; i++) {
-      // What decides whether the shape reaches this pixel is read first; the effects only once it
-      // does, as every read is a texture fetch.
+      // Every read is a texture fetch, so the box and the reach come first: past its reach the shape
+      // draws nothing here, field or shadow, and the rest isn't read.
       vec4 box = shapeValue(i, ROW_BOX);
       vec4 sizes = shapeValue(i, ROW_SHAPE);
-      vec4 fill = shapeValue(i, ROW_COLOR);
-      vec4 shadowColor = shapeValue(i, ROW_SHADOW);
       vec2 local = p - box.xy;
       vec2 half_size = box.zw;
       float radius = min(sizes.x, min(half_size.x, half_size.y));
+      float toEdge = roundBox(local, half_size, radius);
+      if (toEdge > sizes.w) continue;
+      vec4 fill = shapeValue(i, ROW_COLOR);
+      vec4 shadowColor = shapeValue(i, ROW_SHADOW);
       if (shadowColor.a > 0.0) {
         vec4 shadowShape = shapeValue(i, ROW_SHADOW_SHAPE);
         vec2 shadowLocal = local - shadowShape.xy;
@@ -157,7 +159,6 @@ void main() {
         }
       }
 
-      float toEdge = roundBox(local, half_size, radius);
       if (toEdge > REACH * u_sigma) continue;
       vec4 color = vec4(fill.rgb * fill.a, fill.a);
       vec4 shapeStroke = shapeValue(i, ROW_STROKE);
