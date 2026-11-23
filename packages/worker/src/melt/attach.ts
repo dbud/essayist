@@ -2,8 +2,8 @@ import { acquireMeltContext } from "./context.ts";
 import { findShapes, type ShapeNode } from "./discover.ts";
 import { layoutFrame, type MeltFrame } from "./layout.ts";
 import { createFrameLoop } from "./loop.ts";
-import { measure } from "./measure.ts";
-import { shapesMoving, watchMotion } from "./motion.ts";
+import { measure, readShapeStyle, type ShapeStyle } from "./measure.ts";
+import { restyledElements, shapesMoving, watchMotion } from "./motion.ts";
 import { packFrame } from "./pack.ts";
 
 const LEFT_OUT = "data-melt-left-out";
@@ -28,7 +28,7 @@ export function attachMelt(root: HTMLElement, { debug = false } = {}): () => voi
   };
   const context = acquireMeltContext({
     lost: () => drawn(false),
-    restored: () => loop.wake(),
+    restored: () => restyle(),
   });
   if (context === null) return () => {};
   root.insertBefore(canvas, root.firstChild);
@@ -43,9 +43,24 @@ export function attachMelt(root: HTMLElement, { debug = false } = {}): () => voi
       if (out !== element.hasAttribute(LEFT_OUT)) element.toggleAttribute(LEFT_OUT, out);
     });
   };
+  // Styles are kept between the frames of a running animation. Anything that wakes the loop from
+  // outside, such as a mutation, a hover or a resize, may restyle any shape, so it clears them.
+  const styles = new Map<Element, ShapeStyle>();
+  const restyle = () => {
+    styles.clear();
+    loop.wake();
+  };
+  const styleOf = (restyled: readonly Element[]) => (element: HTMLElement) => {
+    const kept = styles.get(element);
+    if (kept !== undefined && !restyled.some((animated) => animated.contains(element))) return kept;
+    const style = readShapeStyle(element);
+    styles.set(element, style);
+    return style;
+  };
   const loop = createFrameLoop(
     () => {
-      const frame = layoutFrame(measure(root, nodes));
+      const restyled = styles.size > 0 ? restyledElements(root) : [];
+      const frame = layoutFrame(measure(root, nodes, styleOf(restyled)));
       markLeftOut(frame?.leftOut ?? []);
       if (frame === null) {
         canvas.hidden = true;
@@ -57,7 +72,7 @@ export function attachMelt(root: HTMLElement, { debug = false } = {}): () => voi
     },
     () => shapesMoving(root, elements()),
   );
-  const motion = watchMotion(root, loop.wake);
+  const motion = watchMotion(root, restyle);
   const discover = () => {
     nodes = findShapes(root);
     motion.track(elements());
@@ -72,7 +87,7 @@ export function attachMelt(root: HTMLElement, { debug = false } = {}): () => voi
     if (changes.some((record) => record.type === "childList" || record.attributeName === "class")) {
       discover();
     }
-    loop.wake();
+    restyle();
   });
   mutations.observe(root, { childList: true, attributes: true, subtree: true });
   // Attached before the first paint, so the group never shows unmelted.

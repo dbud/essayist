@@ -8,6 +8,31 @@ export function shapesMoving(root: HTMLElement, shapes: readonly Element[]): boo
   });
 }
 
+// The measurement reads opacity and the transformed rects on every frame, so animating these leaves
+// the style of a shape as it was.
+const GEOMETRY = new Set(["opacity", "transform", "translate", "scale", "rotate"]);
+const KEYFRAME_FIELDS = new Set(["offset", "computedOffset", "easing", "composite"]);
+
+/** The targets of running animations and transitions that change anything but opacity or a
+    transform, so the shapes in them need their style read again. */
+export function restyledElements(root: HTMLElement): Element[] {
+  const targets: Element[] = [];
+  for (const animation of root.getAnimations({ subtree: true })) {
+    if (animation.playState !== "running") continue;
+    const effect = animation.effect;
+    if (!(effect instanceof KeyframeEffect) || effect.target === null) continue;
+    const properties =
+      animation instanceof CSSTransition
+        ? [animation.transitionProperty]
+        : effect
+            .getKeyframes()
+            .flatMap((frame) => Object.keys(frame))
+            .filter((key) => !KEYFRAME_FIELDS.has(key));
+    if (properties.some((property) => !GEOMETRY.has(property))) targets.push(effect.target);
+  }
+  return targets;
+}
+
 export interface MotionWatch {
   /** Watches the size of these shapes, in place of the ones before. */
   track(shapes: readonly Element[]): void;
