@@ -8,7 +8,6 @@ import Melt, {
   meltDebug,
   meltEnabled,
   meltFieldScale,
-  meltMultiPass,
   meltPixelRatio,
 } from "#/components/ui/Melt.tsx";
 import { meltTargetStatus, simulateContextLoss } from "#/melt/context.ts";
@@ -251,25 +250,16 @@ function FrameStats() {
       <button
         type="button"
         class="text-left underline opacity-70"
-        onClick={() => (meltMultiPass.value = !meltMultiPass.value)}
+        onClick={() => (meltFieldScale.value = next(FIELD_SCALES, meltFieldScale.value))}
       >
-        renderer: {meltMultiPass.value ? "multi-pass" : "single-pass"}
+        field: {meltFieldScale.value === undefined ? "default (1/4)" : `${meltFieldScale.value}×`}
       </button>
-      {meltMultiPass.value && (
-        <button
-          type="button"
-          class="text-left underline opacity-70"
-          onClick={() => (meltFieldScale.value = next(FIELD_SCALES, meltFieldScale.value))}
-        >
-          field: {meltFieldScale.value === undefined ? "default (1/2)" : `${meltFieldScale.value}×`}
-        </button>
-      )}
     </div>
   );
 }
 
 const PIXEL_RATIOS = [undefined, 1, 0.5] as const;
-const FIELD_SCALES = [undefined, 1, 0.25] as const;
+const FIELD_SCALES = [undefined, 0.5, 1] as const;
 const BUTTON_COUNTS = [48, 12, 24, 32] as const;
 
 /** The next value after current in a list, wrapping round. */

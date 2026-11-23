@@ -1,6 +1,6 @@
 /** The field passes draw at this fraction of the canvas resolution by default: the field is a blur,
     so it scales up without visible loss. */
-export const FIELD_SCALE = 0.5;
+export const FIELD_SCALE = 0.25;
 
 /** The size in pixels of the field of a frame of a size, at a scale. */
 export function fieldSize(width: number, height: number, scale: number): [number, number] {

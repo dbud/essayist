@@ -70,23 +70,38 @@ test("the texture has a column per shape and a row per value", () => {
   expect(texel(packed, ROW.BOX, 2)[0]).toBe(10);
 });
 
-test("groups are numbered again from 0, and each ends after its last shape", () => {
+test("a group runs over the shapes that share it, wherever its number", () => {
   const packed = packFrame(frame([shape(0), shape(0), shape(3), shape(7)]), 1);
-  expect(packed.groups).toBe(3);
-  expect([0, 1, 2].map((g) => texel(packed, ROW.GROUPS, g)[0])).toEqual([2, 3, 4]);
+  expect(packed.groupList.map(({ start, end }) => [start, end])).toEqual([
+    [0, 2],
+    [2, 3],
+    [3, 4],
+  ]);
+});
+
+test("the area of a group covers its shapes and their reach, within the frame", () => {
+  // Boxes of 10 by 8 round x 30 and x 60, at y 20: the reach is 3 sigma, or 18, and the top stops
+  // at the frame.
+  const plain = (x: number): MeltShape => ({
+    ...shape(0, x),
+    effects: { ...shape(0).effects, shadow: [0, 0, 0, 0] },
+  });
+  const [group] = packFrame(frame([plain(30), plain(60)]), 1).groupList;
+  expect(group).toMatchObject({ left: 7, top: 0, right: 83, bottom: 42 });
 });
 
 test("shapes past the limit are left out", () => {
   const many = frame(Array.from({ length: MAX_SHAPES + 3 }, (_, i) => shape(i, i)));
   const packed = packFrame(many, 1);
   expect(packed.count).toBe(MAX_SHAPES);
-  expect(packed.groups).toBe(MAX_SHAPES);
-  expect(texel(packed, ROW.GROUPS, MAX_SHAPES - 1)[0]).toBe(MAX_SHAPES);
+  expect(packed.groupList).toHaveLength(MAX_SHAPES);
+  expect(packed.groupList.at(-1)?.end).toBe(MAX_SHAPES);
 });
 
 test("a frame with no shapes still has a column", () => {
   const packed = packFrame(frame([]), 1);
-  expect([packed.count, packed.groups]).toEqual([1, 0]);
+  expect(packed.count).toBe(1);
+  expect(packed.groupList).toHaveLength(0);
 });
 
 test("the light angle becomes a direction, from straight up and clockwise", () => {

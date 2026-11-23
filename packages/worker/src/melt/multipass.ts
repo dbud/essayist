@@ -2,6 +2,7 @@ import COMMON from "./common.glsl?raw";
 import FIELD from "./field.frag?raw";
 import FILL from "./fill.frag?raw";
 import FRAGMENT from "./fragment.glsl?raw";
+import OUTLINE from "./outline.frag?raw";
 import type { PackedFrame, PackedGroup } from "./pack.ts";
 import { compileProgram, type MeltRenderer } from "./renderer.ts";
 import RESOLVE_FRAGMENT from "./resolve.frag?raw";
@@ -51,9 +52,14 @@ export function createMultiPassRenderer(
     vertexSource(RESOLVE_VERTEX),
     fragmentSource(RESOLVE_FRAGMENT),
   );
-  if (fieldA === null || fieldB === null || fill === null || resolve === null) return null;
+  const outline = compileProgram(gl, vertexSource(SHAPE), fragmentSource(OUTLINE), {
+    QUAD_REACH: 0,
+  });
+  if (fieldA === null || fieldB === null || fill === null || resolve === null || outline === null) {
+    return null;
+  }
   // Captured after the check, so the functions below see them compiled.
-  const programs = { fieldA, fieldB, fill, resolve };
+  const programs = { fieldA, fieldB, fill, resolve, outline };
 
   const vertexArray = gl.createVertexArray();
   const shapes = createShapeTexture(gl);
@@ -183,6 +189,13 @@ export function createMultiPassRenderer(
     }
 
     gl.disable(gl.SCISSOR_TEST);
+    if (frame.debug) {
+      // Every shape of the frame, over the canvas.
+      gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+      const at = useProgram(programs.outline, frame, full);
+      gl.uniform1i(at("u_start"), 0);
+      gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, frame.groupList.at(-1)?.end ?? 0);
+    }
     gl.disable(gl.BLEND);
   }
 

@@ -5,9 +5,8 @@ export { MAX_SHAPES };
 // Keeps the shader from dividing by zero when sigma is set to 0.
 const MIN_SIGMA = 0.001;
 
-/** The rows of the shape texture. Each shape is a column, with four numbers in each row; the
-    groups row holds in column n the number of shapes up to the end of group n. The shader gets
-    these as ROW_BOX and so on. */
+/** The rows of the shape texture. Each shape is a column, with four numbers in each row. The
+    shaders get these as ROW_BOX and so on. */
 export const ROW = {
   /** The centre and half size. */
   BOX: 0,
@@ -20,7 +19,6 @@ export const ROW = {
   SHADOW_SHAPE: 6,
   /** The corner radius, stroke width, glow, and reach, as reachOf. */
   SHAPE: 7,
-  GROUPS: 8,
 } as const;
 
 export const ROWS = Object.keys(ROW).length;
@@ -37,13 +35,10 @@ export interface PackedFrame {
   /** The shape texture, ROWS rows of count texels of four numbers. */
   readonly shapes: Float32Array;
   readonly count: number;
-  readonly groups: number;
-  /** The groups in drawing order, for the multi-pass renderer. */
+  /** The groups in drawing order. */
   readonly groupList: readonly PackedGroup[];
   /** Outlines the measured box of each shape over the melt. */
   readonly debug: boolean;
-  /** Draws with the multi-pass renderer where the device supports it. */
-  readonly multiPass: boolean;
   /** The fraction of the canvas resolution the field passes of the multi-pass renderer draw at. */
   readonly fieldScale: number;
 }
@@ -71,7 +66,7 @@ export function reachOf(shape: MeltShape, sigma: number, pixelRatio: number): nu
   const field = FIELD_REACH * sigma;
   const { shadow, shadowX, shadowY, shadowBlur } = shape.effects;
   if (shadow[3] <= 0) return field;
-  // As in melt.frag: the Gaussian width of the shadow is half its blur, and never under half a
+  // As in field.frag: the Gaussian width of the shadow is half its blur, and never under half a
   // pixel, and the tight estimate blurs it with sigma as well.
   const blur = Math.max((shadowBlur / 2) * pixelRatio, 0.5);
   const offset = Math.hypot(shadowX, shadowY) * pixelRatio;
@@ -82,11 +77,7 @@ export function reachOf(shape: MeltShape, sigma: number, pixelRatio: number): nu
 export function packFrame(
   frame: MeltFrame,
   pixelRatio: number,
-  {
-    debug = false,
-    multiPass = false,
-    fieldScale = FIELD_SCALE,
-  }: { debug?: boolean; multiPass?: boolean; fieldScale?: number } = {},
+  { debug = false, fieldScale = FIELD_SCALE }: { debug?: boolean; fieldScale?: number } = {},
 ): PackedFrame {
   const drawn = frame.shapes.slice(0, MAX_SHAPES);
   // At least one column, as a texture can't be empty.
@@ -100,13 +91,10 @@ export function packFrame(
   const width = Math.max(1, Math.round(frame.width * pixelRatio));
   const height = Math.max(1, Math.round(frame.height * pixelRatio));
 
-  // Groups are numbered again from 0, as the frame leaves out groups with nothing to draw.
-  let groups = 0;
-  let previous: number | null = null;
+  // The shapes come sorted by group, so a group starts where the group of a shape changes.
   const groupList: PackedGroup[] = [];
   drawn.forEach((shape, i) => {
-    if (shape.group !== previous) groups++;
-    previous = shape.group;
+    const starts = i === 0 || shape.group !== drawn[i - 1].group;
     const { effects } = shape;
     const reach = reachOf(shape, sigma, pixelRatio);
     const bounds = {
@@ -116,7 +104,7 @@ export function packFrame(
       bottom: Math.min(height, Math.ceil((shape.y + shape.halfHeight) * pixelRatio + reach)),
     };
     const last = groupList.at(-1);
-    if (last === undefined || groupList.length < groups) {
+    if (last === undefined || starts) {
       groupList.push({ start: i, end: i + 1, ...bounds });
     } else {
       groupList[groupList.length - 1] = {
@@ -142,7 +130,6 @@ export function packFrame(
       effects.glow,
       reach,
     ]);
-    put(ROW.GROUPS, groups - 1, [i + 1]);
   });
 
   return {
@@ -157,10 +144,8 @@ export function packFrame(
     ],
     shapes,
     count,
-    groups,
     groupList,
     debug,
-    multiPass,
     fieldScale,
   };
 }

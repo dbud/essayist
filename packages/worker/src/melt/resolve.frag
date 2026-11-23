@@ -1,5 +1,7 @@
-// Composes a group from the sums of its field passes and its fills, as the end of the group loop in
-// melt.frag, and draws it over the groups before it. Colours are premultiplied.
+// Composes a group from the sums of its field passes and its fills, and draws it over the groups
+// before it: where the field passes its threshold, the outline, with the colour of the shapes or of
+// the shapes nearby between them, the rim, shade, stroke, glow and shadow. Colours are
+// premultiplied.
 
 // Field pass A, as field.frag.
 uniform highp sampler2D u_field;

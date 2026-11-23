@@ -67,9 +67,10 @@ rim-white/50`), `transparent`, or any colour in brackets. `melt-glow-30` is a gl
 ## Without the canvas
 
 Every shape paints its fill as an ordinary background and its shadow as a box shadow, so the page
-stays usable without WebGL2 and while the context is lost. A root adds `data-melt-drawn` while its
-canvas draws, which turns those backgrounds off. The server renders roots with `data-melt-pending`,
-which hides them until hydration, so the first paint never shows them unmelted.
+stays usable without the melt: without WebGL2 or float render targets, and while the context is
+lost. A root adds `data-melt-drawn` while its canvas draws, which turns those backgrounds off. The
+server renders roots with `data-melt-pending`, which hides them until hydration, so the first paint
+never shows them unmelted.
 
 ## How it works
 
@@ -83,89 +84,58 @@ Each root runs a small pipeline on every frame in which something moves:
 
 3. `layout.ts` turns them into a frame: the area to draw and the shapes in it, sorted by group.
 
-4. `pack.ts` packs the frame into a float texture the shader reads, in device pixels: a column per
-   shape, a row per value, and a row with the end of each group.
+4. `pack.ts` packs the frame for the shaders, in device pixels: a float texture with a column per
+   shape and a row per value, and the area of each group.
 
-5. `renderer.ts` draws it with `melt.frag`, through a single WebGL context that every root shares
-   (`context.ts`), and each root copies the result into its own 2D canvas.
+5. `multipass.ts` draws it group by group, as below, through a single WebGL context that every
+   root shares (`context.ts`), and each root copies the result into its own 2D canvas.
 
 `loop.ts` and `motion.ts` keep drawing while a transition or animation moves a shape, and stop once
 everything is still. `attach.ts` wires the pipeline to a root.
 
-In the shader, each shape spreads a soft field: its rounded box smoothed with a Gaussian. The fields
-of a group add up, and the outline is where the sum passes a threshold, so close shapes join where
-their fields overlap. The rim, shade and stroke are measured from that outline.
+Each shape spreads a soft field: its rounded box smoothed with a Gaussian. The fields of a group
+add up, and the outline is where the sum passes a threshold, so close shapes join where their fields
+overlap. The rim, shade and stroke are measured from that outline.
 
-## Multi-pass rendering (planned)
+## Rendering
 
-Today every pixel of a canvas loops over every shape of its root, so the cost is pixels times
-shapes, redrawn whole on every frame. The plan draws each shape only where it reaches, and the
-expensive field at a lower resolution, while the edges stay sharp.
+Each shape is drawn only where it reaches, and the field, the expensive part, at a quarter of
+the resolution of the canvas (`FIELD_SCALE` in `targets.ts`), while the edges are cut at full
+resolution, so they stay sharp. For each group in order, in its area only (its shapes and their
+reach, scissored):
 
-### Passes
+1. Field passes, at the lower resolution (`field.frag`). Each shape is a quad over its box and its
+   reach (`reachOf`), drawn instanced, adding into 16-bit float targets:
 
-For each group in order, in the area of the group only (its shapes, their reach, scissored):
-
-1. Field passes, at a fraction of the canvas resolution (1/2 to start, 1/4 to try). Each shape is a
-   quad over its box and its reach (`reachOf`), drawn instanced, with additive blending into 16-bit
-   float targets. Its fragments add what the shape loop adds now:
-
-   - pass A, four targets: the field weighted by colour (`field`), and the rim, shade and stroke
-     colours weighted by it.
+   - pass A, four targets: the field weighted by colour, and the rim, shade and stroke colours
+     weighted by it.
    - pass B, three targets: the stroke width and glow weighted by the field, the two shadow fields
      (tight and soft), the shadow colours, and the shadow blur.
 
-   Four targets is the most WebGL2 guarantees in one pass, so the values take two passes.
+   Four targets is the most WebGL2 guarantees in one pass, so the values take two passes. Each group
+   clears its area of the targets with a margin, as the next pass reads past its edge.
 
-2. Fill pass, at full resolution: each shape is a quad over its box, drawn instanced with ordinary
-   blending, later shapes over earlier ones, into a colour target (`shapes`). These are the crisp
-   edges, so they can't be drawn at the lower resolution.
+2. Fill pass, at full resolution (`fill.frag`): each shape is a quad over its box, drawn
+   instanced, later shapes over earlier ones. These are the crisp edges.
 
-3. Resolve pass, at full resolution: a quad over the group reads the field targets (filtered, so
-   they scale up smoothly) and the fills, and does what the end of the group loop does now: the
-   outline, the bridge colour, rim, shade, stroke, glow and shadow. It draws the group over the
-   groups before it on the canvas.
+3. Resolve pass, at full resolution (`resolve.frag`): a quad over the group reads the field targets,
+   filtered so they scale up smoothly, and the fills. It cuts the outline, colours the space between
+   shapes, and draws the rim, shade, stroke, glow and shadow, with the slope of the field taken a
+   pixel to either side. It draws the group over the groups before it.
 
-### What changes in how it's worked out
-
-- The slope of the field comes from the field target around the pixel instead of `dFdx`, which
-  isn't reliable inside branches. The field is smooth, so this costs nothing in accuracy.
-- The interior shortcut and the early-skip go: a shape is only drawn where it reaches, and the
-  resolve pass can skip pixels deep inside a group or far outside it.
-- Rim, shade, stroke and glow still blend between shapes where they melt, as now.
-
-### Targets and support
+Rim, shade, stroke, glow and shadow blend between shapes where they melt. While debugging, a last
+pass outlines the measured box of every shape (`outline.frag`).
 
 The field targets are RGBA16F, which can be blended on every platform that renders to float,
-including iOS, where 32-bit float can't be blended. The fill target is RGBA8. Like the shared
-canvas, they belong to the single WebGL context and only grow, so roots of different sizes don't
-reallocate them. A browser without WebGL2 or without float render targets (`EXT_color_buffer_float`
-or `EXT_color_buffer_half_float`) gets the CSS fallback described above; the single-pass shader
-is removed.
-
-### Cost
-
-- Field passes: the area each shape reaches, at a quarter of the pixels (at 1/2), times two passes.
-- Fill pass: the area of the boxes.
-- Resolve pass: the area of the groups.
-
-Nothing multiplies pixels by shapes any more. A menu with many rows costs about its area, and a
-large panel about its area, at full resolution once and at a lower one for the field.
-
-### Steps
-
-1. Support check and the render targets, with the current look.
-
-2. Field, fill and resolve passes at full resolution, compared side by side with the current shader
-   until they match.
-
-3. The field at 1/2, then 1/4, judged on the phone.
-
-4. Remove the single-pass shader.
+including iOS, where 32-bit float can't be blended; the fill target is RGBA8. They belong to the
+single WebGL context and only grow, like its canvas, so roots of different sizes don't reallocate
+them.
 
 ## Limits
 
 - At most 256 shapes per root are drawn (`MAX_SHAPES` in `layout.ts`); the rest keep their own
-  background and shadow. Every pixel loops over the shapes of its root, so the cost grows with each.
+  background and shadow.
+- The cost grows with the area each shape reaches and the area of each group, not with the number
+  of shapes a pixel sees.
 - A rotated root isn't supported; scaled and translated roots are.
 - A `<Melt>` inside another draws its own shapes; the outer one skips them.
