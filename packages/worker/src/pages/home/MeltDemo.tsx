@@ -5,7 +5,7 @@ import { useEffect } from "preact/hooks";
 import AqSegmented from "#/components/ui/AqSegmented.tsx";
 import AqSwap from "#/components/ui/AqSwap.tsx";
 import Melt, { meltDebug, meltEnabled, meltPixelRatio } from "#/components/ui/Melt.tsx";
-import { simulateContextLoss } from "#/melt/context.ts";
+import { meltTargetStatus, simulateContextLoss } from "#/melt/context.ts";
 import { TIMED_PARTS, type TimedPart, takeFrameStats } from "#/melt/stats.ts";
 
 function Buttons() {
@@ -234,6 +234,7 @@ function FrameStats() {
       <span>layout {ms("layout")} ms</span>
       <span>draw {ms("draw")} ms</span>
       {meltDebug.value && <span>gpu {ms("gpu")} ms</span>}
+      {meltDebug.value && <span class="max-w-64 break-words">{meltTargetStatus()}</span>}
       <button
         type="button"
         class="text-left underline opacity-70"

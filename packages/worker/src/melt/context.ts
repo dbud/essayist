@@ -1,6 +1,13 @@
 import type { PackedFrame } from "./pack.ts";
 import { createMeltRenderer, type MeltRenderer } from "./renderer.ts";
 import { addTime } from "./stats.ts";
+import {
+  createMeltTargets,
+  enableFloatTargets,
+  type FloatSupport,
+  type MeltTargets,
+  type Target,
+} from "./targets.ts";
 
 export interface MeltContextListener {
   lost(): void;
@@ -20,6 +27,10 @@ interface Shared {
   readonly canvas: HTMLCanvasElement;
   readonly gl: WebGL2RenderingContext;
   renderer: MeltRenderer | null;
+  /** Null where the multi-pass melt can't run, which then falls back to CSS. */
+  floatSupport: FloatSupport | null;
+  // TODO -- created only while debugging until the multi-pass melt draws with them
+  targets: MeltTargets | null;
   readonly listeners: Set<MeltContextListener>;
   readonly dispose: () => void;
 }
@@ -40,6 +51,10 @@ export function acquireMeltContext(listener: MeltContextListener): MeltContext |
       // The canvas only grows, so groups of different sizes don't reallocate it on every frame.
       if (current.canvas.width < frame.width) current.canvas.width = frame.width;
       if (current.canvas.height < frame.height) current.canvas.height = frame.height;
+      if (frame.debug && current.floatSupport !== null) {
+        current.targets ??= createMeltTargets(current.gl);
+        current.targets.ensure(frame.width, frame.height);
+      }
       current.renderer.draw(frame);
       // Reading a pixel back waits for the GPU, unlike finish in some browsers, so the readout can
       // show how long the shader takes. It stalls the pipeline, so only while debugging.
@@ -81,16 +96,27 @@ function createShared(): Shared | null {
   const renderer = createMeltRenderer(gl);
   if (renderer === null) return null;
 
-  const state: Shared = { canvas, gl, renderer, listeners: new Set(), dispose };
+  const state: Shared = {
+    canvas,
+    gl,
+    renderer,
+    floatSupport: enableFloatTargets(gl),
+    targets: null,
+    listeners: new Set(),
+    dispose,
+  };
 
   function onLost(event: Event) {
     // Without preventDefault the browser never restores the context.
     event.preventDefault();
     state.renderer = null;
+    state.targets = null;
     for (const listener of state.listeners) listener.lost();
   }
 
   function onRestored() {
+    // A restored context starts without extensions or resources.
+    state.floatSupport = enableFloatTargets(gl);
     state.renderer = createMeltRenderer(gl);
     if (state.renderer === null) return;
     for (const listener of state.listeners) listener.restored();
@@ -101,12 +127,31 @@ function createShared(): Shared | null {
     canvas.removeEventListener("webglcontextrestored", onRestored);
     state.renderer?.dispose();
     state.renderer = null;
+    state.targets?.dispose();
+    state.targets = null;
     gl.getExtension("WEBGL_lose_context")?.loseContext();
   }
 
   canvas.addEventListener("webglcontextlost", onLost);
   canvas.addEventListener("webglcontextrestored", onRestored);
   return state;
+}
+
+/** For the debug readout: how this device supports the multi-pass melt, and its targets once a
+    debug frame has made them. */
+export function meltTargetStatus(): string {
+  if (shared === null) return "no context";
+  const { floatSupport, targets } = shared;
+  if (floatSupport === null) return "no float targets: CSS fallback";
+  if (targets === null) return `${floatSupport}, no targets yet`;
+  const describe = (name: string, target: Target) =>
+    `${name} ${target.width}×${target.height}${target.complete ? "" : " incomplete"}`;
+  return [
+    floatSupport,
+    describe("field A", targets.fieldA),
+    describe("field B", targets.fieldB),
+    describe("fill", targets.fill),
+  ].join(" · ");
 }
 
 /** Loses the shared context and restores it after a delay, to try the fallback by hand. */
