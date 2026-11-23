@@ -6,7 +6,7 @@ import AqSegmented from "#/components/ui/AqSegmented.tsx";
 import AqSwap from "#/components/ui/AqSwap.tsx";
 import Melt, { meltDebug, meltEnabled, meltPixelRatio } from "#/components/ui/Melt.tsx";
 import { simulateContextLoss } from "#/melt/context.ts";
-import { takeFrameStats } from "#/melt/stats.ts";
+import { TIMED_PARTS, type TimedPart, takeFrameStats } from "#/melt/stats.ts";
 
 function Buttons() {
   return (
@@ -184,10 +184,12 @@ function Effects() {
   );
 }
 
-/** Frames drawn in the last second, and the melt time per frame: measuring, drawing, and the GPU
-    part of drawing, which is only measured while debugging. */
+/** Frames drawn in the last second, and the melt time of each timed part per frame. */
 function useFrameStats() {
-  const stats = useSignal({ fps: 0, measure: 0, draw: 0, gpu: 0 });
+  const stats = useSignal<{ fps: number; parts: Partial<Record<TimedPart, number>> }>({
+    fps: 0,
+    parts: {},
+  });
   useEffect(() => {
     let frames = 0;
     let since = performance.now();
@@ -195,12 +197,10 @@ function useFrameStats() {
     let request = requestAnimationFrame(function tick(now) {
       frames++;
       if (now - since >= 1000) {
-        const { measure, draw, gpu } = takeFrameStats();
+        const totals = takeFrameStats();
         stats.value = {
           fps: Math.round((frames * 1000) / (now - since)),
-          measure: measure / frames,
-          draw: draw / frames,
-          gpu: gpu / frames,
+          parts: Object.fromEntries(TIMED_PARTS.map((part) => [part, totals[part] / frames])),
         };
         frames = 0;
         since = now;
@@ -212,16 +212,28 @@ function useFrameStats() {
   return stats;
 }
 
+// The parts of measure() in stats.ts.
+const MEASURE_PARTS = ["flush", "styles", "rects", "opacity"] as const;
+
 /** Fixed in a corner, so it stays in view while scrolling to the other samples. */
 function FrameStats() {
   const stats = useFrameStats();
-  const { fps, measure, draw, gpu } = stats.value;
+  const { fps, parts } = stats.value;
+  const ms = (part: TimedPart) => (parts[part] ?? 0).toFixed(1);
+  const measure = MEASURE_PARTS.reduce((sum, part) => sum + (parts[part] ?? 0), 0);
   return (
     <div class="fixed right-4 bottom-20 z-toast flex flex-col gap-1 rounded-md bg-float px-3 py-2 font-mono text-xs text-float-ink tabular-nums">
       <span>{fps} fps</span>
       <span>measure {measure.toFixed(1)} ms</span>
-      <span>draw {draw.toFixed(1)} ms</span>
-      {meltDebug.value && <span>gpu {gpu.toFixed(1)} ms</span>}
+      {MEASURE_PARTS.map((part) => (
+        <span key={part} class="pl-2 opacity-70">
+          {part} {ms(part)}
+        </span>
+      ))}
+      <span>animations {ms("animations")} ms</span>
+      <span>layout {ms("layout")} ms</span>
+      <span>draw {ms("draw")} ms</span>
+      {meltDebug.value && <span>gpu {ms("gpu")} ms</span>}
       <button
         type="button"
         class="text-left underline opacity-70"

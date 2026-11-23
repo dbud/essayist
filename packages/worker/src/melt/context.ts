@@ -1,6 +1,6 @@
 import type { PackedFrame } from "./pack.ts";
 import { createMeltRenderer, type MeltRenderer } from "./renderer.ts";
-import { recordGpu } from "./stats.ts";
+import { addTime } from "./stats.ts";
 
 export interface MeltContextListener {
   lost(): void;
@@ -46,7 +46,7 @@ export function acquireMeltContext(listener: MeltContextListener): MeltContext |
       if (frame.debug) {
         const waited = performance.now();
         current.gl.readPixels(0, 0, 1, 1, current.gl.RGBA, current.gl.UNSIGNED_BYTE, PIXEL);
-        recordGpu(performance.now() - waited);
+        addTime("gpu", performance.now() - waited);
       }
       // The frame sits in the lower left corner, and drawImage counts from the top.
       const top = current.canvas.height - frame.height;

@@ -1,6 +1,7 @@
 import { parseColor, type Rgba } from "./color.ts";
 import type { ShapeNode } from "./discover.ts";
 import type { Box, MeasuredShape, MeltEffects, Measurement } from "./layout.ts";
+import { timed } from "./stats.ts";
 
 /** The parts of a shape that only change with its computed style, so they can be kept between
     frames while nothing restyles it. */
@@ -43,9 +44,14 @@ export function measure(
   // root, so the transforms of the root and its ancestors apply to it as well; dividing them out
   // leaves the CSS pixels of the root. The computed width keeps its fraction, unlike offsetWidth,
   // whose rounding would scale every position by a little and shift shapes far from the root.
-  const origin = root.getBoundingClientRect();
-  const rootStyle = getComputedStyle(root);
-  const layoutWidth = parseFloat(rootStyle.width) || root.offsetWidth;
+  const { origin, rootStyle, layoutWidth } = timed("flush", () => {
+    const style = getComputedStyle(root);
+    return {
+      origin: root.getBoundingClientRect(),
+      rootStyle: style,
+      layoutWidth: parseFloat(style.width) || root.offsetWidth,
+    };
+  });
   const scale = layoutWidth > 0 ? origin.width / layoutWidth : 1;
   const local = (rect: DOMRect): Box => ({
     left: (rect.left - origin.left) / scale,
@@ -56,15 +62,27 @@ export function measure(
   const setting = (name: string) => parseFloat(rootStyle.getPropertyValue(`--melt-${name}`));
   const opacities = new Map<Element, number>([[root, 1]]);
 
-  const shapes = nodes.map(({ element, group }): MeasuredShape => {
-    const { radius, fill, effects, visible } = styleOf(element);
-    return {
+  // Each kind of read runs over every shape in turn, so each is timed once per frame: timers are
+  // too coarse for a single read.
+  const styles = timed("styles", () => nodes.map(({ element }) => styleOf(element)));
+  const boxes = timed("rects", () =>
+    nodes.map(({ element }) => ({
       rect: local(element.getBoundingClientRect()),
       layoutWidth: element.offsetWidth,
-      radius: parseRadius(radius, element.offsetWidth),
+    })),
+  );
+  const opacity = timed("opacity", () => nodes.map(({ element }) => opacityOf(element, opacities)));
+
+  const shapes = nodes.map(({ group }, i): MeasuredShape => {
+    const { radius, fill, effects, visible } = styles[i];
+    const { rect, layoutWidth: width } = boxes[i];
+    return {
+      rect,
+      layoutWidth: width,
+      radius: parseRadius(radius, width),
       fill,
       effects,
-      opacity: opacityOf(element, opacities),
+      opacity: opacity[i],
       visible,
       group,
     };

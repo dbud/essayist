@@ -5,7 +5,7 @@ import { createFrameLoop } from "./loop.ts";
 import { measure, readShapeStyle, type ShapeStyle } from "./measure.ts";
 import { restyledElements, shapesMoving, watchMotion } from "./motion.ts";
 import { packFrame } from "./pack.ts";
-import { recordFrame } from "./stats.ts";
+import { timed } from "./stats.ts";
 
 const LEFT_OUT = "data-melt-left-out";
 
@@ -63,22 +63,22 @@ export function attachMelt(
   };
   const loop = createFrameLoop(
     () => {
-      const started = performance.now();
-      const restyled = styles.size > 0 ? restyledElements(root) : [];
-      const frame = layoutFrame(measure(root, nodes, styleOf(restyled)));
-      const measured = performance.now();
+      const restyled = styles.size > 0 ? timed("animations", () => restyledElements(root)) : [];
+      const measurement = measure(root, nodes, styleOf(restyled));
+      const frame = timed("layout", () => layoutFrame(measurement));
       markLeftOut(frame?.leftOut ?? []);
       if (frame === null) {
         canvas.hidden = true;
         return;
       }
-      const ratio = pixelRatio ?? devicePixelRatio;
-      const packed = packFrame(frame, ratio, { debug });
-      placeCanvas(canvas, frame, packed, ratio);
-      drawn(context.render(packed, target));
-      recordFrame(measured - started, performance.now() - measured);
+      timed("draw", () => {
+        const ratio = pixelRatio ?? devicePixelRatio;
+        const packed = packFrame(frame, ratio, { debug });
+        placeCanvas(canvas, frame, packed, ratio);
+        drawn(context.render(packed, target));
+      });
     },
-    () => shapesMoving(root, elements()),
+    () => timed("animations", () => shapesMoving(root, elements())),
   );
   const motion = watchMotion(root, restyle);
   const discover = () => {

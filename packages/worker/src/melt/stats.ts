@@ -1,25 +1,41 @@
-/** Milliseconds spent on melt frames across every root since the last take, for a readout. */
-let measureMs = 0;
-let drawMs = 0;
-let gpuMs = 0;
+/** The parts of a melt frame that are timed. flush to opacity are parts of measure(): flush is the
+    first read of the root, which waits for the browser to finish any pending style and layout. */
+export const TIMED_PARTS = [
+  "animations",
+  "flush",
+  "styles",
+  "rects",
+  "opacity",
+  "layout",
+  "draw",
+  "gpu",
+] as const;
 
-/** Measuring covers reading the shapes and laying out the frame; drawing covers packing,
-    rendering and copying into the canvas of the root. */
-export function recordFrame(measure: number, draw: number): void {
-  measureMs += measure;
-  drawMs += draw;
+export type TimedPart = (typeof TIMED_PARTS)[number];
+
+let totals = emptyTotals();
+
+function emptyTotals(): Record<TimedPart, number> {
+  return Object.fromEntries(TIMED_PARTS.map((part) => [part, 0])) as Record<TimedPart, number>;
 }
 
-/** The wait for the GPU to finish a frame, measured only while debugging. Part of drawing. */
-export function recordGpu(ms: number): void {
-  gpuMs += ms;
+/** Adds to the milliseconds spent on a part across every root since the last take. gpu is only
+    measured while debugging, and is part of draw. */
+export function addTime(part: TimedPart, ms: number): void {
+  totals[part] += ms;
+}
+
+/** Runs read and adds its time to a part. */
+export function timed<T>(part: TimedPart, read: () => T): T {
+  const started = performance.now();
+  const value = read();
+  addTime(part, performance.now() - started);
+  return value;
 }
 
 /** The totals since the last call, which start again from 0. */
-export function takeFrameStats(): { measure: number; draw: number; gpu: number } {
-  const stats = { measure: measureMs, draw: drawMs, gpu: gpuMs };
-  measureMs = 0;
-  drawMs = 0;
-  gpuMs = 0;
-  return stats;
+export function takeFrameStats(): Record<TimedPart, number> {
+  const taken = totals;
+  totals = emptyTotals();
+  return taken;
 }
