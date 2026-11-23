@@ -3,7 +3,7 @@ import { findShapes, type ShapeNode } from "./discover.ts";
 import { layoutFrame, type MeltFrame } from "./layout.ts";
 import { createFrameLoop } from "./loop.ts";
 import { measure, readShapeStyle, type ShapeStyle } from "./measure.ts";
-import { restyledElements, shapesMoving, watchMotion } from "./motion.ts";
+import { readMotion, shapesAndAncestors, watchMotion } from "./motion.ts";
 import { packFrame } from "./pack.ts";
 import { timed } from "./stats.ts";
 
@@ -61,10 +61,15 @@ export function attachMelt(
     styles.set(element, style);
     return style;
   };
+  // The animations are read once at the start of each frame. Whether shapes still move then decides
+  // whether to draw the next one; an animation that starts in between wakes the loop by its event.
+  let withShapes = new Set<Element>();
+  let moving = false;
   const loop = createFrameLoop(
     () => {
-      const restyled = styles.size > 0 ? timed("animations", () => restyledElements(root)) : [];
-      const measurement = measure(root, nodes, styleOf(restyled));
+      const motionNow = timed("animations", () => readMotion(root, withShapes));
+      moving = motionNow.moving;
+      const measurement = measure(root, nodes, styleOf(motionNow.restyled));
       const frame = timed("layout", () => layoutFrame(measurement));
       markLeftOut(frame?.leftOut ?? []);
       if (frame === null) {
@@ -78,11 +83,12 @@ export function attachMelt(
         drawn(context.render(packed, target));
       });
     },
-    () => timed("animations", () => shapesMoving(root, elements())),
+    () => moving,
   );
   const motion = watchMotion(root, restyle);
   const discover = () => {
     nodes = findShapes(root);
+    withShapes = shapesAndAncestors(root, elements());
     motion.track(elements());
   };
   discover();
