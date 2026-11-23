@@ -132,10 +132,18 @@ void main() {
         vec2 shadowLocal = local - u_shadowShape[i].xy;
         float blur = max(u_shadowShape[i].z, HALF_PIXEL);
         float width = sqrt(u_sigma * u_sigma + blur * blur);
-        if (roundBox(shadowLocal, half_size, radius) < REACH * width) {
-          float w = u_color[i].a * shapeField(shadowLocal, half_size, radius, width);
+        float toShadow = roundBox(shadowLocal, half_size, radius);
+        if (toShadow < REACH * width) {
+          // Deep inside, both blurs are flat at 1, so the integrals are skipped.
+          float tightField = toShadow < -REACH * width
+            ? 1.0
+            : shapeField(shadowLocal, half_size, radius, width);
+          float softField = toShadow < -REACH * blur
+            ? 1.0
+            : shapeField(shadowLocal, half_size, radius, blur);
+          float w = u_color[i].a * tightField;
           shadowField += w;
-          shadowBox += u_color[i].a * shapeField(shadowLocal, half_size, radius, blur);
+          shadowBox += u_color[i].a * softField;
           shadowColors += vec4(u_shadow[i].rgb * u_shadow[i].a, u_shadow[i].a) * w;
           shadowSigmas += blur * w;
         }
@@ -144,7 +152,10 @@ void main() {
       float toEdge = roundBox(local, half_size, radius);
       if (toEdge > REACH * u_sigma) continue;
       vec4 color = vec4(u_color[i].rgb * u_color[i].a, u_color[i].a);
-      float f = shapeField(local, half_size, radius, u_sigma);
+      // More than the reach inside the edge, the blurred box is flat at 1 (within about 0.1%), so
+      // the integral is skipped. The rest still runs here, as the derivatives below need every
+      // pixel to take the same path.
+      float f = toEdge < -REACH * u_sigma ? 1.0 : shapeField(local, half_size, radius, u_sigma);
       field += color * f;
       float w = color.a * f;
       strokes += vec4(u_stroke[i].rgb * u_stroke[i].a, u_stroke[i].a) * w;
