@@ -36,7 +36,11 @@ export interface PackedFrame {
 }
 
 /** Packs a frame for the shader. Shapes past the limits are left out. */
-export function packFrame(frame: MeltFrame, pixelRatio: number, debug = false): PackedFrame {
+export function packFrame(
+  frame: MeltFrame,
+  pixelRatio: number,
+  { debug = false }: { debug?: boolean } = {},
+): PackedFrame {
   const box = new Float32Array(MAX_SHAPES * 4);
   const color = new Float32Array(MAX_SHAPES * 4);
   const stroke = new Float32Array(MAX_SHAPES * 4);

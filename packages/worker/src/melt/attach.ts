@@ -5,14 +5,18 @@ import { createFrameLoop } from "./loop.ts";
 import { measure, readShapeStyle, type ShapeStyle } from "./measure.ts";
 import { restyledElements, shapesMoving, watchMotion } from "./motion.ts";
 import { packFrame } from "./pack.ts";
+import { recordFrame } from "./stats.ts";
 
 const LEFT_OUT = "data-melt-left-out";
 
 /** Draws the melt of a group root on a canvas behind its content, and returns a function to stop.
     While the canvas draws, the root has the data-melt-drawn attribute, which turns off the
     backgrounds of the shapes in it. With debug, the canvas also outlines the measured box of each
-    shape. */
-export function attachMelt(root: HTMLElement, { debug = false } = {}): () => void {
+    shape. A pixel ratio draws the canvas at that resolution instead of the one of the device. */
+export function attachMelt(
+  root: HTMLElement,
+  { debug = false, pixelRatio }: { debug?: boolean; pixelRatio?: number } = {},
+): () => void {
   const canvas = document.createElement("canvas");
   canvas.className = "melt-canvas";
   canvas.setAttribute("aria-hidden", "true");
@@ -59,16 +63,20 @@ export function attachMelt(root: HTMLElement, { debug = false } = {}): () => voi
   };
   const loop = createFrameLoop(
     () => {
+      const started = performance.now();
       const restyled = styles.size > 0 ? restyledElements(root) : [];
       const frame = layoutFrame(measure(root, nodes, styleOf(restyled)));
+      const measured = performance.now();
       markLeftOut(frame?.leftOut ?? []);
       if (frame === null) {
         canvas.hidden = true;
         return;
       }
-      const packed = packFrame(frame, devicePixelRatio, debug);
-      placeCanvas(canvas, frame, packed, devicePixelRatio);
+      const ratio = pixelRatio ?? devicePixelRatio;
+      const packed = packFrame(frame, ratio, { debug });
+      placeCanvas(canvas, frame, packed, ratio);
       drawn(context.render(packed, target));
+      recordFrame(measured - started, performance.now() - measured);
     },
     () => shapesMoving(root, elements()),
   );

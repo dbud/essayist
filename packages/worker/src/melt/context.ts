@@ -1,5 +1,6 @@
 import type { PackedFrame } from "./pack.ts";
 import { createMeltRenderer, type MeltRenderer } from "./renderer.ts";
+import { recordGpu } from "./stats.ts";
 
 export interface MeltContextListener {
   lost(): void;
@@ -24,6 +25,7 @@ interface Shared {
 }
 
 let shared: Shared | null = null;
+const PIXEL = new Uint8Array(4);
 
 /** Joins the shared context, or returns null without WebGL2. */
 export function acquireMeltContext(listener: MeltContextListener): MeltContext | null {
@@ -39,6 +41,13 @@ export function acquireMeltContext(listener: MeltContextListener): MeltContext |
       if (current.canvas.width < frame.width) current.canvas.width = frame.width;
       if (current.canvas.height < frame.height) current.canvas.height = frame.height;
       current.renderer.draw(frame);
+      // Reading a pixel back waits for the GPU, unlike finish in some browsers, so the readout can
+      // show how long the shader takes. It stalls the pipeline, so only while debugging.
+      if (frame.debug) {
+        const waited = performance.now();
+        current.gl.readPixels(0, 0, 1, 1, current.gl.RGBA, current.gl.UNSIGNED_BYTE, PIXEL);
+        recordGpu(performance.now() - waited);
+      }
       // The frame sits in the lower left corner, and drawImage counts from the top.
       const top = current.canvas.height - frame.height;
       target.clearRect(0, 0, frame.width, frame.height);

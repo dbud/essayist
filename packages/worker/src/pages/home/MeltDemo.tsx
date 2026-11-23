@@ -1,14 +1,16 @@
 import { useSignal } from "@preact/signals";
 import { ChevronDown, ChevronRight, Highlighter } from "lucide-preact";
+import { useEffect } from "preact/hooks";
 
 import AqSegmented from "#/components/ui/AqSegmented.tsx";
 import AqSwap from "#/components/ui/AqSwap.tsx";
-import Melt, { meltEnabled } from "#/components/ui/Melt.tsx";
+import Melt, { meltDebug, meltEnabled, meltPixelRatio } from "#/components/ui/Melt.tsx";
 import { simulateContextLoss } from "#/melt/context.ts";
+import { takeFrameStats } from "#/melt/stats.ts";
 
 function Buttons() {
   return (
-    <Melt class="flex items-center gap-1">
+    <Melt class="flex items-center gap-4">
       <button type="button" class="aq-btn">
         Settings
       </button>
@@ -162,7 +164,7 @@ function Segmented() {
 /** Each effect on a single button, with a neighbour to melt into. */
 function Effects() {
   return (
-    <Melt class="flex items-center gap-1">
+    <Melt class="flex items-center gap-4">
       <button type="button" class="aq-btn--idle">
         Idle
       </button>
@@ -182,7 +184,114 @@ function Effects() {
   );
 }
 
+/** Frames drawn in the last second, and the melt time per frame: measuring, drawing, and the GPU
+    part of drawing, which is only measured while debugging. */
+function useFrameStats() {
+  const stats = useSignal({ fps: 0, measure: 0, draw: 0, gpu: 0 });
+  useEffect(() => {
+    let frames = 0;
+    let since = performance.now();
+    takeFrameStats();
+    let request = requestAnimationFrame(function tick(now) {
+      frames++;
+      if (now - since >= 1000) {
+        const { measure, draw, gpu } = takeFrameStats();
+        stats.value = {
+          fps: Math.round((frames * 1000) / (now - since)),
+          measure: measure / frames,
+          draw: draw / frames,
+          gpu: gpu / frames,
+        };
+        frames = 0;
+        since = now;
+      }
+      request = requestAnimationFrame(tick);
+    });
+    return () => cancelAnimationFrame(request);
+  }, []);
+  return stats;
+}
+
+/** Fixed in a corner, so it stays in view while scrolling to the other samples. */
+function FrameStats() {
+  const stats = useFrameStats();
+  const { fps, measure, draw, gpu } = stats.value;
+  return (
+    <div class="fixed right-4 bottom-20 z-toast flex flex-col gap-1 rounded-md bg-float px-3 py-2 font-mono text-xs text-float-ink tabular-nums">
+      <span>{fps} fps</span>
+      <span>measure {measure.toFixed(1)} ms</span>
+      <span>draw {draw.toFixed(1)} ms</span>
+      {meltDebug.value && <span>gpu {gpu.toFixed(1)} ms</span>}
+      <button
+        type="button"
+        class="text-left underline opacity-70"
+        onClick={() => (meltDebug.value = !meltDebug.value)}
+      >
+        outlines + gpu: {meltDebug.value ? "on" : "off"}
+      </button>
+    </div>
+  );
+}
+
+const PIXEL_RATIOS = [undefined, 1, 0.5] as const;
+const BUTTON_COUNTS = [48, 12, 24, 32] as const;
+
+/** The next value after current in a list, wrapping round. */
+function next<T>(values: readonly T[], current: T): T {
+  return values[(values.indexOf(current) + 1) % values.length];
+}
+
+/** A 4 by 12 grid of buttons in a single root, past the shape limit, to test performance. */
+function Grid() {
+  const animate = useSignal(false);
+  const shadows = useSignal(true);
+  const count = useSignal<number>(48);
+  const ratio = meltPixelRatio.value;
+  return (
+    <div class="flex flex-col gap-3">
+      <span class="flex flex-wrap items-center gap-x-4 gap-y-1 opacity-60">
+        <button type="button" class="underline" onClick={() => (animate.value = !animate.value)}>
+          animate: {animate.value ? "on" : "off"}
+        </button>
+        <button
+          type="button"
+          class="underline"
+          onClick={() => (meltPixelRatio.value = next(PIXEL_RATIOS, ratio))}
+        >
+          resolution: {ratio === undefined ? "device" : `${ratio}×`}
+        </button>
+        <button type="button" class="underline" onClick={() => (shadows.value = !shadows.value)}>
+          shadows: {shadows.value ? "on" : "off"}
+        </button>
+        <button
+          type="button"
+          class="underline"
+          onClick={() => (count.value = next(BUTTON_COUNTS, count.value))}
+        >
+          buttons: {count.value}
+        </button>
+      </span>
+      <Melt class="grid w-fit grid-cols-4 gap-4">
+        {Array.from({ length: count.value }, (_, i) => (
+          <button
+            key={i}
+            type="button"
+            class={`aq-btn justify-center ${animate.value ? "animate-pulse" : ""}`}
+            style={{
+              animationDelay: animate.value ? `${(i % 8) * -250}ms` : undefined,
+              "--melt-shadow": shadows.value ? undefined : "transparent",
+            }}
+          >
+            {i + 1}
+          </button>
+        ))}
+      </Melt>
+    </div>
+  );
+}
+
 const SAMPLES = [
+  { name: "grid", Sample: Grid, height: "h-auto" },
   { name: "buttons", Sample: Buttons, height: "h-16" },
   { name: "swap", Sample: Swap, height: "h-16" },
   { name: "dropdown", Sample: Dropdown, height: "h-52" },
@@ -195,6 +304,7 @@ const SAMPLES = [
 export default function MeltDemo() {
   return (
     <section class="grid grid-cols-[6rem_1fr] gap-x-8 px-8 py-4 text-sm">
+      <FrameStats />
       <span />
       <span class="flex items-center gap-4 opacity-60">
         <button
