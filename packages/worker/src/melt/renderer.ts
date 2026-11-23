@@ -1,7 +1,8 @@
 import { FIELD_REACH } from "./layout.ts";
 import FRAGMENT from "./melt.frag?raw";
 import VERTEX from "./melt.vert?raw";
-import { type PackedFrame, ROW, ROWS } from "./pack.ts";
+import { type PackedFrame, ROW } from "./pack.ts";
+import { createShapeTexture } from "./shapeTexture.ts";
 
 export interface MeltRenderer {
   draw(frame: PackedFrame): void;
@@ -11,7 +12,7 @@ export interface MeltRenderer {
 /** Draws each frame into the lower left corner of the canvas of gl, which has to be at least as
     large as the frame. */
 export function createMeltRenderer(gl: WebGL2RenderingContext): MeltRenderer | null {
-  const program = linkProgram(gl);
+  const program = compileProgram(gl, VERTEX, FRAGMENT);
   if (program === null) return null;
 
   const vertexArray = gl.createVertexArray();
@@ -26,16 +27,7 @@ export function createMeltRenderer(gl: WebGL2RenderingContext): MeltRenderer | n
     groups: at("u_groups"),
     debug: at("u_debug"),
   };
-
-  // The shapes are a float texture read with texelFetch, so it needs no filtering and no extension.
-  // It is allocated again only when the number of shapes changes.
-  const shapes = gl.createTexture();
-  gl.bindTexture(gl.TEXTURE_2D, shapes);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-  let columns = 0;
+  const shapes = createShapeTexture(gl);
 
   function draw(frame: PackedFrame) {
     gl.viewport(0, 0, frame.width, frame.height);
@@ -43,25 +35,7 @@ export function createMeltRenderer(gl: WebGL2RenderingContext): MeltRenderer | n
     gl.clear(gl.COLOR_BUFFER_BIT);
     gl.useProgram(program);
     gl.bindVertexArray(vertexArray);
-
-    gl.activeTexture(gl.TEXTURE0);
-    gl.bindTexture(gl.TEXTURE_2D, shapes);
-    if (frame.count === columns) {
-      gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, frame.count, ROWS, gl.RGBA, gl.FLOAT, frame.shapes);
-    } else {
-      gl.texImage2D(
-        gl.TEXTURE_2D,
-        0,
-        gl.RGBA32F,
-        frame.count,
-        ROWS,
-        0,
-        gl.RGBA,
-        gl.FLOAT,
-        frame.shapes,
-      );
-      columns = frame.count;
-    }
+    shapes.upload(frame, 0);
 
     gl.uniform2f(uniforms.size, frame.width, frame.height);
     gl.uniform1f(uniforms.sigma, frame.sigma);
@@ -75,7 +49,7 @@ export function createMeltRenderer(gl: WebGL2RenderingContext): MeltRenderer | n
   }
 
   function dispose() {
-    gl.deleteTexture(shapes);
+    shapes.dispose();
     gl.deleteVertexArray(vertexArray);
     gl.deleteProgram(program);
   }
@@ -83,16 +57,24 @@ export function createMeltRenderer(gl: WebGL2RenderingContext): MeltRenderer | n
   return { draw, dispose };
 }
 
-function linkProgram(gl: WebGL2RenderingContext): WebGLProgram | null {
+/** Compiles and links a program. Every shader gets FIELD_REACH and the ROW_ numbers of the shape
+    texture as defines, and the extra ones given. */
+export function compileProgram(
+  gl: WebGL2RenderingContext,
+  vertex: string,
+  fragment: string,
+  defines: Record<string, number> = {},
+): WebGLProgram | null {
   const rows = Object.fromEntries(Object.entries(ROW).map(([name, row]) => [`ROW_${name}`, row]));
+  const all = { FIELD_REACH, ...rows, ...defines };
   const program = gl.createProgram();
   for (const [type, source] of [
-    [gl.VERTEX_SHADER, VERTEX],
-    [gl.FRAGMENT_SHADER, FRAGMENT],
+    [gl.VERTEX_SHADER, vertex],
+    [gl.FRAGMENT_SHADER, fragment],
   ] as const) {
     const shader = gl.createShader(type);
     if (shader === null) return null;
-    gl.shaderSource(shader, withDefines(source, { FIELD_REACH, ...rows }));
+    gl.shaderSource(shader, withDefines(source, all));
     gl.compileShader(shader);
     if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
       console.error("melt shader:", gl.getShaderInfoLog(shader));

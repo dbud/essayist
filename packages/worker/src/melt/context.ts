@@ -1,3 +1,4 @@
+import { createMultiPassRenderer } from "./multipass.ts";
 import type { PackedFrame } from "./pack.ts";
 import { createMeltRenderer, type MeltRenderer } from "./renderer.ts";
 import { addTime } from "./stats.ts";
@@ -29,8 +30,10 @@ interface Shared {
   renderer: MeltRenderer | null;
   /** Null where the multi-pass melt can't run, which then falls back to CSS. */
   floatSupport: FloatSupport | null;
-  // TODO -- created only while debugging until the multi-pass melt draws with them
+  /** Made for the first frame that asks for the multi-pass renderer, or a debug frame. */
   targets: MeltTargets | null;
+  /** Undefined until a frame asks for it; null when the device can't run it. */
+  multiPass: MeltRenderer | null | undefined;
   readonly listeners: Set<MeltContextListener>;
   readonly dispose: () => void;
 }
@@ -51,11 +54,15 @@ export function acquireMeltContext(listener: MeltContextListener): MeltContext |
       // The canvas only grows, so groups of different sizes don't reallocate it on every frame.
       if (current.canvas.width < frame.width) current.canvas.width = frame.width;
       if (current.canvas.height < frame.height) current.canvas.height = frame.height;
-      if (frame.debug && current.floatSupport !== null) {
+      if ((frame.debug || frame.multiPass) && current.floatSupport !== null) {
         current.targets ??= createMeltTargets(current.gl);
         current.targets.ensure(frame.width, frame.height);
       }
-      current.renderer.draw(frame);
+      // TODO -- draw only with the multi-pass renderer, and fall back to CSS without it
+      const renderer = frame.multiPass
+        ? (multiPassOf(current) ?? current.renderer)
+        : current.renderer;
+      renderer.draw(frame);
       // Reading a pixel back waits for the GPU, unlike finish in some browsers, so the readout can
       // show how long the shader takes. It stalls the pipeline, so only while debugging.
       if (frame.debug) {
@@ -102,6 +109,7 @@ function createShared(): Shared | null {
     renderer,
     floatSupport: enableFloatTargets(gl),
     targets: null,
+    multiPass: undefined,
     listeners: new Set(),
     dispose,
   };
@@ -111,6 +119,7 @@ function createShared(): Shared | null {
     event.preventDefault();
     state.renderer = null;
     state.targets = null;
+    state.multiPass = undefined;
     for (const listener of state.listeners) listener.lost();
   }
 
@@ -127,6 +136,8 @@ function createShared(): Shared | null {
     canvas.removeEventListener("webglcontextrestored", onRestored);
     state.renderer?.dispose();
     state.renderer = null;
+    state.multiPass?.dispose();
+    state.multiPass = undefined;
     state.targets?.dispose();
     state.targets = null;
     gl.getExtension("WEBGL_lose_context")?.loseContext();
@@ -137,20 +148,38 @@ function createShared(): Shared | null {
   return state;
 }
 
+/** The multi-pass renderer, made on first use, or null when the device can't run it: without float
+    targets, with a target the driver refuses, or when its shaders don't compile. */
+function multiPassOf(state: Shared): MeltRenderer | null {
+  if (state.multiPass !== undefined) return state.multiPass;
+  const { targets } = state;
+  const complete =
+    targets !== null && [targets.fieldA, targets.fieldB, targets.fill].every((t) => t.complete);
+  state.multiPass = complete ? createMultiPassRenderer(state.gl, targets) : null;
+  return state.multiPass;
+}
+
 /** For the debug readout: how this device supports the multi-pass melt, and its targets once a
     debug frame has made them. */
 export function meltTargetStatus(): string {
   if (shared === null) return "no context";
-  const { floatSupport, targets } = shared;
+  const { floatSupport, targets, multiPass } = shared;
   if (floatSupport === null) return "no float targets: CSS fallback";
   if (targets === null) return `${floatSupport}, no targets yet`;
   const describe = (name: string, target: Target) =>
     `${name} ${target.width}×${target.height}${target.complete ? "" : " incomplete"}`;
+  const renderer =
+    multiPass === undefined
+      ? "multi-pass not tried"
+      : multiPass === null
+        ? "multi-pass failed"
+        : "multi-pass ready";
   return [
     floatSupport,
     describe("field A", targets.fieldA),
     describe("field B", targets.fieldB),
     describe("fill", targets.fill),
+    renderer,
   ].join(" · ");
 }
 

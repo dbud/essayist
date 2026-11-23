@@ -37,8 +37,23 @@ export interface PackedFrame {
   readonly shapes: Float32Array;
   readonly count: number;
   readonly groups: number;
+  /** The groups in drawing order, for the multi-pass renderer. */
+  readonly groupList: readonly PackedGroup[];
   /** Outlines the measured box of each shape over the melt. */
   readonly debug: boolean;
+  /** Draws with the multi-pass renderer where the device supports it. */
+  readonly multiPass: boolean;
+}
+
+/** A group of a packed frame: its shapes, from start up to end, and the area they reach, in whole
+    device pixels from the top left of the frame and within it. */
+export interface PackedGroup {
+  readonly start: number;
+  readonly end: number;
+  readonly left: number;
+  readonly top: number;
+  readonly right: number;
+  readonly bottom: number;
 }
 
 /** The four numbers of a shape in a row of the shape texture. */
@@ -64,7 +79,7 @@ export function reachOf(shape: MeltShape, sigma: number, pixelRatio: number): nu
 export function packFrame(
   frame: MeltFrame,
   pixelRatio: number,
-  { debug = false }: { debug?: boolean } = {},
+  { debug = false, multiPass = false }: { debug?: boolean; multiPass?: boolean } = {},
 ): PackedFrame {
   const drawn = frame.shapes.slice(0, MAX_SHAPES);
   // At least one column, as a texture can't be empty.
@@ -75,13 +90,37 @@ export function packFrame(
   const lengths = (values: readonly number[]) => values.map((value) => value * pixelRatio);
   const sigma = Math.max(frame.settings.sigma * pixelRatio, MIN_SIGMA);
 
+  const width = Math.max(1, Math.round(frame.width * pixelRatio));
+  const height = Math.max(1, Math.round(frame.height * pixelRatio));
+
   // Groups are numbered again from 0, as the frame leaves out groups with nothing to draw.
   let groups = 0;
   let previous: number | null = null;
+  const groupList: PackedGroup[] = [];
   drawn.forEach((shape, i) => {
     if (shape.group !== previous) groups++;
     previous = shape.group;
     const { effects } = shape;
+    const reach = reachOf(shape, sigma, pixelRatio);
+    const bounds = {
+      left: Math.max(0, Math.floor((shape.x - shape.halfWidth) * pixelRatio - reach)),
+      top: Math.max(0, Math.floor((shape.y - shape.halfHeight) * pixelRatio - reach)),
+      right: Math.min(width, Math.ceil((shape.x + shape.halfWidth) * pixelRatio + reach)),
+      bottom: Math.min(height, Math.ceil((shape.y + shape.halfHeight) * pixelRatio + reach)),
+    };
+    const last = groupList.at(-1);
+    if (last === undefined || groupList.length < groups) {
+      groupList.push({ start: i, end: i + 1, ...bounds });
+    } else {
+      groupList[groupList.length - 1] = {
+        start: last.start,
+        end: i + 1,
+        left: Math.min(last.left, bounds.left),
+        top: Math.min(last.top, bounds.top),
+        right: Math.max(last.right, bounds.right),
+        bottom: Math.max(last.bottom, bounds.bottom),
+      };
+    }
     put(ROW.BOX, i, lengths([shape.x, shape.y, shape.halfWidth, shape.halfHeight]));
     put(ROW.COLOR, i, shape.color);
     put(ROW.STROKE, i, effects.stroke);
@@ -94,14 +133,14 @@ export function packFrame(
       shape.radius * pixelRatio,
       effects.strokeWidth * pixelRatio,
       effects.glow,
-      reachOf(shape, sigma, pixelRatio),
+      reach,
     ]);
     put(ROW.GROUPS, groups - 1, [i + 1]);
   });
 
   return {
-    width: Math.max(1, Math.round(frame.width * pixelRatio)),
-    height: Math.max(1, Math.round(frame.height * pixelRatio)),
+    width,
+    height,
     sigma,
     gain: frame.settings.gain,
     bias: frame.settings.bias,
@@ -112,6 +151,8 @@ export function packFrame(
     shapes,
     count,
     groups,
+    groupList,
     debug,
+    multiPass,
   };
 }

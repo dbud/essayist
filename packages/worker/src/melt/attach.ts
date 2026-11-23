@@ -15,7 +15,11 @@ const LEFT_OUT = "data-melt-left-out";
     shape. A pixel ratio draws the canvas at that resolution instead of the one of the device. */
 export function attachMelt(
   root: HTMLElement,
-  { debug = false, pixelRatio }: { debug?: boolean; pixelRatio?: number } = {},
+  {
+    debug = false,
+    multiPass = false,
+    pixelRatio,
+  }: { debug?: boolean; multiPass?: boolean; pixelRatio?: number } = {},
 ): () => void {
   const canvas = document.createElement("canvas");
   canvas.className = "melt-canvas";
@@ -78,7 +82,7 @@ export function attachMelt(
       }
       timed("draw", () => {
         const ratio = pixelRatio ?? devicePixelRatio;
-        const packed = packFrame(frame, ratio, { debug });
+        const packed = packFrame(frame, ratio, { debug, multiPass });
         placeCanvas(canvas, frame, packed, ratio);
         drawn(context.render(packed, target));
       });

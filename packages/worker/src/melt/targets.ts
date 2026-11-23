@@ -1,6 +1,7 @@
 /** The field passes draw at this fraction of the canvas resolution: the field is a blur, so it
     scales up without visible loss. */
-export const FIELD_SCALE = 0.5;
+// TODO -- lower to 1/2, then 1/4, once the passes match the single-pass shader at full resolution
+export const FIELD_SCALE = 1;
 
 /** The textures each pass draws into, as in the README. */
 const FIELD_A_TARGETS = 4;

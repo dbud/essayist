@@ -4,7 +4,12 @@ import { useEffect } from "preact/hooks";
 
 import AqSegmented from "#/components/ui/AqSegmented.tsx";
 import AqSwap from "#/components/ui/AqSwap.tsx";
-import Melt, { meltDebug, meltEnabled, meltPixelRatio } from "#/components/ui/Melt.tsx";
+import Melt, {
+  meltDebug,
+  meltEnabled,
+  meltMultiPass,
+  meltPixelRatio,
+} from "#/components/ui/Melt.tsx";
 import { meltTargetStatus, simulateContextLoss } from "#/melt/context.ts";
 import { TIMED_PARTS, type TimedPart, takeFrameStats } from "#/melt/stats.ts";
 
@@ -241,6 +246,13 @@ function FrameStats() {
         onClick={() => (meltDebug.value = !meltDebug.value)}
       >
         outlines + gpu: {meltDebug.value ? "on" : "off"}
+      </button>
+      <button
+        type="button"
+        class="text-left underline opacity-70"
+        onClick={() => (meltMultiPass.value = !meltMultiPass.value)}
+      >
+        renderer: {meltMultiPass.value ? "multi-pass" : "single-pass"}
       </button>
     </div>
   );
