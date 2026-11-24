@@ -6,7 +6,7 @@ import { usePreferences } from "#/models/preferences.ts";
 export default function RightSidebar() {
   const { debugSidebarOpened } = usePreferences();
   return (
-    <Sidebar open={debugSidebarOpened.value} class="scheme-dark bg-paper striped/5 text-ink">
+    <Sidebar open={debugSidebarOpened.value} class="scheme-dark bg-paper striped/8 text-ink">
       <ErrorBoundary>
         <div class="w-128 flex flex-col gap-3 p-6">
           <Lazy

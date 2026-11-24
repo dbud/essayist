@@ -7,7 +7,8 @@
 @utility alert {
   @apply relative flex flex-col leading-none min-h-12 overflow-hidden;
   font-size: 0.8rem;
-  @apply melt-shape melt-rim-white/50 melt-shadow;
+  @apply melt-shape melt-shadow;
+  --melt-rim: var(--aq-rim-primary);
   --melt-fill: var(--alert-color, var(--color-surface));
   transition: --melt-fill var(--toast-duration) ease-out;
 }

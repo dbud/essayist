@@ -1,5 +1,6 @@
 .aq-menu {
-  @apply melt-shape melt-rim-white/30 melt-shadow rounded-lg py-2 px-2 text-float-ink;
+  @apply melt-shape melt-shadow rounded-lg py-2 px-2 text-float-ink;
+  --melt-rim: var(--aq-rim-primary);
   --melt-fill: var(--color-float);
 }
 
@@ -19,7 +20,7 @@
   @apply melt-rim-transparent melt-shadow-none;
 
   &:hover {
-    @apply melt-rim-white/20;
+    @apply melt-rim-white/25;
   }
 }
 
@@ -40,7 +41,8 @@ li > .aq-menu-btn:has(~ .aq-menu-action) {
 
 .aq-avatar {
   @apply relative w-full h-full rounded-md;
-  @apply melt-group melt-shape melt-rim-white/70 melt-shadow-none;
+  @apply melt-group melt-shape melt-shadow-none;
+  --melt-rim: var(--aq-rim-primary);
   --melt-fill: var(--color-float);
 }
 

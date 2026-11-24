@@ -1,4 +1,11 @@
 :root {
   --aq-gap: 0.5rem;
-  --melt-light-angle: -20deg;
+  --melt-light-angle: -35deg;
+  --melt-light-elevation: 20deg;
+  --melt-rim-width: 2;
+  --melt-rim-highlight: 4;
+  --melt-rim-shine: 10;
+  --melt-rim-sheen: 0.5;
+  --aq-rim-primary: color-mix(in oklab, white 60%, transparent);
+  --aq-rim-secondary: color-mix(in oklab, var(--color-stroke) 20%, transparent);
 }
