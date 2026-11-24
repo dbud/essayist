@@ -94,6 +94,11 @@ export function measure(
       gain: setting("gain"),
       bias: setting("bias"),
       lightAngle: setting("light-angle"),
+      lightElevation: setting("light-elevation"),
+      rimWidth: setting("rim-width"),
+      rimHighlight: setting("rim-highlight"),
+      rimShine: setting("rim-shine"),
+      rimSheen: setting("rim-sheen"),
     },
     shapes,
   };

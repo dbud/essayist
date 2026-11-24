@@ -60,6 +60,16 @@ rim-white/50`), `transparent`, or any colour in brackets. `melt-glow-30` is a gl
 
 - `--melt-light-angle` sets where the light comes from, clockwise from straight up, for the whole
   page. It is set on `:root` in `aq.css`.
+- `--melt-light-elevation` sets how high the light is above the page (45deg).
+- `--melt-rim-width` is half the thickness of each melted shape, lit as a slab with a half-round
+  edge (4 CSS pixels): from above, its surface turns from facing out at the outline to level
+  `--melt-rim-width` inside it. The distance to the outline is searched in the field, so the edge
+  follows the melted outline. 0 makes it flat, with no rim.
+- The rim is what the edge mirrors of the light: a broad glow (`--melt-rim-sheen`, 0.5) round a
+  tight spot (`--melt-rim-highlight`, 1, its size set by `--melt-rim-shine`, 12, higher is smaller).
+  Both fade round the edges that face away from the light. The shade darkens where the edge turns
+  away from the light.
+- All of these are set on `:root` in `aq.css`, and a root can override them.
 - `--melt-sigma`, `--melt-gain` and `--melt-bias` on a root tune the melt itself: how far shapes
   reach to merge (6px), and how sharp the outline is (18 and -6).
 - `meltEnabled` in `Melt.tsx` turns the canvas off for the whole page.

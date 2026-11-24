@@ -179,6 +179,11 @@ export function createMultiPassRenderer(
       gl.uniform1f(at("u_gain"), frame.gain);
       gl.uniform1f(at("u_bias"), frame.bias);
       gl.uniform2fv(at("u_light"), frame.light);
+      gl.uniform1f(at("u_lightElevation"), frame.lightElevation);
+      gl.uniform1f(at("u_rimWidth"), frame.rimWidth);
+      gl.uniform1f(at("u_rimHighlight"), frame.rimHighlight);
+      gl.uniform1f(at("u_rimShine"), frame.rimShine);
+      gl.uniform1f(at("u_rimSheen"), frame.rimSheen);
       gl.uniform4f(at("u_rect"), group.left, group.top, group.right, group.bottom);
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
       // The next group draws into these targets, which mustn't stay bound for reading.

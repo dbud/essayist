@@ -13,9 +13,29 @@ export interface MeltSettings {
   readonly bias: number;
   /** In degrees clockwise from straight up. */
   readonly lightAngle: number;
+  /** In degrees above the page. */
+  readonly lightElevation: number;
+  /** Half the thickness of the slab, the radius of its rounded edge, in CSS pixels. */
+  readonly rimWidth: number;
+  /** How bright the spot of the light is. */
+  readonly rimHighlight: number;
+  /** How small the spot of the light is. */
+  readonly rimShine: number;
+  /** How bright the broad glow round the light is. */
+  readonly rimSheen: number;
 }
 
-export const DEFAULT_SETTINGS: MeltSettings = { sigma: 6, gain: 18, bias: -6, lightAngle: 0 };
+export const DEFAULT_SETTINGS: MeltSettings = {
+  sigma: 6,
+  gain: 18,
+  bias: -6,
+  lightAngle: 0,
+  lightElevation: 45,
+  rimWidth: 4,
+  rimHighlight: 1,
+  rimShine: 12,
+  rimSheen: 0.5,
+};
 
 /** The effects of a shape along the melted edge. */
 export interface MeltEffects {
@@ -98,6 +118,11 @@ export function resolveSettings(settings: MeltSettings): MeltSettings {
     gain: pick("gain"),
     bias: pick("bias"),
     lightAngle: pick("lightAngle"),
+    lightElevation: pick("lightElevation"),
+    rimWidth: pick("rimWidth"),
+    rimHighlight: pick("rimHighlight"),
+    rimShine: pick("rimShine"),
+    rimSheen: pick("rimSheen"),
   };
 }
 

@@ -50,7 +50,17 @@ test("shapes past the limit are left out of the frame and its bounds", () => {
 });
 
 test("unset settings fall back to the defaults", () => {
-  const unset = { sigma: Number.NaN, gain: 10, bias: Number.NaN, lightAngle: Number.NaN };
+  const unset = {
+    sigma: Number.NaN,
+    gain: 10,
+    bias: Number.NaN,
+    lightAngle: Number.NaN,
+    lightElevation: Number.NaN,
+    rimWidth: Number.NaN,
+    rimHighlight: Number.NaN,
+    rimShine: Number.NaN,
+    rimSheen: Number.NaN,
+  };
   expect(resolveSettings(unset)).toEqual({
     ...DEFAULT_SETTINGS,
     gain: 10,

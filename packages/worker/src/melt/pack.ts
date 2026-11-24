@@ -32,6 +32,13 @@ export interface PackedFrame {
   readonly bias: number;
   /** Towards the light, with y pointing up. */
   readonly light: readonly [number, number];
+  /** In radians above the page. */
+  readonly lightElevation: number;
+  /** In device pixels. */
+  readonly rimWidth: number;
+  readonly rimHighlight: number;
+  readonly rimShine: number;
+  readonly rimSheen: number;
   /** The shape texture, ROWS rows of count texels of four numbers. */
   readonly shapes: Float32Array;
   readonly count: number;
@@ -142,6 +149,11 @@ export function packFrame(
       Math.sin((frame.settings.lightAngle * Math.PI) / 180),
       Math.cos((frame.settings.lightAngle * Math.PI) / 180),
     ],
+    lightElevation: (frame.settings.lightElevation * Math.PI) / 180,
+    rimWidth: frame.settings.rimWidth * pixelRatio,
+    rimHighlight: frame.settings.rimHighlight,
+    rimShine: frame.settings.rimShine,
+    rimSheen: frame.settings.rimSheen,
     shapes,
     count,
     groupList,

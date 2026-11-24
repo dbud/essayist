@@ -14,6 +14,41 @@
   initial-value: 0deg;
 }
 
+/* How high the light is above the page. */
+@property --melt-light-elevation {
+  syntax: "<angle>";
+  inherits: true;
+  initial-value: 45deg;
+}
+
+/* Half the thickness of the slab, the radius of its rounded edge, in CSS pixels. */
+@property --melt-rim-width {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 4;
+}
+
+/* How bright the spot of the light is on the rounded edge. */
+@property --melt-rim-highlight {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 1;
+}
+
+/* How small the spot of the light is. Higher is a tighter, glossier spot. */
+@property --melt-rim-shine {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 12;
+}
+
+/* How bright the broad glow round the light is on the rounded edge. */
+@property --melt-rim-sheen {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 0.5;
+}
+
 /* The effects of a shape along the melted edge, off by default. They don't inherit, so each shape
    sets its own, and they transition like the fill. */
 @property --melt-stroke {

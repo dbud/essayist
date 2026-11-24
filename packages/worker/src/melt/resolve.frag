@@ -22,15 +22,51 @@ uniform float u_gain;
 uniform float u_bias;
 // Towards the light, with y pointing up.
 uniform vec2 u_light;
+// The height of the light above the page, in radians.
+uniform float u_lightElevation;
+// Half the thickness of the slab, the radius of its rounded edge, in device pixels.
+uniform float u_rimWidth;
+// How bright the spot of the light is.
+uniform float u_rimHighlight;
+// How small the spot of the light is. Higher is a tighter, glossier spot.
+uniform float u_rimShine;
+// How bright the broad glow round the light is.
+uniform float u_rimSheen;
 
-// The width of the rim, in device pixels.
-const float RIM_WIDTH = 0.75;
-// How much of the rim and the shade wraps round to the other edges.
-const float RIM_BASE = 0.2;
-// The width of the shade, in device pixels.
-const float SHADE_WIDTH = 1.5;
+// The steps of the search for the outline.
+const int OUTLINE_STEPS = 6;
+// How broad the glow round the light is, as a shine.
+const float GLOW_SHINE = 2.0;
 
 out vec4 outColor;
+
+// The brightness of a reflection of the light, from 0 to 1. `towards` is how directly the surface
+// reflects the light, and `flatTowards` the same for the flat top, which is subtracted so the flat
+// top stays unlit. A higher shine makes a smaller, sharper reflection.
+float lobe(float towards, float flatTowards, float shine) {
+  // pow is undefined for a base of 0 and a shine of 0.
+  float flatLobe = pow(max(flatTowards, 1e-6), shine);
+  return max(pow(max(towards, 1e-6), shine) - flatLobe, 0.0) / max(1.0 - flatLobe, 1e-6);
+}
+
+// The distance from a pixel to the melted outline, in device pixels, up to `reach`. It walks along
+// `direction`, a step of a device pixel towards the outline, and halves the interval until it finds
+// where the field drops to `edgeField`. `here` is the field at the pixel.
+float outlineDistance(vec2 at, float here, vec2 direction, float edgeField, float reach) {
+  if (here <= edgeField) return 0.0;
+  if (texture(u_field, at + direction * reach).a > edgeField) return reach;
+  float near = 0.0;
+  float far = reach;
+  for (int k = 0; k < OUTLINE_STEPS; k++) {
+    float middle = 0.5 * (near + far);
+    if (texture(u_field, at + direction * middle).a > edgeField) {
+      near = middle;
+    } else {
+      far = middle;
+    }
+  }
+  return 0.5 * (near + far);
+}
 
 void main() {
   // The field targets and the canvas both count from the bottom left, so a pixel of the canvas maps
@@ -78,20 +114,35 @@ void main() {
   float edgeField = (0.5 - u_bias) / u_gain;
   float inside = (field.a - edgeField) / steepness;
 
-  // The rim and the shade start where the outline turns opaque, so they land on solid colour.
-  // The rim is a line RIM_WIDTH wide, antialiased on its inner side; the shade fades inwards.
-  // Both change the colour but not the opacity, so the soft edge keeps its coverage. An edge
-  // faces against the slope of the field.
-  float solid = (field.a - (1.0 - u_bias) / u_gain) / steepness;
-  float facingLight = clamp(dot(-slope / steepness, u_light), 0.0, 1.0);
-  float rimLine = clamp(RIM_WIDTH + HALF_PIXEL - max(solid, 0.0), 0.0, 1.0);
-  float rim = rimLine * mix(RIM_BASE, 1.0, facingLight) * rimColor.a;
+  // The rim and the shade change the colour but not the opacity, so the soft edge keeps its
+  // coverage. An edge faces against the slope of the field.
+  vec2 outward = -slope / steepness;
+  // The shape is a slab as thick as twice u_rimWidth, its edge a half circle seen from the side.
+  // From above, its surface turns from facing out at the melted outline to facing the viewer
+  // u_rimWidth inside it. The distance to the outline is searched in the field rather than taken
+  // from its slope, so the turn follows the melted outline and not the shapes melted into it. The
+  // rim is what the surface mirrors of a single light: a broad glow and a tight spot round the
+  // same direction, so it reads as a single surface and fades round the edges that face away.
+  // Both are measured against what the flat top mirrors, so the inside of the shape keeps its own
+  // colour.
+  vec2 towardsOutline = outward.x * dx + outward.y * dy;
+  float toOutline = outlineDistance(at, field.a, towardsOutline, edgeField, u_rimWidth);
+  // A slab of no thickness is flat all over.
+  float across = u_rimWidth > 0.0 ? 1.0 - toOutline / u_rimWidth : 0.0;
+  vec3 normal = vec3(outward * across, sqrt(1.0 - across * across));
+  vec3 mirrored = vec3(2.0 * normal.z * normal.xy, 2.0 * normal.z * normal.z - 1.0);
+  vec3 light = vec3(u_light * cos(u_lightElevation), sin(u_lightElevation));
+  float towards = max(dot(mirrored, light), 0.0);
+  float flatTowards = max(light.z, 0.0);
+  float spot = lobe(towards, flatTowards, u_rimShine);
+  float sheen = lobe(towards, flatTowards, GLOW_SHINE);
+  // Strong settings approach the rim colour gradually instead of clipping, which would flatten
+  // the glow into a band of a single brightness.
+  float rim = (1.0 - exp(-(u_rimHighlight * spot + u_rimSheen * sheen))) * rimColor.a;
+  // The shade darkens where the normal turns away from the light, against the flat top.
+  float flatLight = max(light.z, 1e-3);
+  float shade = clamp((flatLight - dot(normal, light)) / flatLight, 0.0, 1.0) * shadeColor.a;
   groupColor.rgb = mix(groupColor.rgb, rimColor.rgb / max(rimColor.a, 1e-6) * groupColor.a, rim);
-
-  // The shade mirrors the rim, on the edges facing away from the light.
-  float facingAway = clamp(dot(slope / steepness, u_light), 0.0, 1.0);
-  float shade =
-    exp(-max(solid, 0.0) / SHADE_WIDTH) * mix(RIM_BASE, 1.0, facingAway) * shadeColor.a;
   groupColor.rgb =
     mix(groupColor.rgb, shadeColor.rgb / max(shadeColor.a, 1e-6) * groupColor.a, shade);
 
