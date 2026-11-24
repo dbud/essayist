@@ -1,11 +1,10 @@
 :root {
-  /* Tempo: 1 = real-time pace; pages raise it to observe. */
-  --aq-tempo: 2;
+  --aq-tempo: 3;
   --aq-open-tf: calc(250ms * var(--aq-tempo));
   --aq-open-op: calc(130ms * var(--aq-tempo));
   --aq-close-tf: calc(200ms * var(--aq-tempo));
   --aq-close-op: calc(80ms * var(--aq-tempo));
-  --aq-stagger-base: calc(50ms * var(--aq-tempo));
+  --aq-stagger-base: calc(40ms * var(--aq-tempo));
   --aq-stagger-step: calc(20ms * var(--aq-tempo));
   --aq-item-tf: calc(100ms * var(--aq-tempo));
   --aq-item-op: calc(80ms * var(--aq-tempo));
@@ -41,34 +40,6 @@
   }
 }
 
-/* --aq-i is the child index consumed by the delay schedule above. */
-[data-aq-stagger] > *:nth-child(1) {
-  --aq-i: 0;
-}
-[data-aq-stagger] > *:nth-child(2) {
-  --aq-i: 1;
-}
-[data-aq-stagger] > *:nth-child(3) {
-  --aq-i: 2;
-}
-[data-aq-stagger] > *:nth-child(4) {
-  --aq-i: 3;
-}
-[data-aq-stagger] > *:nth-child(5) {
-  --aq-i: 4;
-}
-[data-aq-stagger] > *:nth-child(6) {
-  --aq-i: 5;
-}
-[data-aq-stagger] > *:nth-child(7) {
-  --aq-i: 6;
-}
-[data-aq-stagger] > *:nth-child(8) {
-  --aq-i: 7;
-}
-[data-aq-stagger] > *:nth-child(9) {
-  --aq-i: 8;
-}
-[data-aq-stagger] > *:nth-child(10) {
-  --aq-i: 9;
+[data-aq-stagger] > * {
+  --aq-i: calc(sibling-index() - 1);
 }
