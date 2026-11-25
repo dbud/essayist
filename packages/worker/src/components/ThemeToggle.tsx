@@ -19,7 +19,7 @@ export default function ThemeToggle() {
       <Swap on={String(dark)}>
         <button
           type="button"
-          class="btn--idle"
+          class="btn"
           aria-label={`Switch to ${dark ? "light" : "dark"} theme`}
           data-tooltip="Switch theme"
           onClick={toggleTheme}

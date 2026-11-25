@@ -55,7 +55,7 @@ export default function FileStats() {
       <Swap on={enabled.join(",")}>
         <button
           type="button"
-          class="btn--idle items-center text-xs"
+          class="btn items-center text-xs"
           aria-expanded={open.value}
           onClick={() => (open.value = !open.value)}
         >

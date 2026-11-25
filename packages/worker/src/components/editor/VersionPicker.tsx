@@ -115,7 +115,7 @@ export default function VersionPicker() {
       <Swap on={state}>
         <button
           type="button"
-          class="btn--idle relative min-w-36"
+          class="btn relative min-w-36"
           aria-expanded={hasVersions ? open.value : false}
           onClick={() => {
             if (hasVersions) open.value = !open.value;
@@ -174,7 +174,7 @@ export default function VersionPicker() {
             </ul>
           </div>
           {import.meta.env.DEV && promotable ? (
-            <button type="button" class="btn" onClick={() => void promoteDraft(close)}>
+            <button type="button" class="btn--solid" onClick={() => void promoteDraft(close)}>
               Save version
             </button>
           ) : null}

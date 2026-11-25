@@ -94,7 +94,7 @@ export default function EditorToolbar({ wsId, path, versionId, disabled }: Edito
             <Melt class="-translate-y-px">
               <button
                 type="button"
-                class={`btn--small ${sel[fmt].value ? "btn--accent" : "btn"}`}
+                class={`btn--small ${sel[fmt].value ? "btn--accent" : "btn--solid"}`}
                 disabled={inlineDisabled}
                 data-tooltip={tooltip}
                 onClick={() => format(fmt)}

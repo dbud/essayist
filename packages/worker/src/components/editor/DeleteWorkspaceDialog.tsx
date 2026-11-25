@@ -54,7 +54,7 @@ export default function DeleteWorkspaceDialog({ open, onDeleted }: DeleteWorkspa
       <div class="flex justify-end gap-4">
         <button
           type="button"
-          class="btn"
+          class="btn--solid"
           onClick={() => (open.value = false)}
           disabled={submitting.value}
         >

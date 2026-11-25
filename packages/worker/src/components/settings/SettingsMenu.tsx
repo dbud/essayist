@@ -48,7 +48,7 @@ export default function SettingsMenu({ user }: SettingsMenuProps) {
     <Melt class="inline-flex" ref={ref}>
       <button
         type="button"
-        class="btn--idle"
+        class="btn"
         aria-expanded={open.value}
         onClick={() => (open.value = !open.value)}
       >

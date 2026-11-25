@@ -24,7 +24,7 @@ export default function FontSelect() {
       <Swap on={current.value}>
         <button
           type="button"
-          class="btn--idle"
+          class="btn"
           aria-expanded={open.value}
           data-tooltip="Reading font"
           onClick={() => (open.value = !open.value)}

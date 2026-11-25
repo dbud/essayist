@@ -5,10 +5,10 @@
   --btn-px: 0.625rem;
   --btn-py: 0.375rem;
 
-  --btn-float-bg: var(--color-float);
-  --btn-float-bg-hover: color-mix(in oklch, var(--color-float), white 25%);
-  --btn-float-ink: var(--color-float-ink);
-  --btn-float-ink-hover: var(--color-float-ink);
+  --btn-solid-bg: var(--color-float);
+  --btn-solid-bg-hover: color-mix(in oklch, var(--color-float), white 25%);
+  --btn-solid-ink: var(--color-float-ink);
+  --btn-solid-ink-hover: var(--color-float-ink);
   --btn-idle-bg: var(--color-surface);
   --btn-idle-bg-hover: var(--color-float);
   --btn-idle-ink: var(--color-ink);
@@ -17,10 +17,10 @@
   --btn-accent-bg-hover: var(--btn-accent-hover);
   --btn-accent-ink: var(--color-float-ink);
 
-  --btn-bg: var(--btn-float-bg);
-  --btn-bg-hover: var(--btn-float-bg-hover);
-  --btn-ink: var(--btn-float-ink);
-  --btn-ink-hover: var(--btn-float-ink-hover);
+  --btn-bg: var(--btn-solid-bg);
+  --btn-bg-hover: var(--btn-solid-bg-hover);
+  --btn-ink: var(--btn-solid-ink);
+  --btn-ink-hover: var(--btn-solid-ink-hover);
   --btn-highlight-ink: var(--color-accent);
 }
 
@@ -61,8 +61,8 @@
 
   &[aria-expanded="true"] {
     @apply melt-shadow-lifted;
-    --btn-bg: var(--btn-float-bg);
-    --btn-ink: var(--btn-float-ink);
+    --btn-bg: var(--btn-solid-bg);
+    --btn-ink: var(--btn-solid-ink);
   }
 
   &:not(:disabled):active {
@@ -74,7 +74,7 @@
   }
 }
 
-@utility btn {
+@utility btn--solid {
   @apply btn--base;
   @apply rounded-sm;
 
@@ -90,14 +90,14 @@
 }
 
 @utility btn--accent {
-  @apply btn melt-rim-white/70;
+  @apply btn--solid melt-rim-white/70;
   --btn-bg: var(--btn-accent-bg);
   --btn-bg-hover: var(--btn-accent-bg-hover);
   --btn-ink: var(--btn-accent-ink);
   --btn-ink-hover: var(--btn-accent-ink);
 }
 
-/* A size modifier for a button utility, such as btn or btn--accent. */
+/* A size modifier for a button utility, such as btn--solid or btn--accent. */
 @utility btn--small {
   --btn-px: 0.3rem;
   --btn-py: 0.25rem;
@@ -112,8 +112,8 @@
   @apply size-3;
 }
 
-@utility btn--idle {
-  @apply btn;
+@utility btn {
+  @apply btn--solid;
   --btn-bg: var(--btn-idle-bg);
   --btn-bg-hover: var(--btn-idle-bg-hover);
   --btn-ink: var(--btn-idle-ink);

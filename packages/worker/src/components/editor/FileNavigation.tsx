@@ -94,7 +94,7 @@ export default function FileNavigation({ open }: FileNavigationProps) {
     <Swap on={`${selectedWorkspace}/${selectedPath}`}>
       <button
         type="button"
-        class="btn--idle max-w-lg"
+        class="btn max-w-lg"
         aria-expanded={open.value}
         onClick={() => (open.value = !open.value)}
       >
@@ -136,7 +136,11 @@ export default function FileNavigation({ open }: FileNavigationProps) {
   );
 
   const deleteWorkspace = ownsSelected && (
-    <button type="button" class="btn self-start" onClick={() => (deletingWorkspace.value = true)}>
+    <button
+      type="button"
+      class="btn--solid self-start"
+      onClick={() => (deletingWorkspace.value = true)}
+    >
       <Trash2 />
       <span>Delete project&hellip;</span>
     </button>
@@ -190,7 +194,11 @@ export default function FileNavigation({ open }: FileNavigationProps) {
   );
 
   const createWorkspace = (
-    <button type="button" class="btn self-start" onClick={() => (creatingWorkspace.value = true)}>
+    <button
+      type="button"
+      class="btn--solid self-start"
+      onClick={() => (creatingWorkspace.value = true)}
+    >
       <Plus />
       <span>New project&hellip;</span>
     </button>
