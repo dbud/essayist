@@ -9,10 +9,10 @@
   --btn-solid-bg-hover: color-mix(in oklch, var(--color-solid), white 25%);
   --btn-solid-ink: var(--color-solid-ink);
   --btn-solid-ink-hover: var(--color-solid-ink);
-  --btn-idle-bg: var(--color-surface);
-  --btn-idle-bg-hover: var(--color-solid);
-  --btn-idle-ink: var(--color-ink);
-  --btn-idle-ink-hover: var(--color-solid-ink);
+  --btn-surface-bg: var(--color-surface);
+  --btn-surface-bg-hover: var(--color-solid);
+  --btn-surface-ink: var(--color-ink);
+  --btn-surface-ink-hover: var(--color-solid-ink);
   --btn-accent-bg: var(--color-accent);
   --btn-accent-bg-hover: var(--btn-accent-hover);
   --btn-accent-ink: var(--color-solid-ink);
@@ -86,10 +86,10 @@
   --btn-shadow-height: var(--melt-height-flat, 0.5px);
   --btn-rim: var(--rim-secondary);
   --btn-shade: color-mix(in oklab, black 5%, transparent);
-  --btn-bg: var(--btn-idle-bg);
-  --btn-bg-hover: var(--btn-idle-bg-hover);
-  --btn-ink: var(--btn-idle-ink);
-  --btn-ink-hover: var(--btn-idle-ink-hover);
+  --btn-bg: var(--btn-surface-bg);
+  --btn-bg-hover: var(--btn-surface-bg-hover);
+  --btn-ink: var(--btn-surface-ink);
+  --btn-ink-hover: var(--btn-surface-ink-hover);
 
   &:disabled {
     @apply pointer-events-none striped;
