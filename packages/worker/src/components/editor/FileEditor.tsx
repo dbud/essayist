@@ -61,7 +61,7 @@ export default function FileEditor() {
         </div>
       </div>
       <div class="absolute inset-x-0 top-0 pointer-events-none" data-scroll-gap="top">
-        <div class="absolute inset-0 striped-8 fade" aria-hidden="true" />
+        <div class="absolute inset-0 striped-8 fade [--fade-start:100%]" aria-hidden="true" />
         <div class="content-layout content-layout--side relative">
           <div class="content-main flex flex-col items-start py-3">
             <ErrorBoundary>
