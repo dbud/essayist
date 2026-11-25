@@ -67,7 +67,10 @@
 
   &:not(:disabled):active {
     --aq-btn-lifted: 0.95;
-    transition: --aq-btn-lifted calc(60ms * var(--aq-tempo, 1)) var(--aq-btn-ease);
+    --melt-height: var(--melt-height-flat, 0.5px);
+    transition:
+      --aq-btn-lifted calc(60ms * var(--aq-tempo, 1)) var(--aq-btn-ease),
+      --melt-height calc(60ms * var(--aq-tempo, 1)) var(--aq-btn-ease);
   }
 }
 
