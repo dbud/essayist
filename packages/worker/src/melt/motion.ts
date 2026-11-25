@@ -31,7 +31,7 @@ function restyling(animation: Animation, effect: KeyframeEffect): boolean {
 
 // TODO -- stop polling getAnimations, which costs about 6 ms a frame on a phone with 32 running
 // animations: track CSS animations and transitions by their start and end events, and have
-// useAqSwap report the animations it starts with element.animate, which fire no events.
+// useSwap report the animations it starts with element.animate, which fire no events.
 /** Reads the running animations under the root once. withShapes holds the shapes and every
     element between them and the root, so an animation moves a shape when its target is in it. */
 export function readMotion(root: HTMLElement, withShapes: ReadonlySet<Element>): Motion {

@@ -1,6 +1,6 @@
 import { type Signal } from "@preact/signals";
 
-import AqSegmented from "#/components/ui/Segmented.tsx";
+import Segmented from "#/components/ui/Segmented.tsx";
 
 export const SANS_FONT_OPTIONS = [
   { value: "atkinson", label: "Hyperlegible" },
@@ -30,7 +30,7 @@ export default function FontAxisSelect({ axis, label }: FontAxisSelectProps) {
       <ul class="menu-rows" data-stagger>
         <li class="flex flex-col gap-1">
           <span class="shrink-0 px-2">{label}</span>
-          <AqSegmented value={axis.signal} options={axis.options} label={label} />
+          <Segmented value={axis.signal} options={axis.options} label={label} />
         </li>
       </ul>
     </div>

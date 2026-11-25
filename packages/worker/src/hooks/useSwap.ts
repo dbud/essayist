@@ -2,7 +2,7 @@ import { useSignal } from "@preact/signals";
 import type { ComponentChildren } from "preact";
 import { useLayoutEffect, useRef } from "preact/hooks";
 
-export interface AqSwapState {
+export interface SwapState {
   /** Attach to the host element; the swap drives its phases and size. */
   ref: { current: HTMLElement | null };
   /** Wraps the content children: held content during swaps, fresh when idle. */
@@ -29,7 +29,7 @@ function swapParts(node: HTMLElement): Element[] {
 /** A sequential content swap: the held content runs the out animation, the
     children patch in place, the new content runs the in animation, and the
     host eases between the two sizes. */
-export function useAqSwap(on: string | number | null | undefined): AqSwapState {
+export function useSwap(on: string | number | null | undefined): SwapState {
   const held = useSignal<ComponentChildren>(null);
   const ref = useRef<HTMLElement | null>(null);
   const running = useRef(false);

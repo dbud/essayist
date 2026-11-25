@@ -1,7 +1,7 @@
 import { Moon, Sun } from "lucide-preact";
 
 import Melt from "#/components/ui/Melt.tsx";
-import AqSwap from "#/components/ui/Swap.tsx";
+import Swap from "#/components/ui/Swap.tsx";
 import { useBooting } from "#/hooks/useBooting.ts";
 import { usePreferences } from "#/models/preferences.ts";
 
@@ -16,7 +16,7 @@ export default function ThemeToggle() {
   const dark = booting.value ? themeOverride.value === "dark" : theme.value === "dark";
   return (
     <Melt>
-      <AqSwap on={String(dark)}>
+      <Swap on={String(dark)}>
         <button
           type="button"
           class="btn--idle"
@@ -26,7 +26,7 @@ export default function ThemeToggle() {
         >
           {dark ? <Moon class="swap-rotate" /> : <Sun class="swap-rotate" />}
         </button>
-      </AqSwap>
+      </Swap>
     </Melt>
   );
 }

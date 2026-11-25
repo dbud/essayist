@@ -2,7 +2,7 @@ import { toKebabCase } from "@std/text/to-kebab-case";
 import { ChevronDown } from "lucide-preact";
 import type { ComponentChildren } from "preact";
 
-import AqCollapse from "#/components/ui/Collapsible.tsx";
+import Collapsible from "#/components/ui/Collapsible.tsx";
 import Melt from "#/components/ui/Melt.tsx";
 import { usePersistentSignal } from "#/utils/persistentSignal.ts";
 
@@ -27,9 +27,9 @@ export default function Section({ title, children, defaultOpen = true }: Section
           {title}
           <ChevronDown class="chevron" />
         </button>
-        <AqCollapse open={open.value} fade>
+        <Collapsible open={open.value} fade>
           <div class="pt-2">{children}</div>
-        </AqCollapse>
+        </Collapsible>
       </div>
     </Melt>
   );

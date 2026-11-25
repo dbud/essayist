@@ -4,7 +4,7 @@ import { ChevronDown, Highlighter } from "lucide-preact";
 
 import { type RingSegment, SegmentedRingIcon } from "#/components/ui/icons.tsx";
 import Melt from "#/components/ui/Melt.tsx";
-import AqSwap from "#/components/ui/Swap.tsx";
+import Swap from "#/components/ui/Swap.tsx";
 import WaveBars from "#/components/ui/WaveBars.tsx";
 import { useClickOutside } from "#/hooks/useClickOutside.ts";
 import { showToast } from "#/models/utils/toast.ts";
@@ -48,7 +48,7 @@ export default function ReviewButton() {
 
   return (
     <Melt class="pointer-events-auto inline-flex z-toolbar" ref={ref}>
-      <AqSwap on={busy ? "busy" : "idle"}>
+      <Swap on={busy ? "busy" : "idle"}>
         <button
           type="button"
           class={busy ? "btn--idle" : "btn--accent"}
@@ -72,7 +72,7 @@ export default function ReviewButton() {
           )}
           <WaveBars fill amplitude={busy ? 0.5 : 0} class="pointer-events-none text-accent" />
         </button>
-      </AqSwap>
+      </Swap>
       {progress !== null && progress.units.length > 0 && (
         <div class={`dropdown ${expanded ? "is-open" : ""}`}>
           <div class="menu menu--small">

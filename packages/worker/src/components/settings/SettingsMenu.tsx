@@ -16,10 +16,10 @@ import FontAxisSelect, {
   SERIF_FONT_OPTIONS,
 } from "#/components/settings/FontAxisSelect.tsx";
 import MarkStyleSelect from "#/components/settings/MarkStyleSelect.tsx";
-import AqCollapse from "#/components/ui/Collapsible.tsx";
+import Collapsible from "#/components/ui/Collapsible.tsx";
 import Melt, { meltDebug, meltEnabled } from "#/components/ui/Melt.tsx";
-import AqSegmented from "#/components/ui/Segmented.tsx";
-import AqToggle from "#/components/ui/Toggle.tsx";
+import Segmented from "#/components/ui/Segmented.tsx";
+import Toggle from "#/components/ui/Toggle.tsx";
 import { useClickOutside } from "#/hooks/useClickOutside.ts";
 import { AUTO_SAVE_INTERVAL_VALUES } from "#/models/preferences.ts";
 import { usePreferences } from "#/models/preferences.ts";
@@ -76,16 +76,16 @@ export default function SettingsMenu({ user }: SettingsMenuProps) {
                 onClick={() => (autoSave.value = !autoSave.value)}
               >
                 <span>Autosave</span>
-                <AqToggle />
+                <Toggle />
               </button>
-              <AqCollapse open={autoSave.value} fade>
-                <AqSegmented
+              <Collapsible open={autoSave.value} fade>
+                <Segmented
                   value={autoSaveInterval}
                   options={INTERVAL_OPTIONS}
                   label="Autosave interval"
                   class="mt-2"
                 />
-              </AqCollapse>
+              </Collapsible>
             </li>
             <li>
               <button
@@ -111,7 +111,7 @@ export default function SettingsMenu({ user }: SettingsMenuProps) {
                     onClick={() => (meltEnabled.value = !meltEnabled.value)}
                   >
                     <span>Melt shader</span>
-                    <AqToggle />
+                    <Toggle />
                   </button>
                 </li>
                 <li>
@@ -123,7 +123,7 @@ export default function SettingsMenu({ user }: SettingsMenuProps) {
                     onClick={() => (meltDebug.value = !meltDebug.value)}
                   >
                     <span>Melt outlines</span>
-                    <AqToggle />
+                    <Toggle />
                   </button>
                 </li>
                 <li>

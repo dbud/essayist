@@ -1,6 +1,6 @@
 import { type Signal } from "@preact/signals";
 
-export default function AqSegmented<T extends number | string>({
+export default function Segmented<T extends number | string>({
   value,
   options,
   label,

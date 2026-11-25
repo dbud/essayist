@@ -2,7 +2,7 @@ import { useSignal } from "@preact/signals";
 import { ChevronDown } from "lucide-preact";
 
 import Melt from "#/components/ui/Melt.tsx";
-import AqSwap from "#/components/ui/Swap.tsx";
+import Swap from "#/components/ui/Swap.tsx";
 import { useClickOutside } from "#/hooks/useClickOutside.ts";
 import { usePreferences } from "#/models/preferences.ts";
 
@@ -21,7 +21,7 @@ export default function FontSelect() {
 
   return (
     <Melt class="inline-flex" ref={ref}>
-      <AqSwap on={current.value}>
+      <Swap on={current.value}>
         <button
           type="button"
           class="btn--idle"
@@ -34,7 +34,7 @@ export default function FontSelect() {
           </span>
           <ChevronDown class="chevron" data-static />
         </button>
-      </AqSwap>
+      </Swap>
       <div class={`dropdown dropdown--origin-start ${open.value ? "is-open" : ""}`}>
         <div class="menu">
           <ul class="menu-rows" data-stagger>

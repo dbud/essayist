@@ -3,8 +3,8 @@ import { assertExists, unreachable } from "@std/assert";
 import { ChevronDown } from "lucide-preact";
 
 import Melt from "#/components/ui/Melt.tsx";
-import AqSwap from "#/components/ui/Swap.tsx";
-import AqToggle from "#/components/ui/Toggle.tsx";
+import Swap from "#/components/ui/Swap.tsx";
+import Toggle from "#/components/ui/Toggle.tsx";
 import { useClickOutside } from "#/hooks/useClickOutside.ts";
 import { FileStatsModel } from "#/models/fileStats.ts";
 import { type FileStatSection, usePreferences } from "#/models/preferences.ts";
@@ -52,7 +52,7 @@ export default function FileStats() {
 
   return (
     <Melt class="inline-flex pointer-events-auto" ref={ref}>
-      <AqSwap on={enabled.join(",")}>
+      <Swap on={enabled.join(",")}>
         <button
           type="button"
           class="btn--idle items-center text-xs"
@@ -72,7 +72,7 @@ export default function FileStats() {
           )}
           <ChevronDown class="chevron rotate-180" data-static />
         </button>
-      </AqSwap>
+      </Swap>
       <div class={"dropdown--origin-end dropdown--up" + (open.value ? " is-open" : "")}>
         <div class="menu">
           <ul class="menu-rows" data-stagger>
@@ -86,7 +86,7 @@ export default function FileStats() {
                   onClick={() => toggleSection(opt.value)}
                 >
                   <span>{opt.label}</span>
-                  <AqToggle />
+                  <Toggle />
                 </button>
               </li>
             ))}

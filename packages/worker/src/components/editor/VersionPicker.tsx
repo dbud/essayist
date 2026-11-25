@@ -5,7 +5,7 @@ import { ChevronDown, CircleDashed, LockKeyhole, PencilLine } from "lucide-preac
 
 import { CircleCheckIcon, CountdownRingIcon } from "#/components/ui/icons.tsx";
 import Melt from "#/components/ui/Melt.tsx";
-import AqSwap from "#/components/ui/Swap.tsx";
+import Swap from "#/components/ui/Swap.tsx";
 import WaveBars from "#/components/ui/WaveBars.tsx";
 import { useBooting } from "#/hooks/useBooting.ts";
 import { useClickOutside } from "#/hooks/useClickOutside.ts";
@@ -112,7 +112,7 @@ export default function VersionPicker() {
 
   return (
     <Melt class="inline-flex z-toolbar" ref={ref}>
-      <AqSwap on={state}>
+      <Swap on={state}>
         <button
           type="button"
           class="btn--idle relative min-w-36"
@@ -140,7 +140,7 @@ export default function VersionPicker() {
           )}
           {!pending && hasVersions && <ChevronDown class="chevron" data-static />}
         </button>
-      </AqSwap>
+      </Swap>
       {hasVersions && (
         <div class={`dropdown ${open.value ? "is-open" : ""}`}>
           <div class="menu">

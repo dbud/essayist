@@ -13,7 +13,7 @@ import {
 import type { ComponentChild } from "preact";
 
 import Melt from "#/components/ui/Melt.tsx";
-import AqSwap from "#/components/ui/Swap.tsx";
+import Swap from "#/components/ui/Swap.tsx";
 import { type BlockType } from "#/editor/blockFormat.ts";
 import { useClickOutside } from "#/hooks/useClickOutside.ts";
 
@@ -48,7 +48,7 @@ export default function BlockTypeSelect({ block, onChange, disabled }: BlockType
 
   return (
     <Melt ref={ref}>
-      <AqSwap on={current.value}>
+      <Swap on={current.value}>
         <button
           type="button"
           class="btn btn--small"
@@ -61,7 +61,7 @@ export default function BlockTypeSelect({ block, onChange, disabled }: BlockType
           <span class="hidden @sm:inline">{current.label}</span>
           <ChevronDown class="chevron" data-static />
         </button>
-      </AqSwap>
+      </Swap>
       <div class={`dropdown dropdown--origin-start ${open.value ? "is-open" : ""}`}>
         <div class="menu menu--small">
           <ul class="menu-rows" data-stagger>

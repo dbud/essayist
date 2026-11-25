@@ -8,7 +8,7 @@ import FileUploader from "#/components/editor/FileUploader.tsx";
 import GoogleDocImporter from "#/components/editor/GoogleDocImporter.tsx";
 import RemoveFileDialog from "#/components/editor/RemoveFileDialog.tsx";
 import Melt from "#/components/ui/Melt.tsx";
-import AqSwap from "#/components/ui/Swap.tsx";
+import Swap from "#/components/ui/Swap.tsx";
 import WaveBars from "#/components/ui/WaveBars.tsx";
 import { useClickOutside } from "#/hooks/useClickOutside.ts";
 import { useOutgoing } from "#/hooks/useOutgoing.ts";
@@ -91,7 +91,7 @@ export default function FileNavigation({ open }: FileNavigationProps) {
   const ownsSelected = user !== undefined && workspaces.current.value?.ownerId === user.id;
 
   const breadcrumbsTrigger = (
-    <AqSwap on={`${selectedWorkspace}/${selectedPath}`}>
+    <Swap on={`${selectedWorkspace}/${selectedPath}`}>
       <button
         type="button"
         class="btn max-w-lg"
@@ -108,7 +108,7 @@ export default function FileNavigation({ open }: FileNavigationProps) {
         )}
         <ChevronDown data-static />
       </button>
-    </AqSwap>
+    </Swap>
   );
 
   const createFile = (

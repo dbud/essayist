@@ -1,4 +1,4 @@
-import AqSegmented from "#/components/ui/Segmented.tsx";
+import Segmented from "#/components/ui/Segmented.tsx";
 import { type HighlightStyle, usePreferences } from "#/models/preferences.ts";
 
 const OPTIONS: { value: HighlightStyle; label: string }[] = [
@@ -13,7 +13,7 @@ export default function MarkStyleSelect() {
       <ul class="menu-rows" data-stagger>
         <li class="flex flex-col gap-1">
           <span class="shrink-0 px-2">Mark style</span>
-          <AqSegmented value={highlightStyle} options={OPTIONS} label="Mark style" />
+          <Segmented value={highlightStyle} options={OPTIONS} label="Mark style" />
         </li>
       </ul>
     </div>

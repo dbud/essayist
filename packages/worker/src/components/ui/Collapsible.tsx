@@ -1,6 +1,6 @@
 import type { ComponentChildren } from "preact";
 
-export default function AqCollapse({
+export default function Collapsible({
   open,
   fade = false,
   class: extra,

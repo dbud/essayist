@@ -8,8 +8,8 @@ import Melt, {
   meltFieldScale,
   meltPixelRatio,
 } from "#/components/ui/Melt.tsx";
-import AqSegmented from "#/components/ui/Segmented.tsx";
-import AqSwap from "#/components/ui/Swap.tsx";
+import Segmented from "#/components/ui/Segmented.tsx";
+import Swap from "#/components/ui/Swap.tsx";
 import { meltTargetStatus, simulateContextLoss } from "#/melt/context.ts";
 import { TIMED_PARTS, type TimedPart, takeFrameStats } from "#/melt/stats.ts";
 
@@ -33,11 +33,11 @@ function Buttons() {
 }
 
 /** A button whose content swaps and resizes, next to a button it melts into. */
-function Swap() {
+function SwapSample() {
   const busy = useSignal(false);
   return (
     <Melt class="inline-flex items-center gap-1">
-      <AqSwap on={busy.value ? "busy" : "idle"}>
+      <Swap on={busy.value ? "busy" : "idle"}>
         <button
           type="button"
           class={busy.value ? "btn--idle" : "btn--accent"}
@@ -55,7 +55,7 @@ function Swap() {
             </>
           )}
         </button>
-      </AqSwap>
+      </Swap>
       <button type="button" class="btn">
         Saved
       </button>
@@ -157,11 +157,11 @@ const SEGMENTS = [
   { value: "1 min", label: "1 min" },
 ];
 
-function Segmented() {
+function SegmentedSample() {
   const value = useSignal("5s");
   return (
     <Melt class="inline-flex text-float-ink">
-      <AqSegmented value={value} options={SEGMENTS} label="Interval" />
+      <Segmented value={value} options={SEGMENTS} label="Interval" />
     </Melt>
   );
 }
@@ -319,10 +319,10 @@ function Grid() {
 const SAMPLES = [
   { name: "grid", Sample: Grid, height: "h-auto" },
   { name: "buttons", Sample: Buttons, height: "h-16" },
-  { name: "swap", Sample: Swap, height: "h-16" },
+  { name: "swap", Sample: SwapSample, height: "h-16" },
   { name: "dropdown", Sample: Dropdown, height: "h-52" },
   { name: "bridged", Sample: BridgedDropdown, height: "h-72" },
-  { name: "segmented", Sample: Segmented, height: "h-16" },
+  { name: "segmented", Sample: SegmentedSample, height: "h-16" },
   { name: "effects", Sample: Effects, height: "h-16" },
 ];
 
