@@ -94,7 +94,7 @@ export default function FileNavigation({ open }: FileNavigationProps) {
     <Swap on={`${selectedWorkspace}/${selectedPath}`}>
       <button
         type="button"
-        class="btn max-w-lg"
+        class="btn--idle max-w-lg"
         aria-expanded={open.value}
         onClick={() => (open.value = !open.value)}
       >

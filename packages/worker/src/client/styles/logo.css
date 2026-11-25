@@ -54,10 +54,24 @@
 }
 
 .logo-e {
-  @apply melt-shape melt-shadow;
-  --melt-rim: var(--rim-primary);
-  --melt-fill: var(--color-ink);
+  @apply melt-shape melt-shadow-flat melt-shade-black/5 rounded-sm;
+  --melt-rim: var(--rim-secondary);
+  --melt-fill: var(--btn-idle-bg);
   --logo-period: 30s;
+  color: var(--btn-idle-ink);
+  transition:
+    --melt-fill calc(200ms * var(--tempo, 1)) var(--btn-ease),
+    --melt-rim calc(200ms * var(--tempo, 1)) var(--btn-ease),
+    --melt-shade calc(200ms * var(--tempo, 1)) var(--btn-ease),
+    --melt-height calc(200ms * var(--tempo, 1)) var(--btn-ease),
+    color calc(200ms * var(--tempo, 1)) var(--btn-ease);
+
+  &:hover {
+    @apply melt-shadow-lifted melt-shade-transparent;
+    --melt-rim: var(--rim-primary);
+    --melt-fill: var(--btn-idle-bg-hover);
+    color: var(--btn-idle-ink-hover);
+  }
 }
 
 .logo-e path {

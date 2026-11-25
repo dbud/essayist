@@ -6,13 +6,8 @@ interface EssayistLogoProps {
 
 export default function EssayistLogo({ class: className = "" }: EssayistLogoProps) {
   return (
-    <div class={`logo-e flex select-none justify-center scheme-light items-center ${className}`}>
-      <svg
-        class="text-surface aspect-square w-5/8"
-        viewBox="0 0 24 24"
-        fill="none"
-        aria-hidden="true"
-      >
+    <div class={`logo-e flex select-none justify-center items-center ${className}`}>
+      <svg class="aspect-square w-5/8" viewBox="0 0 24 24" fill="none" aria-hidden="true">
         <g transform={logoMark.transform}>
           {logoMark.paths.map((d) => (
             <path d={d} pathLength={1} />

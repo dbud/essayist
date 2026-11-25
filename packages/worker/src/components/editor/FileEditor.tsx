@@ -70,8 +70,8 @@ export default function FileEditor() {
                   <EssayistLogo class="h-full w-8" />
                 </Melt>
                 <FileNavigation open={navigationOpen} />
-                {file !== null && <ReviewButton />}
                 {file !== null && <VersionPicker />}
+                {file !== null && <ReviewButton />}
               </div>
             </ErrorBoundary>
           </div>
