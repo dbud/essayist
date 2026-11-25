@@ -79,7 +79,7 @@ export default function FileEditor() {
         {selection !== null && file !== null && (
           <div class="content-layout z-toolbar">
             <div class="content-main" />
-            <div class="content-side flex items-start py-2">
+            <div class="content-side flex items-start">
               <SidenoteControls />
             </div>
           </div>
