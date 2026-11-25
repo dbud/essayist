@@ -40,7 +40,9 @@
   font-size: var(--btn-font-size);
   padding: var(--btn-py) var(--btn-px);
   @apply melt-shape melt-shadow;
-  --melt-rim: var(--rim-primary);
+  --melt-height: var(--btn-shadow-height, var(--melt-height-rest, 1px));
+  --melt-rim: var(--btn-rim, var(--rim-primary));
+  --melt-shade: var(--btn-shade, transparent);
   --melt-fill: var(--btn-bg);
   transform: scale(var(--btn-lifted));
   transition:
@@ -55,12 +57,16 @@
 
   &:hover {
     @apply melt-shadow-lifted;
+    --btn-rim: var(--rim-primary);
+    --btn-shade: transparent;
     --btn-bg: var(--btn-bg-hover);
     --btn-ink: var(--btn-ink-hover);
   }
 
   &[aria-expanded="true"] {
     @apply melt-shadow-lifted;
+    --btn-rim: var(--rim-primary);
+    --btn-shade: transparent;
     --btn-bg: var(--btn-solid-bg);
     --btn-ink: var(--btn-solid-ink);
   }
@@ -74,9 +80,16 @@
   }
 }
 
-@utility btn--solid {
+@utility btn {
   @apply btn--base;
   @apply rounded-sm;
+  --btn-shadow-height: var(--melt-height-flat, 0.5px);
+  --btn-rim: var(--rim-secondary);
+  --btn-shade: color-mix(in oklab, black 5%, transparent);
+  --btn-bg: var(--btn-idle-bg);
+  --btn-bg-hover: var(--btn-idle-bg-hover);
+  --btn-ink: var(--btn-idle-ink);
+  --btn-ink-hover: var(--btn-idle-ink-hover);
 
   &:disabled {
     @apply pointer-events-none striped;
@@ -89,6 +102,17 @@
   }
 }
 
+@utility btn--solid {
+  @apply btn;
+  --btn-shadow-height: var(--melt-height-rest, 1px);
+  --btn-rim: var(--rim-primary);
+  --btn-shade: transparent;
+  --btn-bg: var(--btn-solid-bg);
+  --btn-bg-hover: var(--btn-solid-bg-hover);
+  --btn-ink: var(--btn-solid-ink);
+  --btn-ink-hover: var(--btn-solid-ink-hover);
+}
+
 @utility btn--accent {
   @apply btn--solid melt-rim-white/70;
   --btn-bg: var(--btn-accent-bg);
@@ -97,7 +121,7 @@
   --btn-ink-hover: var(--btn-accent-ink);
 }
 
-/* A size modifier for a button utility, such as btn--solid or btn--accent. */
+/* A size modifier for a button utility, such as btn or btn--accent. */
 @utility btn--small {
   --btn-px: 0.3rem;
   --btn-py: 0.25rem;
@@ -110,17 +134,4 @@
 
 .btn--small .chevron {
   @apply size-3;
-}
-
-@utility btn {
-  @apply btn--solid;
-  --btn-bg: var(--btn-idle-bg);
-  --btn-bg-hover: var(--btn-idle-bg-hover);
-  --btn-ink: var(--btn-idle-ink);
-  --btn-ink-hover: var(--btn-idle-ink-hover);
-
-  &:not(:hover, [aria-expanded="true"]) {
-    @apply melt-shadow-flat melt-shade-black/5;
-    --melt-rim: var(--rim-secondary);
-  }
 }
