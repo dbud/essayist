@@ -10,6 +10,20 @@
   caret-color: transparent;
 }
 
+.editor-input :is(p, h1, h2, h3, h4, h5, h6, blockquote, pre, ul, ol, li)::before {
+  content: "";
+  display: block;
+  height: var(--block-spacer-before, 0px);
+  @apply striped-3 spacer-fade;
+}
+
+.editor-input :is(p, h1, h2, h3, h4, h5, h6, blockquote, pre, ul, ol, li)::after {
+  content: "";
+  display: block;
+  height: var(--block-spacer-after, 0px);
+  @apply striped-3 spacer-fade;
+}
+
 ::selection {
   background-color: var(--color-ink);
   color: var(--color-paper);
