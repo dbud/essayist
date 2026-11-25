@@ -60,6 +60,7 @@
   }
 
   &[aria-expanded="true"] {
+    @apply melt-shadow-lifted;
     --btn-bg: var(--aq-btn-float-bg);
     --btn-ink: var(--aq-btn-float-ink);
   }

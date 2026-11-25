@@ -1,5 +1,5 @@
 .aq-menu {
-  @apply melt-shape melt-shadow rounded-lg py-2 px-2 text-float-ink;
+  @apply melt-shape melt-shadow-lifted rounded-lg py-2 px-2 text-float-ink;
   --melt-rim: var(--aq-rim-primary);
   --melt-fill: var(--color-float);
 }
