@@ -66,8 +66,9 @@ export interface MotionWatch {
   dispose(): void;
 }
 
-/** Calls wake when something under the root may change how its shapes look: a transition or an
-    animation starts, the pointer or focus moves, or a shape changes size. */
+/** Calls wake when something may change how the shapes under the root look: a transition or an
+    animation starts, the pointer or focus moves, a shape changes size, or an attribute of an
+    ancestor changes, as when the theme switches or a panel around the root shows it again. */
 export function watchMotion(root: HTMLElement, wake: () => void): MotionWatch {
   // Hover and focus change fills without a transition when motion is reduced.
   const events = [
@@ -84,6 +85,15 @@ export function watchMotion(root: HTMLElement, wake: () => void): MotionWatch {
   sizes.observe(root);
   window.addEventListener("resize", wake);
 
+  // Changes outside the root: the theme is set on the document element or follows the system, and a
+  // panel shows or hides the root by its own class or style.
+  const ancestors = new MutationObserver(wake);
+  for (let node = root.parentElement; node !== null; node = node.parentElement) {
+    ancestors.observe(node, { attributes: true });
+  }
+  const scheme = matchMedia("(prefers-color-scheme: dark)");
+  scheme.addEventListener("change", wake);
+
   return {
     track(shapes) {
       sizes.disconnect();
@@ -94,6 +104,8 @@ export function watchMotion(root: HTMLElement, wake: () => void): MotionWatch {
       for (const type of events) root.removeEventListener(type, wake);
       sizes.disconnect();
       window.removeEventListener("resize", wake);
+      ancestors.disconnect();
+      scheme.removeEventListener("change", wake);
     },
   };
 }
