@@ -17,10 +17,9 @@ const shape = (group: number, x = 10): MeltShape => ({
     shade: [0, 0, 0, 0.2],
     glow: 0.2,
     shadow: [0, 0, 0, 0.2],
-    shadowX: 1,
-    shadowY: 8,
-    shadowBlur: 12,
+    height: 8,
   },
+  cast: { x: 1, y: 8, blur: 6, key: 0.4, ambientBlur: 1, ambient: 0.5 },
   group,
 });
 
@@ -43,8 +42,9 @@ test("lengths are scaled to device pixels, and the size is rounded", () => {
   expect(texel(packed, ROW.RIM, 0)).toEqual([1, 1, 1, 0.3].map(Math.fround));
   expect(texel(packed, ROW.SHADE, 0)).toEqual([0, 0, 0, 0.2].map(Math.fround));
   expect(texel(packed, ROW.SHADOW, 0)).toEqual([0, 0, 0, 0.2].map(Math.fround));
-  // The shadow offset and Gaussian width, half the blur, are lengths.
-  expect(texel(packed, ROW.SHADOW_SHAPE, 0).slice(0, 3)).toEqual([2, 16, 12]);
+  // The offsets, penumbra and reach of the shadows are lengths; how dark each is is not.
+  expect(texel(packed, ROW.SHADOW_SHAPE, 0)).toEqual([2, 16, 12, 0.4].map(Math.fround));
+  expect(texel(packed, ROW.SHADOW_AMBIENT, 0)).toEqual([2, 0.5, 0, 0]);
   // The radius and the stroke width are lengths; the glow is not.
   expect(texel(packed, ROW.SHAPE, 0).slice(0, 3)).toEqual([4, 2, 0.2].map(Math.fround));
 });
@@ -53,11 +53,8 @@ test("the reach covers the field, or the offset and blurred shadow when it reach
   const sigma = 6;
   const plain = { ...shape(0), effects: { ...shape(0).effects, shadow: [0, 0, 0, 0] as const } };
   expect(reachOf(plain, sigma, 1)).toBe(FIELD_REACH * sigma);
-  // An offset of 3, 4 is 5 long, and the Gaussian width of the shadow is half its blur of 16.
-  const shadowed = {
-    ...shape(0),
-    effects: { ...shape(0).effects, shadowX: 3, shadowY: 4, shadowBlur: 16 },
-  };
+  // An offset of 3, 4 is 5 long, and the key shadow reaches further than the ambient shadow.
+  const shadowed = { ...shape(0), cast: { ...shape(0).cast, x: 3, y: 4, blur: 8 } };
   expect(reachOf(shadowed, sigma, 1)).toBeCloseTo(5 + FIELD_REACH * Math.hypot(sigma, 8));
   // Lengths are scaled to device pixels, but sigma already is.
   expect(reachOf(shadowed, sigma, 2)).toBeCloseTo(10 + FIELD_REACH * Math.hypot(sigma, 16));

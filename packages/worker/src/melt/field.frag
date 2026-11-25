@@ -12,11 +12,16 @@ layout(location = 1) out vec4 outRim;
 layout(location = 2) out vec4 outShade;
 layout(location = 3) out vec4 outStroke;
 #else
-// The stroke width and glow weighted by the field, and the tight and soft shadow fields.
+// The stroke width and glow weighted by the field, and the key shadow field, with the last unused.
 layout(location = 0) out vec4 outEffects;
-// The shadow colours and blur, weighted by the tight shadow field.
+// The key shadow colours, each as dark as the key shadow of its shape, weighted by its field.
 layout(location = 1) out vec4 outShadowColor;
+// The blur of the key shadow, weighted by its field, then the ambient shadow field and its blur,
+// weighted by that field.
 layout(location = 2) out vec4 outShadowBlur;
+// The ambient shadow colours, each as dark as the ambient shadow of its shape, weighted by its
+// field.
+layout(location = 3) out vec4 outAmbientColor;
 #endif
 
 void main() {
@@ -44,14 +49,16 @@ void main() {
   outShade = vec4(shade.rgb * shade.a, shade.a) * w;
   outStroke = vec4(stroke.rgb * stroke.a, stroke.a) * w;
 #else
-  // A shadow has two estimates. The tight one blurs the shifted shape with sigma and its own blur,
-  // so it follows the melted outline; the soft one blurs the shifted box with its blur alone.
+  // Each shadow blurs its shifted shape with sigma and its own blur, so it follows the melted
+  // outline, and the resolve pass reads the distance to that outline from it.
   vec4 shadowColor = shapeValue(i, ROW_SHADOW);
+  vec4 shadowShape = shapeValue(i, ROW_SHADOW_SHAPE);
+  vec4 ambient = shapeValue(i, ROW_SHADOW_AMBIENT);
   float tightField = 0.0;
-  float softField = 0.0;
+  float ambientField = 0.0;
   float blur = HALF_PIXEL;
+  float ambientBlur = max(ambient.x, HALF_PIXEL);
   if (shadowColor.a > 0.0) {
-    vec4 shadowShape = shapeValue(i, ROW_SHADOW_SHAPE);
     vec2 shadowLocal = local - shadowShape.xy;
     blur = max(shadowShape.z, HALF_PIXEL);
     float width = sqrt(u_sigma * u_sigma + blur * blur);
@@ -60,12 +67,20 @@ void main() {
       tightField = toShadow < -REACH * width
         ? 1.0
         : shapeField(shadowLocal, half_size, radius, width);
-      softField = toShadow < -REACH * blur ? 1.0 : shapeField(shadowLocal, half_size, radius, blur);
+    }
+    float ambientWidth = sqrt(u_sigma * u_sigma + ambientBlur * ambientBlur);
+    if (toEdge < REACH * ambientWidth) {
+      ambientField = toEdge < -REACH * ambientWidth
+        ? 1.0
+        : shapeField(local, half_size, radius, ambientWidth);
     }
   }
   float shadowWeight = fill.a * tightField;
-  outEffects = vec4(sizes.yz * w, shadowWeight, fill.a * softField);
-  outShadowColor = vec4(shadowColor.rgb * shadowColor.a, shadowColor.a) * shadowWeight;
-  outShadowBlur = vec4(blur * shadowWeight, 0.0, 0.0, 0.0);
+  float ambientWeight = fill.a * ambientField;
+  vec4 shadowPremultiplied = vec4(shadowColor.rgb * shadowColor.a, shadowColor.a);
+  outEffects = vec4(sizes.yz * w, shadowWeight, 0.0);
+  outShadowColor = shadowPremultiplied * shadowShape.w * shadowWeight;
+  outShadowBlur = vec4(blur * shadowWeight, ambientWeight, ambientBlur * ambientWeight, 0.0);
+  outAmbientColor = shadowPremultiplied * ambient.y * ambientWeight;
 #endif
 }

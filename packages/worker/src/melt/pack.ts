@@ -15,10 +15,12 @@ export const ROW = {
   RIM: 3,
   SHADE: 4,
   SHADOW: 5,
-  /** The shadow offset in x and y and its Gaussian width, with the last unused. */
+  /** The offset in x and y and the half penumbra of the key shadow, and how dark it is. */
   SHADOW_SHAPE: 6,
   /** The corner radius, stroke width, glow, and reach, as reachOf. */
   SHAPE: 7,
+  /** The reach of the ambient shadow and how dark it is, with the last two unused. */
+  SHADOW_AMBIENT: 8,
 } as const;
 
 export const ROWS = Object.keys(ROW).length;
@@ -39,6 +41,7 @@ export interface PackedFrame {
   readonly rimHighlight: number;
   readonly rimShine: number;
   readonly rimSheen: number;
+  readonly grain: number;
   /** The shape texture, ROWS rows of count texels of four numbers. */
   readonly shapes: Float32Array;
   readonly count: number;
@@ -67,17 +70,18 @@ export function texel(frame: PackedFrame, row: number, column: number): number[]
   return Array.from(frame.shapes.subarray(start, start + 4));
 }
 
-/** How far from its box a shape draws anything, in device pixels: its field, or its shadow, which
-    is offset and blurred further. Past it, the shader skips the shape. */
+/** How far from its box a shape draws anything, in device pixels: its field, or its key or ambient
+    shadow, which are offset and blurred further. Past it, the shader skips the shape. */
 export function reachOf(shape: MeltShape, sigma: number, pixelRatio: number): number {
   const field = FIELD_REACH * sigma;
-  const { shadow, shadowX, shadowY, shadowBlur } = shape.effects;
-  if (shadow[3] <= 0) return field;
-  // As in field.frag: the Gaussian width of the shadow is half its blur, and never under half a
-  // pixel, and the tight estimate blurs it with sigma as well.
-  const blur = Math.max((shadowBlur / 2) * pixelRatio, 0.5);
-  const offset = Math.hypot(shadowX, shadowY) * pixelRatio;
-  return Math.max(field, offset + FIELD_REACH * Math.hypot(sigma, blur));
+  if (shape.effects.shadow[3] <= 0) return field;
+  // As in field.frag: a shadow is never blurred under half a pixel, and the tight estimate blurs it
+  // with sigma as well.
+  const { cast } = shape;
+  const reach = (x: number, y: number, blur: number) =>
+    Math.hypot(x, y) * pixelRatio +
+    FIELD_REACH * Math.hypot(sigma, Math.max(blur * pixelRatio, 0.5));
+  return Math.max(field, reach(cast.x, cast.y, cast.blur), reach(0, 0, cast.ambientBlur));
 }
 
 /** Packs a frame for the shader. Shapes past the limit are left out. */
@@ -129,8 +133,9 @@ export function packFrame(
     put(ROW.RIM, i, effects.rim);
     put(ROW.SHADE, i, effects.shade);
     put(ROW.SHADOW, i, effects.shadow);
-    // TODO -- cast the shadow away from the page light angle instead of straight down
-    put(ROW.SHADOW_SHAPE, i, lengths([effects.shadowX, effects.shadowY, effects.shadowBlur / 2]));
+    const { cast } = shape;
+    put(ROW.SHADOW_SHAPE, i, [...lengths([cast.x, cast.y, cast.blur]), cast.key]);
+    put(ROW.SHADOW_AMBIENT, i, [cast.ambientBlur * pixelRatio, cast.ambient, 0, 0]);
     put(ROW.SHAPE, i, [
       shape.radius * pixelRatio,
       effects.strokeWidth * pixelRatio,
@@ -154,6 +159,7 @@ export function packFrame(
     rimHighlight: frame.settings.rimHighlight,
     rimShine: frame.settings.rimShine,
     rimSheen: frame.settings.rimSheen,
+    grain: frame.settings.grain,
     shapes,
     count,
     groupList,

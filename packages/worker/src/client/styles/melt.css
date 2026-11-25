@@ -87,35 +87,60 @@
   initial-value: transparent;
 }
 
-@property --melt-shadow-x {
+/* How high a shape floats above the page. Its shadow falls away from the light, further and
+   softer the higher it is. */
+@property --melt-height {
   syntax: "<length>";
   inherits: false;
   initial-value: 0px;
 }
 
-@property --melt-shadow-y {
-  syntax: "<length>";
-  inherits: false;
-  initial-value: 0px;
+/* How wide the light is, from its centre to its edge: a wider light casts a wider penumbra for the
+   same height. */
+@property --melt-light-size {
+  syntax: "<angle>";
+  inherits: true;
+  initial-value: 45deg;
 }
 
-@property --melt-shadow-blur {
-  syntax: "<length>";
-  inherits: false;
-  initial-value: 0px;
+/* How much of the colour of a shape its shadow takes, from 0 to 1. */
+@property --melt-shadow-tint {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 0.25;
 }
 
-/* The shadow of a shape, like a CSS drop-shadow. Touching shapes cast a single shadow. */
+/* How strong the grain in the shadows is, as a share of how dark they are. */
+@property --melt-grain {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 0;
+}
+
+/* The share of the light that comes from all around rather than from the light, from 0 to 1. It
+   casts the ambient shadow under a shape; the rest casts the key shadow away from the light. */
+@property --melt-light-ambient {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 0.6;
+}
+
+/* The shadow of a shape at one of three heights: almost flat on the page, at rest, and lifted. The
+   page sets the colour and the heights on :root, as --melt-shadow-color and --melt-height-flat,
+   --melt-height-rest and --melt-height-lifted. Touching shapes cast a single shadow. */
+@utility melt-shadow-flat {
+  --melt-shadow: var(--melt-shadow-color, rgb(0 0 0 / 0.3));
+  --melt-height: var(--melt-height-flat, 0.5px);
+}
+
 @utility melt-shadow {
-  --melt-shadow: rgb(0 0 0 / 0.3);
-  --melt-shadow-y: 0.3rem;
-  --melt-shadow-blur: 1.4rem;
+  --melt-shadow: var(--melt-shadow-color, rgb(0 0 0 / 0.3));
+  --melt-height: var(--melt-height-rest, 1px);
 }
 
-@utility melt-shadow-sm {
-  --melt-shadow: rgb(0 0 0 / 0.08);
-  --melt-shadow-y: 2px;
-  --melt-shadow-blur: 10px;
+@utility melt-shadow-lifted {
+  --melt-shadow: var(--melt-shadow-color, rgb(0 0 0 / 0.3));
+  --melt-height: var(--melt-height-lifted, 3px);
 }
 
 @utility melt-shadow-none {
@@ -175,9 +200,21 @@
 @utility melt-shape {
   --melt-shape: 1;
   background: var(--melt-background, var(--melt-fill));
+  /* The key and ambient shadows as the canvas casts them, from the height and the light, without
+     fading as the shape rises. A CSS blur spreads about as far as the penumbra or the reach. */
+  --melt-cast: calc(var(--melt-height) / tan(max(var(--melt-light-elevation), 5deg)));
   box-shadow: var(
     --melt-box-shadow,
-    var(--melt-shadow-x) var(--melt-shadow-y) var(--melt-shadow-blur) var(--melt-shadow)
+    calc(-1 * sin(var(--melt-light-angle)) * var(--melt-cast))
+      calc(cos(var(--melt-light-angle)) * var(--melt-cast))
+      calc(var(--melt-height) * tan(var(--melt-light-size)))
+      color-mix(
+        in oklab,
+        var(--melt-shadow) calc((1 - var(--melt-light-ambient)) * 100%),
+        transparent
+      ),
+    0 0 calc(1px + var(--melt-height))
+      color-mix(in oklab, var(--melt-shadow) calc(var(--melt-light-ambient) * 100%), transparent)
   );
 }
 

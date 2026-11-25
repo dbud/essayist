@@ -28,6 +28,7 @@ const RESOLVE_INPUTS = [
   "u_effects",
   "u_shadowColor",
   "u_shadowBlur",
+  "u_ambientColor",
   "u_fill",
 ] as const;
 
@@ -184,6 +185,7 @@ export function createMultiPassRenderer(
       gl.uniform1f(at("u_rimHighlight"), frame.rimHighlight);
       gl.uniform1f(at("u_rimShine"), frame.rimShine);
       gl.uniform1f(at("u_rimSheen"), frame.rimSheen);
+      gl.uniform1f(at("u_grain"), frame.grain);
       gl.uniform4f(at("u_rect"), group.left, group.top, group.right, group.bottom);
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
       // The next group draws into these targets, which mustn't stay bound for reading.

@@ -1,7 +1,9 @@
 import { expect, test } from "vitest";
 
 import {
+  castShadow,
   DEFAULT_SETTINGS,
+  FIELD_REACH,
   layoutFrame,
   MAX_SHAPES,
   type MeasuredShape,
@@ -17,9 +19,7 @@ const NO_EFFECTS = {
   shade: [0, 0, 0, 0],
   glow: 0,
   shadow: [0, 0, 0, 0],
-  shadowX: 0,
-  shadowY: 0,
-  shadowBlur: 0,
+  height: 0,
 } as const;
 
 const shape = (fields: Partial<MeasuredShape> = {}): MeasuredShape => ({
@@ -60,6 +60,10 @@ test("unset settings fall back to the defaults", () => {
     rimHighlight: Number.NaN,
     rimShine: Number.NaN,
     rimSheen: Number.NaN,
+    lightSize: Number.NaN,
+    shadowTint: Number.NaN,
+    lightAmbient: Number.NaN,
+    grain: Number.NaN,
   };
   expect(resolveSettings(unset)).toEqual({
     ...DEFAULT_SETTINGS,
@@ -80,14 +84,53 @@ test("the frame spans the shapes and three sigma around them", () => {
 });
 
 test("the frame reaches past a shape for its shadow", () => {
-  const effects = { ...NO_EFFECTS, shadowY: 8, shadowBlur: 12 };
-  // The shadow reaches 8 + 3 * 6 = 26 past the shape, further than the field at 3 * 5.
-  expect(layoutFrame(measurement([shape({ effects })]))).toMatchObject({
-    left: 74,
-    top: 74,
-    width: 92,
-    height: 72,
-  });
+  const effects = { ...NO_EFFECTS, shadow: [0, 0, 0, 0.3], height: 8 } as const;
+  // With the light at 45deg, straight up and 45deg wide, the key shadow falls 8 down with a blur of
+  // 8, which the tight estimate widens by sigma. It reaches further than the ambient shadow.
+  const margin = 8 + FIELD_REACH * Math.hypot(5, 8);
+  const frame = layoutFrame(measurement([shape({ effects })]));
+  expect(frame?.left).toBeCloseTo(100 - margin);
+  expect(frame?.top).toBeCloseTo(100 - margin);
+  expect(frame?.width).toBeCloseTo(40 + 2 * margin);
+  expect(frame?.height).toBeCloseTo(20 + 2 * margin);
+});
+
+test("the key shadow falls away from the light, further and softer the higher the shape", () => {
+  const settings = { ...DEFAULT_SETTINGS, lightAngle: -90, lightElevation: 45, lightSize: 45 };
+  // The light is to the left, so the key shadow falls to the right.
+  const low = castShadow(2, 10, settings);
+  expect(low.x).toBeCloseTo(2);
+  expect(low.y).toBeCloseTo(0);
+  expect(low.blur).toBeCloseTo(2);
+  const high = castShadow(8, 10, settings);
+  expect(high.x).toBeCloseTo(8);
+  expect(high.blur).toBeCloseTo(8);
+});
+
+test("the ambient shadow stays under the shape, and both fade as it rises", () => {
+  const settings = { ...DEFAULT_SETTINGS, lightAmbient: 0.6 };
+  const flat = castShadow(0, 10, settings);
+  // On the page, the light is split between the shadows, and the ambient one is tight.
+  expect(flat.ambient).toBeCloseTo(0.6);
+  expect(flat.key).toBeCloseTo(0.4);
+  expect(flat.ambientBlur).toBe(1);
+  // Risen as high as the shape is wide, each is half as dark, and the ambient one is wider.
+  const risen = castShadow(10, 10, settings);
+  expect(risen.ambient).toBeCloseTo(0.3);
+  expect(risen.key).toBeCloseTo(0.2);
+  expect(risen.ambientBlur).toBe(11);
+});
+
+test("the ambient shadow reaches at least half as far as the penumbra of the key shadow", () => {
+  const cast = castShadow(4, 10, { ...DEFAULT_SETTINGS, lightSize: 80 });
+  expect(cast.ambientBlur).toBeCloseTo(cast.blur / 2);
+});
+
+test("a lower light casts a longer shadow", () => {
+  const at = (lightElevation: number) =>
+    castShadow(4, 10, { ...DEFAULT_SETTINGS, lightAngle: 0, lightElevation }).y;
+  expect(at(20)).toBeGreaterThan(at(45));
+  expect(at(45)).toBeCloseTo(4);
 });
 
 test("a shape scaled by a transform has its radius scaled too", () => {
@@ -127,10 +170,9 @@ test("the opacity of a shape goes into the alpha of its colour and of its effect
     rim: [1, 1, 1, 0.2],
     shade: [0, 0, 0, 0],
     glow: 0.1,
-    shadow: [0, 0, 0, 0.3],
-    shadowX: 0,
-    shadowY: 0,
-    shadowBlur: 0,
+    // The default tint mixes in a quarter of the darkened red.
+    shadow: [0.125, 0, 0, 0.3],
+    height: 0,
   });
 });
 
@@ -149,4 +191,11 @@ test("hidden, transparent and empty shapes are left out", () => {
 
 test("a frame with nothing to draw is null", () => {
   expect(layoutFrame(measurement([shape({ visible: false })]))).toBeNull();
+});
+
+test("a grid snaps the edges of the frame outwards and keeps the shapes in place", () => {
+  // The field of sigma 5 reaches 15 past the box at 100 to 140 by 100 to 120.
+  const frame = layoutFrame(measurement([shape()], 5), 8);
+  expect(frame).toMatchObject({ left: 80, top: 80, width: 80, height: 56 });
+  expect(frame?.shapes[0]).toMatchObject({ x: 40, y: 30 });
 });

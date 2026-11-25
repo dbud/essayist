@@ -45,13 +45,13 @@ toggle knob are spans for that reason.
 Each effect is a registered property on the shape, so it transitions and reacts to `:hover` like the
 fill. Along a melted edge, each effect is the average of the shapes nearby.
 
-| Utility                                  | What it draws                                        |
-| ---------------------------------------- | ---------------------------------------------------- |
-| `melt-stroke-<colour>`                   | A line just inside the edge (`--melt-stroke-width`)  |
-| `melt-rim-<colour>`                      | A light line on the edges facing the light           |
-| `melt-shade-<colour>`                    | A soft band on the edges facing away from the light  |
-| `melt-glow-<n>`                          | A halo outside the edge, in the colour of the shapes |
-| `melt-shadow`, `melt-shadow-sm`, `-none` | A drop shadow; touching shapes cast a single shadow  |
+| Utility                                               | What it draws                                                          |
+| ----------------------------------------------------- | ---------------------------------------------------------------------- |
+| `melt-stroke-<colour>`                                | A line just inside the edge (`--melt-stroke-width`)                    |
+| `melt-rim-<colour>`                                   | A light line on the edges facing the light                             |
+| `melt-shade-<colour>`                                 | A soft band on the edges facing away from the light                    |
+| `melt-glow-<n>`                                       | A halo outside the edge, in the colour of the shapes                   |
+| `melt-shadow-flat`, `melt-shadow`, `-lifted`, `-none` | A shadow at one of three heights; touching shapes cast a single shadow |
 
 The colour utilities take a theme colour (`melt-rim-white`), a theme colour with an opacity (`melt-
 rim-white/50`), `transparent`, or any colour in brackets. `melt-glow-30` is a glow at 30%.
@@ -69,6 +69,23 @@ rim-white/50`), `transparent`, or any colour in brackets. `melt-glow-30` is a gl
   tight spot (`--melt-rim-highlight`, 1, its size set by `--melt-rim-shine`, 12, higher is smaller).
   Both fade round the edges that face away from the light. The shade darkens where the edge turns
   away from the light.
+- A shape floats `--melt-height` above the page and casts two shadows in `--melt-shadow`. The shadow
+  utilities set both from `--melt-shadow-color` and from `--melt-height-flat`, `--melt-height-rest`
+  and `--melt-height-lifted`, which the page sets on `:root` in `aq.css`. `--melt-light-ambient`
+  (0.6) is the share of the light that comes from all around: it casts the ambient shadow, a crease
+  along the outline, darkest at it and falling fastest there, gone a pixel out on the page, about
+  the height out as the shape rises, and never sooner than halfway across the penumbra of the key
+  shadow, so the two blend. The rest casts the key shadow away from the light, further the lower the
+  light is, with a penumbra that eases in from the full shadow and out to the page, as wide as twice
+  the height times the tangent of `--melt-light-size` (45deg), and nothing past it. Both fade as the
+  shape rises above its own size. `--melt-shadow-tint` mixes the darkened colour of the shape into
+  its shadow (0.25). The box shadow without the canvas follows the same light.
+- Shadows take away a share of the light, so they are turned into the sRGB value of the light left
+  on a white page before they are drawn: dark right at the edge with a long, faint tail, rather than
+  the dark body with an edge that blending in sRGB gives.
+- Every pixel of the canvas gets noise of a level up and down, so soft gradients don't band, and
+  `--melt-grain` varies how much light each pixel of a shadow takes by that share (0), so shadows
+  read as falling on paper. The shapes stay smooth.
 - All of these are set on `:root` in `aq.css`, and a root can override them.
 - `--melt-sigma`, `--melt-gain` and `--melt-bias` on a root tune the melt itself: how far shapes
   reach to merge (6px), and how sharp the outline is (18 and -6).
@@ -119,8 +136,9 @@ reach, scissored):
 
    - pass A, four targets: the field weighted by colour, and the rim, shade and stroke colours
      weighted by it.
-   - pass B, three targets: the stroke width and glow weighted by the field, the two shadow fields
-     (tight and soft), the shadow colours, and the shadow blur.
+   - pass B, four targets: the stroke width and glow weighted by the field, the key shadow field,
+     the key shadow colours, the key shadow blur with the ambient shadow field and blur, and the
+     ambient shadow colours.
 
    Four targets is the most WebGL2 guarantees in one pass, so the values take two passes. Each group
    clears its area of the targets with a margin, as the next pass reads past its edge.

@@ -23,6 +23,15 @@ export interface MeltSettings {
   readonly rimShine: number;
   /** How bright the broad glow round the light is. */
   readonly rimSheen: number;
+  /** How wide the light is, as the angle from its centre to its edge, in degrees: a wider light
+      casts a wider penumbra for the same height. */
+  readonly lightSize: number;
+  /** How much of the colour of a shape its shadow takes, from 0 to 1. */
+  readonly shadowTint: number;
+  /** The share of the light that comes from all around rather than from the light, from 0 to 1. */
+  readonly lightAmbient: number;
+  /** How strong the grain in the shadows is, as a share of how dark they are. */
+  readonly grain: number;
 }
 
 export const DEFAULT_SETTINGS: MeltSettings = {
@@ -35,7 +44,67 @@ export const DEFAULT_SETTINGS: MeltSettings = {
   rimHighlight: 1,
   rimShine: 12,
   rimSheen: 0.5,
+  lightSize: 45,
+  shadowTint: 0.25,
+  lightAmbient: 0.6,
+  grain: 0,
 };
+
+/** Where a shape casts its shadows on the page, in CSS pixels where y points down. How dark each
+    is goes against the opacity of the shadow colour, from 0 to 1. */
+export interface CastShadow {
+  /** The offset of the key shadow, which the light casts away from itself. */
+  readonly x: number;
+  readonly y: number;
+  /** Half the width of the penumbra of the key shadow. */
+  readonly blur: number;
+  readonly key: number;
+  /** How far the ambient shadow reaches past the outline. The light from all around casts it as a
+      crease along the outline, darkest at it. */
+  readonly ambientBlur: number;
+  readonly ambient: number;
+}
+
+// How far the ambient shadow of a shape on the page reaches past its outline, in CSS pixels. It
+// reaches further by the height as the shape rises.
+const AMBIENT_BLUR = 1;
+// The lowest light, in degrees, so a light on the page doesn't cast an endless shadow.
+const MIN_ELEVATION = 5;
+// How dark the colour of a shape is in its shadow, from 0 to 1.
+const TINT_DEPTH = 0.5;
+
+/** The shadows a shape of a size, the smaller half of its width and height, casts from its height
+    above the page. Most light comes from all around, so the ambient shadow stays under the shape,
+    tight and dark on the page and wider as it rises; the rest comes from the light, whose key
+    shadow falls away from it, further the lower it is, and blurs with the height and the size of
+    the light. Both fade as the shape rises and blocks less of the light. */
+export function castShadow(height: number, size: number, settings: MeltSettings): CastShadow {
+  const radians = (degrees: number) => (degrees * Math.PI) / 180;
+  const lift = Math.max(height, 0);
+  const angle = radians(settings.lightAngle);
+  const length = lift / Math.tan(radians(Math.max(settings.lightElevation, MIN_ELEVATION)));
+  const x = -Math.sin(angle) * length;
+  const y = Math.cos(angle) * length;
+  const span = Math.max(size, 1);
+  const fade = (span * span) / (span * span + lift * lift);
+  const ambient = Math.min(Math.max(settings.lightAmbient, 0), 1);
+  const blur = lift * Math.tan(radians(Math.min(Math.max(settings.lightSize, 0), 89)));
+  return {
+    x,
+    y,
+    blur,
+    key: (1 - ambient) * fade,
+    // At least half the key penumbra, so the crease blends into it instead of ending inside it.
+    ambientBlur: Math.max(AMBIENT_BLUR + lift, blur / 2),
+    ambient: ambient * fade,
+  };
+}
+
+/** The shadow colour, mixed with the darkened colour of the shape by the tint. */
+export function tintShadow(shadow: Rgba, fill: Rgba, tint: number): Rgba {
+  const mix = (from: number, to: number) => from + (to * TINT_DEPTH - from) * tint;
+  return [mix(shadow[0], fill[0]), mix(shadow[1], fill[1]), mix(shadow[2], fill[2]), shadow[3]];
+}
 
 /** The effects of a shape along the melted edge. */
 export interface MeltEffects {
@@ -49,11 +118,10 @@ export interface MeltEffects {
   readonly shade: Rgba;
   /** The opacity of a halo outside the edge, in the colour of the shapes nearby. */
   readonly glow: number;
-  /** A shadow like the CSS drop-shadow, with lengths in CSS pixels. */
+  /** The colour of the shadow, which castShadow places on the page from the height. */
   readonly shadow: Rgba;
-  readonly shadowX: number;
-  readonly shadowY: number;
-  readonly shadowBlur: number;
+  /** How high the shape floats above the page, in CSS pixels. */
+  readonly height: number;
 }
 
 export interface MeasuredShape {
@@ -88,8 +156,10 @@ export interface MeltShape {
   readonly radius: number;
   /** With the opacity of the element and of its ancestors in the alpha. */
   readonly color: Rgba;
-  /** With the same opacity in the alpha of the stroke, the rim and the glow. */
+  /** With the same opacity in the alpha of the stroke, the rim and the glow, and the shadow
+      tinted. */
   readonly effects: MeltEffects;
+  readonly cast: CastShadow;
   /** As in MeasuredShape. */
   readonly group: number;
 }
@@ -123,11 +193,31 @@ export function resolveSettings(settings: MeltSettings): MeltSettings {
     rimHighlight: pick("rimHighlight"),
     rimShine: pick("rimShine"),
     rimSheen: pick("rimSheen"),
+    lightSize: pick("lightSize"),
+    shadowTint: pick("shadowTint"),
+    lightAmbient: pick("lightAmbient"),
+    grain: pick("grain"),
   };
 }
 
-/** Lays out the visible shapes of a measurement, or returns null when there are none. */
-export function layoutFrame(measurement: Measurement): MeltFrame | null {
+/** The smaller half of the width and the height of a box. */
+function sizeOf(box: Box): number {
+  return Math.min(box.width, box.height) / 2;
+}
+
+/** How far past its box a shape draws, in CSS pixels: its field, or its key or ambient shadow. */
+function marginOf({ effects, rect }: MeasuredShape, settings: MeltSettings): number {
+  const field = settings.sigma * FIELD_REACH;
+  if (effects.shadow[3] <= 0) return field;
+  const cast = castShadow(effects.height, sizeOf(rect), settings);
+  const key = Math.hypot(cast.x, cast.y) + FIELD_REACH * Math.hypot(settings.sigma, cast.blur);
+  const ambient = FIELD_REACH * Math.hypot(settings.sigma, cast.ambientBlur);
+  return Math.max(field, key, ambient);
+}
+
+/** Lays out the visible shapes of a measurement, or returns null when there are none. With a grid,
+    in CSS pixels, the edges of the frame snap outwards to multiples of it. */
+export function layoutFrame(measurement: Measurement, grid = 0): MeltFrame | null {
   const settings = resolveSettings(measurement.settings);
 
   const visible = measurement.shapes
@@ -144,21 +234,18 @@ export function layoutFrame(measurement: Measurement): MeltFrame | null {
   const drawn = visible.slice(0, MAX_SHAPES).map(({ shape }) => shape);
   const leftOut = visible.slice(MAX_SHAPES).map(({ index }) => index);
 
-  // The frame covers the field of each shape and its shadow, whichever reaches further. A blur of b
-  // is a Gaussian of width b / 2, as in CSS.
-  const margin = ({ effects }: MeasuredShape) =>
-    Math.max(
-      settings.sigma * FIELD_REACH,
-      Math.max(Math.abs(effects.shadowX), Math.abs(effects.shadowY)) +
-        (effects.shadowBlur / 2) * FIELD_REACH,
-    );
-  const left = Math.min(...drawn.map((shape) => shape.rect.left - margin(shape)));
-  const top = Math.min(...drawn.map((shape) => shape.rect.top - margin(shape)));
-  const right = Math.max(
-    ...drawn.map((shape) => shape.rect.left + shape.rect.width + margin(shape)),
+  const margin = (shape: MeasuredShape) => marginOf(shape, settings);
+  const snap = (value: number, round: (value: number) => number) =>
+    grid > 0 ? round(value / grid) * grid : value;
+  const left = snap(Math.min(...drawn.map((shape) => shape.rect.left - margin(shape))), Math.floor);
+  const top = snap(Math.min(...drawn.map((shape) => shape.rect.top - margin(shape))), Math.floor);
+  const right = snap(
+    Math.max(...drawn.map((shape) => shape.rect.left + shape.rect.width + margin(shape))),
+    Math.ceil,
   );
-  const bottom = Math.max(
-    ...drawn.map((shape) => shape.rect.top + shape.rect.height + margin(shape)),
+  const bottom = snap(
+    Math.max(...drawn.map((shape) => shape.rect.top + shape.rect.height + margin(shape))),
+    Math.ceil,
   );
 
   const shapes = drawn.map((shape): MeltShape => {
@@ -182,16 +269,14 @@ export function layoutFrame(measurement: Measurement): MeltFrame | null {
         rim: [effects.rim[0], effects.rim[1], effects.rim[2], effects.rim[3] * opacity],
         shade: [effects.shade[0], effects.shade[1], effects.shade[2], effects.shade[3] * opacity],
         glow: effects.glow * opacity,
-        shadow: [
-          effects.shadow[0],
-          effects.shadow[1],
-          effects.shadow[2],
-          effects.shadow[3] * opacity,
-        ],
-        shadowX: effects.shadowX,
-        shadowY: effects.shadowY,
-        shadowBlur: effects.shadowBlur,
+        shadow: tintShadow(
+          [effects.shadow[0], effects.shadow[1], effects.shadow[2], effects.shadow[3] * opacity],
+          fill,
+          settings.shadowTint,
+        ),
+        height: effects.height,
       },
+      cast: castShadow(effects.height, sizeOf(rect), settings),
       group: shape.group,
     };
   });

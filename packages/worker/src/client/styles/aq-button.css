@@ -49,12 +49,12 @@
     --melt-rim calc(200ms * var(--aq-tempo, 1)) var(--aq-btn-ease),
     --melt-shade calc(200ms * var(--aq-tempo, 1)) var(--aq-btn-ease),
     --melt-shadow calc(200ms * var(--aq-tempo, 1)) var(--aq-btn-ease),
-    --melt-shadow-y calc(200ms * var(--aq-tempo, 1)) var(--aq-btn-ease),
-    --melt-shadow-blur calc(200ms * var(--aq-tempo, 1)) var(--aq-btn-ease),
+    --melt-height calc(200ms * var(--aq-tempo, 1)) var(--aq-btn-ease),
     color calc(200ms * var(--aq-tempo, 1)) var(--aq-btn-ease),
     --aq-btn-lifted calc(240ms * var(--aq-tempo, 1)) var(--aq-btn-ease);
 
   &:hover {
+    @apply melt-shadow-lifted;
     --btn-bg: var(--btn-bg-hover);
     --btn-ink: var(--btn-ink-hover);
   }
@@ -116,7 +116,7 @@
   --btn-ink-hover: var(--aq-btn-idle-ink-hover);
 
   &:not(:hover, [aria-expanded="true"]) {
-    @apply melt-shadow-none melt-shade-black/5;
+    @apply melt-shadow-flat melt-shade-black/5;
     --melt-rim: var(--aq-rim-secondary);
   }
 }

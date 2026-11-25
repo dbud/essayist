@@ -9,7 +9,7 @@ export function fieldSize(width: number, height: number, scale: number): [number
 
 /** The textures each pass draws into, as in the README. */
 const FIELD_A_TARGETS = 4;
-const FIELD_B_TARGETS = 3;
+const FIELD_B_TARGETS = 4;
 
 export type FloatSupport = "EXT_color_buffer_float" | "EXT_color_buffer_half_float";
 

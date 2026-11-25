@@ -8,6 +8,10 @@ import { packFrame } from "./pack.ts";
 import { timed } from "./stats.ts";
 
 const LEFT_OUT = "data-melt-left-out";
+// The step in device pixels that the edges of the frame snap to. While a shadow grows, the canvas
+// then moves only in whole steps, so its pixels, the grain on them and the coarser field grid stay
+// put on the page. It holds a whole number of field texels at a field scale of 1, 1/2 or 1/4.
+const FRAME_GRID = 16;
 
 /** Draws the melt of a group root on a canvas behind its content, and returns a function to stop.
     While the canvas draws, the root has the data-melt-drawn attribute, which turns off the
@@ -74,14 +78,14 @@ export function attachMelt(
       const motionNow = timed("animations", () => readMotion(root, withShapes));
       moving = motionNow.moving;
       const measurement = measure(root, nodes, styleOf(motionNow.restyled));
-      const frame = timed("layout", () => layoutFrame(measurement));
+      const ratio = pixelRatio ?? devicePixelRatio;
+      const frame = timed("layout", () => layoutFrame(measurement, FRAME_GRID / ratio));
       markLeftOut(frame?.leftOut ?? []);
       if (frame === null) {
         canvas.hidden = true;
         return;
       }
       timed("draw", () => {
-        const ratio = pixelRatio ?? devicePixelRatio;
         const packed = packFrame(frame, ratio, { debug, fieldScale });
         placeCanvas(canvas, frame, packed, ratio);
         drawn(context.render(packed, target));

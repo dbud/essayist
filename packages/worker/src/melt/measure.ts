@@ -25,9 +25,7 @@ export function readShapeStyle(element: Element): ShapeStyle {
       shade: parseColor(style.getPropertyValue("--melt-shade")),
       glow: parseFloat(style.getPropertyValue("--melt-glow")) || 0,
       shadow: parseColor(style.getPropertyValue("--melt-shadow")),
-      shadowX: parseFloat(style.getPropertyValue("--melt-shadow-x")) || 0,
-      shadowY: parseFloat(style.getPropertyValue("--melt-shadow-y")) || 0,
-      shadowBlur: parseFloat(style.getPropertyValue("--melt-shadow-blur")) || 0,
+      height: parseFloat(style.getPropertyValue("--melt-height")) || 0,
     },
     visible: style.visibility !== "hidden",
   };
@@ -99,6 +97,10 @@ export function measure(
       rimHighlight: setting("rim-highlight"),
       rimShine: setting("rim-shine"),
       rimSheen: setting("rim-sheen"),
+      lightSize: setting("light-size"),
+      shadowTint: setting("shadow-tint"),
+      lightAmbient: setting("light-ambient"),
+      grain: setting("grain"),
     },
     shapes,
   };

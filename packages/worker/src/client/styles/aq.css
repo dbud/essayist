@@ -6,6 +6,14 @@
   --melt-rim-highlight: 4;
   --melt-rim-shine: 10;
   --melt-rim-sheen: 0.5;
+  --melt-light-size: 75deg;
+  --melt-shadow-tint: 0.5;
+  --melt-grain: 0.1;
+  --melt-light-ambient: 0.3;
+  --melt-shadow-color: rgb(0 0 0 / 0.9);
+  --melt-height-flat: 0.1px;
+  --melt-height-rest: 0.8px;
+  --melt-height-lifted: 2.8px;
   --aq-rim-primary: color-mix(in oklab, white 60%, transparent);
   --aq-rim-secondary: color-mix(in oklab, var(--color-stroke) 20%, transparent);
 }

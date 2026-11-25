@@ -12,6 +12,7 @@ uniform highp sampler2D u_stroke;
 uniform highp sampler2D u_effects;
 uniform highp sampler2D u_shadowColor;
 uniform highp sampler2D u_shadowBlur;
+uniform highp sampler2D u_ambientColor;
 // The fill pass, at the resolution of the canvas.
 uniform highp sampler2D u_fill;
 // The allocated size of the field targets, and how many of their pixels a device pixel spans in x
@@ -32,7 +33,13 @@ uniform float u_rimHighlight;
 uniform float u_rimShine;
 // How bright the broad glow round the light is.
 uniform float u_rimSheen;
+// How strong the grain in the shadows is, as a share of how dark they are.
+uniform float u_grain;
 
+const float PI = 3.14159265;
+const float SQRT2 = 1.41421356;
+// The constant of Winitzki's approximation of the inverse error function.
+const float ERFINV_A = 0.147;
 // The steps of the search for the outline.
 const int OUTLINE_STEPS = 6;
 // How broad the glow round the light is, as a shine.
@@ -68,6 +75,41 @@ float outlineDistance(vec2 at, float here, vec2 direction, float edgeField, floa
   return 0.5 * (near + far);
 }
 
+// The inverse of the cumulative normal distribution, from Winitzki's approximation of the inverse
+// error function. The field of a blurred straight edge is that distribution, so this turns a field
+// back into a distance, in units of its blur.
+float probit(float field) {
+  float x = 2.0 * clamp(field, 1e-4, 1.0 - 1e-4) - 1.0;
+  float l = log(1.0 - x * x);
+  float a = 2.0 / (PI * ERFINV_A) + 0.5 * l;
+  return SQRT2 * sign(x) * sqrt(sqrt(a * a - l / ERFINV_A) - a);
+}
+
+// The sRGB value of an amount of light from 0 to 1.
+float srgb(float light) {
+  return light <= 0.0031308 ? 12.92 * light : 1.055 * pow(light, 1.0 / 2.4) - 0.055;
+}
+
+// A number from 0 to 1 that looks random, the same for a pixel and a seed on every frame and GPU.
+float random(uvec2 pixel, uint seed) {
+  uint h = pixel.x * 1664525u + pixel.y * 1013904223u + seed * 2654435769u;
+  h ^= h >> 16;
+  h *= 2246822519u;
+  h ^= h >> 13;
+  h *= 3266489917u;
+  h ^= h >> 16;
+  return float(h) / 4294967295.0;
+}
+
+// How much of a light an edge hides, from t = -1, where all of it shows, to t = 1, where it is
+// gone. A light with a hard rim would start and stop the fade abruptly, which shows as a crease
+// where the penumbra meets the full shadow; real lights soften at their rim, so the fade eases in
+// and out.
+float penumbra(float t) {
+  float u = clamp(0.5 * (t + 1.0), 0.0, 1.0);
+  return u * u * u * (u * (u * 6.0 - 15.0) + 10.0);
+}
+
 void main() {
   // The field targets and the canvas both count from the bottom left, so a pixel of the canvas maps
   // to the field by its scale. A device pixel apart in x and y, for the slopes.
@@ -82,9 +124,12 @@ void main() {
   vec4 effectsAndShadow = texture(u_effects, at);
   vec2 effects = effectsAndShadow.xy;
   float shadowField = effectsAndShadow.z;
-  float shadowBox = effectsAndShadow.w;
   vec4 shadowColors = texture(u_shadowColor, at);
-  float shadowSigmas = texture(u_shadowBlur, at).x;
+  vec4 shadowBlurs = texture(u_shadowBlur, at);
+  float shadowSigmas = shadowBlurs.x;
+  float ambientField = shadowBlurs.y;
+  float ambientSigmas = shadowBlurs.z;
+  vec4 ambientColors = texture(u_ambientColor, at);
   vec4 shapes = texelFetch(u_fill, ivec2(gl_FragCoord.xy), 0);
 
   // The opacity of the outline rises from 0 to 1 as the total field goes from -bias / gain to
@@ -155,20 +200,51 @@ void main() {
   float glow = glowStrength * clamp(field.a / edgeField, 0.0, 1.0);
   groupColor += vec4(average * glow, glow) * (1.0 - groupColor.a);
 
-  // The shadow sits under the group and its glow. The tight estimate blurs across the edge of the
-  // shifted outline; the soft one takes over as the blur grows past the melt.
-  vec2 shadowGradient = 0.5 * vec2(
-    texture(u_effects, at + dx).z - texture(u_effects, at - dx).z,
-    texture(u_effects, at + dy).z - texture(u_effects, at - dy).z
-  );
-  float shadowSlope = max(length(shadowGradient), 1e-6);
-  float shadowInside = (shadowField - edgeField) / shadowSlope;
-  float shadowBlur = shadowField > 0.0 ? shadowSigmas / shadowField : HALF_PIXEL;
-  float tight = 0.5 + 0.5 * erf(shadowInside * INV_SQRT2 / shadowBlur);
-  float soft = min(shadowBox, 1.0);
-  float shadowCover = mix(tight, soft, smoothstep(0.25 * u_sigma, 0.75 * u_sigma, shadowBlur));
-  vec4 shadow = shadowField > 0.0 ? shadowColors / shadowField * shadowCover : vec4(0.0);
-  groupColor += shadow * (1.0 - groupColor.a);
+  // The shadows sit under the group and its glow. Each field is the shifted shape blurred by sigma
+  // and the blur of its shadow, so along a straight edge its probit gives how far inside the
+  // shifted outline a pixel is, wherever it is, unlike the slope of the field.
+  float outlineDepth = u_sigma * probit(edgeField);
+
+  // The key shadow fades across a penumbra as wide as twice its blur, as an edge hides more and
+  // more of the light: dark inside it and clear past it, with no haze beyond.
+  float keyBlur = shadowField > 0.0 ? shadowSigmas / shadowField : HALF_PIXEL;
+  float keyInside =
+    sqrt(u_sigma * u_sigma + keyBlur * keyBlur) * probit(shadowField) - outlineDepth;
+  float keyCover = penumbra(keyInside / keyBlur);
+  vec4 shadow = shadowField > 0.0 ? shadowColors / shadowField * keyCover : vec4(0.0);
+
+  // The ambient shadow is a crease along the outline: darkest at it and gone as far out as its
+  // blur, falling off steeply.
+  float ambientBlur = ambientField > 0.0 ? ambientSigmas / ambientField : HALF_PIXEL;
+  float ambientInside =
+    sqrt(u_sigma * u_sigma + ambientBlur * ambientBlur) * probit(ambientField) - outlineDepth;
+  float ambientFade = 1.0 - clamp(-ambientInside / ambientBlur, 0.0, 1.0);
+  float ambientCover = ambientFade * ambientFade;
+  vec4 ambient = ambientField > 0.0 ? ambientColors / ambientField * ambientCover : vec4(0.0);
+
+  // The two shadows take light away from the page together, each from what the other lets through.
+  // A shadow takes away a share of the light, but the page and the canvas blend stored sRGB values,
+  // which hold brightness on a curve. So the shadow becomes the sRGB value of the light left on a
+  // white page, and the colour of the tint the sRGB value of the light it adds back.
+  vec4 occlusion = shadow + ambient * (1.0 - shadow.a);
+  // Grain makes each pixel of the shadow take a little more or less light, in proportion to the
+  // shadow, so it fades out with it and leaves the shapes and the bare page smooth.
+  uvec2 pixel = uvec2(gl_FragCoord.xy);
+  float grain = (random(pixel, 2u) + random(pixel, 3u) - 1.0) * u_grain;
+  occlusion *= clamp(1.0 + grain, 0.0, 1.0 / max(occlusion.a, 1e-6));
+  float lightLeft = 1.0 - occlusion.a;
+  float darkened = srgb(lightLeft);
+  vec3 tinted = vec3(
+    srgb(lightLeft + occlusion.r),
+    srgb(lightLeft + occlusion.g),
+    srgb(lightLeft + occlusion.b)
+  ) - darkened;
+  groupColor += vec4(tinted, 1.0 - darkened) * (1.0 - groupColor.a);
+
+  // Noise of a level up and down, so soft gradients don't band. It scales with the opacity, which
+  // keeps the colour premultiplied.
+  float dither = (random(pixel, 0u) + random(pixel, 1u) - 1.0) / 255.0;
+  groupColor.rgb = clamp(groupColor.rgb + dither * groupColor.a, 0.0, groupColor.a);
 
   outColor = groupColor;
 }
