@@ -46,7 +46,7 @@
   @apply cell;
   @apply cursor-pointer;
 
-  &:hover:where(:not(.dropdown-open, .is-selected)) {
+  &:hover:where(:not(.is-selected)) {
     --btn-bg: var(--btn-bg-hover);
   }
   &:focus-visible {
@@ -72,37 +72,4 @@
   --btn-bg: var(--color-ink);
   --btn-bg-hover: color-mix(in oklch, var(--color-ink), var(--color-opposite) 30%);
   color: var(--color-surface);
-}
-
-@utility btn--ghost {
-  @apply cell--base;
-  @apply cursor-pointer;
-  --btn-bg: transparent;
-  --btn-bg-hover: transparent;
-  background: transparent;
-  color: inherit;
-
-  &:not(:disabled) {
-    text-decoration: underline 1px solid color-mix(in oklch, transparent 40%, currentColor);
-    text-underline-offset: 0.2rem;
-  }
-  &:hover {
-    color: var(--color-accent);
-  }
-
-  &.is-selected {
-    @apply text-accent font-medium;
-    text-decoration: none;
-  }
-}
-
-@layer base {
-  kbd {
-    @apply inline-block rounded-xs border border-ink pr-1 py-px min-w-5.5 font-sans
-      text-[0.65rem] leading-none shadow-md;
-  }
-
-  kbd + kbd {
-    @apply ml-0.5;
-  }
 }

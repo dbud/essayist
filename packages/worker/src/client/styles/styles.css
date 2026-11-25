@@ -1,14 +1,10 @@
 @import "tailwindcss";
 @import "./fonts.css";
 @import "./badges.css";
-@import "./buttons.css";
 @import "./caret.css";
 @import "./content.css";
-@import "./dialog.css";
-@import "./dropdown.css";
 @import "./floating-toolbar.css";
 @import "./icons.css";
-@import "./input.css";
 @import "./layers.css";
 @import "./aq-button.css";
 @import "./aq.css";
@@ -23,14 +19,13 @@
 @import "./aq-toggle.css";
 @import "./logo.css";
 @import "./marks.css";
-@import "./motion.css";
 @import "./overlay.css";
-@import "./pane.css";
-@import "./slider.css";
 @import "./toast.css";
 @import "./tooltip.css";
 @import "./view-transitions.css";
 @import "./wavebars.css";
+@import "./legacy/legacy.css";
+
 @plugin "@tailwindcss/typography";
 
 :root {
@@ -114,6 +109,15 @@
 
   html[data-serif-font="system"] {
     --font-serif: ui-serif, Georgia, serif;
+  }
+
+  kbd {
+    @apply inline-block rounded-xs border border-ink pr-1 py-px min-w-5.5 font-sans
+      text-[0.65rem] leading-none shadow-md;
+  }
+
+  kbd + kbd {
+    @apply ml-0.5;
   }
 }
 
