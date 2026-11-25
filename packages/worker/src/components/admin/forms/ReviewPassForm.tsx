@@ -10,7 +10,7 @@ import { useAdminModels } from "#/pages/admin/models.ts";
 
 function PromptPreview({ text }: { text?: string }) {
   if (!text) return null;
-  return <div class="cell--data col-span-2 min-w-0">{text}</div>;
+  return <div class="swiss-cell--data col-span-2 min-w-0">{text}</div>;
 }
 
 export function ReviewPassForm({ entity, open }: { entity?: ReviewPass; open: Signal<boolean> }) {

@@ -16,15 +16,15 @@ export function EntityCard({
   children: ComponentChildren;
 }) {
   return (
-    <div class="flex flex-col stack stack--col">
-      <div class="flex stack stack--row shadow-md z-toolbar">
-        <div class="cell min-w-0 flex-1 gap-2">
+    <div class="flex flex-col swiss-stack swiss-stack--col">
+      <div class="flex swiss-stack swiss-stack--row shadow-md z-toolbar">
+        <div class="swiss-cell min-w-0 flex-1 gap-2">
           {title}
           {id && <span class="ml-auto text-ink/40 font-mono">id: {id}</span>}
         </div>
-        <div class="flex shrink-0 stack">{actions}</div>
+        <div class="flex shrink-0 swiss-stack">{actions}</div>
       </div>
-      <div class="grid grid-cols-[auto_1fr] stack stack--row">{children}</div>
+      <div class="grid grid-cols-[auto_1fr] swiss-stack swiss-stack--row">{children}</div>
     </div>
   );
 }
@@ -42,7 +42,13 @@ export function ActionBtn({
   onClick: () => void;
 }) {
   return (
-    <button type="button" class="btn" data-tooltip={label} disabled={disabled} onClick={onClick}>
+    <button
+      type="button"
+      class="swiss-btn"
+      data-tooltip={label}
+      disabled={disabled}
+      onClick={onClick}
+    >
       <Icon size={14} />
     </button>
   );
@@ -51,8 +57,8 @@ export function ActionBtn({
 /** Accent "New <entity>" trigger wrapped in a ruled row. */
 export function NewButton({ label, onClick }: { label: string; onClick: () => void }) {
   return (
-    <div class="flex stack stack--row">
-      <button type="button" class="btn cell--accent" onClick={onClick}>
+    <div class="flex swiss-stack swiss-stack--row">
+      <button type="button" class="swiss-btn swiss-cell--accent" onClick={onClick}>
         <Plus size={16} />
         {label}
       </button>

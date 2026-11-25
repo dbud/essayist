@@ -71,15 +71,15 @@ export function CategoryForm({ entity, open }: { entity?: Category; open: Signal
     >
       <TextRow label="label" value={label} onInput={setLabel} />
       <TextRow label="severity" value={severity} onInput={setSeverity} />
-      <span class="cell">color</span>
-      <button type="button" class="btn w-full" onClick={() => setColorEnabled((v) => !v)}>
+      <span class="swiss-cell">color</span>
+      <button type="button" class="swiss-btn w-full" onClick={() => setColorEnabled((v) => !v)}>
         <CheckboxIcon selected={colorEnabled} size={15} />
         <span>custom color</span>
       </button>
       {colorEnabled && (
         <>
           <Slider
-            class="cell col-span-2"
+            class="swiss-cell col-span-2"
             label="lightness"
             value={l}
             min={0}
@@ -89,7 +89,7 @@ export function CategoryForm({ entity, open }: { entity?: Category; open: Signal
             format={(v) => `${v}%`}
           />
           <Slider
-            class="cell col-span-2"
+            class="swiss-cell col-span-2"
             label="chroma"
             value={c}
             min={0}
@@ -99,7 +99,7 @@ export function CategoryForm({ entity, open }: { entity?: Category; open: Signal
             format={(v) => v.toFixed(2)}
           />
           <Slider
-            class="cell col-span-2"
+            class="swiss-cell col-span-2"
             label="hue"
             value={h}
             min={0}
@@ -109,8 +109,8 @@ export function CategoryForm({ entity, open }: { entity?: Category; open: Signal
           />
         </>
       )}
-      <span class="cell">preview</span>
-      <div class="cell w-full gap-2">
+      <span class="swiss-cell">preview</span>
+      <div class="swiss-cell w-full gap-2">
         <ColorSwatch color={previewColor} />
         <span class="min-w-0 truncate font-mono text-xs text-ink/60">
           {colorEnabled ? canonical : "fallback"}

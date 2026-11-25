@@ -19,7 +19,7 @@ export default function Tabs<T extends string>({
   class: className,
 }: TabsProps<T>) {
   return (
-    <div class={`flex stack stack--row ${className ?? ""}`} role="tablist">
+    <div class={`flex swiss-stack swiss-stack--row ${className ?? ""}`} role="tablist">
       {items.map((item) => {
         const selected = value === item.value;
         return (
@@ -27,7 +27,7 @@ export default function Tabs<T extends string>({
             key={item.value}
             type="button"
             role="tab"
-            class={`btn ${selected ? "is-selected" : ""}`}
+            class={`swiss-btn ${selected ? "is-selected" : ""}`}
             aria-selected={selected}
             onClick={() => onChange(item.value)}
           >

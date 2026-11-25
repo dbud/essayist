@@ -61,7 +61,7 @@ export default function Dialog({ open, children, aside, onClosed }: DialogProps)
   return (
     <dialog
       ref={ref}
-      class="dialog-backdrop"
+      class="swiss-dialog-backdrop"
       onClose={() => {
         close();
         onClosed?.();

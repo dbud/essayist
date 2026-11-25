@@ -29,10 +29,10 @@ export function TextareaRow({
 
   return (
     <>
-      <span class="cell--data text-ink/60">{label}</span>
+      <span class="swiss-cell--data text-ink/60">{label}</span>
       <textarea
         ref={textareaRef}
-        class="input-text block h-[auto] min-w-0 resize-none whitespace-pre-wrap leading-tight"
+        class="swiss-input-text block h-[auto] min-w-0 resize-none whitespace-pre-wrap leading-tight"
         rows={rows}
         value={value}
         placeholder={placeholder}

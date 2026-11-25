@@ -76,11 +76,11 @@ function SectionHeader({
   /** unit for the red group headers, idle for nodes that made no call. */
   tone?: "ink" | "unit" | "idle";
 }) {
-  const titleClass = `cell min-w-0 flex-1 ${
-    tone === "unit" ? "cell--accent" : tone === "idle" ? "striped" : "cell--ink"
+  const titleClass = `swiss-cell min-w-0 flex-1 ${
+    tone === "unit" ? "swiss-cell--accent" : tone === "idle" ? "striped" : "swiss-cell--ink"
   }`;
   return (
-    <div class="col-span-3 flex stack">
+    <div class="col-span-3 flex swiss-stack">
       <div class={titleClass}>{title}</div>
       {meta}
     </div>
@@ -90,11 +90,11 @@ function SectionHeader({
 function PromptRow({ text }: { text: string }) {
   return (
     <>
-      <div class="cell--data">
+      <div class="swiss-cell--data">
         <Type size={14} />
         prompt
       </div>
-      <div class="cell--data col-span-2 min-w-0 max-h-72 overflow-y-auto break-words">
+      <div class="swiss-cell--data col-span-2 min-w-0 max-h-72 overflow-y-auto break-words">
         <MarkdownView content={text} class="code-wrap min-w-0" />
       </div>
     </>
@@ -104,11 +104,11 @@ function PromptRow({ text }: { text: string }) {
 function ReasoningRow({ text }: { text: string }) {
   return (
     <>
-      <div class="cell--data">
+      <div class="swiss-cell--data">
         <Brain size={14} />
         thinking
       </div>
-      <div class="cell--data col-span-2 min-w-0 max-h-72 overflow-y-auto break-words">
+      <div class="swiss-cell--data col-span-2 min-w-0 max-h-72 overflow-y-auto break-words">
         <MarkdownView content={text} class="code-wrap min-w-0" />
       </div>
     </>
@@ -118,11 +118,11 @@ function ReasoningRow({ text }: { text: string }) {
 function RepairRow({ raw, error }: { raw: string; error: string }) {
   return (
     <>
-      <div class="cell--data">
+      <div class="swiss-cell--data">
         <AlertTriangle size={14} />
         re-asked
       </div>
-      <div class="cell--data col-span-2 min-w-0 max-h-72 overflow-y-auto break-words">
+      <div class="swiss-cell--data col-span-2 min-w-0 max-h-72 overflow-y-auto break-words">
         <div class="flex flex-col gap-2">
           <div class="text-xs text-error">{error}</div>
           <pre class="min-w-0 whitespace-pre-wrap font-mono">{raw}</pre>
@@ -135,11 +135,11 @@ function RepairRow({ raw, error }: { raw: string; error: string }) {
 function RetryRow({ attempt, error }: { attempt: number; error: string }) {
   return (
     <>
-      <div class="cell--data">
+      <div class="swiss-cell--data">
         <RefreshCw size={14} />
         retried
       </div>
-      <div class="cell--data col-span-2 min-w-0 break-words">
+      <div class="swiss-cell--data col-span-2 min-w-0 break-words">
         <div class="flex flex-col gap-1">
           <span class="text-xs text-ink">attempt {attempt} failed</span>
           <div class="text-xs text-error">{error}</div>
@@ -152,11 +152,11 @@ function RetryRow({ attempt, error }: { attempt: number; error: string }) {
 function OutputRow({ output }: { output: unknown }) {
   return (
     <>
-      <div class="cell--data">
+      <div class="swiss-cell--data">
         <ArrowRight size={14} />
         output
       </div>
-      <div class="cell--data col-span-2 min-w-0 max-h-72 overflow-y-auto break-words">
+      <div class="swiss-cell--data col-span-2 min-w-0 max-h-72 overflow-y-auto break-words">
         <pre class="min-w-0 whitespace-pre-wrap font-mono">{pretty(output)}</pre>
       </div>
     </>
@@ -165,7 +165,7 @@ function OutputRow({ output }: { output: unknown }) {
 
 function AttemptRow({ attempt }: { attempt: MarkAttempt }) {
   return (
-    <div class="cell--data col-span-2 min-w-0 max-h-72 overflow-y-auto break-words flex flex-col gap-4">
+    <div class="swiss-cell--data col-span-2 min-w-0 max-h-72 overflow-y-auto break-words flex flex-col gap-4">
       <div class="flex gap-2 items-start">
         <span class={`badge ${attempt.marked ? "badge--success" : "badge--error"} self-start`}>
           {attempt.marked ? "placed" : "failed"}
@@ -182,11 +182,11 @@ function AttemptRow({ attempt }: { attempt: MarkAttempt }) {
 function AppliedRow({ attempts }: { attempts: MarkAttempt[] }) {
   return (
     <>
-      <div class="cell--data">
+      <div class="swiss-cell--data">
         <Wrench size={14} />
         applied
       </div>
-      <div class="col-span-2 min-w-0 flex flex-col stack">
+      <div class="col-span-2 min-w-0 flex flex-col swiss-stack">
         {attempts.map((attempt) => (
           <AttemptRow key={attempt.mark_id ?? attempt.selected_text} attempt={attempt} />
         ))}
@@ -199,11 +199,11 @@ function ModelCallRow({ call }: { call: ModelCallRecord }) {
   const cost = call.usage?.cost;
   return (
     <>
-      <div class="cell--data">
+      <div class="swiss-cell--data">
         <Cpu size={14} />
         model
       </div>
-      <div class="cell--data col-span-2 min-w-0 break-words gap-2">
+      <div class="swiss-cell--data col-span-2 min-w-0 break-words gap-2">
         <span>{call.model}</span>
         <span>{(call.durationMs / 1000).toFixed(1)}s</span>
         <span>{cost !== undefined && cost > 0 && `$${cost.toFixed(4)}`}</span>
@@ -255,7 +255,7 @@ function NodeSection({ node }: { node: TraceNodeView }) {
   // A node that made no model call (source, gate, collect, an idle repair) has no work to show, so
   // it reads as a muted stripe.
   const idle = node.events.every((event) => event.type !== "model_call");
-  const metaCell = `cell shrink-0 ${idle ? "striped" : "cell--ink"}`;
+  const metaCell = `swiss-cell shrink-0 ${idle ? "striped" : "swiss-cell--ink"}`;
   return (
     <>
       <SectionHeader
@@ -291,10 +291,10 @@ function NodeSection({ node }: { node: TraceNodeView }) {
         }
       />
       {node.status === "failed" && node.error && (
-        <div class="cell--data col-span-3 min-w-0 break-words">{node.error}</div>
+        <div class="swiss-cell--data col-span-3 min-w-0 break-words">{node.error}</div>
       )}
       {node.status === "skipped" && node.reason && (
-        <div class="cell--data col-span-3 min-w-0 break-words">{node.reason}</div>
+        <div class="swiss-cell--data col-span-3 min-w-0 break-words">{node.reason}</div>
       )}
       {node.events.map((event, i) => (
         <EventRow key={i} event={event} />
@@ -329,28 +329,28 @@ export default function ReviewTracePage({
   const units = groupUnits(view.nodes);
   return (
     <div class="flex flex-1 min-h-0">
-      <main class="flex flex-1 flex-col stack stack--col min-h-0 @container">
+      <main class="flex flex-1 flex-col swiss-stack swiss-stack--col min-h-0 @container">
         <Navigation user={user}>
-          <div class="flex stack stack--row">
-            <a href={editorHref(run)} class="btn">
+          <div class="flex swiss-stack swiss-stack--row">
+            <a href={editorHref(run)} class="swiss-btn">
               <MoveLeft size={16} />
             </a>
-            <div class="cell">Review trace</div>
+            <div class="swiss-cell">Review trace</div>
           </div>
         </Navigation>
         <div class="z-toolbar flex flex-col bg-surface shadow-md">
           <div class="content-layout">
             <div class="content-main min-w-0">
-              <div class="flex stack stack--row">
-                <div class="cell shrink-0">
+              <div class="flex swiss-stack swiss-stack--row">
+                <div class="swiss-cell shrink-0">
                   <span class="self-start">{statusBadge(run.status)}</span>
                 </div>
-                <div class="cell min-w-0 flex-1 truncate">{run.path}</div>
-                <div class="cell shrink-0">
+                <div class="swiss-cell min-w-0 flex-1 truncate">{run.path}</div>
+                <div class="swiss-cell shrink-0">
                   {new Date(run.startedAt).toLocaleString()}
                   {completedAt && ` (${duration(completedAt - run.startedAt)})`}
                 </div>
-                <div class="cell shrink-0">
+                <div class="swiss-cell shrink-0">
                   <TokenUsage
                     inputTokens={view.totals.inputTokens}
                     outputTokens={view.totals.outputTokens}
@@ -365,9 +365,9 @@ export default function ReviewTracePage({
           <div class="content-layout">
             <div class="content-main min-w-0 py-10">
               {view.nodes.length === 0 && view.orphans.length === 0 ? (
-                <div class="cell--data">No trace events recorded.</div>
+                <div class="swiss-cell--data">No trace events recorded.</div>
               ) : (
-                <div class="grid grid-cols-3 stack stack--col stack--row">
+                <div class="grid grid-cols-3 swiss-stack swiss-stack--col swiss-stack--row">
                   {units.flatMap(({ unit, nodes }) => [
                     unit !== "content" && (
                       <SectionHeader key={`unit-${unit}`} title={unit} tone="unit" />
@@ -375,7 +375,7 @@ export default function ReviewTracePage({
                     ...nodes.map((node) => <NodeSection key={node.nodeId} node={node} />),
                   ])}
                   {view.orphans.map((event) => (
-                    <div class="cell--data col-span-3 min-w-0" key={event.seq}>
+                    <div class="swiss-cell--data col-span-3 min-w-0" key={event.seq}>
                       {pretty(event)}
                     </div>
                   ))}

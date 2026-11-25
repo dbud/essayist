@@ -1,12 +1,12 @@
-@utility stack {
+@utility swiss-stack {
   gap: 1px;
   background: var(--color-stroke);
 }
 
-@utility stack--col {
+@utility swiss-stack--col {
   padding-block: 1px;
 }
 
-@utility stack--row {
+@utility swiss-stack--row {
   padding-inline: 1px;
 }

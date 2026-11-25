@@ -156,7 +156,7 @@ export function CheckboxIcon({ selected, size }: ChoiceIconProps) {
   const width = size ?? useLucideContext().size ?? 24;
   return (
     <svg
-      class={`checkbox-icon${selected ? " is-selected" : ""}`}
+      class={`swiss-checkbox-icon${selected ? " is-selected" : ""}`}
       width={(width * VB_W) / VB_H}
       height={width}
       viewBox={`0 0 ${VB_W} ${VB_H * LINE_HEIGHT}`}
@@ -164,11 +164,11 @@ export function CheckboxIcon({ selected, size }: ChoiceIconProps) {
       stroke="currentColor"
       stroke-width={STROKE}
       aria-hidden="true"
-      style={{ "--knob-travel": `${KNOB_TRAVEL}px` }}
+      style={{ "--swiss-knob-travel": `${KNOB_TRAVEL}px` }}
     >
       <rect x={STROKE / 2} y={STROKE / 2} width={TRACK_W} height={TRACK_H} rx={TRACK_R2} />
       <circle
-        class="checkbox-knob"
+        class="swiss-checkbox-knob"
         cx={TRACK_R2 + STROKE / 2}
         cy={STROKE / 2 + TRACK_H / 2}
         r={KNOB_R1}

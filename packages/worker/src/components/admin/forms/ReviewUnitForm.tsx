@@ -12,7 +12,7 @@ const NONE: Option = { value: "", label: "none" };
 
 function PromptPreview({ text }: { text?: string }) {
   if (!text) return null;
-  return <div class="cell--data col-span-2 min-w-0">{text}</div>;
+  return <div class="swiss-cell--data col-span-2 min-w-0">{text}</div>;
 }
 
 export function ReviewUnitForm({
@@ -181,7 +181,7 @@ export function ReviewUnitForm({
               )
             }
           />
-          <div class="cell col-span-2">
+          <div class="swiss-cell col-span-2">
             <Slider
               class="max-w-72"
               label="repair rounds"

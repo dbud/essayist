@@ -13,8 +13,11 @@ export default function Sidebar({ open, class: className = "", children }: Sideb
   const { clipRef, onTransitionEnd } = usePaneClip(open, "grid-template-columns");
   const state = open ? "is-open" : "is-closed";
   return (
-    <aside class={`pane pane--sidebar ${state} ${className}`} onTransitionEnd={onTransitionEnd}>
-      <div class="pane-clip" ref={clipRef}>
+    <aside
+      class={`swiss-pane swiss-pane--sidebar ${state} ${className}`}
+      onTransitionEnd={onTransitionEnd}
+    >
+      <div class="swiss-pane-clip" ref={clipRef}>
         <div class="h-full overflow-y-auto">{children}</div>
       </div>
     </aside>

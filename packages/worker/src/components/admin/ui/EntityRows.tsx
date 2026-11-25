@@ -4,8 +4,8 @@ import type { ComponentChildren } from "preact";
 export function Field({ label, value }: { label: string; value: ComponentChildren }) {
   return (
     <>
-      <div class="cell--data text-ink/60">{label}</div>
-      <div class="cell--data min-w-0 break-words">{value}</div>
+      <div class="swiss-cell--data text-ink/60">{label}</div>
+      <div class="swiss-cell--data min-w-0 break-words">{value}</div>
     </>
   );
 }
@@ -15,8 +15,8 @@ export function List({ label, items }: { label: string; items: readonly string[]
   if (items.length === 0) return null;
   return (
     <>
-      <div class="cell--data text-ink/60">{label}</div>
-      <div class="cell--data flex-col min-w-0 break-words">
+      <div class="swiss-cell--data text-ink/60">{label}</div>
+      <div class="swiss-cell--data flex-col min-w-0 break-words">
         {items.map((item) => (
           <div>{item}</div>
         ))}

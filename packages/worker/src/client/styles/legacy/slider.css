@@ -1,6 +1,6 @@
-@utility slider {
-  --slider-thumb-size: 0.5rem;
-  --slider-duration: 120ms;
+@utility swiss-slider {
+  --swiss-slider-thumb-size: 0.5rem;
+  --swiss-slider-duration: 120ms;
 
   @apply block cursor-pointer appearance-none select-none;
   height: 0.8rem;
@@ -19,14 +19,14 @@
 
   &::-webkit-slider-thumb {
     @apply appearance-none;
-    width: var(--slider-thumb-size);
-    height: var(--slider-thumb-size);
+    width: var(--swiss-slider-thumb-size);
+    height: var(--swiss-slider-thumb-size);
     /* Center the thumb on the 1px track. */
-    margin-top: calc((1px - var(--slider-thumb-size)) / 2);
+    margin-top: calc((1px - var(--swiss-slider-thumb-size)) / 2);
     border: none;
     border-radius: 0;
     background: var(--color-ink);
-    transition: background-color var(--slider-duration) ease-out;
+    transition: background-color var(--swiss-slider-duration) ease-out;
   }
 
   &:active::-webkit-slider-thumb {
@@ -39,12 +39,12 @@
   }
 
   &::-moz-range-thumb {
-    width: var(--slider-thumb-size);
-    height: var(--slider-thumb-size);
+    width: var(--swiss-slider-thumb-size);
+    height: var(--swiss-slider-thumb-size);
     border: none;
     border-radius: 0;
     background: var(--color-ink);
-    transition: background-color var(--slider-duration) ease-out;
+    transition: background-color var(--swiss-slider-duration) ease-out;
   }
 
   &:active::-moz-range-thumb {

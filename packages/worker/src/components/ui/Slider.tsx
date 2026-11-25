@@ -51,7 +51,7 @@ export default function Slider({
     <label class={`flex w-full gap-2 cursor-pointer${className ? ` ${className}` : ""}`}>
       <span>{label}</span>
       <input
-        class="slider min-w-0 flex-1"
+        class="swiss-slider min-w-0 flex-1"
         type="range"
         min={0}
         max={lastIndex}

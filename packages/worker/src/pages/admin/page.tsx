@@ -9,13 +9,13 @@ function AdminPage() {
 
   return (
     <div class="flex flex-1 min-h-0">
-      <main class="flex flex-1 flex-col stack stack--col min-h-0 @container">
+      <main class="flex flex-1 flex-col swiss-stack swiss-stack--col min-h-0 @container">
         <Navigation user={user}>
-          <div class="flex stack stack--row">
-            <a href="/editor" class="btn">
+          <div class="flex swiss-stack swiss-stack--row">
+            <a href="/editor" class="swiss-btn">
               <MoveLeft size={16} />
             </a>
-            <div class="cell">Control panel</div>
+            <div class="swiss-cell">Control panel</div>
           </div>
         </Navigation>
         <AdminConfig />

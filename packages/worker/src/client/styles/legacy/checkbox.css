@@ -1,26 +1,26 @@
 /* CheckboxIcon: pill track with a knob circle. Off: empty knob at the left
    end. On: knob at the right end, filled. Slide and fill both transition.
-   The slide distance arrives from the component as --knob-travel. */
+   The slide distance arrives from the component as --swiss-knob-travel. */
 
-.checkbox-icon {
-  --checkbox-duration: 180ms;
+.swiss-checkbox-icon {
+  --swiss-checkbox-duration: 180ms;
 }
 
-.checkbox-knob {
+.swiss-checkbox-knob {
   fill: transparent;
   transform: translateX(0);
   transition:
-    transform var(--checkbox-duration) ease-out,
-    fill var(--checkbox-duration) ease-out;
+    transform var(--swiss-checkbox-duration) ease-out,
+    fill var(--swiss-checkbox-duration) ease-out;
 }
 
-.checkbox-icon.is-selected .checkbox-knob {
+.swiss-checkbox-icon.is-selected .swiss-checkbox-knob {
   fill: currentColor;
-  transform: translateX(var(--knob-travel));
+  transform: translateX(var(--swiss-knob-travel));
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .checkbox-knob {
+  .swiss-checkbox-knob {
     transition: none;
   }
 }

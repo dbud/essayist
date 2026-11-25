@@ -16,7 +16,7 @@ interface RadioItemProps {
 
 function RadioItem({ name, opt, selected, onToggle }: RadioItemProps) {
   return (
-    <label class="btn cursor-pointer gap-1">
+    <label class="swiss-btn cursor-pointer gap-1">
       <input
         type="radio"
         class="sr-only"
@@ -38,7 +38,7 @@ interface CheckboxItemProps {
 
 function CheckboxItem({ opt, selected, onToggle }: CheckboxItemProps) {
   return (
-    <label class="btn cursor-pointer gap-1">
+    <label class="swiss-btn cursor-pointer gap-1">
       <input
         type="checkbox"
         class="sr-only"
@@ -65,10 +65,10 @@ function OptionList({
   onToggle: (value: string) => void;
 }) {
   if (options.length === 0) {
-    return <div class="cell--data min-w-0">none available</div>;
+    return <div class="swiss-cell--data min-w-0">none available</div>;
   }
   return (
-    <div class="flex min-w-0 flex-col stack">
+    <div class="flex min-w-0 flex-col swiss-stack">
       {options.map((opt) =>
         kind === "radio" ? (
           <RadioItem
@@ -104,7 +104,7 @@ interface OptionsRowProps {
 export function OptionsRow({ kind, name, label, options, values, onToggle }: OptionsRowProps) {
   return (
     <>
-      {label && <span class="cell--data">{label}</span>}
+      {label && <span class="swiss-cell--data">{label}</span>}
       <OptionList kind={kind} name={name} options={options} values={values} onToggle={onToggle} />
     </>
   );

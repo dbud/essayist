@@ -14,9 +14,9 @@ export function TextRow({
 }) {
   return (
     <>
-      <span class="cell">{label}</span>
+      <span class="swiss-cell">{label}</span>
       <input
-        class="input-text"
+        class="swiss-input-text"
         value={value}
         placeholder={placeholder}
         disabled={disabled}

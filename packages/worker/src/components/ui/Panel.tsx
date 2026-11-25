@@ -25,8 +25,11 @@ export default function Panel({
   const outsideRef = useClickOutside(onClickOutside);
   const state = open ? "is-open" : "is-closed";
   return (
-    <div class={`pane pane--panel ${state} ${className}`} onTransitionEnd={onTransitionEnd}>
-      <div class="pane-clip" ref={clipRef}>
+    <div
+      class={`swiss-pane swiss-pane--panel ${state} ${className}`}
+      onTransitionEnd={onTransitionEnd}
+    >
+      <div class="swiss-pane-clip" ref={clipRef}>
         <div ref={outsideRef}>{children}</div>
       </div>
     </div>

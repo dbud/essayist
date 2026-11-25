@@ -105,7 +105,7 @@ export default function PassGraph() {
 
   return (
     <div class="flex flex-col gap-10">
-      <div class="grid grid-cols-[auto_1fr] stack stack--row stack--col">
+      <div class="grid grid-cols-[auto_1fr] swiss-stack swiss-stack--row swiss-stack--col">
         <OptionsRow
           kind="radio"
           name="graph-pass"
@@ -140,15 +140,15 @@ export function PassGraphSide() {
   }
 
   return (
-    <div class="flex flex-col stack stack--col shadow-md">
-      <div class="flex stack stack--row">
-        <div class="cell min-w-0 flex-1">agentflow definition</div>
-        <button type="button" class="btn" onClick={copy}>
+    <div class="flex flex-col swiss-stack swiss-stack--col shadow-md">
+      <div class="flex swiss-stack swiss-stack--row">
+        <div class="swiss-cell min-w-0 flex-1">agentflow definition</div>
+        <button type="button" class="swiss-btn" onClick={copy}>
           copy
         </button>
       </div>
-      <div class="grid stack stack--row">
-        <div class="cell--data max-h-80 min-w-0 overflow-auto">
+      <div class="grid swiss-stack swiss-stack--row">
+        <div class="swiss-cell--data max-h-80 min-w-0 overflow-auto">
           <pre class="min-w-0 font-mono text-xs whitespace-pre-wrap">{definition}</pre>
         </div>
       </div>

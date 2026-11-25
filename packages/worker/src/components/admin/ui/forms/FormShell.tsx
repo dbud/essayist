@@ -25,19 +25,23 @@ export function FormShell({
 }: FormShellProps) {
   return (
     <form onSubmit={onSubmit} class="flex flex-col text-ink">
-      <div class="cell cell--ink">{title}</div>
-      <div class="form-grid stack--row">
+      <div class="swiss-cell swiss-cell--ink">{title}</div>
+      <div class="swiss-form-grid swiss-stack--row">
         {children}
         {error && (
-          <div role="alert" class="cell--data col-span-2 whitespace-[normal] text-red-500">
+          <div role="alert" class="swiss-cell--data col-span-2 whitespace-[normal] text-red-500">
             {error}
           </div>
         )}
-        <div class="form-actions">
-          <button type="button" class="btn" onClick={onCancel} disabled={submitting}>
+        <div class="swiss-form-actions">
+          <button type="button" class="swiss-btn" onClick={onCancel} disabled={submitting}>
             Cancel
           </button>
-          <button type="submit" class="btn cell--accent relative w-30" disabled={submitting}>
+          <button
+            type="submit"
+            class="swiss-btn swiss-cell--accent relative w-30"
+            disabled={submitting}
+          >
             {submitLabel}
             <WaveBars fill amplitude={submitting ? 1 : 0} />
           </button>

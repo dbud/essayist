@@ -1,17 +1,17 @@
 /* Pane: collapsible container with grid fr animation.
-   .pane (outer) > .pane-clip (overflow hidden) > content div.
-   State toggled by .is-open / .is-closed on .pane only. */
+   .swiss-pane (outer) > .swiss-pane-clip (overflow hidden) > content div.
+   State toggled by .is-open / .is-closed on .swiss-pane only. */
 
 :root {
-  --motion-pane-clip-duration: 250ms;
+  --swiss-pane-duration: 250ms;
 }
 
-@utility pane {
+@utility swiss-pane {
   position: relative;
   z-index: var(--z-panel);
   flex-shrink: 0;
   display: grid;
-  transition-duration: var(--motion-pane-clip-duration);
+  transition-duration: var(--swiss-pane-duration);
   opacity: 0;
 
   &.is-open {
@@ -22,7 +22,7 @@
     transition-timing-function: ease-in;
   }
 
-  &.pane--sidebar {
+  &.swiss-pane--sidebar {
     grid-template-columns: 0fr;
     grid-template-rows: minmax(0, 1fr);
     transition-property: grid-template-columns opacity;
@@ -31,7 +31,7 @@
     }
   }
 
-  &.pane--panel {
+  &.swiss-pane--panel {
     grid-template-rows: 0fr;
     transition-property: grid-template-rows opacity;
     &.is-open {
@@ -40,15 +40,15 @@
   }
 }
 
-@utility pane-clip {
+@utility swiss-pane-clip {
   overflow: clip;
 
-  .pane--sidebar & {
+  .swiss-pane--sidebar & {
     min-width: 0;
     height: 100%;
   }
 
-  .pane--panel & {
+  .swiss-pane--panel & {
     min-height: 0;
     width: 100%;
   }

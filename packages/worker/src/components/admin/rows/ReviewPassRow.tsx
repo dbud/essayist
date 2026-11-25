@@ -8,9 +8,9 @@ import { Field, List } from "#/components/admin/ui/EntityRows.tsx";
 function PromptField({ label, prompt }: { label: string; prompt?: Prompt }) {
   return (
     <>
-      <div class={`cell--data text-ink/60 ${prompt ? "row-span-2" : ""}`}>{label}</div>
-      <div class="cell--data min-w-0">{prompt?.key ?? "missing"}</div>
-      {prompt && <div class="cell--data min-w-0">{prompt.body}</div>}
+      <div class={`swiss-cell--data text-ink/60 ${prompt ? "row-span-2" : ""}`}>{label}</div>
+      <div class="swiss-cell--data min-w-0">{prompt?.key ?? "missing"}</div>
+      {prompt && <div class="swiss-cell--data min-w-0">{prompt.body}</div>}
     </>
   );
 }
@@ -70,8 +70,8 @@ export function ReviewPassRow({
       <PromptField label="system" prompt={byKey(pass.systemPromptKey)} />
       {pass.units.map((unit) => (
         <Fragment key={unit.id}>
-          <div class="col-span-2 flex stack">
-            <div class="flex flex-1 cell--data cell--ink gap-2">
+          <div class="col-span-2 flex swiss-stack">
+            <div class="flex flex-1 swiss-cell--data swiss-cell--ink gap-2">
               <span>{unit.id}</span>
               {unit.attempt && <span class="badge self-start">marks</span>}
               {unit.summary && <span class="badge self-start">summary</span>}
