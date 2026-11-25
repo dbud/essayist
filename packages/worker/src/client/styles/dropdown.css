@@ -40,7 +40,7 @@
   @apply panel;
   --panel-origin-x: var(--dropdown-origin-x);
   left: var(--dropdown-x);
-  top: calc(100% + var(--panel-gap, var(--gap)));
+  top: calc(100% + var(--panel-gap));
   width: max-content;
   align-items: stretch;
   gap: var(--dropdown-gap);
@@ -101,7 +101,7 @@
 
 @utility dropdown--up {
   top: auto;
-  bottom: calc(100% + var(--panel-gap, var(--gap)));
+  bottom: calc(100% + var(--panel-gap));
   transform-origin: var(--panel-origin-x, 50%) bottom;
 }
 
