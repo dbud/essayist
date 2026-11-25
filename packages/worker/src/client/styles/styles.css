@@ -1,6 +1,7 @@
 @import "tailwindcss";
 @import "./tokens.css";
 @import "./fonts.css";
+@import "./utilities.css";
 @import "./badges.css";
 @import "./caret.css";
 @import "./content.css";
@@ -27,12 +28,6 @@
 @import "./legacy/legacy.css";
 
 @plugin "@tailwindcss/typography";
-
-@layer utilities {
-  :where(.font-mono) {
-    font-size: 0.9em;
-  }
-}
 
 @layer base {
   html {
@@ -99,20 +94,6 @@
   }
 }
 
-:root {
-  --spacer-fade: 1.5rem;
-}
-
-@utility spacer-fade {
-  mask-image: linear-gradient(
-    to bottom,
-    transparent,
-    #000 min(var(--spacer-fade, 1rem), 50%),
-    #000 calc(100% - min(var(--spacer-fade, 1rem), 50%)),
-    transparent
-  );
-}
-
 .editor-input :is(p, h1, h2, h3, h4, h5, h6, blockquote, pre, ul, ol, li)::before {
   content: "";
   display: block;
@@ -125,36 +106,4 @@
   display: block;
   height: var(--block-spacer-after, 0px);
   @apply striped-3 spacer-fade;
-}
-
-@utility code-wrap {
-  & pre {
-    white-space: pre-wrap;
-  }
-}
-
-@utility striped-* {
-  --stripe-opacity: --value(integer, --default(10));
-  --stripe-opacity: --modifier(integer);
-  --stripe-color: color-mix(
-    in oklch,
-    var(--color-ink),
-    transparent calc(100% - var(--stripe-opacity) * 1%)
-  );
-  background-image: linear-gradient(
-    -45deg,
-    var(--stripe-color) 0 12.5%,
-    transparent 12.5% 50%,
-    var(--stripe-color) 50% 62.5%,
-    transparent 62.5%
-  );
-  background-size: 8px 8px;
-}
-
-@utility fade {
-  mask-image: linear-gradient(to bottom, black var(--fade-start, 0%), transparent 100%);
-}
-
-@utility separator {
-  @apply h-3 bg-surface/90 striped/5;
 }
