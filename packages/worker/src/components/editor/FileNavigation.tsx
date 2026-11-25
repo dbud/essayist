@@ -193,7 +193,11 @@ export default function FileNavigation({ open }: FileNavigationProps) {
   );
 
   const createWorkspace = (
-    <button type="button" class="aq-btn" onClick={() => (creatingWorkspace.value = true)}>
+    <button
+      type="button"
+      class="aq-btn self-start"
+      onClick={() => (creatingWorkspace.value = true)}
+    >
       <Plus />
       <span>New project&hellip;</span>
     </button>
