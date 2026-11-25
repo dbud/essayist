@@ -48,6 +48,13 @@
   &.is-open {
     @apply aq-panel-open;
   }
+
+  @starting-style {
+    &.is-open {
+      opacity: 0;
+      transform: translateY(var(--aq-panel-hidden-y)) scale(var(--aq-panel-hidden-scale));
+    }
+  }
 }
 
 @utility aq-dropdown--origin-end {

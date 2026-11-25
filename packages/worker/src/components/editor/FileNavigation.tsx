@@ -11,6 +11,7 @@ import AqSwap from "#/components/ui/AqSwap.tsx";
 import Melt from "#/components/ui/Melt.tsx";
 import WaveBars from "#/components/ui/WaveBars.tsx";
 import { useClickOutside } from "#/hooks/useClickOutside.ts";
+import { useOutgoing } from "#/hooks/useOutgoing.ts";
 import type { TreeNode } from "#/models/fileTree.ts";
 import { useEditorModels } from "#/pages/editor/models.ts";
 import { useAppState } from "#/state.ts";
@@ -145,8 +146,8 @@ export default function FileNavigation({ open }: FileNavigationProps) {
     </button>
   );
 
-  const filesList = (
-    <div class={`aq-dropdown--right-bridged aq-dropdown--fit max-w-96 ${showNav ? "is-open" : ""}`}>
+  const filesList = (isOpen: boolean) => (
+    <div class={`aq-dropdown--right-bridged aq-dropdown--fit max-w-96 ${isOpen ? "is-open" : ""}`}>
       <span class="aq-dropdown-bridge" aria-hidden="true" />
       {fileEntries.length > 0 && (
         <div class="aq-menu aq-menu--wrap">
@@ -203,6 +204,11 @@ export default function FileNavigation({ open }: FileNavigationProps) {
     </button>
   );
 
+  // The files of the previous project close while the new ones open.
+  const filesFor = useOutgoing(workspaces.selectedId.value, (current) =>
+    filesList(current && showNav),
+  );
+
   const workspacesList = workspaces.list.value.map(({ id, name }) => {
     const isSelected = id === workspaces.selectedId.value;
     return (
@@ -220,7 +226,7 @@ export default function FileNavigation({ open }: FileNavigationProps) {
             class="text-surface"
           />
         </button>
-        {isSelected && filesList}
+        {filesFor(id)}
       </li>
     );
   });
