@@ -29,7 +29,7 @@
   color: var(--color-paper);
 }
 
-.essayist-caret {
+.caret {
   left: var(--caret-left);
   top: calc(var(--caret-top) - var(--caret-extend-top));
   width: var(--caret-thickness);

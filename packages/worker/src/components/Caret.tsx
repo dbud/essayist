@@ -8,7 +8,7 @@ export function Caret({ rect }: { rect: ReadonlySignal<CaretRect | null> }) {
   return (
     <div class="pointer-events-none absolute inset-0">
       <span
-        class="essayist-caret absolute"
+        class="caret absolute"
         style={{
           "--caret-left": `${value.left}px`,
           "--caret-top": `${value.top}px`,
