@@ -3,9 +3,9 @@ import { assertExists } from "@std/assert";
 import { sortBy } from "@std/collections";
 import { ChevronDown, CircleDashed, LockKeyhole, PencilLine } from "lucide-preact";
 
-import AqSwap from "#/components/ui/AqSwap.tsx";
 import { CircleCheckIcon, CountdownRingIcon } from "#/components/ui/icons.tsx";
 import Melt from "#/components/ui/Melt.tsx";
+import AqSwap from "#/components/ui/Swap.tsx";
 import WaveBars from "#/components/ui/WaveBars.tsx";
 import { useBooting } from "#/hooks/useBooting.ts";
 import { useClickOutside } from "#/hooks/useClickOutside.ts";

@@ -1,6 +1,6 @@
 import { type Signal } from "@preact/signals";
 
-import AqSegmented from "#/components/ui/AqSegmented.tsx";
+import AqSegmented from "#/components/ui/Segmented.tsx";
 
 export const SANS_FONT_OPTIONS = [
   { value: "atkinson", label: "Hyperlegible" },

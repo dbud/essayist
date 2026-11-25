@@ -2,9 +2,9 @@ import { useModel, useSignal } from "@preact/signals";
 import { assertExists, unreachable } from "@std/assert";
 import { ChevronDown } from "lucide-preact";
 
-import AqSwap from "#/components/ui/AqSwap.tsx";
-import AqToggle from "#/components/ui/AqToggle.tsx";
 import Melt from "#/components/ui/Melt.tsx";
+import AqSwap from "#/components/ui/Swap.tsx";
+import AqToggle from "#/components/ui/Toggle.tsx";
 import { useClickOutside } from "#/hooks/useClickOutside.ts";
 import { FileStatsModel } from "#/models/fileStats.ts";
 import { type FileStatSection, usePreferences } from "#/models/preferences.ts";

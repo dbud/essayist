@@ -1,7 +1,7 @@
 import { Moon, Sun } from "lucide-preact";
 
-import AqSwap from "#/components/ui/AqSwap.tsx";
 import Melt from "#/components/ui/Melt.tsx";
+import AqSwap from "#/components/ui/Swap.tsx";
 import { useBooting } from "#/hooks/useBooting.ts";
 import { usePreferences } from "#/models/preferences.ts";
 

@@ -2,14 +2,14 @@ import { useSignal } from "@preact/signals";
 import { ChevronDown, ChevronRight, Highlighter } from "lucide-preact";
 import { useEffect } from "preact/hooks";
 
-import AqSegmented from "#/components/ui/AqSegmented.tsx";
-import AqSwap from "#/components/ui/AqSwap.tsx";
 import Melt, {
   meltDebug,
   meltEnabled,
   meltFieldScale,
   meltPixelRatio,
 } from "#/components/ui/Melt.tsx";
+import AqSegmented from "#/components/ui/Segmented.tsx";
+import AqSwap from "#/components/ui/Swap.tsx";
 import { meltTargetStatus, simulateContextLoss } from "#/melt/context.ts";
 import { TIMED_PARTS, type TimedPart, takeFrameStats } from "#/melt/stats.ts";
 

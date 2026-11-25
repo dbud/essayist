@@ -12,8 +12,8 @@ import {
 } from "lucide-preact";
 import type { ComponentChild } from "preact";
 
-import AqSwap from "#/components/ui/AqSwap.tsx";
 import Melt from "#/components/ui/Melt.tsx";
+import AqSwap from "#/components/ui/Swap.tsx";
 import { type BlockType } from "#/editor/blockFormat.ts";
 import { useClickOutside } from "#/hooks/useClickOutside.ts";
 

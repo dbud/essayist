@@ -16,10 +16,10 @@ import FontAxisSelect, {
   SERIF_FONT_OPTIONS,
 } from "#/components/settings/FontAxisSelect.tsx";
 import MarkStyleSelect from "#/components/settings/MarkStyleSelect.tsx";
-import AqCollapse from "#/components/ui/AqCollapse.tsx";
-import AqSegmented from "#/components/ui/AqSegmented.tsx";
-import AqToggle from "#/components/ui/AqToggle.tsx";
+import AqCollapse from "#/components/ui/Collapsible.tsx";
 import Melt, { meltDebug, meltEnabled } from "#/components/ui/Melt.tsx";
+import AqSegmented from "#/components/ui/Segmented.tsx";
+import AqToggle from "#/components/ui/Toggle.tsx";
 import { useClickOutside } from "#/hooks/useClickOutside.ts";
 import { AUTO_SAVE_INTERVAL_VALUES } from "#/models/preferences.ts";
 import { usePreferences } from "#/models/preferences.ts";

@@ -2,9 +2,9 @@ import type { ReviewProgress } from "@essayist/core";
 import { useSignal } from "@preact/signals";
 import { ChevronDown, Highlighter } from "lucide-preact";
 
-import AqSwap from "#/components/ui/AqSwap.tsx";
 import { type RingSegment, SegmentedRingIcon } from "#/components/ui/icons.tsx";
 import Melt from "#/components/ui/Melt.tsx";
+import AqSwap from "#/components/ui/Swap.tsx";
 import WaveBars from "#/components/ui/WaveBars.tsx";
 import { useClickOutside } from "#/hooks/useClickOutside.ts";
 import { showToast } from "#/models/utils/toast.ts";

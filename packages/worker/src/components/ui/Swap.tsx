@@ -1,7 +1,7 @@
 import { assert } from "@std/assert";
 import { cloneElement, isValidElement, type HTMLAttributes, type VNode } from "preact";
 
-import { useAqSwap } from "#/hooks/useAqSwap.ts";
+import { useAqSwap } from "#/hooks/useSwap.ts";
 
 interface AqSwapProps {
   /** The condition the swap fires on; changing it swaps the children. */

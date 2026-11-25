@@ -1,4 +1,4 @@
-import AqSegmented from "#/components/ui/AqSegmented.tsx";
+import AqSegmented from "#/components/ui/Segmented.tsx";
 import { type HighlightStyle, usePreferences } from "#/models/preferences.ts";
 
 const OPTIONS: { value: HighlightStyle; label: string }[] = [

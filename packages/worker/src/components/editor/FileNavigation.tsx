@@ -7,8 +7,8 @@ import DeleteWorkspaceDialog from "#/components/editor/DeleteWorkspaceDialog.tsx
 import FileUploader from "#/components/editor/FileUploader.tsx";
 import GoogleDocImporter from "#/components/editor/GoogleDocImporter.tsx";
 import RemoveFileDialog from "#/components/editor/RemoveFileDialog.tsx";
-import AqSwap from "#/components/ui/AqSwap.tsx";
 import Melt from "#/components/ui/Melt.tsx";
+import AqSwap from "#/components/ui/Swap.tsx";
 import WaveBars from "#/components/ui/WaveBars.tsx";
 import { useClickOutside } from "#/hooks/useClickOutside.ts";
 import { useOutgoing } from "#/hooks/useOutgoing.ts";

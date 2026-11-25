@@ -2,7 +2,7 @@ import { toKebabCase } from "@std/text/to-kebab-case";
 import { ChevronDown } from "lucide-preact";
 import type { ComponentChildren } from "preact";
 
-import AqCollapse from "#/components/ui/AqCollapse.tsx";
+import AqCollapse from "#/components/ui/Collapsible.tsx";
 import Melt from "#/components/ui/Melt.tsx";
 import { usePersistentSignal } from "#/utils/persistentSignal.ts";
 

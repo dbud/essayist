@@ -1,8 +1,8 @@
 import { useSignal } from "@preact/signals";
 import { ChevronDown } from "lucide-preact";
 
-import AqSwap from "#/components/ui/AqSwap.tsx";
 import Melt from "#/components/ui/Melt.tsx";
+import AqSwap from "#/components/ui/Swap.tsx";
 import { useClickOutside } from "#/hooks/useClickOutside.ts";
 import { usePreferences } from "#/models/preferences.ts";
 
