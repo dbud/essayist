@@ -55,7 +55,7 @@ export default function FileStats() {
       <AqSwap on={enabled.join(",")}>
         <button
           type="button"
-          class="aq-btn--idle items-center text-xs"
+          class="btn--idle items-center text-xs"
           aria-expanded={open.value}
           onClick={() => (open.value = !open.value)}
         >
@@ -70,19 +70,19 @@ export default function FileStats() {
           ) : (
             <span>Stats</span>
           )}
-          <ChevronDown class="aq-chevron rotate-180" data-static />
+          <ChevronDown class="chevron rotate-180" data-static />
         </button>
       </AqSwap>
-      <div class={"aq-dropdown--origin-end aq-dropdown--up" + (open.value ? " is-open" : "")}>
-        <div class="aq-menu">
-          <ul class="aq-menu-rows" data-aq-stagger>
+      <div class={"dropdown--origin-end dropdown--up" + (open.value ? " is-open" : "")}>
+        <div class="menu">
+          <ul class="menu-rows" data-stagger>
             {STAT_OPTIONS.map((opt) => (
               <li key={opt.value}>
                 <button
                   type="button"
                   role="switch"
                   aria-checked={enabled.includes(opt.value)}
-                  class={`aq-menu-btn aq-toggle-row ${enabled.includes(opt.value) ? "is-on" : ""}`}
+                  class={`menu-btn toggle-row ${enabled.includes(opt.value) ? "is-on" : ""}`}
                   onClick={() => toggleSection(opt.value)}
                 >
                   <span>{opt.label}</span>

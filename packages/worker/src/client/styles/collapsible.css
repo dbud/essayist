@@ -1,32 +1,32 @@
-.aq-collapse {
+.collapsible {
   display: grid;
   grid-template-rows: 0fr;
-  transition: grid-template-rows var(--aq-item-tf) ease-out;
+  transition: grid-template-rows var(--item-tf) ease-out;
 
   &[data-open] {
     grid-template-rows: 1fr;
   }
 
-  > .aq-collapse-clip {
+  > .collapsible-clip {
     min-height: 0;
     overflow: hidden;
   }
 
-  &.aq-collapse-fade {
-    > .aq-collapse-clip {
+  &.collapsible-fade {
+    > .collapsible-clip {
       opacity: 0;
-      transition: opacity var(--aq-item-op) ease;
+      transition: opacity var(--item-op) ease;
     }
 
-    &[data-open] > .aq-collapse-clip {
+    &[data-open] > .collapsible-clip {
       opacity: 1;
     }
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .aq-collapse,
-  .aq-collapse-fade > .aq-collapse-clip {
+  .collapsible,
+  .collapsible-fade > .collapsible-clip {
     transition: none;
   }
 }

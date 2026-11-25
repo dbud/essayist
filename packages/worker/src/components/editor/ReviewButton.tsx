@@ -51,7 +51,7 @@ export default function ReviewButton() {
       <AqSwap on={busy ? "busy" : "idle"}>
         <button
           type="button"
-          class={busy ? "aq-btn--idle" : "aq-btn--accent"}
+          class={busy ? "btn--idle" : "btn--accent"}
           aria-expanded={busy ? expanded : undefined}
           aria-label={busy ? progressLabel(progress) : undefined}
           onClick={busy ? () => (open.value = !open.value) : onReview}
@@ -62,7 +62,7 @@ export default function ReviewButton() {
                 segments={progress?.units.map(({ state }) => segment(state)) ?? []}
               />
               <span>Review in progress</span>
-              <ChevronDown class="aq-chevron ms-10" />
+              <ChevronDown class="chevron ms-10" />
             </>
           ) : (
             <>
@@ -74,9 +74,9 @@ export default function ReviewButton() {
         </button>
       </AqSwap>
       {progress !== null && progress.units.length > 0 && (
-        <div class={`aq-dropdown ${expanded ? "is-open" : ""}`}>
-          <div class="aq-menu aq-menu--small">
-            <ul class="aq-menu-rows" data-aq-stagger>
+        <div class={`dropdown ${expanded ? "is-open" : ""}`}>
+          <div class="menu menu--small">
+            <ul class="menu-rows" data-stagger>
               {progress.units.map(({ id, state }) => (
                 <li key={id} class="flex items-center gap-2 text-sm p-1">
                   <SegmentedRingIcon segments={[segment(state)]} size={14} />

@@ -1,43 +1,43 @@
-@property --aq-toggle-x {
+@property --toggle-x {
   syntax: "<number>";
   inherits: true;
   initial-value: 0;
 }
 
-.aq-toggle-row {
+.toggle-row {
   @apply pr-12;
-  --aq-toggle-width: 2.2rem;
-  --aq-toggle-right: 0.5rem;
-  --aq-toggle-knob: 0.85rem;
-  --aq-toggle-inset: 0.14rem;
+  --toggle-width: 2.2rem;
+  --toggle-right: 0.5rem;
+  --toggle-knob: 0.85rem;
+  --toggle-inset: 0.14rem;
 
   &.is-on {
-    --aq-toggle-x: 1;
+    --toggle-x: 1;
   }
 }
 
 /* The track and the knob each start a melt group of their own, so the knob is drawn over the track
    without bleeding into it, which would make the track look lopsided. */
-.aq-toggle {
+.toggle {
   @apply absolute top-1/2 -translate-y-1/2 rounded-full melt-group melt-shape;
   --melt-fill: color-mix(in oklch, var(--color-float), white 12%);
-  right: var(--aq-toggle-right);
-  width: var(--aq-toggle-width);
-  height: calc(var(--aq-toggle-knob) + 2 * var(--aq-toggle-inset));
+  right: var(--toggle-right);
+  width: var(--toggle-width);
+  height: calc(var(--toggle-knob) + 2 * var(--toggle-inset));
 }
 
-.aq-toggle-knob {
-  @apply absolute rounded-full melt-group melt-shape melt-rim-white/70 size-[var(--aq-toggle-knob)];
+.toggle-knob {
+  @apply absolute rounded-full melt-group melt-shape melt-rim-white/70 size-[var(--toggle-knob)];
   --melt-fill: color-mix(in oklch, var(--color-float), white 45%);
-  top: var(--aq-toggle-inset);
+  top: var(--toggle-inset);
   left: calc(
-    var(--aq-toggle-inset) + var(--aq-toggle-x) *
-      (var(--aq-toggle-width) - var(--aq-toggle-knob) - 2 * var(--aq-toggle-inset))
+    var(--toggle-inset) + var(--toggle-x) *
+      (var(--toggle-width) - var(--toggle-knob) - 2 * var(--toggle-inset))
   );
   transition:
-    --aq-toggle-x calc(180ms * var(--aq-tempo, 1)) var(--aq-spring),
-    --melt-fill calc(120ms * var(--aq-tempo, 1)) ease,
-    --melt-glow calc(120ms * var(--aq-tempo, 1)) ease;
+    --toggle-x calc(180ms * var(--tempo, 1)) var(--spring),
+    --melt-fill calc(120ms * var(--tempo, 1)) ease,
+    --melt-glow calc(120ms * var(--tempo, 1)) ease;
 
   .is-on & {
     @apply melt-glow-30;

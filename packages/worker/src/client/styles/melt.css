@@ -226,7 +226,7 @@
    have no backgrounds of their own. */
 @utility melt-root {
   @apply relative isolate melt-group;
-  transition: opacity calc(150ms * var(--aq-tempo, 1)) ease-in;
+  transition: opacity calc(150ms * var(--tempo, 1)) ease-in;
 
   @media (prefers-reduced-motion: reduce) {
     transition: none;

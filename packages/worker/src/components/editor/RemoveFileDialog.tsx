@@ -17,7 +17,7 @@ export default function RemoveFileDialog({ path, onRemoved }: RemoveFileDialogPr
 
   return (
     <form
-      class={`aq-dropdown aq-dropdown--detached ${open ? "is-open" : ""}`}
+      class={`dropdown dropdown--detached ${open ? "is-open" : ""}`}
       onSubmit={onSubmit}
       onKeyDown={(e) => {
         if (e.key === "Escape" && open) {
@@ -26,16 +26,16 @@ export default function RemoveFileDialog({ path, onRemoved }: RemoveFileDialogPr
         }
       }}
     >
-      <div class="aq-menu">
-        <div class="aq-form" data-aq-stagger>
+      <div class="menu">
+        <div class="form" data-stagger>
           <div class="col-span-2">Remove &ldquo;{path.value}&rdquo;?</div>
         </div>
       </div>
       <div class="flex justify-end gap-4">
-        <button type="button" class="aq-btn" onClick={() => (path.value = null)}>
+        <button type="button" class="btn" onClick={() => (path.value = null)}>
           Cancel
         </button>
-        <button type="submit" class="aq-btn--accent">
+        <button type="submit" class="btn--accent">
           Remove
         </button>
       </div>

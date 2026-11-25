@@ -11,7 +11,7 @@ interface AqSwapProps {
 }
 
 /** Slot-style swap: takes the host element as its child, merges the swap ref
-    and the aq-swap class onto it, and adds no box of its own. Decorate static
+    and the swap class onto it, and adds no box of its own. Decorate static
     children of the host with data-static so only the changing parts are animated. */
 export default function AqSwap({ on, children }: AqSwapProps) {
   const { ref, render } = useAqSwap(on);
@@ -23,7 +23,7 @@ export default function AqSwap({ on, children }: AqSwapProps) {
       if (typeof host.ref === "function") host.ref(node);
       else if (host.ref) host.ref.current = node;
     },
-    class: [host.props.class, "aq-swap"].filter((value) => typeof value === "string").join(" "),
+    class: [host.props.class, "swap"].filter((value) => typeof value === "string").join(" "),
     children: render(host.props.children),
   });
 }

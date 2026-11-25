@@ -17,15 +17,15 @@ export default function Section({ title, children, defaultOpen = true }: Section
 
   return (
     <Melt>
-      <div class="aq-menu">
+      <div class="menu">
         <button
           type="button"
-          class="aq-menu-btn justify-between"
+          class="menu-btn justify-between"
           onClick={() => (open.value = !open.value)}
           aria-expanded={open.value}
         >
           {title}
-          <ChevronDown class="aq-chevron" />
+          <ChevronDown class="chevron" />
         </button>
         <AqCollapse open={open.value} fade>
           <div class="pt-2">{children}</div>

@@ -40,7 +40,7 @@ export default function CreateWorkspaceDialog({ open, onCreated }: CreateWorkspa
 
   return (
     <form
-      class={`aq-dropdown aq-dropdown--detached ${open.value ? "is-open" : ""}`}
+      class={`dropdown dropdown--detached ${open.value ? "is-open" : ""}`}
       autocomplete="off"
       onSubmit={onSubmit}
       onKeyDown={(e) => {
@@ -50,8 +50,8 @@ export default function CreateWorkspaceDialog({ open, onCreated }: CreateWorkspa
         }
       }}
     >
-      <div class="aq-menu">
-        <div class="aq-form" data-aq-stagger>
+      <div class="menu">
+        <div class="form" data-stagger>
           <div class="col-span-2">New project</div>
           <label for="create-project-name">Name</label>
           <input
@@ -71,7 +71,7 @@ export default function CreateWorkspaceDialog({ open, onCreated }: CreateWorkspa
       <div class="flex justify-end gap-4">
         <button
           type="button"
-          class="aq-btn"
+          class="btn"
           onClick={() => (open.value = false)}
           disabled={submitting.value}
         >
@@ -79,7 +79,7 @@ export default function CreateWorkspaceDialog({ open, onCreated }: CreateWorkspa
         </button>
         <button
           type="submit"
-          class="aq-btn--accent relative"
+          class="btn--accent relative"
           disabled={submitting.value || !name.value.trim()}
         >
           {submitting.value ? "Creating…" : "Create"}

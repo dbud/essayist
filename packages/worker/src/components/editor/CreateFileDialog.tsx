@@ -29,7 +29,7 @@ export default function CreateFileDialog({ open, onCreated }: CreateFileDialogPr
 
   return (
     <form
-      class={`aq-dropdown aq-dropdown--detached ${open.value ? "is-open" : ""}`}
+      class={`dropdown dropdown--detached ${open.value ? "is-open" : ""}`}
       autocomplete="off"
       onSubmit={onSubmit}
       onKeyDown={(e) => {
@@ -39,8 +39,8 @@ export default function CreateFileDialog({ open, onCreated }: CreateFileDialogPr
         }
       }}
     >
-      <div class="aq-menu">
-        <div class="aq-form" data-aq-stagger>
+      <div class="menu">
+        <div class="form" data-stagger>
           <div class="col-span-2">New file</div>
           <label for="create-file-name">Name</label>
           <input
@@ -54,10 +54,10 @@ export default function CreateFileDialog({ open, onCreated }: CreateFileDialogPr
         </div>
       </div>
       <div class="flex justify-end gap-4">
-        <button type="button" class="aq-btn" onClick={() => (open.value = false)}>
+        <button type="button" class="btn" onClick={() => (open.value = false)}>
           Cancel
         </button>
-        <button type="submit" class="aq-btn--accent" disabled={!name.value.trim()}>
+        <button type="submit" class="btn--accent" disabled={!name.value.trim()}>
           Create
         </button>
       </div>

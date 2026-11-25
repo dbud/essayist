@@ -11,13 +11,13 @@ export default function AqCollapse({
   class?: string;
   children: ComponentChildren;
 }) {
-  const classes = ["aq-collapse"];
-  if (fade) classes.push("aq-collapse-fade");
+  const classes = ["collapsible"];
+  if (fade) classes.push("collapsible-fade");
   if (extra) classes.push(extra);
 
   return (
     <div class={classes.join(" ")} data-open={open ? "" : undefined}>
-      <div class="aq-collapse-clip">{children}</div>
+      <div class="collapsible-clip">{children}</div>
     </div>
   );
 }

@@ -23,7 +23,7 @@ function RunItem({ run, onDelete }: { run: ReviewRunData; onDelete?: () => void 
   const { completedAt, error, summary } = run;
   return (
     <li class="flex gap-2">
-      <a href={`/traces/${run.wsId}/${run.id}`} class="aq-menu-btn" title="View trace">
+      <a href={`/traces/${run.wsId}/${run.id}`} class="menu-btn" title="View trace">
         <span class="flex flex-col items-start gap-1 min-w-0 whitespace-normal text-start">
           <span class="flex items-center gap-2">
             {statusBadge(run.status)}
@@ -41,7 +41,7 @@ function RunItem({ run, onDelete }: { run: ReviewRunData; onDelete?: () => void 
       {onDelete && (
         <button
           type="button"
-          class="aq-menu-btn aq-menu-action"
+          class="menu-btn menu-action"
           aria-label="Delete run and its marks"
           onClick={onDelete}
         >
@@ -77,18 +77,18 @@ export default function ReviewHistorySection() {
 
   return (
     <Section title="Review history">
-      <ul class="aq-menu-rows">
+      <ul class="menu-rows">
         {isAdmin && (
           <li class="flex gap-2">
             <button
               type="button"
-              class="aq-menu-btn"
+              class="menu-btn"
               onClick={() => cleanup(() => review.clear(selection.versionId))}
             >
               <Trash2 />
               Clear version
             </button>
-            <button type="button" class="aq-menu-btn" onClick={() => cleanup(() => review.clear())}>
+            <button type="button" class="menu-btn" onClick={() => cleanup(() => review.clear())}>
               <Trash2 />
               Clear file
             </button>

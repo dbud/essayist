@@ -1,10 +1,10 @@
-.aq-form {
-  --aq-underline-inset: 0.4rem;
-  --aq-underline-lift: 0.4rem;
-  --aq-underline-thickness: 1.5px;
+.form {
+  --underline-inset: 0.4rem;
+  --underline-lift: 0.4rem;
+  --underline-thickness: 1.5px;
 
   @apply rounded-md p-2 min-w-96 w-full text-float-ink;
-  font-size: var(--aq-btn-font-size);
+  font-size: var(--btn-font-size);
 
   @apply grid items-stretch;
   grid-template-columns: max-content minmax(0, 1fr);
@@ -20,8 +20,8 @@
     font-size: inherit;
     caret-color: var(--color-accent);
     background-image: linear-gradient(var(--color-accent), var(--color-accent));
-    background-position: var(--aq-underline-inset) calc(100% - var(--aq-underline-lift));
-    background-size: calc(100% - 2 * var(--aq-underline-inset)) var(--aq-underline-thickness);
+    background-position: var(--underline-inset) calc(100% - var(--underline-lift));
+    background-size: calc(100% - 2 * var(--underline-inset)) var(--underline-thickness);
     background-repeat: no-repeat;
 
     &::placeholder {

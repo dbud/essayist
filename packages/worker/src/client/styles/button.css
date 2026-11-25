@@ -1,57 +1,57 @@
 :root {
-  --aq-btn-ease: cubic-bezier(0.4, -0.5, 0.55, 1.35);
-  --aq-btn-accent-hover: oklch(from var(--color-accent) l calc(c * 1.3) h);
-  --aq-btn-font-size: 0.85rem;
-  --aq-btn-px: 0.625rem;
-  --aq-btn-py: 0.375rem;
+  --btn-ease: cubic-bezier(0.4, -0.5, 0.55, 1.35);
+  --btn-accent-hover: oklch(from var(--color-accent) l calc(c * 1.3) h);
+  --btn-font-size: 0.85rem;
+  --btn-px: 0.625rem;
+  --btn-py: 0.375rem;
 
-  --aq-btn-float-bg: var(--color-float);
-  --aq-btn-float-bg-hover: color-mix(in oklch, var(--color-float), white 25%);
-  --aq-btn-float-ink: var(--color-float-ink);
-  --aq-btn-float-ink-hover: var(--color-float-ink);
-  --aq-btn-idle-bg: var(--color-surface);
-  --aq-btn-idle-bg-hover: var(--color-float);
-  --aq-btn-idle-ink: var(--color-ink);
-  --aq-btn-idle-ink-hover: var(--color-float-ink);
-  --aq-btn-accent-bg: var(--color-accent);
-  --aq-btn-accent-bg-hover: var(--aq-btn-accent-hover);
-  --aq-btn-accent-ink: var(--color-float-ink);
+  --btn-float-bg: var(--color-float);
+  --btn-float-bg-hover: color-mix(in oklch, var(--color-float), white 25%);
+  --btn-float-ink: var(--color-float-ink);
+  --btn-float-ink-hover: var(--color-float-ink);
+  --btn-idle-bg: var(--color-surface);
+  --btn-idle-bg-hover: var(--color-float);
+  --btn-idle-ink: var(--color-ink);
+  --btn-idle-ink-hover: var(--color-float-ink);
+  --btn-accent-bg: var(--color-accent);
+  --btn-accent-bg-hover: var(--btn-accent-hover);
+  --btn-accent-ink: var(--color-float-ink);
 
-  --btn-bg: var(--aq-btn-float-bg);
-  --btn-bg-hover: var(--aq-btn-float-bg-hover);
-  --btn-ink: var(--aq-btn-float-ink);
-  --btn-ink-hover: var(--aq-btn-float-ink-hover);
-  --btn-accent-ink: var(--color-accent);
+  --btn-bg: var(--btn-float-bg);
+  --btn-bg-hover: var(--btn-float-bg-hover);
+  --btn-ink: var(--btn-float-ink);
+  --btn-ink-hover: var(--btn-float-ink-hover);
+  --btn-highlight-ink: var(--color-accent);
 }
 
-@property --aq-btn-lifted {
+@property --btn-lifted {
   syntax: "<number>";
   inherits: false;
   initial-value: 1;
 }
 
-@utility aq-btn--base {
+@utility btn--base {
   @apply relative inline-flex isolate;
   @apply items-center gap-1;
   @apply appearance-none border-0 select-none whitespace-nowrap leading-none;
   @apply cursor-pointer;
   @apply font-sans font-normal;
   color: var(--btn-ink);
-  font-size: var(--aq-btn-font-size);
-  padding: var(--aq-btn-py) var(--aq-btn-px);
+  font-size: var(--btn-font-size);
+  padding: var(--btn-py) var(--btn-px);
   @apply melt-shape melt-shadow;
-  --melt-rim: var(--aq-rim-primary);
+  --melt-rim: var(--rim-primary);
   --melt-fill: var(--btn-bg);
-  transform: scale(var(--aq-btn-lifted));
+  transform: scale(var(--btn-lifted));
   transition:
-    --melt-fill calc(200ms * var(--aq-tempo, 1)) var(--aq-btn-ease),
-    --melt-stroke calc(200ms * var(--aq-tempo, 1)) var(--aq-btn-ease),
-    --melt-rim calc(200ms * var(--aq-tempo, 1)) var(--aq-btn-ease),
-    --melt-shade calc(200ms * var(--aq-tempo, 1)) var(--aq-btn-ease),
-    --melt-shadow calc(200ms * var(--aq-tempo, 1)) var(--aq-btn-ease),
-    --melt-height calc(200ms * var(--aq-tempo, 1)) var(--aq-btn-ease),
-    color calc(200ms * var(--aq-tempo, 1)) var(--aq-btn-ease),
-    --aq-btn-lifted calc(240ms * var(--aq-tempo, 1)) var(--aq-btn-ease);
+    --melt-fill calc(200ms * var(--tempo, 1)) var(--btn-ease),
+    --melt-stroke calc(200ms * var(--tempo, 1)) var(--btn-ease),
+    --melt-rim calc(200ms * var(--tempo, 1)) var(--btn-ease),
+    --melt-shade calc(200ms * var(--tempo, 1)) var(--btn-ease),
+    --melt-shadow calc(200ms * var(--tempo, 1)) var(--btn-ease),
+    --melt-height calc(200ms * var(--tempo, 1)) var(--btn-ease),
+    color calc(200ms * var(--tempo, 1)) var(--btn-ease),
+    --btn-lifted calc(240ms * var(--tempo, 1)) var(--btn-ease);
 
   &:hover {
     @apply melt-shadow-lifted;
@@ -61,21 +61,21 @@
 
   &[aria-expanded="true"] {
     @apply melt-shadow-lifted;
-    --btn-bg: var(--aq-btn-float-bg);
-    --btn-ink: var(--aq-btn-float-ink);
+    --btn-bg: var(--btn-float-bg);
+    --btn-ink: var(--btn-float-ink);
   }
 
   &:not(:disabled):active {
-    --aq-btn-lifted: 0.95;
+    --btn-lifted: 0.95;
     --melt-height: var(--melt-height-flat, 0.5px);
     transition:
-      --aq-btn-lifted calc(60ms * var(--aq-tempo, 1)) var(--aq-btn-ease),
-      --melt-height calc(60ms * var(--aq-tempo, 1)) var(--aq-btn-ease);
+      --btn-lifted calc(60ms * var(--tempo, 1)) var(--btn-ease),
+      --melt-height calc(60ms * var(--tempo, 1)) var(--btn-ease);
   }
 }
 
-@utility aq-btn {
-  @apply aq-btn--base;
+@utility btn {
+  @apply btn--base;
   @apply rounded-sm;
 
   &:disabled {
@@ -89,38 +89,38 @@
   }
 }
 
-@utility aq-btn--accent {
-  @apply aq-btn melt-rim-white/70;
-  --btn-bg: var(--aq-btn-accent-bg);
-  --btn-bg-hover: var(--aq-btn-accent-bg-hover);
-  --btn-ink: var(--aq-btn-accent-ink);
-  --btn-ink-hover: var(--aq-btn-accent-ink);
+@utility btn--accent {
+  @apply btn melt-rim-white/70;
+  --btn-bg: var(--btn-accent-bg);
+  --btn-bg-hover: var(--btn-accent-bg-hover);
+  --btn-ink: var(--btn-accent-ink);
+  --btn-ink-hover: var(--btn-accent-ink);
 }
 
-/* A size modifier for a button utility, such as aq-btn or aq-btn--accent. */
-@utility aq-btn--small {
-  --aq-btn-px: 0.3rem;
-  --aq-btn-py: 0.25rem;
-  --aq-btn-font-size: 0.75rem;
+/* A size modifier for a button utility, such as btn or btn--accent. */
+@utility btn--small {
+  --btn-px: 0.3rem;
+  --btn-py: 0.25rem;
+  --btn-font-size: 0.75rem;
 
   & .lucide {
     @apply size-3.5;
   }
 }
 
-.aq-btn--small .aq-chevron {
+.btn--small .chevron {
   @apply size-3;
 }
 
-@utility aq-btn--idle {
-  @apply aq-btn;
-  --btn-bg: var(--aq-btn-idle-bg);
-  --btn-bg-hover: var(--aq-btn-idle-bg-hover);
-  --btn-ink: var(--aq-btn-idle-ink);
-  --btn-ink-hover: var(--aq-btn-idle-ink-hover);
+@utility btn--idle {
+  @apply btn;
+  --btn-bg: var(--btn-idle-bg);
+  --btn-bg-hover: var(--btn-idle-bg-hover);
+  --btn-ink: var(--btn-idle-ink);
+  --btn-ink-hover: var(--btn-idle-ink-hover);
 
   &:not(:hover, [aria-expanded="true"]) {
     @apply melt-shadow-flat melt-shade-black/5;
-    --melt-rim: var(--aq-rim-secondary);
+    --melt-rim: var(--rim-secondary);
   }
 }

@@ -1,45 +1,45 @@
 :root {
-  --aq-tempo: 3;
-  --aq-open-tf: calc(250ms * var(--aq-tempo));
-  --aq-open-op: calc(130ms * var(--aq-tempo));
-  --aq-close-tf: calc(200ms * var(--aq-tempo));
-  --aq-close-op: calc(80ms * var(--aq-tempo));
-  --aq-stagger-base: calc(40ms * var(--aq-tempo));
-  --aq-stagger-step: calc(20ms * var(--aq-tempo));
-  --aq-item-tf: calc(100ms * var(--aq-tempo));
-  --aq-item-op: calc(80ms * var(--aq-tempo));
-  --aq-spring: cubic-bezier(0.3, 1.6, 0.45, 1);
-  --aq-absorb-ease: cubic-bezier(0.4, -0.5, 0.55, 1.35);
+  --tempo: 3;
+  --open-tf: calc(250ms * var(--tempo));
+  --open-op: calc(130ms * var(--tempo));
+  --close-tf: calc(200ms * var(--tempo));
+  --close-op: calc(80ms * var(--tempo));
+  --stagger-base: calc(40ms * var(--tempo));
+  --stagger-step: calc(20ms * var(--tempo));
+  --item-tf: calc(100ms * var(--tempo));
+  --item-op: calc(80ms * var(--tempo));
+  --spring: cubic-bezier(0.3, 1.6, 0.45, 1);
+  --absorb-ease: cubic-bezier(0.4, -0.5, 0.55, 1.35);
 }
 
 /* Staggered cascade for panel contents. */
-[data-aq-stagger] > * {
+[data-stagger] > * {
   opacity: 0;
   transform: translateY(1.1rem) scale(0.7);
   transition:
-    transform var(--aq-item-tf) var(--aq-spring) 0s,
-    opacity var(--aq-item-op) ease-in 0s;
+    transform var(--item-tf) var(--spring) 0s,
+    opacity var(--item-op) ease-in 0s;
 
   @media (prefers-reduced-motion: reduce) {
     transition: none;
   }
 }
 
-[data-aq-stagger].is-open > *,
-.is-open > .aq-menu > [data-aq-stagger] > * {
+[data-stagger].is-open > *,
+.is-open > .menu > [data-stagger] > * {
   opacity: 1;
   transform: none;
   transition:
-    transform var(--aq-item-tf) var(--aq-spring)
-      calc(var(--aq-stagger-base) + var(--aq-i, 0) * var(--aq-stagger-step)),
-    opacity var(--aq-item-op) ease-out
-      calc(var(--aq-stagger-base) + var(--aq-i, 0) * var(--aq-stagger-step));
+    transform var(--item-tf) var(--spring)
+      calc(var(--stagger-base) + var(--stagger-index, 0) * var(--stagger-step)),
+    opacity var(--item-op) ease-out
+      calc(var(--stagger-base) + var(--stagger-index, 0) * var(--stagger-step));
 
   @media (prefers-reduced-motion: reduce) {
     transition: none;
   }
 }
 
-[data-aq-stagger] > * {
-  --aq-i: calc(sibling-index() - 1);
+[data-stagger] > * {
+  --stagger-index: calc(sibling-index() - 1);
 }

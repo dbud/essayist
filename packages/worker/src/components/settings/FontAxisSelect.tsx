@@ -26,8 +26,8 @@ interface FontAxisSelectProps {
 
 export default function FontAxisSelect({ axis, label }: FontAxisSelectProps) {
   return (
-    <div class="aq-menu">
-      <ul class="aq-menu-rows" data-aq-stagger>
+    <div class="menu">
+      <ul class="menu-rows" data-stagger>
         <li class="flex flex-col gap-1">
           <span class="shrink-0 px-2">{label}</span>
           <AqSegmented value={axis.signal} options={axis.options} label={label} />

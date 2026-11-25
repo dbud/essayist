@@ -7,8 +7,8 @@ interface AvatarProps {
 
 export default function Avatar({ user }: AvatarProps) {
   return (
-    <span class="aq-avatar">
-      <span class="aq-avatar-picture">
+    <span class="avatar">
+      <span class="avatar-picture">
         {user.picture ? (
           <img
             src={user.picture}

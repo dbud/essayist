@@ -2,15 +2,15 @@
    --swap-x, --swap-y, --swap-turn and --swap-scale, and the new content moves in from the mirrored
    values. */
 
-@utility aq-swap {
+@utility swap {
   --swap-duration: 140ms;
 
   &[data-phase="out"] > :not([data-static]) {
-    animation: aq-swap-out var(--swap-duration) ease-in forwards;
+    animation: swap-out var(--swap-duration) ease-in forwards;
   }
 
   &[data-phase="in"] > :not([data-static]) {
-    animation: aq-swap-in var(--swap-duration) ease-out forwards;
+    animation: swap-in var(--swap-duration) ease-out forwards;
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -22,7 +22,7 @@
   }
 }
 
-@keyframes aq-swap-out {
+@keyframes swap-out {
   to {
     opacity: 0;
     transform: translate(var(--swap-x, 0px), var(--swap-y, 0px)) rotate(var(--swap-turn, 0deg))
@@ -30,7 +30,7 @@
   }
 }
 
-@keyframes aq-swap-in {
+@keyframes swap-in {
   from {
     opacity: 0;
     transform: translate(calc(-1 * var(--swap-x, 0px)), calc(-1 * var(--swap-y, 0px)))

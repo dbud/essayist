@@ -115,7 +115,7 @@ export default function VersionPicker() {
       <AqSwap on={state}>
         <button
           type="button"
-          class="aq-btn--idle relative min-w-36"
+          class="btn--idle relative min-w-36"
           aria-expanded={hasVersions ? open.value : false}
           onClick={() => {
             if (hasVersions) open.value = !open.value;
@@ -132,24 +132,24 @@ export default function VersionPicker() {
                 ) : autoSave.value ? (
                   <SaveArc file={file} intervalSeconds={autoSaveInterval.value} />
                 ) : (
-                  <CircleDashed class="text-(--btn-accent-ink) animate-[spin_3s_linear_infinite]" />
+                  <CircleDashed class="text-(--btn-highlight-ink) animate-[spin_3s_linear_infinite]" />
                 )}
               </span>
               {!pending && label && <span>{label}</span>}
             </>
           )}
-          {!pending && hasVersions && <ChevronDown class="aq-chevron" data-static />}
+          {!pending && hasVersions && <ChevronDown class="chevron" data-static />}
         </button>
       </AqSwap>
       {hasVersions && (
-        <div class={`aq-dropdown ${open.value ? "is-open" : ""}`}>
-          <div class="aq-menu">
-            <ul class="aq-menu-rows" data-aq-stagger>
+        <div class={`dropdown ${open.value ? "is-open" : ""}`}>
+          <div class="menu">
+            <ul class="menu-rows" data-stagger>
               {list.map((version, i) => (
                 <li key={version.version_id}>
                   <button
                     type="button"
-                    class={`aq-menu-btn ${version.version_id === versionId ? "is-selected" : ""}`}
+                    class={`menu-btn ${version.version_id === versionId ? "is-selected" : ""}`}
                     onClick={() => {
                       fileTrees.current.value?.selectVersion(version.version_id);
                       close();
@@ -174,7 +174,7 @@ export default function VersionPicker() {
             </ul>
           </div>
           {import.meta.env.DEV && promotable ? (
-            <button type="button" class="aq-btn" onClick={() => void promoteDraft(close)}>
+            <button type="button" class="btn" onClick={() => void promoteDraft(close)}>
               Save version
             </button>
           ) : null}

@@ -1,22 +1,22 @@
-.aq-menu {
+.menu {
   @apply melt-shape melt-shadow-lifted rounded-lg py-2 px-2 text-float-ink;
-  --melt-rim: var(--aq-rim-primary);
+  --melt-rim: var(--rim-primary);
   --melt-fill: var(--color-float);
 }
 
-.aq-menu-head {
+.menu-head {
   @apply py-2 px-3;
 }
 
-.aq-menu-rows {
+.menu-rows {
   @apply flex flex-col gap-2;
 }
 
-.aq-menu-btn {
-  @apply aq-btn--base py-1.5 px-2 min-w-48 w-full rounded-sm;
+.menu-btn {
+  @apply btn--base py-1.5 px-2 min-w-48 w-full rounded-sm;
   @apply melt-group;
   --btn-bg: oklch(from var(--color-float) l c h / 0.6);
-  --aq-btn-ease: cubic-bezier(0.2, 0, 0, 1);
+  --btn-ease: cubic-bezier(0.2, 0, 0, 1);
   @apply melt-rim-transparent melt-shadow-none;
 
   &:hover {
@@ -24,44 +24,44 @@
   }
 }
 
-/* Icon buttons next to a row, like remove or rename. Outranks .aq-menu--wrap. */
-li > .aq-menu-btn.aq-menu-action {
+/* Icon buttons next to a row, like remove or rename. Outranks .menu--wrap. */
+li > .menu-btn.menu-action {
   @apply grid place-items-center self-center w-auto min-w-0 shrink-0 px-2;
 }
 
 /* Hidden until the row is hovered, focused or selected. */
-li:not(:hover, :focus-within) > .aq-menu-btn:not(.is-selected) ~ .aq-menu-action {
+li:not(:hover, :focus-within) > .menu-btn:not(.is-selected) ~ .menu-action {
   --btn-bg: transparent;
   --btn-ink: transparent;
 }
 
-li > .aq-menu-btn:has(~ .aq-menu-action) {
+li > .menu-btn:has(~ .menu-action) {
   @apply flex-1 min-w-0;
 }
 
-.aq-avatar {
+.avatar {
   @apply relative w-full h-full rounded-md;
   @apply melt-group melt-shape melt-shadow-none;
-  --melt-rim: var(--aq-rim-primary);
+  --melt-rim: var(--rim-primary);
   --melt-fill: var(--color-float);
 }
 
-.aq-avatar-picture {
+.avatar-picture {
   @apply absolute -inset-px grid place-items-center rounded-[13px] overflow-hidden text-float-ink;
 }
 
-.aq-menu-btn.is-selected {
+.menu-btn.is-selected {
   @apply melt-rim-white/70;
   --btn-bg: var(--color-accent);
-  --btn-bg-hover: var(--aq-btn-accent-hover);
+  --btn-bg-hover: var(--btn-accent-hover);
 
   &:hover {
     --btn-bg: var(--btn-bg-hover);
   }
 }
 
-.aq-menu--wrap {
-  & .aq-menu-btn {
+.menu--wrap {
+  & .menu-btn {
     @apply block text-start whitespace-normal;
 
     & > span + span {
@@ -70,14 +70,14 @@ li > .aq-menu-btn:has(~ .aq-menu-action) {
   }
 }
 
-.aq-menu--small {
+.menu--small {
   @apply rounded-md py-1 px-1.5;
 
-  & .aq-menu-rows {
+  & .menu-rows {
     @apply gap-1;
   }
 
-  & .aq-menu-btn {
+  & .menu-btn {
     @apply py-1 px-1.5 min-w-36;
     font-size: 0.8rem;
 

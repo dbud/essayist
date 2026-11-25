@@ -48,17 +48,17 @@ export default function SettingsMenu({ user }: SettingsMenuProps) {
     <Melt class="inline-flex" ref={ref}>
       <button
         type="button"
-        class="aq-btn--idle"
+        class="btn--idle"
         aria-expanded={open.value}
         onClick={() => (open.value = !open.value)}
       >
         <Settings2 />
         <span class="hidden @lg:inline">Settings</span>
-        <ChevronDown class="hidden @sm:inline aq-chevron" />
+        <ChevronDown class="hidden @sm:inline chevron" />
       </button>
-      <div class={`aq-dropdown--origin-end ${open.value ? "is-open" : ""}`}>
-        <div class="aq-menu">
-          <ul class="aq-menu-rows" data-aq-stagger>
+      <div class={`dropdown--origin-end ${open.value ? "is-open" : ""}`}>
+        <div class="menu">
+          <ul class="menu-rows" data-stagger>
             <li class="pointer-events-none flex gap-2">
               <span class="grid h-10 w-10">
                 <Avatar user={user} />
@@ -72,7 +72,7 @@ export default function SettingsMenu({ user }: SettingsMenuProps) {
                 type="button"
                 role="switch"
                 aria-checked={autoSave.value}
-                class={`aq-menu-btn aq-toggle-row ${autoSave.value ? "is-on" : ""}`}
+                class={`menu-btn toggle-row ${autoSave.value ? "is-on" : ""}`}
                 onClick={() => (autoSave.value = !autoSave.value)}
               >
                 <span>Autosave</span>
@@ -90,7 +90,7 @@ export default function SettingsMenu({ user }: SettingsMenuProps) {
             <li>
               <button
                 type="button"
-                class="aq-menu-btn"
+                class="menu-btn"
                 onClick={() => {
                   debugSidebarOpened.value = !debugSidebarOpened.value;
                   close();
@@ -107,7 +107,7 @@ export default function SettingsMenu({ user }: SettingsMenuProps) {
                     type="button"
                     role="switch"
                     aria-checked={meltEnabled.value}
-                    class={`aq-menu-btn aq-toggle-row ${meltEnabled.value ? "is-on" : ""}`}
+                    class={`menu-btn toggle-row ${meltEnabled.value ? "is-on" : ""}`}
                     onClick={() => (meltEnabled.value = !meltEnabled.value)}
                   >
                     <span>Melt shader</span>
@@ -119,7 +119,7 @@ export default function SettingsMenu({ user }: SettingsMenuProps) {
                     type="button"
                     role="switch"
                     aria-checked={meltDebug.value}
-                    class={`aq-menu-btn aq-toggle-row ${meltDebug.value ? "is-on" : ""}`}
+                    class={`menu-btn toggle-row ${meltDebug.value ? "is-on" : ""}`}
                     onClick={() => (meltDebug.value = !meltDebug.value)}
                   >
                     <span>Melt outlines</span>
@@ -127,7 +127,7 @@ export default function SettingsMenu({ user }: SettingsMenuProps) {
                   </button>
                 </li>
                 <li>
-                  <a href="/admin" class="aq-menu-btn" onClick={close}>
+                  <a href="/admin" class="menu-btn" onClick={close}>
                     <SlidersVertical />
                     Control panel
                   </a>
@@ -137,7 +137,7 @@ export default function SettingsMenu({ user }: SettingsMenuProps) {
             <li>
               <button
                 type="button"
-                class="aq-menu-btn"
+                class="menu-btn"
                 onClick={() => {
                   localStorage.clear();
                   clearPreferencesCookie(new URL(location.href));
@@ -150,7 +150,7 @@ export default function SettingsMenu({ user }: SettingsMenuProps) {
               </button>
             </li>
             <li>
-              <a href="/oauth/signout" class="aq-menu-btn" onClick={close}>
+              <a href="/oauth/signout" class="menu-btn" onClick={close}>
                 <LogOut />
                 Sign out
               </a>

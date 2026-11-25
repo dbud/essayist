@@ -1,5 +1,5 @@
 :root {
-  --aq-gap: 0.5rem;
+  --gap: 0.5rem;
   --melt-light-angle: -35deg;
   --melt-light-elevation: 20deg;
   --melt-rim-width: 2;
@@ -14,6 +14,6 @@
   --melt-height-flat: 0.1px;
   --melt-height-rest: 0.8px;
   --melt-height-lifted: 2.8px;
-  --aq-rim-primary: color-mix(in oklab, white 60%, transparent);
-  --aq-rim-secondary: color-mix(in oklab, var(--color-stroke) 20%, transparent);
+  --rim-primary: color-mix(in oklab, white 60%, transparent);
+  --rim-secondary: color-mix(in oklab, var(--color-stroke) 20%, transparent);
 }

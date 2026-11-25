@@ -16,16 +16,16 @@ import { TIMED_PARTS, type TimedPart, takeFrameStats } from "#/melt/stats.ts";
 function Buttons() {
   return (
     <Melt class="flex items-center gap-4">
-      <button type="button" class="aq-btn">
+      <button type="button" class="btn">
         Settings
       </button>
-      <button type="button" class="aq-btn--accent">
+      <button type="button" class="btn--accent">
         Review
       </button>
-      <button type="button" class="aq-btn--idle">
+      <button type="button" class="btn--idle">
         Saved
       </button>
-      <button type="button" class="aq-btn aq-btn--small">
+      <button type="button" class="btn btn--small">
         B
       </button>
     </Melt>
@@ -40,13 +40,13 @@ function Swap() {
       <AqSwap on={busy.value ? "busy" : "idle"}>
         <button
           type="button"
-          class={busy.value ? "aq-btn--idle" : "aq-btn--accent"}
+          class={busy.value ? "btn--idle" : "btn--accent"}
           onClick={() => (busy.value = !busy.value)}
         >
           {busy.value ? (
             <>
               <span>Review in progress</span>
-              <ChevronDown class="aq-chevron" />
+              <ChevronDown class="chevron" />
             </>
           ) : (
             <>
@@ -56,7 +56,7 @@ function Swap() {
           )}
         </button>
       </AqSwap>
-      <button type="button" class="aq-btn">
+      <button type="button" class="btn">
         Saved
       </button>
     </Melt>
@@ -72,19 +72,19 @@ function Dropdown() {
     <Melt class="inline-flex">
       <button
         type="button"
-        class="aq-btn--idle"
+        class="btn--idle"
         aria-expanded={open.value}
         onClick={() => (open.value = !open.value)}
       >
         <span>Aa</span>
-        <ChevronDown class="aq-chevron" />
+        <ChevronDown class="chevron" />
       </button>
-      <div class={`aq-dropdown aq-dropdown--origin-start ${open.value ? "is-open" : ""}`}>
-        <div class="aq-menu">
-          <ul class="aq-menu-rows" data-aq-stagger>
+      <div class={`dropdown dropdown--origin-start ${open.value ? "is-open" : ""}`}>
+        <div class="menu">
+          <ul class="menu-rows" data-stagger>
             {FONTS.map((font, i) => (
               <li key={font}>
-                <button type="button" class={`aq-menu-btn ${i === 1 ? "is-selected" : ""}`}>
+                <button type="button" class={`menu-btn ${i === 1 ? "is-selected" : ""}`}>
                   {font}
                 </button>
               </li>
@@ -106,32 +106,32 @@ function BridgedDropdown() {
     <Melt class="inline-flex">
       <button
         type="button"
-        class="aq-btn"
+        class="btn"
         aria-expanded={open.value}
         onClick={() => (open.value = !open.value)}
       >
         <span>Essays / Draft.md</span>
-        <ChevronDown class="aq-chevron" />
+        <ChevronDown class="chevron" />
       </button>
-      <div class={`aq-dropdown aq-dropdown--detached ${open.value ? "is-open" : ""}`}>
-        <div class="aq-menu">
-          <ul class="aq-menu-rows" data-aq-stagger>
+      <div class={`dropdown dropdown--detached ${open.value ? "is-open" : ""}`}>
+        <div class="menu">
+          <ul class="menu-rows" data-stagger>
             {PROJECTS.map((project, i) => (
               <li key={project} class="relative flex">
-                <button type="button" class={`aq-menu-btn ${i === 0 ? "is-selected" : ""}`}>
+                <button type="button" class={`menu-btn ${i === 0 ? "is-selected" : ""}`}>
                   {project}
                   {i === 0 && <ChevronRight class="absolute right-1" />}
                 </button>
                 {i === 0 && (
-                  <div class={`aq-dropdown--right-bridged ${open.value ? "is-open" : ""}`}>
-                    <span class="aq-dropdown-bridge" aria-hidden="true" />
-                    <div class="aq-menu">
-                      <ul class="aq-menu-rows" data-aq-stagger>
+                  <div class={`dropdown--right-bridged ${open.value ? "is-open" : ""}`}>
+                    <span class="dropdown-bridge" aria-hidden="true" />
+                    <div class="menu">
+                      <ul class="menu-rows" data-stagger>
                         {FILES.map((file, j) => (
                           <li key={file}>
                             <button
                               type="button"
-                              class={`aq-menu-btn ${j === 0 ? "is-selected" : ""}`}
+                              class={`menu-btn ${j === 0 ? "is-selected" : ""}`}
                             >
                               {file}
                             </button>
@@ -170,19 +170,19 @@ function Segmented() {
 function Effects() {
   return (
     <Melt class="flex items-center gap-4">
-      <button type="button" class="aq-btn--idle">
+      <button type="button" class="btn--idle">
         Idle
       </button>
-      <button type="button" class="aq-btn">
+      <button type="button" class="btn">
         Float
       </button>
-      <button type="button" class="aq-btn melt-rim-white/35">
+      <button type="button" class="btn melt-rim-white/35">
         Rim
       </button>
-      <button type="button" class="aq-btn--accent melt-glow-40">
+      <button type="button" class="btn--accent melt-glow-40">
         Glow
       </button>
-      <button type="button" class="aq-btn melt-rim-white/35 melt-stroke-[rgb(255_255_255/0.2)]">
+      <button type="button" class="btn melt-rim-white/35 melt-stroke-[rgb(255_255_255/0.2)]">
         Rim and stroke
       </button>
     </Melt>
@@ -302,7 +302,7 @@ function Grid() {
           <button
             key={i}
             type="button"
-            class={`aq-btn justify-center ${animate.value ? "animate-pulse" : ""}`}
+            class={`btn justify-center ${animate.value ? "animate-pulse" : ""}`}
             style={{
               animationDelay: animate.value ? `${(i % 8) * -250}ms` : undefined,
               "--melt-shadow": shadows.value ? undefined : "transparent",

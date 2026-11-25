@@ -94,7 +94,7 @@ export default function FileNavigation({ open }: FileNavigationProps) {
     <AqSwap on={`${selectedWorkspace}/${selectedPath}`}>
       <button
         type="button"
-        class="aq-btn max-w-lg"
+        class="btn max-w-lg"
         aria-expanded={open.value}
         onClick={() => (open.value = !open.value)}
       >
@@ -112,12 +112,12 @@ export default function FileNavigation({ open }: FileNavigationProps) {
   );
 
   const createFile = (
-    <div class="aq-menu self-start">
-      <ul class="aq-menu-rows" data-aq-stagger>
+    <div class="menu self-start">
+      <ul class="menu-rows" data-stagger>
         <li>
           <button
             type="button"
-            class="aq-menu-btn"
+            class="menu-btn"
             onClick={() => (creatingFile.value = true)}
             data-tooltip="Start writing from scratch"
           >
@@ -136,27 +136,23 @@ export default function FileNavigation({ open }: FileNavigationProps) {
   );
 
   const deleteWorkspace = ownsSelected && (
-    <button
-      type="button"
-      class="aq-btn self-start"
-      onClick={() => (deletingWorkspace.value = true)}
-    >
+    <button type="button" class="btn self-start" onClick={() => (deletingWorkspace.value = true)}>
       <Trash2 />
       <span>Delete project&hellip;</span>
     </button>
   );
 
   const filesList = (isOpen: boolean) => (
-    <div class={`aq-dropdown--right-bridged aq-dropdown--fit max-w-96 ${isOpen ? "is-open" : ""}`}>
-      <span class="aq-dropdown-bridge" aria-hidden="true" />
+    <div class={`dropdown--right-bridged dropdown--fit max-w-96 ${isOpen ? "is-open" : ""}`}>
+      <span class="dropdown-bridge" aria-hidden="true" />
       {fileEntries.length > 0 && (
-        <div class="aq-menu aq-menu--wrap">
-          <ul class="aq-menu-rows" data-aq-stagger>
+        <div class="menu menu--wrap">
+          <ul class="menu-rows" data-stagger>
             {fileEntries.map(({ path, parts, selected: fileSelected, name: fileName }) => (
               <li key={path} class="flex gap-2">
                 <button
                   type="button"
-                  class={`aq-menu-btn group ${fileSelected ? "is-selected" : ""}`}
+                  class={`menu-btn group ${fileSelected ? "is-selected" : ""}`}
                   onClick={() => {
                     files?.select(path);
                     close();
@@ -177,7 +173,7 @@ export default function FileNavigation({ open }: FileNavigationProps) {
                 </button>
                 <button
                   type="button"
-                  class="aq-menu-btn aq-menu-action"
+                  class="menu-btn menu-action"
                   aria-label={`Remove ${path}`}
                   onClick={() => (removingPath.value = path)}
                 >
@@ -194,11 +190,7 @@ export default function FileNavigation({ open }: FileNavigationProps) {
   );
 
   const createWorkspace = (
-    <button
-      type="button"
-      class="aq-btn self-start"
-      onClick={() => (creatingWorkspace.value = true)}
-    >
+    <button type="button" class="btn self-start" onClick={() => (creatingWorkspace.value = true)}>
       <Plus />
       <span>New project&hellip;</span>
     </button>
@@ -215,7 +207,7 @@ export default function FileNavigation({ open }: FileNavigationProps) {
       <li class="relative flex" key={id}>
         <button
           type="button"
-          class={`aq-menu-btn min-w-48 ${isSelected ? "is-selected" : ""}`}
+          class={`menu-btn min-w-48 ${isSelected ? "is-selected" : ""}`}
           onClick={() => workspaces.select(id)}
         >
           {name}
@@ -235,9 +227,9 @@ export default function FileNavigation({ open }: FileNavigationProps) {
     <Melt class="inline-flex z-panel" ref={ref}>
       {breadcrumbsTrigger}
 
-      <div class={`aq-dropdown aq-dropdown--detached ${showNav ? "is-open" : ""}`}>
-        <div class="aq-menu">
-          <ul class="aq-menu-rows" data-aq-stagger>
+      <div class={`dropdown dropdown--detached ${showNav ? "is-open" : ""}`}>
+        <div class="menu">
+          <ul class="menu-rows" data-stagger>
             {workspacesList}
           </ul>
         </div>

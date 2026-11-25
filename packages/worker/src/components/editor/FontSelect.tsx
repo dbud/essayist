@@ -24,7 +24,7 @@ export default function FontSelect() {
       <AqSwap on={current.value}>
         <button
           type="button"
-          class="aq-btn--idle"
+          class="btn--idle"
           aria-expanded={open.value}
           data-tooltip="Reading font"
           onClick={() => (open.value = !open.value)}
@@ -32,17 +32,17 @@ export default function FontSelect() {
           <span class="inline-flex gap-1">
             <span class={current.value}>Aa</span>
           </span>
-          <ChevronDown class="aq-chevron" data-static />
+          <ChevronDown class="chevron" data-static />
         </button>
       </AqSwap>
-      <div class={`aq-dropdown aq-dropdown--origin-start ${open.value ? "is-open" : ""}`}>
-        <div class="aq-menu">
-          <ul class="aq-menu-rows" data-aq-stagger>
+      <div class={`dropdown dropdown--origin-start ${open.value ? "is-open" : ""}`}>
+        <div class="menu">
+          <ul class="menu-rows" data-stagger>
             {OPTIONS.map((o) => (
               <li key={o.value}>
                 <button
                   type="button"
-                  class={`aq-menu-btn ${o.value === viewerFont.value ? "is-selected" : ""}`}
+                  class={`menu-btn ${o.value === viewerFont.value ? "is-selected" : ""}`}
                   onClick={() => {
                     viewerFont.value = o.value;
                     close();

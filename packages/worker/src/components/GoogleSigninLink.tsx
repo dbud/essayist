@@ -6,7 +6,7 @@ import { ArrowUpRight } from "lucide-preact";
  */
 export default function GoogleSigninLink({ next }: { next: string }) {
   return (
-    <a class="aq-btn--accent self-start" href={`/oauth/google?next=${encodeURIComponent(next)}`}>
+    <a class="btn--accent self-start" href={`/oauth/google?next=${encodeURIComponent(next)}`}>
       <ArrowUpRight size={16} />
       Sign in with Google
     </a>

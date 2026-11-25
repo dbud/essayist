@@ -6,9 +6,9 @@
   transform-origin: 0 0;
   transform: var(--pop);
   transition:
-    opacity var(--aq-close-op) ease-in,
-    transform var(--aq-close-tf) var(--aq-spring),
-    visibility 0s linear var(--aq-close-tf);
+    opacity var(--close-op) ease-in,
+    transform var(--close-tf) var(--spring),
+    visibility 0s linear var(--close-tf);
 
   &.is-open {
     opacity: 1;
@@ -16,8 +16,8 @@
     pointer-events: auto;
     transform: none;
     transition:
-      opacity var(--aq-open-op) ease-out,
-      transform var(--aq-open-tf) var(--aq-spring),
+      opacity var(--open-op) ease-out,
+      transform var(--open-tf) var(--spring),
       visibility 0s;
   }
 }

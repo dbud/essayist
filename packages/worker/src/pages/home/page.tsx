@@ -33,27 +33,27 @@ function HomePage() {
     <main class="min-h-svh">
       <MeltDemo />
       <Melt class="flex flex-wrap items-start gap-4 p-8">
-        <button type="button" class="aq-btn" onClick={() => showToast("Saved")}>
+        <button type="button" class="btn" onClick={() => showToast("Saved")}>
           Info
         </button>
         <button
           type="button"
-          class="aq-btn"
+          class="btn"
           onClick={() => showToast("Imported 3 files from Google Docs", "success")}
         >
           Success
         </button>
         <button
           type="button"
-          class="aq-btn"
+          class="btn"
           onClick={() => showToast("Could not reach the server", "error")}
         >
           Error
         </button>
-        <button type="button" class="aq-btn" onClick={runTask}>
+        <button type="button" class="btn" onClick={runTask}>
           Task
         </button>
-        <button type="button" class="aq-btn" onClick={seedToasts}>
+        <button type="button" class="btn" onClick={seedToasts}>
           All
         </button>
       </Melt>

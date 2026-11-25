@@ -51,7 +51,7 @@ export default function BlockTypeSelect({ block, onChange, disabled }: BlockType
       <AqSwap on={current.value}>
         <button
           type="button"
-          class="aq-btn aq-btn--small"
+          class="btn btn--small"
           aria-expanded={open.value}
           data-tooltip="Paragraph style"
           disabled={disabled}
@@ -59,17 +59,17 @@ export default function BlockTypeSelect({ block, onChange, disabled }: BlockType
         >
           <span class="swap-rotate">{current.icon}</span>
           <span class="hidden @sm:inline">{current.label}</span>
-          <ChevronDown class="aq-chevron" data-static />
+          <ChevronDown class="chevron" data-static />
         </button>
       </AqSwap>
-      <div class={`aq-dropdown aq-dropdown--origin-start ${open.value ? "is-open" : ""}`}>
-        <div class="aq-menu aq-menu--small">
-          <ul class="aq-menu-rows" data-aq-stagger>
+      <div class={`dropdown dropdown--origin-start ${open.value ? "is-open" : ""}`}>
+        <div class="menu menu--small">
+          <ul class="menu-rows" data-stagger>
             {OPTIONS.map((o) => (
               <li key={o.value}>
                 <button
                   type="button"
-                  class={`aq-menu-btn ${o.value === block ? "is-selected" : ""}`}
+                  class={`menu-btn ${o.value === block ? "is-selected" : ""}`}
                   onClick={() => {
                     onChange(o.value);
                     close();

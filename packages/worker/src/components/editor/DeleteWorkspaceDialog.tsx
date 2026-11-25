@@ -32,7 +32,7 @@ export default function DeleteWorkspaceDialog({ open, onDeleted }: DeleteWorkspa
 
   return (
     <form
-      class={`aq-dropdown aq-dropdown--detached ${open.value ? "is-open" : ""}`}
+      class={`dropdown dropdown--detached ${open.value ? "is-open" : ""}`}
       onSubmit={onSubmit}
       onKeyDown={(e) => {
         if (e.key === "Escape" && open.value) {
@@ -41,8 +41,8 @@ export default function DeleteWorkspaceDialog({ open, onDeleted }: DeleteWorkspa
         }
       }}
     >
-      <div class="aq-menu">
-        <div class="aq-form" data-aq-stagger>
+      <div class="menu">
+        <div class="form" data-stagger>
           <div class="col-span-2">Delete project &ldquo;{workspace?.name}&rdquo;?</div>
           {error.value && (
             <div class="col-span-2 text-[0.8rem] text-red-400" role="alert">
@@ -54,7 +54,7 @@ export default function DeleteWorkspaceDialog({ open, onDeleted }: DeleteWorkspa
       <div class="flex justify-end gap-4">
         <button
           type="button"
-          class="aq-btn"
+          class="btn"
           onClick={() => (open.value = false)}
           disabled={submitting.value}
         >
@@ -62,7 +62,7 @@ export default function DeleteWorkspaceDialog({ open, onDeleted }: DeleteWorkspa
         </button>
         <button
           type="submit"
-          class="aq-btn--accent relative"
+          class="btn--accent relative"
           disabled={submitting.value || workspace === undefined}
         >
           {submitting.value ? "Deleting..." : "Delete"}

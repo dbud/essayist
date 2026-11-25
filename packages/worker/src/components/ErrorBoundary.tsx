@@ -22,7 +22,7 @@ export default function ErrorBoundary({ children }: ErrorBoundaryProps) {
     return (
       <div class="flex flex-1 min-h-0 h-full items-center justify-center p-6 bg-paper striped pointer-events-auto">
         <Melt class="flex flex-col items-end gap-4 w-full max-w-128">
-          <div class="aq-menu flex flex-col gap-2 self-stretch">
+          <div class="menu flex flex-col gap-2 self-stretch">
             <div class="flex items-center gap-2">
               <TriangleAlert size={16} class="text-accent" />
               <span>Something went wrong</span>
@@ -32,10 +32,10 @@ export default function ErrorBoundary({ children }: ErrorBoundaryProps) {
             </pre>
           </div>
           <div class="flex gap-4">
-            <button type="button" class="aq-btn" onClick={resetError}>
+            <button type="button" class="btn" onClick={resetError}>
               Try again
             </button>
-            <button type="button" class="aq-btn" onClick={() => location.reload()}>
+            <button type="button" class="btn" onClick={() => location.reload()}>
               <RotateCcw />
               <span>Reload</span>
             </button>

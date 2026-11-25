@@ -1,4 +1,4 @@
-.aq-segmented {
+.segmented {
   @apply flex items-center gap-1 rounded-full cursor-pointer p-1;
   @apply relative melt-group melt-shape melt-shadow;
   --melt-fill: color-mix(in oklab, var(--color-float) 60%, transparent);
@@ -9,7 +9,7 @@
 
     @apply melt-shape;
     --melt-fill: transparent;
-    transition: --melt-fill calc(120ms * var(--aq-tempo, 1)) ease;
+    transition: --melt-fill calc(120ms * var(--tempo, 1)) ease;
 
     &:hover {
       --melt-fill: color-mix(in oklch, var(--color-float), white 25%);
@@ -22,12 +22,12 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .aq-segmented > button {
+  .segmented > button {
     transition: none;
   }
 }
 
-.aq-segmented--vertical {
+.segmented--vertical {
   @apply flex-col items-stretch min-w-0;
 
   & > button {

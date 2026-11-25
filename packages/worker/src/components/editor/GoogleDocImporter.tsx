@@ -74,7 +74,7 @@ export default function GoogleDocImporter({ onImported }: GoogleDocImporterProps
   return (
     <button
       type="button"
-      class="aq-menu-btn"
+      class="menu-btn"
       onClick={handleImport}
       disabled={importing.value}
       title="Import from Google Docs"

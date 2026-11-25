@@ -12,9 +12,9 @@ A melted component has a root, rendered by `<Melt>`, and shapes inside it.
 import Melt from "#/components/ui/Melt.tsx";
 
 <Melt class="inline-flex" ref={ref}>
-  <button class="aq-btn">Settings</button>
-  <div class="aq-dropdown">
-    <div class="aq-menu">...</div>
+  <button class="btn">Settings</button>
+  <div class="dropdown">
+    <div class="menu">...</div>
   </div>
 </Melt>;
 ```
@@ -22,8 +22,8 @@ import Melt from "#/components/ui/Melt.tsx";
 - `<Melt>` renders a `div` with the `melt-root` class and draws its shapes on a canvas behind its
   content. It takes an optional `ref`, so it can stand in for a root that `useClickOutside` needs.
 - A **shape** is an element with the `melt-shape` utility and a `--melt-fill` colour. The canvas
-  draws it as a rounded box, using its border radius. `aq-btn`, `aq-menu`, the segmented control,
-  toasts and the logo are shapes already.
+  draws it as a rounded box, using its border radius. `btn`, `menu`, the segmented control, toasts
+  and the logo are shapes already.
 - A **group** is a set of shapes that merge with each other. The root starts group 0, and every
   element with the `melt-group` utility starts a group of its own. Groups are drawn in document
   order, each over the ones before, so a menu row (its own group) sits on its panel without melting
@@ -59,7 +59,7 @@ rim-white/50`), `transparent`, or any colour in brackets. `melt-glow-30` is a gl
 ## Settings
 
 - `--melt-light-angle` sets where the light comes from, clockwise from straight up, for the whole
-  page. It is set on `:root` in `aq.css`.
+  page. It is set on `:root` in `tokens.css`.
 - `--melt-light-elevation` sets how high the light is above the page (45deg).
 - `--melt-rim-width` is half the thickness of each melted shape, lit as a slab with a half-round
   edge (4 CSS pixels): from above, its surface turns from facing out at the outline to level
@@ -71,7 +71,7 @@ rim-white/50`), `transparent`, or any colour in brackets. `melt-glow-30` is a gl
   away from the light.
 - A shape floats `--melt-height` above the page and casts two shadows in `--melt-shadow`. The shadow
   utilities set both from `--melt-shadow-color` and from `--melt-height-flat`, `--melt-height-rest`
-  and `--melt-height-lifted`, which the page sets on `:root` in `aq.css`. `--melt-light-ambient`
+  and `--melt-height-lifted`, which the page sets on `:root` in `tokens.css`. `--melt-light-ambient`
   (0.6) is the share of the light that comes from all around: it casts the ambient shadow, a crease
   along the outline, darkest at it and falling fastest there, gone a pixel out on the page, about
   the height out as the shape rises, and never sooner than halfway across the penumbra of the key
@@ -86,7 +86,7 @@ rim-white/50`), `transparent`, or any colour in brackets. `melt-glow-30` is a gl
 - Every pixel of the canvas gets noise of a level up and down, so soft gradients don't band, and
   `--melt-grain` varies how much light each pixel of a shadow takes by that share (0), so shadows
   read as falling on paper. The shapes stay smooth.
-- All of these are set on `:root` in `aq.css`, and a root can override them.
+- All of these are set on `:root` in `tokens.css`, and a root can override them.
 - `--melt-sigma`, `--melt-gain` and `--melt-bias` on a root tune the melt itself: how far shapes
   reach to merge (6px), and how sharp the outline is (18 and -6).
 - `meltEnabled` in `Melt.tsx` turns the canvas off for the whole page.

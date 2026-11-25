@@ -19,7 +19,7 @@ export default function ThemeToggle() {
       <AqSwap on={String(dark)}>
         <button
           type="button"
-          class="aq-btn--idle"
+          class="btn--idle"
           aria-label={`Switch to ${dark ? "light" : "dark"} theme`}
           data-tooltip="Switch theme"
           onClick={toggleTheme}

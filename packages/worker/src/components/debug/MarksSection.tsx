@@ -22,7 +22,7 @@ function MarkDetail({
     <li>
       <button
         type="button"
-        class={`aq-menu-btn ${active ? "is-selected" : ""}`}
+        class={`menu-btn ${active ? "is-selected" : ""}`}
         title="Go to mark in editor"
         disabled={editor === null}
         onClick={() => editor?.dispatchCommand(SELECT_MARK_COMMAND, mark.id)}
@@ -71,7 +71,7 @@ export default function MarksSection() {
 
   return (
     <Section title="Marks">
-      <ul class="aq-menu-rows">
+      <ul class="menu-rows">
         {current.marks.value.map((mark) => (
           <MarkDetail
             key={mark.id}
