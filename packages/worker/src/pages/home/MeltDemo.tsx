@@ -160,7 +160,7 @@ const SEGMENTS = [
 function SegmentedSample() {
   const value = useSignal("5s");
   return (
-    <Melt class="inline-flex text-float-ink">
+    <Melt class="inline-flex text-solid-ink">
       <Segmented value={value} options={SEGMENTS} label="Interval" />
     </Melt>
   );
@@ -227,7 +227,7 @@ function FrameStats() {
   const ms = (part: TimedPart) => (parts[part] ?? 0).toFixed(1);
   const measure = MEASURE_PARTS.reduce((sum, part) => sum + (parts[part] ?? 0), 0);
   return (
-    <div class="fixed right-4 bottom-20 z-toast flex flex-col gap-1 rounded-md bg-float px-3 py-2 font-mono text-xs text-float-ink tabular-nums">
+    <div class="fixed right-4 bottom-20 z-toast flex flex-col gap-1 rounded-md bg-solid px-3 py-2 font-mono text-xs text-solid-ink tabular-nums">
       <span>{fps} fps</span>
       <span>measure {measure.toFixed(1)} ms</span>
       {MEASURE_PARTS.map((part) => (

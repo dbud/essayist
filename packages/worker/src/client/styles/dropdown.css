@@ -86,7 +86,7 @@
    so the melt canvas can measure it. */
 @utility dropdown-bridge {
   @apply absolute melt-shape melt-shadow-lifted;
-  --melt-fill: var(--color-float);
+  --melt-fill: var(--color-solid);
   right: 100%;
   top: 0.25rem;
   width: calc(var(--dropdown--right-x) - 0.5rem);

@@ -20,7 +20,7 @@
    without bleeding into it, which would make the track look lopsided. */
 .toggle {
   @apply absolute top-1/2 -translate-y-1/2 rounded-full melt-group melt-shape;
-  --melt-fill: color-mix(in oklch, var(--color-float), white 12%);
+  --melt-fill: color-mix(in oklch, var(--color-solid), white 12%);
   right: var(--toggle-right);
   width: var(--toggle-width);
   height: calc(var(--toggle-knob) + 2 * var(--toggle-inset));
@@ -28,7 +28,7 @@
 
 .toggle-knob {
   @apply absolute rounded-full melt-group melt-shape melt-rim-white/70 size-[var(--toggle-knob)];
-  --melt-fill: color-mix(in oklch, var(--color-float), white 45%);
+  --melt-fill: color-mix(in oklch, var(--color-solid), white 45%);
   top: var(--toggle-inset);
   left: calc(
     var(--toggle-inset) + var(--toggle-x) *

@@ -1,7 +1,7 @@
 .menu {
-  @apply melt-shape melt-shadow-lifted rounded-lg py-2 px-2 text-float-ink;
+  @apply melt-shape melt-shadow-lifted rounded-lg py-2 px-2 text-solid-ink;
   --melt-rim: var(--rim-primary);
-  --melt-fill: var(--color-float);
+  --melt-fill: var(--color-solid);
 }
 
 .menu-head {
@@ -15,7 +15,7 @@
 .menu-btn {
   @apply btn--base py-1.5 px-2 min-w-48 w-full rounded-sm;
   @apply melt-group;
-  --btn-bg: oklch(from var(--color-float) l c h / 0.6);
+  --btn-bg: oklch(from var(--color-solid) l c h / 0.6);
   --btn-ease: cubic-bezier(0.2, 0, 0, 1);
   @apply melt-rim-transparent melt-shadow-none;
 
@@ -43,11 +43,11 @@ li > .menu-btn:has(~ .menu-action) {
   @apply relative w-full h-full rounded-md;
   @apply melt-group melt-shape melt-shadow-none;
   --melt-rim: var(--rim-primary);
-  --melt-fill: var(--color-float);
+  --melt-fill: var(--color-solid);
 }
 
 .avatar-picture {
-  @apply absolute -inset-px grid place-items-center rounded-[13px] overflow-hidden text-float-ink;
+  @apply absolute -inset-px grid place-items-center rounded-[13px] overflow-hidden text-solid-ink;
 }
 
 .menu-btn.is-selected {
