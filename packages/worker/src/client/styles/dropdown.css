@@ -112,13 +112,3 @@
 .melt-root:has(> [aria-expanded="true"]) {
   z-index: var(--z-dropdown);
 }
-
-.chevron {
-  width: 1rem;
-  height: 1rem;
-  transition: transform var(--close-tf) var(--spring);
-}
-
-[aria-expanded="true"] .chevron {
-  transform: rotate(-180deg);
-}
