@@ -1,7 +1,6 @@
 /**
  * The AuthStore D1 layer over the `node:sqlite` shim in place of the worker's `D1Database` binding,
- * with a fake Clock for deterministic expiry and TTL. The layer applies its own tables, so the
- * schema creation runs under test too.
+ * with a fake Clock for deterministic expiry and TTL.
  */
 
 import type { DatabaseSync } from "node:sqlite";

@@ -1,5 +1,5 @@
 import type * as D1Client from "@effect/sql-d1/D1Client";
-import { Cause, Clock, Effect, Layer, Option, Schema } from "effect";
+import { Cause, Clock, Effect, Layer, Option } from "effect";
 import { SqlModel, SqlSchema } from "effect/sql";
 import { SqlClient } from "effect/sql/SqlClient";
 
@@ -16,26 +16,6 @@ const backendFault = (cause: unknown) => new PersistenceError({ cause });
 export function layerAuthD1(
   client: D1Client.D1Client & SqlClient,
 ): Layer.Layer<AuthStore, PersistenceError> {
-  const ensureSchema = SqlSchema.void({
-    Request: Schema.Void,
-    execute: () =>
-      client.batch([
-        client`CREATE TABLE IF NOT EXISTS auth_session (
-          id TEXT PRIMARY KEY NOT NULL,
-          userId TEXT NOT NULL,
-          expiresAt INTEGER NOT NULL,
-          tokens TEXT
-        )`,
-        // for a future expiry sweep
-        client`CREATE INDEX IF NOT EXISTS auth_session_expiry ON auth_session (expiresAt)`,
-        client`CREATE TABLE IF NOT EXISTS auth_refresh_token (
-          userId TEXT PRIMARY KEY NOT NULL,
-          refreshToken TEXT NOT NULL,
-          updatedAt INTEGER NOT NULL
-        )`,
-      ]),
-  });
-
   const upsertRefreshTokenRow = SqlSchema.void({
     Request: AuthRefreshToken.insert,
     execute: ({ userId, refreshToken, updatedAt }) =>
@@ -47,7 +27,6 @@ export function layerAuthD1(
 
   return Layer.unwrap(
     Effect.gen(function* () {
-      yield* Effect.mapError(ensureSchema(), backendFault);
       const sessions = yield* SqlModel.makeRepository(AuthSession, {
         tableName: "auth_session",
         spanPrefix: "AuthSession",

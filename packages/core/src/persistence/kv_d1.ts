@@ -25,13 +25,6 @@ import {
 } from "./mod.ts";
 import { Persistence, PersistenceError } from "./service.ts";
 
-/** The kv table schema; apply with `wrangler d1 execute --file`. */
-export const KV_D1_SCHEMA = `CREATE TABLE IF NOT EXISTS kv (
-  key TEXT PRIMARY KEY NOT NULL,
-  value TEXT NOT NULL,
-  version INTEGER NOT NULL
-) WITHOUT ROWID`;
-
 /** A stored row: the encoded key and value texts, plus the version
  * counter. */
 const RowSchema = Schema.Struct({

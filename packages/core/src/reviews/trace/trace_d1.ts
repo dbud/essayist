@@ -10,21 +10,7 @@ import { TraceEvent } from "./types.ts";
 
 const backendFault = (cause: unknown) => new PersistenceError({ cause });
 
-export function layerTraceEventsD1(
-  client: D1Client.D1Client,
-): Layer.Layer<TraceEvents, PersistenceError> {
-  const ensureSchema = SqlSchema.void({
-    Request: Schema.Void,
-    execute: () =>
-      client`CREATE TABLE IF NOT EXISTS review_trace_events (
-        wsId TEXT NOT NULL,
-        runId TEXT NOT NULL,
-        seq INTEGER NOT NULL,
-        event TEXT NOT NULL,
-        PRIMARY KEY (wsId, runId, seq)
-      ) WITHOUT ROWID`,
-  });
-
+export function layerTraceEventsD1(client: D1Client.D1Client): Layer.Layer<TraceEvents> {
   const insertEvent = SqlSchema.void({
     Request: Schema.Struct({
       wsId: Schema.String,
@@ -83,10 +69,5 @@ export function layerTraceEventsD1(
       yield* Effect.mapError(deleteEventRows({ wsId, runId }), backendFault);
     });
 
-  return Layer.unwrap(
-    Effect.gen(function* () {
-      yield* Effect.mapError(ensureSchema(), backendFault);
-      return Layer.succeed(TraceEvents, TraceEvents.of({ append, get, deleteRun }));
-    }),
-  );
+  return Layer.succeed(TraceEvents, TraceEvents.of({ append, get, deleteRun }));
 }

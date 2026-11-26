@@ -22,7 +22,7 @@ import {
   TraceEvents,
   Workspaces,
 } from "@essayist/core";
-import { KV_D1_SCHEMA, layerKvD1 } from "@essayist/core/kv_d1";
+import { layerKvD1 } from "@essayist/core/kv_d1";
 import { type D1RestConfig, d1RestDatabase } from "@essayist/core/kv_d1_rest";
 import { d1SqliteShim } from "@essayist/core/kv_d1_sqlite";
 import { Config, Effect, Layer, ManagedRuntime } from "effect";
@@ -50,13 +50,14 @@ function localDatabase(): D1Database {
     // miniflare's bookkeeping database; its content db sits next to it.
     .filter((path) => basename(path) !== "metadata.sqlite");
   if (files.length === 0) {
-    throw new Error("no local D1 state; start the vite dev server once, then retry");
+    throw new Error(
+      "no local D1 state; run `pnpm -C packages/worker db:migrate:local`, then retry",
+    );
   }
   if (files.length > 1) {
     throw new Error(`several local D1 state files; not sure which:\n  ${files.join("\n  ")}`);
   }
   const db = new DatabaseSync(join(D1_STATE, files[0]));
-  db.exec(KV_D1_SCHEMA);
   return d1SqliteShim(db);
 }
 
@@ -90,8 +91,7 @@ export function database(globals: KvctlGlobals): D1Database {
 }
 
 // One layer: the domain services plus Persistence in the runtime context (the raw listings need
-// it), all over the one database. The run and trace layers apply their own tables, so kvctl needs
-// no separate schema step.
+// it), all over the one database.
 export function storeLayer(
   db: D1Database,
 ): Layer.Layer<

@@ -12,39 +12,7 @@ import { ReviewRun, ReviewRunStatus } from "./types.ts";
 
 const backendFault = (cause: unknown) => new PersistenceError({ cause });
 
-export function layerReviewRunsD1(
-  client: D1Client.D1Client,
-): Layer.Layer<ReviewRuns, PersistenceError> {
-  const ensureSchema = SqlSchema.void({
-    Request: Schema.Void,
-    execute: () =>
-      client.batch([
-        client`CREATE TABLE IF NOT EXISTS review_runs (
-          id TEXT NOT NULL,
-          wsId TEXT NOT NULL,
-          path TEXT NOT NULL,
-          reviewPassId TEXT NOT NULL,
-          versionId TEXT NOT NULL,
-          status TEXT NOT NULL CHECK (status IN ('running', 'completed', 'failed')),
-          startedAt INTEGER NOT NULL,
-          completedAt INTEGER,
-          error TEXT,
-          summary TEXT,
-          leaseOwner TEXT,
-          heartbeatAt INTEGER,
-          PRIMARY KEY (wsId, id)
-        ) WITHOUT ROWID`,
-        client`CREATE INDEX IF NOT EXISTS review_runs_started
-          ON review_runs (wsId, startedAt DESC)`,
-        // a global sweep for runs in progress, for the stale-run janitor
-        client`CREATE INDEX IF NOT EXISTS review_runs_stale ON review_runs (heartbeatAt)
-          WHERE status = 'running'`,
-        // a single running review per file
-        client`CREATE UNIQUE INDEX IF NOT EXISTS review_runs_active ON review_runs (wsId, path)
-          WHERE status = 'running'`,
-      ]),
-  });
-
+export function layerReviewRunsD1(client: D1Client.D1Client): Layer.Layer<ReviewRuns> {
   const insertRun = SqlSchema.void({
     Request: Schema.Struct({
       id: Schema.String,
@@ -274,22 +242,17 @@ export function layerReviewRunsD1(
       return Option.isSome(deleted);
     });
 
-  return Layer.unwrap(
-    Effect.gen(function* () {
-      yield* Effect.mapError(ensureSchema(), backendFault);
-      return Layer.succeed(
-        ReviewRuns,
-        ReviewRuns.of({
-          createRun,
-          getRun,
-          listRuns,
-          completeRun,
-          failRun,
-          claimRun,
-          heartbeatRun,
-          deleteRun,
-        }),
-      );
+  return Layer.succeed(
+    ReviewRuns,
+    ReviewRuns.of({
+      createRun,
+      getRun,
+      listRuns,
+      completeRun,
+      failRun,
+      claimRun,
+      heartbeatRun,
+      deleteRun,
     }),
   );
 }
