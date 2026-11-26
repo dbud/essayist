@@ -109,6 +109,7 @@
   min-width: 100%;
 }
 
+/* Unlayered, so it outranks a z-* utility on the same element. */
 .melt-root:has(> [aria-expanded="true"]) {
   z-index: var(--z-dropdown);
 }

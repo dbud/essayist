@@ -17,9 +17,11 @@
   }
 }
 
-.wave-bar {
-  transform-box: fill-box;
-  transform-origin: bottom;
-  fill: color-mix(in oklch, currentColor, transparent 22%);
-  animation: wave-bar var(--wave-duration, 1s) ease-in-out var(--wave-delay, 0s) infinite;
+@layer components {
+  .wave-bar {
+    transform-box: fill-box;
+    transform-origin: bottom;
+    fill: color-mix(in oklch, currentColor, transparent 22%);
+    animation: wave-bar var(--wave-duration, 1s) ease-in-out var(--wave-delay, 0s) infinite;
+  }
 }

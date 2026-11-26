@@ -1,36 +1,38 @@
-.floating-toolbar {
-  --pop: translateY(0.2rem) scale(0.6);
-  opacity: 0;
-  visibility: hidden;
-  pointer-events: none;
-  transform-origin: 0 0;
-  transform: var(--pop);
-  transition:
-    opacity var(--close-op) ease-in,
-    transform var(--close-tf) var(--spring),
-    visibility 0s linear var(--close-tf);
-
-  &.is-open {
-    opacity: 1;
-    visibility: visible;
-    pointer-events: auto;
-    transform: none;
-    transition:
-      opacity var(--open-op) ease-out,
-      transform var(--open-tf) var(--spring),
-      visibility 0s;
-  }
-}
-
-@starting-style {
-  .floating-toolbar.is-open {
-    opacity: 0;
-    transform: var(--pop);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
+@layer components {
   .floating-toolbar {
-    transition: none;
+    --pop: translateY(0.2rem) scale(0.6);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transform-origin: 0 0;
+    transform: var(--pop);
+    transition:
+      opacity var(--close-op) ease-in,
+      transform var(--close-tf) var(--spring),
+      visibility 0s linear var(--close-tf);
+
+    &.is-open {
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
+      transform: none;
+      transition:
+        opacity var(--open-op) ease-out,
+        transform var(--open-tf) var(--spring),
+        visibility 0s;
+    }
+  }
+
+  @starting-style {
+    .floating-toolbar.is-open {
+      opacity: 0;
+      transform: var(--pop);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .floating-toolbar {
+      transition: none;
+    }
   }
 }

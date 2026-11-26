@@ -1,36 +1,38 @@
-.segmented {
-  @apply flex items-center gap-1 rounded-full cursor-pointer p-1;
-  @apply relative melt-group melt-shape melt-shadow;
-  --melt-fill: color-mix(in oklab, var(--color-solid) 60%, transparent);
+@layer components {
+  .segmented {
+    @apply flex items-center gap-1 rounded-full cursor-pointer p-1;
+    @apply relative melt-group melt-shape melt-shadow;
+    --melt-fill: color-mix(in oklab, var(--color-solid) 60%, transparent);
 
-  & > button {
-    @apply rounded-full px-2 py-1 leading-none cursor-pointer appearance-none
-      border-0 select-none whitespace-nowrap text-sm;
+    & > button {
+      @apply rounded-full px-2 py-1 leading-none cursor-pointer appearance-none
+        border-0 select-none whitespace-nowrap text-sm;
 
-    @apply melt-shape;
-    --melt-fill: transparent;
-    transition: --melt-fill calc(120ms * var(--tempo, 1)) ease;
+      @apply melt-shape;
+      --melt-fill: transparent;
+      transition: --melt-fill calc(120ms * var(--tempo, 1)) ease;
 
-    &:hover {
-      --melt-fill: color-mix(in oklch, var(--color-solid), white 25%);
-    }
+      &:hover {
+        --melt-fill: color-mix(in oklch, var(--color-solid), white 25%);
+      }
 
-    &.is-selected {
-      --melt-fill: var(--color-accent);
+      &.is-selected {
+        --melt-fill: var(--color-accent);
+      }
     }
   }
-}
 
-@media (prefers-reduced-motion: reduce) {
-  .segmented > button {
-    transition: none;
+  @media (prefers-reduced-motion: reduce) {
+    .segmented > button {
+      transition: none;
+    }
   }
-}
 
-.segmented--vertical {
-  @apply flex-col items-stretch min-w-0;
+  .segmented--vertical {
+    @apply flex-col items-stretch min-w-0;
 
-  & > button {
-    @apply text-left whitespace-normal;
+    & > button {
+      @apply text-left whitespace-normal;
+    }
   }
 }

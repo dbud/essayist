@@ -1,88 +1,90 @@
-.menu {
-  @apply melt-shape melt-shadow-lifted rounded-lg py-2 px-2 text-solid-ink;
-  --melt-rim: var(--rim-primary);
-  --melt-fill: var(--color-solid);
-}
-
-.menu-head {
-  @apply py-2 px-3;
-}
-
-.menu-rows {
-  @apply flex flex-col gap-2;
-}
-
-.menu-btn {
-  @apply btn-base py-1.5 px-2 min-w-48 w-full rounded-sm;
-  @apply melt-group;
-  --btn-bg: oklch(from var(--color-solid) l c h / 0.6);
-  --btn-ease: cubic-bezier(0.2, 0, 0, 1);
-  @apply melt-rim-transparent melt-shadow-none;
-
-  &:hover {
-    @apply melt-rim-white/25;
+@layer components {
+  .menu {
+    @apply melt-shape melt-shadow-lifted rounded-lg py-2 px-2 text-solid-ink;
+    --melt-rim: var(--rim-primary);
+    --melt-fill: var(--color-solid);
   }
-}
 
-/* Icon buttons next to a row, like remove or rename. Outranks .menu--wrap. */
-li > .menu-btn.menu-action {
-  @apply grid place-items-center self-center w-auto min-w-0 shrink-0 px-2;
-}
-
-/* Hidden until the row is hovered, focused or selected. */
-li:not(:hover, :focus-within) > .menu-btn:not(.is-selected) ~ .menu-action {
-  --btn-bg: transparent;
-  --btn-ink: transparent;
-}
-
-li > .menu-btn:has(~ .menu-action) {
-  @apply flex-1 min-w-0;
-}
-
-.avatar {
-  @apply relative w-full h-full rounded-md;
-  @apply melt-group melt-shape melt-shadow-none;
-  --melt-rim: var(--rim-primary);
-  --melt-fill: var(--color-solid);
-}
-
-.avatar-picture {
-  @apply absolute -inset-px grid place-items-center rounded-[13px] overflow-hidden text-solid-ink;
-}
-
-.menu-btn.is-selected {
-  @apply melt-rim-white/70;
-  --btn-bg: var(--color-accent);
-  --btn-bg-hover: var(--btn-accent-hover);
-
-  &:hover {
-    --btn-bg: var(--btn-bg-hover);
+  .menu-head {
+    @apply py-2 px-3;
   }
-}
 
-.menu--wrap {
-  & .menu-btn {
-    @apply block text-start whitespace-normal;
+  .menu-rows {
+    @apply flex flex-col gap-2;
+  }
 
-    & > span + span {
-      padding-left: 0.25rem;
+  .menu-btn {
+    @apply btn-base py-1.5 px-2 min-w-48 w-full rounded-sm;
+    @apply melt-group;
+    --btn-bg: oklch(from var(--color-solid) l c h / 0.6);
+    --btn-ease: cubic-bezier(0.2, 0, 0, 1);
+    @apply melt-rim-transparent melt-shadow-none;
+
+    &:hover {
+      @apply melt-rim-white/25;
     }
   }
-}
 
-.menu--small {
-  @apply rounded-md py-1 px-1.5;
-
-  & .menu-rows {
-    @apply gap-1;
+  /* Icon buttons next to a row, like remove or rename. Outranks .menu--wrap. */
+  li > .menu-btn.menu-action {
+    @apply grid place-items-center self-center w-auto min-w-0 shrink-0 px-2;
   }
 
-  & .menu-btn {
-    @apply py-1 px-1.5 min-w-36;
-    font-size: 0.8rem;
+  /* Hidden until the row is hovered, focused or selected. */
+  li:not(:hover, :focus-within) > .menu-btn:not(.is-selected) ~ .menu-action {
+    --btn-bg: transparent;
+    --btn-ink: transparent;
+  }
 
-    & .lucide {
-      @apply size-3;
+  li > .menu-btn:has(~ .menu-action) {
+    @apply flex-1 min-w-0;
+  }
+
+  .avatar {
+    @apply relative w-full h-full rounded-md;
+    @apply melt-group melt-shape melt-shadow-none;
+    --melt-rim: var(--rim-primary);
+    --melt-fill: var(--color-solid);
+  }
+
+  .avatar-picture {
+    @apply absolute -inset-px grid place-items-center rounded-[13px] overflow-hidden text-solid-ink;
+  }
+
+  .menu-btn.is-selected {
+    @apply melt-rim-white/70;
+    --btn-bg: var(--color-accent);
+    --btn-bg-hover: var(--btn-accent-hover);
+
+    &:hover {
+      --btn-bg: var(--btn-bg-hover);
+    }
+  }
+
+  .menu--wrap {
+    & .menu-btn {
+      @apply block text-start whitespace-normal;
+
+      & > span + span {
+        padding-left: 0.25rem;
+      }
+    }
+  }
+
+  .menu--small {
+    @apply rounded-md py-1 px-1.5;
+
+    & .menu-rows {
+      @apply gap-1;
+    }
+
+    & .menu-btn {
+      @apply py-1 px-1.5 min-w-36;
+      font-size: 0.8rem;
+
+      & .lucide {
+        @apply size-3;
+      }
     }
   }
 }

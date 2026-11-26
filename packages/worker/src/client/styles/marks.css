@@ -9,27 +9,29 @@
   --mark-inner-pct: 100%;
 }
 
-.mark-wavy {
-  @apply absolute inset-0 w-full h-full overflow-visible pointer-events-none;
-  --mark-pct: 90%;
-  --mark-active-pct: 100%;
-  --mark-stroke: 1.2;
-  --mark-active-stroke: var(--mark-stroke);
-  --mark-inner-stroke: 2;
-}
+@layer components {
+  .mark-wavy {
+    @apply absolute inset-0 w-full h-full overflow-visible pointer-events-none;
+    --mark-pct: 90%;
+    --mark-active-pct: 100%;
+    --mark-stroke: 1.2;
+    --mark-active-stroke: var(--mark-stroke);
+    --mark-inner-stroke: 2;
+  }
 
-.mark-band {
-  @apply absolute rounded-none;
-  --mark-pct: 30%;
-  --mark-active-pct: var(--mark-pct);
-  --mark-inner-pct: 50%;
-}
+  .mark-band {
+    @apply absolute rounded-none;
+    --mark-pct: 30%;
+    --mark-active-pct: var(--mark-pct);
+    --mark-inner-pct: 50%;
+  }
 
-.mark-band,
-.mark-wavy {
-  --mark-duration: 200ms;
-  animation: mark-fade-in calc(2 * var(--mark-duration)) ease;
-  transition: opacity var(--mark-duration) ease;
+  .mark-band,
+  .mark-wavy {
+    --mark-duration: 200ms;
+    animation: mark-fade-in calc(2 * var(--mark-duration)) ease;
+    transition: opacity var(--mark-duration) ease;
+  }
 }
 
 @layer base {
@@ -125,6 +127,7 @@
   }
 }
 
+/* Unlayered, so it overrides the badge utility. */
 .sidenote {
   .badge {
     @apply mr-2;

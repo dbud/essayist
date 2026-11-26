@@ -1,39 +1,41 @@
-.form {
-  --underline-inset: 0.4rem;
-  --underline-lift: 0.4rem;
-  --underline-thickness: 1.5px;
+@layer components {
+  .form {
+    --underline-inset: 0.4rem;
+    --underline-lift: 0.4rem;
+    --underline-thickness: 1.5px;
 
-  @apply rounded-md p-2 min-w-96 w-full text-solid-ink;
-  font-size: var(--btn-font-size);
+    @apply rounded-md p-2 min-w-96 w-full text-solid-ink;
+    font-size: var(--btn-font-size);
 
-  @apply grid items-stretch;
-  grid-template-columns: max-content minmax(0, 1fr);
-  @apply gap-x-5 gap-y-3;
+    @apply grid items-stretch;
+    grid-template-columns: max-content minmax(0, 1fr);
+    @apply gap-x-5 gap-y-3;
 
-  & label {
-    @apply py-1.5;
-  }
-
-  & input,
-  & textarea {
-    @apply select-text outline-none min-w-0 pt-1.5 px-2 pb-2.5 bg-solid text-solid-ink rounded-xs;
-    font-size: inherit;
-    caret-color: var(--color-accent);
-    background-image: linear-gradient(var(--color-accent), var(--color-accent));
-    background-position: var(--underline-inset) calc(100% - var(--underline-lift));
-    background-size: calc(100% - 2 * var(--underline-inset)) var(--underline-thickness);
-    background-repeat: no-repeat;
-
-    &::placeholder {
-      color: color-mix(in oklch, var(--color-solid-ink) 50%, transparent);
+    & label {
+      @apply py-1.5;
     }
 
-    &:focus {
-      background-color: color-mix(in oklch, var(--color-solid), white 20%);
-    }
-  }
+    & input,
+    & textarea {
+      @apply select-text outline-none min-w-0 pt-1.5 px-2 pb-2.5 bg-solid text-solid-ink rounded-xs;
+      font-size: inherit;
+      caret-color: var(--color-accent);
+      background-image: linear-gradient(var(--color-accent), var(--color-accent));
+      background-position: var(--underline-inset) calc(100% - var(--underline-lift));
+      background-size: calc(100% - 2 * var(--underline-inset)) var(--underline-thickness);
+      background-repeat: no-repeat;
 
-  & textarea {
-    @apply resize-none;
+      &::placeholder {
+        color: color-mix(in oklch, var(--color-solid-ink) 50%, transparent);
+      }
+
+      &:focus {
+        background-color: color-mix(in oklch, var(--color-solid), white 20%);
+      }
+    }
+
+    & textarea {
+      @apply resize-none;
+    }
   }
 }

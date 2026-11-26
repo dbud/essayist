@@ -1,32 +1,34 @@
-.collapsible {
-  display: grid;
-  grid-template-rows: 0fr;
-  transition: grid-template-rows var(--item-tf) ease-out;
+@layer components {
+  .collapsible {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows var(--item-tf) ease-out;
 
-  &[data-open] {
-    grid-template-rows: 1fr;
-  }
+    &[data-open] {
+      grid-template-rows: 1fr;
+    }
 
-  > .collapsible-clip {
-    min-height: 0;
-    overflow: hidden;
-  }
-
-  &.collapsible-fade {
     > .collapsible-clip {
-      opacity: 0;
-      transition: opacity var(--item-op) ease;
+      min-height: 0;
+      overflow: hidden;
     }
 
-    &[data-open] > .collapsible-clip {
-      opacity: 1;
+    &.collapsible-fade {
+      > .collapsible-clip {
+        opacity: 0;
+        transition: opacity var(--item-op) ease;
+      }
+
+      &[data-open] > .collapsible-clip {
+        opacity: 1;
+      }
     }
   }
-}
 
-@media (prefers-reduced-motion: reduce) {
-  .collapsible,
-  .collapsible-fade > .collapsible-clip {
-    transition: none;
+  @media (prefers-reduced-motion: reduce) {
+    .collapsible,
+    .collapsible-fade > .collapsible-clip {
+      transition: none;
+    }
   }
 }

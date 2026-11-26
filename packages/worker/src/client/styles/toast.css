@@ -45,14 +45,16 @@
   @apply text-white;
 }
 
-.toast-progress {
-  @apply absolute inset-x-2 bottom-2 h-2 striped overflow-hidden rounded-full;
-  background-color: color-mix(in oklch, currentColor 20%, transparent);
-}
-.toast-progress-fill {
-  @apply h-full;
-  background: var(--toast-progress-fill, var(--color-accent));
-  transition: width var(--toast-duration) ease-out;
+@layer components {
+  .toast-progress {
+    @apply absolute inset-x-2 bottom-2 h-2 striped overflow-hidden rounded-full;
+    background-color: color-mix(in oklch, currentColor 20%, transparent);
+  }
+  .toast-progress-fill {
+    @apply h-full;
+    background: var(--toast-progress-fill, var(--color-accent));
+    transition: width var(--toast-duration) ease-out;
+  }
 }
 
 @keyframes toast-in {

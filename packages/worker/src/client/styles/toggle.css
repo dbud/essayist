@@ -4,47 +4,49 @@
   initial-value: 0;
 }
 
-.toggle-row {
-  @apply pr-12;
-  --toggle-width: 2.2rem;
-  --toggle-right: 0.5rem;
-  --toggle-knob: 0.85rem;
-  --toggle-inset: 0.14rem;
+@layer components {
+  .toggle-row {
+    @apply pr-12;
+    --toggle-width: 2.2rem;
+    --toggle-right: 0.5rem;
+    --toggle-knob: 0.85rem;
+    --toggle-inset: 0.14rem;
 
-  &.is-on {
-    --toggle-x: 1;
-  }
-}
-
-/* The track and the knob each start a melt group of their own, so the knob is drawn over the track
-   without bleeding into it, which would make the track look lopsided. */
-.toggle {
-  @apply absolute top-1/2 -translate-y-1/2 rounded-full melt-group melt-shape;
-  --melt-fill: color-mix(in oklch, var(--color-solid), white 12%);
-  right: var(--toggle-right);
-  width: var(--toggle-width);
-  height: calc(var(--toggle-knob) + 2 * var(--toggle-inset));
-}
-
-.toggle-knob {
-  @apply absolute rounded-full melt-group melt-shape melt-rim-white/70 size-[var(--toggle-knob)];
-  --melt-fill: color-mix(in oklch, var(--color-solid), white 45%);
-  top: var(--toggle-inset);
-  left: calc(
-    var(--toggle-inset) + var(--toggle-x) *
-      (var(--toggle-width) - var(--toggle-knob) - 2 * var(--toggle-inset))
-  );
-  transition:
-    --toggle-x calc(180ms * var(--tempo, 1)) var(--spring),
-    --melt-fill calc(120ms * var(--tempo, 1)) ease,
-    --melt-glow calc(120ms * var(--tempo, 1)) ease;
-
-  .is-on & {
-    @apply melt-glow-30;
-    --melt-fill: var(--color-accent);
+    &.is-on {
+      --toggle-x: 1;
+    }
   }
 
-  @media (prefers-reduced-motion: reduce) {
-    transition: none;
+  /* The track and the knob each start a melt group of their own, so the knob is drawn over the track
+     without bleeding into it, which would make the track look lopsided. */
+  .toggle {
+    @apply absolute top-1/2 -translate-y-1/2 rounded-full melt-group melt-shape;
+    --melt-fill: color-mix(in oklch, var(--color-solid), white 12%);
+    right: var(--toggle-right);
+    width: var(--toggle-width);
+    height: calc(var(--toggle-knob) + 2 * var(--toggle-inset));
+  }
+
+  .toggle-knob {
+    @apply absolute rounded-full melt-group melt-shape melt-rim-white/70 size-[var(--toggle-knob)];
+    --melt-fill: color-mix(in oklch, var(--color-solid), white 45%);
+    top: var(--toggle-inset);
+    left: calc(
+      var(--toggle-inset) + var(--toggle-x) *
+        (var(--toggle-width) - var(--toggle-knob) - 2 * var(--toggle-inset))
+    );
+    transition:
+      --toggle-x calc(180ms * var(--tempo, 1)) var(--spring),
+      --melt-fill calc(120ms * var(--tempo, 1)) ease,
+      --melt-glow calc(120ms * var(--tempo, 1)) ease;
+
+    .is-on & {
+      @apply melt-glow-30;
+      --melt-fill: var(--color-accent);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      transition: none;
+    }
   }
 }
