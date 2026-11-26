@@ -1,4 +1,3 @@
-import type { User } from "@essayist/core";
 import { useSignal } from "@preact/signals";
 import {
   ChevronDown,
@@ -23,10 +22,11 @@ import Toggle from "#/components/ui/Toggle.tsx";
 import { useClickOutside } from "#/hooks/useClickOutside.ts";
 import { AUTO_SAVE_INTERVAL_VALUES } from "#/models/preferences.ts";
 import { usePreferences } from "#/models/preferences.ts";
+import type { UserData } from "#/state.ts";
 import { clearPreferencesCookie } from "#/utils/preferencesCookie.ts";
 
 interface SettingsMenuProps {
-  user: User;
+  user: UserData;
 }
 
 const INTERVAL_OPTIONS = AUTO_SAVE_INTERVAL_VALUES.map((seconds) => ({

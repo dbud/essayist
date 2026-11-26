@@ -1,24 +1,26 @@
 import { Schema } from "effect";
+import { Model } from "effect/schema";
+
+/** Site-wide role. `admin` can access the admin area and manage config. */
+export const USER_ROLES = ["admin", "writer"] as const;
+export const UserRole = Schema.Literals(USER_ROLES);
+export type UserRole = typeof UserRole.Type;
 
 /** A user identity. */
-export interface User {
-  id: string;
-  email: string;
-  name?: string;
-  picture?: string;
-  role?: UserRole;
-  createdAt: number;
-}
+export class User extends Model.Class<User>("User")({
+  id: Model.GeneratedByApp(Schema.String),
+  email: Schema.String,
+  name: Model.FieldOption(Schema.String),
+  picture: Model.FieldOption(Schema.String),
+  role: UserRole,
+  createdAt: Model.DateTimeInsert,
+}) {}
 
-/** Editable profile fields shared by {@link User}. Used for create/update. */
+/** Editable profile fields of a {@link User}, as a sign-in reports them. */
 export interface UserProfile {
   name?: string;
   picture?: string;
 }
-
-/** Site-wide role. `admin` can access the admin area and manage config. */
-export const USER_ROLES = ["admin", "writer"] as const;
-export type UserRole = (typeof USER_ROLES)[number];
 
 /** Input for creating a user: the unique email plus optional profile fields. */
 export interface UserInput extends UserProfile {
@@ -30,30 +32,29 @@ export interface UserInput extends UserProfile {
  * can, plus manage members and delete the workspace.
  */
 export const Role = Schema.Literals(["owner", "editor"]);
-export type Role = Schema.Schema.Type<typeof Role>;
+export type Role = typeof Role.Type;
 
 /**
  * A named collection of files, shared with its members. Access comes from the member roles;
  * `createdBy` only records who created it. A deleted workspace keeps its record, memberships, and
  * data; `deletedAt` hides it from listings and access checks.
  */
-export const Workspace = Schema.Struct({
-  id: Schema.String,
+export class Workspace extends Model.Class<Workspace>("Workspace")({
+  id: Model.GeneratedByApp(Schema.String),
   name: Schema.String,
   createdBy: Schema.String,
-  createdAt: Schema.Number,
-  deletedAt: Schema.optionalKey(Schema.Number),
-  deletedBy: Schema.optionalKey(Schema.String),
-});
-export type Workspace = Schema.Schema.Type<typeof Workspace>;
+  createdAt: Model.DateTimeInsert,
+  deletedAt: Model.FieldOption(Schema.DateTimeUtcFromString),
+  deletedBy: Model.FieldOption(Schema.String),
+}) {}
 
 /** The many-to-many share edge between a user and a workspace. */
-export interface WorkspaceMember {
-  wsId: string;
-  userId: string;
-  role: Role;
-  createdAt: number;
-}
+export class WorkspaceMember extends Model.Class<WorkspaceMember>("WorkspaceMember")({
+  wsId: Schema.String,
+  userId: Schema.String,
+  role: Role,
+  createdAt: Model.DateTimeInsert,
+}) {}
 
 /** Creating a user with an email that is already in use. */
 export class UserEmailTakenError extends Schema.TaggedError<UserEmailTakenError>()(

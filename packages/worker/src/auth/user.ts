@@ -3,18 +3,16 @@
  * they changed.
  */
 
-import {
-  type ConcurrentModificationError,
-  PersistenceError,
-  type User,
-  type UserInput,
-  Workspaces,
-} from "@essayist/core";
-import { Effect } from "effect";
+import { PersistenceError, User, type UserInput, Workspaces } from "@essayist/core";
+import { Effect, Option, Schema } from "effect";
+
+import type { UserData } from "#/state.ts";
+
+export const encodeUser: (user: User) => UserData = Schema.encodeSync(User.json);
 
 export const resolveGoogleUser = (
   info: UserInput,
-): Effect.Effect<User, PersistenceError | ConcurrentModificationError, Workspaces> =>
+): Effect.Effect<User, PersistenceError, Workspaces> =>
   Effect.gen(function* () {
     const user =
       (yield* Workspaces.use((store) => store.getUserByEmail(info.email))) ??
@@ -32,7 +30,10 @@ export const resolveGoogleUser = (
       );
     }
 
-    if (info.name !== user.name || info.picture !== user.picture) {
+    if (
+      (info.name || undefined) !== Option.getOrUndefined(user.name) ||
+      (info.picture || undefined) !== Option.getOrUndefined(user.picture)
+    ) {
       const updated = yield* Workspaces.use((store) =>
         store.updateUser(user.id, {
           name: info.name,

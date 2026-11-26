@@ -1,8 +1,9 @@
-import type { User } from "@essayist/core";
 import { User as UserIcon } from "lucide-preact";
 
+import type { UserData } from "#/state.ts";
+
 interface AvatarProps {
-  user: User;
+  user: UserData;
 }
 
 export default function Avatar({ user }: AvatarProps) {

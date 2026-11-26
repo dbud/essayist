@@ -37,7 +37,7 @@ const CreatePayload = Schema.Struct({ name: Schema.NonEmptyString });
 
 const createWorkspace = HttpApiEndpoint.post("createWorkspace", "/workspaces", {
   payload: CreatePayload,
-  success: Workspace,
+  success: Workspace.json,
 });
 
 // Soft delete, owner only.

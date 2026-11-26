@@ -1,6 +1,7 @@
 import { Effect, Schema } from "effect";
 import { Hono } from "hono";
 
+import { encodeUser } from "#/auth/user.ts";
 import { env } from "#/env.ts";
 import { categoriesLoader } from "#/models/categories.loader.ts";
 import { fileTreesLoader } from "#/models/fileTrees.loader.ts";
@@ -50,7 +51,7 @@ export default new Hono<{ Bindings: Cloudflare.Env }>().get("/", async (c) => {
     seed.pipe(Effect.flatMap(Schema.encodeEffect(EditorData)), Effect.orDie),
   );
   return c.render(
-    <EditorModelsProvider value={createModels(data, user)}>
+    <EditorModelsProvider value={createModels(data, encodeUser(user))}>
       <Page />
     </EditorModelsProvider>,
     {

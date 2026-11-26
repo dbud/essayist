@@ -1,8 +1,9 @@
-import type { User } from "@essayist/core";
 import type { ComponentChildren } from "preact";
 
+import type { UserData } from "#/state.ts";
+
 interface NavigationProps {
-  user?: User;
+  user?: UserData;
   children: ComponentChildren;
 }
 

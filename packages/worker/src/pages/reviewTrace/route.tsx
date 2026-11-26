@@ -2,6 +2,7 @@ import { ReviewRuns, TraceEvents, WorkspaceId, Workspaces } from "@essayist/core
 import { Effect } from "effect";
 import { Hono } from "hono";
 
+import { encodeUser } from "#/auth/user.ts";
 import { env } from "#/env.ts";
 import { runtime } from "#/runtime.ts";
 
@@ -30,5 +31,7 @@ export default new Hono<{ Bindings: Cloudflare.Env }>().get("/:wsId/:runId", asy
   );
   if (found === undefined) return c.text("Review run not found", 404);
   const { run, trace } = found;
-  return c.render(<Page run={run} trace={trace} user={user} />, { title: "review trace" });
+  return c.render(<Page run={run} trace={trace} user={encodeUser(user)} />, {
+    title: "review trace",
+  });
 });

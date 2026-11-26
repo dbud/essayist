@@ -6,7 +6,6 @@ import {
   type ReviewRunStatus,
   type TraceEvent,
   type TraceNodeView,
-  type User,
 } from "@essayist/core";
 import { Option } from "effect";
 import {
@@ -26,6 +25,7 @@ import type { ComponentChildren } from "preact";
 
 import Navigation from "#/components/admin/Navigation.tsx";
 import MarkdownView from "#/components/MarkdownView.tsx";
+import type { UserData } from "#/state.ts";
 
 function statusBadge(status: ReviewRunStatus) {
   const classes =
@@ -322,7 +322,7 @@ export default function ReviewTracePage({
 }: {
   run: ReviewRun;
   trace: TraceEvent[];
-  user: User;
+  user: UserData;
 }) {
   const view = groupTraceNodes(trace);
   const completedAt = Option.getOrUndefined(run.completedAt);

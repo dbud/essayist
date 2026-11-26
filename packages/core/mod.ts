@@ -102,16 +102,17 @@ export { Search } from "#/search/service.ts";
 export type { GrepMatch, GrepOptions, GrepResult } from "#/search/types.ts";
 export { UserState } from "#/user_state/service.ts";
 export { Workspaces } from "#/workspace/service.ts";
+export { layerWorkspacesD1 } from "#/workspace/workspaces_d1.ts";
 export {
   LastOwnerError,
   Role,
   USER_ROLES,
-  type User,
+  User,
   UserEmailTakenError,
   type UserInput,
   type UserProfile,
-  type UserRole,
+  UserRole,
   Workspace,
-  type WorkspaceMember,
+  WorkspaceMember,
 } from "#/workspace/types.ts";
 export { WorkspaceId } from "#/workspace/WorkspaceId.ts";

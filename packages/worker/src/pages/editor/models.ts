@@ -1,5 +1,3 @@
-import type { User } from "@essayist/core";
-
 import { CategoriesModel } from "#/models/categories.ts";
 import { FileContentsModel } from "#/models/fileContents.ts";
 import { FileMarksByPathModel } from "#/models/fileMarksByPath.ts";
@@ -12,10 +10,11 @@ import { ReviewRunsByPathModel } from "#/models/reviewRunsByPath.ts";
 import { SidenotesByPathModel } from "#/models/sidenotesByPath.ts";
 import { createModelContext } from "#/models/utils/context.ts";
 import { WorkspacesModel } from "#/models/workspaces.ts";
+import type { UserData } from "#/state.ts";
 
 import type { EditorData } from "./data";
 
-export default function createModels(data: EditorData, user: User | undefined) {
+export default function createModels(data: EditorData, user: UserData | undefined) {
   const workspaces = new WorkspacesModel(data.workspaces);
   const fileTrees = new FileTreesModel(workspaces.selectedId, data.fileTrees);
   const selected = createFileSelection(workspaces, fileTrees);

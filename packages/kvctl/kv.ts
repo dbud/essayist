@@ -13,6 +13,7 @@ import {
   Files,
   type Key,
   layerReviewRunsD1,
+  layerWorkspacesD1,
   layerTraceEventsD1,
   Marks,
   Persistence,
@@ -103,7 +104,7 @@ export function storeLayer(
       const d1 = layerKvD1(client);
       return Layer.provide(
         Layer.mergeAll(
-          Workspaces.layerNoDeps,
+          layerWorkspacesD1(client),
           ReviewConfig.layerNoDeps,
           Files.layerNoDeps,
           Layer.provide(Marks.layerNoDeps, Files.layerNoDeps),

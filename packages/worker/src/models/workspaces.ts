@@ -31,7 +31,7 @@ export const WorkspacesModel = createModel((data: WorkspacesData) => {
   }
 
   async function create(name: string): Promise<void> {
-    const workspace = await postJson<Workspace>("/api/workspaces", { name });
+    const workspace = await postJson<typeof Workspace.json.Encoded>("/api/workspaces", { name });
     list.value = [...list.value, { workspace, role: "owner" }];
     select(workspace.id);
   }

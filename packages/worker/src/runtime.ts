@@ -6,6 +6,7 @@ import {
   layerAuthD1,
   layerReviewJanitorD1,
   layerReviewRunsD1,
+  layerWorkspacesD1,
   layerTraceEventsD1,
   Marks,
   ModelClient,
@@ -78,7 +79,7 @@ function cell(env: WorkerEnv): RuntimeCell {
           Layer.provideMerge(Layer.mergeAll(Marks.layerNoDeps, ReviewCleanup.layerNoDeps), base),
           ReviewConfig.layerNoDeps,
           UserState.layerNoDeps,
-          Workspaces.layerNoDeps,
+          layerWorkspacesD1(client),
           layerReviewJanitorD1(client),
           Layer.succeed(
             ModelClient,

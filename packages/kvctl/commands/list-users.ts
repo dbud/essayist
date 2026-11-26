@@ -1,19 +1,16 @@
 import { Command } from "@cliffy/command";
-import type { User } from "@essayist/core";
 
 import type { KvctlGlobals } from "#/globals.ts";
-import { listAll, withStore } from "#/kv.ts";
+import { database } from "#/kv.ts";
 
 export const listUsers = new Command<KvctlGlobals>()
   .description("List users.")
-  .action(({ target, local }) =>
-    withStore({ target, local }, async ({ runtime }) => {
-      let n = 0;
-      for await (const entry of listAll<User>(runtime, ["users"])) {
-        const u = entry.value;
-        console.log(`${u.id}  ${u.email.padEnd(24)}  role=${u.role ?? "writer"}`);
-        n++;
-      }
-      console.log(`(${n} users)`);
-    }),
-  );
+  .action(async ({ target, local }) => {
+    const { results } = await database({ target, local })
+      .prepare("SELECT id, email, role FROM users ORDER BY createdAt")
+      .all<{ id: string; email: string; role: string }>();
+    for (const u of results) {
+      console.log(`${u.id}  ${u.email.padEnd(24)}  role=${u.role}`);
+    }
+    console.log(`(${results.length} users)`);
+  });

@@ -1,16 +1,12 @@
 // The user endpoints: the authenticated user behind the session middleware, the first consumer of
 // that middleware.
-import { Schema } from "effect";
+import { User } from "@essayist/core";
+import { Struct } from "effect";
 import { HttpApiEndpoint, HttpApiGroup } from "effect/http-api";
 
 import { SessionMiddleware } from "./sessionMiddleware";
 
-const UserResponse = Schema.Struct({
-  id: Schema.String,
-  email: Schema.String,
-  name: Schema.optional(Schema.String),
-  picture: Schema.optional(Schema.String),
-});
+const UserResponse = User.json.mapFields(Struct.pick(["id", "email", "name", "picture"]));
 
 const getUser = HttpApiEndpoint.get("getUser", "/user", {
   success: UserResponse,

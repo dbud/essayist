@@ -2,6 +2,7 @@ import type { MiddlewareHandler } from "hono";
 import type { ComponentChildren } from "preact";
 import { render } from "preact-render-to-string";
 
+import { encodeUser } from "#/auth/user.ts";
 import { env } from "#/env.ts";
 import { type Preferences, preferencesFromCookie } from "#/models/preferences.ts";
 import { clientScriptUrl, styleSheetUrl } from "#/pages/meta.ts";
@@ -71,8 +72,9 @@ export function Document({
 export const pageRenderer: MiddlewareHandler = async (c, next) => {
   const e = env(c.env);
   c.setRenderer((content, props) => {
+    const user = c.get("auth-user");
     const state = {
-      user: c.get("auth-user"),
+      user: user === undefined ? undefined : encodeUser(user),
       sessionId: c.get("auth-session-id"),
     };
     const preferences = preferencesFromCookie(c.req.header("cookie"), new URL(c.req.url));
