@@ -3,4 +3,4 @@ import { Schema } from "effect";
 
 export const FileVersionsData = Schema.Array(FileVersion);
 
-export type FileVersionsData = Schema.Schema.Type<typeof FileVersionsData>;
+export type FileVersionsData = typeof FileVersionsData.Encoded;

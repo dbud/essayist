@@ -7,4 +7,4 @@ export const FileTreeData = Schema.Struct({
   selectedVersionId: Schema.NullOr(Schema.String),
 });
 
-export type FileTreeData = Schema.Schema.Type<typeof FileTreeData>;
+export type FileTreeData = typeof FileTreeData.Encoded;

@@ -8,7 +8,7 @@ export function fileTreeLoader(
   wsId: string,
   fileIntent: string | undefined,
   versionIntent?: string,
-): Effect.Effect<FileTreeData, PersistenceError, Files | UserState> {
+): Effect.Effect<typeof FileTreeData.Type, PersistenceError, Files | UserState> {
   return Effect.gen(function* () {
     const files = yield* Effect.provideService(
       Files.use((store) => store.list()),

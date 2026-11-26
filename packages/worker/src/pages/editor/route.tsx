@@ -1,4 +1,4 @@
-import { Effect } from "effect";
+import { Effect, Schema } from "effect";
 import { Hono } from "hono";
 
 import { env } from "#/env.ts";
@@ -9,6 +9,7 @@ import { reviewRunsLoader } from "#/models/reviewRuns.loader.ts";
 import { workspacesLoader } from "#/models/workspaces.loader.ts";
 import { runtime } from "#/runtime.ts";
 
+import { EditorData } from "./data.ts";
 import createModels, { EditorModelsProvider } from "./models";
 import Page from "./page";
 
@@ -45,7 +46,9 @@ export default new Hono<{ Bindings: Cloudflare.Env }>().get("/", async (c) => {
       categories,
     };
   });
-  const data = await runtime(env(c.env)).runPromise(seed);
+  const data = await runtime(env(c.env)).runPromise(
+    seed.pipe(Effect.flatMap(Schema.encodeEffect(EditorData)), Effect.orDie),
+  );
   return c.render(
     <EditorModelsProvider value={createModels(data, user)}>
       <Page />

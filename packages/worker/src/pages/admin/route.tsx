@@ -1,6 +1,8 @@
+import { Effect, Schema } from "effect";
 import { Hono } from "hono";
 
 import { env } from "#/env.ts";
+import { AdminConfigData } from "#/models/admin.data.ts";
 import { adminConfigLoader } from "#/models/admin.loader.ts";
 import { runtime } from "#/runtime.ts";
 
@@ -12,7 +14,9 @@ export default new Hono<{ Bindings: Cloudflare.Env }>().get("/", async (c) => {
   if (user?.role !== "admin") {
     return c.redirect("/", 303);
   }
-  const data = await runtime(env(c.env)).runPromise(adminConfigLoader());
+  const data = await runtime(env(c.env)).runPromise(
+    adminConfigLoader().pipe(Effect.flatMap(Schema.encodeEffect(AdminConfigData)), Effect.orDie),
+  );
   return c.render(
     <AdminModelsProvider value={createModels(data)}>
       <Page />

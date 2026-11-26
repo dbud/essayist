@@ -10,4 +10,4 @@ export const FileViewData = Schema.Struct({
   marks: MarksData,
 });
 
-export type FileViewData = Schema.Schema.Type<typeof FileViewData>;
+export type FileViewData = typeof FileViewData.Encoded;

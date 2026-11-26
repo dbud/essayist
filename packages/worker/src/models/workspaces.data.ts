@@ -6,4 +6,4 @@ export const WorkspacesData = Schema.Struct({
   selectedId: Schema.NullOr(Schema.String),
 });
 
-export type WorkspacesData = Schema.Schema.Type<typeof WorkspacesData>;
+export type WorkspacesData = typeof WorkspacesData.Encoded;

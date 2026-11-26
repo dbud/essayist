@@ -6,4 +6,4 @@ export const FileContentData = Schema.Struct({
   draft: Schema.NullOr(DraftSnapshot),
 });
 
-export type FileContentData = Schema.Schema.Type<typeof FileContentData>;
+export type FileContentData = typeof FileContentData.Encoded;

@@ -7,7 +7,7 @@ export function fileContentLoader(
   wsId: string,
   path: string,
   versionId?: string,
-): Effect.Effect<FileContentData, PersistenceError | FileMissingError, Files> {
+): Effect.Effect<typeof FileContentData.Type, PersistenceError | FileMissingError, Files> {
   return Effect.gen(function* () {
     const version = yield* Effect.provideService(
       Files.use((store) => store.read(path, versionId)),

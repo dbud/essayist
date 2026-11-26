@@ -9,4 +9,4 @@ export const AdminConfigData = Schema.Struct({
   activeReviewPassId: Schema.optional(Schema.String),
 });
 
-export type AdminConfigData = Schema.Schema.Type<typeof AdminConfigData>;
+export type AdminConfigData = typeof AdminConfigData.Encoded;

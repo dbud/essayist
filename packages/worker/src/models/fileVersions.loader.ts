@@ -6,7 +6,7 @@ import type { FileVersionsData } from "./fileVersions.data.ts";
 export function fileVersionsLoader(
   wsId: string,
   path: string,
-): Effect.Effect<FileVersionsData, PersistenceError | FileMissingError, Files> {
+): Effect.Effect<typeof FileVersionsData.Type, PersistenceError | FileMissingError, Files> {
   return Effect.provideService(
     Files.use((store) => store.getVersions(path)),
     WorkspaceId,

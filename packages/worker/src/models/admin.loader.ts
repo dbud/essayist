@@ -4,7 +4,7 @@ import { Effect } from "effect";
 import type { AdminConfigData } from "./admin.data.ts";
 
 export function adminConfigLoader(): Effect.Effect<
-  AdminConfigData,
+  typeof AdminConfigData.Type,
   PersistenceError,
   ReviewConfig
 > {

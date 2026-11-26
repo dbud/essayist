@@ -14,4 +14,4 @@ export const EditorData = Schema.Struct({
   categories: CategoriesData,
 });
 
-export type EditorData = Schema.Schema.Type<typeof EditorData>;
+export type EditorData = typeof EditorData.Encoded;

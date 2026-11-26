@@ -9,7 +9,7 @@ export function fileViewLoader(
   wsId: string,
   path: string,
   versionId: string | null,
-): Effect.Effect<FileViewData, PersistenceError | FileMissingError, Files> {
+): Effect.Effect<typeof FileViewData.Type, PersistenceError | FileMissingError, Files> {
   return Effect.gen(function* () {
     const content = yield* fileContentLoader(wsId, path, versionId ?? undefined);
     const versions = yield* fileVersionsLoader(wsId, path);
