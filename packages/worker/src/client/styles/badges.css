@@ -25,29 +25,29 @@
   --slant-inset-y: 0.25rem;
   color: var(--badge-fg);
   --slant-bg: var(--badge-bg);
-}
 
-@utility badge--surface {
-  --badge-bg: var(--color-surface);
-  --slant-stroke: var(--color-stroke);
-}
+  &:where(.badge--surface) {
+    --badge-bg: var(--color-surface);
+    --slant-stroke: var(--color-stroke);
+  }
 
-@utility badge--success {
-  --badge-bg: oklch(62% 0.13 145);
-  --badge-fg: white;
-}
+  &:where(.badge--success) {
+    --badge-bg: oklch(62% 0.13 145);
+    --badge-fg: white;
+  }
 
-@utility badge--error {
-  --badge-bg: oklch(62% 0.2 25);
-  --badge-fg: white;
-}
+  &:where(.badge--error) {
+    --badge-bg: oklch(62% 0.2 25);
+    --badge-fg: white;
+  }
 
-@utility badge--warning {
-  --badge-bg: oklch(82% 0.12 85);
-  --badge-fg: oklch(30% 0.05 60);
-}
+  &:where(.badge--warning) {
+    --badge-bg: oklch(82% 0.12 85);
+    --badge-fg: oklch(30% 0.05 60);
+  }
 
-@utility badge--accent {
-  --badge-bg: var(--color-accent);
-  --badge-fg: white;
+  &:where(.badge--accent) {
+    --badge-bg: var(--color-accent);
+    --badge-fg: white;
+  }
 }

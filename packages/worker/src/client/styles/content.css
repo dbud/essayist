@@ -7,13 +7,13 @@
   @container (width >= 96rem) {
     @apply max-w-[90rem];
   }
-}
 
-@utility content-layout--side {
-  @apply grid-cols-[2fr_1fr] gap-4;
+  &:where(.content-layout--side) {
+    @apply grid-cols-[2fr_1fr] gap-4;
 
-  @container (width >= 64rem) {
-    @apply gap-8;
+    @container (width >= 64rem) {
+      @apply gap-8;
+    }
   }
 }
 

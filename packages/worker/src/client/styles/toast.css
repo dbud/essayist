@@ -19,6 +19,22 @@
   &.is-leaving {
     animation: toast-out var(--toast-duration) ease-in forwards;
   }
+
+  &:where(.alert--info) {
+    --alert-color: var(--color-ink);
+    @apply text-surface;
+  }
+
+  &:where(.alert--success) {
+    --alert-color: oklch(65% 0.2 135);
+    --toast-progress-fill: white;
+    @apply text-white;
+  }
+
+  &:where(.alert--error) {
+    --alert-color: var(--color-accent);
+    @apply text-white;
+  }
 }
 
 @utility toast-close {
@@ -27,22 +43,6 @@
   &:hover {
     @apply opacity-100;
   }
-}
-
-@utility alert--info {
-  --alert-color: var(--color-ink);
-  @apply text-surface;
-}
-
-@utility alert--success {
-  --alert-color: oklch(65% 0.2 135);
-  --toast-progress-fill: white;
-  @apply text-white;
-}
-
-@utility alert--error {
-  --alert-color: var(--color-accent);
-  @apply text-white;
 }
 
 @layer components {
