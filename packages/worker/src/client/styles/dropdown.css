@@ -6,7 +6,7 @@
   /* The offset and the scale of a closed panel. */
   --panel-hidden-y: 0rem;
   --panel-hidden-scale: 0.16;
-  --dropdown--right-x: 1rem;
+  --dropdown-right-x: 1rem;
 }
 
 @utility panel {
@@ -23,7 +23,7 @@
   }
 }
 
-@utility panel-open {
+@utility panel--open {
   @apply opacity-100 visible pointer-events-auto;
   transform: translateY(0) scale(1);
   transition:
@@ -46,7 +46,7 @@
   gap: var(--dropdown-gap);
 
   &.is-open {
-    @apply panel-open;
+    @apply panel--open;
   }
 
   @starting-style {
@@ -72,14 +72,14 @@
 @utility dropdown--right {
   @apply dropdown;
   --panel-origin-x: 0%;
-  left: calc(100% + var(--dropdown--right-x));
+  left: calc(100% + var(--dropdown-right-x));
   top: 0;
   width: max-content;
 }
 
 @utility dropdown--right-bridged {
   @apply dropdown--right;
-  --dropdown--right-x: 1.5rem;
+  --dropdown-right-x: 1.5rem;
 }
 
 /* Joins a right-bridged panel to the menu it opens from. An element rather than a pseudo-element,
@@ -89,7 +89,7 @@
   --melt-fill: var(--color-solid);
   right: 100%;
   top: 0.25rem;
-  width: calc(var(--dropdown--right-x) - 0.5rem);
+  width: calc(var(--dropdown-right-x) - 0.5rem);
   height: 1.5rem;
 }
 
