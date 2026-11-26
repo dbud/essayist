@@ -11,6 +11,14 @@
   --melt-rim: var(--rim-primary);
   --melt-fill: var(--alert-color, var(--color-surface));
   transition: --melt-fill var(--toast-duration) ease-out;
+
+  &.is-entering {
+    animation: toast-in var(--toast-duration) ease-out;
+  }
+
+  &.is-leaving {
+    animation: toast-out var(--toast-duration) ease-in forwards;
+  }
 }
 
 @utility toast-close {
@@ -59,12 +67,4 @@
     opacity: 0;
     transform: translateX(100%);
   }
-}
-
-@utility toast-enter {
-  animation: toast-in var(--toast-duration) ease-out;
-}
-
-@utility toast-leave {
-  animation: toast-out var(--toast-duration) ease-in forwards;
 }

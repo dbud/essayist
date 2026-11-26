@@ -21,7 +21,7 @@ function ToastView({ toast }: { toast: Signal<Toast> }) {
   const pct = progress && progress.total > 0 ? (progress.done / progress.total) * 100 : 0;
   return (
     <div
-      class={`alert ${alertClass} ${dismissing ? "toast-leave" : "toast-enter"}`}
+      class={`alert ${alertClass} ${dismissing ? "is-leaving" : "is-entering"}`}
       role="alert"
       onAnimationEnd={(e) => {
         if (e.animationName === "toast-out") removeToast(toast);
