@@ -71,7 +71,7 @@ async function setup(content: string) {
         Effect.gen(function* () {
           const files = yield* Files;
           const write = yield* files.write("essay.txt", content);
-          return write.version_id;
+          return write.versionId;
         }),
         WorkspaceId,
         { wsId: "ws" },
@@ -111,7 +111,7 @@ test("review runners -- analyze, propose, apply, and synthesize in a flow", asyn
   const { client, inputs } = createFakeClient([
     { text: ANALYSIS_ROUND, reasoning: "reading closely" },
     {
-      text: '{"marks":[{"selected_text":"brave","comment":"Good.","label":"grammar"}]}',
+      text: '{"marks":[{"selectedText":"brave","comment":"Good.","label":"grammar"}]}',
     },
     { text: '{"summary":"Solid draft."}' },
   ]);
@@ -174,7 +174,7 @@ test("review runners -- analyze, propose, apply, and synthesize in a flow", asyn
   assertEquals(result.artifacts[1].producedBy, "structure");
   const placed = artifactsOf(result, "mark.placed").flat();
   assertEquals(
-    placed.map((attempt) => [attempt.selected_text, attempt.marked]),
+    placed.map((attempt) => [attempt.selectedText, attempt.marked]),
     [["brave", true]],
   );
   assertEquals(artifactsOf(result, "summary")[0], "Solid draft.");
@@ -203,7 +203,7 @@ test("review runners -- repair propose stays idle without failures", async () =>
   const { env: baseEnv, versionId } = await setup("hello world");
   const { client, inputs } = createFakeClient([
     {
-      text: '{"marks":[{"selected_text":"hello","comment":"found it","label":"grammar"}]}',
+      text: '{"marks":[{"selectedText":"hello","comment":"found it","label":"grammar"}]}',
     },
   ]);
   const env = Layer.merge(baseEnv, ModelClient.layerOf(client));
@@ -275,7 +275,7 @@ test("review runners -- repair propose stays idle without failures", async () =>
   assertEquals(proposals[0].producedBy, "m.propose");
   const marks = await readMarks(env, versionId);
   assertEquals(
-    marks.map((mark) => mark.selected_text),
+    marks.map((mark) => mark.selectedText),
     ["hello"],
   );
 });
@@ -284,10 +284,10 @@ test("review runners -- a repair round re-quotes failed spans", async () => {
   const { env: baseEnv, versionId } = await setup("hello world");
   const { client, inputs } = createFakeClient([
     {
-      text: '{"marks":[{"selected_text":"ghost span","comment":"not there","label":"grammar"}]}',
+      text: '{"marks":[{"selectedText":"ghost span","comment":"not there","label":"grammar"}]}',
     },
     {
-      text: '{"marks":[{"selected_text":"hello","comment":"found it","label":"grammar"}]}',
+      text: '{"marks":[{"selectedText":"hello","comment":"found it","label":"grammar"}]}',
     },
   ]);
   const env = Layer.merge(baseEnv, ModelClient.layerOf(client));
@@ -368,7 +368,7 @@ test("review runners -- a repair round re-quotes failed spans", async () => {
 
   const marks = await readMarks(env, versionId);
   assertEquals(
-    marks.map((mark) => mark.selected_text),
+    marks.map((mark) => mark.selectedText),
     ["hello"],
   );
 });

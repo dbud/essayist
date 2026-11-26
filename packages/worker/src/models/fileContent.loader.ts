@@ -15,7 +15,7 @@ export function fileContentLoader(
       { wsId },
     );
     const draft = yield* Effect.provideService(
-      Files.use((store) => store.readDraft(path, version.version_id)),
+      Files.use((store) => store.readDraft(path, version.versionId)),
       WorkspaceId,
       { wsId },
     );

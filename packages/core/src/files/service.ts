@@ -140,7 +140,7 @@ export interface Interface {
     predicate: (mark: Mark) => boolean,
   ): Effect.Effect<number, PersistenceError | ConcurrentModificationError, WorkspaceId>;
   /**
-   * Re-anchor a version's marks onto the latest version. Marks whose thread_id is already on the
+   * Re-anchor a version's marks onto the latest version. Marks whose threadId is already on the
    * latest are skipped; text that no longer resolves becomes stale. No-op when the given version is
    * latest. Fails with FileMissingError when the source version's content is missing in storage.
    */
@@ -190,7 +190,7 @@ export class Files extends Context.Service<Files, Interface>()("@essayist/core/f
             const lines = content.split("\n").length;
             const versionId = ids.next();
             const version: FileVersion = {
-              version_id: versionId,
+              versionId,
               timestamp,
               lines,
             };
@@ -201,7 +201,7 @@ export class Files extends Context.Service<Files, Interface>()("@essayist/core/f
               contentManifestKey(wsId, path, DRAFT_VERSION_ID),
             );
             const previousVersionId =
-              versions.length > 0 ? versions[versions.length - 1].version_id : undefined;
+              versions.length > 0 ? versions[versions.length - 1].versionId : undefined;
             const { manifest, extraChunks } = chunkContent(content);
 
             // Write extra chunks individually before the metadata batch. Deno KV caps total atomic
@@ -292,7 +292,7 @@ export class Files extends Context.Service<Files, Interface>()("@essayist/core/f
               result.push({
                 path,
                 lines: latest.lines,
-                latestVersionId: latest.version_id,
+                latestVersionId: latest.versionId,
               });
             }
           }
@@ -366,7 +366,7 @@ export class Files extends Context.Service<Files, Interface>()("@essayist/core/f
           const { wsId } = yield* WorkspaceId;
           if (atVersionId !== undefined) {
             const latest = yield* persistence.get<StoredSnapshot>(latestKey(wsId, path));
-            if (latest?.value.version_id !== atVersionId) return null;
+            if (latest?.value.versionId !== atVersionId) return null;
           }
           const meta = yield* persistence.get<{ timestamp: number }>(draftKey(wsId, path));
           if (!meta) return null;
@@ -409,8 +409,8 @@ export class Files extends Context.Service<Files, Interface>()("@essayist/core/f
           if (!latest) {
             return yield* Effect.fail(new FileMissingError({ path, versionId: null }));
           }
-          const { version_id, timestamp, lines } = latest.value;
-          return { version: { version_id, timestamp, lines }, promoted: false };
+          const { versionId, timestamp, lines } = latest.value;
+          return { version: { versionId, timestamp, lines }, promoted: false };
         });
 
       const revert = (

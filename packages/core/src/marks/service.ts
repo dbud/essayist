@@ -70,33 +70,33 @@ export class Marks extends Context.Service<Marks, Interface>()("@essayist/core/m
             .pipe(Effect.catchTag("FileMissingError", () => Effect.succeed(null)));
           if (snapshot === null) {
             // TODO -- harden failure on missing file
-            return { mark_id: "", thread_id: "", marked: false };
+            return { markId: "", threadId: "", marked: false };
           }
-          const { content, version_id } = snapshot;
+          const { content } = snapshot;
 
           const offsetHint = lineHint !== undefined ? lineToOffset(content, lineHint) : 0;
           const tt = new TokenizedText(content);
           const offset = tt.findExactNear(selectedText, offsetHint);
           if (offset === null) {
-            return { mark_id: "", thread_id: "", marked: false };
+            return { markId: "", threadId: "", marked: false };
           }
 
           const beforeContext = tt.captureBeforeContext(offset, contextSpan);
           const afterContext = tt.captureAfterContext(offset + selectedText.length, contextSpan);
 
           const ids = yield* Ids;
-          const created_at = yield* Clock.currentTimeMillis;
+          const createdAt = yield* Clock.currentTimeMillis;
           const created: Mark = {
             id: ids.next(),
-            thread_id: threadId ?? ids.next(),
+            threadId: threadId ?? ids.next(),
             path,
-            version_id,
-            selected_text: selectedText,
-            before_context: beforeContext,
-            after_context: afterContext,
+            versionId: snapshot.versionId,
+            selectedText,
+            beforeContext,
+            afterContext,
             comment,
             ...(label !== undefined && { label }),
-            created_at,
+            createdAt,
             offset,
             length: selectedText.length,
             status: "resolved",
@@ -105,8 +105,8 @@ export class Marks extends Context.Service<Marks, Interface>()("@essayist/core/m
           yield* files.saveMark(created);
 
           return {
-            mark_id: created.id,
-            thread_id: created.thread_id,
+            markId: created.id,
+            threadId: created.threadId,
             marked: true,
           };
         });

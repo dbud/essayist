@@ -26,13 +26,13 @@ export const ReviewRunList = Schema.Array(ReviewRun);
 
 /** A proposed mark and its application result. */
 export const MarkAttempt = Schema.Struct({
-  selected_text: Schema.String,
+  selectedText: Schema.String,
   comment: Schema.String,
   label: Schema.optionalKey(Schema.String),
-  line_hint: Schema.optionalKey(Schema.Int),
+  lineHint: Schema.optionalKey(Schema.Int),
   marked: Schema.Boolean,
-  mark_id: Schema.optionalKey(Schema.String),
-  thread_id: Schema.optionalKey(Schema.String),
+  markId: Schema.optionalKey(Schema.String),
+  threadId: Schema.optionalKey(Schema.String),
   error: Schema.optionalKey(Schema.String),
 });
 export type MarkAttempt = Schema.Schema.Type<typeof MarkAttempt>;

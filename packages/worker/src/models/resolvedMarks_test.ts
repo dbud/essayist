@@ -6,14 +6,14 @@ import { reanchorMarks } from "./resolvedMarks.ts";
 
 const base: Mark = {
   id: "m1",
-  thread_id: "t1",
+  threadId: "t1",
   path: "essay.md",
-  version_id: "v1",
-  selected_text: "world",
-  before_context: "",
-  after_context: "",
+  versionId: "v1",
+  selectedText: "world",
+  beforeContext: "",
+  afterContext: "",
   comment: "note",
-  created_at: 0,
+  createdAt: 0,
   offset: 6,
   length: 5,
   status: "resolved",
@@ -28,14 +28,14 @@ test("reanchorMarks -- unchanged content returns the marks as-is", () => {
 test("reanchorMarks -- shifted text remaps offsets onto the new content", () => {
   const out = reanchorMarks([base], "hello world", "hello brave world");
   assertEquals(out[0].offset, "hello brave world".indexOf("world"));
-  assertEquals(out[0].selected_text, "world");
+  assertEquals(out[0].selectedText, "world");
   assertEquals(out[0].status, "resolved");
 });
 
 test("reanchorMarks -- mark ids survive resolution", () => {
   const out = reanchorMarks([base], "hello world", "hello brave world");
   assertEquals(out[0].id, "m1");
-  assertEquals(out[0].thread_id, "t1");
+  assertEquals(out[0].threadId, "t1");
 });
 
 test("reanchorMarks -- vanished text goes stale", () => {

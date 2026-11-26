@@ -129,12 +129,12 @@ export class TokenizedText {
     const windowEnd = Math.min(this.#tokens.length, centerTokenIndex + withinTokens + 1);
     if (windowEnd - windowStart < plen) return null;
 
-    // Distance (in token indices) from the gap-facing edge of the window to center. The gap-
-    // facing edge is the edge facing the selection: - "before" (before_context, sits left of the
-    // selection) faces it on its RIGHT edge = the word after the window. - "after" (after_context,
-    // sits right of the selection) faces it on its LEFT edge = the first word of the window.
-    // Anchoring on the gap-facing edge stops the window from drifting toward the mark and dropping
-    // the far words of the context.
+    // Distance (in token indices) from the gap-facing edge of the window to center. The gap- facing
+    // edge is the edge facing the selection: - "before" (beforeContext, sits left of the selection)
+    // faces it on its RIGHT edge = the word after the window. - "after" (afterContext, sits right
+    // of the selection) faces it on its LEFT edge = the first word of the window. Anchoring on the
+    // gap-facing edge stops the window from drifting toward the mark and dropping the far words of
+    // the context.
     const boundaryDist = (i: number, len: number): number => {
       const leftIdx = i;
       const rightIdx = Math.min(i + len, this.#tokens.length);

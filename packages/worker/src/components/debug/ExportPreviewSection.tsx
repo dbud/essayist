@@ -79,7 +79,7 @@ function MarkdownPreview() {
                 <span class="font-medium">{mark.label || "Mark"}</span>
                 <span class="ml-2">offset: {mark.offset}</span>
                 <span class="ml-1">length: {mark.length}</span>
-                <span class="ml-1 italic">"{mark.selected_text}"</span>
+                <span class="ml-1 italic">"{mark.selectedText}"</span>
               </li>
             ))}
           </ul>

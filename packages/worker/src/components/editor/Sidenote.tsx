@@ -29,9 +29,9 @@ export default function Sidenote({ view, editor, hidden, color }: SidenoteProps)
             {mark.label && <span class="badge">{mark.label}</span>}
             <span class="min-w-0 flex-1">{mark.comment}</span>
           </div>
-          {mark.status === "stale" && mark.selected_text && (
+          {mark.status === "stale" && mark.selectedText && (
             <div class="font-serif italic text-ink line-clamp-2 line-through">
-              &ldquo;{mark.selected_text}&rdquo;
+              &ldquo;{mark.selectedText}&rdquo;
             </div>
           )}
         </div>

@@ -172,7 +172,7 @@ function AttemptRow({ attempt }: { attempt: MarkAttempt }) {
         </span>
         {attempt.label && <span class="self-start">{attempt.label}</span>}
       </div>
-      <div class="whitespace-pre-wrap break-words font-serif italic">{attempt.selected_text}</div>
+      <div class="whitespace-pre-wrap break-words font-serif italic">{attempt.selectedText}</div>
       <div class="whitespace-pre-wrap">{attempt.comment}</div>
       {attempt.error && <div class="text-[0.75rem] text-error">{attempt.error}</div>}
     </div>
@@ -188,7 +188,7 @@ function AppliedRow({ attempts }: { attempts: MarkAttempt[] }) {
       </div>
       <div class="col-span-2 min-w-0 flex flex-col swiss-stack">
         {attempts.map((attempt) => (
-          <AttemptRow key={attempt.mark_id ?? attempt.selected_text} attempt={attempt} />
+          <AttemptRow key={attempt.markId ?? attempt.selectedText} attempt={attempt} />
         ))}
       </div>
     </>

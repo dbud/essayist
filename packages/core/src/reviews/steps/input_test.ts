@@ -96,9 +96,9 @@ test("composeRepairInput -- windows content around the hinted line", () => {
   ).join("\n");
   const failed = [
     {
-      selected_text: "line 10",
+      selectedText: "line 10",
       comment: "fix this",
-      line_hint: 10,
+      lineHint: 10,
       marked: false,
       error: "selected text not found",
     },
@@ -126,7 +126,7 @@ test("composeRepairInput -- windows content around the hinted line", () => {
 test("composeRepairInput -- attempts without a hint get the full essay", () => {
   const failed = [
     {
-      selected_text: "nowhere to anchor",
+      selectedText: "nowhere to anchor",
       comment: "find it",
       marked: false,
       error: "selected text not found",

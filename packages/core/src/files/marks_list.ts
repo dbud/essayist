@@ -39,7 +39,7 @@ export function makeMarkLists(
     retryConcurrency(
       Effect.gen(function* () {
         const { wsId } = yield* WorkspaceId;
-        const key = marksKey(wsId, mark.path, mark.version_id);
+        const key = marksKey(wsId, mark.path, mark.versionId);
         const entry = yield* persistence.get<Mark[]>(key);
         const marks = entry?.value ?? [];
         yield* persistence.batch([{ type: "set", key, value: [...marks, mark] }], {
@@ -96,7 +96,7 @@ export function makeMarkLists(
         const empty: MigrateMarksResult = { migrated: 0, stale: 0 };
         const latestEntry = yield* persistence.get<StoredSnapshot>(latestKey(wsId, path));
         if (!latestEntry) return empty;
-        const targetVersionId = latestEntry.value.version_id;
+        const targetVersionId = latestEntry.value.versionId;
         if (targetVersionId === fromVersionId) return empty;
 
         const targetKey = marksKey(wsId, path, targetVersionId);

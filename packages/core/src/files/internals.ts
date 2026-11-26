@@ -90,12 +90,12 @@ export function makeInternals(persistence: Context.Service.Shape<typeof Persiste
       if (!entry) {
         return yield* Effect.fail(new FileMissingError({ path, versionId: null }));
       }
-      const { version_id, chunkCount, firstChunk, ...rest } = entry.value;
-      const content = yield* reassembleContent(wsId, path, version_id, {
+      const { versionId, chunkCount, firstChunk, ...rest } = entry.value;
+      const content = yield* reassembleContent(wsId, path, versionId, {
         chunkCount,
         firstChunk,
       });
-      return { version_id, content, ...rest };
+      return { versionId, content, ...rest };
     });
 
   /** The version row; fails when the version is missing. */
@@ -106,7 +106,7 @@ export function makeInternals(persistence: Context.Service.Shape<typeof Persiste
   ): Effect.Effect<FileVersion, PersistenceError | FileMissingError> =>
     Effect.gen(function* () {
       const entry = yield* persistence.get<FileVersion[]>(fileVersionsKey(wsId, path));
-      const version = entry?.value.find((v) => v.version_id === versionId);
+      const version = entry?.value.find((v) => v.versionId === versionId);
       if (!version) {
         return yield* Effect.fail(new FileMissingError({ path, versionId }));
       }
@@ -159,8 +159,8 @@ export function makeInternals(persistence: Context.Service.Shape<typeof Persiste
 
   /**
    * Set-op giving targetVersionId's marks plus fromVersionId's marks re-anchored onto newContent;
-   * undefined when nothing is pending. fromVersionId marks whose thread_id is already on the
-   * target are skipped. The source version's content must exist in storage, or the migration cannot
+   * undefined when nothing is pending. fromVersionId marks whose threadId is already on the target
+   * are skipped. The source version's content must exist in storage, or the migration cannot
    * resolve anchors and the effect fails.
    */
   const migrationOp = (
@@ -176,8 +176,8 @@ export function makeInternals(persistence: Context.Service.Shape<typeof Persiste
   > =>
     Effect.gen(function* () {
       const fromMarks = yield* getMarksList(wsId, path, fromVersionId);
-      const existing = new Set(targetMarks.map((m) => m.thread_id));
-      const pending = fromMarks.filter((m) => !existing.has(m.thread_id));
+      const existing = new Set(targetMarks.map((m) => m.threadId));
+      const pending = fromMarks.filter((m) => !existing.has(m.threadId));
       if (pending.length === 0) return undefined;
       const oldContent = yield* getVersionContent(wsId, path, fromVersionId);
       const marks = resolveMarks({ marks: pending, oldContent, newContent });

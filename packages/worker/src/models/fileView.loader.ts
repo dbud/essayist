@@ -14,7 +14,7 @@ export function fileViewLoader(
     const content = yield* fileContentLoader(wsId, path, versionId ?? undefined);
     const versions = yield* fileVersionsLoader(wsId, path);
     const marks = yield* Effect.provideService(
-      Files.use((store) => store.getMarks(path, content.version.version_id)),
+      Files.use((store) => store.getMarks(path, content.version.versionId)),
       WorkspaceId,
       { wsId },
     );

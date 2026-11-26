@@ -26,7 +26,7 @@ const run = <A>(program: Effect.Effect<A, E, Files | Marks | WorkspaceId>): Prom
 function createFile(path: string, content: string) {
   return Effect.gen(function* () {
     const files = yield* Files;
-    const versionId = (yield* files.write(path, content)).version_id;
+    const versionId = (yield* files.write(path, content)).versionId;
     return { files, versionId };
   });
 }
@@ -42,8 +42,8 @@ test("Marks.mark -- places a mark on selected text", async () => {
       const result = yield* marks.mark("essay.txt", "quick brown", "nice phrase");
 
       assertEquals(result.marked, true);
-      assertEquals(typeof result.mark_id, "string");
-      assertEquals(typeof result.thread_id, "string");
+      assertEquals(typeof result.markId, "string");
+      assertEquals(typeof result.threadId, "string");
     }),
   );
 });
@@ -57,7 +57,7 @@ test("Marks.mark -- returns marked false when text not found", async () => {
       const result = yield* marks.mark("f.txt", "nonexistent", "comment");
 
       assertEquals(result.marked, false);
-      assertEquals(result.mark_id, "");
+      assertEquals(result.markId, "");
     }),
   );
 });
@@ -160,9 +160,9 @@ test("Marks.mark -- accepts explicit threadId", async () => {
         threadId: "thread-abc",
       });
 
-      assertEquals(result.thread_id, "thread-abc");
+      assertEquals(result.threadId, "thread-abc");
       const stored = yield* files.getMarks("f.txt", versionId);
-      assertEquals(stored[0].thread_id, "thread-abc");
+      assertEquals(stored[0].threadId, "thread-abc");
     }),
   );
 });
@@ -181,17 +181,17 @@ test("Marks.mark -- captures context around selection", async () => {
       const stored = yield* files.getMarks("f.txt", versionId);
       assertEquals(stored.length, 1);
       assertObjectMatch(stored[0], {
-        before_context: "A".repeat(100),
-        after_context: "B".repeat(100),
+        beforeContext: "A".repeat(100),
+        afterContext: "B".repeat(100),
       });
     }),
   );
 });
 
 test("Marks.mark -- context snapped to word boundaries", async () => {
-  // Small contextSpan so snapping is observable: before_context starts at a word start,
-  // after_context ends at a word end, instead of an arbitrary char window. Trailing punctuation
-  // after a word is not included.
+  // Small contextSpan so snapping is observable: beforeContext starts at a word start, afterContext
+  // ends at a word end, instead of an arbitrary char window. Trailing punctuation after a word is
+  // not included.
   await run(
     Effect.gen(function* () {
       const { files, versionId } = yield* createFile("f.txt", "One. Two. MARK Three. Four.");
@@ -202,8 +202,8 @@ test("Marks.mark -- context snapped to word boundaries", async () => {
       const stored = yield* files.getMarks("f.txt", versionId);
       assertEquals(stored.length, 1);
       assertObjectMatch(stored[0], {
-        before_context: "Two. ",
-        after_context: " Three",
+        beforeContext: "Two. ",
+        afterContext: " Three",
       });
     }),
   );
@@ -220,8 +220,8 @@ test("Marks.mark -- context truncated at file boundaries", async () => {
       const stored = yield* files.getMarks("f.txt", versionId);
       assertEquals(stored.length, 1);
       assertObjectMatch(stored[0], {
-        before_context: "",
-        after_context: " world",
+        beforeContext: "",
+        afterContext: " world",
       });
     }),
   );
@@ -240,8 +240,8 @@ test("Marks.mark -- uses custom contextSpan", async () => {
       const stored = yield* files.getMarks("f.txt", versionId);
       assertEquals(stored.length, 1);
       assertObjectMatch(stored[0], {
-        before_context: "One. Two. ",
-        after_context: " Three. Four",
+        beforeContext: "One. Two. ",
+        afterContext: " Three. Four",
       });
     }),
   );
@@ -297,11 +297,11 @@ test("Marks.mark -- versionId marks the given version, not latest", async () => 
       assertEquals(result.marked, true);
       const v1Marks = yield* files.getMarks("f.txt", v1);
       assertEquals(v1Marks.length, 1);
-      assertEquals(v1Marks[0].version_id, v1);
-      assertEquals(v1Marks[0].selected_text, "hello");
+      assertEquals(v1Marks[0].versionId, v1);
+      assertEquals(v1Marks[0].selectedText, "hello");
       assertEquals(v1Marks[0].comment, "greeting");
       const latest = yield* files.read("f.txt");
-      assertEquals(yield* files.getMarks("f.txt", latest.version_id), []);
+      assertEquals(yield* files.getMarks("f.txt", latest.versionId), []);
     }),
   );
 });
@@ -362,8 +362,8 @@ test("Marks.mark -- versionId captures context from that version", async () => {
 
       const stored = yield* files.getMarks("f.txt", v1);
       assertObjectMatch(stored[0], {
-        before_context: "alpha ",
-        after_context: " omega",
+        beforeContext: "alpha ",
+        afterContext: " omega",
       });
     }),
   );
@@ -380,7 +380,7 @@ test("Marks.mark -- returns marked false for unknown versionId", async () => {
       });
 
       assertEquals(result.marked, false);
-      assertEquals(result.mark_id, "");
+      assertEquals(result.markId, "");
     }),
   );
 });

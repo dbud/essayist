@@ -2,7 +2,7 @@ import { Schema } from "effect";
 
 /** Metadata about a file version (no content). */
 export const FileVersion = Schema.Struct({
-  version_id: Schema.String,
+  versionId: Schema.String,
   timestamp: Schema.Number,
   lines: Schema.Number,
 });
@@ -24,7 +24,7 @@ export type FileEntry = Schema.Schema.Type<typeof FileEntry>;
 
 /** A file version snapshot -- version metadata + content. */
 export const FileSnapshot = Schema.Struct({
-  version_id: Schema.String,
+  versionId: Schema.String,
   timestamp: Schema.Number,
   lines: Schema.Number,
   content: Schema.String,

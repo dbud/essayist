@@ -25,7 +25,7 @@ export const FileVersionsModel = createModel(
     function byId(versionId: string | null): FileVersion | null {
       return versionId === null
         ? null
-        : (versions.value.find((version) => version.version_id === versionId) ?? null);
+        : (versions.value.find((version) => version.versionId === versionId) ?? null);
     }
 
     return { versions, byId, load, loading, error };

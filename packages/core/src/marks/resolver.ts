@@ -68,7 +68,7 @@ export function resolveMarks(
         id: stampId(mark),
         offset: newOffset,
         length: newLength,
-        selected_text: newContent.slice(newOffset, newOffset + newLength),
+        selectedText: newContent.slice(newOffset, newOffset + newLength),
       };
     }
 
@@ -140,13 +140,13 @@ function fuzzyResolveMark(
 
   // Search radius is in word units, scaled by the word count of the mark.
   const markWords =
-    wordTokens(mark.before_context).length +
-    wordTokens(mark.selected_text).length +
-    wordTokens(mark.after_context).length;
+    wordTokens(mark.beforeContext).length +
+    wordTokens(mark.selectedText).length +
+    wordTokens(mark.afterContext).length;
   const radiusTokens = Math.max(minSearchRadius, searchRadiusMultiplier * markWords);
 
   // Phase 1: find the selected text exactly near the expected offset.
-  const selectedOffset = tt.findExactInTokenWindow(mark.selected_text, {
+  const selectedOffset = tt.findExactInTokenWindow(mark.selectedText, {
     near: expectedNewOffset,
     withinTokens: radiusTokens,
   });
@@ -155,20 +155,20 @@ function fuzzyResolveMark(
       ...mark,
       id: stampId(mark),
       offset: selectedOffset,
-      length: mark.selected_text.length,
-      selected_text: mark.selected_text,
+      length: mark.selectedText.length,
+      selectedText: mark.selectedText,
       status: "resolved",
     };
   }
 
   // Phase 2: anchor via before/after context (token multiset fuzzy).
   //
-  // Boundaries are snapped to word edges so the resolved selected_text does not pick up surrounding
-  // separators: - before: the selection starts at nextOffset (the word after the before_context).
-  // - after: the selection ends at startOffset (the after_context's first word); the separators
+  // Boundaries are snapped to word edges so the resolved selectedText does not pick up surrounding
+  // separators: - before: the selection starts at nextOffset (the word after the beforeContext).
+  // - after: the selection ends at startOffset (the afterContext's first word); the separators
   // between the selection and that word stay in the gap and are trimmed below (the original
-  // selected_text decides whether trailing punctuation belongs to the selection or to the
-  // after_context).
+  // selectedText decides whether trailing punctuation belongs to the selection or to the
+  // afterContext).
   function matchContext(
     text: string,
     near: number,
@@ -185,9 +185,9 @@ function fuzzyResolveMark(
     return { startOffset: match.startOffset, nextOffset: match.nextOffset };
   }
 
-  const beforeResult = matchContext(mark.before_context, expectedNewOffset, "before");
+  const beforeResult = matchContext(mark.beforeContext, expectedNewOffset, "before");
   const afterResult = matchContext(
-    mark.after_context,
+    mark.afterContext,
     // Anchor the after-context search at the end of the before match, else at the original
     // estimate.
     beforeResult?.nextOffset ?? expectedNewOffset,
@@ -196,8 +196,8 @@ function fuzzyResolveMark(
 
   // A single context exists but failed -- neighborhood is gone, go stale.
   if (
-    (mark.before_context.length > 0 && !beforeResult) ||
-    (mark.after_context.length > 0 && !afterResult)
+    (mark.beforeContext.length > 0 && !beforeResult) ||
+    (mark.afterContext.length > 0 && !afterResult)
   ) {
     return {
       ...mark,
@@ -208,7 +208,7 @@ function fuzzyResolveMark(
     };
   }
 
-  // Both contexts matched but in reversed order (after_context sits before before_context): the
+  // Both contexts matched but in reversed order (afterContext sits before beforeContext): the
   // neighborhood structure is gone, go stale. Abutting contexts (afterStart == beforeEnd) are still
   // valid (zero-length resolved mark) and stay resolved.
   const beforeEnd = beforeResult?.nextOffset;
@@ -227,7 +227,7 @@ function fuzzyResolveMark(
   const end = afterStart ?? tt.length;
 
   // Phase 3: full-content scan for the selected text (it may have moved).
-  const nearestOffset = tt.findExactNear(mark.selected_text, expectedNewOffset);
+  const nearestOffset = tt.findExactNear(mark.selectedText, expectedNewOffset);
   // Nothing found anywhere -- stale.
   if (!beforeResult && !afterResult && nearestOffset === null) {
     return { ...mark, id: stampId(mark), status: "stale", length: 0 };
@@ -239,17 +239,17 @@ function fuzzyResolveMark(
       ...mark,
       id: stampId(mark),
       offset: nearestOffset,
-      length: mark.selected_text.length,
+      length: mark.selectedText.length,
       status: "resolved",
     };
   }
 
   // Resolve to [start, end), trimming surrounding separators that belong to the contexts rather
   // than the selection. Whitespace is always trimmed; punctuation is trimmed only on a side where
-  // the original selected_text starts/ends with a word character (so a selection that genuinely
+  // the original selectedText starts/ends with a word character (so a selection that genuinely
   // includes trailing punctuation keeps it).
   const raw = tt.text.slice(start, end);
-  const { startsWithWord, endsWithWord } = wordEdges(mark.selected_text);
+  const { startsWithWord, endsWithWord } = wordEdges(mark.selectedText);
   const trimmed = trimContextSeparators(raw, startsWithWord, endsWithWord);
   // If the selected text was deleted (empty gap), only treat it as a zero-length resolved mark when
   // BOTH contexts matched and abut -- that confidently locates where the text was. With a single
@@ -268,7 +268,7 @@ function fuzzyResolveMark(
     id: stampId(mark),
     offset: start + trimmed.leading,
     length: trimmed.text.length,
-    selected_text: trimmed.text,
+    selectedText: trimmed.text,
     status: "resolved",
   };
 }

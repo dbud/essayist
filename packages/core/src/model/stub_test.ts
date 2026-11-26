@@ -56,10 +56,10 @@ test("proposals quote real spans of the essay and use allowed labels", async () 
     result.marks.map((mark) => mark.label),
     ["grammar", "structure"],
   );
-  assertEquals(result.marks[0].selected_text, "On Writing Roughly");
-  assertEquals(result.marks[1].selected_text, "A first draft is permission to be bad.");
+  assertEquals(result.marks[0].selectedText, "On Writing Roughly");
+  assertEquals(result.marks[1].selectedText, "A first draft is permission to be bad.");
   for (const mark of result.marks) {
-    assert(mark.line_hint !== undefined);
+    assert(mark.lineHint !== undefined);
   }
 });
 
@@ -68,8 +68,8 @@ test("faulty proposals quote a ghost span first", async () => {
   const result = await Effect.runPromise(
     client.callModelStructured(proposePrompt(), ProposedMarksSchema, ["stub"]),
   );
-  assertEquals(result.marks[0].selected_text, "ghost span 1");
-  assertEquals(result.marks[1].selected_text, "A first draft is permission to be bad.");
+  assertEquals(result.marks[0].selectedText, "ghost span 1");
+  assertEquals(result.marks[1].selectedText, "A first draft is permission to be bad.");
 });
 
 test("a prompt without essay content proposes nothing", async () => {
@@ -111,12 +111,12 @@ test("repairs re-quote from the failed window", async () => {
     client.callModelStructured(input, ProposedMarksSchema, ["stub"]),
   );
   assertEquals(result.marks.length, 2);
-  assertEquals(result.marks[0].selected_text, "The ear catches what the eye forgives,");
+  assertEquals(result.marks[0].selectedText, "The ear catches what the eye forgives,");
   assertEquals(result.marks[0].label, "grammar");
-  assertEquals(result.marks[0].line_hint, 12);
+  assertEquals(result.marks[0].lineHint, 12);
   // The attempted span already matches the text, so the repair keeps it.
-  assertEquals(result.marks[1].selected_text, "The draft tells you what you meant to say;");
-  assertEquals(result.marks[1].line_hint, 8);
+  assertEquals(result.marks[1].selectedText, "The draft tells you what you meant to say;");
+  assertEquals(result.marks[1].lineHint, 8);
 });
 
 test("analysis bullets do not leak in as allowed labels", async () => {
@@ -145,7 +145,7 @@ test("analysis bullets do not leak in as allowed labels", async () => {
   assertEquals(result.marks.length, 1);
   assertEquals(result.marks[0].label, "structure");
   // Headings do not carry prose; the span lands on the paragraph line.
-  assertEquals(result.marks[0].selected_text, "Body line one. It carries the whole paragraph");
+  assertEquals(result.marks[0].selectedText, "Body line one. It carries the whole paragraph");
 });
 
 test("analysis reflects the essay's line numbers", async () => {

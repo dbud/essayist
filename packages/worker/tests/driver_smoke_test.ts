@@ -191,9 +191,9 @@ test("a progress stream sends a snapshot of the stored trace and none of its tex
         event: {
           type: "applied",
           attempts: [
-            { selected_text: "a", comment: "c", marked: true },
-            { selected_text: "b", comment: "c", marked: true },
-            { selected_text: "x", comment: "c", marked: false },
+            { selectedText: "a", comment: "c", marked: true },
+            { selectedText: "b", comment: "c", marked: true },
+            { selectedText: "x", comment: "c", marked: false },
           ],
         },
       });

@@ -131,14 +131,14 @@ test("assembleList -- a value this layer did not write keeps its own bytes", asy
   const kv = await openKv();
   const values = await store(kv, (persistence) =>
     Effect.gen(function* () {
-      yield* persistence.set(["t", "000001"], { version_id: "abc" });
+      yield* persistence.set(["t", "000001"], { versionId: "abc" });
       yield* writePlan(persistence, ["t", "000002"], bytes(3_000, 0x46));
       const { entries } = yield* persistence.list<Key>(["t"]);
       return byKey(entries);
     }),
   );
 
-  assertEquals(values.get("t,000001")?.raw, { version_id: "abc" });
+  assertEquals(values.get("t,000001")?.raw, { versionId: "abc" });
   assertEquals(values.get("t,000001")?.payload, undefined);
   assertEquals(text(values.get("t,000002")?.payload ?? new Uint8Array()), text(bytes(3_000, 0x46)));
 });

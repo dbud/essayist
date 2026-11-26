@@ -14,7 +14,7 @@ import type { WorkspaceId } from "#/workspace/WorkspaceId.ts";
 import { composeCallInput, composeRepairInput } from "./input.ts";
 
 export const MarkProposalSchema = Schema.Struct({
-  selected_text: Schema.String.annotate({
+  selectedText: Schema.String.annotate({
     description: "The exact text span to mark, copied verbatim from the source text.",
     examples: ["the second sentence of paragraph three, exactly as written"],
   }),
@@ -25,7 +25,7 @@ export const MarkProposalSchema = Schema.Struct({
   label: Schema.String.annotate({
     description: "Which aspect this mark is about. Use the allowed labels.",
   }),
-  line_hint: Schema.optionalKey(
+  lineHint: Schema.optionalKey(
     Schema.Int.annotate({
       description: "Line number of the span, when the text appears more than once.",
     }),
@@ -39,7 +39,7 @@ export const ProposedMarksSchema = Schema.Struct({
     examples: [
       [
         {
-          selected_text: "the exact span from the essay",
+          selectedText: "the exact span from the essay",
           comment: "what is wrong with it",
           label: "grammar",
         },
@@ -78,9 +78,9 @@ export function applyProposedMarks(
         });
         continue;
       }
-      const result = yield* marks.mark(pin.path, proposal.selected_text, proposal.comment, {
+      const result = yield* marks.mark(pin.path, proposal.selectedText, proposal.comment, {
         label: proposal.label,
-        lineHint: proposal.line_hint,
+        lineHint: proposal.lineHint,
         provenance,
         versionId: pin.versionId,
       });

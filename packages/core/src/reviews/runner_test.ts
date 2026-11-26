@@ -100,7 +100,7 @@ async function setup(file?: {
         Effect.gen(function* () {
           const files = yield* Files;
           const write = yield* files.write(file.path, file.content);
-          return write.version_id;
+          return write.versionId;
         }).pipe(Effect.provideService(WorkspaceId, { wsId: "ws" }), Effect.provide(env)),
       )
     : undefined;
@@ -209,7 +209,7 @@ test("resumeReviewRun -- completes a pass with marks, summary, and a per-node tr
   const { client, inputs } = createFakeClient([
     { text: ANALYSIS_ROUND, reasoning: "reading closely" },
     {
-      text: '{"marks":[{"selected_text":"brave","comment":"Good.","label":"grammar"}]}',
+      text: '{"marks":[{"selectedText":"brave","comment":"Good.","label":"grammar"}]}',
     },
     { text: '{"summary":"Solid draft."}' },
   ]);
@@ -238,7 +238,7 @@ test("resumeReviewRun -- completes a pass with marks, summary, and a per-node tr
   assertEquals(run.summary, Option.some("Solid draft."));
 
   const marks = await viaRuns(env, (deps) => deps.files.getMarks("essay.txt", versionId));
-  assertEquals(marks[0].selected_text, "brave");
+  assertEquals(marks[0].selectedText, "brave");
   assertEquals(marks[0].meta, {
     runId: run.id,
     unitId: "mechanics",
@@ -271,10 +271,10 @@ test("resumeReviewRun -- a repair round re-quotes the failed spans", async () =>
   });
   const { client, inputs } = createFakeClient([
     {
-      text: '{"marks":[{"selected_text":"ghost span","comment":"not there","label":"grammar"}]}',
+      text: '{"marks":[{"selectedText":"ghost span","comment":"not there","label":"grammar"}]}',
     },
     {
-      text: '{"marks":[{"selected_text":"hello","comment":"found it","label":"grammar"}]}',
+      text: '{"marks":[{"selectedText":"hello","comment":"found it","label":"grammar"}]}',
     },
     { text: '{"summary":"Solid draft."}' },
   ]);
@@ -313,7 +313,7 @@ test("resumeReviewRun -- a repair round re-quotes the failed spans", async () =>
   // The repair prompt quotes the failed span and its surroundings.
   assertEquals(inputs[1].includes('Attempted span: "ghost span"'), true);
   const marks = await viaRuns(env, (deps) => deps.files.getMarks("essay.txt", versionId));
-  assertEquals(marks[0].selected_text, "hello");
+  assertEquals(marks[0].selectedText, "hello");
 });
 
 test("resumeReviewRun -- a zero budget keeps failed marks with no repair nodes", async () => {
@@ -323,7 +323,7 @@ test("resumeReviewRun -- a zero budget keeps failed marks with no repair nodes",
   });
   const { client } = createFakeClient([
     {
-      text: '{"marks":[{"selected_text":"ghost span","comment":"not there","label":"grammar"}]}',
+      text: '{"marks":[{"selectedText":"ghost span","comment":"not there","label":"grammar"}]}',
     },
     { text: '{"summary":"Solid draft."}' },
   ]);
@@ -405,7 +405,7 @@ test("resumeReviewRun -- a resumed pass skips completed nodes and shows each onc
   // unit is scheduled.
   const second = createFakeClient([
     {
-      text: '{"marks":[{"selected_text":"brave","comment":"Good.","label":"grammar"}]}',
+      text: '{"marks":[{"selectedText":"brave","comment":"Good.","label":"grammar"}]}',
     },
     { text: '{"summary":"Solid draft."}' },
   ]);
@@ -435,7 +435,7 @@ test("resumeReviewRun -- a resumed pass skips completed nodes and shows each onc
   assertEquals(analyzeEvents.filter((type) => type === "node_end").length, 1);
   // The first attempt's mark never reached the VFS, so the retry's does.
   const marks = await viaRuns(env, (deps) => deps.files.getMarks("essay.txt", versionId));
-  assertEquals(marks[0]?.selected_text, "brave");
+  assertEquals(marks[0]?.selectedText, "brave");
 });
 
 test("resumeReviewRun -- a node error fails the run and skips dependents", async () => {

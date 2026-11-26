@@ -160,10 +160,10 @@ function proposeMarks(input: string, faulty: number): unknown {
     marks: labels.map((label, i) => {
       const line = prose[i % prose.length];
       return {
-        selected_text: i < faulty ? `ghost span ${i + 1}` : spanOf(line.text),
+        selectedText: i < faulty ? `ghost span ${i + 1}` : spanOf(line.text),
         comment: COMMENTS[label] ?? "Stub mark on this span.",
         label,
-        line_hint: line.n,
+        lineHint: line.n,
       };
     }),
   };
@@ -184,10 +184,10 @@ function repairMarks(input: string): unknown {
         if (line !== undefined) selectedText = spanOf(line.text);
       }
       return {
-        selected_text: selectedText,
+        selectedText,
         comment: "Stub repair: re-quoted from the surrounding content.",
         label,
-        ...(failed.hint !== undefined && { line_hint: failed.hint }),
+        ...(failed.hint !== undefined && { lineHint: failed.hint }),
       };
     }),
   };

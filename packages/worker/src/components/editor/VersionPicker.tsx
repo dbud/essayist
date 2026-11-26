@@ -67,7 +67,7 @@ export default function VersionPicker() {
   const dirty = file.dirty.value;
   const { draft, version: currentVersion } = file;
   const savedAt = pending ? undefined : (draft.value?.timestamp ?? currentVersion.value?.timestamp);
-  const isPendingVersion = currentVersion.value?.version_id === PENDING_VERSION_ID;
+  const isPendingVersion = currentVersion.value?.versionId === PENDING_VERSION_ID;
   const saved = !pending && !saving && !dirty;
 
   const action = isPendingVersion ? "Created" : "Saved";
@@ -146,12 +146,12 @@ export default function VersionPicker() {
           <div class="menu">
             <ul class="menu-rows" data-stagger>
               {list.map((version, i) => (
-                <li key={version.version_id}>
+                <li key={version.versionId}>
                   <button
                     type="button"
-                    class={`menu-btn ${version.version_id === versionId ? "is-selected" : ""}`}
+                    class={`menu-btn ${version.versionId === versionId ? "is-selected" : ""}`}
                     onClick={() => {
-                      fileTrees.current.value?.selectVersion(version.version_id);
+                      fileTrees.current.value?.selectVersion(version.versionId);
                       close();
                     }}
                   >

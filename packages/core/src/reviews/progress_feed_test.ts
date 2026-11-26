@@ -57,7 +57,7 @@ const storeTrace = Effect.gen(function* () {
         at: 1,
         type: "custom",
         nodeId: "mechanics.apply",
-        event: { type: "applied", attempts: [{ selected_text: "a", comment: "c", marked: true }] },
+        event: { type: "applied", attempts: [{ selectedText: "a", comment: "c", marked: true }] },
       });
     }),
     WorkspaceId,

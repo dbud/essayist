@@ -50,7 +50,7 @@ export const FileContentModel = createModel(
     if (data === undefined) {
       if (versionId === PENDING_VERSION_ID) {
         version.value = {
-          version_id: versionId,
+          versionId,
           timestamp: Date.now(),
           lines: 0,
           content: "",
@@ -67,7 +67,7 @@ export const FileContentModel = createModel(
     }): Promise<"created" | "saved" | undefined> {
       const content = markdown.value;
       if (!dirty.value) return;
-      if (version.value?.version_id === PENDING_VERSION_ID) {
+      if (version.value?.versionId === PENDING_VERSION_ID) {
         if (content === "") return;
         return await runSave(async () => {
           const res = await requestJson<WriteResult>(
@@ -82,8 +82,8 @@ export const FileContentModel = createModel(
                 (res.status === 409 ? `${path}: already exists` : `failed (${res.status})`),
             );
           }
-          const { version_id, timestamp, lines } = res.data;
-          version.value = { version_id, timestamp, lines, content };
+          const { versionId: createdVersionId, timestamp, lines } = res.data;
+          version.value = { versionId: createdVersionId, timestamp, lines, content };
           return "created" as const;
         });
       }

@@ -34,7 +34,7 @@ export function fileTreeLoader(
           WorkspaceId,
           { wsId },
         ).pipe(Effect.catchTag("FileMissingError", (err) => Effect.die(err)));
-        selectedVersionId = versions.some((version) => version.version_id === versionIntent)
+        selectedVersionId = versions.some((version) => version.versionId === versionIntent)
           ? versionIntent
           : fallback;
       }

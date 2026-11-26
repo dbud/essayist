@@ -6,34 +6,34 @@ import type { Mark } from "#/marks/types.ts";
 
 import { type ResolveOptions, resolveMarks } from "./resolver.ts";
 
-function createMark(overrides: Partial<Mark> & { selected_text: string }): Mark {
+function createMark(overrides: Partial<Mark> & { selectedText: string }): Mark {
   const {
     id = `mark_${Math.random().toString(36).slice(2)}`,
-    thread_id,
+    threadId,
     path = "test.txt",
-    version_id = "v1",
-    selected_text,
-    before_context = "",
-    after_context = "",
+    versionId = "v1",
+    selectedText,
+    beforeContext = "",
+    afterContext = "",
     comment = "test comment",
     label,
-    created_at = 1000,
+    createdAt = 1000,
     offset = 0,
-    length = selected_text.length,
+    length = selectedText.length,
     status = "resolved",
   } = overrides;
 
   return {
     id,
-    thread_id: thread_id ?? `thread_${id}`,
+    threadId: threadId ?? `thread_${id}`,
     path,
-    version_id,
-    selected_text,
-    before_context,
-    after_context,
+    versionId,
+    selectedText,
+    beforeContext,
+    afterContext,
     comment,
     label,
-    created_at,
+    createdAt,
     offset,
     length,
     status,
@@ -66,10 +66,10 @@ test("resolveMarks -- pure insertion inside mark region (no division by zero)", 
   const markStart = oldContent.indexOf("since the late");
   const marks = [
     createMark({
-      selected_text: "since the late",
+      selectedText: "since the late",
       offset: markStart,
-      before_context: "It has been used as a typing test ",
-      after_context: " 1800s.",
+      beforeContext: "It has been used as a typing test ",
+      afterContext: " 1800s.",
     }),
   ];
 
@@ -80,7 +80,7 @@ test("resolveMarks -- pure insertion inside mark region (no division by zero)", 
     status: "resolved",
     offset: markStart,
     length: "since the late".length + insertionLen,
-    selected_text: newContent.slice(markStart, markStart + "since the late".length + insertionLen),
+    selectedText: newContent.slice(markStart, markStart + "since the late".length + insertionLen),
   });
 });
 
@@ -95,7 +95,7 @@ test("resolveMarks -- insertion before mark shifts offset right", () => {
   */
   const oldContent = "The fox jumps";
   const newContent = "The quick fox jumps";
-  const marks = [createMark({ selected_text: "fox", offset: 4 })];
+  const marks = [createMark({ selectedText: "fox", offset: 4 })];
 
   const result = resolve(marks, oldContent, newContent);
 
@@ -114,7 +114,7 @@ test("resolveMarks -- deletion before mark shifts offset left", () => {
   */
   const oldContent = "The quick brown fox";
   const newContent = "The brown fox";
-  const marks = [createMark({ selected_text: "brown", offset: 10 })];
+  const marks = [createMark({ selectedText: "brown", offset: 10 })];
 
   const result = resolve(marks, oldContent, newContent);
 
@@ -132,7 +132,7 @@ test("resolveMarks -- multiple edits before mark, cumulative delta", () => {
   */
   const oldContent = "Alpha. Beta. Gamma. Delta.";
   const newContent = "One. Two. Gamma. Delta.";
-  const marks = [createMark({ selected_text: "Gamma", offset: 13 })];
+  const marks = [createMark({ selectedText: "Gamma", offset: 13 })];
 
   const result = resolve(marks, oldContent, newContent);
 
@@ -154,7 +154,7 @@ test("resolveMarks -- edit after mark, offset unchanged", () => {
   */
   const oldContent = "The fox jumps over";
   const newContent = "The fox leaps over";
-  const marks = [createMark({ selected_text: "The ", offset: 0 })];
+  const marks = [createMark({ selectedText: "The ", offset: 0 })];
 
   const result = resolve(marks, oldContent, newContent);
 
@@ -164,7 +164,7 @@ test("resolveMarks -- edit after mark, offset unchanged", () => {
 
 test("resolveMarks -- identical content, offset unchanged", () => {
   const content = "The quick brown fox";
-  const marks = [createMark({ selected_text: "quick", offset: 4 })];
+  const marks = [createMark({ selectedText: "quick", offset: 4 })];
 
   const result = resolve(marks, content, content);
 
@@ -187,10 +187,10 @@ test("resolveMarks -- minor typo fix inside marked text (fuzzy)", () => {
   const newContent = "The quik brown fox";
   const marks = [
     createMark({
-      selected_text: "quick",
+      selectedText: "quick",
       offset: 4,
-      before_context: "The ",
-      after_context: " brown",
+      beforeContext: "The ",
+      afterContext: " brown",
     }),
   ];
 
@@ -199,7 +199,7 @@ test("resolveMarks -- minor typo fix inside marked text (fuzzy)", () => {
   assertEquals(result.length, 1);
   assertObjectMatch(result[0], {
     status: "resolved",
-    selected_text: "quik",
+    selectedText: "quik",
     offset: 4,
   });
 });
@@ -213,24 +213,24 @@ test("resolveMarks -- single word substituted (Phase 1 fails, Phase 2 resolves)"
               "quick" -> "slow"
 
     Phase 1: "quick" vs "slow" = 1/5 = 20% similarity -> fails
-    Phase 2: before_context "The " matches, after_context " brown" matches
+    Phase 2: beforeContext "The " matches, afterContext " brown" matches
              gap = "slow" -> resolved
   */
   const oldContent = "The quick brown fox";
   const newContent = "The slow brown fox";
   const marks = [
     createMark({
-      selected_text: "quick",
+      selectedText: "quick",
       offset: 4,
-      before_context: "The ",
-      after_context: " brown",
+      beforeContext: "The ",
+      afterContext: " brown",
     }),
   ];
 
   const result = resolve(marks, oldContent, newContent);
 
   assertEquals(result.length, 1);
-  assertObjectMatch(result[0], { status: "resolved", selected_text: "slow" });
+  assertObjectMatch(result[0], { status: "resolved", selectedText: "slow" });
 });
 
 test("resolveMarks -- sentence completely rewritten, both contexts intact", () => {
@@ -238,23 +238,23 @@ test("resolveMarks -- sentence completely rewritten, both contexts intact", () =
     old: "Writing is a craft that requires patience and dedication."
     new: "Writing is an art that demands patience and dedication."
 
-    before_context: "Writing is ",
-    selected_text:  "a craft that requires",
-    after_context:  " patience and dedication"
+    beforeContext: "Writing is ",
+    selectedText:  "a craft that requires",
+    afterContext:  " patience and dedication"
 
     Phase 1: "a craft that requires" vs "an art that demands" -> low similarity
-    Phase 2: before_context "Writing is " matches identically
-             after_context " patience and dedication" matches identically
+    Phase 2: beforeContext "Writing is " matches identically
+             afterContext " patience and dedication" matches identically
              gap = "an art that demands" -> resolved
   */
   const oldContent = "Writing is a craft that requires patience and dedication.";
   const newContent = "Writing is an art that demands patience and dedication.";
   const marks = [
     createMark({
-      selected_text: "a craft that requires",
+      selectedText: "a craft that requires",
       offset: 11,
-      before_context: "Writing is ",
-      after_context: " patience and dedication",
+      beforeContext: "Writing is ",
+      afterContext: " patience and dedication",
     }),
   ];
 
@@ -264,7 +264,7 @@ test("resolveMarks -- sentence completely rewritten, both contexts intact", () =
   assertObjectMatch(result[0], {
     status: "resolved",
     offset: 11,
-    selected_text: "an art that demands",
+    selectedText: "an art that demands",
   });
 });
 
@@ -275,13 +275,13 @@ test("resolveMarks -- paragraph rewritten, context fuzzy-matches at boundary", (
 
     The user rewrote the marked paragraph and tweaked the sentence before it.
 
-    before_context: "The conclusion of the previous section was clear and well supported. "
-    selected_text:  "The entire paragraph needs complete revision."
-    after_context:  " The next section begins with an introduction."
+    beforeContext: "The conclusion of the previous section was clear and well supported. "
+    selectedText:  "The entire paragraph needs complete revision."
+    afterContext:  " The next section begins with an introduction."
 
     Phase 1: selected text completely changed -> low similarity -> fails
-    Phase 2: before_context fuzzy-matches (1 word changed in a long string)
-             after_context matches exactly
+    Phase 2: beforeContext fuzzy-matches (1 word changed in a long string)
+             afterContext matches exactly
              gap = "The entire paragraph was completely rewritten from scratch." -> resolved
   */
   const oldContent =
@@ -290,10 +290,10 @@ test("resolveMarks -- paragraph rewritten, context fuzzy-matches at boundary", (
     "The conclusion of the previous section was clear and somewhat supported. The entire paragraph was completely rewritten from scratch. The next section begins with an introduction.";
   const marks = [
     createMark({
-      selected_text: "The entire paragraph needs complete revision.",
+      selectedText: "The entire paragraph needs complete revision.",
       offset: oldContent.indexOf("The entire paragraph needs complete revision."),
-      before_context: "The conclusion of the previous section was clear and well supported. ",
-      after_context: " The next section begins with an introduction.",
+      beforeContext: "The conclusion of the previous section was clear and well supported. ",
+      afterContext: " The next section begins with an introduction.",
     }),
   ];
 
@@ -304,7 +304,7 @@ test("resolveMarks -- paragraph rewritten, context fuzzy-matches at boundary", (
     status: "resolved",
     offset: 73,
     length: 59,
-    selected_text: "The entire paragraph was completely rewritten from scratch.",
+    selectedText: "The entire paragraph was completely rewritten from scratch.",
   });
 });
 
@@ -313,13 +313,13 @@ test("resolveMarks -- sentence deleted, contexts abut, zero-length resolved mark
     old: "Keep this.Delete this.Keep that."
     new: "Keep this.Keep that."
 
-    before_context: "Keep this."
-    selected_text:  "Delete this."
-    after_context:  "Keep that."
+    beforeContext: "Keep this."
+    selectedText:  "Delete this."
+    afterContext:  "Keep that."
 
     Phase 1: "Delete this." not found -> fails
-    Phase 2: before_context "Keep this." matches at offset 0
-             after_context "Keep that." matches at offset 10
+    Phase 2: beforeContext "Keep this." matches at offset 0
+             afterContext "Keep that." matches at offset 10
              gap = "" (zero-length, contexts abut)
              "Delete this." doesn't exist elsewhere -> resolved zero-length
   */
@@ -327,10 +327,10 @@ test("resolveMarks -- sentence deleted, contexts abut, zero-length resolved mark
   const newContent = "Keep this.Keep that.";
   const marks = [
     createMark({
-      selected_text: "Delete this.",
+      selectedText: "Delete this.",
       offset: oldContent.indexOf("Delete this."),
-      before_context: "Keep this.",
-      after_context: "Keep that.",
+      beforeContext: "Keep this.",
+      afterContext: "Keep that.",
     }),
   ];
 
@@ -361,10 +361,10 @@ test("resolveMarks -- long context with small edit near boundary", () => {
 
   const marks = [
     createMark({
-      selected_text: "The marked text.",
+      selectedText: "The marked text.",
       offset: preamble.length,
-      before_context: preamble,
-      after_context: postamble,
+      beforeContext: preamble,
+      afterContext: postamble,
     }),
   ];
 
@@ -374,33 +374,33 @@ test("resolveMarks -- long context with small edit near boundary", () => {
   assertObjectMatch(result[0], {
     status: "resolved",
     offset: newContent.indexOf("Completely rewritten."),
-    selected_text: "Completely rewritten.",
+    selectedText: "Completely rewritten.",
   });
 });
 
-test("resolveMarks -- only before_context matches, stale zero-length at end of match", () => {
+test("resolveMarks -- only beforeContext matches, stale zero-length at end of match", () => {
   /*
     old: "The quick brown fox jumps over the lazy dog."
     new: "The quick brown cat leaps over something entirely different."
 
-    before_context: "The quick brown "
-    selected_text:  "fox"
-    after_context:  " jumps over the lazy dog"
+    beforeContext: "The quick brown "
+    selectedText:  "fox"
+    afterContext:  " jumps over the lazy dog"
 
     Phase 1: "fox" not found near expected offset -> fails
-    Phase 2: before_context "The quick brown " matches
-             after_context " jumps over the lazy dog" vs " leaps over something..."
+    Phase 2: beforeContext "The quick brown " matches
+             afterContext " jumps over the lazy dog" vs " leaps over something..."
              fuzzy similarity too low -> fails
-    -> only one context matches -> stale, zero-length at end of before_context match
+    -> only one context matches -> stale, zero-length at end of beforeContext match
   */
   const oldContent = "The quick brown fox jumps over the lazy dog.";
   const newContent = "The quick brown cat leaps over something entirely different.";
   const marks = [
     createMark({
-      selected_text: "fox",
+      selectedText: "fox",
       offset: oldContent.indexOf("fox"),
-      before_context: "The quick brown ",
-      after_context: " jumps over the lazy dog",
+      beforeContext: "The quick brown ",
+      afterContext: " jumps over the lazy dog",
     }),
   ];
 
@@ -414,30 +414,30 @@ test("resolveMarks -- only before_context matches, stale zero-length at end of m
   });
 });
 
-test("resolveMarks -- only after_context matches, stale zero-length at start of match", () => {
+test("resolveMarks -- only afterContext matches, stale zero-length at start of match", () => {
   /*
     old: "The opening sentence was changed completely. The quick brown fox jumps over the lazy dog."
     new: "Totally new opening here. A fast gray cat leaps over the lazy dog."
 
-    before_context: "The opening sentence was changed completely. "
-    selected_text:  "The quick brown fox"
-    after_context:  " jumps over the lazy dog"
+    beforeContext: "The opening sentence was changed completely. "
+    selectedText:  "The quick brown fox"
+    afterContext:  " jumps over the lazy dog"
 
     Phase 1: "The quick brown fox" not found -> fails
-    Phase 2: before_context -> too different, fails
-             after_context " jumps over the lazy dog" fuzzy-matches
+    Phase 2: beforeContext -> too different, fails
+             afterContext " jumps over the lazy dog" fuzzy-matches
                " leaps over the lazy dog" (high similarity, 1 word diff)
-             -> only one context matches -> stale, zero-length at start of after_context match
+             -> only one context matches -> stale, zero-length at start of afterContext match
   */
   const oldContent =
     "The opening sentence was changed completely. The quick brown fox jumps over the lazy dog.";
   const newContent = "Totally new opening here. A fast gray cat leaps over the lazy dog.";
   const marks = [
     createMark({
-      selected_text: "The quick brown fox",
+      selectedText: "The quick brown fox",
       offset: oldContent.indexOf("The quick brown fox"),
-      before_context: "The opening sentence was changed completely. ",
-      after_context: " jumps over the lazy dog",
+      beforeContext: "The opening sentence was changed completely. ",
+      afterContext: " jumps over the lazy dog",
     }),
   ];
 
@@ -451,29 +451,29 @@ test("resolveMarks -- only after_context matches, stale zero-length at start of 
   });
 });
 
-test("resolveMarks -- empty before_context (mark at content start)", () => {
+test("resolveMarks -- empty beforeContext (mark at content start)", () => {
   /*
     old: "Hello world today"
     new: "Goodbye world today"
 
-    before_context: "" (empty -- mark starts at content beginning)
-    selected_text:  "Hello"
-    after_context:  " world"
+    beforeContext: "" (empty -- mark starts at content beginning)
+    selectedText:  "Hello"
+    afterContext:  " world"
 
     Phase 1: "Hello" not found -> fails
-    Phase 2: no before_context to match
-             after_context " world" matches exactly
+    Phase 2: no beforeContext to match
+             afterContext " world" matches exactly
              -> only one context matches -> resolved to gap from content start
-               to start of after_context
+               to start of afterContext
   */
   const oldContent = "Hello world today";
   const newContent = "Goodbye world today";
   const marks = [
     createMark({
-      selected_text: "Hello",
+      selectedText: "Hello",
       offset: 0,
-      before_context: "",
-      after_context: " world",
+      beforeContext: "",
+      afterContext: " world",
     }),
   ];
 
@@ -484,33 +484,33 @@ test("resolveMarks -- empty before_context (mark at content start)", () => {
     status: "resolved",
     offset: 0,
     length: newContent.indexOf(" world"),
-    selected_text: "Goodbye",
+    selectedText: "Goodbye",
   });
 });
 
-test("resolveMarks -- empty after_context (mark at content end)", () => {
+test("resolveMarks -- empty afterContext (mark at content end)", () => {
   /*
     old: "Hello world today"
     new: "Hello world yesterday"
 
-    before_context: "Hello world "
-    selected_text:  "today"
-    after_context:  "" (empty -- mark ends at content end)
+    beforeContext: "Hello world "
+    selectedText:  "today"
+    afterContext:  "" (empty -- mark ends at content end)
 
     Phase 1: "today" not found -> fails
-    Phase 2: before_context "Hello world " matches exactly
-             no after_context to match
-             -> only one context matches -> resolved to gap from end of before_context
+    Phase 2: beforeContext "Hello world " matches exactly
+             no afterContext to match
+             -> only one context matches -> resolved to gap from end of beforeContext
                         to content end
            */
   const oldContent = "Hello world today";
   const newContent = "Hello world yesterday";
   const marks = [
     createMark({
-      selected_text: "today",
+      selectedText: "today",
       offset: oldContent.indexOf("today"),
-      before_context: "Hello world ",
-      after_context: "",
+      beforeContext: "Hello world ",
+      afterContext: "",
     }),
   ];
 
@@ -522,18 +522,18 @@ test("resolveMarks -- empty after_context (mark at content end)", () => {
     status: "resolved",
     offset,
     length: newContent.length - offset,
-    selected_text: "yesterday",
+    selectedText: "yesterday",
   });
 });
 
-test("resolveMarks -- both contexts empty (selected_text is entire content)", () => {
+test("resolveMarks -- both contexts empty (selectedText is entire content)", () => {
   /*
     old: "Hello world"
     new: "Goodbye world"
 
-    before_context: "" (empty)
-    selected_text:  "Hello world"
-    after_context: "" (empty)
+    beforeContext: "" (empty)
+    selectedText:  "Hello world"
+    afterContext: "" (empty)
 
     The mark covers the entire content and the edit ("Hello " -> "Goodbye ")
     is inside the mark region, so the mark stays resolved and covers the
@@ -545,10 +545,10 @@ test("resolveMarks -- both contexts empty (selected_text is entire content)", ()
   const newContent = "Goodbye world";
   const marks = [
     createMark({
-      selected_text: "Hello world",
+      selectedText: "Hello world",
       offset: 0,
-      before_context: "",
-      after_context: "",
+      beforeContext: "",
+      afterContext: "",
     }),
   ];
 
@@ -559,7 +559,7 @@ test("resolveMarks -- both contexts empty (selected_text is entire content)", ()
     status: "resolved",
     offset: 0,
     length: newContent.length,
-    selected_text: newContent,
+    selectedText: newContent,
   });
 });
 
@@ -569,13 +569,13 @@ test("resolveMarks -- selected text cut and pasted elsewhere", () => {
     old: "First part. Middle part. Last part."
     new: "First part. Last part. Middle part."
 
-    before_context: "First part. "
-    selected_text:  "Middle part"
-    after_context:  " Last part"
+    beforeContext: "First part. "
+    selectedText:  "Middle part"
+    afterContext:  " Last part"
 
     Phase 1: "Middle part" not near original offset -> fails
-    Phase 2: before_context "First part. " matches at offset 0
-             after_context " Last part" matches at offset 10
+    Phase 2: beforeContext "First part. " matches at offset 0
+             afterContext " Last part" matches at offset 10
              gap is empty -> contexts abut, selected text was moved
              fall through to Phase 3
     Phase 3: "Middle part" found via full-content scan -> resolved at new location
@@ -584,10 +584,10 @@ test("resolveMarks -- selected text cut and pasted elsewhere", () => {
   const newContent = "First part. Last part. Middle part.";
   const marks = [
     createMark({
-      selected_text: "Middle part",
+      selectedText: "Middle part",
       offset: oldContent.indexOf("Middle part"),
-      before_context: "First part. ",
-      after_context: " Last part",
+      beforeContext: "First part. ",
+      afterContext: " Last part",
     }),
   ];
 
@@ -617,15 +617,15 @@ test("resolveMarks -- Phase 3 finds moved text when contexts become adjacent", (
 
   const marks = [
     createMark({
-      selected_text: selected,
+      selectedText: selected,
       offset: oldContent.indexOf(selected),
-      before_context: before,
-      after_context: after,
+      beforeContext: before,
+      afterContext: after,
     }),
   ];
 
-  // With a small search radius, Phase 1 can't reach selected_text at offset 0. Phase 2 finds
-  // before/after adjacent -> empty gap -> fall through. Phase 3 finds selected_text at offset 0.
+  // With a small search radius, Phase 1 can't reach selectedText at offset 0. Phase 2 finds
+  // before/after adjacent -> empty gap -> fall through. Phase 3 finds selectedText at offset 0.
   const result = resolve(marks, oldContent, newContent, {
     minSearchRadius: 2,
     searchRadiusMultiplier: 1,
@@ -636,7 +636,7 @@ test("resolveMarks -- Phase 3 finds moved text when contexts become adjacent", (
     status: "resolved",
     offset: 0,
     length: 13,
-    selected_text: "selected_text",
+    selectedText: "selected_text",
   });
 });
 
@@ -647,18 +647,18 @@ test("resolveMarks -- marked region and all context deleted entirely", () => {
     new: "Completely different content with no overlap."
 
     Phase 1: "Marked text" not found -> fails
-    Phase 2: before_context "Unique preamble. " -> not found -> fails
-             after_context " Unique postamble" -> not found -> fails
+    Phase 2: beforeContext "Unique preamble. " -> not found -> fails
+             afterContext " Unique postamble" -> not found -> fails
     Phase 3: "Marked text" not found -> stale
   */
   const oldContent = "Unique preamble. Marked text. Unique postamble.";
   const newContent = "Completely different content with no overlap.";
   const marks = [
     createMark({
-      selected_text: "Marked text",
+      selectedText: "Marked text",
       offset: oldContent.indexOf("Marked text"),
-      before_context: "Unique preamble. ",
-      after_context: " Unique postamble",
+      beforeContext: "Unique preamble. ",
+      afterContext: " Unique postamble",
     }),
   ];
 
@@ -674,9 +674,9 @@ test("resolveMarks -- selected text with 1-char edit resolves via context", () =
     old: "The quick brown fox jumps over the lazy dog."
     new: "The quik brown fox leaps over the lazy dog."
 
-    before_context: "The "
-    selected_text:  "quick"  (Phase 1 exact-only -> "quick" not in new -> fails)
-    after_context: " brown"
+    beforeContext: "The "
+    selectedText:  "quick"  (Phase 1 exact-only -> "quick" not in new -> fails)
+    afterContext: " brown"
 
     Phase 2: contexts match; gap = "quik" -> resolves to "quik".
   */
@@ -684,10 +684,10 @@ test("resolveMarks -- selected text with 1-char edit resolves via context", () =
   const newContent = "The quik brown fox leaps over the lazy dog.";
   const marks = [
     createMark({
-      selected_text: "quick",
+      selectedText: "quick",
       offset: 4,
-      before_context: "The ",
-      after_context: " brown",
+      beforeContext: "The ",
+      afterContext: " brown",
     }),
   ];
 
@@ -696,7 +696,7 @@ test("resolveMarks -- selected text with 1-char edit resolves via context", () =
   });
 
   assertEquals(result.length, 1);
-  assertObjectMatch(result[0], { status: "resolved", selected_text: "quik" });
+  assertObjectMatch(result[0], { status: "resolved", selectedText: "quik" });
 });
 
 test("resolveMarks -- insertion inside a mark spanning multiple lines", () => {
@@ -718,11 +718,11 @@ test("resolveMarks -- insertion inside a mark spanning multiple lines", () => {
     "It has been used as a typing test since the late 1800s.";
   const marks = [
     createMark({
-      selected_text: oldContent,
+      selectedText: oldContent,
       offset: 0,
       length: oldContent.length,
-      before_context: "",
-      after_context: "",
+      beforeContext: "",
+      afterContext: "",
     }),
   ];
 
@@ -733,7 +733,7 @@ test("resolveMarks -- insertion inside a mark spanning multiple lines", () => {
     status: "resolved",
     offset: 0,
     length: newContent.length,
-    selected_text: newContent,
+    selectedText: newContent,
   });
 });
 
@@ -752,11 +752,11 @@ test("resolveMarks -- deletion and insertion inside full-content mark", () => {
 
   const marks = [
     createMark({
-      selected_text: oldContent,
+      selectedText: oldContent,
       offset: 0,
       length: oldContent.length,
-      before_context: "",
-      after_context: "",
+      beforeContext: "",
+      afterContext: "",
     }),
   ];
 
@@ -767,7 +767,7 @@ test("resolveMarks -- deletion and insertion inside full-content mark", () => {
     status: "resolved",
     offset: 0,
     length: newContent.length,
-    selected_text: newContent,
+    selectedText: newContent,
   });
 });
 
@@ -786,11 +786,11 @@ test("resolveMarks -- multiple separated hunks before mark apply only their own 
                     ^      (C -> Y, net 0)
       Two separated replace hunks; only the first changes length (+3).
       Mark "MARK" at old offset 6 should move to new offset 9.
-      Current code returns offset 12 with selected_text "K".
+      Current code returns offset 12 with selectedText "K".
     */
   const oldContent = "A B C MARK";
   const newContent = "AAAA B Y MARK";
-  const marks = [createMark({ selected_text: "MARK", offset: 6 })];
+  const marks = [createMark({ selectedText: "MARK", offset: 6 })];
 
   const result = resolve(marks, oldContent, newContent);
 
@@ -799,7 +799,7 @@ test("resolveMarks -- multiple separated hunks before mark apply only their own 
     status: "resolved",
     offset: 9,
     length: 4,
-    selected_text: "MARK",
+    selectedText: "MARK",
   });
 });
 
@@ -812,13 +812,13 @@ test("resolveMarks -- whole-content mark with edit at start boundary stays resol
       new: "Jello world."
       Mark spans the whole content. A 1-char edit at offset 0 is inside
       the mark, so the mark should cover the whole new content.
-      Current code returns offset 1, length 11, selected_text "ello world.".
+      Current code returns offset 1, length 11, selectedText "ello world.".
     */
   const oldContent = "Hello world.";
   const newContent = "Jello world.";
   const marks = [
     createMark({
-      selected_text: oldContent,
+      selectedText: oldContent,
       offset: 0,
       length: oldContent.length,
     }),
@@ -831,7 +831,7 @@ test("resolveMarks -- whole-content mark with edit at start boundary stays resol
     status: "resolved",
     offset: 0,
     length: newContent.length,
-    selected_text: newContent,
+    selectedText: newContent,
   });
 });
 
@@ -843,13 +843,13 @@ test("resolveMarks -- whole-content mark with edit at end boundary stays resolve
       new: "Hello world FOO"
       Mark spans the whole content; only the last word changes case.
       Mark should cover the whole new content.
-      Current code returns length 14, selected_text "Hello world FO".
+      Current code returns length 14, selectedText "Hello world FO".
     */
   const oldContent = "Hello world foo";
   const newContent = "Hello world FOO";
   const marks = [
     createMark({
-      selected_text: oldContent,
+      selectedText: oldContent,
       offset: 0,
       length: oldContent.length,
     }),
@@ -862,23 +862,23 @@ test("resolveMarks -- whole-content mark with edit at end boundary stays resolve
     status: "resolved",
     offset: 0,
     length: newContent.length,
-    selected_text: newContent,
+    selectedText: newContent,
   });
 });
 
 // Bug 4: the word-token diff drops leading whitespace (the tokenizer `\S+\s*` only captures
 // trailing whitespace per token). Inserting whitespace at the very start of the document produces
-// NO hunks, so marks keep their old offsets and selected_text drifts.
+// NO hunks, so marks keep their old offsets and selectedText drifts.
 test("resolveMarks -- leading-whitespace insertion migrates mark offsets", () => {
   /*
       old: "Hello world"
       new: "  Hello world"
       Two spaces inserted at the start. Mark on "Hello" should shift to
-      offset 2. Current code keeps offset 0 and yields selected_text "  Hel".
+      offset 2. Current code keeps offset 0 and yields selectedText "  Hel".
     */
   const oldContent = "Hello world";
   const newContent = "  Hello world";
-  const marks = [createMark({ selected_text: "Hello", offset: 0 })];
+  const marks = [createMark({ selectedText: "Hello", offset: 0 })];
 
   const result = resolve(marks, oldContent, newContent);
 
@@ -887,7 +887,7 @@ test("resolveMarks -- leading-whitespace insertion migrates mark offsets", () =>
     status: "resolved",
     offset: 2,
     length: 5,
-    selected_text: "Hello",
+    selectedText: "Hello",
   });
 });
 
@@ -906,7 +906,7 @@ test("resolveMarks -- Phase 1 exact match picks nearest occurrence among duplica
     */
   const oldContent = "word   word";
   const newContent = "word word";
-  const marks = [createMark({ selected_text: "word", offset: 6 })];
+  const marks = [createMark({ selectedText: "word", offset: 6 })];
 
   const result = resolve(marks, oldContent, newContent);
 
@@ -915,12 +915,12 @@ test("resolveMarks -- Phase 1 exact match picks nearest occurrence among duplica
     status: "resolved",
     offset: 5,
     length: 4,
-    selected_text: "word",
+    selectedText: "word",
   });
 });
 
 // Bug 6: when Phase 1 fails and both before/after contexts match but in reversed
-// order (after_context appears BEFORE before_context in the new text), `beforeEnd =
+// order (afterContext appears BEFORE beforeContext in the new text), `beforeEnd =
 // beforeResult.nextOffset` ends up GREATER than `afterStart = afterResult.startOffset`. The code
 // still resolves (to a zero-length, out-of-bounds mark) instead of going stale.
 test("resolveMarks -- reversed contexts produce a stale mark", () => {
@@ -935,10 +935,10 @@ test("resolveMarks -- reversed contexts produce a stale mark", () => {
   const newContent = "AFTER YYY BEFORE";
   const marks = [
     createMark({
-      selected_text: "XXX",
+      selectedText: "XXX",
       offset: oldContent.indexOf("XXX"),
-      before_context: "BEFORE ",
-      after_context: " AFTER",
+      beforeContext: "BEFORE ",
+      afterContext: " AFTER",
     }),
   ];
 
@@ -949,10 +949,10 @@ test("resolveMarks -- reversed contexts produce a stale mark", () => {
 });
 
 // Token-based context matching (Phase 2 robustness)
-test("resolveMarks -- clause reorder within after_context stays resolved", () => {
+test("resolveMarks -- clause reorder within afterContext stays resolved", () => {
   /*
-    before_context is intact, the marked word is rewritten, and the
-    after_context has its clauses reordered ("she needed milk and eggs"
+    beforeContext is intact, the marked word is rewritten, and the
+    afterContext has its clauses reordered ("she needed milk and eggs"
     -> "milk and eggs were needed"). Token-based context matching treats
     the moved words as a few token edits and resolves.
   */
@@ -962,10 +962,10 @@ test("resolveMarks -- clause reorder within after_context stays resolved", () =>
     "She quickly ran to the store CHANGED because milk and eggs were needed for the cake recipe.";
   const marks = [
     createMark({
-      selected_text: "MARKED",
+      selectedText: "MARKED",
       offset: oldContent.indexOf("MARKED"),
-      before_context: "She quickly ran to the store ",
-      after_context: " because she needed milk and eggs for the cake recipe.",
+      beforeContext: "She quickly ran to the store ",
+      afterContext: " because she needed milk and eggs for the cake recipe.",
     }),
   ];
 
@@ -975,24 +975,24 @@ test("resolveMarks -- clause reorder within after_context stays resolved", () =>
   assertObjectMatch(result[0], {
     status: "resolved",
     offset: newContent.indexOf("CHANGED"),
-    selected_text: "CHANGED",
+    selectedText: "CHANGED",
   });
 });
 
 test("resolveMarks -- punctuation tweak in context does not break Phase 2", () => {
   /*
     The marked word is rewritten (Phase 2 invoked) and a comma in the
-    before_context is removed. Token matching ignores punctuation, so
+    beforeContext is removed. Token matching ignores punctuation, so
     the context still anchors and the mark resolves to the rewritten word.
   */
   const oldContent = "She said, hello there friend.";
   const newContent = "She said hi there friend.";
   const marks = [
     createMark({
-      selected_text: "hello",
+      selectedText: "hello",
       offset: oldContent.indexOf("hello"),
-      before_context: "She said, ",
-      after_context: " there friend.",
+      beforeContext: "She said, ",
+      afterContext: " there friend.",
     }),
   ];
 
@@ -1001,7 +1001,7 @@ test("resolveMarks -- punctuation tweak in context does not break Phase 2", () =
   assertEquals(result.length, 1);
   assertObjectMatch(result[0], {
     status: "resolved",
-    selected_text: "hi",
+    selectedText: "hi",
   });
 });
 
@@ -1015,10 +1015,10 @@ test("resolveMarks -- paragraph reflow (newline to space) in context stays resol
   const newContent = "First paragraph ends here. Second paragraph has the REWRITTEN word in it.";
   const marks = [
     createMark({
-      selected_text: "MARKED",
+      selectedText: "MARKED",
       offset: oldContent.indexOf("MARKED"),
-      before_context: "First paragraph ends here.\n\nSecond paragraph has the ",
-      after_context: " word in it.",
+      beforeContext: "First paragraph ends here.\n\nSecond paragraph has the ",
+      afterContext: " word in it.",
     }),
   ];
 
@@ -1027,11 +1027,11 @@ test("resolveMarks -- paragraph reflow (newline to space) in context stays resol
   assertEquals(result.length, 1);
   assertObjectMatch(result[0], {
     status: "resolved",
-    selected_text: "REWRITTEN",
+    selectedText: "REWRITTEN",
   });
 });
 
-test("resolveMarks -- resolved selected_text excludes surrounding whitespace", () => {
+test("resolveMarks -- resolved selectedText excludes surrounding whitespace", () => {
   /*
     A word mark resolved via context matching should not pick up the
     spaces around the selected word (the contexts own those separators).
@@ -1040,10 +1040,10 @@ test("resolveMarks -- resolved selected_text excludes surrounding whitespace", (
   const newContent = "The slow brown fox jumps.";
   const marks = [
     createMark({
-      selected_text: "quick",
+      selectedText: "quick",
       offset: oldContent.indexOf("quick"),
-      before_context: "The ",
-      after_context: " brown",
+      beforeContext: "The ",
+      afterContext: " brown",
     }),
   ];
 
@@ -1054,24 +1054,24 @@ test("resolveMarks -- resolved selected_text excludes surrounding whitespace", (
     status: "resolved",
     offset: newContent.indexOf("slow"),
     length: 4,
-    selected_text: "slow",
+    selectedText: "slow",
   });
 });
 
 // Id handling: re-derived marks keep their ids; a new version writes new rows with new ids.
 test("resolveMarks -- preserveIds keeps the input ids on unchanged content", () => {
-  const marks = [createMark({ id: "m1", selected_text: "quick", offset: 4 })];
+  const marks = [createMark({ id: "m1", selectedText: "quick", offset: 4 })];
 
   const result = resolve(marks, "The quick brown fox", "The quick brown fox", {
     preserveIds: true,
   });
 
   assertEquals(result[0].id, "m1");
-  assertEquals(result[0].thread_id, "thread_m1");
+  assertEquals(result[0].threadId, "thread_m1");
 });
 
 test("resolveMarks -- preserveIds keeps the input ids through exact mapping", () => {
-  const marks = [createMark({ id: "m1", selected_text: "quick", offset: 4 })];
+  const marks = [createMark({ id: "m1", selectedText: "quick", offset: 4 })];
 
   const result = resolve(marks, "The quick brown fox", "The quick brown fox jumps", {
     preserveIds: true,
@@ -1086,10 +1086,10 @@ test("resolveMarks -- preserveIds keeps the input ids through fuzzy resolution",
   const marks = [
     createMark({
       id: "m1",
-      selected_text: "quick",
+      selectedText: "quick",
       offset: 4,
-      before_context: "The ",
-      after_context: " brown",
+      beforeContext: "The ",
+      afterContext: " brown",
     }),
   ];
 
@@ -1099,7 +1099,7 @@ test("resolveMarks -- preserveIds keeps the input ids through fuzzy resolution",
 });
 
 test("resolveMarks -- preserveIds keeps the input ids on stale marks", () => {
-  const marks = [createMark({ id: "m1", selected_text: "world", offset: 6 })];
+  const marks = [createMark({ id: "m1", selectedText: "world", offset: 6 })];
 
   const result = resolve(marks, "hello world", "goodbye", { preserveIds: true });
 
@@ -1108,7 +1108,7 @@ test("resolveMarks -- preserveIds keeps the input ids on stale marks", () => {
 });
 
 test("resolveMarks -- preserveIds keeps the input ids on already-stale marks", () => {
-  const marks = [createMark({ id: "m1", selected_text: "gone", offset: 0, status: "stale" })];
+  const marks = [createMark({ id: "m1", selectedText: "gone", offset: 0, status: "stale" })];
 
   const result = resolve(marks, "The quick brown fox", "The quick brown fox jumps", {
     preserveIds: true,
@@ -1118,10 +1118,10 @@ test("resolveMarks -- preserveIds keeps the input ids on already-stale marks", (
 });
 
 test("resolveMarks -- default resolves mint fresh ids and keep threads", () => {
-  const marks = [createMark({ id: "m1", selected_text: "quick", offset: 4 })];
+  const marks = [createMark({ id: "m1", selectedText: "quick", offset: 4 })];
 
   const result = resolve(marks, "The quick brown fox", "The quick brown fox jumps");
 
-  assertEquals(result[0].thread_id, "thread_m1");
+  assertEquals(result[0].threadId, "thread_m1");
   assertNotEquals(result[0].id, "m1");
 });

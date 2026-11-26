@@ -89,7 +89,7 @@ function renderAnalysis(analysis: Analysis): string {
 function renderAttemptList(
   header: string,
   attempts: readonly {
-    selected_text: string;
+    selectedText: string;
     comment: string;
     label?: string;
     error?: string;
@@ -99,7 +99,7 @@ function renderAttemptList(
     section(header),
     attempts.map((attempt) =>
       joinLines(
-        `"${attempt.selected_text}"`,
+        `"${attempt.selectedText}"`,
         attempt.comment,
         ...(attempt.label ? [attempt.label] : []),
         ...(attempt.error ? [`error: ${attempt.error}`] : []),
@@ -150,11 +150,11 @@ export function composeRepairInput(
 
 function failedAttemptBody(attempt: MarkAttempt, essay: string): string {
   const lines = essay.split("\n");
-  const hint = attempt.line_hint;
+  const hint = attempt.lineHint;
   const from = Math.max(1, (hint ?? 1) - REPAIR_CONTEXT_LINES);
   const to = Math.min(lines.length, (hint ?? lines.length) + REPAIR_CONTEXT_LINES);
   return joinLines(
-    `Attempted span: "${attempt.selected_text}"`,
+    `Attempted span: "${attempt.selectedText}"`,
     `Comment: ${attempt.comment}`,
     `Error: ${attempt.error}`,
     "",

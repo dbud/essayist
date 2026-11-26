@@ -286,7 +286,7 @@ const workspaceHandlers = HttpApiBuilder.group(
             store.createRun({
               path,
               reviewPassId: pass.pass.id,
-              versionId: version.version_id,
+              versionId: version.versionId,
             }),
           ).pipe(
             Effect.provideService(WorkspaceId, { wsId }),

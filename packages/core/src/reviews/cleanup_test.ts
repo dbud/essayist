@@ -60,10 +60,10 @@ const reviewed = (text: string) =>
     const runs = yield* ReviewRuns;
     const traces = yield* TraceEvents;
     const marks = yield* Marks;
-    const { version_id } = yield* files.read(PATH);
+    const { versionId } = yield* files.read(PATH);
     const created = yield* runs.createRun({
       path: PATH,
-      versionId: version_id,
+      versionId,
       reviewPassId: "pass",
     });
     yield* traces.append(created.id, { seq: 1, at: 1, type: "node_start", nodeId: "n" });
@@ -71,14 +71,14 @@ const reviewed = (text: string) =>
       provenance: { runId: created.id, unitId: "unit" },
     });
     yield* runs.completeRun(created.id, "done");
-    return { runId: created.id, versionId: version_id };
+    return { runId: created.id, versionId: versionId };
   });
 
 const markTexts = (versionId: string) =>
   Effect.gen(function* () {
     const files = yield* Files;
     const marks = yield* files.getMarks(PATH, versionId);
-    return marks.map((mark) => mark.selected_text).toSorted();
+    return marks.map((mark) => mark.selectedText).toSorted();
   });
 
 const runIds = Effect.gen(function* () {
@@ -95,7 +95,7 @@ test("ReviewCleanup.deleteRun -- removes the run, its trace, and its marks on ev
       yield* files.write(PATH, "alpha beta gamma");
       const a = yield* reviewed("alpha");
       const b = yield* reviewed("beta");
-      const { version_id: v2 } = yield* files.write(PATH, "alpha beta gamma delta");
+      const { versionId: v2 } = yield* files.write(PATH, "alpha beta gamma delta");
 
       assertEquals(yield* markTexts(v2), ["alpha", "beta"]);
 
@@ -157,18 +157,18 @@ test("ReviewCleanup -- a running run in scope refuses the cleanup and deletes no
       const files = yield* Files;
       const runs = yield* ReviewRuns;
       const cleanup = yield* ReviewCleanup;
-      const { version_id } = yield* files.write(PATH, "alpha beta gamma");
+      const { versionId } = yield* files.write(PATH, "alpha beta gamma");
       const a = yield* reviewed("alpha");
       const active = yield* runs.createRun({
         path: PATH,
-        versionId: version_id,
+        versionId,
         reviewPassId: "pass",
       });
 
-      const error = yield* Effect.flip(cleanup.clearVersion(PATH, version_id));
+      const error = yield* Effect.flip(cleanup.clearVersion(PATH, versionId));
 
       assertEquals(error._tag, "ReviewRunActiveError");
-      assertEquals(yield* markTexts(version_id), ["alpha"]);
+      assertEquals(yield* markTexts(versionId), ["alpha"]);
       assertEquals(yield* runIds, [a.runId, active.id].toSorted());
     }),
   );

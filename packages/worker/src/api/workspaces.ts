@@ -116,7 +116,7 @@ const GetMarks = HttpApiEndpoint.get("getMarks", "/workspaces/files/marks", {
 });
 
 const WriteResult = Schema.Struct({
-  version_id: Schema.String,
+  versionId: Schema.String,
   timestamp: Schema.Number,
   lines: Schema.Number,
   path: Schema.String,

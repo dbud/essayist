@@ -170,7 +170,7 @@ test("TokenizedText.findFuzzyInTokenWindow -- punctuation differences ignored", 
 });
 
 test("TokenizedText.findFuzzyInTokenWindow -- nextOffset points at the next word", () => {
-  // before_context "alpha beta " -> nextOffset should be start of "gamma"
+  // beforeContext "alpha beta " -> nextOffset should be start of "gamma"
   const text = "alpha beta gamma delta";
   const tt = new TokenizedText(text);
   const result = tt.findFuzzyInTokenWindow("alpha beta", {

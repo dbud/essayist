@@ -29,15 +29,15 @@ export interface MarkOptions {
  */
 export const Mark = Schema.Struct({
   id: Schema.String,
-  thread_id: Schema.String, // stable id across versions
+  threadId: Schema.String, // stable id across versions
   path: Schema.String,
-  version_id: Schema.String,
-  selected_text: Schema.String,
-  before_context: Schema.String,
-  after_context: Schema.String,
+  versionId: Schema.String,
+  selectedText: Schema.String,
+  beforeContext: Schema.String,
+  afterContext: Schema.String,
   comment: Schema.String,
   label: Schema.optionalKey(Schema.String),
-  created_at: Schema.Number,
+  createdAt: Schema.Number,
   offset: Schema.Number,
   length: Schema.Number,
   status: MarkStatus,
@@ -47,8 +47,8 @@ export type Mark = Schema.Schema.Type<typeof Mark>;
 
 /** Result of a mark operation. */
 export interface MarkResult {
-  mark_id: string;
-  thread_id: string;
+  markId: string;
+  threadId: string;
   marked: boolean;
 }
 

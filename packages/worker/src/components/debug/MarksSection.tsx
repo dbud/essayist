@@ -40,13 +40,13 @@ function MarkDetail({
               {mark.status}
             </span>
           </span>
-          <span class="italic">&ldquo;{mark.selected_text}&rdquo;</span>
+          <span class="italic">&ldquo;{mark.selectedText}&rdquo;</span>
           <span class="text-sm">{mark.comment}</span>
           <span class="flex flex-wrap gap-x-2 font-mono text-[0.7rem] text-current/60">
             <span>offset: {mark.offset}</span>
             <span>length: {mark.length}</span>
             <span class="break-all">id: {mark.id}</span>
-            <span class="break-all">thread_id: {mark.thread_id}</span>
+            <span class="break-all">threadId: {mark.threadId}</span>
           </span>
         </span>
       </button>

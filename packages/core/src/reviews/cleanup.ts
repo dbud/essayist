@@ -69,11 +69,11 @@ export class ReviewCleanup extends Context.Service<ReviewCleanup, Interface>()(
               .getVersions(path)
               .pipe(Effect.catchTag("FileMissingError", () => Effect.succeed([])));
             let marks = 0;
-            for (const { version_id } of versions) {
-              const wipe = wipeVersion(version_id);
+            for (const { versionId } of versions) {
+              const wipe = wipeVersion(versionId);
               marks += yield* files.deleteMarksWhere(
                 path,
-                version_id,
+                versionId,
                 (mark) => wipe || (mark.meta !== undefined && runIds.has(mark.meta.runId)),
               );
             }

@@ -67,9 +67,9 @@ const applied = (nodeId: string, marked: number, unmarked = 0): TraceEvent => ({
   event: {
     type: "applied",
     attempts: [
-      ...Array.from({ length: marked }, () => ({ selected_text: "a", comment: "c", marked: true })),
+      ...Array.from({ length: marked }, () => ({ selectedText: "a", comment: "c", marked: true })),
       ...Array.from({ length: unmarked }, () => ({
-        selected_text: "b",
+        selectedText: "b",
         comment: "c",
         marked: false,
       })),
