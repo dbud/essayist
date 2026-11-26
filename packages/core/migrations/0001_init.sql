@@ -1,15 +1,47 @@
+CREATE TABLE users (
+  id TEXT PRIMARY KEY NOT NULL,
+  email TEXT NOT NULL UNIQUE COLLATE NOCASE,
+  name TEXT,
+  picture TEXT,
+  role TEXT NOT NULL DEFAULT 'writer' CHECK (role IN ('admin', 'writer')),
+  createdAt TEXT NOT NULL CHECK (createdAt IS strftime('%FT%R:%fZ', createdAt))
+) STRICT;
+
+CREATE TABLE workspaces (
+  id TEXT PRIMARY KEY NOT NULL,
+  name TEXT NOT NULL,
+  createdBy TEXT NOT NULL REFERENCES users (id),
+  createdAt TEXT NOT NULL CHECK (createdAt IS strftime('%FT%R:%fZ', createdAt)),
+  deletedAt TEXT CHECK (deletedAt IS strftime('%FT%R:%fZ', deletedAt)),
+  deletedBy TEXT REFERENCES users (id),
+  CHECK ((deletedAt IS NULL) = (deletedBy IS NULL))
+) STRICT;
+
+-- for a future retention sweep, oldest first; ISO timestamps sort as text
+CREATE INDEX workspaces_deleted ON workspaces (deletedAt) WHERE deletedAt IS NOT NULL;
+
+CREATE TABLE workspace_members (
+  wsId TEXT NOT NULL REFERENCES workspaces (id) ON DELETE CASCADE,
+  userId TEXT NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+  role TEXT NOT NULL CHECK (role IN ('owner', 'editor')),
+  createdAt TEXT NOT NULL CHECK (createdAt IS strftime('%FT%R:%fZ', createdAt)),
+  PRIMARY KEY (wsId, userId)
+) STRICT, WITHOUT ROWID;
+
+CREATE INDEX workspace_members_user ON workspace_members (userId);
+
 CREATE TABLE kv (
   key TEXT PRIMARY KEY NOT NULL,
   value TEXT NOT NULL,
   version INTEGER NOT NULL
-) WITHOUT ROWID;
+) STRICT, WITHOUT ROWID;
 
 CREATE TABLE auth_session (
   id TEXT PRIMARY KEY NOT NULL,
   userId TEXT NOT NULL,
   expiresAt INTEGER NOT NULL,
   tokens TEXT
-);
+) STRICT;
 
 -- for a future expiry sweep
 CREATE INDEX auth_session_expiry ON auth_session (expiresAt);
@@ -18,7 +50,7 @@ CREATE TABLE auth_refresh_token (
   userId TEXT PRIMARY KEY NOT NULL,
   refreshToken TEXT NOT NULL,
   updatedAt INTEGER NOT NULL
-);
+) STRICT;
 
 CREATE TABLE review_runs (
   id TEXT NOT NULL,
@@ -34,7 +66,7 @@ CREATE TABLE review_runs (
   leaseOwner TEXT,
   heartbeatAt INTEGER,
   PRIMARY KEY (wsId, id)
-) WITHOUT ROWID;
+) STRICT, WITHOUT ROWID;
 
 CREATE INDEX review_runs_started ON review_runs (wsId, startedAt DESC);
 
@@ -50,4 +82,4 @@ CREATE TABLE review_trace_events (
   seq INTEGER NOT NULL,
   event TEXT NOT NULL,
   PRIMARY KEY (wsId, runId, seq)
-) WITHOUT ROWID;
+) STRICT, WITHOUT ROWID;
