@@ -14,7 +14,6 @@ import { useClickOutside } from "#/hooks/useClickOutside.ts";
 import { useOutgoing } from "#/hooks/useOutgoing.ts";
 import type { TreeNode } from "#/models/fileTree.ts";
 import { useEditorModels } from "#/pages/editor/models.ts";
-import { useAppState } from "#/state.ts";
 
 interface PathPart {
   segment: string;
@@ -76,7 +75,6 @@ export default function FileNavigation({ open }: FileNavigationProps) {
 
   const ref = useClickOutside(close);
 
-  const { user } = useAppState();
   const { workspaces, fileTrees, selected } = useEditorModels();
   const files = fileTrees.current.value;
   const selectedPath = selected.value?.path ?? null;
@@ -88,7 +86,7 @@ export default function FileNavigation({ open }: FileNavigationProps) {
     !creatingWorkspace.value &&
     !deletingWorkspace.value &&
     removingPath.value === null;
-  const ownsSelected = user !== undefined && workspaces.current.value?.ownerId === user.id;
+  const ownsSelected = workspaces.currentRole.value === "owner";
 
   const breadcrumbsTrigger = (
     <Swap on={`${selectedWorkspace}/${selectedPath}`}>
@@ -211,7 +209,7 @@ export default function FileNavigation({ open }: FileNavigationProps) {
     filesList(current && showNav),
   );
 
-  const workspacesList = workspaces.list.value.map(({ id, name }) => {
+  const workspacesList = workspaces.list.value.map(({ workspace: { id, name } }) => {
     const isSelected = id === workspaces.selectedId.value;
     return (
       <li class="relative flex" key={id}>

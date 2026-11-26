@@ -29,16 +29,18 @@ export interface UserInput extends UserProfile {
  * Membership role within a workspace. `owner` >= `editor`: an owner can do everything an editor
  * can, plus manage members and delete the workspace.
  */
-export type Role = "owner" | "editor";
+export const Role = Schema.Literals(["owner", "editor"]);
+export type Role = Schema.Schema.Type<typeof Role>;
 
 /**
- * A named collection of files owned by a user, shareable with others. A deleted workspace keeps its
- * record, memberships, and data; `deletedAt` hides it from listings and access checks.
+ * A named collection of files, shared with its members. Access comes from the member roles;
+ * `createdBy` only records who created it. A deleted workspace keeps its record, memberships, and
+ * data; `deletedAt` hides it from listings and access checks.
  */
 export const Workspace = Schema.Struct({
   id: Schema.String,
   name: Schema.String,
-  ownerId: Schema.String,
+  createdBy: Schema.String,
   createdAt: Schema.Number,
   deletedAt: Schema.optionalKey(Schema.Number),
   deletedBy: Schema.optionalKey(Schema.String),

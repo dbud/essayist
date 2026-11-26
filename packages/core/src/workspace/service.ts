@@ -33,14 +33,12 @@ import { LastOwnerError, UserEmailTakenError } from "./types.ts";
 //   ["users", userId]                        -> User
 //   ["user_emails", email]                   -> userId   (unique-email index)
 //   ["workspaces", wsId]                     -> Workspace
-//   ["workspaces_by_owner", ownerId, wsId]   -> true
 //   ["members_by_ws", wsId, userId]          -> WorkspaceMember
 //   ["members_by_user", userId, wsId]        -> true
 //   ["workspaces_deleted", deletedAtIso, wsId] -> true  (oldest first, for the retention cleanup)
 const USERS = "users";
 const USER_EMAILS = "user_emails";
 const WORKSPACES = "workspaces";
-const WORKSPACES_BY_OWNER = "workspaces_by_owner";
 const MEMBERS_BY_WS = "members_by_ws";
 const MEMBERS_BY_USER = "members_by_user";
 const WORKSPACES_DELETED = "workspaces_deleted";
@@ -67,10 +65,10 @@ export interface Interface {
   ): Effect.Effect<User | undefined, PersistenceError | ConcurrentModificationError>;
   /** Whether `user` has the admin role. */
   isAdmin(user: User): boolean;
-  /** Create a workspace and its owner membership atomically. */
+  /** Create a workspace and the owner membership of its creator atomically. */
   createWorkspace(
     name: string,
-    ownerId: string,
+    createdBy: string,
   ): Effect.Effect<Workspace, PersistenceError | ConcurrentModificationError>;
   /** Get a workspace, including a deleted one; check `deletedAt`. */
   getWorkspace(id: string): Effect.Effect<Workspace | undefined, PersistenceError>;
@@ -83,8 +81,10 @@ export interface Interface {
     wsId: string,
     deletedBy: string,
   ): Effect.Effect<boolean, PersistenceError | ConcurrentModificationError>;
-  /** List the workspaces a user belongs to (any role), without deleted ones. */
-  listWorkspacesForUser(userId: string): Effect.Effect<Workspace[], PersistenceError>;
+  /** List the workspaces a user belongs to, with their role in each, without deleted ones. */
+  listWorkspacesForUser(
+    userId: string,
+  ): Effect.Effect<Array<{ workspace: Workspace; role: Role }>, PersistenceError>;
   /** Add a member, or update their role if already a member (upsert). */
   addMember(
     wsId: string,
@@ -187,15 +187,15 @@ export class Workspaces extends Context.Service<Workspaces, Interface>()(
 
       const isAdmin = (user: User): boolean => user.role === "admin";
 
-      const createWorkspace = (name: string, ownerId: string) =>
+      const createWorkspace = (name: string, createdBy: string) =>
         Effect.gen(function* () {
           const ids = yield* Ids;
           const id = ids.next();
           const createdAt = yield* Clock.currentTimeMillis;
-          const workspace: Workspace = { id, name, ownerId, createdAt };
+          const workspace: Workspace = { id, name, createdBy, createdAt };
           const ownerMember: WorkspaceMember = {
             wsId: id,
-            userId: ownerId,
+            userId: createdBy,
             role: "owner",
             createdAt,
           };
@@ -204,17 +204,12 @@ export class Workspaces extends Context.Service<Workspaces, Interface>()(
               { type: "set", key: [WORKSPACES, id], value: workspace },
               {
                 type: "set",
-                key: [WORKSPACES_BY_OWNER, ownerId, id],
-                value: true,
-              },
-              {
-                type: "set",
-                key: [MEMBERS_BY_WS, id, ownerId],
+                key: [MEMBERS_BY_WS, id, createdBy],
                 value: ownerMember,
               },
               {
                 type: "set",
-                key: [MEMBERS_BY_USER, ownerId, id],
+                key: [MEMBERS_BY_USER, createdBy, id],
                 value: true,
               },
             ])
@@ -252,9 +247,17 @@ export class Workspaces extends Context.Service<Workspaces, Interface>()(
           const results = yield* persistence.getMany<Workspace>(
             wsIds.map((id) => [WORKSPACES, id]),
           );
+          const members = yield* persistence.getMany<WorkspaceMember>(
+            wsIds.map((id) => [MEMBERS_BY_WS, id, userId]),
+          );
+          const listed = mapNotNullish(results, (result, i) => {
+            const role = members[i]?.value.role;
+            if (result === undefined || role === undefined) return undefined;
+            return { workspace: result.value, role };
+          });
           return sortBy(
-            mapNotNullish(results, (r) => r?.value).filter((ws) => ws.deletedAt === undefined),
-            (workspace) => workspace.createdAt,
+            listed.filter(({ workspace }) => workspace.deletedAt === undefined),
+            ({ workspace }) => workspace.createdAt,
           );
         });
 

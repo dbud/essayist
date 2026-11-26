@@ -10,7 +10,11 @@ export const WorkspacesModel = createModel((data: WorkspacesData) => {
   const list = signal(data.workspaces);
   const selectedId = signal(data.selectedId);
 
-  const current = computed(() => list.value.find((workspace) => workspace.id === selectedId.value));
+  const currentEntry = computed(() =>
+    list.value.find(({ workspace }) => workspace.id === selectedId.value),
+  );
+  const current = computed(() => currentEntry.value?.workspace);
+  const currentRole = computed(() => currentEntry.value?.role);
 
   function select(id: string): void {
     selectedId.value = id;
@@ -28,7 +32,7 @@ export const WorkspacesModel = createModel((data: WorkspacesData) => {
 
   async function create(name: string): Promise<void> {
     const workspace = await postJson<Workspace>("/api/workspaces", { name });
-    list.value = [...list.value, workspace];
+    list.value = [...list.value, { workspace, role: "owner" }];
     select(workspace.id);
   }
 
@@ -38,7 +42,18 @@ export const WorkspacesModel = createModel((data: WorkspacesData) => {
     await refresh();
   }
 
-  return { list, selectedId, current, select, refresh, create, remove, loading, error };
+  return {
+    list,
+    selectedId,
+    current,
+    currentRole,
+    select,
+    refresh,
+    create,
+    remove,
+    loading,
+    error,
+  };
 });
 
 export type Workspaces = InstanceType<typeof WorkspacesModel>;

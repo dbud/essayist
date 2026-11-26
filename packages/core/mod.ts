@@ -104,7 +104,7 @@ export { UserState } from "#/user_state/service.ts";
 export { Workspaces } from "#/workspace/service.ts";
 export {
   LastOwnerError,
-  type Role,
+  Role,
   USER_ROLES,
   type User,
   UserEmailTakenError,

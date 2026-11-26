@@ -63,7 +63,7 @@ export const seedDemo = new Command<KvctlGlobals>()
       const workspaces = await runtime.runPromise(
         Effect.orDie(Workspaces.use((store) => store.listWorkspacesForUser(user.id))),
       );
-      let workspace = workspaces.find((w) => w.name === wsName);
+      let workspace = workspaces.find((entry) => entry.workspace.name === wsName)?.workspace;
       if (!workspace) {
         workspace = await runtime.runPromise(
           Effect.orDie(Workspaces.use((store) => store.createWorkspace(wsName, user.id))),

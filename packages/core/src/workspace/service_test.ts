@@ -99,7 +99,7 @@ test("Workspaces -- createWorkspace adds the owner membership", async () => {
     const owner = yield* store.createUser({ email: "owner@example.com" });
     const ws = yield* store.createWorkspace("Essays", owner.id);
     assertEquals(ws.name, "Essays");
-    assertEquals(ws.ownerId, owner.id);
+    assertEquals(ws.createdBy, owner.id);
 
     assertEquals((yield* store.getWorkspace(ws.id))?.id, ws.id);
     const membership = yield* store.getMembership(ws.id, owner.id);
@@ -119,8 +119,19 @@ test("Workspaces -- listWorkspacesForUser returns memberships", async () => {
     yield* store.createWorkspace("Bobs", bob.id);
 
     const forAlice = yield* store.listWorkspacesForUser(alice.id);
-    assertEquals(forAlice.map((w) => w.id).toSorted(), [ws1.id, ws2.id].toSorted());
+    assertEquals(
+      forAlice.map(({ workspace }) => workspace.id).toSorted(),
+      [ws1.id, ws2.id].toSorted(),
+    );
+    assertEquals(
+      forAlice.map(({ role }) => role),
+      ["owner", "owner"],
+    );
     assertEquals((yield* store.listWorkspacesForUser(bob.id)).length, 1);
+
+    yield* store.addMember(ws1.id, bob.id, "editor");
+    const forBob = yield* store.listWorkspacesForUser(bob.id);
+    assertEquals(forBob.find(({ workspace }) => workspace.id === ws1.id)?.role, "editor");
   });
   await Effect.runPromise(Effect.provide(program, testLayer(Workspaces.layerNoDeps)));
 });
@@ -269,7 +280,7 @@ test("Workspaces -- deleteWorkspace hides the workspace from listings and access
     assertEquals(yield* store.deleteWorkspace(gone.id, owner.id), true);
 
     assertEquals(
-      (yield* store.listWorkspacesForUser(owner.id)).map((ws) => ws.id),
+      (yield* store.listWorkspacesForUser(owner.id)).map(({ workspace }) => workspace.id),
       [kept.id],
     );
     assertEquals(yield* store.listWorkspacesForUser(editor.id), []);
