@@ -1,4 +1,4 @@
-/* The swapping parts fade, and a swap-* utility also moves them: the old content moves out by
+/* The swapping parts fade, and a swap--* modifier also moves them: the old content moves out by
    --swap-x, --swap-y, --swap-turn and --swap-scale, and the new content moves in from the mirrored
    values. */
 
@@ -38,15 +38,15 @@
   }
 }
 
-@utility swap-slide {
+@utility swap--slide {
   --swap-x: -50%;
 }
 
-@utility swap-rotate {
+@utility swap--rotate {
   --swap-turn: -90deg;
   --swap-scale: 0.5;
 }
 
-@utility swap-shift {
+@utility swap--shift {
   --swap-y: -50%;
 }

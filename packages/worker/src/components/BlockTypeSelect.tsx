@@ -57,7 +57,7 @@ export default function BlockTypeSelect({ block, onChange, disabled }: BlockType
           disabled={disabled}
           onClick={() => (open.value = !open.value)}
         >
-          <span class="swap-rotate">{current.icon}</span>
+          <span class="swap--rotate">{current.icon}</span>
           <span class="hidden @sm:inline">{current.label}</span>
           <ChevronDown class="chevron" data-static />
         </button>

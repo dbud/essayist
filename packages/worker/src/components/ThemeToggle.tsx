@@ -24,7 +24,7 @@ export default function ThemeToggle() {
           data-tooltip="Switch theme"
           onClick={toggleTheme}
         >
-          {dark ? <Moon class="swap-rotate" /> : <Sun class="swap-rotate" />}
+          {dark ? <Moon class="swap--rotate" /> : <Sun class="swap--rotate" />}
         </button>
       </Swap>
     </Melt>

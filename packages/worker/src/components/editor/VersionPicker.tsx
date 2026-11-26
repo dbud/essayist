@@ -126,7 +126,7 @@ export default function VersionPicker() {
             <VersionChip timestamp={selectedVersion.timestamp} lock />
           ) : (
             <>
-              <span class={`swap-rotate${pending ? " invisible" : ""}`}>
+              <span class={`swap--rotate${pending ? " invisible" : ""}`}>
                 {saved ? (
                   <CircleCheckIcon />
                 ) : autoSave.value ? (
