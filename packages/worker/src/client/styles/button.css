@@ -130,8 +130,8 @@
   & .lucide {
     @apply size-3.5;
   }
-}
 
-.btn--small .chevron {
-  @apply size-3;
+  & .chevron {
+    @apply size-3;
+  }
 }
