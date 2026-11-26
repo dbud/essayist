@@ -30,7 +30,7 @@
   initial-value: 1;
 }
 
-@utility btn--base {
+@utility btn-base {
   @apply relative inline-flex isolate;
   @apply items-center gap-1;
   @apply appearance-none border-0 select-none whitespace-nowrap leading-none;
@@ -81,7 +81,7 @@
 }
 
 @utility btn {
-  @apply btn--base;
+  @apply btn-base;
   @apply rounded-sm;
   --btn-shadow-height: var(--melt-height-flat, 0.5px);
   --btn-rim: var(--rim-secondary);
