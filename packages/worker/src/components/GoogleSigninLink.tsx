@@ -9,7 +9,7 @@ import Melt from "#/components/ui/Melt.tsx";
 export default function GoogleSigninLink({ next }: { next: string }) {
   return (
     <Melt class="inline-flex self-start">
-      <a class="btn--accent" href={`/oauth/google?next=${encodeURIComponent(next)}`}>
+      <a class="btn btn--accent" href={`/oauth/google?next=${encodeURIComponent(next)}`}>
         <ArrowUpRight size={16} />
         Sign in with Google
       </a>

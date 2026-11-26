@@ -56,7 +56,7 @@ export default function SettingsMenu({ user }: SettingsMenuProps) {
         <span class="hidden @lg:inline">Settings</span>
         <ChevronDown class="hidden @sm:inline chevron" />
       </button>
-      <div class={`dropdown--origin-end ${open.value ? "is-open" : ""}`}>
+      <div class={`dropdown dropdown--origin-end ${open.value ? "is-open" : ""}`}>
         <div class="menu">
           <ul class="menu-rows" data-stagger>
             <li class="pointer-events-none flex gap-2">

@@ -73,7 +73,7 @@ export default function FileStats() {
           <ChevronDown class="chevron rotate-180" data-static />
         </button>
       </Swap>
-      <div class={"dropdown--origin-end dropdown--up" + (open.value ? " is-open" : "")}>
+      <div class={"dropdown dropdown--origin-end dropdown--up" + (open.value ? " is-open" : "")}>
         <div class="menu">
           <ul class="menu-rows" data-stagger>
             {STAT_OPTIONS.map((opt) => (

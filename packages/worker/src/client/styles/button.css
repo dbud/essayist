@@ -100,38 +100,37 @@
     outline-style: solid;
     outline-color: var(--color-accent);
   }
-}
 
-@utility btn--solid {
-  @apply btn;
-  --btn-shadow-height: var(--melt-height-rest, 1px);
-  --btn-rim: var(--rim-primary);
-  --btn-shade: transparent;
-  --btn-bg: var(--btn-solid-bg);
-  --btn-bg-hover: var(--btn-solid-bg-hover);
-  --btn-ink: var(--btn-solid-ink);
-  --btn-ink-hover: var(--btn-solid-ink-hover);
-}
-
-@utility btn--accent {
-  @apply btn--solid melt-rim-white/70;
-  --btn-bg: var(--btn-accent-bg);
-  --btn-bg-hover: var(--btn-accent-bg-hover);
-  --btn-ink: var(--btn-accent-ink);
-  --btn-ink-hover: var(--btn-accent-ink);
-}
-
-/* A size modifier for a button utility, such as btn or btn--accent. */
-@utility btn--small {
-  --btn-px: 0.3rem;
-  --btn-py: 0.25rem;
-  --btn-font-size: 0.75rem;
-
-  & .lucide {
-    @apply size-3.5;
+  /* Modifiers keep the specificity of .btn, so they override it while :hover still wins. */
+  &:where(.btn--solid, .btn--accent) {
+    --btn-shadow-height: var(--melt-height-rest, 1px);
+    --btn-rim: var(--rim-primary);
+    --btn-shade: transparent;
+    --btn-bg: var(--btn-solid-bg);
+    --btn-bg-hover: var(--btn-solid-bg-hover);
+    --btn-ink: var(--btn-solid-ink);
+    --btn-ink-hover: var(--btn-solid-ink-hover);
   }
 
-  & .chevron {
-    @apply size-3;
+  &:where(.btn--accent) {
+    @apply melt-rim-white/70;
+    --btn-bg: var(--btn-accent-bg);
+    --btn-bg-hover: var(--btn-accent-bg-hover);
+    --btn-ink: var(--btn-accent-ink);
+    --btn-ink-hover: var(--btn-accent-ink);
+  }
+
+  &:where(.btn--small) {
+    --btn-px: 0.3rem;
+    --btn-py: 0.25rem;
+    --btn-font-size: 0.75rem;
+
+    & .lucide {
+      @apply size-3.5;
+    }
+
+    & .chevron {
+      @apply size-3;
+    }
   }
 }

@@ -32,10 +32,10 @@ export default function ErrorBoundary({ children }: ErrorBoundaryProps) {
             </pre>
           </div>
           <div class="flex gap-4">
-            <button type="button" class="btn--solid" onClick={resetError}>
+            <button type="button" class="btn btn--solid" onClick={resetError}>
               Try again
             </button>
-            <button type="button" class="btn--solid" onClick={() => location.reload()}>
+            <button type="button" class="btn btn--solid" onClick={() => location.reload()}>
               <RotateCcw />
               <span>Reload</span>
             </button>

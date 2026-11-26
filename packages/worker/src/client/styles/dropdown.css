@@ -55,35 +55,47 @@
       transform: translateY(var(--panel-hidden-y)) scale(var(--panel-hidden-scale));
     }
   }
+
+  /* Modifiers keep the specificity of .dropdown and come after it, so they override it. */
+  &:where(.dropdown--origin-end) {
+    --dropdown-origin-x: 100%;
+    left: auto;
+    right: var(--dropdown-x);
+  }
+
+  &:where(.dropdown--origin-start) {
+    --dropdown-origin-x: 0%;
+  }
+
+  &:where(.dropdown--right) {
+    --panel-origin-x: 0%;
+    left: calc(100% + var(--dropdown-right-x));
+    top: 0;
+  }
+
+  &:where(.dropdown--bridged) {
+    --dropdown-right-x: 1.5rem;
+  }
+
+  &:where(.dropdown--detached) {
+    --panel-gap: 0.8rem;
+    --panel-hidden-y: -0.8rem;
+    transform-origin: var(--panel-origin-x, 50%) var(--panel-hidden-y);
+  }
+
+  &:where(.dropdown--up) {
+    top: auto;
+    bottom: calc(100% + var(--panel-gap));
+    transform-origin: var(--panel-origin-x, 50%) bottom;
+  }
+
+  &:where(.dropdown--fit) {
+    min-width: 100%;
+  }
 }
 
-@utility dropdown--origin-end {
-  @apply dropdown;
-  --dropdown-origin-x: 100%;
-  left: auto;
-  right: var(--dropdown-x);
-}
-
-@utility dropdown--origin-start {
-  @apply dropdown;
-  --dropdown-origin-x: 0%;
-}
-
-@utility dropdown--right {
-  @apply dropdown;
-  --panel-origin-x: 0%;
-  left: calc(100% + var(--dropdown-right-x));
-  top: 0;
-  width: max-content;
-}
-
-@utility dropdown--right-bridged {
-  @apply dropdown--right;
-  --dropdown-right-x: 1.5rem;
-}
-
-/* Joins a right-bridged panel to the menu it opens from. An element rather than a pseudo-element,
-   so the melt canvas can measure it. */
+/* Joins a bridged panel to the menu it opens from. An element rather than a pseudo-element, so
+   the melt canvas can measure it. */
 @utility dropdown-bridge {
   @apply absolute melt-shape melt-shadow-lifted;
   --melt-fill: var(--color-solid);
@@ -91,22 +103,6 @@
   top: 0.25rem;
   width: calc(var(--dropdown-right-x) - 0.5rem);
   height: 1.5rem;
-}
-
-@utility dropdown--detached {
-  --panel-gap: 0.8rem;
-  --panel-hidden-y: -0.8rem;
-  transform-origin: var(--panel-origin-x, 50%) var(--panel-hidden-y);
-}
-
-@utility dropdown--up {
-  top: auto;
-  bottom: calc(100% + var(--panel-gap));
-  transform-origin: var(--panel-origin-x, 50%) bottom;
-}
-
-@utility dropdown--fit {
-  min-width: 100%;
 }
 
 /* Unlayered, so it outranks a z-* utility on the same element. */

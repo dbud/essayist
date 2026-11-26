@@ -16,16 +16,16 @@ import { TIMED_PARTS, type TimedPart, takeFrameStats } from "#/melt/stats.ts";
 function Buttons() {
   return (
     <Melt class="flex items-center gap-4">
-      <button type="button" class="btn--solid">
+      <button type="button" class="btn btn--solid">
         Settings
       </button>
-      <button type="button" class="btn--accent">
+      <button type="button" class="btn btn--accent">
         Review
       </button>
       <button type="button" class="btn">
         Saved
       </button>
-      <button type="button" class="btn--solid btn--small">
+      <button type="button" class="btn btn--solid btn--small">
         B
       </button>
     </Melt>
@@ -40,7 +40,7 @@ function SwapSample() {
       <Swap on={busy.value ? "busy" : "idle"}>
         <button
           type="button"
-          class={busy.value ? "btn" : "btn--accent"}
+          class={busy.value ? "btn" : "btn btn--accent"}
           onClick={() => (busy.value = !busy.value)}
         >
           {busy.value ? (
@@ -56,7 +56,7 @@ function SwapSample() {
           )}
         </button>
       </Swap>
-      <button type="button" class="btn--solid">
+      <button type="button" class="btn btn--solid">
         Saved
       </button>
     </Melt>
@@ -106,7 +106,7 @@ function BridgedDropdown() {
     <Melt class="inline-flex">
       <button
         type="button"
-        class="btn--solid"
+        class="btn btn--solid"
         aria-expanded={open.value}
         onClick={() => (open.value = !open.value)}
       >
@@ -123,7 +123,9 @@ function BridgedDropdown() {
                   {i === 0 && <ChevronRight class="absolute right-1" />}
                 </button>
                 {i === 0 && (
-                  <div class={`dropdown--right-bridged ${open.value ? "is-open" : ""}`}>
+                  <div
+                    class={`dropdown dropdown--right dropdown--bridged ${open.value ? "is-open" : ""}`}
+                  >
                     <span class="dropdown-bridge" aria-hidden="true" />
                     <div class="menu">
                       <ul class="menu-rows" data-stagger>
@@ -173,16 +175,19 @@ function Effects() {
       <button type="button" class="btn">
         Idle
       </button>
-      <button type="button" class="btn--solid">
+      <button type="button" class="btn btn--solid">
         Float
       </button>
-      <button type="button" class="btn--solid melt-rim-white/35">
+      <button type="button" class="btn btn--solid melt-rim-white/35">
         Rim
       </button>
-      <button type="button" class="btn--accent melt-glow-40">
+      <button type="button" class="btn btn--accent melt-glow-40">
         Glow
       </button>
-      <button type="button" class="btn--solid melt-rim-white/35 melt-stroke-[rgb(255_255_255/0.2)]">
+      <button
+        type="button"
+        class="btn btn--solid melt-rim-white/35 melt-stroke-[rgb(255_255_255/0.2)]"
+      >
         Rim and stroke
       </button>
     </Melt>
@@ -302,7 +307,7 @@ function Grid() {
           <button
             key={i}
             type="button"
-            class={`btn--solid justify-center ${animate.value ? "animate-pulse" : ""}`}
+            class={`btn btn--solid justify-center ${animate.value ? "animate-pulse" : ""}`}
             style={{
               animationDelay: animate.value ? `${(i % 8) * -250}ms` : undefined,
               "--melt-shadow": shadows.value ? undefined : "transparent",

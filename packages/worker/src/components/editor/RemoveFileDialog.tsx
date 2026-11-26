@@ -32,10 +32,10 @@ export default function RemoveFileDialog({ path, onRemoved }: RemoveFileDialogPr
         </div>
       </div>
       <div class="flex justify-end gap-4">
-        <button type="button" class="btn--solid" onClick={() => (path.value = null)}>
+        <button type="button" class="btn btn--solid" onClick={() => (path.value = null)}>
           Cancel
         </button>
-        <button type="submit" class="btn--accent">
+        <button type="submit" class="btn btn--accent">
           Remove
         </button>
       </div>

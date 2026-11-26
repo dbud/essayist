@@ -51,7 +51,7 @@ export default function BlockTypeSelect({ block, onChange, disabled }: BlockType
       <Swap on={current.value}>
         <button
           type="button"
-          class="btn--solid btn--small"
+          class="btn btn--solid btn--small"
           aria-expanded={open.value}
           data-tooltip="Paragraph style"
           disabled={disabled}

@@ -54,10 +54,10 @@ export default function CreateFileDialog({ open, onCreated }: CreateFileDialogPr
         </div>
       </div>
       <div class="flex justify-end gap-4">
-        <button type="button" class="btn--solid" onClick={() => (open.value = false)}>
+        <button type="button" class="btn btn--solid" onClick={() => (open.value = false)}>
           Cancel
         </button>
-        <button type="submit" class="btn--accent" disabled={!name.value.trim()}>
+        <button type="submit" class="btn btn--accent" disabled={!name.value.trim()}>
           Create
         </button>
       </div>

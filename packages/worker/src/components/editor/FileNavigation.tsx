@@ -138,7 +138,7 @@ export default function FileNavigation({ open }: FileNavigationProps) {
   const deleteWorkspace = ownsSelected && (
     <button
       type="button"
-      class="btn--solid self-start"
+      class="btn btn--solid self-start"
       onClick={() => (deletingWorkspace.value = true)}
     >
       <Trash2 />
@@ -147,7 +147,9 @@ export default function FileNavigation({ open }: FileNavigationProps) {
   );
 
   const filesList = (isOpen: boolean) => (
-    <div class={`dropdown--right-bridged dropdown--fit max-w-96 ${isOpen ? "is-open" : ""}`}>
+    <div
+      class={`dropdown dropdown--right dropdown--bridged dropdown--fit max-w-96 ${isOpen ? "is-open" : ""}`}
+    >
       <span class="dropdown-bridge" aria-hidden="true" />
       {fileEntries.length > 0 && (
         <div class="menu menu--wrap">
@@ -196,7 +198,7 @@ export default function FileNavigation({ open }: FileNavigationProps) {
   const createWorkspace = (
     <button
       type="button"
-      class="btn--solid self-start"
+      class="btn btn--solid self-start"
       onClick={() => (creatingWorkspace.value = true)}
     >
       <Plus />

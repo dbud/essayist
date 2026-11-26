@@ -51,7 +51,7 @@ export default function ReviewButton() {
       <Swap on={busy ? "busy" : "idle"}>
         <button
           type="button"
-          class={busy ? "btn" : "btn--accent"}
+          class={busy ? "btn" : "btn btn--accent"}
           aria-expanded={busy ? expanded : undefined}
           aria-label={busy ? progressLabel(progress) : undefined}
           onClick={busy ? () => (open.value = !open.value) : onReview}
