@@ -32,26 +32,33 @@ If this heading does not match the workspace you think you opened, the
 navigation sent you somewhere else than you asked for.
 `;
 
+const DEMO_EMAIL = "demo@example.com";
+
 export const seedDemo = new Command<KvctlGlobals>()
-  .description("Seed a demo user, workspace, and sample essay.")
-  .option("--email <email:string>", "Demo user email.", {
-    default: "demo@example.com",
+  .description("Seed a user, workspace, and sample essay.")
+  .option("--email <email:string>", "User email; DEV_USER_EMAIL from .env, else the demo user.", {
+    default: process.env.DEV_USER_EMAIL ?? DEMO_EMAIL,
   })
-  .option("--name <name:string>", "Demo user display name.", {
-    default: "Demo User",
-  })
+  .option("--name <name:string>", "Display name for a new user; sign-in replaces it.")
   .option("--ws-name <name:string>", "Demo workspace name.", {
     default: "Demo",
   })
   .action(({ email, name, wsName, target, local }) =>
     withStore({ target, local }, async ({ runtime }) => {
-      // Create or reuse the demo user; new users get site admin
+      // Create or reuse the user; new users get site admin
       let user = await runtime.runPromise(
         Effect.orDie(Workspaces.use((store) => store.getUserByEmail(email))),
       );
       if (!user) {
         const created = await runtime.runPromise(
-          Effect.orDie(Workspaces.use((store) => store.createUser({ email, name }))),
+          Effect.orDie(
+            Workspaces.use((store) =>
+              store.createUser({
+                email,
+                name: name ?? (email === DEMO_EMAIL ? "Demo User" : undefined),
+              }),
+            ),
+          ),
         );
         user =
           (await runtime.runPromise(
@@ -101,7 +108,7 @@ export const seedDemo = new Command<KvctlGlobals>()
         (s) => s !== null,
       );
       console.log(
-        `seeded demo: user '${user.id}' (${user.email}), workspace '${workspace.id}' (${workspace.name})${seeded.length ? `, ${seeded.join(", ")}` : ""}`,
+        `seeded: user '${user.id}' (${user.email}), workspace '${workspace.id}' (${workspace.name})${seeded.length ? `, ${seeded.join(", ")}` : ""}`,
       );
     }),
   );
