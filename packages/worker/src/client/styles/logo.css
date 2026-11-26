@@ -45,15 +45,6 @@
 }
 
 @layer components {
-  .logo-e svg {
-    display: block;
-    transition: transform 250ms cubic-bezier(0.34, 1.56, 0.64, 1);
-  }
-
-  .logo-e:hover svg {
-    transform: rotate(-2.5deg) scale(1.1);
-  }
-
   .logo-e {
     @apply melt-shape melt-shadow-flat melt-shade-black/5 rounded-sm;
     --melt-rim: var(--rim-secondary);
@@ -73,49 +64,57 @@
       --melt-fill: var(--btn-surface-bg-hover);
       color: var(--btn-surface-ink-hover);
     }
-  }
 
-  .logo-e path {
-    stroke: currentColor;
-    stroke-width: 3;
-    stroke-linecap: butt;
-    stroke-dasharray: 1;
-    animation: logo-cycle var(--logo-period) linear infinite;
-  }
+    & svg {
+      display: block;
+      transition: transform 250ms cubic-bezier(0.34, 1.56, 0.64, 1);
 
-  .logo-e path:nth-of-type(2) {
-    animation-delay: 150ms;
-  }
+      @media (prefers-reduced-motion: reduce) {
+        transition: none;
+      }
+    }
 
-  .logo-e path:nth-of-type(3) {
-    animation-delay: 300ms;
-  }
+    &:hover svg {
+      transform: rotate(-2.5deg) scale(1.1);
+    }
 
-  .logo-e path:nth-of-type(4) {
-    animation-delay: 450ms;
+    & path {
+      stroke: currentColor;
+      stroke-width: 3;
+      stroke-linecap: butt;
+      stroke-dasharray: 1;
+      animation: logo-cycle var(--logo-period) linear infinite;
+
+      &:nth-of-type(2) {
+        animation-delay: 150ms;
+      }
+      &:nth-of-type(3) {
+        animation-delay: 300ms;
+      }
+      &:nth-of-type(4) {
+        animation-delay: 450ms;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        animation: none;
+        stroke-dashoffset: 0;
+      }
+    }
   }
 
   .logo-e-window {
     animation: logo-doze var(--logo-period) linear infinite;
+
+    @media (prefers-reduced-motion: reduce) {
+      animation: none;
+    }
   }
 
   .logo-e-caret {
     animation: logo-caret-blink 1.1s steps(1, end) infinite;
-  }
 
-  @media (prefers-reduced-motion: reduce) {
-    .logo-e path {
+    @media (prefers-reduced-motion: reduce) {
       animation: none;
-      stroke-dashoffset: 0;
-    }
-    .logo-e-window {
-      animation: none;
-    }
-    .logo-e-caret {
-      animation: none;
-    }
-    .logo-e svg {
-      transition: none;
     }
   }
 }
