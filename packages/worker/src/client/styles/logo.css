@@ -59,7 +59,7 @@
       color calc(200ms * var(--tempo, 1)) var(--btn-ease);
 
     &:hover {
-      @apply melt-shadow-lifted melt-shade-transparent;
+      @apply melt-shadow melt-shade-transparent;
       --melt-rim: var(--rim-primary);
       --melt-fill: var(--btn-surface-bg-hover);
       color: var(--btn-surface-ink-hover);

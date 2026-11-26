@@ -56,7 +56,7 @@
     --btn-lifted calc(240ms * var(--tempo, 1)) var(--btn-ease);
 
   &:hover {
-    @apply melt-shadow-lifted;
+    --melt-height: var(--btn-shadow-height-hover, var(--melt-height-lifted, 3px));
     --btn-rim: var(--rim-primary);
     --btn-shade: transparent;
     --btn-bg: var(--btn-bg-hover);
@@ -84,6 +84,7 @@
   @apply btn-base;
   @apply rounded-sm;
   --btn-shadow-height: var(--melt-height-flat, 0.5px);
+  --btn-shadow-height-hover: var(--melt-height-rest, 1px);
   --btn-rim: var(--rim-secondary);
   --btn-shade: color-mix(in oklab, black 5%, transparent);
   --btn-bg: var(--btn-surface-bg);
@@ -104,6 +105,7 @@
   /* Modifiers keep the specificity of .btn, so they override it while :hover still wins. */
   &:where(.btn--solid, .btn--accent) {
     --btn-shadow-height: var(--melt-height-rest, 1px);
+    --btn-shadow-height-hover: var(--melt-height-lifted, 3px);
     --btn-rim: var(--rim-primary);
     --btn-shade: transparent;
     --btn-bg: var(--btn-solid-bg);
