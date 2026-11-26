@@ -9,6 +9,8 @@
   "scripts": {
     "build": "vite build",
     "check": "tsc --noEmit & app=$!; tsc --noEmit -p src/client; client=$?; wait $app && exit $client",
+    "db:migrate": "wrangler d1 migrations apply essayist-db --remote",
+    "db:migrate:local": "wrangler d1 migrations apply essayist-db --local",
     "deploy": "vite build && wrangler deploy",
     "dev": "vite dev",
     "favicon": "node scripts/favicon.ts",

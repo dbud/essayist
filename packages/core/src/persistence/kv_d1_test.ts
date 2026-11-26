@@ -3,21 +3,19 @@
  * the worker's `D1Database` binding.
  */
 
-import { DatabaseSync } from "node:sqlite";
-
 import * as D1Client from "@effect/sql-d1/D1Client";
 import { Effect } from "effect";
 import * as Reactivity from "effect/reactivity/Reactivity";
 import { test } from "vitest";
 
-import { KV_D1_SCHEMA, layerKvD1 } from "./kv_d1.ts";
+import { layerKvD1 } from "./kv_d1.ts";
 import { d1SqliteShim } from "./kv_d1_sqlite.ts";
 import { SCENARIOS } from "./scenarios.ts";
+import { migratedDatabase } from "./testing/d1.ts";
 
 for (const [title, run] of SCENARIOS) {
   test(`layerKvD1 -- ${title}`, async () => {
-    const db = new DatabaseSync(":memory:");
-    db.exec(KV_D1_SCHEMA);
+    const db = migratedDatabase();
     try {
       await Effect.runPromise(
         Effect.gen(function* () {

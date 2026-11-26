@@ -1,5 +1,5 @@
 import { ReviewRuns, TraceEvents, WorkspaceId } from "@essayist/core";
-import { KV_D1_SCHEMA } from "@essayist/core/kv_d1";
+import { applyD1Migrations, type D1Migration } from "cloudflare:test";
 import { env } from "cloudflare:workers";
 import { Effect, Option } from "effect";
 import { beforeEach, expect, test, vi } from "vitest";
@@ -8,9 +8,10 @@ import { env as makeEnv } from "#/env.ts";
 import { janitorJob } from "#/reviews/janitor.ts";
 import { runtime } from "#/runtime.ts";
 
-// Isolated test storage starts empty; in production the kv table is applied out of band.
+// Isolated test storage starts empty; vitest.do.config.ts reads the migrations into a binding.
 beforeEach(async () => {
-  await env.DB.prepare(KV_D1_SCHEMA).run();
+  const { TEST_MIGRATIONS } = env as unknown as { TEST_MIGRATIONS: D1Migration[] };
+  await applyD1Migrations(env.DB, TEST_MIGRATIONS);
 });
 
 test("the D1 and driver bindings are reachable", () => {

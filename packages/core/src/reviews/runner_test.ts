@@ -1,4 +1,4 @@
-import { DatabaseSync } from "node:sqlite";
+import type { DatabaseSync } from "node:sqlite";
 
 import { type Kv, openKv } from "@deno/kv";
 import * as D1Client from "@effect/sql-d1/D1Client";
@@ -17,6 +17,7 @@ import { d1SqliteShim } from "#/persistence/kv_d1_sqlite.ts";
 import { kvLayer } from "#/persistence/kv_layer.ts";
 import type { PersistenceError } from "#/persistence/mod.ts";
 import { Persistence } from "#/persistence/mod.ts";
+import { migratedDatabase } from "#/persistence/testing/d1.ts";
 import { noopObserver } from "#/reviews/observer/noop.ts";
 import type { ReviewObserver } from "#/reviews/observer/types.ts";
 import { ReviewPacing } from "#/reviews/pacing.ts";
@@ -80,7 +81,7 @@ async function setup(file?: {
   content: string;
 }): Promise<Setup & { versionId?: string }> {
   const kv = await openKv();
-  const db = new DatabaseSync(":memory:");
+  const db = migratedDatabase();
   const d1 = await Effect.runPromise(
     D1Client.make({ db: d1SqliteShim(db) }).pipe(Effect.scoped, Effect.provide(Reactivity.layer)),
   );

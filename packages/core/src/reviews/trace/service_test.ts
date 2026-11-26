@@ -3,8 +3,6 @@
  * trip.
  */
 
-import { DatabaseSync } from "node:sqlite";
-
 import * as D1Client from "@effect/sql-d1/D1Client";
 import { assertEquals } from "@std/assert";
 import { Effect } from "effect";
@@ -13,6 +11,7 @@ import { test } from "vitest";
 
 import { d1SqliteShim } from "#/persistence/kv_d1_sqlite.ts";
 import type { PersistenceError } from "#/persistence/service.ts";
+import { migratedDatabase } from "#/persistence/testing/d1.ts";
 import { WorkspaceId } from "#/workspace/WorkspaceId.ts";
 
 import { TraceEvents } from "./service.ts";
@@ -22,7 +21,7 @@ import type { TraceEvent } from "./types.ts";
 const run = <A>(
   program: Effect.Effect<A, PersistenceError, TraceEvents | WorkspaceId>,
 ): Promise<A> => {
-  const db = new DatabaseSync(":memory:");
+  const db = migratedDatabase();
   return Effect.runPromise(
     Effect.gen(function* () {
       const client = yield* D1Client.make({ db: d1SqliteShim(db) });

@@ -4,7 +4,7 @@
  * schema creation runs under test too.
  */
 
-import { DatabaseSync } from "node:sqlite";
+import type { DatabaseSync } from "node:sqlite";
 
 import * as D1Client from "@effect/sql-d1/D1Client";
 import { Clock, Effect, Option } from "effect";
@@ -12,6 +12,7 @@ import * as Reactivity from "effect/reactivity/Reactivity";
 import { expect, test } from "vitest";
 
 import { d1SqliteShim } from "#/persistence/kv_d1_sqlite.ts";
+import { migratedDatabase } from "#/persistence/testing/d1.ts";
 
 import { layerAuthD1 } from "./auth_d1.ts";
 import { AuthStore, type Interface } from "./service.ts";
@@ -43,7 +44,7 @@ const makeHarness = () => {
     monotonicTimeNanos: Effect.sync(() => BigInt(now)),
     sleep: () => Effect.void,
   };
-  const db = new DatabaseSync(":memory:");
+  const db = migratedDatabase();
   const run = (
     body: (test: {
       auth: Interface;

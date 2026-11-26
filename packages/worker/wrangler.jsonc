@@ -10,6 +10,7 @@
       "binding": "DB",
       "database_id": "553b3689-f25b-4848-a1f4-98da845f6caf",
       "database_name": "essayist-db",
+      "migrations_dir": "../core/migrations",
     },
   ],
   "durable_objects": {
