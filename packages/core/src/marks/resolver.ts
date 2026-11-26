@@ -14,8 +14,14 @@ export const DEFAULT_SEARCH_RADIUS_MULTIPLIER = 2;
 /** Minimum search radius, in tokens (words). */
 export const DEFAULT_MIN_SEARCH_RADIUS = 60;
 
-export interface ResolveInput {
-  marks: readonly Mark[];
+/** The fields the resolver reads to anchor a mark to a span; it copies every other field as is. */
+export type MarkAnchor = Pick<
+  Mark,
+  "id" | "selectedText" | "beforeContext" | "afterContext" | "offset" | "length" | "status"
+>;
+
+export interface ResolveInput<M extends MarkAnchor = MarkAnchor> {
+  marks: readonly M[];
   oldContent: string;
   newContent: string;
 }
@@ -40,12 +46,14 @@ export interface ResolveOptions {
  *
  * Marks that were already stale in the previous version are preserved as stale (they are not re-
  * searched).
+ *
+ * The results are plain copies of the input marks, not instances of their class.
  */
-export function resolveMarks(
-  { marks, newContent, oldContent }: ResolveInput,
+export function resolveMarks<M extends MarkAnchor>(
+  { marks, newContent, oldContent }: ResolveInput<M>,
   options?: ResolveOptions,
-): Mark[] {
-  const stampId: (mark: Mark) => string = options?.preserveIds
+): M[] {
+  const stampId: (mark: M) => string = options?.preserveIds
     ? (mark) => mark.id
     : () => (options?.newId ?? randomId)();
   if (oldContent === "" || oldContent === newContent) {
@@ -76,7 +84,7 @@ export function resolveMarks(
   });
 }
 
-function mapOffset(mark: Mark, hunks: DiffHunk[]): [boolean, number, number] {
+function mapOffset(mark: MarkAnchor, hunks: DiffHunk[]): [boolean, number, number] {
   const markStart = mark.offset;
   const markEnd = mark.offset + mark.length;
   let offsetDelta = 0;
@@ -125,13 +133,13 @@ function mapOffset(mark: Mark, hunks: DiffHunk[]): [boolean, number, number] {
  * the mark was moved -- resolve there. 4. If nothing found anywhere, the mark is stale. Otherwise
  * resolve to [start, end) (may be zero-length if the text was deleted).
  */
-function fuzzyResolveMark(
-  mark: Mark,
+function fuzzyResolveMark<M extends MarkAnchor>(
+  mark: M,
   tt: TokenizedText,
   expectedNewOffset: number,
-  stampId: (mark: Mark) => string,
+  stampId: (mark: M) => string,
   options?: ResolveOptions,
-): Mark {
+): M {
   const {
     contextFuzzyThreshold = DEFAULT_CONTEXT_FUZZY_THRESHOLD,
     searchRadiusMultiplier = DEFAULT_SEARCH_RADIUS_MULTIPLIER,
