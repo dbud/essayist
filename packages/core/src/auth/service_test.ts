@@ -6,7 +6,7 @@
 import type { DatabaseSync } from "node:sqlite";
 
 import * as D1Client from "@effect/sql-d1/D1Client";
-import { Clock, Effect, Option } from "effect";
+import { Clock, DateTime, Effect, Option } from "effect";
 import * as Reactivity from "effect/reactivity/Reactivity";
 import { expect, test } from "vitest";
 
@@ -44,6 +44,12 @@ const makeHarness = () => {
     sleep: () => Effect.void,
   };
   const db = migratedDatabase();
+  // the user the sessions and the refresh token belong to
+  db.prepare("INSERT INTO users (id, email, createdAt) VALUES (?, ?, ?)").run(
+    "user-1",
+    "user-1@example.com",
+    new Date(BASE_TIME).toISOString(),
+  );
   const run = (
     body: (test: {
       auth: Interface;
@@ -80,7 +86,7 @@ test("create and read a session without tokens", async () => {
       expect(session?.tokens).toEqual(Option.none());
       expect(session?.id).toBe("s1");
       expect(session?.userId).toBe("user-1");
-      expect(typeof session?.expiresAt).toBe("number");
+      expect(DateTime.isDateTime(session?.expiresAt)).toBe(true);
       expect(yield* t.auth.getSession("missing")).toBeUndefined();
     }),
   );
@@ -126,9 +132,9 @@ test("update rewrites tokens and slides the TTL", async () => {
       const session = yield* t.auth.getSession("s1");
       expect(session?.tokens).toEqual(Option.some(refreshed));
       const row = t.db.prepare("SELECT expiresAt FROM auth_session WHERE id = 's1'").get() as {
-        expiresAt: number;
+        expiresAt: string;
       };
-      expect(row.expiresAt).toBe(BASE_TIME + 3_600_000 + 90 * DAY_MS);
+      expect(row.expiresAt).toBe(new Date(BASE_TIME + 3_600_000 + 90 * DAY_MS).toISOString());
     }),
   );
 });
@@ -163,6 +169,18 @@ test("delete session and refresh token upsert", async () => {
       // Updating the tokens of a deleted session changes nothing.
       yield* t.auth.updateSessionTokens("s1", tokens);
       expect(yield* t.auth.getSession("s1")).toBeUndefined();
+    }),
+  );
+});
+
+test("deleting a user deletes their sessions and refresh token", async () => {
+  await makeHarness().run((t) =>
+    Effect.gen(function* () {
+      yield* t.auth.createSession("s1", "user-1", tokens);
+      yield* t.auth.setRefreshToken("user-1", "rt");
+      t.db.prepare("DELETE FROM users WHERE id = 'user-1'").run();
+      expect(yield* t.auth.getSession("s1")).toBeUndefined();
+      expect(yield* t.auth.getRefreshToken("user-1")).toEqual(Option.none());
     }),
   );
 });

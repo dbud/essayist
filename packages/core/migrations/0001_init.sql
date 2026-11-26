@@ -38,18 +38,21 @@ CREATE TABLE kv (
 
 CREATE TABLE auth_session (
   id TEXT PRIMARY KEY NOT NULL,
-  userId TEXT NOT NULL,
-  expiresAt INTEGER NOT NULL,
-  tokens TEXT
+  userId TEXT NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+  expiresAt TEXT NOT NULL CHECK (expiresAt IS strftime('%FT%R:%fZ', expiresAt)),
+  tokens TEXT CHECK (json_valid(tokens))
 ) STRICT;
 
 -- for a future expiry sweep
 CREATE INDEX auth_session_expiry ON auth_session (expiresAt);
 
+-- for the cascade from users
+CREATE INDEX auth_session_user ON auth_session (userId);
+
 CREATE TABLE auth_refresh_token (
-  userId TEXT PRIMARY KEY NOT NULL,
+  userId TEXT PRIMARY KEY NOT NULL REFERENCES users (id) ON DELETE CASCADE,
   refreshToken TEXT NOT NULL,
-  updatedAt INTEGER NOT NULL
+  updatedAt TEXT NOT NULL CHECK (updatedAt IS strftime('%FT%R:%fZ', updatedAt))
 ) STRICT;
 
 CREATE TABLE review_runs (

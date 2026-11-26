@@ -13,7 +13,7 @@ export type SessionTokens = Schema.Schema.Type<typeof SessionTokens>;
 export class AuthSession extends Model.Class<AuthSession>("AuthSession")({
   id: Schema.String,
   userId: Model.FieldExcept(["update"])(Schema.String),
-  expiresAt: Schema.Number,
+  expiresAt: Schema.DateTimeUtcFromString,
   tokens: Model.Field({
     select: Schema.OptionFromNullOr(Schema.fromJsonString(SessionTokens)),
     insert: Schema.optional(Schema.fromJsonString(SessionTokens)),
@@ -24,5 +24,5 @@ export class AuthSession extends Model.Class<AuthSession>("AuthSession")({
 export class AuthRefreshToken extends Model.Class<AuthRefreshToken>("AuthRefreshToken")({
   userId: Schema.String,
   refreshToken: Schema.String,
-  updatedAt: Schema.Number,
+  updatedAt: Schema.DateTimeUtcFromString,
 }) {}

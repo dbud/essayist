@@ -1,5 +1,5 @@
 import type * as D1Client from "@effect/sql-d1/D1Client";
-import { Cause, Clock, Effect, Layer, Option } from "effect";
+import { Cause, DateTime, Duration, Effect, Layer, Option } from "effect";
 import { SqlModel, SqlSchema } from "effect/sql";
 import { SqlClient } from "effect/sql/SqlClient";
 
@@ -9,7 +9,7 @@ import { AuthStore } from "./service.ts";
 import { type SessionTokens, AuthRefreshToken, AuthSession } from "./types.ts";
 
 // Idle session lifetime; re-applied at every token refresh.
-const SESSION_TTL_MS = 90 * 24 * 60 * 60 * 1000;
+const SESSION_TTL = Duration.days(90);
 
 const backendFault = (cause: unknown) => new PersistenceError({ cause });
 
@@ -44,9 +44,9 @@ export function layerAuthD1(
         tokens?: SessionTokens,
       ): Effect.Effect<void, PersistenceError> =>
         Effect.gen(function* () {
-          const now = yield* Clock.currentTimeMillis;
+          const expiresAt = DateTime.addDuration(yield* DateTime.now, SESSION_TTL);
           yield* Effect.mapError(
-            sessions.insertVoid({ id, userId, expiresAt: now + SESSION_TTL_MS, tokens }),
+            sessions.insertVoid({ id, userId, expiresAt, tokens }),
             backendFault,
           );
         });
@@ -54,9 +54,9 @@ export function layerAuthD1(
       // missing and expired sessions read as undefined
       const getSession = (id: string): Effect.Effect<AuthSession | undefined, PersistenceError> =>
         Effect.gen(function* () {
-          const now = yield* Clock.currentTimeMillis;
+          const now = yield* DateTime.now;
           return yield* sessions.findById(id).pipe(
-            Effect.map((row) => (row.expiresAt > now ? row : undefined)),
+            Effect.map((row) => (DateTime.isGreaterThan(row.expiresAt, now) ? row : undefined)),
             Effect.catchTag("NoSuchElementError", () => Effect.succeed(undefined)),
             Effect.mapError(backendFault),
           );
@@ -67,8 +67,8 @@ export function layerAuthD1(
         tokens: SessionTokens,
       ): Effect.Effect<void, PersistenceError> =>
         Effect.gen(function* () {
-          const now = yield* Clock.currentTimeMillis;
-          yield* sessions.update({ id, expiresAt: now + SESSION_TTL_MS, tokens }).pipe(
+          const expiresAt = DateTime.addDuration(yield* DateTime.now, SESSION_TTL);
+          yield* sessions.update({ id, expiresAt, tokens }).pipe(
             // a sign-out in another tab or device can delete the session while a google refresh is
             // in flight: updating the missing row is the no-op
             Effect.catchDefect((defect) =>
@@ -86,7 +86,7 @@ export function layerAuthD1(
         refreshToken: string,
       ): Effect.Effect<void, PersistenceError> =>
         Effect.gen(function* () {
-          const updatedAt = yield* Clock.currentTimeMillis;
+          const updatedAt = yield* DateTime.now;
           yield* Effect.mapError(
             upsertRefreshTokenRow({ userId, refreshToken, updatedAt }),
             backendFault,
