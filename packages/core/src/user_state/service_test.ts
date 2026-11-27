@@ -1,44 +1,142 @@
 import { assertEquals } from "@std/assert";
-import { Effect } from "effect";
+import { Duration, Effect, Layer, Option } from "effect";
+import { TestClock } from "effect/testing";
 import { test } from "vitest";
 
-import { testLayer } from "#/persistence/testing/kv.ts";
+import { layerFilesD1 } from "#/files/files_d1.ts";
+import { Files } from "#/files/service.ts";
+import { testLayerD1 } from "#/persistence/testing/d1.ts";
+import { Workspaces } from "#/workspace/service.ts";
+import { WorkspaceId } from "#/workspace/WorkspaceId.ts";
+import { layerWorkspacesD1 } from "#/workspace/workspaces_d1.ts";
 
 import { UserState } from "./service.ts";
+import { layerUserStateD1 } from "./user_state_d1.ts";
 
-test("UserState -- selected workspace round-trips", async () => {
-  const program = Effect.gen(function* () {
-    const store = yield* UserState;
-    assertEquals(yield* store.getSelectedWorkspace("u1"), undefined);
-    yield* store.setSelectedWorkspace("u1", "ws1");
-    assertEquals(yield* store.getSelectedWorkspace("u1"), "ws1");
-    yield* store.setSelectedWorkspace("u1", "ws2");
-    assertEquals(yield* store.getSelectedWorkspace("u1"), "ws2");
+const layer = testLayerD1((client) =>
+  Layer.mergeAll(layerUserStateD1(client), layerWorkspacesD1(client), layerFilesD1(client)),
+);
+
+const run = <A, E>(program: Effect.Effect<A, E, UserState | Workspaces | Files>) =>
+  Effect.runPromise(program.pipe(Effect.provide(TestClock.layer()), Effect.provide(layer)));
+
+/** A user who owns a workspace for each of the names. */
+const userWith = (email: string, ...names: string[]) =>
+  Effect.gen(function* () {
+    const workspaces = yield* Workspaces;
+    const user = yield* Effect.orDie(workspaces.createUser({ email }));
+    const ids: string[] = [];
+    for (const name of names) ids.push((yield* workspaces.createWorkspace(name, user.id)).id);
+    return { userId: user.id, ids };
   });
-  await Effect.runPromise(Effect.provide(program, testLayer(UserState.layerNoDeps)));
+
+/** Open a workspace a second after the last open, so each open is later than the one before. */
+const open = (userId: string, wsId: string) =>
+  Effect.andThen(
+    TestClock.adjust(Duration.seconds(1)),
+    UserState.use((state) => state.setSelectedWorkspace(userId, wsId)),
+  );
+
+const createFile = (wsId: string, path: string) =>
+  Files.use((files) => files.createAt(path, "text")).pipe(
+    Effect.provideService(WorkspaceId, { wsId }),
+    Effect.orDie,
+  );
+
+test("UserState -- the selected workspace is the one opened last", async () => {
+  await run(
+    Effect.gen(function* () {
+      const state = yield* UserState;
+      const { userId, ids } = yield* userWith("a@example.com", "One", "Two");
+      assertEquals(yield* state.getSelectedWorkspace(userId), Option.none());
+      yield* open(userId, ids[0]);
+      yield* open(userId, ids[1]);
+      assertEquals(yield* state.getSelectedWorkspace(userId), Option.some(ids[1]));
+      yield* open(userId, ids[0]);
+      assertEquals(yield* state.getSelectedWorkspace(userId), Option.some(ids[0]));
+    }),
+  );
 });
 
-test("UserState -- selected file round-trips, scoped per workspace", async () => {
-  const program = Effect.gen(function* () {
-    const store = yield* UserState;
-    assertEquals(yield* store.getSelectedFile("u1", "ws1"), undefined);
-    yield* store.setSelectedFile("u1", "ws1", "essays/a.md");
-    yield* store.setSelectedFile("u1", "ws2", "notes/b.md");
-    assertEquals(yield* store.getSelectedFile("u1", "ws1"), "essays/a.md");
-    assertEquals(yield* store.getSelectedFile("u1", "ws2"), "notes/b.md");
-    yield* store.setSelectedFile("u1", "ws1", "essays/c.md");
-    assertEquals(yield* store.getSelectedFile("u1", "ws1"), "essays/c.md");
-  });
-  await Effect.runPromise(Effect.provide(program, testLayer(UserState.layerNoDeps)));
+test("UserState -- leaving the selected workspace selects the one opened before", async () => {
+  await run(
+    Effect.gen(function* () {
+      const workspaces = yield* Workspaces;
+      const { userId: owner, ids } = yield* userWith("owner@example.com", "Shared");
+      const { userId, ids: own } = yield* userWith("member@example.com", "Own");
+      yield* Effect.orDie(workspaces.addMember(ids[0], userId, "editor"));
+      yield* open(userId, own[0]);
+      yield* open(userId, ids[0]);
+
+      yield* Effect.orDie(workspaces.removeMember(ids[0], userId));
+      const state = yield* UserState;
+      assertEquals(yield* state.getSelectedWorkspace(userId), Option.some(own[0]));
+      assertEquals(yield* state.getSelectedWorkspace(owner), Option.none());
+    }),
+  );
+});
+
+test("UserState -- a deleted workspace is never the selected one", async () => {
+  await run(
+    Effect.gen(function* () {
+      const { userId, ids } = yield* userWith("a@example.com", "Kept", "Gone");
+      yield* open(userId, ids[0]);
+      yield* open(userId, ids[1]);
+      yield* Workspaces.use((workspaces) => workspaces.deleteWorkspace(ids[1], userId));
+      assertEquals(
+        yield* UserState.use((state) => state.getSelectedWorkspace(userId)),
+        Option.some(ids[0]),
+      );
+    }),
+  );
+});
+
+test("UserState -- the selected file is kept per workspace", async () => {
+  await run(
+    Effect.gen(function* () {
+      const state = yield* UserState;
+      const { userId, ids } = yield* userWith("a@example.com", "One", "Two");
+      yield* createFile(ids[0], "a.md");
+      yield* createFile(ids[0], "c.md");
+      yield* createFile(ids[1], "b.md");
+      assertEquals(yield* state.getSelectedFile(userId, ids[0]), Option.none());
+
+      yield* state.setSelectedFile(userId, ids[0], "a.md");
+      yield* state.setSelectedFile(userId, ids[1], "b.md");
+      assertEquals(yield* state.getSelectedFile(userId, ids[0]), Option.some("a.md"));
+      assertEquals(yield* state.getSelectedFile(userId, ids[1]), Option.some("b.md"));
+      yield* state.setSelectedFile(userId, ids[0], "c.md");
+      assertEquals(yield* state.getSelectedFile(userId, ids[0]), Option.some("c.md"));
+    }),
+  );
+});
+
+test("UserState -- a path with no file selects nothing", async () => {
+  await run(
+    Effect.gen(function* () {
+      const state = yield* UserState;
+      const { userId, ids } = yield* userWith("a@example.com", "One");
+      yield* createFile(ids[0], "a.md");
+      yield* state.setSelectedFile(userId, ids[0], "a.md");
+      yield* state.setSelectedFile(userId, ids[0], "missing.md");
+      assertEquals(yield* state.getSelectedFile(userId, ids[0]), Option.some("a.md"));
+    }),
+  );
 });
 
 test("UserState -- users are isolated", async () => {
-  const program = Effect.gen(function* () {
-    const store = yield* UserState;
-    yield* store.setSelectedWorkspace("u1", "ws1");
-    yield* store.setSelectedFile("u1", "ws1", "a.md");
-    assertEquals(yield* store.getSelectedWorkspace("u2"), undefined);
-    assertEquals(yield* store.getSelectedFile("u2", "ws1"), undefined);
-  });
-  await Effect.runPromise(Effect.provide(program, testLayer(UserState.layerNoDeps)));
+  await run(
+    Effect.gen(function* () {
+      const state = yield* UserState;
+      const workspaces = yield* Workspaces;
+      const { userId: first, ids } = yield* userWith("a@example.com", "Shared");
+      const { userId: second } = yield* userWith("b@example.com");
+      yield* Effect.orDie(workspaces.addMember(ids[0], second, "editor"));
+      yield* createFile(ids[0], "a.md");
+      yield* open(first, ids[0]);
+      yield* state.setSelectedFile(first, ids[0], "a.md");
+      assertEquals(yield* state.getSelectedWorkspace(second), Option.none());
+      assertEquals(yield* state.getSelectedFile(second, ids[0]), Option.none());
+    }),
+  );
 });

@@ -61,6 +61,19 @@ CREATE TABLE file_drafts (
   updatedAt TEXT NOT NULL CHECK (updatedAt IS strftime('%FT%R:%fZ', updatedAt))
 ) STRICT;
 
+-- what a member last had open: the selected workspace of a user is the one opened last, and
+-- leaving a workspace forgets what was open in it
+CREATE TABLE user_workspace_state (
+  userId TEXT NOT NULL,
+  wsId TEXT NOT NULL,
+  selectedFileId TEXT REFERENCES files (id) ON DELETE SET NULL,
+  openedAt TEXT NOT NULL CHECK (openedAt IS strftime('%FT%R:%fZ', openedAt)),
+  PRIMARY KEY (userId, wsId),
+  FOREIGN KEY (wsId, userId) REFERENCES workspace_members (wsId, userId) ON DELETE CASCADE
+) STRICT;
+
+CREATE INDEX user_workspace_state_opened ON user_workspace_state (userId, openedAt DESC);
+
 -- the review config: global, edited by admins, each item saved whole
 CREATE TABLE model_pools (
   id TEXT PRIMARY KEY NOT NULL,
