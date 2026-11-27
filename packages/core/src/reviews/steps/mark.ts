@@ -2,9 +2,9 @@ import { partition } from "@std/collections";
 import { Effect, Schema } from "effect";
 
 import type { Category } from "#/config/types.ts";
-import type { FileMissingError } from "#/files/d1/types.ts";
+import type { FileMissingError } from "#/files/types.ts";
 import type { NodeRunner } from "#/flow/types.ts";
-import { Marks } from "#/marks/d1/service.ts";
+import { Marks } from "#/marks/service.ts";
 import type { ModelClient } from "#/model/service.ts";
 import { callStructured } from "#/reviews/call.ts";
 import type { ReviewTypes } from "#/reviews/graph.ts";

@@ -28,8 +28,8 @@ export {
 } from "#/config/types.ts";
 export { demoFiles, seedDemoFiles } from "#/demo.ts";
 export { setMyers } from "#/diff/diff.ts";
-export { layerFilesD1 } from "#/files/d1/files_d1.ts";
-export { Files } from "#/files/d1/service.ts";
+export { layerFilesD1 } from "#/files/files_d1.ts";
+export { Files } from "#/files/service.ts";
 export {
   DraftStaleError,
   File,
@@ -40,15 +40,15 @@ export {
   FileTooLargeError,
   FileVersion,
   MAX_DOCUMENT_BYTES,
-} from "#/files/d1/types.ts";
+} from "#/files/types.ts";
 export { pluralize } from "#/format.ts";
 export type { IdGenerator } from "#/ids.ts";
 export { Ids } from "#/idsRef.ts";
 export { nextId } from "#/ids.ts";
 export { jsonLogger, jsonLogLayer } from "#/log.ts";
-export { layerMarksD1 } from "#/marks/d1/marks_d1.ts";
-export { type MarkInput, Marks } from "#/marks/d1/service.ts";
-export { Mark, MarkTextNotFoundError } from "#/marks/d1/types.ts";
+export { layerMarksD1 } from "#/marks/marks_d1.ts";
+export { type MarkInput, Marks } from "#/marks/service.ts";
+export { Mark, MarkTextNotFoundError } from "#/marks/types.ts";
 export type {
   MarkAnchor,
   MarkStatus,

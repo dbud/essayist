@@ -6,7 +6,7 @@ import type { ResolvedReviewUnit } from "#/config/types.ts";
 import type { PassWhenSpec } from "#/flow/helpers.ts";
 import { FlowRunner } from "#/flow/runner.ts";
 import type { Artifacts, FlowEvent, FlowGraph, FlowRunResult } from "#/flow/types.ts";
-import { Marks } from "#/marks/d1/service.ts";
+import { Marks } from "#/marks/service.ts";
 import { createFakeClient } from "#/model/fake_client.ts";
 import { ModelClient } from "#/model/service.ts";
 import {

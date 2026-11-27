@@ -1,8 +1,8 @@
 import { computeDiff, type DiffHunk } from "#/diff/diff.ts";
 
 import { trimContextSeparators, wordEdges } from "./context.ts";
-import type { Mark } from "./d1/types.ts";
 import { TokenizedText, wordTokens } from "./tokenized.ts";
+import type { Mark } from "./types.ts";
 
 /** Default fuzzy threshold for matching context (Phase 2). */
 export const DEFAULT_CONTEXT_FUZZY_THRESHOLD = 0.8;

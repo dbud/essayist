@@ -12,12 +12,12 @@ import {
 } from "effect";
 
 import type { ResolvedReviewPass } from "#/config/types.ts";
-import type { Files } from "#/files/d1/service.ts";
+import type { Files } from "#/files/service.ts";
 import { FlowRunner } from "#/flow/runner.ts";
 import type { FlowEvent } from "#/flow/types.ts";
 import { view } from "#/flow/view.ts";
 import { Ids } from "#/idsRef.ts";
-import type { Marks } from "#/marks/d1/service.ts";
+import type { Marks } from "#/marks/service.ts";
 import type { ModelClient } from "#/model/service.ts";
 import { buildReviewGraph } from "#/reviews/adapter.ts";
 import { type ReviewServices, type ReviewTypes, reviewRunners } from "#/reviews/graph.ts";

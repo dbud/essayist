@@ -3,8 +3,8 @@ import { Effect, Option } from "effect";
 import { test } from "vitest";
 
 import { seedDemoFiles } from "#/demo.ts";
-import { FileExistsError } from "#/files/d1/types.ts";
-import { Marks } from "#/marks/d1/service.ts";
+import { FileExistsError } from "#/files/types.ts";
+import { Marks } from "#/marks/service.ts";
 import { ReviewRuns } from "#/reviews/service.ts";
 import { runInWorkspace } from "#/reviews/testing.ts";
 

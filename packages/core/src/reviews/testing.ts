@@ -4,10 +4,10 @@ import * as D1Client from "@effect/sql-d1/D1Client";
 import { Effect, Layer } from "effect";
 import * as Reactivity from "effect/reactivity/Reactivity";
 
-import { layerFilesD1 } from "#/files/d1/files_d1.ts";
-import { Files } from "#/files/d1/service.ts";
-import { layerMarksD1 } from "#/marks/d1/marks_d1.ts";
-import type { Marks } from "#/marks/d1/service.ts";
+import { layerFilesD1 } from "#/files/files_d1.ts";
+import { Files } from "#/files/service.ts";
+import { layerMarksD1 } from "#/marks/marks_d1.ts";
+import type { Marks } from "#/marks/service.ts";
 import { d1SqliteShim } from "#/persistence/kv_d1_sqlite.ts";
 import { migratedDatabase, testLayerD1 } from "#/persistence/testing/d1.ts";
 import { Workspaces } from "#/workspace/service.ts";

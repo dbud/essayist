@@ -2,7 +2,7 @@ import type * as D1Client from "@effect/sql-d1/D1Client";
 import { DateTime, Effect, Layer, Option, Schema } from "effect";
 import { SqlSchema } from "effect/sql";
 
-import { FileMissingError } from "#/files/d1/types.ts";
+import { FileMissingError } from "#/files/types.ts";
 import { Ids } from "#/idsRef.ts";
 import { WorkspaceId } from "#/workspace/WorkspaceId.ts";
 

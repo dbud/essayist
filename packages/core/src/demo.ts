@@ -3,9 +3,9 @@
 
 import { Effect } from "effect";
 
-import { Files } from "#/files/d1/service.ts";
-import type { FileExistsError, FileTooLargeError } from "#/files/d1/types.ts";
-import { Marks } from "#/marks/d1/service.ts";
+import { Files } from "#/files/service.ts";
+import type { FileExistsError, FileTooLargeError } from "#/files/types.ts";
+import { Marks } from "#/marks/service.ts";
 import { ReviewRuns } from "#/reviews/service.ts";
 import type { WorkspaceId } from "#/workspace/WorkspaceId.ts";
 

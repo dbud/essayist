@@ -2,7 +2,7 @@
 
 import { Context, type Effect, type Option, Schema } from "effect";
 
-import type { FileMissingError } from "#/files/d1/types.ts";
+import type { FileMissingError } from "#/files/types.ts";
 import type { WorkspaceId } from "#/workspace/WorkspaceId.ts";
 
 import type { ReviewRun } from "./types.ts";

@@ -1,10 +1,8 @@
-/** The Marks D1 layer over the marks table, reading version content through the Files service. */
-
 import type * as D1Client from "@effect/sql-d1/D1Client";
 import { DateTime, Effect, Layer, Option, Schema } from "effect";
 import { SqlSchema } from "effect/sql";
 
-import { Files } from "#/files/d1/service.ts";
+import { Files } from "#/files/service.ts";
 import { Ids } from "#/idsRef.ts";
 import { TokenizedText } from "#/marks/tokenized.ts";
 import { WorkspaceId } from "#/workspace/WorkspaceId.ts";

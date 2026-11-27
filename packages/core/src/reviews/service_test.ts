@@ -3,9 +3,9 @@ import { DateTime, Duration, Effect, Option } from "effect";
 import { TestClock } from "effect/testing";
 import { test } from "vitest";
 
-import { Files } from "#/files/d1/service.ts";
-import { FileMissingError } from "#/files/d1/types.ts";
-import { Marks } from "#/marks/d1/service.ts";
+import { Files } from "#/files/service.ts";
+import { FileMissingError } from "#/files/types.ts";
+import { Marks } from "#/marks/service.ts";
 
 import { ReviewRunActiveError, ReviewRunMissingError, ReviewRuns } from "./service.ts";
 import { reviewedFile, runInWorkspace } from "./testing.ts";

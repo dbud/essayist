@@ -6,9 +6,9 @@ import { type Context, Effect, Layer, Option } from "effect";
 import { test } from "vitest";
 
 import type { ResolvedReviewPass, ReviewUnit } from "#/config/types.ts";
-import { Files } from "#/files/d1/service.ts";
+import { Files } from "#/files/service.ts";
 import type { NodeRun } from "#/flow/types.ts";
-import { Marks } from "#/marks/d1/service.ts";
+import { Marks } from "#/marks/service.ts";
 import { createFakeClient } from "#/model/fake_client.ts";
 import { ModelClient } from "#/model/service.ts";
 import { noopObserver } from "#/reviews/observer/noop.ts";

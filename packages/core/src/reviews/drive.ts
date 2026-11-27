@@ -6,8 +6,8 @@ import {
   resolveReviewPassById,
 } from "#/config/resolve.ts";
 import type { ReviewConfig } from "#/config/service.ts";
-import type { Files } from "#/files/d1/service.ts";
-import type { Marks } from "#/marks/d1/service.ts";
+import type { Files } from "#/files/service.ts";
+import type { Marks } from "#/marks/service.ts";
 import type { ModelClient } from "#/model/service.ts";
 import type { PersistenceError } from "#/persistence/mod.ts";
 import { tolerate } from "#/reviews/observer/tolerate.ts";

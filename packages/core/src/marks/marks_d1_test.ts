@@ -2,8 +2,8 @@ import { assertEquals, assertInstanceOf, assertObjectMatch } from "@std/assert";
 import { Effect, Option } from "effect";
 import { test } from "vitest";
 
-import { Files } from "#/files/d1/service.ts";
-import { FileMissingError } from "#/files/d1/types.ts";
+import { Files } from "#/files/service.ts";
+import { FileMissingError } from "#/files/types.ts";
 import { reviewedFile, runInWorkspace } from "#/reviews/testing.ts";
 
 import { type MarkInput, Marks } from "./service.ts";

@@ -1,6 +1,4 @@
 /**
- * The Files D1 layer over the files, file_versions and file_drafts tables.
- *
  * A version computes its seq inside its insert, and D1 runs statements one at a time, so concurrent
  * saves of a file get consecutive versions with no conflict to retry. A draft is saved only on the
  * latest version and cleared in the same batch as every new version, so a draft is always on the

@@ -2,9 +2,9 @@ import { assertEquals, assertInstanceOf, assertObjectMatch } from "@std/assert";
 import { Effect, Option, Result, Schema } from "effect";
 import { test } from "vitest";
 
-import { Files } from "#/files/d1/service.ts";
-import { FileMissingError } from "#/files/d1/types.ts";
-import { Marks } from "#/marks/d1/service.ts";
+import { Files } from "#/files/service.ts";
+import { FileMissingError } from "#/files/types.ts";
+import { Marks } from "#/marks/service.ts";
 import { reviewedFile, runInWorkspace } from "#/reviews/testing.ts";
 
 import { applyProposedMarks, type MarkContext, ProposedMarksSchema } from "./mark.ts";

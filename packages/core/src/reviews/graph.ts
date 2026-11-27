@@ -1,11 +1,11 @@
 import { Schema } from "effect";
 
 import type { ResolvedReviewUnit } from "#/config/types.ts";
-import type { Files } from "#/files/d1/service.ts";
+import type { Files } from "#/files/service.ts";
 import type { ForwardSpec, PassWhenSpec } from "#/flow/helpers.ts";
 import { forward, passWhen } from "#/flow/helpers.ts";
 import type { FlowTypes, NodeRunners } from "#/flow/types.ts";
-import type { Marks } from "#/marks/d1/service.ts";
+import type { Marks } from "#/marks/service.ts";
 import { type ModelClient, ModelCallRecord } from "#/model/service.ts";
 import { type Analysis, analyzeRunner } from "#/reviews/steps/analyze.ts";
 import {
