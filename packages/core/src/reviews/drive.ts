@@ -11,12 +11,8 @@ import type { ReviewPacing } from "#/reviews/pacing.ts";
 import { resumeReviewRun } from "#/reviews/runner.ts";
 import { ReviewRuns } from "#/reviews/service.ts";
 import type { TraceEvents } from "#/reviews/trace/service.ts";
+import type { RunRef } from "#/reviews/types.ts";
 import { WorkspaceId } from "#/workspace/WorkspaceId.ts";
-
-export interface RunRef {
-  readonly runId: string;
-  readonly wsId: string;
-}
 
 export type DriveServices =
   | ReviewConfig

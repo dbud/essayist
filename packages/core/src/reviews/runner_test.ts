@@ -3,10 +3,12 @@ import type { DatabaseSync } from "node:sqlite";
 import type * as D1Client from "@effect/sql-d1/D1Client";
 import { assert, assertEquals, assertRejects } from "@std/assert";
 import { type Context, Effect, Layer, Option } from "effect";
+import type { SqlClient } from "effect/sql/SqlClient";
 import { test } from "vitest";
 
 import { category, reviewPass } from "#/config/testing.ts";
 import type { ResolvedReviewPass, ReviewUnit } from "#/config/types.ts";
+import { type CoreServices, layerCoreD1 } from "#/d1/layer.ts";
 import { Files } from "#/files/service.ts";
 import type { NodeRun } from "#/flow/types.ts";
 import { Marks } from "#/marks/service.ts";
@@ -18,11 +20,7 @@ import { ReviewPacing } from "#/reviews/pacing.ts";
 import { ReviewLeaseTakenError, resumeReviewRun } from "#/reviews/runner.ts";
 import { layerReviewRunsD1 } from "#/reviews/runs_d1.ts";
 import { ReviewRunMissingError, ReviewRuns } from "#/reviews/service.ts";
-import {
-  openReviewDatabase,
-  reviewServicesD1,
-  type ReviewTestServices,
-} from "#/reviews/testing.ts";
+import { openReviewDatabase } from "#/reviews/testing.ts";
 import { TraceEvents } from "#/reviews/trace/service.ts";
 import type { TraceEvent } from "#/reviews/trace/types.ts";
 import type { ReviewRun } from "#/reviews/types.ts";
@@ -62,13 +60,13 @@ function passFixture(units: ReviewUnit[]): ResolvedReviewPass {
   };
 }
 
-type Env = Layer.Layer<ModelClient | ReviewTestServices>;
+type Env = Layer.Layer<ModelClient | CoreServices>;
 
 /** A database for a single test, with a file at its first version. */
 interface Setup {
   db: DatabaseSync;
-  client: D1Client.D1Client;
-  env: Layer.Layer<ReviewTestServices>;
+  client: D1Client.D1Client & SqlClient;
+  env: Layer.Layer<CoreServices>;
   wsId: string;
   fileId: string;
   versionId: string;
@@ -90,7 +88,7 @@ const PACING = { heartbeatMs: 50, staleMs: 500, retryMs: 500 };
 const inWorkspace = <A, E>(
   { wsId }: Setup,
   env: Env,
-  effect: Effect.Effect<A, E, ModelClient | ReviewTestServices | ReviewPacing | WorkspaceId>,
+  effect: Effect.Effect<A, E, ModelClient | CoreServices | ReviewPacing | WorkspaceId>,
 ): Promise<A> =>
   Effect.runPromise(
     effect.pipe(
@@ -591,9 +589,9 @@ test("resumeReviewRun -- resumes a run whose lease went stale", async () => {
 
 /** The review services, counting the heartbeats of ReviewRuns. */
 function countingReviews(
-  client: D1Client.D1Client,
+  client: D1Client.D1Client & SqlClient,
   count: { renewed: number; refused: number },
-): Layer.Layer<ReviewTestServices> {
+): Layer.Layer<CoreServices> {
   const heartbeats = Layer.effect(
     ReviewRuns,
     Effect.gen(function* () {
@@ -610,8 +608,5 @@ function countingReviews(
       });
     }),
   );
-  return Layer.merge(
-    reviewServicesD1(client),
-    Layer.provide(heartbeats, layerReviewRunsD1(client)),
-  );
+  return Layer.merge(layerCoreD1(client), Layer.provide(heartbeats, layerReviewRunsD1(client)));
 }

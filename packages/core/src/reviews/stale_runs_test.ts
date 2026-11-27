@@ -5,15 +5,14 @@ import { test } from "vitest";
 
 import { WorkspaceId } from "#/workspace/WorkspaceId.ts";
 
-import { ReviewJanitor } from "./janitor.ts";
 import { ReviewRuns } from "./service.ts";
 import { reviewedFile, runInWorkspace } from "./testing.ts";
 
 const STALE_MS = 15 * 60_000;
 
-const staleRuns = ReviewJanitor.use((janitor) => janitor.staleRuns(STALE_MS));
+const staleRuns = ReviewRuns.use((runs) => runs.staleRuns(STALE_MS));
 
-test("ReviewJanitor -- a run that was never claimed is swept", async () => {
+test("ReviewRuns.staleRuns -- a run that was never claimed is swept", async () => {
   await runInWorkspace(() =>
     Effect.gen(function* () {
       const { run } = yield* reviewedFile();
@@ -23,7 +22,7 @@ test("ReviewJanitor -- a run that was never claimed is swept", async () => {
   );
 });
 
-test("ReviewJanitor -- a live lease is not swept; it goes stale and settles", async () => {
+test("ReviewRuns.staleRuns -- a live lease is not swept; it goes stale and settles", async () => {
   await runInWorkspace(() =>
     Effect.gen(function* () {
       const runs = yield* ReviewRuns;
@@ -43,7 +42,7 @@ test("ReviewJanitor -- a live lease is not swept; it goes stale and settles", as
   );
 });
 
-test("ReviewJanitor -- the sweep is global across workspaces, oldest first", async () => {
+test("ReviewRuns.staleRuns -- the sweep is global across workspaces, oldest first", async () => {
   await runInWorkspace((other) =>
     Effect.gen(function* () {
       const a = yield* reviewedFile();

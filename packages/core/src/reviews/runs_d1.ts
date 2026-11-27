@@ -132,6 +132,17 @@ export function layerReviewRunsD1(client: D1Client.D1Client): Layer.Layer<Review
         RETURNING id`,
   });
 
+  const findStaleRuns = SqlSchema.findAll({
+    Request: Schema.Struct({ staleBefore: Schema.DateTimeUtcFromString }),
+    Result: Schema.Struct({ runId: Schema.String, wsId: Schema.String }),
+    execute: ({ staleBefore }) =>
+      client`SELECT r.id AS runId, f.wsId FROM review_runs r JOIN files f ON f.id = r.fileId
+        WHERE r.status = 'running'
+          AND (r.heartbeatAt IS NULL OR r.heartbeatAt < ${staleBefore})
+        ORDER BY r.startedAt
+        LIMIT 100`,
+  });
+
   const missing = (runId: string) => () => Effect.fail(new ReviewRunMissingError({ runId }));
 
   const getRun = (runId: string) =>
@@ -225,6 +236,12 @@ export function layerReviewRunsD1(client: D1Client.D1Client): Layer.Layer<Review
       return yield* Effect.fail(new ReviewRunActiveError({ runId: active.value.id }));
     });
 
+  const staleRuns = (staleMs: number) =>
+    Effect.gen(function* () {
+      const staleBefore = DateTime.subtract(yield* DateTime.now, { milliseconds: staleMs });
+      return yield* Effect.orDie(findStaleRuns({ staleBefore }));
+    });
+
   return Layer.succeed(
     ReviewRuns,
     ReviewRuns.of({
@@ -237,6 +254,7 @@ export function layerReviewRunsD1(client: D1Client.D1Client): Layer.Layer<Review
       heartbeatRun,
       deleteRun,
       deleteRuns,
+      staleRuns,
     }),
   );
 }

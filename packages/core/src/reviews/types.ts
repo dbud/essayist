@@ -45,3 +45,8 @@ export type FailedMarkAttempt = Schema.Schema.Type<typeof FailedMarkAttempt>;
 /** A proposed mark with its outcome: the id of the placed mark, or why it was not placed. */
 export const MarkAttempt = Schema.Union([PlacedMarkAttempt, FailedMarkAttempt]);
 export type MarkAttempt = Schema.Schema.Type<typeof MarkAttempt>;
+
+export interface RunRef {
+  readonly runId: string;
+  readonly wsId: string;
+}

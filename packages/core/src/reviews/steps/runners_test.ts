@@ -3,6 +3,7 @@ import { Effect, Layer } from "effect";
 import { test } from "vitest";
 
 import type { ResolvedReviewUnit } from "#/config/types.ts";
+import type { CoreServices } from "#/d1/layer.ts";
 import type { PassWhenSpec } from "#/flow/helpers.ts";
 import { FlowRunner } from "#/flow/runner.ts";
 import type { Artifacts, FlowEvent, FlowGraph, FlowRunResult } from "#/flow/types.ts";
@@ -16,7 +17,7 @@ import {
   reviewRunners,
 } from "#/reviews/graph.ts";
 import type { MarkContext } from "#/reviews/steps/mark.ts";
-import { openReviewDatabase, type ReviewTestServices, reviewedFile } from "#/reviews/testing.ts";
+import { openReviewDatabase, reviewedFile } from "#/reviews/testing.ts";
 import { WorkspaceId } from "#/workspace/WorkspaceId.ts";
 
 const ANALYSIS_ROUND =
@@ -83,7 +84,7 @@ const readMarks = ({ env, wsId, apply }: Setup) =>
 
 const runFlow = (
   { wsId }: Setup,
-  env: Layer.Layer<ModelClient | ReviewTestServices>,
+  env: Layer.Layer<ModelClient | CoreServices>,
   flow: FlowRunner<ReviewTypes, ReviewServices>,
   graph: FlowGraph<ReviewTypes>,
 ): Promise<FlowRunResult<ReviewTypes>> =>

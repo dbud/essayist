@@ -19,6 +19,7 @@ export {
   ReviewPass,
   ReviewUnitSchema,
 } from "#/config/types.ts";
+export { type CoreServices, layerCoreD1 } from "#/d1/layer.ts";
 export { demoFiles, seedDemoFiles } from "#/demo.ts";
 export { setMyers } from "#/diff/diff.ts";
 export { layerFilesD1 } from "#/files/files_d1.ts";
@@ -59,9 +60,7 @@ export type { ReviewObserver } from "#/reviews/observer/types.ts";
 export { noopObserver } from "#/reviews/observer/noop.ts";
 export type { RunnerError } from "#/reviews/runner.ts";
 export { ReviewLeaseTakenError, resumeReviewRun } from "#/reviews/runner.ts";
-export { driveReviewRun, type DriveServices, type RunRef } from "#/reviews/drive.ts";
-export { ReviewJanitor } from "#/reviews/janitor.ts";
-export { layerReviewJanitorD1 } from "#/reviews/janitor_d1.ts";
+export { driveReviewRun, type DriveServices } from "#/reviews/drive.ts";
 export { ReviewPacing } from "#/reviews/pacing.ts";
 export type { ProgressFeed } from "#/reviews/progress.ts";
 export { feedTraceEvent, ReviewProgress } from "#/reviews/progress.ts";
@@ -72,7 +71,7 @@ export type { TraceEvent, TraceNodeView, TraceTotals, TraceView } from "#/review
 export { groupTraceNodes } from "#/reviews/trace/mod.ts";
 export { TraceEvents } from "#/reviews/trace/service.ts";
 export { layerTraceEventsD1 } from "#/reviews/trace/trace_d1.ts";
-export { ReviewRun, ReviewRunList, ReviewRunStatus } from "#/reviews/types.ts";
+export { ReviewRun, ReviewRunList, ReviewRunStatus, type RunRef } from "#/reviews/types.ts";
 export type { FailedMarkAttempt, MarkAttempt, PlacedMarkAttempt } from "#/reviews/types.ts";
 export { UserState } from "#/user_state/service.ts";
 export { layerUserStateD1 } from "#/user_state/user_state_d1.ts";

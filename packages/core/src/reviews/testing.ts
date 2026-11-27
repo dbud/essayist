@@ -1,50 +1,19 @@
 /** Fixtures for tests of the review layers: a database, a workspace, and files under review. */
 
 import * as D1Client from "@effect/sql-d1/D1Client";
-import { Effect, Layer, Option } from "effect";
+import { Effect, Option } from "effect";
 import * as Reactivity from "effect/reactivity/Reactivity";
 
-import { layerReviewConfigD1 } from "#/config/config_d1.ts";
 import { ReviewConfig } from "#/config/service.ts";
 import { Category } from "#/config/types.ts";
+import { type CoreServices, layerCoreD1 } from "#/d1/layer.ts";
 import { d1SqliteShim } from "#/d1/sqlite.ts";
 import { migratedDatabase, testLayerD1 } from "#/d1/testing.ts";
-import { layerFilesD1 } from "#/files/files_d1.ts";
 import { Files } from "#/files/service.ts";
-import { layerMarksD1 } from "#/marks/marks_d1.ts";
-import type { Marks } from "#/marks/service.ts";
 import { Workspaces } from "#/workspace/service.ts";
 import { WorkspaceId } from "#/workspace/WorkspaceId.ts";
-import { layerWorkspacesD1 } from "#/workspace/workspaces_d1.ts";
 
-import type { ReviewJanitor } from "./janitor.ts";
-import { layerReviewJanitorD1 } from "./janitor_d1.ts";
-import { layerReviewRunsD1 } from "./runs_d1.ts";
 import { ReviewRuns } from "./service.ts";
-import type { TraceEvents } from "./trace/service.ts";
-import { layerTraceEventsD1 } from "./trace/trace_d1.ts";
-
-export type ReviewTestServices =
-  | ReviewConfig
-  | Files
-  | Marks
-  | ReviewRuns
-  | TraceEvents
-  | ReviewJanitor
-  | Workspaces;
-
-export function reviewServicesD1(client: D1Client.D1Client): Layer.Layer<ReviewTestServices> {
-  const files = layerFilesD1(client);
-  return Layer.mergeAll(
-    layerReviewConfigD1(client),
-    files,
-    Layer.provide(layerMarksD1(client), files),
-    layerReviewRunsD1(client),
-    layerTraceEventsD1(client),
-    layerReviewJanitorD1(client),
-    layerWorkspacesD1(client),
-  );
-}
 
 /** Every test database has this category, for the marks that name one. */
 export const GRAMMAR = new Category({
@@ -75,7 +44,7 @@ type InOther = <B, F, R>(
  * second workspace.
  */
 export function runInWorkspace<A, E>(
-  program: (other: InOther) => Effect.Effect<A, E, ReviewTestServices | WorkspaceId>,
+  program: (other: InOther) => Effect.Effect<A, E, CoreServices | WorkspaceId>,
 ): Promise<A> {
   return Effect.runPromise(
     Effect.gen(function* () {
@@ -85,7 +54,7 @@ export function runInWorkspace<A, E>(
       const other: InOther = (effect) =>
         Effect.provideService(effect, WorkspaceId, { wsId: second });
       return yield* Effect.provideService(program(other), WorkspaceId, { wsId: home });
-    }).pipe(Effect.provide(testLayerD1(reviewServicesD1))),
+    }).pipe(Effect.provide(testLayerD1(layerCoreD1))),
   );
 }
 
@@ -112,7 +81,7 @@ export async function openReviewDatabase() {
   const client = await Effect.runPromise(
     D1Client.make({ db: d1SqliteShim(db) }).pipe(Effect.scoped, Effect.provide(Reactivity.layer)),
   );
-  const env = reviewServicesD1(client);
+  const env = layerCoreD1(client);
   const wsId = await Effect.runPromise(
     Effect.provide(Effect.andThen(seedCategory, newWorkspace()), env),
   );

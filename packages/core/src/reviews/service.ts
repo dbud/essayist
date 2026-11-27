@@ -5,7 +5,7 @@ import { Context, type Effect, type Option, Schema } from "effect";
 import type { FileMissingError } from "#/files/types.ts";
 import type { WorkspaceId } from "#/workspace/WorkspaceId.ts";
 
-import type { ReviewRun } from "./types.ts";
+import type { ReviewRun, RunRef } from "./types.ts";
 
 /** A run was looked up and does not exist (never created, deleted, or in another workspace). */
 export class ReviewRunMissingError extends Schema.TaggedError<ReviewRunMissingError>()(
@@ -68,6 +68,11 @@ export interface Interface {
     fileId: string,
     versionId?: string,
   ): Effect.Effect<number, ReviewRunActiveError, WorkspaceId>;
+  /**
+   * Running runs with no lease, or a heartbeat older than `staleMs`, oldest first and across every
+   * workspace, for a sweep that drives them again.
+   */
+  staleRuns(staleMs: number): Effect.Effect<ReadonlyArray<RunRef>>;
 }
 
 export class ReviewRuns extends Context.Service<ReviewRuns, Interface>()(

@@ -6,6 +6,7 @@ import * as D1Client from "@effect/sql-d1/D1Client";
 import { migrations } from "@essayist/core/migrations";
 import { Effect, Layer } from "effect";
 import * as Reactivity from "effect/reactivity/Reactivity";
+import type { SqlClient } from "effect/sql/SqlClient";
 
 import { d1SqliteShim } from "#/d1/sqlite.ts";
 
@@ -19,7 +20,9 @@ export function migratedDatabase(): DatabaseSync {
  * Build a D1 layer, such as `layerWorkspacesD1`, for a test: the layer gets its own in-memory
  * database with the migrations applied, closed when the test releases the layer.
  */
-export function testLayerD1<S, E>(make: (client: D1Client.D1Client) => Layer.Layer<S, E>) {
+export function testLayerD1<S, E>(
+  make: (client: D1Client.D1Client & SqlClient) => Layer.Layer<S, E>,
+) {
   return Layer.unwrap(
     Effect.gen(function* () {
       const db = yield* Effect.acquireRelease(Effect.sync(migratedDatabase), (opened) =>
