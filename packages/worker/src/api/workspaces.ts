@@ -1,14 +1,13 @@
-import { DraftSnapshot, FileVersion, ReviewRun, ReviewRunList, Workspace } from "@essayist/core";
+import { FileDraft, FileVersion, ReviewRun, ReviewRunList, Workspace } from "@essayist/core";
 import { Schema } from "effect";
 import { HttpApiEndpoint, HttpApiError, HttpApiGroup, HttpApiSchema } from "effect/http-api";
 
-import { FileContentData } from "#/models/fileContent.data.ts";
+import { FileContentData, FileWriteData } from "#/models/fileContent.data.ts";
 import { FileTreeData } from "#/models/fileTree.data.ts";
 import { FileVersionsData } from "#/models/fileVersions.data.ts";
-import { MarksData } from "#/models/marks.data.ts";
 import { WorkspacesData } from "#/models/workspaces.data.ts";
 
-import { ApiConflict, ApiFailure } from "./errors";
+import { ApiConflict, ApiFailure, ApiTooLarge } from "./errors";
 import { SessionMiddleware } from "./sessionMiddleware";
 
 const ListQuery = Schema.Struct({ wsId: Schema.optional(Schema.String) });
@@ -71,6 +70,7 @@ const VersionsQuery = Schema.Struct({
 const DraftPayload = Schema.Struct({
   wsId: Schema.NonEmptyString,
   path: Schema.NonEmptyString,
+  baseVersionId: Schema.NonEmptyString,
   content: Schema.String,
 });
 
@@ -82,8 +82,8 @@ const getFileContent = HttpApiEndpoint.get("getFileContent", "/workspaces/files/
 
 const saveFileDraft = HttpApiEndpoint.put("saveFileDraft", "/workspaces/files/draft", {
   payload: DraftPayload,
-  success: DraftSnapshot,
-  error: [HttpApiError.Forbidden, HttpApiError.NotFound],
+  success: FileDraft.json,
+  error: [HttpApiError.Forbidden, HttpApiError.NotFound, ApiConflict, ApiTooLarge],
 });
 
 const PromotePayload = Schema.Struct({
@@ -93,7 +93,7 @@ const PromotePayload = Schema.Struct({
 
 const promoteFileDraft = HttpApiEndpoint.post("promoteFileDraft", "/workspaces/files/promote", {
   payload: PromotePayload,
-  success: FileVersion,
+  success: FileVersion.json,
   error: [HttpApiError.Forbidden, HttpApiError.NotFound],
 });
 
@@ -101,26 +101,6 @@ const getFileVersions = HttpApiEndpoint.get("getFileVersions", "/workspaces/file
   query: VersionsQuery,
   success: FileVersionsData,
   error: [HttpApiError.Forbidden, HttpApiError.NotFound],
-});
-
-const MarksQuery = Schema.Struct({
-  wsId: Schema.NonEmptyString,
-  path: Schema.NonEmptyString,
-  versionId: Schema.NonEmptyString,
-});
-
-const GetMarks = HttpApiEndpoint.get("getMarks", "/workspaces/files/marks", {
-  query: MarksQuery,
-  success: MarksData,
-  error: [HttpApiError.Forbidden, HttpApiError.NotFound],
-});
-
-const WriteResult = Schema.Struct({
-  versionId: Schema.String,
-  timestamp: Schema.Number,
-  lines: Schema.Number,
-  path: Schema.String,
-  created: Schema.Boolean,
 });
 
 const WritePayload = Schema.Struct({
@@ -131,14 +111,14 @@ const WritePayload = Schema.Struct({
 
 const createFile = HttpApiEndpoint.post("createFile", "/workspaces/files/create", {
   payload: WritePayload,
-  success: WriteResult,
-  error: [HttpApiError.Forbidden, HttpApiError.Conflict],
+  success: FileWriteData,
+  error: [HttpApiError.Forbidden, ApiConflict, ApiTooLarge],
 });
 
 const upsertFile = HttpApiEndpoint.put("upsertFile", "/workspaces/files/upsert", {
   payload: WritePayload,
-  success: WriteResult,
-  error: [HttpApiError.Forbidden, HttpApiError.NotFound],
+  success: FileWriteData,
+  error: [HttpApiError.Forbidden, ApiTooLarge],
 });
 
 const ImportPayload = Schema.Struct({
@@ -155,7 +135,7 @@ const ImportResult = Schema.Struct({
 const importGoogleDoc = HttpApiEndpoint.post("importGoogleDoc", "/workspaces/import/google-docs", {
   payload: ImportPayload,
   success: ImportResult,
-  error: [HttpApiError.Forbidden, HttpApiError.Unauthorized, ApiFailure],
+  error: [HttpApiError.Forbidden, HttpApiError.Unauthorized, ApiFailure, ApiTooLarge],
 });
 
 const RunsQuery = Schema.Struct({
@@ -191,7 +171,6 @@ export const workspaceGroup = HttpApiGroup.make("workspaces")
   .add(selectFile)
   .add(getFileContent)
   .add(getFileVersions)
-  .add(GetMarks)
   .add(saveFileDraft)
   .add(promoteFileDraft)
   .add(createFile)

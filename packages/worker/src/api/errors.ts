@@ -24,3 +24,10 @@ export class ApiConflict extends Schema.TaggedError<ApiConflict>()(
   { message: Schema.String },
   { description: "ApiConflict", httpApiStatus: 409 },
 ) {}
+
+// A document over the size limit, with the limit in the message.
+export class ApiTooLarge extends Schema.TaggedError<ApiTooLarge>()(
+  "ApiTooLarge",
+  { message: Schema.String },
+  { description: "ApiTooLarge", httpApiStatus: 413 },
+) {}

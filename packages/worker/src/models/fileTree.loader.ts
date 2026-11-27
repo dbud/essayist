@@ -1,44 +1,33 @@
-import { Files, type PersistenceError, UserState, WorkspaceId } from "@essayist/core";
-import { Effect } from "effect";
+import { Files, UserState, WorkspaceId } from "@essayist/core";
+import { Effect, Option } from "effect";
 
 import type { FileTreeData } from "#/models/fileTree.data.ts";
 
+/**
+ * The files of a workspace and the one to show: the file asked for, else the last selected, else
+ * the first; with the version asked for when the file has it, else the latest.
+ */
 export function fileTreeLoader(
   userId: string,
   wsId: string,
-  fileIntent: string | undefined,
+  pathIntent: string | undefined,
   versionIntent?: string,
-): Effect.Effect<typeof FileTreeData.Type, PersistenceError, Files | UserState> {
+): Effect.Effect<typeof FileTreeData.Type, never, Files | UserState> {
   return Effect.gen(function* () {
-    const files = yield* Effect.provideService(
-      Files.use((store) => store.list()),
-      WorkspaceId,
-      { wsId },
-    );
+    const files = yield* Files.use((store) => store.list());
     const persisted = yield* UserState.use((store) => store.getSelectedFile(userId, wsId));
-    const known = (p: string | null | undefined): p is string =>
-      !!p && files.some((file) => file.path === p);
-    const selectedPath = known(fileIntent)
-      ? fileIntent
-      : known(persisted)
-        ? persisted
-        : (files[0]?.path ?? null);
-    let selectedVersionId = null;
-    if (selectedPath) {
-      const fallback = files.find((file) => file.path === selectedPath)?.latestVersionId ?? null;
-      if (versionIntent === undefined) {
-        selectedVersionId = fallback;
-      } else {
-        const versions = yield* Effect.provideService(
-          Files.use((store) => store.getVersions(selectedPath)),
-          WorkspaceId,
-          { wsId },
-        ).pipe(Effect.catchTag("FileMissingError", (err) => Effect.die(err)));
-        selectedVersionId = versions.some((version) => version.versionId === versionIntent)
-          ? versionIntent
-          : fallback;
+    const at = (path: string | undefined) => files.find((entry) => entry.file.path === path);
+    const selected = at(pathIntent) ?? at(Option.getOrUndefined(persisted)) ?? files[0];
+    if (selected === undefined) return { files, selectedPath: null, selectedVersionId: null };
+
+    let selectedVersionId = selected.latest.id;
+    if (versionIntent !== undefined && versionIntent !== selected.latest.id) {
+      // the file was just listed, so it exists
+      const versions = yield* Effect.orDie(Files.use((store) => store.versions(selected.file.id)));
+      if (versions.some((version) => version.id === versionIntent)) {
+        selectedVersionId = versionIntent;
       }
     }
-    return { files, selectedPath, selectedVersionId };
-  });
+    return { files, selectedPath: selected.file.path, selectedVersionId };
+  }).pipe(Effect.provideService(WorkspaceId, { wsId }));
 }

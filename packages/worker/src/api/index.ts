@@ -3,13 +3,13 @@ import {
   type AuthStore,
   agentflowDefinition,
   buildReviewGraph,
-  ConcurrentModificationError,
+  type DraftStaleError,
+  type FileExistsError,
   Files,
-  FileMissingError,
+  type FileTooLargeError,
   Marks,
   type ModelClient,
-  nextId,
-  type PersistenceError,
+  randomId,
   resolveActiveReviewPass,
   type Role,
   resolveReviewPass,
@@ -36,7 +36,7 @@ import { workspacesLoader } from "#/models/workspaces.loader.ts";
 import { RunDrivers } from "#/reviews/runDrivers.ts";
 
 import { adminGroup } from "./admin";
-import { ApiBadRequest, ApiConflict, ApiFailure } from "./errors";
+import { ApiBadRequest, ApiConflict, ApiFailure, ApiTooLarge } from "./errors";
 import { userGroup } from "./user";
 import { workspaceGroup } from "./workspaces";
 
@@ -85,45 +85,36 @@ const workspaceHandlers = HttpApiBuilder.group(
         }
       });
 
-    // The file write verbs fail with this triple: persistence and concurrent-write faults are
-    // defects per the worker convention, a missing file maps to 404.
-    const dieWriteErrors = <A, R>(
-      self: Effect.Effect<A, PersistenceError | ConcurrentModificationError | FileMissingError, R>,
-    ): Effect.Effect<A, HttpApiError.NotFound, R> =>
-      Effect.catchTags(self, {
-        PersistenceError: Effect.die,
-        ConcurrentModificationError: Effect.die,
-        FileMissingError: () => Effect.fail(new HttpApiError.NotFound()),
-      });
+    const notFound = () => Effect.fail(new HttpApiError.NotFound());
+    const tooLarge = (error: FileTooLargeError) =>
+      Effect.fail(new ApiTooLarge({ message: error.message }));
+    const conflict = (error: DraftStaleError | FileExistsError) =>
+      Effect.fail(new ApiConflict({ message: error.message }));
 
     return handlers.handleAll({
       getWorkspaces: (req) =>
         Effect.gen(function* () {
           const { user } = yield* UserSession;
-          return yield* Effect.orDie(
-            workspacesLoader(user.id, req.query.wsId).pipe(Effect.provide(stores)),
-          );
+          return yield* workspacesLoader(user.id, req.query.wsId).pipe(Effect.provide(stores));
         }),
       selectWorkspace: (req) =>
         Effect.gen(function* () {
           const { user } = yield* UserSession;
           const { wsId } = req.payload;
           yield* requireAccess(wsId, user.id);
-          yield* Effect.orDie(userState.setSelectedWorkspace(user.id, wsId));
+          yield* userState.setSelectedWorkspace(user.id, wsId);
         }),
       createWorkspace: (req) =>
         Effect.gen(function* () {
           const { user } = yield* UserSession;
-          return yield* Effect.orDie(
-            workspacesStore.createWorkspace(req.payload.name, user.id).pipe(Effect.provide(stores)),
-          );
+          return yield* workspacesStore.createWorkspace(req.payload.name, user.id);
         }),
       deleteWorkspace: (req) =>
         Effect.gen(function* () {
           const { user } = yield* UserSession;
           const { wsId } = req.query;
           yield* requireAccess(wsId, user.id, "owner");
-          const deleted = yield* Effect.orDie(workspacesStore.deleteWorkspace(wsId, user.id));
+          const deleted = yield* workspacesStore.deleteWorkspace(wsId, user.id);
           if (!deleted) {
             return yield* Effect.fail(new HttpApiError.NotFound());
           }
@@ -132,8 +123,8 @@ const workspaceHandlers = HttpApiBuilder.group(
         Effect.gen(function* () {
           const { user } = yield* UserSession;
           yield* requireAccess(req.query.wsId, user.id);
-          return yield* Effect.orDie(
-            fileTreeLoader(user.id, req.query.wsId, req.query.path).pipe(Effect.provide(stores)),
+          return yield* fileTreeLoader(user.id, req.query.wsId, req.query.path).pipe(
+            Effect.provide(stores),
           );
         }),
       selectFile: (req) =>
@@ -141,7 +132,7 @@ const workspaceHandlers = HttpApiBuilder.group(
           const { user } = yield* UserSession;
           const { wsId, path } = req.payload;
           yield* requireAccess(wsId, user.id);
-          yield* Effect.orDie(userState.setSelectedFile(user.id, wsId, path));
+          yield* userState.setSelectedFile(user.id, wsId, path);
         }),
       getFileContent: (req) =>
         Effect.gen(function* () {
@@ -150,8 +141,7 @@ const workspaceHandlers = HttpApiBuilder.group(
           yield* requireAccess(wsId, user.id);
           return yield* fileContentLoader(wsId, path, versionId).pipe(
             Effect.provide(stores),
-            Effect.catchTag("PersistenceError", Effect.die),
-            Effect.catchTag("FileMissingError", () => Effect.fail(new HttpApiError.NotFound())),
+            Effect.catchTag("FileMissingError", notFound),
           );
         }),
       getFileVersions: (req) =>
@@ -161,77 +151,57 @@ const workspaceHandlers = HttpApiBuilder.group(
           yield* requireAccess(wsId, user.id);
           return yield* fileVersionsLoader(wsId, path).pipe(
             Effect.provide(stores),
-            Effect.catchTag("PersistenceError", Effect.die),
-            Effect.catchTag("FileMissingError", () => Effect.fail(new HttpApiError.NotFound())),
+            Effect.catchTag("FileMissingError", notFound),
           );
-        }),
-      getMarks: (req) =>
-        Effect.gen(function* () {
-          const { user } = yield* UserSession;
-          const { wsId, path, versionId } = req.query;
-          yield* requireAccess(wsId, user.id);
-          return yield* files
-            .getMarks(path, versionId)
-            .pipe(
-              Effect.provideService(WorkspaceId, { wsId }),
-              Effect.catchTag("PersistenceError", Effect.die),
-            );
         }),
       saveFileDraft: (req) =>
         Effect.gen(function* () {
           const { user } = yield* UserSession;
-          const { wsId, path, content } = req.payload;
+          const { wsId, path, baseVersionId, content } = req.payload;
           yield* requireAccess(wsId, user.id);
-          return yield* files
-            .writeDraft(path, content)
-            .pipe(Effect.provideService(WorkspaceId, { wsId }), dieWriteErrors);
-        }),
+          const file = yield* files.fileAt(path);
+          return yield* files.writeDraft(file.id, baseVersionId, content);
+        }).pipe(
+          Effect.provideService(WorkspaceId, { wsId: req.payload.wsId }),
+          Effect.catchTags({
+            FileMissingError: notFound,
+            DraftStaleError: conflict,
+            FileTooLargeError: tooLarge,
+          }),
+        ),
       promoteFileDraft: (req) =>
         Effect.gen(function* () {
           const { user } = yield* UserSession;
           const { wsId, path } = req.payload;
           yield* requireAccess(wsId, user.id);
-          const result = yield* files
-            .promoteDraft(path)
-            .pipe(Effect.provideService(WorkspaceId, { wsId }), dieWriteErrors);
-          if (!result.promoted) {
-            return yield* Effect.fail(new HttpApiError.NotFound());
-          }
-          return result.version;
-        }),
+          const file = yield* files.fileAt(path);
+          const { version } = yield* files.promoteDraft(file.id);
+          return version;
+        }).pipe(
+          Effect.provideService(WorkspaceId, { wsId: req.payload.wsId }),
+          Effect.catchTag("FileMissingError", notFound),
+        ),
       createFile: (req) =>
         Effect.gen(function* () {
           const { user } = yield* UserSession;
           const { wsId, path, content } = req.payload;
           yield* requireAccess(wsId, user.id);
-          const entries = yield* files
-            .list(path)
-            .pipe(
-              Effect.provideService(WorkspaceId, { wsId }),
-              Effect.catchTag("PersistenceError", Effect.die),
-            );
-          if (entries.some((entry) => entry.path === path)) {
-            return yield* Effect.fail(new HttpApiError.Conflict());
-          }
-          return yield* files.write(path, content).pipe(
-            Effect.provideService(WorkspaceId, { wsId }),
-            Effect.catchTags({
-              PersistenceError: Effect.die,
-              ConcurrentModificationError: Effect.die,
-              // create-only: by the time write runs the path exists, so a missing file is a defect
-              FileMissingError: Effect.die,
-            }),
-          );
-        }),
+          const created = yield* files.createAt(path, content);
+          return { ...created, created: true };
+        }).pipe(
+          Effect.provideService(WorkspaceId, { wsId: req.payload.wsId }),
+          Effect.catchTags({ FileExistsError: conflict, FileTooLargeError: tooLarge }),
+        ),
       upsertFile: (req) =>
         Effect.gen(function* () {
           const { user } = yield* UserSession;
           const { wsId, path, content } = req.payload;
           yield* requireAccess(wsId, user.id);
-          return yield* files
-            .write(path, content)
-            .pipe(Effect.provideService(WorkspaceId, { wsId }), dieWriteErrors);
-        }),
+          return yield* files.writeAt(path, content);
+        }).pipe(
+          Effect.provideService(WorkspaceId, { wsId: req.payload.wsId }),
+          Effect.catchTag("FileTooLargeError", tooLarge),
+        ),
       importGoogleDoc: (req) =>
         Effect.gen(function* () {
           const { user, sessionId } = yield* UserSession;
@@ -315,16 +285,6 @@ const adminHandlers = HttpApiBuilder.group(
     const cleanup = yield* ReviewCleanup;
     const workspacesStore = yield* Workspaces;
     const OK = { ok: true as const };
-    // Persistence and concurrent-write faults are defects per the worker convention; every config
-    // store call fails with exactly this pair (or the Persistence-only reads, caught pointwise).
-    const diePersist = <A, R>(
-      self: Effect.Effect<A, PersistenceError | ConcurrentModificationError, R>,
-    ): Effect.Effect<A, never, R> =>
-      Effect.catchTags(self, {
-        PersistenceError: Effect.die,
-        ConcurrentModificationError: Effect.die,
-      });
-
     const requireAccess = (wsId: string) =>
       Effect.gen(function* () {
         const { user } = yield* UserSession;
@@ -341,41 +301,38 @@ const adminHandlers = HttpApiBuilder.group(
           Effect.catchTag("PersistenceError", Effect.die),
         ),
       createCategory: (req) => {
-        const category = { ...req.payload, id: nextId() };
-        return config.saveCategory(category).pipe(diePersist, Effect.as(category));
+        const category = { ...req.payload, id: randomId() };
+        return config.saveCategory(category).pipe(Effect.as(category));
       },
       updateCategory: (req) => {
         const category = { ...req.payload, id: req.params.id };
-        return config.saveCategory(category).pipe(diePersist, Effect.as(category));
+        return config.saveCategory(category).pipe(Effect.as(category));
       },
-      deleteCategory: (req) => config.deleteCategory(req.params.id).pipe(diePersist, Effect.as(OK)),
+      deleteCategory: (req) => config.deleteCategory(req.params.id).pipe(Effect.as(OK)),
       createModelPool: (req) => {
-        const pool = { ...req.payload, id: nextId() };
-        return config.saveModelPool(pool).pipe(diePersist, Effect.as(pool));
+        const pool = { ...req.payload, id: randomId() };
+        return config.saveModelPool(pool).pipe(Effect.as(pool));
       },
       updateModelPool: (req) => {
         const pool = { ...req.payload, id: req.params.id };
-        return config.saveModelPool(pool).pipe(diePersist, Effect.as(pool));
+        return config.saveModelPool(pool).pipe(Effect.as(pool));
       },
-      deleteModelPool: (req) =>
-        config.deleteModelPool(req.params.id).pipe(diePersist, Effect.as(OK)),
-      createPrompt: (req) =>
-        config.savePrompt(req.payload).pipe(diePersist, Effect.as(req.payload)),
+      deleteModelPool: (req) => config.deleteModelPool(req.params.id).pipe(Effect.as(OK)),
+      createPrompt: (req) => config.savePrompt(req.payload).pipe(Effect.as(req.payload)),
       updatePrompt: (req) => {
         const prompt = { ...req.payload, key: req.params.key };
-        return config.savePrompt(prompt).pipe(diePersist, Effect.as(prompt));
+        return config.savePrompt(prompt).pipe(Effect.as(prompt));
       },
-      deletePrompt: (req) => config.deletePrompt(req.params.key).pipe(diePersist, Effect.as(OK)),
+      deletePrompt: (req) => config.deletePrompt(req.params.key).pipe(Effect.as(OK)),
       createReviewPass: (req) => {
-        const pass = { ...req.payload, id: nextId() };
-        return config.saveReviewPass(pass).pipe(diePersist, Effect.as(pass));
+        const pass = { ...req.payload, id: randomId() };
+        return config.saveReviewPass(pass).pipe(Effect.as(pass));
       },
       updateReviewPass: (req) => {
         const pass = { ...req.payload, id: req.params.id };
-        return config.saveReviewPass(pass).pipe(diePersist, Effect.as(pass));
+        return config.saveReviewPass(pass).pipe(Effect.as(pass));
       },
-      deleteReviewPass: (req) =>
-        config.deleteReviewPass(req.params.id).pipe(diePersist, Effect.as(OK)),
+      deleteReviewPass: (req) => config.deleteReviewPass(req.params.id).pipe(Effect.as(OK)),
       setActiveReviewPass: (req) =>
         Effect.gen(function* () {
           const reviewPassId = req.payload.reviewPassId;
@@ -385,7 +342,7 @@ const adminHandlers = HttpApiBuilder.group(
           if (pass === undefined) {
             return yield* Effect.fail(new HttpApiError.NotFound());
           }
-          yield* config.setActiveReviewPass(reviewPassId).pipe(diePersist);
+          yield* config.setActiveReviewPass(reviewPassId);
           return { activeReviewPassId: reviewPassId };
         }),
       deleteReviewRun: (req) =>

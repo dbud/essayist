@@ -1,14 +1,14 @@
 /**
  * The google-docs import flow for the workspace api: resolve the session's Google access token,
- * export the doc as markdown, and write it into the workspace VFS under google-docs/. Failures map
- * to the api error shapes; group handlers stay simple.
+ * export the doc as markdown, and write it into the workspace under google-docs/, mapping failures
+ * to api errors.
  */
 
-import { type AuthStore, Files, WorkspaceId, type WriteResult } from "@essayist/core";
+import { type AuthStore, Files, WorkspaceId } from "@essayist/core";
 import { Effect, Option } from "effect";
 import { HttpApiError } from "effect/http-api";
 
-import { ApiFailure } from "#/api/errors.ts";
+import { ApiFailure, ApiTooLarge } from "#/api/errors.ts";
 import { getValidAccessToken } from "#/auth/token.ts";
 import { GoogleConfig } from "#/env.ts";
 import { exportDocAsMarkdown, sanitizeDocTitle } from "#/utils/googleDrive.ts";
@@ -29,8 +29,8 @@ export function importGoogleDocFile({
   docId,
   name,
 }: ImportGoogleDocInput): Effect.Effect<
-  WriteResult,
-  HttpApiError.Unauthorized | ApiFailure,
+  { path: string; created: boolean },
+  HttpApiError.Unauthorized | ApiFailure | ApiTooLarge,
   AuthStore | GoogleConfig | Files
 > {
   return Effect.gen(function* () {
@@ -66,8 +66,12 @@ export function importGoogleDocFile({
       ),
     );
     const targetPath = `google-docs/${sanitizeDocTitle(name ?? "untitled")}`;
-    return yield* files
-      .write(targetPath, markdown)
-      .pipe(Effect.provideService(WorkspaceId, { wsId }), Effect.orDie);
+    const { created } = yield* files.writeAt(targetPath, markdown).pipe(
+      Effect.provideService(WorkspaceId, { wsId }),
+      Effect.catchTag("FileTooLargeError", (error) =>
+        Effect.fail(new ApiTooLarge({ message: error.message })),
+      ),
+    );
+    return { path: targetPath, created };
   });
 }

@@ -1,4 +1,4 @@
-import { type FileMissingError, Files, type PersistenceError, WorkspaceId } from "@essayist/core";
+import type { FileMissingError, Files } from "@essayist/core";
 import { Effect } from "effect";
 
 import { fileContentLoader } from "./fileContent.loader.ts";
@@ -9,15 +9,10 @@ export function fileViewLoader(
   wsId: string,
   path: string,
   versionId: string | null,
-): Effect.Effect<typeof FileViewData.Type, PersistenceError | FileMissingError, Files> {
+): Effect.Effect<typeof FileViewData.Type, FileMissingError, Files> {
   return Effect.gen(function* () {
     const content = yield* fileContentLoader(wsId, path, versionId ?? undefined);
     const versions = yield* fileVersionsLoader(wsId, path);
-    const marks = yield* Effect.provideService(
-      Files.use((store) => store.getMarks(path, content.version.versionId)),
-      WorkspaceId,
-      { wsId },
-    );
-    return { content, versions, marks };
+    return { content, versions };
   });
 }

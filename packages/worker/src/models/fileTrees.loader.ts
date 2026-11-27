@@ -1,4 +1,4 @@
-import type { Files, PersistenceError, UserState } from "@essayist/core";
+import type { Files, UserState } from "@essayist/core";
 import { Effect } from "effect";
 
 import { fileTreeLoader } from "./fileTree.loader.ts";
@@ -9,7 +9,7 @@ export function fileTreesLoader(
   wsId: string | null,
   pathIntent: string | undefined,
   versionIntent: string | undefined,
-): Effect.Effect<typeof FileTreesData.Type, PersistenceError, Files | UserState> {
+): Effect.Effect<typeof FileTreesData.Type, never, Files | UserState> {
   return Effect.gen(function* () {
     const tree =
       wsId === null ? null : yield* fileTreeLoader(userId, wsId, pathIntent, versionIntent);
