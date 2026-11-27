@@ -7,7 +7,7 @@ import { getJson, requestJson } from "#/models/utils/http.ts";
 import type { UploadedFile } from "#/utils/fileUpload.ts";
 
 import { PENDING_VERSION_ID } from "./fileContent.ts";
-import type { FileTreeData } from "./fileTree.data";
+import type { FileEntryData, FileTreeData } from "./fileTree.data";
 
 export interface PickerDoc {
   id: string;
@@ -15,11 +15,14 @@ export interface PickerDoc {
 }
 
 export const FileTreeModel = createModel((wsId: string, data?: FileTreeData) => {
-  const files = signal(data?.files ?? []);
+  const files = signal<readonly FileEntryData[]>(data?.files ?? []);
+  // the paths of files started here and not created yet
+  const pending = signal<readonly string[]>([]);
+  const paths = computed(() => [...files.value.map(({ file }) => file.path), ...pending.value]);
   const selectedPath = signal(data?.selectedPath ?? null);
   const selectedVersionId = signal(data?.selectedVersionId ?? null);
 
-  const tree = computed(() => buildFileTree(files.value));
+  const tree = computed(() => buildFileTree(paths.value));
 
   const [runLoad, { loading, error }] = createAsyncState();
 
@@ -30,12 +33,11 @@ export const FileTreeModel = createModel((wsId: string, data?: FileTreeData) => 
     );
     if (fresh) {
       batch(() => {
-        const pending = files.value.filter((file) => file.latestVersionId === PENDING_VERSION_ID);
-        // A pending buffer survives a refresh only while the server still lacks its path.
-        const unsaved = pending.filter(
-          (file) => !fresh.files.some((freshFile) => freshFile.path === file.path),
+        files.value = fresh.files;
+        // a pending file stays only while the server still lacks its path
+        pending.value = pending.value.filter(
+          (path) => !fresh.files.some(({ file }) => file.path === path),
         );
-        files.value = [...fresh.files, ...unsaved];
         selectedPath.value = fresh.selectedPath;
         selectedVersionId.value = fresh.selectedVersionId;
       });
@@ -44,27 +46,25 @@ export const FileTreeModel = createModel((wsId: string, data?: FileTreeData) => 
 
   if (data === undefined && !import.meta.env.SSR) void load();
 
+  function latestVersionId(path: string): string | null {
+    const saved = files.value.find(({ file }) => file.path === path);
+    if (saved !== undefined) return saved.latest.id;
+    return pending.value.includes(path) ? PENDING_VERSION_ID : null;
+  }
+
   function select(path: string | null, versionId?: string | null): void {
     batch(() => {
       selectedPath.value = path;
       // A file switch points at its latest version unless an id arrives.
-      selectedVersionId.value =
-        versionId ??
-        (path === null
-          ? null
-          : (files.value.find((file) => file.path === path)?.latestVersionId ?? null));
+      selectedVersionId.value = versionId ?? (path === null ? null : latestVersionId(path));
     });
   }
 
   function startPending(name: string): void {
     const stem = pendingStem(name);
-    const taken = new Set(files.value.map((file) => file.path));
-    const candidate = freePath(`${stem}.md`, taken);
+    const candidate = freePath(`${stem}.md`, new Set(paths.value));
     batch(() => {
-      files.value = [
-        ...files.value,
-        { path: candidate, lines: 0, latestVersionId: PENDING_VERSION_ID },
-      ];
+      pending.value = [...pending.value, candidate];
       select(candidate, PENDING_VERSION_ID);
     });
   }
@@ -179,7 +179,7 @@ export interface TreeNode {
   children: TreeNode[];
 }
 
-function buildFileTree(files: FileTreeData["files"]): TreeNode {
+function buildFileTree(paths: readonly string[]): TreeNode {
   const root: TreeNode = {
     name: "",
     path: "",
@@ -187,8 +187,8 @@ function buildFileTree(files: FileTreeData["files"]): TreeNode {
     children: [],
   };
 
-  for (const file of files) {
-    const parts = file.path.split("/");
+  for (const filePath of paths) {
+    const parts = filePath.split("/");
     let current = root;
 
     for (let i = 0; i < parts.length; i++) {

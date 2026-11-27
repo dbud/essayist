@@ -1,4 +1,3 @@
-import type { DraftSnapshot, FileSnapshot, FileVersion, WriteResult } from "@essayist/core";
 import { computed, createModel, signal } from "@preact/signals";
 import type { EditorState } from "lexical";
 
@@ -6,17 +5,27 @@ import createAsyncState from "#/models/utils/asyncState.ts";
 import { getJson, postJson, putJson, requestJson } from "#/models/utils/http.ts";
 import { editorStateToMarkdown, markdownToEditorState } from "#/utils/markdown.ts";
 
-import type { FileContentData } from "./fileContent.data.ts";
+import type {
+  FileContentData,
+  FileDraftData,
+  FileSnapshotData,
+  FileWriteData,
+} from "./fileContent.data.ts";
 import type { FileKey } from "./fileSelection.ts";
+import type { FileVersionData } from "./fileVersions.data.ts";
 
 export const PENDING_VERSION_ID = "pending";
 
 export const FileContentModel = createModel(
   ({ wsId, path, versionId }: FileKey, data?: FileContentData) => {
-    const version = signal<FileSnapshot | null>(data?.version ?? null);
-    const draft = signal<DraftSnapshot | null>(data?.draft ?? null);
+    const version = signal<FileSnapshotData | null>(data?.version ?? null);
+    const draft = signal<FileDraftData | null>(data?.draft ?? null);
+    // a file started here and not created yet; its first save creates it
+    const pending = computed(() => versionId === PENDING_VERSION_ID && version.value === null);
 
-    const initialContent = computed(() => draft.value?.content ?? version.value?.content ?? null);
+    const initialContent = computed(
+      () => draft.value?.content ?? version.value?.content ?? (pending.value ? "" : null),
+    );
     const initialState = computed(() =>
       initialContent.value === null ? null : markdownToEditorState(initialContent.value),
     );
@@ -47,18 +56,7 @@ export const FileContentModel = createModel(
       }
     }
 
-    if (data === undefined) {
-      if (versionId === PENDING_VERSION_ID) {
-        version.value = {
-          versionId,
-          timestamp: Date.now(),
-          lines: 0,
-          content: "",
-        };
-      } else if (!import.meta.env.SSR) {
-        void load();
-      }
-    }
+    if (data === undefined && !pending.value && !import.meta.env.SSR) void load();
 
     const [runSave, { loading: saving, error: saveError }] = createAsyncState();
 
@@ -67,10 +65,10 @@ export const FileContentModel = createModel(
     }): Promise<"created" | "saved" | undefined> {
       const content = markdown.value;
       if (!dirty.value) return;
-      if (version.value?.versionId === PENDING_VERSION_ID) {
+      if (pending.value) {
         if (content === "") return;
         return await runSave(async () => {
-          const res = await requestJson<WriteResult>(
+          const res = await requestJson<FileWriteData>(
             "POST",
             "/api/workspaces/files/create",
             { wsId, path, content },
@@ -82,13 +80,19 @@ export const FileContentModel = createModel(
                 (res.status === 409 ? `${path}: already exists` : `failed (${res.status})`),
             );
           }
-          const { versionId: createdVersionId, timestamp, lines } = res.data;
-          version.value = { versionId: createdVersionId, timestamp, lines, content };
+          version.value = { ...res.data.version, content };
           return "created" as const;
         });
       }
+      const base = version.value;
+      if (base === null) return;
+      // a newer version saved elsewhere refuses the draft, with its reason in saveError
       const result = await runSave(async () =>
-        putJson<DraftSnapshot>("/api/workspaces/files/draft", { wsId, path, content }, options),
+        putJson<FileDraftData>(
+          "/api/workspaces/files/draft",
+          { wsId, path, baseVersionId: base.id, content },
+          options,
+        ),
       );
       if (result) {
         draft.value = result;
@@ -105,7 +109,7 @@ export const FileContentModel = createModel(
           // save() reports through saveError; rethrow so promote surfaces the error
           if (saveError.value !== "") throw new Error(saveError.value);
         }
-        const res = await postJson<FileVersion>("/api/workspaces/files/promote", {
+        const res = await postJson<FileVersionData>("/api/workspaces/files/promote", {
           wsId,
           path,
         });
@@ -119,6 +123,7 @@ export const FileContentModel = createModel(
     return {
       version,
       draft,
+      pending,
       initialState,
       modifiedState,
       setModifiedState,

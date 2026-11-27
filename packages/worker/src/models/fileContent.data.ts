@@ -1,10 +1,16 @@
 import { File, FileDraft, FileSnapshot, FileVersion } from "@essayist/core";
 import { Schema } from "effect";
 
+export const FileSnapshotData = FileSnapshot.json;
+export type FileSnapshotData = typeof FileSnapshotData.Encoded;
+
+export const FileDraftData = FileDraft.json;
+export type FileDraftData = typeof FileDraftData.Encoded;
+
 /** A version of a file, and the unsaved draft on it when the version is the latest. */
 export const FileContentData = Schema.Struct({
-  version: FileSnapshot.json,
-  draft: Schema.NullOr(FileDraft.json),
+  version: FileSnapshotData,
+  draft: Schema.NullOr(FileDraftData),
 });
 
 export type FileContentData = typeof FileContentData.Encoded;

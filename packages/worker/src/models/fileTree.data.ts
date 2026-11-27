@@ -1,10 +1,11 @@
 import { File, FileVersion } from "@essayist/core";
 import { Schema } from "effect";
 
-export const FileEntry = Schema.Struct({ file: File.json, latest: FileVersion.json });
+export const FileEntryData = Schema.Struct({ file: File.json, latest: FileVersion.json });
+export type FileEntryData = typeof FileEntryData.Encoded;
 
 export const FileTreeData = Schema.Struct({
-  files: Schema.Array(FileEntry),
+  files: Schema.Array(FileEntryData),
   selectedPath: Schema.NullOr(Schema.String),
   selectedVersionId: Schema.NullOr(Schema.String),
 });

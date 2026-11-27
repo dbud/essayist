@@ -1,14 +1,13 @@
-import type { FileVersion } from "@essayist/core";
 import { createModel, signal } from "@preact/signals";
 
 import createAsyncState from "#/models/utils/asyncState.ts";
 import { getJson } from "#/models/utils/http.ts";
 
-import type { FileVersionsData } from "./fileVersions.data.ts";
+import type { FileVersionData, FileVersionsData } from "./fileVersions.data.ts";
 
 export const FileVersionsModel = createModel(
   (wsId: string, path: string, data?: FileVersionsData) => {
-    const versions = signal<readonly FileVersion[]>(data ?? []);
+    const versions = signal<readonly FileVersionData[]>(data ?? []);
 
     const [runLoad, { loading, error }] = createAsyncState();
 
@@ -22,10 +21,10 @@ export const FileVersionsModel = createModel(
 
     if (data === undefined && !import.meta.env.SSR) void load();
 
-    function byId(versionId: string | null): FileVersion | null {
+    function byId(versionId: string | null): FileVersionData | null {
       return versionId === null
         ? null
-        : (versions.value.find((version) => version.versionId === versionId) ?? null);
+        : (versions.value.find((version) => version.id === versionId) ?? null);
     }
 
     return { versions, byId, load, loading, error };

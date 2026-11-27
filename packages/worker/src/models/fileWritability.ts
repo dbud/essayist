@@ -14,7 +14,7 @@ export function createFileWritability(
     return (
       selection !== null &&
       (selection.versionId === PENDING_VERSION_ID ||
-        selection.versionId === fileVersions.current.value?.versions.value.at(-1)?.versionId)
+        selection.versionId === fileVersions.current.value?.versions.value.at(-1)?.id)
     );
   });
 }

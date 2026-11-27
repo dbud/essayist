@@ -25,11 +25,11 @@ function useFileLoading(): boolean {
   return file.loading.value || file.state.value === null || booting.value;
 }
 
-function VersionChip({ timestamp, lock }: { timestamp: number; lock?: boolean }) {
+function VersionChip({ createdAt, lock }: { createdAt: string; lock?: boolean }) {
   return (
     <span class="inline-flex items-center gap-1">
       {lock && <LockKeyhole />}
-      <span class="leading-none">{formatDateTime(timestamp)}</span>
+      <span class="leading-none">{formatDateTime(Date.parse(createdAt))}</span>
     </span>
   );
 }
@@ -52,7 +52,7 @@ export default function VersionPicker() {
   const versions = fileVersions.current.value;
   const selection = selected.value;
   const versionId = selection?.versionId ?? null;
-  const list = sortBy(versions?.versions.value ?? [], (version) => version.timestamp, {
+  const list = sortBy(versions?.versions.value ?? [], (version) => version.seq, {
     order: "desc",
   });
   const hasVersions = list.length > 0;
@@ -66,8 +66,8 @@ export default function VersionPicker() {
   const saveError = file.saveError.value;
   const dirty = file.dirty.value;
   const { draft, version: currentVersion } = file;
-  const savedAt = pending ? undefined : (draft.value?.timestamp ?? currentVersion.value?.timestamp);
-  const isPendingVersion = currentVersion.value?.versionId === PENDING_VERSION_ID;
+  const savedAt = pending ? undefined : (draft.value?.updatedAt ?? currentVersion.value?.createdAt);
+  const isPendingVersion = file.pending.value;
   const saved = !pending && !saving && !dirty;
 
   const action = isPendingVersion ? "Created" : "Saved";
@@ -88,7 +88,8 @@ export default function VersionPicker() {
             </span>,
           ] as const);
     }
-    const text = savedAt === undefined ? action : `${action} ${formatRelativeTime(savedAt)}`;
+    const text =
+      savedAt === undefined ? action : `${action} ${formatRelativeTime(Date.parse(savedAt))}`;
     return [text, text] as const;
   })();
   const state = writable.value ? saveState : `pinned-${versionId ?? ""}`;
@@ -123,7 +124,7 @@ export default function VersionPicker() {
         >
           <WaveBars fill amplitude={active ? 1 : 0} data-static />
           {!writable.value && selectedVersion ? (
-            <VersionChip timestamp={selectedVersion.timestamp} lock />
+            <VersionChip createdAt={selectedVersion.createdAt} lock />
           ) : (
             <>
               <span class={`swap--rotate${pending ? " invisible" : ""}`}>
@@ -146,25 +147,26 @@ export default function VersionPicker() {
           <div class="menu">
             <ul class="menu-rows" data-stagger>
               {list.map((version, i) => (
-                <li key={version.versionId}>
+                <li key={version.id}>
                   <button
                     type="button"
-                    class={`menu-btn ${version.versionId === versionId ? "is-selected" : ""}`}
+                    class={`menu-btn ${version.id === versionId ? "is-selected" : ""}`}
                     onClick={() => {
-                      fileTrees.current.value?.selectVersion(version.versionId);
+                      fileTrees.current.value?.selectVersion(version.id);
                       close();
                     }}
                   >
                     <span class="flex flex-col items-start leading-tight">
                       <span class="flex items-center gap-1">
                         {i === 0 && <PencilLine class="size-3" />}
-                        <VersionChip timestamp={version.timestamp} />
+                        <VersionChip createdAt={version.createdAt} />
                       </span>
                       {i === 0 &&
                         draft.value !== null &&
-                        draft.value.timestamp > version.timestamp + 60_000 && (
+                        Date.parse(draft.value.updatedAt) >
+                          Date.parse(version.createdAt) + 60_000 && (
                           <span class="text-xs">
-                            draft saved {formatRelativeTime(draft.value.timestamp)}
+                            draft saved {formatRelativeTime(Date.parse(draft.value.updatedAt))}
                           </span>
                         )}
                     </span>
