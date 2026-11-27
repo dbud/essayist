@@ -5,7 +5,7 @@
  */
 
 import { type AuthStore, Files, WorkspaceId, type WriteResult } from "@essayist/core";
-import { Effect } from "effect";
+import { Effect, Option } from "effect";
 import { HttpApiError } from "effect/http-api";
 
 import { ApiFailure } from "#/api/errors.ts";
@@ -44,15 +44,14 @@ export function importGoogleDocFile({
       config.clientId,
       config.clientSecret,
     ).pipe(
-      Effect.catchTag("PersistenceError", (err) => Effect.die(err)),
       // A failed refresh is repairable with a fresh sign-in, so the client gets the 401 fail-fast
       // path instead of a per-document failure.
       Effect.catchTag("TokenRefreshError", () => Effect.fail(new HttpApiError.Unauthorized({}))),
     );
-    if (accessToken === undefined) {
+    if (Option.isNone(accessToken)) {
       return yield* Effect.fail(new HttpApiError.Unauthorized({}));
     }
-    const markdown = yield* exportDocAsMarkdown(accessToken, docId).pipe(
+    const markdown = yield* exportDocAsMarkdown(accessToken.value, docId).pipe(
       Effect.catchTag("GoogleDriveError", (err) =>
         Effect.fail(
           err.status === 401

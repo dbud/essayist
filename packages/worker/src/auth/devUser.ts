@@ -1,4 +1,5 @@
 import { type User, Workspaces } from "@essayist/core";
+import { Option } from "effect";
 import type { Context } from "hono";
 
 import { env } from "#/env.ts";
@@ -16,9 +17,9 @@ export const DEV_USER_HEADER = "x-dev-user";
 export const DEV_SESSION_ID = "dev-session";
 
 /** The user the dev header names, for hono routes. */
-export async function resolveDevUser(c: Context): Promise<User | undefined> {
+export async function resolveDevUser(c: Context): Promise<Option.Option<User>> {
   const email = c.req.header(DEV_USER_HEADER)?.trim();
-  if (email === undefined) return undefined;
+  if (email === undefined) return Option.none();
   return await runtime(env(c.env)).runPromise(
     Workspaces.use((store) => store.getUserByEmail(email)),
   );

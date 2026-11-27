@@ -3,6 +3,7 @@
  */
 
 import { AuthStore, type User, Workspaces } from "@essayist/core";
+import { Option } from "effect";
 import type { Context, MiddlewareHandler } from "hono";
 import { generateCookie, getCookie } from "hono/cookie";
 
@@ -68,9 +69,9 @@ export const resolveSession: MiddlewareHandler = async (c, next) => {
   if (!isAuthRoute(path)) {
     if (import.meta.env.DEV) {
       const devUser = await resolveDevUser(c);
-      if (devUser !== undefined) {
+      if (Option.isSome(devUser)) {
         c.set("auth-session-id", DEV_SESSION_ID);
-        c.set("auth-user", devUser);
+        c.set("auth-user", devUser.value);
         await next();
         return;
       }
@@ -80,13 +81,13 @@ export const resolveSession: MiddlewareHandler = async (c, next) => {
       const session = await runtime(env(c.env)).runPromise(
         AuthStore.use((store) => store.getSession(sessionId)),
       );
-      if (session !== undefined) {
+      if (Option.isSome(session)) {
         const user = await runtime(env(c.env)).runPromise(
-          Workspaces.use((store) => store.getUser(session.userId)),
+          Workspaces.use((store) => store.getUser(session.value.userId)),
         );
-        if (user !== undefined) {
+        if (Option.isSome(user)) {
           c.set("auth-session-id", sessionId);
-          c.set("auth-user", user);
+          c.set("auth-user", user.value);
         }
       }
     }

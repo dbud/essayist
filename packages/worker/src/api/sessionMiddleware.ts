@@ -2,7 +2,7 @@
 // and provides UserSession to handlers. The admin group uses the admin variant, which adds the role
 // gate on top of the same session resolution.
 import { AuthStore, type User, Workspaces } from "@essayist/core";
-import { Context, Effect, Layer } from "effect";
+import { Context, Effect, Layer, Option } from "effect";
 import { HttpApiError, HttpApiMiddleware } from "effect/http-api";
 import * as HttpServerRequest from "effect/http/HttpServerRequest";
 
@@ -64,11 +64,9 @@ function resolveUserSession(
     if (import.meta.env.DEV) {
       const email = request.headers[DEV_USER_HEADER]?.trim();
       if (email !== undefined) {
-        const devUser = yield* Workspaces.use((store) => store.getUserByEmail(email)).pipe(
-          Effect.orDie,
-        );
-        if (devUser !== undefined) {
-          return { user: devUser, sessionId: DEV_SESSION_ID } satisfies UserSessionProps;
+        const devUser = yield* Workspaces.use((store) => store.getUserByEmail(email));
+        if (Option.isSome(devUser)) {
+          return { user: devUser.value, sessionId: DEV_SESSION_ID } satisfies UserSessionProps;
         }
       }
     }
@@ -77,14 +75,14 @@ function resolveUserSession(
     if (sessionId === undefined) {
       return yield* Effect.fail(new HttpApiError.Unauthorized({}));
     }
-    const session = yield* AuthStore.use((store) => store.getSession(sessionId)).pipe(Effect.orDie);
-    if (session === undefined) {
+    const session = yield* AuthStore.use((store) => store.getSession(sessionId));
+    if (Option.isNone(session)) {
       return yield* Effect.fail(new HttpApiError.Unauthorized({}));
     }
-    const user = yield* Workspaces.use((store) => store.getUser(session.userId)).pipe(Effect.orDie);
-    if (user === undefined) {
+    const user = yield* Workspaces.use((store) => store.getUser(session.value.userId));
+    if (Option.isNone(user)) {
       return yield* Effect.fail(new HttpApiError.Unauthorized({}));
     }
-    return { user, sessionId } satisfies UserSessionProps;
+    return { user: user.value, sessionId } satisfies UserSessionProps;
   });
 }

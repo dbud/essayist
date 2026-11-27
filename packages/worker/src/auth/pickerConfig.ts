@@ -6,7 +6,7 @@
  */
 
 import type { AuthStore } from "@essayist/core";
-import { Effect, Schema } from "effect";
+import { Effect, Option, Schema } from "effect";
 
 import { getValidAccessToken } from "#/auth/token.ts";
 import { GoogleConfig } from "#/env.ts";
@@ -52,7 +52,6 @@ export const pickerConfig = (
       config.clientId,
       config.clientSecret,
     ).pipe(
-      Effect.catchTag("PersistenceError", (err) => Effect.die(err)),
       Effect.catchTag("TokenRefreshError", () =>
         Effect.fail(
           new PickerConfigError({
@@ -62,7 +61,7 @@ export const pickerConfig = (
         ),
       ),
     );
-    if (accessToken === undefined) {
+    if (Option.isNone(accessToken)) {
       return yield* Effect.fail(
         new PickerConfigError({
           reason: "No Google tokens on session; re-sign-in",
@@ -71,7 +70,7 @@ export const pickerConfig = (
       );
     }
     return {
-      accessToken,
+      accessToken: accessToken.value,
       developerKey: config.apiKey,
       ...(config.appId !== undefined && { appId: config.appId }),
     };

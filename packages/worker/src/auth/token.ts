@@ -2,7 +2,7 @@
  * Google token refresh for auth sessions.
  */
 
-import { AuthStore, type PersistenceError, type SessionTokens } from "@essayist/core";
+import { AuthStore, type SessionTokens } from "@essayist/core";
 import { Clock, Effect, Option, Schema } from "effect";
 
 /** Google's token endpoint rejected a refresh. */
@@ -82,23 +82,24 @@ function refreshRequest(
 
 /**
  * A fresh access token for the session: the cached one while it is still valid, otherwise a refresh
- * via Google. `undefined` when the session has no tokens (created before the Drive scope existed)
- * or nothing valid can be produced (revoked grant, no stored refresh token).
+ * via Google. None when the session has no tokens (created before the Drive scope existed) or
+ * nothing valid can be produced (revoked grant, no stored refresh token).
  */
 export const getValidAccessToken = (
   sessionId: string,
   clientId: string,
   clientSecret: string,
-): Effect.Effect<string | undefined, PersistenceError | TokenRefreshError, AuthStore> =>
+): Effect.Effect<Option.Option<string>, TokenRefreshError, AuthStore> =>
   Effect.gen(function* () {
     const auth = yield* AuthStore;
-    const session = yield* auth.getSession(sessionId);
-    if (session === undefined) return undefined;
-    const tokens = Option.getOrUndefined(session.tokens);
-    if (tokens === undefined) return undefined;
+    const found = yield* auth.getSession(sessionId);
+    if (Option.isNone(found)) return Option.none();
+    const session = found.value;
+    if (Option.isNone(session.tokens)) return Option.none();
+    const tokens = session.tokens.value;
 
     const now = yield* Clock.currentTimeMillis;
-    if (expiresAtValid(tokens, now)) return tokens.accessToken;
+    if (expiresAtValid(tokens, now)) return Option.some(tokens.accessToken);
 
     // The session-level refresh token first, the user-level store as the fallback: Google returns a
     // refresh token only on the first authorization.
@@ -109,7 +110,7 @@ export const getValidAccessToken = (
         sessionId: session.id,
       });
       // The stored token is expired or inside the refresh buffer.
-      return undefined;
+      return Option.none();
     }
     const fresh = yield* refreshRequest(clientId, clientSecret, refreshToken).pipe(
       Effect.catchTags({
@@ -128,7 +129,7 @@ export const getValidAccessToken = (
           }),
       }),
     );
-    if (fresh === undefined) return undefined;
+    if (fresh === undefined) return Option.none();
     const nextRefreshToken = fresh.refresh_token ?? refreshToken;
     const refreshed: SessionTokens = {
       accessToken: fresh.access_token,
@@ -143,7 +144,7 @@ export const getValidAccessToken = (
       sessionId: session.id,
       expiresIn: fresh.expires_in,
     });
-    return refreshed.accessToken;
+    return Option.some(refreshed.accessToken);
   });
 
 function expiresAtValid(tokens: SessionTokens, now: number): boolean {
@@ -151,19 +152,20 @@ function expiresAtValid(tokens: SessionTokens, now: number): boolean {
 }
 
 /**
- * Fresh session tokens via the user-level refresh token; `undefined` without one or when Google
- * rejects the grant. A rejected refresh still signs the user in, without Google API access; a
- * revoked grant also loses the stored token.
+ * Fresh session tokens via the user-level refresh token; none without one or when Google rejects
+ * the grant. A rejected refresh still signs the user in, without Google API access; a revoked grant
+ * also loses the stored token.
  */
 export const refreshTokensForUser = (
   userId: string,
   clientId: string,
   clientSecret: string,
-): Effect.Effect<SessionTokens | undefined, PersistenceError | TokenRefreshError, AuthStore> =>
+): Effect.Effect<Option.Option<SessionTokens>, never, AuthStore> =>
   Effect.gen(function* () {
     const auth = yield* AuthStore;
-    const refreshToken = Option.getOrUndefined(yield* auth.getRefreshToken(userId));
-    if (refreshToken === undefined) return undefined;
+    const stored = yield* auth.getRefreshToken(userId);
+    if (Option.isNone(stored)) return Option.none();
+    const refreshToken = stored.value;
 
     const now = yield* Clock.currentTimeMillis;
     const fresh = yield* refreshRequest(clientId, clientSecret, refreshToken).pipe(
@@ -182,13 +184,13 @@ export const refreshTokensForUser = (
           }),
       }),
     );
-    if (fresh === undefined) return undefined;
+    if (fresh === undefined) return Option.none();
 
-    return {
+    return Option.some<SessionTokens>({
       accessToken: fresh.access_token,
       tokenType: undefined,
       expiresIn: fresh.expires_in,
       refreshToken: fresh.refresh_token ?? refreshToken,
       expiresAt: now + fresh.expires_in * 1000,
-    } satisfies SessionTokens;
+    });
   });

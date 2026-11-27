@@ -5,9 +5,9 @@
  * the session.
  */
 
-import { AuthStore, nextId, type SessionTokens } from "@essayist/core";
+import { AuthStore, randomId, type SessionTokens } from "@essayist/core";
 import { googleAuth } from "@hono/oauth-providers/google";
-import { Clock, Effect } from "effect";
+import { Clock, Effect, Option } from "effect";
 import { Hono } from "hono";
 import { getCookie, setCookie } from "hono/cookie";
 
@@ -104,7 +104,7 @@ export const oauthRoutes = new Hono<{ Bindings: Cloudflare.Env }>()
           refreshToken: c.get("refresh-token")?.token,
           expiresAt: now + (token.expires_in ?? 3600) * 1000,
         };
-        const id = nextId();
+        const id = randomId();
         const auth = yield* AuthStore;
         yield* auth.createSession(id, user.id, tokens);
         if (tokens.refreshToken !== undefined) {
@@ -159,8 +159,10 @@ export const oauthRoutes = new Hono<{ Bindings: Cloudflare.Env }>()
           picture: claims.picture,
         });
         const tokens = yield* refreshTokensForUser(user.id, googleClientId, googleClientSecret);
-        const id = nextId();
-        yield* AuthStore.use((auth) => auth.createSession(id, user.id, tokens));
+        const id = randomId();
+        yield* AuthStore.use((auth) =>
+          auth.createSession(id, user.id, Option.getOrUndefined(tokens)),
+        );
         return id;
       }),
     );
