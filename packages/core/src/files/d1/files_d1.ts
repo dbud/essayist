@@ -12,7 +12,6 @@ import { DateTime, Effect, Layer, Option, Schema } from "effect";
 import { SqlSchema, type Statement } from "effect/sql";
 
 import { Ids } from "#/idsRef.ts";
-import { PersistenceError } from "#/persistence/service.ts";
 import { WorkspaceId } from "#/workspace/WorkspaceId.ts";
 
 import { Files } from "./service.ts";
@@ -27,8 +26,6 @@ import {
   FileVersion,
   MAX_DOCUMENT_BYTES,
 } from "./types.ts";
-
-const backendFault = (cause: unknown) => new PersistenceError({ cause });
 
 const checkSize = (content: string) => {
   const bytes = new TextEncoder().encode(content).length;
@@ -121,7 +118,7 @@ export function layerFilesD1(client: D1Client.D1Client): Layer.Layer<Files> {
       return yield* Effect.catchTags(
         findFile({ wsId, fileId }),
         { NoSuchElementError: () => Effect.fail(new FileMissingError({ fileId })) },
-        (e) => Effect.fail(backendFault(e)),
+        Effect.die,
       );
     });
 
@@ -130,14 +127,14 @@ export function layerFilesD1(client: D1Client.D1Client): Layer.Layer<Files> {
     Effect.catchTags(
       findLatestSnapshot({ fileId }),
       { NoSuchElementError: () => Effect.fail(new FileMissingError({ fileId })) },
-      (e) => Effect.fail(backendFault(e)),
+      Effect.die,
     );
 
   const list = () =>
     Effect.gen(function* () {
       const { wsId } = yield* WorkspaceId;
       // a single batch reads both at once, so every listed file has its latest version
-      const [fileRows, versionRows] = yield* Effect.mapError(
+      const [fileRows, versionRows] = yield* Effect.orDie(
         client.batch([
           client`SELECT * FROM files
             WHERE wsId = ${wsId} AND deletedAt IS NULL ORDER BY path`,
@@ -146,14 +143,12 @@ export function layerFilesD1(client: D1Client.D1Client): Layer.Layer<Files> {
             WHERE f.wsId = ${wsId} AND f.deletedAt IS NULL
               AND v.seq = (SELECT max(seq) FROM file_versions WHERE fileId = f.id)`,
         ]),
-        backendFault,
       );
-      const [files, latestVersions] = yield* Effect.mapError(
+      const [files, latestVersions] = yield* Effect.orDie(
         Effect.all([
           Schema.decodeUnknownEffect(Schema.Array(File))(fileRows),
           Schema.decodeUnknownEffect(Schema.Array(FileVersion))(versionRows),
         ]),
-        backendFault,
       );
       const latestByFile = new Map(latestVersions.map((version) => [version.fileId, version]));
       return files.flatMap((file) => {
@@ -168,7 +163,7 @@ export function layerFilesD1(client: D1Client.D1Client): Layer.Layer<Files> {
       return yield* Effect.catchTags(
         findFileByPath({ wsId, path }),
         { NoSuchElementError: () => Effect.fail(new FileMissingError({ path })) },
-        (e) => Effect.fail(backendFault(e)),
+        Effect.die,
       );
     });
 
@@ -198,11 +193,8 @@ export function layerFilesD1(client: D1Client.D1Client): Layer.Layer<Files> {
         createdAt: file.createdAt,
         content,
       });
-      const fileRow = yield* Effect.mapError(Schema.encodeEffect(File)(file), backendFault);
-      const versionRow = yield* Effect.mapError(
-        Schema.encodeEffect(FileSnapshot)(snapshot),
-        backendFault,
-      );
+      const fileRow = yield* Effect.orDie(Schema.encodeEffect(File)(file));
+      const versionRow = yield* Effect.orDie(Schema.encodeEffect(FileSnapshot)(snapshot));
       // a single batch, so a file never exists without its first version
       yield* client
         .batch([
@@ -214,7 +206,7 @@ export function layerFilesD1(client: D1Client.D1Client): Layer.Layer<Files> {
           Effect.catch((cause) =>
             fileAt(path).pipe(
               Effect.flatMap(() => Effect.fail(new FileExistsError({ path }))),
-              Effect.catchTag("FileMissingError", () => Effect.fail(backendFault(cause))),
+              Effect.catchTag("FileMissingError", () => Effect.die(cause)),
             ),
           ),
         );
@@ -227,11 +219,11 @@ export function layerFilesD1(client: D1Client.D1Client): Layer.Layer<Files> {
       const { wsId } = yield* WorkspaceId;
       const ids = yield* Ids;
       const candidate = yield* newFile(path);
-      const fileRow = yield* Effect.mapError(Schema.encodeEffect(File)(candidate), backendFault);
+      const fileRow = yield* Effect.orDie(Schema.encodeEffect(File)(candidate));
       const versionId = ids.next();
       // a single batch, so a new file never exists without its first version: the file row goes in
       // only when no file holds the path, and the version goes to whichever file does
-      yield* Effect.mapError(
+      yield* Effect.orDie(
         client.batch([
           client`INSERT INTO files ${client.insert([fileRow])}
             ON CONFLICT (wsId, path) WHERE deletedAt IS NULL DO NOTHING`,
@@ -242,14 +234,13 @@ export function layerFilesD1(client: D1Client.D1Client): Layer.Layer<Files> {
             SELECT id FROM files WHERE wsId = ${wsId} AND path = ${path} AND deletedAt IS NULL
           )`,
         ]),
-        backendFault,
       );
       // the batch wrote both rows, so a missing one is a defect
       const file = yield* Effect.catchTag(fileAt(path), "FileMissingError", Effect.die);
       const version = yield* Effect.catchTags(
         findVersion({ versionId }),
         { NoSuchElementError: Effect.die },
-        (e) => Effect.fail(backendFault(e)),
+        Effect.die,
       );
       return { file, version, created: file.id === candidate.id };
     });
@@ -261,14 +252,14 @@ export function layerFilesD1(client: D1Client.D1Client): Layer.Layer<Files> {
       return yield* Effect.catchTags(
         findSnapshot({ fileId, versionId }),
         { NoSuchElementError: () => Effect.fail(new FileMissingError({ fileId, versionId })) },
-        (e) => Effect.fail(backendFault(e)),
+        Effect.die,
       );
     });
 
   const versions = (fileId: string) =>
     Effect.gen(function* () {
       yield* fileById(fileId);
-      return yield* Effect.mapError(findVersions({ fileId }), backendFault);
+      return yield* Effect.orDie(findVersions({ fileId }));
     });
 
   const writeDraft = (fileId: string, baseVersionId: string, content: string) =>
@@ -285,14 +276,14 @@ export function layerFilesD1(client: D1Client.D1Client): Layer.Layer<Files> {
               Effect.fail(new DraftStaleError({ fileId, baseVersionId })),
             ),
         },
-        (e) => Effect.fail(backendFault(e)),
+        Effect.die,
       );
     });
 
   const readDraft = (fileId: string) =>
     Effect.gen(function* () {
       yield* fileById(fileId);
-      return yield* Effect.mapError(findDraft({ fileId }), backendFault);
+      return yield* Effect.orDie(findDraft({ fileId }));
     });
 
   const promoteDraft = (fileId: string) =>
@@ -302,14 +293,13 @@ export function layerFilesD1(client: D1Client.D1Client): Layer.Layer<Files> {
       const versionId = ids.next();
       const createdAt = DateTime.formatIso(yield* DateTime.now);
       // a single batch, so the draft never outlives its promotion
-      yield* Effect.mapError(
+      yield* Effect.orDie(
         client.batch([
           client`INSERT INTO file_versions (id, fileId, seq, createdAt, content)
             SELECT ${versionId}, fileId, ${nextSeqOf(fileId)}, ${createdAt}, content
             FROM file_drafts WHERE fileId = ${fileId}`,
           client`DELETE FROM file_drafts WHERE fileId = ${fileId}`,
         ]),
-        backendFault,
       );
       return yield* Effect.catchTags(
         Effect.map(findVersion({ versionId }), (version) => ({ version, promoted: true })),
@@ -321,7 +311,7 @@ export function layerFilesD1(client: D1Client.D1Client): Layer.Layer<Files> {
               promoted: false,
             })),
         },
-        (e) => Effect.fail(backendFault(e)),
+        Effect.die,
       );
     });
 

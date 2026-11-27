@@ -6,7 +6,6 @@
 
 import { Context, type Effect, type Option } from "effect";
 
-import type { PersistenceError } from "#/persistence/service.ts";
 import type { WorkspaceId } from "#/workspace/WorkspaceId.ts";
 
 import type {
@@ -22,14 +21,14 @@ import type {
 
 export interface Interface {
   /** The files of the workspace and their latest versions, by path. */
-  list(): Effect.Effect<Array<{ file: File; latest: FileVersion }>, PersistenceError, WorkspaceId>;
-  fileAt(path: string): Effect.Effect<File, PersistenceError | FileMissingError, WorkspaceId>;
+  list(): Effect.Effect<Array<{ file: File; latest: FileVersion }>, never, WorkspaceId>;
+  fileAt(path: string): Effect.Effect<File, FileMissingError, WorkspaceId>;
   createAt(
     path: string,
     content: string,
   ): Effect.Effect<
     { file: File; version: FileVersion },
-    PersistenceError | FileExistsError | FileTooLargeError,
+    FileExistsError | FileTooLargeError,
     WorkspaceId
   >;
   /** Save a version of the file at a path, creating the file there when there is none. */
@@ -38,7 +37,7 @@ export interface Interface {
     content: string,
   ): Effect.Effect<
     { file: File; version: FileVersion; created: boolean },
-    PersistenceError | FileTooLargeError,
+    FileTooLargeError,
     WorkspaceId
   >;
 
@@ -46,35 +45,25 @@ export interface Interface {
   read(
     fileId: string,
     versionId?: string,
-  ): Effect.Effect<FileSnapshot, PersistenceError | FileMissingError, WorkspaceId>;
+  ): Effect.Effect<FileSnapshot, FileMissingError, WorkspaceId>;
   /** The versions of a file, oldest first. */
   versions(
     fileId: string,
-  ): Effect.Effect<ReadonlyArray<FileVersion>, PersistenceError | FileMissingError, WorkspaceId>;
+  ): Effect.Effect<ReadonlyArray<FileVersion>, FileMissingError, WorkspaceId>;
   /** Save the draft, edited from `baseVersionId`; refused when that is no longer the latest. */
   writeDraft(
     fileId: string,
     baseVersionId: string,
     content: string,
-  ): Effect.Effect<
-    FileDraft,
-    PersistenceError | FileMissingError | FileTooLargeError | DraftStaleError,
-    WorkspaceId
-  >;
-  readDraft(
-    fileId: string,
-  ): Effect.Effect<Option.Option<FileDraft>, PersistenceError | FileMissingError, WorkspaceId>;
+  ): Effect.Effect<FileDraft, FileMissingError | FileTooLargeError | DraftStaleError, WorkspaceId>;
+  readDraft(fileId: string): Effect.Effect<Option.Option<FileDraft>, FileMissingError, WorkspaceId>;
   /**
    * Save the draft as a new version and clear it. Without a draft nothing is written, and the
    * latest version is returned.
    */
   promoteDraft(
     fileId: string,
-  ): Effect.Effect<
-    { version: FileVersion; promoted: boolean },
-    PersistenceError | FileMissingError,
-    WorkspaceId
-  >;
+  ): Effect.Effect<{ version: FileVersion; promoted: boolean }, FileMissingError, WorkspaceId>;
 }
 
 export class Files extends Context.Service<Files, Interface>()("@essayist/core/files/Files") {}

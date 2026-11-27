@@ -3,7 +3,6 @@
 import { Context, type Effect } from "effect";
 
 import type { FileMissingError } from "#/files/d1/types.ts";
-import type { PersistenceError } from "#/persistence/service.ts";
 import type { WorkspaceId } from "#/workspace/WorkspaceId.ts";
 
 import type { Mark, MarkTextNotFoundError } from "./types.ts";
@@ -24,9 +23,9 @@ export interface Interface {
   /** Place a mark: find the text in the version, capture the context around it, and store it. */
   mark(
     input: MarkInput,
-  ): Effect.Effect<Mark, PersistenceError | FileMissingError | MarkTextNotFoundError, WorkspaceId>;
+  ): Effect.Effect<Mark, FileMissingError | MarkTextNotFoundError, WorkspaceId>;
   /** The marks of a run, oldest first. */
-  ofRun(runId: string): Effect.Effect<ReadonlyArray<Mark>, PersistenceError, WorkspaceId>;
+  ofRun(runId: string): Effect.Effect<ReadonlyArray<Mark>, never, WorkspaceId>;
 }
 
 export class Marks extends Context.Service<Marks, Interface>()("@essayist/core/marks/Marks") {}

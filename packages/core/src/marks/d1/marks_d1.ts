@@ -7,13 +7,10 @@ import { SqlSchema } from "effect/sql";
 import { Files } from "#/files/d1/service.ts";
 import { Ids } from "#/idsRef.ts";
 import { TokenizedText } from "#/marks/tokenized.ts";
-import { PersistenceError } from "#/persistence/service.ts";
 import { WorkspaceId } from "#/workspace/WorkspaceId.ts";
 
 import { type MarkInput, Marks } from "./service.ts";
 import { Mark, MarkTextNotFoundError } from "./types.ts";
-
-const backendFault = (cause: unknown) => new PersistenceError({ cause });
 
 /** Context span captured around a selection when none is given. */
 const DEFAULT_CONTEXT_SPAN = 60;
@@ -82,14 +79,14 @@ export function layerMarksD1(client: D1Client.D1Client): Layer.Layer<Marks, neve
             offset,
             length: selectedText.length,
           });
-          yield* Effect.mapError(insertMark(created), backendFault);
+          yield* Effect.orDie(insertMark(created));
           return created;
         });
 
       const ofRun = (runId: string) =>
         Effect.gen(function* () {
           const { wsId } = yield* WorkspaceId;
-          return yield* Effect.mapError(findRunMarks({ wsId, runId }), backendFault);
+          return yield* Effect.orDie(findRunMarks({ wsId, runId }));
         });
 
       return Marks.of({ mark, ofRun });
