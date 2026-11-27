@@ -1,11 +1,10 @@
-import type { PersistenceError } from "@essayist/core";
 import { Effect } from "effect";
 
 import { env } from "#/env.ts";
 import { janitorJob } from "#/reviews/janitor.ts";
 import { runtime, type WorkerServices } from "#/runtime.ts";
 
-type ScheduledJob = Effect.Effect<void, PersistenceError, WorkerServices>;
+type ScheduledJob = Effect.Effect<void, never, WorkerServices>;
 
 /** Jobs run on every cron tick, in order; a failing job logs and waits for the next tick. */
 const jobs: ReadonlyArray<ScheduledJob> = [janitorJob];

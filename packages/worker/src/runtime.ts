@@ -1,26 +1,11 @@
 import * as D1Client from "@effect/sql-d1/D1Client";
 import {
-  type AuthStore,
+  type CoreServices,
   createStubModelClient,
-  Files,
-  layerAuthD1,
-  layerReviewJanitorD1,
-  layerReviewRunsD1,
-  layerWorkspacesD1,
-  layerTraceEventsD1,
-  Marks,
+  layerCoreD1,
   ModelClient,
-  type PersistenceError,
-  ReviewCleanup,
-  ReviewConfig,
-  ReviewJanitor,
   ReviewPacing,
-  ReviewRuns,
-  TraceEvents,
-  UserState,
-  Workspaces,
 } from "@essayist/core";
-import { layerKvD1 } from "@essayist/core/kv_d1";
 import { Effect, Layer, LogLevel, ManagedRuntime, References } from "effect";
 import * as Reactivity from "effect/reactivity/Reactivity";
 
@@ -28,23 +13,9 @@ import { type GoogleConfig, googleConfigLayer, type WorkerEnv } from "#/env.ts";
 import { logLayer } from "#/log.ts";
 import { RunDrivers } from "#/reviews/runDrivers.ts";
 
-export type WorkerServices =
-  | ReviewCleanup
-  | ReviewConfig
-  | ReviewJanitor
-  | ReviewRuns
-  | ReviewPacing
-  | TraceEvents
-  | Marks
-  | Workspaces
-  | AuthStore
-  | UserState
-  | Files
-  | ModelClient
-  | RunDrivers
-  | GoogleConfig;
+export type WorkerServices = CoreServices | ReviewPacing | ModelClient | RunDrivers | GoogleConfig;
 
-export type WorkerRuntime = ManagedRuntime.ManagedRuntime<WorkerServices, PersistenceError>;
+export type WorkerRuntime = ManagedRuntime.ManagedRuntime<WorkerServices, never>;
 
 function parseLogLevel(raw: string | undefined) {
   const wanted = (raw ?? "info").toLowerCase();
@@ -52,7 +23,7 @@ function parseLogLevel(raw: string | undefined) {
   return level ?? "Info";
 }
 
-type RuntimeLayer = Layer.Layer<WorkerServices, PersistenceError>;
+type RuntimeLayer = Layer.Layer<WorkerServices>;
 
 interface RuntimeCell {
   readonly layer: RuntimeLayer;
@@ -68,19 +39,8 @@ function cell(env: WorkerEnv): RuntimeCell {
     const layer: RuntimeLayer = Layer.unwrap(
       Effect.gen(function* () {
         const client = yield* D1Client.make({ db: e.db });
-        const storage = layerKvD1(client);
-        // Services the Marks and ReviewCleanup layers are built on.
-        const base = Layer.mergeAll(
-          Files.layerNoDeps,
-          layerReviewRunsD1(client),
-          layerTraceEventsD1(client),
-        );
         return Layer.mergeAll(
-          Layer.provideMerge(Layer.mergeAll(Marks.layerNoDeps, ReviewCleanup.layerNoDeps), base),
-          ReviewConfig.layerNoDeps,
-          UserState.layerNoDeps,
-          layerWorkspacesD1(client),
-          layerReviewJanitorD1(client),
+          layerCoreD1(client),
           Layer.succeed(
             ModelClient,
             createStubModelClient({
@@ -94,11 +54,10 @@ function cell(env: WorkerEnv): RuntimeCell {
             staleMs: e.driverStaleMs,
             retryMs: e.driverRetryMs,
           }),
-          layerAuthD1(client),
           googleConfigLayer(e),
           logLayer,
           Layer.succeed(References.MinimumLogLevel, parseLogLevel(e.logLevel)),
-        ).pipe(Layer.provide(storage));
+        );
       }),
     ).pipe(Layer.provide(Reactivity.layer));
     return { layer, runtime: ManagedRuntime.make(layer) };
