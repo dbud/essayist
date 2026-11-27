@@ -9,9 +9,8 @@
   },
   "exports": {
     ".": "./mod.ts",
-    "./kv_d1": "./src/persistence/kv_d1.ts",
-    "./kv_d1_rest": "./src/persistence/kv_d1_rest.ts",
-    "./kv_d1_sqlite": "./src/persistence/kv_d1_sqlite.ts",
+    "./d1/rest": "./src/d1/rest.ts",
+    "./d1/sqlite": "./src/d1/sqlite.ts",
     "./migrations": "./migrations/mod.ts"
   },
   "scripts": {
@@ -25,14 +24,10 @@
     "@effect/sql-d1": "catalog:",
     "@std/assert": "catalog:",
     "@std/collections": "catalog:",
-    "@std/encoding": "catalog:",
-    "cbor-x": "^1.6.9",
-    "effect": "catalog:",
-    "fdb-tuple": "^1.0.0"
+    "effect": "catalog:"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "catalog:",
-    "@deno/kv": "catalog:",
     "@types/node": "catalog:",
     "vite": "catalog:"
   }

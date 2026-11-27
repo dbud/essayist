@@ -4,7 +4,7 @@ import { test } from "vitest";
 
 import { layerReviewConfigD1 } from "#/config/config_d1.ts";
 import { category, reviewPass } from "#/config/testing.ts";
-import { testLayerD1 } from "#/persistence/testing/d1.ts";
+import { testLayerD1 } from "#/d1/testing.ts";
 
 import { ConfigInvalidError, resolveActiveReviewPass } from "./resolve.ts";
 import { ReviewConfig } from "./service.ts";

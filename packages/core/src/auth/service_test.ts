@@ -10,8 +10,8 @@ import { Clock, DateTime, Effect, Option } from "effect";
 import * as Reactivity from "effect/reactivity/Reactivity";
 import { expect, test } from "vitest";
 
-import { d1SqliteShim } from "#/persistence/kv_d1_sqlite.ts";
-import { migratedDatabase } from "#/persistence/testing/d1.ts";
+import { d1SqliteShim } from "#/d1/sqlite.ts";
+import { migratedDatabase } from "#/d1/testing.ts";
 
 import { layerAuthD1 } from "./auth_d1.ts";
 import { AuthStore, type Interface } from "./service.ts";

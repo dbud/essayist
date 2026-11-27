@@ -7,7 +7,7 @@ import { migrations } from "@essayist/core/migrations";
 import { Effect, Layer } from "effect";
 import * as Reactivity from "effect/reactivity/Reactivity";
 
-import { d1SqliteShim } from "#/persistence/kv_d1_sqlite.ts";
+import { d1SqliteShim } from "#/d1/sqlite.ts";
 
 export function migratedDatabase(): DatabaseSync {
   const db = new DatabaseSync(":memory:");

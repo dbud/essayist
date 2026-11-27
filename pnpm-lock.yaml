@@ -167,9 +167,6 @@ catalogs:
     '@cloudflare/workers-types':
       specifier: ^5.20261121.1
       version: 5.20261121.1
-    '@deno/kv':
-      specifier: ^0.14.0
-      version: 0.14.0
     '@effect/ai-openrouter':
       specifier: ~4.1.5
       version: 4.1.6
@@ -259,25 +256,13 @@ importers:
       '@std/collections':
         specifier: 'catalog:'
         version: '@jsr/std__collections@1.4.0'
-      '@std/encoding':
-        specifier: 'catalog:'
-        version: '@jsr/std__encoding@1.0.11'
-      cbor-x:
-        specifier: ^1.6.9
-        version: 1.6.9
       effect:
         specifier: 'catalog:'
         version: 4.1.6
-      fdb-tuple:
-        specifier: ^1.0.0
-        version: 1.0.0
     devDependencies:
       '@cloudflare/workers-types':
         specifier: 'catalog:'
         version: 5.20261121.1
-      '@deno/kv':
-        specifier: 'catalog:'
-        version: 0.14.0
       '@types/node':
         specifier: 'catalog:'
         version: 26.6.6
@@ -487,36 +472,6 @@ packages:
   '@braintree/sanitize-url@7.1.2':
     resolution: {integrity: sha512-jigsZK+sMF/cuiB7sERuo9V7N9jx+dhmHHnQyDSVdpZwVutaBu7WvNYqMDLSgFgfB30n452TP3vjDAvFC973mA==}
 
-  '@cbor-extract/cbor-extract-darwin-arm64@2.2.3':
-    resolution: {integrity: sha512-qpUy9Yoisi6a7QHOVa+AlnqfN7eVstSRhpLwiLnwi6i3SNLkM5D2Z7MXl4LC5nUGA77mZEt479cPH3u8GD163Q==}
-    cpu: [arm64]
-    os: [darwin]
-
-  '@cbor-extract/cbor-extract-darwin-x64@2.2.3':
-    resolution: {integrity: sha512-6bZbK7dyKn8BUNmG3UfzSnM4L/OzJ8xGAtBHYycprl+bgvtZmZoQC7CucWXuF/oHJP5skzqkqFr6BLSSGIkoWw==}
-    cpu: [x64]
-    os: [darwin]
-
-  '@cbor-extract/cbor-extract-linux-arm64@2.2.3':
-    resolution: {integrity: sha512-QAuFuQkOw0cm4MNc+QwxH9aiMxmrczESnVEu33B8m2Du9fBuH/1AvJfmO8YajpeWLoHqt2iUG3d1/gIWAKY8IQ==}
-    cpu: [arm64]
-    os: [linux]
-
-  '@cbor-extract/cbor-extract-linux-arm@2.2.3':
-    resolution: {integrity: sha512-joCovTc7uEYCL9XxdAJJpGIH7Vvc31Fi7vh3HnlY5zgkLSU/64WxYl5iUi/puE21qT3bmxMfOZEZUbnqVKeJTQ==}
-    cpu: [arm]
-    os: [linux]
-
-  '@cbor-extract/cbor-extract-linux-x64@2.2.3':
-    resolution: {integrity: sha512-IQMPVLulOvFv9Had7J1idJyfQzsFamDVdjH37qW7suHI7mgO4w1Oo3MisL7AjnWARxo0/ZmEEQ3i81WA7y34Ug==}
-    cpu: [x64]
-    os: [linux]
-
-  '@cbor-extract/cbor-extract-win32-x64@2.2.3':
-    resolution: {integrity: sha512-fGFfq6F3l0GCoKOZeyjjm3q+NHO7jo8ILtQ93U3rYJOgG2BGLS/QmBdoFLNEsoWPjyxAS8svWhTyo73MTDawog==}
-    cpu: [x64]
-    os: [win32]
-
   '@chevrotain/cst-dts-gen@13.2.0':
     resolution: {integrity: sha512-bA9dvWlhAUcHkNwU+8w9yiUxJPlj/Lm3VqS7MD+NbIR/7LmpNLuK/AWNFdCo/T3SK5ND0/UHf3IJvl/Jn/i6yg==}
 
@@ -630,41 +585,6 @@ packages:
   '@cspotcode/source-map-support@0.8.1':
     resolution: {integrity: sha512-IchNf6dN4tHoMFIn/7OE8LWZ19Y6q/67Bmf6vnGREv8RSbBVb9LPJxEcnwrcwX6ixSvaiGoomAUvu4YSxXrVgw==}
     engines: {node: '>=12'}
-
-  '@deno/kv-darwin-arm64@0.14.0':
-    resolution: {integrity: sha512-lo9FmjWcR0VmQN+4keQnfn/HuCppqh2od7nYfU6hVPplnZnLwan+oTh24qQg+Mcwbb1AgvvByCO3FX+vnhFPdA==}
-    engines: {node: '>= 18'}
-    cpu: [arm64]
-    os: [darwin]
-
-  '@deno/kv-darwin-x64@0.14.0':
-    resolution: {integrity: sha512-xc749JPa8snKIQpjWTtBzFSGQKAQC03oSHmJ5ovRvR6IREhtrFCFm8f4TitooBrofPEV3E67MhDYqXuTYNYX9g==}
-    engines: {node: '>= 18'}
-    cpu: [x64]
-    os: [darwin]
-
-  '@deno/kv-linux-arm64-gnu@0.14.0':
-    resolution: {integrity: sha512-zUBTkwug1HFZmZwhY+hbIqXssywFNwVVcwoJMKbYB2Tw4mQ5/X6ZFzMh8tbVRboItBimBodZAZLvgTbmzrU0CQ==}
-    engines: {node: '>= 18'}
-    cpu: [arm64]
-    os: [linux]
-    libc: [glibc]
-
-  '@deno/kv-linux-x64-gnu@0.14.0':
-    resolution: {integrity: sha512-v2eDXLEFaoi81SAkwfjvtgqPU2p9sPz+bmBOhzqhorR3sKw+ozkM/7n5VflE6VKnQZlXXmGr4sosmQX480OSwg==}
-    engines: {node: '>= 18'}
-    cpu: [x64]
-    os: [linux]
-    libc: [glibc]
-
-  '@deno/kv-win32-x64-msvc@0.14.0':
-    resolution: {integrity: sha512-9tyxx3NGiLPX+J9M8kObjxWzeJRX4nhSxXXliu1KEdD/XiFSNJXlAG2cx4nIm2XsIzYqHfA7dc+3WUZ1CGHs8A==}
-    engines: {node: '>= 18'}
-    cpu: [x64]
-    os: [win32]
-
-  '@deno/kv@0.14.0':
-    resolution: {integrity: sha512-k/grNUE/UuKPjzhRl7bKf3Yrc32n0O4KZvIKsiaWm/ruwiPnG9GKaeSkNp1FVonXiVADcTyN9js5nUQbAYrKsg==}
 
   '@effect/ai-openrouter@4.1.6':
     resolution: {integrity: sha512-Eg9Yz7TpVPORPUFAo3rOG2bdHIy4PnmkWvsVYCqiACwBC9NwHJASJssfYWjcytMEp/lMjHiwyoKhgthpzgbTyA==}
@@ -2355,13 +2275,6 @@ packages:
     resolution: {integrity: sha512-Sp1ablJ0ivDkSzjcaJdxEunN5/XvksFJ2sMBFfq6x0ryhQV/2b/KwFe21cMpmHtPOSij8K99/wSfoEuTObmuMQ==}
     engines: {node: '>= 0.4'}
 
-  cbor-extract@2.2.3:
-    resolution: {integrity: sha512-zTOCEYwiQDChj5DV/sUqccv3jhdZqbhymztwcrW2LncIG2fPPkb1ceK5rmr0bdtxzJCXoWzZ95shA+uaSH8cKw==}
-    hasBin: true
-
-  cbor-x@1.6.9:
-    resolution: {integrity: sha512-TCT9XHLb4iPGQ99fpQjcTRncbus6cXHvSD/RY+bPrDACBCJKiQLmAM6r7/BgQcI5i+8h4gwp4vjfb6S6T8bPGw==}
-
   chai@6.3.0:
     resolution: {integrity: sha512-XWAtwJ6OHO+tj0EKCs0Y2UamnyOxseZWltU4x2U2wh8g4AigdjwvtUjvLP2tqkA/avxHEtzxNaqGq/YGNwckKg==}
     engines: {node: '>=18'}
@@ -2656,9 +2569,6 @@ packages:
   expect-type@1.4.0:
     resolution: {integrity: sha512-KfYbmpRm0VbLjEvVa9yGwCi9GI34xvi7A/HXYWQO65CSD2u3MczUJSuwXKFIxlGsgBQizV9q5J9NHj4VG0n+pA==}
     engines: {node: '>=12.0.0'}
-
-  fdb-tuple@1.0.0:
-    resolution: {integrity: sha512-8jSvKPCYCgTpi9Pt87qlfTk6griyMx4Gk3Xv31Dp72Qp8b6XgIyFsMm8KzPmFJ9iJ8K4pGvRxvOS8D0XGnrkjw==}
 
   fdir@6.5.0:
     resolution: {integrity: sha512-tIbYtZbucOs0BRGqPJkshJUYdL+SDH7dVM8gjy+ERp3WAUjLEFJE+02kanyHtwjWOnwrKYBiwAmM0p4kLJAnXg==}
@@ -2965,10 +2875,6 @@ packages:
     peerDependenciesMeta:
       encoding:
         optional: true
-
-  node-gyp-build-optional-packages@5.1.1:
-    resolution: {integrity: sha512-+P72GAjVAbTxjjwUmwjVrqrdZROD4nf8KgpBoDxqXXTiYZZt/ud60dE5yvCSr9lRO8e8yv6kgJIC0K0PfZFVQw==}
-    hasBin: true
 
   obug@3.0.0:
     resolution: {integrity: sha512-5vvB5+W7ePv+p3uqxi+RcW1XAzLW0/hxt3/4X4Lc4qHudzOhmBiBwOY6DRob4WnanAEGvNcLjF+KNOufrUoEQw==}
@@ -3365,24 +3271,6 @@ snapshots:
 
   '@braintree/sanitize-url@7.1.2': {}
 
-  '@cbor-extract/cbor-extract-darwin-arm64@2.2.3':
-    optional: true
-
-  '@cbor-extract/cbor-extract-darwin-x64@2.2.3':
-    optional: true
-
-  '@cbor-extract/cbor-extract-linux-arm64@2.2.3':
-    optional: true
-
-  '@cbor-extract/cbor-extract-linux-arm@2.2.3':
-    optional: true
-
-  '@cbor-extract/cbor-extract-linux-x64@2.2.3':
-    optional: true
-
-  '@cbor-extract/cbor-extract-win32-x64@2.2.3':
-    optional: true
-
   '@chevrotain/cst-dts-gen@13.2.0':
     dependencies:
       '@chevrotain/gast': 13.2.0
@@ -3478,29 +3366,6 @@ snapshots:
   '@cspotcode/source-map-support@0.8.1':
     dependencies:
       '@jridgewell/trace-mapping': 0.3.9
-
-  '@deno/kv-darwin-arm64@0.14.0':
-    optional: true
-
-  '@deno/kv-darwin-x64@0.14.0':
-    optional: true
-
-  '@deno/kv-linux-arm64-gnu@0.14.0':
-    optional: true
-
-  '@deno/kv-linux-x64-gnu@0.14.0':
-    optional: true
-
-  '@deno/kv-win32-x64-msvc@0.14.0':
-    optional: true
-
-  '@deno/kv@0.14.0':
-    optionalDependencies:
-      '@deno/kv-darwin-arm64': 0.14.0
-      '@deno/kv-darwin-x64': 0.14.0
-      '@deno/kv-linux-arm64-gnu': 0.14.0
-      '@deno/kv-linux-x64-gnu': 0.14.0
-      '@deno/kv-win32-x64-msvc': 0.14.0
 
   '@effect/ai-openrouter@4.1.6(effect@4.1.6)':
     dependencies:
@@ -4802,22 +4667,6 @@ snapshots:
       es-errors: 1.3.0
       function-bind: 1.1.2
 
-  cbor-extract@2.2.3:
-    dependencies:
-      node-gyp-build-optional-packages: 5.1.1
-    optionalDependencies:
-      '@cbor-extract/cbor-extract-darwin-arm64': 2.2.3
-      '@cbor-extract/cbor-extract-darwin-x64': 2.2.3
-      '@cbor-extract/cbor-extract-linux-arm': 2.2.3
-      '@cbor-extract/cbor-extract-linux-arm64': 2.2.3
-      '@cbor-extract/cbor-extract-linux-x64': 2.2.3
-      '@cbor-extract/cbor-extract-win32-x64': 2.2.3
-    optional: true
-
-  cbor-x@1.6.9:
-    optionalDependencies:
-      cbor-extract: 2.2.3
-
   chai@6.3.0: {}
 
   chalk@5.3.0: {}
@@ -5147,8 +4996,6 @@ snapshots:
 
   expect-type@1.4.0: {}
 
-  fdb-tuple@1.0.0: {}
-
   fdir@6.5.0(picomatch@4.0.7):
     optionalDependencies:
       picomatch: 4.0.7
@@ -5428,11 +5275,6 @@ snapshots:
   node-fetch@2.7.0:
     dependencies:
       whatwg-url: 5.0.0
-
-  node-gyp-build-optional-packages@5.1.1:
-    dependencies:
-      detect-libc: 2.1.2
-    optional: true
 
   obug@3.0.0: {}
 

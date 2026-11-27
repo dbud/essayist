@@ -2,7 +2,7 @@ import { assertEquals, assertInstanceOf } from "@std/assert";
 import { Effect, Layer, Option, Result } from "effect";
 import { test } from "vitest";
 
-import { testLayerD1 } from "#/persistence/testing/d1.ts";
+import { testLayerD1 } from "#/d1/testing.ts";
 import { Workspaces } from "#/workspace/service.ts";
 import { WorkspaceId } from "#/workspace/WorkspaceId.ts";
 import { layerWorkspacesD1 } from "#/workspace/workspaces_d1.ts";

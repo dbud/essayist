@@ -23,8 +23,8 @@ on core: check, fmt, lint, test. Scripts on kvctl: check, fmt, kvctl, lint. Scri
 build, check, deploy, dev, favicon, favicon:check, preview, typegen, fmt, lint.
 
 pnpm-workspace.yaml lists `packages/*`, carries the catalog (shared version ranges for effect,
-@deno/kv, typescript, oxlint, oxfmt, vitest, vite) and the pnpm build-script allowances the worker
-package needs. There is a single root pnpm-lock.yaml.
+typescript, oxlint, oxfmt, vitest, vite) and the pnpm build-script allowances the worker package
+needs. There is a single root pnpm-lock.yaml.
 
 oxlint and oxfmt are the single linter and formatter; the configs are the root `.oxlintrc.json`
 and `.oxfmtrc.json`, discovered by walking up from each package. `pnpm fmt` runs `oxfmt .`, which
@@ -53,11 +53,11 @@ web APIs core uses, and excludes the two dormant wasm diff files.
 ## Testing (core)
 
 core runs vitest (`pnpm test`; config in `packages/core/vitest.config.ts`). The suite uses
-`@std/assert` (via the JSR npm alias) and the npm `@deno/kv` client's in-memory backend: tests
-compose `kvLayer` over `openKv()`, and the shared helper lives in `src/persistence/testing/kv.ts`
-(`layerKvMemory`, `testLayer`). `src/persistence/kv_layer.ts` is the runtime-neutral KV
-implementation the tests run on; the D1 adapters (`kv_d1.ts` and its rest/sqlite shims) serve the
-live runtimes.
+`@std/assert` (via the JSR npm alias). Tests of the D1 layers run on an in-memory SQLite database
+with the migrations applied: `testLayerD1` in `src/d1/testing.ts` builds a layer over a fresh
+database, and `src/d1/sqlite.ts` is the `node:sqlite` stand-in for D1 it runs on. The review tests
+share fixtures in `src/reviews/testing.ts`. kvctl reaches the remote database through the REST
+adapter in `src/d1/rest.ts`.
 
 The diff wasm convergence tests (`diff_wasm_test.ts`) are dormant until the WASM worker returns
 (ESS-90).

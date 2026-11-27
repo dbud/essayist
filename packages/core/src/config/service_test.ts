@@ -2,8 +2,8 @@ import { assertEquals } from "@std/assert";
 import { Effect, Option } from "effect";
 import { test } from "vitest";
 
+import { testLayerD1 } from "#/d1/testing.ts";
 import { Marks } from "#/marks/service.ts";
-import { testLayerD1 } from "#/persistence/testing/d1.ts";
 import { reviewedFile, runInWorkspace } from "#/reviews/testing.ts";
 
 import { layerReviewConfigD1 } from "./config_d1.ts";

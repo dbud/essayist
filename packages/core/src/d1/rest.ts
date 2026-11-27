@@ -1,10 +1,9 @@
 /**
  * A `D1Database`-shaped adapter over the Cloudflare D1 REST API, for node runtimes without a
  * binding (kvctl). Single statements bind params natively; a batch joins statements with `;` in
- * one /query call, which is all-or-nothing, and the REST API forbids params across statements,
- * so a batch carries its params inlined as literals. That is sound for this table's params by
- * construction: fdb-tuple hex keys, CBOR base64 values, and version counters share no string
- * metacharacters.
+ * one /query call, which is all-or-nothing, and the REST API forbids params across statements, so a
+ * batch carries its params inlined as SQL literals. Inlined params count toward the 100 KB limit of
+ * a D1 statement, so a batch cannot carry a large document.
  */
 
 import type { D1Database, D1PreparedStatement } from "@cloudflare/workers-types";
@@ -58,7 +57,7 @@ export function d1RestDatabase(config: D1RestConfig): D1Database {
       }
       if (param === null) return "NULL";
       if (typeof param === "number") return String(param);
-      if (typeof param === "string") return `'${param}'`;
+      if (typeof param === "string") return `'${param.replaceAll("'", "''")}'`;
       throw new Error(`unsupported SQL param type: ${typeof param}`);
     });
   };

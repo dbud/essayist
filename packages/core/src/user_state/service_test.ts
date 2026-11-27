@@ -3,9 +3,9 @@ import { Duration, Effect, Layer, Option } from "effect";
 import { TestClock } from "effect/testing";
 import { test } from "vitest";
 
+import { testLayerD1 } from "#/d1/testing.ts";
 import { layerFilesD1 } from "#/files/files_d1.ts";
 import { Files } from "#/files/service.ts";
-import { testLayerD1 } from "#/persistence/testing/d1.ts";
 import { Workspaces } from "#/workspace/service.ts";
 import { WorkspaceId } from "#/workspace/WorkspaceId.ts";
 import { layerWorkspacesD1 } from "#/workspace/workspaces_d1.ts";

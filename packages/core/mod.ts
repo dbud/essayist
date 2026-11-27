@@ -53,19 +53,6 @@ export { resolveMarks } from "#/marks/resolver.ts";
 export type { ModelCallRecord } from "#/model/service.ts";
 export { ModelClient, StructuredParseError } from "#/model/service.ts";
 export { createStubModelClient, type StubModelOptions } from "#/model/stub.ts";
-export { ChunkedValues, MissingChunksError } from "#/persistence/chunked_values.ts";
-export {
-  type BatchOptions,
-  ConcurrentModificationError,
-  type Entry,
-  type Key,
-  type ListOptions,
-  type ListResult,
-  Persistence,
-  PersistenceError,
-  type ReadOptions as AdapterReadOptions,
-  type WriteOp,
-} from "#/persistence/mod.ts";
 export { buildReviewGraph } from "#/reviews/adapter.ts";
 export { agentflowDefinition } from "#/reviews/agentflow.ts";
 export type { ReviewObserver } from "#/reviews/observer/types.ts";

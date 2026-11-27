@@ -2,7 +2,7 @@ import { assertEquals, assertInstanceOf } from "@std/assert";
 import { Effect, Option, Result } from "effect";
 import { test } from "vitest";
 
-import { testLayerD1 } from "#/persistence/testing/d1.ts";
+import { testLayerD1 } from "#/d1/testing.ts";
 
 import { Workspaces } from "./service.ts";
 import { LastOwnerError, UserEmailTakenError, type WorkspaceMember } from "./types.ts";
