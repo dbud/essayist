@@ -1,6 +1,6 @@
 /** Storage for users, workspaces, and memberships as an Effect service. */
 
-import { Context, type Effect } from "effect";
+import { Context, type Effect, type Option } from "effect";
 
 import type {
   LastOwnerError,
@@ -8,6 +8,7 @@ import type {
   User,
   UserEmailTakenError,
   UserInput,
+  UserMissingError,
   UserProfile,
   UserRole,
   Workspace,
@@ -17,19 +18,15 @@ import type {
 export interface Interface {
   /** Create a user with a unique email; `UserEmailTakenError` on conflict. */
   createUser(data: UserInput): Effect.Effect<User, UserEmailTakenError>;
-  getUser(id: string): Effect.Effect<User | undefined>;
+  getUser(id: string): Effect.Effect<Option.Option<User>>;
   /** Emails match regardless of the case of ASCII letters. */
-  getUserByEmail(email: string): Effect.Effect<User | undefined>;
-  /** Replace the profile fields; a missing field clears it. `undefined` for an unknown id. */
-  updateUser(id: string, changes: UserProfile): Effect.Effect<User | undefined>;
-  /** Set a user's site-wide role. `undefined` for an unknown id. */
-  setUserRole(id: string, role: UserRole): Effect.Effect<User | undefined>;
-  /** Whether `user` has the admin role. */
-  isAdmin(user: User): boolean;
+  getUserByEmail(email: string): Effect.Effect<Option.Option<User>>;
+  /** Replace the profile fields; a missing field clears it. */
+  updateUser(id: string, changes: UserProfile): Effect.Effect<User, UserMissingError>;
+  /** Set the site-wide role of a user. */
+  setUserRole(id: string, role: UserRole): Effect.Effect<User, UserMissingError>;
   /** Create a workspace and the owner membership of its creator atomically. */
   createWorkspace(name: string, createdBy: string): Effect.Effect<Workspace>;
-  /** Get a workspace, including a deleted one; check `deletedAt`. */
-  getWorkspace(id: string): Effect.Effect<Workspace | undefined>;
   /**
    * Soft-delete a workspace: hide it from listings and access checks, keeping its data for a later
    * restore or retention cleanup. Ownership is the caller's check. `false` when the workspace is
@@ -48,8 +45,6 @@ export interface Interface {
   removeMember(wsId: string, userId: string): Effect.Effect<boolean, LastOwnerError>;
   /** List all members of a workspace. */
   getMembers(wsId: string): Effect.Effect<ReadonlyArray<WorkspaceMember>>;
-  /** Get a membership, or `undefined` if the user is not a member. */
-  getMembership(wsId: string, userId: string): Effect.Effect<WorkspaceMember | undefined>;
   /** Whether `userId` can access `wsId`, optionally requiring a role.
    * `owner` satisfies an `editor` requirement (owner >= editor). False for a deleted workspace. */
   hasAccess(wsId: string, userId: string, role?: Role): Effect.Effect<boolean>;

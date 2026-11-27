@@ -19,6 +19,7 @@ import {
   type UserProfile,
   UserRole,
   UserEmailTakenError,
+  UserMissingError,
   Workspace,
   WorkspaceMember,
 } from "./types.ts";
@@ -53,7 +54,7 @@ export function layerWorkspacesD1(client: D1Client.D1Client): Layer.Layer<Worksp
     execute: ({ email }) => client`SELECT * FROM users WHERE email = ${email}`,
   });
 
-  const updateProfile = SqlSchema.findOneOption({
+  const updateProfile = SqlSchema.findOne({
     Request: Schema.Struct({
       id: Schema.String,
       name: Schema.NullOr(Schema.String),
@@ -67,7 +68,7 @@ export function layerWorkspacesD1(client: D1Client.D1Client): Layer.Layer<Worksp
         RETURNING *`,
   });
 
-  const updateRole = SqlSchema.findOneOption({
+  const updateRole = SqlSchema.findOne({
     Request: Schema.Struct({ id: Schema.String, role: UserRole }),
     Result: User,
     execute: ({ id, role }) => client`UPDATE users SET role = ${role} WHERE id = ${id} RETURNING *`,
@@ -80,12 +81,6 @@ export function layerWorkspacesD1(client: D1Client.D1Client): Layer.Layer<Worksp
         client`INSERT INTO workspaces ${client.insert([workspace])}`,
         client`INSERT INTO workspace_members ${client.insert([owner])}`,
       ]),
-  });
-
-  const findWorkspace = SqlSchema.findOneOption({
-    Request: ById,
-    Result: Workspace,
-    execute: ({ id }) => client`SELECT * FROM workspaces WHERE id = ${id}`,
   });
 
   const markDeleted = SqlSchema.findOneOption({
@@ -161,9 +156,6 @@ export function layerWorkspacesD1(client: D1Client.D1Client): Layer.Layer<Worksp
         RETURNING role`,
   });
 
-  const orUndefined = <A, E>(effect: Effect.Effect<Option.Option<A>, E>) =>
-    effect.pipe(Effect.map(Option.getOrUndefined), Effect.orDie);
-
   const createUser = (data: UserInput) =>
     Effect.gen(function* () {
       const ids = yield* Ids;
@@ -182,22 +174,25 @@ export function layerWorkspacesD1(client: D1Client.D1Client): Layer.Layer<Worksp
       return inserted.value;
     });
 
-  const getUser = (id: string) => orUndefined(findUser({ id }));
+  const getUser = (id: string) => Effect.orDie(findUser({ id }));
 
-  const getUserByEmail = (email: string) => orUndefined(findUserByEmail({ email }));
+  const getUserByEmail = (email: string) => Effect.orDie(findUserByEmail({ email }));
+
+  const userMissing = (userId: string) => () => Effect.fail(new UserMissingError({ userId }));
 
   const updateUser = (id: string, changes: UserProfile) =>
-    orUndefined(
+    Effect.catchTags(
       updateProfile({
         id,
         name: Option.getOrNull(present(changes.name)),
         picture: Option.getOrNull(present(changes.picture)),
       }),
+      { NoSuchElementError: userMissing(id) },
+      Effect.die,
     );
 
-  const setUserRole = (id: string, role: UserRole) => orUndefined(updateRole({ id, role }));
-
-  const isAdmin = (user: User): boolean => user.role === "admin";
+  const setUserRole = (id: string, role: UserRole) =>
+    Effect.catchTags(updateRole({ id, role }), { NoSuchElementError: userMissing(id) }, Effect.die);
 
   const createWorkspace = (name: string, createdBy: string) =>
     Effect.gen(function* () {
@@ -221,8 +216,6 @@ export function layerWorkspacesD1(client: D1Client.D1Client): Layer.Layer<Worksp
       return workspace;
     });
 
-  const getWorkspace = (id: string) => orUndefined(findWorkspace({ id }));
-
   const deleteWorkspace = (wsId: string, deletedBy: string) =>
     Effect.gen(function* () {
       const deletedAt = yield* DateTime.now;
@@ -243,8 +236,6 @@ export function layerWorkspacesD1(client: D1Client.D1Client): Layer.Layer<Worksp
 
   const getMembers = (wsId: string) => Effect.orDie(findMembers({ wsId }));
 
-  const getMembership = (wsId: string, userId: string) => orUndefined(findMember({ wsId, userId }));
-
   const addMember = (wsId: string, userId: string, role: Role) =>
     Effect.gen(function* () {
       const member = new WorkspaceMember({ wsId, userId, role, createdAt: yield* DateTime.now });
@@ -258,8 +249,10 @@ export function layerWorkspacesD1(client: D1Client.D1Client): Layer.Layer<Worksp
       const removed = yield* Effect.orDie(deleteMember({ wsId, userId }));
       if (Option.isSome(removed)) return true;
       // nothing was deleted: either not a member, or the last owner
-      const member = yield* getMembership(wsId, userId);
-      if (member?.role === "owner") return yield* Effect.fail(new LastOwnerError({ wsId }));
+      const member = yield* Effect.orDie(findMember({ wsId, userId }));
+      if (Option.exists(member, ({ role }) => role === "owner")) {
+        return yield* Effect.fail(new LastOwnerError({ wsId }));
+      }
       return false;
     });
 
@@ -279,15 +272,12 @@ export function layerWorkspacesD1(client: D1Client.D1Client): Layer.Layer<Worksp
       getUserByEmail,
       updateUser,
       setUserRole,
-      isAdmin,
       createWorkspace,
-      getWorkspace,
       deleteWorkspace,
       listWorkspacesForUser,
       addMember,
       removeMember,
       getMembers,
-      getMembership,
       hasAccess,
     }),
   );

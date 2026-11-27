@@ -82,12 +82,12 @@ test("create and read a session without tokens", async () => {
   await makeHarness().run((t) =>
     Effect.gen(function* () {
       yield* t.auth.createSession("s1", "user-1");
-      const session = yield* t.auth.getSession("s1");
-      expect(session?.tokens).toEqual(Option.none());
-      expect(session?.id).toBe("s1");
-      expect(session?.userId).toBe("user-1");
-      expect(DateTime.isDateTime(session?.expiresAt)).toBe(true);
-      expect(yield* t.auth.getSession("missing")).toBeUndefined();
+      const session = Option.getOrThrow(yield* t.auth.getSession("s1"));
+      expect(session.tokens).toEqual(Option.none());
+      expect(session.id).toBe("s1");
+      expect(session.userId).toBe("user-1");
+      expect(DateTime.isDateTime(session.expiresAt)).toBe(true);
+      expect(yield* t.auth.getSession("missing")).toEqual(Option.none());
     }),
   );
 });
@@ -96,8 +96,8 @@ test("tokens round trip", async () => {
   await makeHarness().run((t) =>
     Effect.gen(function* () {
       yield* t.auth.createSession("s1", "user-1", tokens);
-      const session = yield* t.auth.getSession("s1");
-      expect(session?.tokens).toEqual(Option.some(tokens));
+      const session = Option.getOrThrow(yield* t.auth.getSession("s1"));
+      expect(session.tokens).toEqual(Option.some(tokens));
     }),
   );
 });
@@ -112,8 +112,8 @@ test("a token blob with absent optional fields reads as unset", async () => {
         refreshToken: undefined,
         expiresAt: 12345,
       });
-      const session = yield* t.auth.getSession("s1");
-      const stored = Option.getOrUndefined(session?.tokens ?? Option.none());
+      const session = Option.getOrThrow(yield* t.auth.getSession("s1"));
+      const stored = Option.getOrUndefined(session.tokens);
       expect(stored?.accessToken).toBe("at");
       expect(stored?.tokenType).toBeUndefined();
       expect(stored?.refreshToken).toBeUndefined();
@@ -129,8 +129,8 @@ test("update rewrites tokens and slides the TTL", async () => {
       t.tick(3_600_000);
       const refreshed = { ...tokens, accessToken: "at2" };
       yield* t.auth.updateSessionTokens("s1", refreshed);
-      const session = yield* t.auth.getSession("s1");
-      expect(session?.tokens).toEqual(Option.some(refreshed));
+      const session = Option.getOrThrow(yield* t.auth.getSession("s1"));
+      expect(session.tokens).toEqual(Option.some(refreshed));
       const row = t.db.prepare("SELECT expiresAt FROM auth_session WHERE id = 's1'").get() as {
         expiresAt: string;
       };
@@ -144,7 +144,7 @@ test("a session past expiry reads as missing", async () => {
     Effect.gen(function* () {
       yield* t.auth.createSession("s1", "user-1", tokens);
       t.tick(90 * DAY_MS + 1);
-      expect(yield* t.auth.getSession("s1")).toBeUndefined();
+      expect(yield* t.auth.getSession("s1")).toEqual(Option.none());
     }),
   );
 });
@@ -164,11 +164,11 @@ test("delete session and refresh token upsert", async () => {
 
       yield* t.auth.createSession("s1", "user-1");
       yield* t.auth.deleteSession("s1");
-      expect(yield* t.auth.getSession("s1")).toBeUndefined();
+      expect(yield* t.auth.getSession("s1")).toEqual(Option.none());
 
       // Updating the tokens of a deleted session changes nothing.
       yield* t.auth.updateSessionTokens("s1", tokens);
-      expect(yield* t.auth.getSession("s1")).toBeUndefined();
+      expect(yield* t.auth.getSession("s1")).toEqual(Option.none());
     }),
   );
 });
@@ -179,7 +179,7 @@ test("deleting a user deletes their sessions and refresh token", async () => {
       yield* t.auth.createSession("s1", "user-1", tokens);
       yield* t.auth.setRefreshToken("user-1", "rt");
       t.db.prepare("DELETE FROM users WHERE id = 'user-1'").run();
-      expect(yield* t.auth.getSession("s1")).toBeUndefined();
+      expect(yield* t.auth.getSession("s1")).toEqual(Option.none());
       expect(yield* t.auth.getRefreshToken("user-1")).toEqual(Option.none());
     }),
   );

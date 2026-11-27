@@ -5,8 +5,8 @@ import type { AuthSession, SessionTokens } from "./types.ts";
 export interface Interface {
   /** Insert a session; expiry applies from the insert time. */
   createSession(id: string, userId: string, tokens?: SessionTokens): Effect.Effect<void>;
-  /** Read a session; absent and expired sessions yield `undefined`. */
-  getSession(id: string): Effect.Effect<AuthSession | undefined>;
+  /** Read a session; none when it is missing or expired. */
+  getSession(id: string): Effect.Effect<Option.Option<AuthSession>>;
   /** Replace the tokens of a session and re-apply the TTL. A no-op
    * when the session is gone. */
   updateSessionTokens(id: string, tokens: SessionTokens): Effect.Effect<void>;

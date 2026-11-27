@@ -84,6 +84,7 @@ export {
   User,
   UserEmailTakenError,
   type UserInput,
+  UserMissingError,
   type UserProfile,
   UserRole,
   Workspace,

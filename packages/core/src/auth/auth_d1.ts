@@ -42,13 +42,14 @@ export function layerAuthD1(client: D1Client.D1Client & SqlClient): Layer.Layer<
           yield* Effect.orDie(sessions.insertVoid({ id, userId, expiresAt, tokens }));
         });
 
-      // missing and expired sessions read as undefined
-      const getSession = (id: string): Effect.Effect<AuthSession | undefined> =>
+      const getSession = (id: string): Effect.Effect<Option.Option<AuthSession>> =>
         Effect.gen(function* () {
           const now = yield* DateTime.now;
           return yield* sessions.findById(id).pipe(
-            Effect.map((row) => (DateTime.isGreaterThan(row.expiresAt, now) ? row : undefined)),
-            Effect.catchTag("NoSuchElementError", () => Effect.succeed(undefined)),
+            Effect.map((session) =>
+              DateTime.isGreaterThan(session.expiresAt, now) ? Option.some(session) : Option.none(),
+            ),
+            Effect.catchTag("NoSuchElementError", () => Effect.succeedNone),
             Effect.orDie,
           );
         });

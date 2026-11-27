@@ -57,6 +57,15 @@ export class WorkspaceMember extends Model.Class<WorkspaceMember>("WorkspaceMemb
 }) {}
 
 /** Creating a user with an email that is already in use. */
+/** A user was looked up to be changed and does not exist. */
+export class UserMissingError extends Schema.TaggedError<UserMissingError>()("UserMissingError", {
+  userId: Schema.String,
+}) {
+  override get message() {
+    return `No user ${this.userId}`;
+  }
+}
+
 export class UserEmailTakenError extends Schema.TaggedError<UserEmailTakenError>()(
   "UserEmailTakenError",
   { email: Schema.String },
