@@ -3,19 +3,13 @@ import { Cause, DateTime, Duration, Effect, Layer, Option } from "effect";
 import { SqlModel, SqlSchema } from "effect/sql";
 import { SqlClient } from "effect/sql/SqlClient";
 
-import { PersistenceError } from "#/persistence/service.ts";
-
 import { AuthStore } from "./service.ts";
 import { type SessionTokens, AuthRefreshToken, AuthSession } from "./types.ts";
 
 // Idle session lifetime; re-applied at every token refresh.
 const SESSION_TTL = Duration.days(90);
 
-const backendFault = (cause: unknown) => new PersistenceError({ cause });
-
-export function layerAuthD1(
-  client: D1Client.D1Client & SqlClient,
-): Layer.Layer<AuthStore, PersistenceError> {
+export function layerAuthD1(client: D1Client.D1Client & SqlClient): Layer.Layer<AuthStore> {
   const upsertRefreshTokenRow = SqlSchema.void({
     Request: AuthRefreshToken.insert,
     execute: ({ userId, refreshToken, updatedAt }) =>
@@ -42,30 +36,24 @@ export function layerAuthD1(
         id: string,
         userId: string,
         tokens?: SessionTokens,
-      ): Effect.Effect<void, PersistenceError> =>
+      ): Effect.Effect<void> =>
         Effect.gen(function* () {
           const expiresAt = DateTime.addDuration(yield* DateTime.now, SESSION_TTL);
-          yield* Effect.mapError(
-            sessions.insertVoid({ id, userId, expiresAt, tokens }),
-            backendFault,
-          );
+          yield* Effect.orDie(sessions.insertVoid({ id, userId, expiresAt, tokens }));
         });
 
       // missing and expired sessions read as undefined
-      const getSession = (id: string): Effect.Effect<AuthSession | undefined, PersistenceError> =>
+      const getSession = (id: string): Effect.Effect<AuthSession | undefined> =>
         Effect.gen(function* () {
           const now = yield* DateTime.now;
           return yield* sessions.findById(id).pipe(
             Effect.map((row) => (DateTime.isGreaterThan(row.expiresAt, now) ? row : undefined)),
             Effect.catchTag("NoSuchElementError", () => Effect.succeed(undefined)),
-            Effect.mapError(backendFault),
+            Effect.orDie,
           );
         });
 
-      const updateSessionTokens = (
-        id: string,
-        tokens: SessionTokens,
-      ): Effect.Effect<void, PersistenceError> =>
+      const updateSessionTokens = (id: string, tokens: SessionTokens): Effect.Effect<void> =>
         Effect.gen(function* () {
           const expiresAt = DateTime.addDuration(yield* DateTime.now, SESSION_TTL);
           yield* sessions.update({ id, expiresAt, tokens }).pipe(
@@ -74,36 +62,27 @@ export function layerAuthD1(
             Effect.catchDefect((defect) =>
               Cause.isNoSuchElementError(defect) ? Effect.void : Effect.die(defect),
             ),
-            Effect.mapError(backendFault),
+            Effect.orDie,
           );
         });
 
-      const deleteSession = (id: string): Effect.Effect<void, PersistenceError> =>
-        Effect.mapError(sessions.delete(id), backendFault);
+      const deleteSession = (id: string): Effect.Effect<void> => Effect.orDie(sessions.delete(id));
 
-      const setRefreshToken = (
-        userId: string,
-        refreshToken: string,
-      ): Effect.Effect<void, PersistenceError> =>
+      const setRefreshToken = (userId: string, refreshToken: string): Effect.Effect<void> =>
         Effect.gen(function* () {
           const updatedAt = yield* DateTime.now;
-          yield* Effect.mapError(
-            upsertRefreshTokenRow({ userId, refreshToken, updatedAt }),
-            backendFault,
-          );
+          yield* Effect.orDie(upsertRefreshTokenRow({ userId, refreshToken, updatedAt }));
         });
 
-      const getRefreshToken = (
-        userId: string,
-      ): Effect.Effect<Option.Option<string>, PersistenceError> =>
+      const getRefreshToken = (userId: string): Effect.Effect<Option.Option<string>> =>
         refreshTokens.findById(userId).pipe(
           Effect.map((row) => Option.some(row.refreshToken)),
           Effect.catchTag("NoSuchElementError", () => Effect.succeed(Option.none())),
-          Effect.mapError(backendFault),
+          Effect.orDie,
         );
 
-      const deleteRefreshToken = (userId: string): Effect.Effect<void, PersistenceError> =>
-        Effect.mapError(refreshTokens.delete(userId), backendFault);
+      const deleteRefreshToken = (userId: string): Effect.Effect<void> =>
+        Effect.orDie(refreshTokens.delete(userId));
 
       return Layer.succeed(
         AuthStore,
@@ -117,6 +96,6 @@ export function layerAuthD1(
           deleteRefreshToken,
         }),
       );
-    }).pipe(Effect.provideService(SqlClient, client), Effect.mapError(backendFault)),
+    }).pipe(Effect.provideService(SqlClient, client), Effect.orDie),
   );
 }

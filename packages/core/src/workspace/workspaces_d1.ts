@@ -9,7 +9,6 @@ import { DateTime, Effect, Layer, Option, Schema } from "effect";
 import { SqlSchema } from "effect/sql";
 
 import { Ids } from "#/idsRef.ts";
-import { PersistenceError } from "#/persistence/service.ts";
 
 import { Workspaces } from "./service.ts";
 import {
@@ -23,8 +22,6 @@ import {
   Workspace,
   WorkspaceMember,
 } from "./types.ts";
-
-const backendFault = (cause: unknown) => new PersistenceError({ cause });
 
 /** A profile field as stored: an empty value is no value. */
 const present = (value: string | undefined) =>
@@ -165,7 +162,7 @@ export function layerWorkspacesD1(client: D1Client.D1Client): Layer.Layer<Worksp
   });
 
   const orUndefined = <A, E>(effect: Effect.Effect<Option.Option<A>, E>) =>
-    effect.pipe(Effect.map(Option.getOrUndefined), Effect.mapError(backendFault));
+    effect.pipe(Effect.map(Option.getOrUndefined), Effect.orDie);
 
   const createUser = (data: UserInput) =>
     Effect.gen(function* () {
@@ -178,7 +175,7 @@ export function layerWorkspacesD1(client: D1Client.D1Client): Layer.Layer<Worksp
         role: "writer",
         createdAt: yield* DateTime.now,
       });
-      const inserted = yield* Effect.mapError(insertUser(user), backendFault);
+      const inserted = yield* Effect.orDie(insertUser(user));
       if (Option.isNone(inserted)) {
         return yield* Effect.fail(new UserEmailTakenError({ email: data.email }));
       }
@@ -220,7 +217,7 @@ export function layerWorkspacesD1(client: D1Client.D1Client): Layer.Layer<Worksp
         role: "owner",
         createdAt,
       });
-      yield* Effect.mapError(insertWorkspace({ workspace, owner }), backendFault);
+      yield* Effect.orDie(insertWorkspace({ workspace, owner }));
       return workspace;
     });
 
@@ -229,10 +226,7 @@ export function layerWorkspacesD1(client: D1Client.D1Client): Layer.Layer<Worksp
   const deleteWorkspace = (wsId: string, deletedBy: string) =>
     Effect.gen(function* () {
       const deletedAt = yield* DateTime.now;
-      const row = yield* Effect.mapError(
-        markDeleted({ id: wsId, deletedAt, deletedBy }),
-        backendFault,
-      );
+      const row = yield* Effect.orDie(markDeleted({ id: wsId, deletedAt, deletedBy }));
       return Option.isSome(row);
     });
 
@@ -244,28 +238,24 @@ export function layerWorkspacesD1(client: D1Client.D1Client): Layer.Layer<Worksp
           role: memberRole,
         })),
       ),
-      Effect.mapError(backendFault),
+      Effect.orDie,
     );
 
-  const getMembers = (wsId: string) =>
-    findMembers({ wsId }).pipe(
-      Effect.map((rows) => [...rows]),
-      Effect.mapError(backendFault),
-    );
+  const getMembers = (wsId: string) => Effect.orDie(findMembers({ wsId }));
 
   const getMembership = (wsId: string, userId: string) => orUndefined(findMember({ wsId, userId }));
 
   const addMember = (wsId: string, userId: string, role: Role) =>
     Effect.gen(function* () {
       const member = new WorkspaceMember({ wsId, userId, role, createdAt: yield* DateTime.now });
-      const row = yield* Effect.mapError(upsertMember(member), backendFault);
+      const row = yield* Effect.orDie(upsertMember(member));
       if (Option.isNone(row)) return yield* Effect.fail(new LastOwnerError({ wsId }));
       return row.value;
     });
 
   const removeMember = (wsId: string, userId: string) =>
     Effect.gen(function* () {
-      const removed = yield* Effect.mapError(deleteMember({ wsId, userId }), backendFault);
+      const removed = yield* Effect.orDie(deleteMember({ wsId, userId }));
       if (Option.isSome(removed)) return true;
       // nothing was deleted: either not a member, or the last owner
       const member = yield* getMembership(wsId, userId);
@@ -275,7 +265,7 @@ export function layerWorkspacesD1(client: D1Client.D1Client): Layer.Layer<Worksp
 
   const hasAccess = (wsId: string, userId: string, role?: Role) =>
     Effect.gen(function* () {
-      const access = yield* Effect.mapError(findAccess({ wsId, userId }), backendFault);
+      const access = yield* Effect.orDie(findAccess({ wsId, userId }));
       if (Option.isNone(access)) return false;
       // owner satisfies an editor requirement
       return role !== "owner" || access.value.role === "owner";

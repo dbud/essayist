@@ -184,7 +184,7 @@ test("Workspaces -- addMember + getMembers", async () => {
 
     const member = yield* store.addMember(ws.id, editor.id, "editor");
     assertEquals(member.role, "editor");
-    const members: WorkspaceMember[] = yield* store.getMembers(ws.id);
+    const members: ReadonlyArray<WorkspaceMember> = yield* store.getMembers(ws.id);
     assertEquals(members.length, 2);
     assertEquals(members.find((m) => m.userId === editor.id)?.role, "editor");
   });

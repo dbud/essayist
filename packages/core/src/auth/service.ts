@@ -1,29 +1,23 @@
 import { Context, type Effect, type Option } from "effect";
 
-import type { PersistenceError } from "#/persistence/service.ts";
-
 import type { AuthSession, SessionTokens } from "./types.ts";
 
 export interface Interface {
   /** Insert a session; expiry applies from the insert time. */
-  createSession(
-    id: string,
-    userId: string,
-    tokens?: SessionTokens,
-  ): Effect.Effect<void, PersistenceError>;
+  createSession(id: string, userId: string, tokens?: SessionTokens): Effect.Effect<void>;
   /** Read a session; absent and expired sessions yield `undefined`. */
-  getSession(id: string): Effect.Effect<AuthSession | undefined, PersistenceError>;
+  getSession(id: string): Effect.Effect<AuthSession | undefined>;
   /** Replace the tokens of a session and re-apply the TTL. A no-op
    * when the session is gone. */
-  updateSessionTokens(id: string, tokens: SessionTokens): Effect.Effect<void, PersistenceError>;
+  updateSessionTokens(id: string, tokens: SessionTokens): Effect.Effect<void>;
   /** Remove a session (sign-out). */
-  deleteSession(id: string): Effect.Effect<void, PersistenceError>;
+  deleteSession(id: string): Effect.Effect<void>;
   /** Store the user-level refresh token, surviving across sessions. */
-  setRefreshToken(userId: string, refreshToken: string): Effect.Effect<void, PersistenceError>;
+  setRefreshToken(userId: string, refreshToken: string): Effect.Effect<void>;
   /** Read the user-level refresh token, or none. */
-  getRefreshToken(userId: string): Effect.Effect<Option.Option<string>, PersistenceError>;
+  getRefreshToken(userId: string): Effect.Effect<Option.Option<string>>;
   /** Delete the user-level refresh token, e.g. after a revoked grant. */
-  deleteRefreshToken(userId: string): Effect.Effect<void, PersistenceError>;
+  deleteRefreshToken(userId: string): Effect.Effect<void>;
 }
 
 /** Auth session storage as an Effect service. */
