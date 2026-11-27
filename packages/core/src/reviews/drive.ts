@@ -6,11 +6,10 @@ import {
   resolveReviewPassById,
 } from "#/config/resolve.ts";
 import type { ReviewConfig } from "#/config/service.ts";
-import type { Files } from "#/files/service.ts";
-import type { Marks } from "#/marks/service.ts";
+import type { Files } from "#/files/d1/service.ts";
+import type { Marks } from "#/marks/d1/service.ts";
 import type { ModelClient } from "#/model/service.ts";
-import type { MissingChunksError } from "#/persistence/chunked_values.ts";
-import type { ConcurrentModificationError, PersistenceError } from "#/persistence/mod.ts";
+import type { PersistenceError } from "#/persistence/mod.ts";
 import { tolerate } from "#/reviews/observer/tolerate.ts";
 import type { ReviewObserver } from "#/reviews/observer/types.ts";
 import type { ReviewPacing } from "#/reviews/pacing.ts";
@@ -24,13 +23,8 @@ export interface RunRef {
   readonly wsId: string;
 }
 
-/** A taken lease and a missing run are outcomes, not failures. */
-export type DriveError =
-  | ConfigMissingError
-  | ConfigInvalidError
-  | PersistenceError
-  | ConcurrentModificationError
-  | MissingChunksError;
+/** A taken lease and a missing run are outcomes, not failures; the rest come from the config. */
+export type DriveError = ConfigMissingError | ConfigInvalidError | PersistenceError;
 
 export type DriveServices =
   | ReviewConfig

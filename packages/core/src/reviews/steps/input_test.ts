@@ -4,6 +4,7 @@ import { test } from "vitest";
 import type { ResolvedPrompts } from "#/config/types.ts";
 import type { Artifact, Artifacts, ArtifactType } from "#/flow/types.ts";
 import type { ReviewTypes } from "#/reviews/graph.ts";
+import type { FailedMarkAttempt } from "#/reviews/types.ts";
 
 import { composeCallInput, composeRepairInput } from "./input.ts";
 
@@ -94,7 +95,7 @@ test("composeRepairInput -- windows content around the hinted line", () => {
     { length: 20 },
     (_, i) => `${String(i + 1).padStart(6)}: line ${i + 1}`,
   ).join("\n");
-  const failed = [
+  const failed: FailedMarkAttempt[] = [
     {
       selectedText: "line 10",
       comment: "fix this",
@@ -124,7 +125,7 @@ test("composeRepairInput -- windows content around the hinted line", () => {
 });
 
 test("composeRepairInput -- attempts without a hint get the full essay", () => {
-  const failed = [
+  const failed: FailedMarkAttempt[] = [
     {
       selectedText: "nowhere to anchor",
       comment: "find it",

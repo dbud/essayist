@@ -67,11 +67,17 @@ const applied = (nodeId: string, marked: number, unmarked = 0): TraceEvent => ({
   event: {
     type: "applied",
     attempts: [
-      ...Array.from({ length: marked }, () => ({ selectedText: "a", comment: "c", marked: true })),
+      ...Array.from({ length: marked }, () => ({
+        selectedText: "a",
+        comment: "c",
+        marked: true as const,
+        markId: "m",
+      })),
       ...Array.from({ length: unmarked }, () => ({
         selectedText: "b",
         comment: "c",
-        marked: false,
+        marked: false as const,
+        error: "selected text not found",
       })),
     ],
   },

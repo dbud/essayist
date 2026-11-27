@@ -1,14 +1,14 @@
 import { partition } from "@std/collections";
 import { Effect, Schema } from "effect";
 
+import type { Category } from "#/config/types.ts";
+import type { FileMissingError } from "#/files/d1/types.ts";
 import type { NodeRunner } from "#/flow/types.ts";
-import { Marks } from "#/marks/service.ts";
-import type { MarkProvenance } from "#/marks/types.ts";
+import { Marks } from "#/marks/d1/service.ts";
 import type { ModelClient } from "#/model/service.ts";
-import type { ConcurrentModificationError, PersistenceError } from "#/persistence/mod.ts";
 import { callStructured } from "#/reviews/call.ts";
 import type { ReviewTypes } from "#/reviews/graph.ts";
-import type { MarkAttempt } from "#/reviews/types.ts";
+import type { MarkAttempt, PlacedMarkAttempt } from "#/reviews/types.ts";
 import type { WorkspaceId } from "#/workspace/WorkspaceId.ts";
 
 import { composeCallInput, composeRepairInput } from "./input.ts";
@@ -48,63 +48,66 @@ export const ProposedMarksSchema = Schema.Struct({
   }),
 });
 
-export interface MarkPin {
-  path: string;
+/** The version an apply node marks, the run that owns the marks, and the categories of the pass. */
+export interface MarkContext {
+  fileId: string;
   versionId: string;
+  runId: string;
+  /** A proposal names its category by label; any label goes when there are none. */
+  categories: ReadonlyArray<Pick<Category, "id" | "label">>;
 }
 
-/** Apply proposals as marks on one pinned version, one proposal per
- * attempt: every attempt is reported, including failures with their reason. Each mark appends to
- * the version's single mark list through a checked write, retried on concurrent modification. */
+/** Apply proposals as marks, one attempt per proposal. Every attempt is reported, a failed one
+ * with its reason for the repair round. */
 export function applyProposedMarks(
   proposals: readonly MarkProposal[],
-  allowedLabels: readonly string[],
-  pin: MarkPin,
-  provenance: MarkProvenance,
-): Effect.Effect<
-  MarkAttempt[],
-  PersistenceError | ConcurrentModificationError,
-  Marks | WorkspaceId
-> {
+  { fileId, versionId, runId, categories }: MarkContext,
+): Effect.Effect<MarkAttempt[], FileMissingError, Marks | WorkspaceId> {
   return Effect.gen(function* () {
     const marks = yield* Marks;
     const attempts: MarkAttempt[] = [];
     for (const proposal of proposals) {
-      if (allowedLabels.length > 0 && !allowedLabels.includes(proposal.label)) {
+      const category = categories.find(({ label }) => label === proposal.label);
+      if (categories.length > 0 && category === undefined) {
+        const allowed = categories.map(({ label }) => label).join(", ");
         attempts.push({
           ...proposal,
           marked: false,
-          error: `label "${proposal.label}" is not allowed; use one of: ${allowedLabels.join(", ")}`,
+          error: `label "${proposal.label}" is not allowed; use one of: ${allowed}`,
         });
         continue;
       }
-      const result = yield* marks.mark(pin.path, proposal.selectedText, proposal.comment, {
-        label: proposal.label,
-        lineHint: proposal.lineHint,
-        provenance,
-        versionId: pin.versionId,
-      });
-      attempts.push(
-        result.marked
-          ? { ...proposal, ...result }
-          : { ...proposal, ...result, error: "selected text not found" },
-      );
+      const attempt = yield* marks
+        .mark({
+          fileId,
+          versionId,
+          runId,
+          selectedText: proposal.selectedText,
+          comment: proposal.comment,
+          categoryId: category?.id,
+          lineHint: proposal.lineHint,
+        })
+        .pipe(
+          Effect.map((mark): MarkAttempt => ({ ...proposal, marked: true, markId: mark.id })),
+          Effect.catchTag("MarkTextNotFoundError", (error) =>
+            Effect.succeed<MarkAttempt>({ ...proposal, marked: false, error: error.message }),
+          ),
+        );
+      attempts.push(attempt);
     }
     return attempts;
   });
 }
 
 export const markApplyRunner: NodeRunner<ReviewTypes, "mark.apply", Marks | WorkspaceId> = {
-  execute: ({ path, versionId, allowedLabels, provenance }, { inputs, artifact, emit }) =>
+  execute: (context, { inputs, artifact, emit }) =>
     Effect.gen(function* () {
-      const attempts = yield* applyProposedMarks(
-        inputs.of("mark.proposals").flat(),
-        allowedLabels,
-        { path, versionId },
-        provenance,
-      );
+      const attempts = yield* applyProposedMarks(inputs.of("mark.proposals").flat(), context);
       yield* emit({ type: "applied", attempts });
-      const [placed, failed] = partition(attempts, (attempt) => attempt.marked);
+      const [placed, failed] = partition(
+        attempts,
+        (attempt): attempt is PlacedMarkAttempt => attempt.marked,
+      );
       return [
         artifact("mark.placed", placed),
         ...(failed.length > 0 ? [artifact("mark.failed", failed)] : []),

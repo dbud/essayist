@@ -2,7 +2,7 @@ import { renderTemplate } from "#/config/template.ts";
 import type { Category, ResolvedPrompts } from "#/config/types.ts";
 import type { Artifact, Artifacts, ArtifactType } from "#/flow/types.ts";
 import type { ReviewTypes } from "#/reviews/graph.ts";
-import type { MarkAttempt } from "#/reviews/types.ts";
+import type { FailedMarkAttempt, PlacedMarkAttempt } from "#/reviews/types.ts";
 import { bulletList, joinBlocks, joinLines, listOf, section } from "#/text/markdown.ts";
 
 import type { Analysis } from "./analyze.ts";
@@ -59,11 +59,11 @@ function renderProposedMarks(data: readonly MarkProposal[]): string {
   return renderAttemptList("Proposed marks", data);
 }
 
-function renderPlacedMarks(data: MarkAttempt[]): string {
+function renderPlacedMarks(data: PlacedMarkAttempt[]): string {
   return renderAttemptList("Placed marks", data);
 }
 
-function renderFailedMarks(data: MarkAttempt[]): string {
+function renderFailedMarks(data: FailedMarkAttempt[]): string {
   return renderAttemptList("Failed marks", data);
 }
 
@@ -148,7 +148,7 @@ export function composeRepairInput(
   );
 }
 
-function failedAttemptBody(attempt: MarkAttempt, essay: string): string {
+function failedAttemptBody(attempt: FailedMarkAttempt, essay: string): string {
   const lines = essay.split("\n");
   const hint = attempt.lineHint;
   const from = Math.max(1, (hint ?? 1) - REPAIR_CONTEXT_LINES);

@@ -1,83 +1,75 @@
-/**
- * Review runs as an Effect service: creation, reads, listing, and the lease ops. The D1 layer is
- * the only transport.
- */
+/** Review runs as an Effect service, scoped to the workspace through the file of each run. */
 
 import { Context, type Effect, type Option, Schema } from "effect";
 
-import type { ClaimOptions } from "#/persistence/mod.ts";
-import type { PersistenceError } from "#/persistence/service.ts";
-import { WorkspaceId } from "#/workspace/WorkspaceId.ts";
+import type { FileMissingError } from "#/files/d1/types.ts";
+import type { WorkspaceId } from "#/workspace/WorkspaceId.ts";
 
 import type { ReviewRun } from "./types.ts";
 
-/** A run was looked up and does not exist (never created, or swept). */
+/** A run was looked up and does not exist (never created, deleted, or in another workspace). */
 export class ReviewRunMissingError extends Schema.TaggedError<ReviewRunMissingError>()(
   "ReviewRunMissingError",
-  { id: Schema.String },
+  { runId: Schema.String },
 ) {
   override get message() {
-    return `No run ${this.id}`;
+    return `No run ${this.runId}`;
   }
 }
 
-/** A run is still running: a second run on its file, or a cleanup in its scope, is refused. */
+/** A run is still running: a second run on its file, or deleting it, is refused. */
 export class ReviewRunActiveError extends Schema.TaggedError<ReviewRunActiveError>()(
   "ReviewRunActiveError",
-  { id: Schema.String },
+  { runId: Schema.String },
 ) {
   override get message() {
-    return `Run ${this.id} is still running`;
+    return `Run ${this.runId} is still running`;
   }
 }
 
 export interface Interface {
-  /**
-   * Create a run in the "running" state. Fails with ReviewRunActiveError, naming the running run,
-   * when the file already has one.
-   */
+  /** Start a run on a version; refused with ReviewRunActiveError while the file has one running. */
   createRun(input: {
-    path: string;
+    fileId: string;
     versionId: string;
     reviewPassId: string;
-    startedAt?: number;
-  }): Effect.Effect<ReviewRun, PersistenceError | ReviewRunActiveError, WorkspaceId>;
-  /** Get a run. Fails with ReviewRunMissingError when absent. */
-  getRun(
-    id: string,
-  ): Effect.Effect<ReviewRun, PersistenceError | ReviewRunMissingError, WorkspaceId>;
-  /** List runs for the workspace, newest first. Optionally filtered by file. */
-  listRuns(path?: string): Effect.Effect<ReadonlyArray<ReviewRun>, PersistenceError, WorkspaceId>;
-  /** Complete a run with its final summary. Fails with ReviewRunMissingError when absent. */
+  }): Effect.Effect<ReviewRun, FileMissingError | ReviewRunActiveError, WorkspaceId>;
+  getRun(runId: string): Effect.Effect<ReviewRun, ReviewRunMissingError, WorkspaceId>;
+  /** The runs of the workspace, or of a single file, newest first. */
+  listRuns(fileId?: string): Effect.Effect<ReadonlyArray<ReviewRun>, never, WorkspaceId>;
   completeRun(
-    id: string,
+    runId: string,
     summary: string,
-  ): Effect.Effect<ReviewRun, PersistenceError | ReviewRunMissingError, WorkspaceId>;
-  /** Fail a run with its error. Fails with ReviewRunMissingError when absent. */
+  ): Effect.Effect<ReviewRun, ReviewRunMissingError, WorkspaceId>;
   failRun(
-    id: string,
+    runId: string,
     error: string,
-  ): Effect.Effect<ReviewRun, PersistenceError | ReviewRunMissingError, WorkspaceId>;
+  ): Effect.Effect<ReviewRun, ReviewRunMissingError, WorkspaceId>;
   /**
-   * Take the lease on a run, so only one owner works on it at a time. Option.none when the run is
-   * gone, another owner holds a live lease, or a concurrent claim won the race. Claiming as the
-   * current owner renews.
+   * Take the lease on a running run, so a single driver works on it at a time. The lease is free
+   * when nobody holds it, the owner is the caller, or its heartbeat is older than `staleMs`.
+   * Option.none when the run is missing, settled, or leased to a live driver.
    */
   claimRun(
-    id: string,
-    options: ClaimOptions,
-  ): Effect.Effect<Option.Option<ReviewRun>, PersistenceError, WorkspaceId>;
+    runId: string,
+    lease: { owner: string; staleMs: number },
+  ): Effect.Effect<Option.Option<ReviewRun>, never, WorkspaceId>;
+  /** Renew the lease while the owner still holds it; false when it is lost. */
+  heartbeatRun(runId: string, owner: string): Effect.Effect<boolean, never, WorkspaceId>;
+  /** Delete a run with its trace and marks. */
+  deleteRun(
+    runId: string,
+  ): Effect.Effect<void, ReviewRunMissingError | ReviewRunActiveError, WorkspaceId>;
   /**
-   * Renew the lease on a run, only while it is leased to the given owner. Unlike claim, this never
-   * takes a lease. False when the run is gone, another owner holds the lease, or a concurrent write
-   * won the race.
+   * Delete the runs of a file, or only those on a single version, with their traces and marks.
+   * Refused, deleting nothing, while one of them is running. Returns how many were deleted.
    */
-  heartbeatRun(id: string, owner: string): Effect.Effect<boolean, PersistenceError, WorkspaceId>;
-  /** Delete a run row. False when absent. */
-  deleteRun(id: string): Effect.Effect<boolean, PersistenceError, WorkspaceId>;
+  deleteRuns(
+    fileId: string,
+    versionId?: string,
+  ): Effect.Effect<number, ReviewRunActiveError, WorkspaceId>;
 }
 
-/** Review run storage as an Effect service. */
 export class ReviewRuns extends Context.Service<ReviewRuns, Interface>()(
   "@essayist/core/reviews/ReviewRuns",
 ) {}

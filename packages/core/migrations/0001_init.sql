@@ -61,6 +61,41 @@ CREATE TABLE file_drafts (
   updatedAt TEXT NOT NULL CHECK (updatedAt IS strftime('%FT%R:%fZ', updatedAt))
 ) STRICT;
 
+-- a review pass run over a version of a file; at most one runs on a file at a time
+CREATE TABLE review_runs (
+  id TEXT PRIMARY KEY NOT NULL,
+  fileId TEXT NOT NULL,
+  versionId TEXT NOT NULL,
+  reviewPassId TEXT NOT NULL,
+  status TEXT NOT NULL CHECK (status IN ('running', 'completed', 'failed')),
+  startedAt TEXT NOT NULL CHECK (startedAt IS strftime('%FT%R:%fZ', startedAt)),
+  completedAt TEXT CHECK (completedAt IS strftime('%FT%R:%fZ', completedAt)),
+  error TEXT,
+  summary TEXT,
+  leaseOwner TEXT,
+  heartbeatAt TEXT CHECK (heartbeatAt IS strftime('%FT%R:%fZ', heartbeatAt)),
+  FOREIGN KEY (fileId, versionId) REFERENCES file_versions (fileId, id) ON DELETE CASCADE,
+  CHECK ((status = 'running') = (completedAt IS NULL)),
+  CHECK (error IS NULL OR status = 'failed'),
+  CHECK (summary IS NULL OR status = 'completed'),
+  CHECK (leaseOwner IS NULL OR status = 'running'),
+  CHECK ((leaseOwner IS NULL) = (heartbeatAt IS NULL))
+) STRICT;
+
+CREATE UNIQUE INDEX review_runs_active ON review_runs (fileId) WHERE status = 'running';
+
+CREATE INDEX review_runs_file ON review_runs (fileId, startedAt DESC);
+
+-- for the stale-run janitor
+CREATE INDEX review_runs_stale ON review_runs (heartbeatAt) WHERE status = 'running';
+
+CREATE TABLE review_trace_events (
+  runId TEXT NOT NULL REFERENCES review_runs (id) ON DELETE CASCADE,
+  seq INTEGER NOT NULL CHECK (seq >= 0),
+  event TEXT NOT NULL CHECK (json_valid(event)),
+  PRIMARY KEY (runId, seq)
+) STRICT, WITHOUT ROWID;
+
 -- a review comment, written once by its run and anchored to the version the run reviewed
 CREATE TABLE marks (
   id TEXT PRIMARY KEY NOT NULL,
@@ -102,38 +137,3 @@ CREATE TABLE auth_refresh_token (
   refreshToken TEXT NOT NULL,
   updatedAt TEXT NOT NULL CHECK (updatedAt IS strftime('%FT%R:%fZ', updatedAt))
 ) STRICT;
-
-CREATE TABLE review_runs (
-  id TEXT NOT NULL,
-  wsId TEXT NOT NULL,
-  path TEXT NOT NULL,
-  reviewPassId TEXT NOT NULL,
-  versionId TEXT NOT NULL,
-  status TEXT NOT NULL CHECK (status IN ('running', 'completed', 'failed')),
-  startedAt INTEGER NOT NULL,
-  completedAt INTEGER,
-  error TEXT,
-  summary TEXT,
-  leaseOwner TEXT,
-  heartbeatAt INTEGER,
-  PRIMARY KEY (wsId, id)
-) STRICT, WITHOUT ROWID;
-
-CREATE INDEX review_runs_started ON review_runs (wsId, startedAt DESC);
-
--- the key marks.runId references
-CREATE UNIQUE INDEX review_runs_id ON review_runs (id);
-
--- a global sweep for runs in progress, for the stale-run janitor
-CREATE INDEX review_runs_stale ON review_runs (heartbeatAt) WHERE status = 'running';
-
--- a single running review per file
-CREATE UNIQUE INDEX review_runs_active ON review_runs (wsId, path) WHERE status = 'running';
-
-CREATE TABLE review_trace_events (
-  wsId TEXT NOT NULL,
-  runId TEXT NOT NULL,
-  seq INTEGER NOT NULL,
-  event TEXT NOT NULL,
-  PRIMARY KEY (wsId, runId, seq)
-) STRICT, WITHOUT ROWID;

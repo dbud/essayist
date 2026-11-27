@@ -1,11 +1,10 @@
 import { Context, type Effect } from "effect";
 
-import type { PersistenceError } from "#/persistence/service.ts";
-
 import type { RunRef } from "./drive.ts";
 
 export interface Interface {
-  staleRuns(staleMs: number): Effect.Effect<RunRef[], PersistenceError>;
+  /** Running runs with no lease, or a heartbeat older than `staleMs`, oldest first. */
+  staleRuns(staleMs: number): Effect.Effect<ReadonlyArray<RunRef>>;
 }
 
 export class ReviewJanitor extends Context.Service<ReviewJanitor, Interface>()(

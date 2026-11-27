@@ -260,7 +260,7 @@ test("groupTraceNodes -- applied events collect attempts", () => {
         event: {
           type: "applied",
           attempts: [
-            { selectedText: "a", comment: "tighten", marked: true },
+            { selectedText: "a", comment: "tighten", marked: true, markId: "m" },
             {
               selectedText: "b",
               comment: "cut",

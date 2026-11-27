@@ -1,24 +1,22 @@
-import { openKv } from "@deno/kv";
 import { assertEquals } from "@std/assert";
 import { Effect, Layer } from "effect";
 import { test } from "vitest";
 
 import type { ResolvedReviewUnit } from "#/config/types.ts";
-import { Files } from "#/files/service.ts";
 import type { PassWhenSpec } from "#/flow/helpers.ts";
 import { FlowRunner } from "#/flow/runner.ts";
 import type { Artifacts, FlowEvent, FlowGraph, FlowRunResult } from "#/flow/types.ts";
-import { Marks } from "#/marks/service.ts";
-import type { Mark } from "#/marks/types.ts";
+import { Marks } from "#/marks/d1/service.ts";
 import { createFakeClient } from "#/model/fake_client.ts";
 import { ModelClient } from "#/model/service.ts";
-import { kvLayer } from "#/persistence/kv_layer.ts";
 import {
   type ReviewNodeEvent,
   type ReviewServices,
   type ReviewTypes,
   reviewRunners,
 } from "#/reviews/graph.ts";
+import type { MarkContext } from "#/reviews/steps/mark.ts";
+import { openReviewDatabase, type ReviewTestServices, reviewedFile } from "#/reviews/testing.ts";
 import { WorkspaceId } from "#/workspace/WorkspaceId.ts";
 
 const ANALYSIS_ROUND =
@@ -58,56 +56,43 @@ function artifactsOf<A extends keyof ReviewTypes["artifacts"]>(
     .map((artifact) => artifact.data as ReviewTypes["artifacts"][A]);
 }
 
-/** One shared KV per test, seeded through the Files service. */
+/** A file under review in its own database, with the node payloads for it. */
 async function setup(content: string) {
-  const kv = await openKv();
-  const env = Layer.provide(
-    Layer.mergeAll(Files.layerNoDeps, Layer.provide(Marks.layerNoDeps, Files.layerNoDeps)),
-    kvLayer(kv),
+  const { env, wsId } = await openReviewDatabase();
+  const { file, version, run } = await Effect.runPromise(
+    reviewedFile(content).pipe(Effect.provideService(WorkspaceId, { wsId }), Effect.provide(env)),
   );
-  const versionId = await Effect.runPromise(
-    Effect.provide(
-      Effect.provideService(
-        Effect.gen(function* () {
-          const files = yield* Files;
-          const write = yield* files.write("essay.txt", content);
-          return write.versionId;
-        }),
-        WorkspaceId,
-        { wsId: "ws" },
-      ),
-      env,
-    ),
-  );
-  return { env, versionId };
+  const source = { fileId: file.id, versionId: version.id };
+  const apply: MarkContext = {
+    ...source,
+    runId: run.id,
+    categories: [{ id: "grammar", label: "grammar" }],
+  };
+  return { env, wsId, source, apply };
 }
 
-const readMarks = (
-  env: Layer.Layer<ModelClient | Files | Marks>,
-  versionId: string,
-): Promise<Mark[]> =>
+type Setup = Awaited<ReturnType<typeof setup>>;
+
+const readMarks = ({ env, wsId, apply }: Setup) =>
   Effect.runPromise(
-    Effect.provide(
-      Effect.provideService(
-        Files.use((files) => files.getMarks("essay.txt", versionId)),
-        WorkspaceId,
-        { wsId: "ws" },
-      ),
-      env,
+    Marks.use((marks) => marks.ofRun(apply.runId)).pipe(
+      Effect.provideService(WorkspaceId, { wsId }),
+      Effect.provide(env),
     ),
   );
 
 const runFlow = (
-  env: Layer.Layer<ModelClient | Files | Marks>,
+  { wsId }: Setup,
+  env: Layer.Layer<ModelClient | ReviewTestServices>,
   flow: FlowRunner<ReviewTypes, ReviewServices>,
   graph: FlowGraph<ReviewTypes>,
 ): Promise<FlowRunResult<ReviewTypes>> =>
   Effect.runPromise(
-    Effect.provide(Effect.provideService(flow.run(graph), WorkspaceId, { wsId: "ws" }), env),
+    flow.run(graph).pipe(Effect.provideService(WorkspaceId, { wsId }), Effect.provide(env)),
   );
 
 test("review runners -- analyze, propose, apply, and synthesize in a flow", async () => {
-  const { env: baseEnv, versionId } = await setup("hello brave world");
+  const fixture = await setup("hello brave world");
   const { client, inputs } = createFakeClient([
     { text: ANALYSIS_ROUND, reasoning: "reading closely" },
     {
@@ -115,7 +100,7 @@ test("review runners -- analyze, propose, apply, and synthesize in a flow", asyn
     },
     { text: '{"summary":"Solid draft."}' },
   ]);
-  const env = Layer.merge(baseEnv, ModelClient.layerOf(client));
+  const env = Layer.merge(fixture.env, ModelClient.layerOf(client));
   const runners = reviewRunners;
   const events: FlowEvent[] = [];
   const flow = new FlowRunner<ReviewTypes, ReviewServices>({
@@ -129,7 +114,7 @@ test("review runners -- analyze, propose, apply, and synthesize in a flow", asyn
         id: "content",
         kind: "source",
         dependsOn: [],
-        payload: { path: "essay.txt", versionId },
+        payload: fixture.source,
       },
       {
         id: "structure",
@@ -147,12 +132,7 @@ test("review runners -- analyze, propose, apply, and synthesize in a flow", asyn
         id: "mechanics.apply",
         kind: "mark.apply",
         dependsOn: ["mechanics.propose"],
-        payload: {
-          path: "essay.txt",
-          versionId,
-          allowedLabels: ["grammar"],
-          provenance: { runId: "r", unitId: "mechanics" },
-        },
+        payload: fixture.apply,
       },
       {
         id: "summary",
@@ -163,7 +143,7 @@ test("review runners -- analyze, propose, apply, and synthesize in a flow", asyn
     ],
   };
 
-  const result = await runFlow(env, flow, graph);
+  const result = await runFlow(fixture, env, flow, graph);
 
   assertEquals(result.errors, []);
   assertEquals(result.status, "completed");
@@ -194,30 +174,29 @@ test("review runners -- analyze, propose, apply, and synthesize in a flow", asyn
     ["summary", "output"],
   ]);
 
-  const marks = await readMarks(env, versionId);
+  const marks = await readMarks(fixture);
   assertEquals(marks.length, 1);
-  assertEquals(marks[0].meta, { runId: "r", unitId: "mechanics" });
+  assertEquals(marks[0].runId, fixture.apply.runId);
 });
 
 test("review runners -- repair propose stays idle without failures", async () => {
-  const { env: baseEnv, versionId } = await setup("hello world");
+  const fixture = await setup("hello world");
   const { client, inputs } = createFakeClient([
     {
       text: '{"marks":[{"selectedText":"hello","comment":"found it","label":"grammar"}]}',
     },
   ]);
-  const env = Layer.merge(baseEnv, ModelClient.layerOf(client));
+  const env = Layer.merge(fixture.env, ModelClient.layerOf(client));
   const runners = reviewRunners;
-  const provenance = { runId: "r", unitId: "m" };
   const flow = new FlowRunner<ReviewTypes, ReviewServices>({ runners });
 
-  const result = await runFlow(env, flow, {
+  const result = await runFlow(fixture, env, flow, {
     nodes: [
       {
         id: "content",
         kind: "source",
         dependsOn: [],
-        payload: { path: "essay.txt", versionId },
+        payload: fixture.source,
       },
       {
         id: "m.propose",
@@ -229,12 +208,7 @@ test("review runners -- repair propose stays idle without failures", async () =>
         id: "m.apply",
         kind: "mark.apply",
         dependsOn: ["m.propose"],
-        payload: {
-          path: "essay.txt",
-          versionId,
-          allowedLabels: ["grammar"],
-          provenance,
-        },
+        payload: fixture.apply,
       },
       {
         id: "m.repair1.gate",
@@ -252,12 +226,7 @@ test("review runners -- repair propose stays idle without failures", async () =>
         id: "m.repair1.apply",
         kind: "mark.apply",
         dependsOn: ["m.repair1.propose"],
-        payload: {
-          path: "essay.txt",
-          versionId,
-          allowedLabels: ["grammar"],
-          provenance,
-        },
+        payload: fixture.apply,
       },
     ],
   });
@@ -273,7 +242,7 @@ test("review runners -- repair propose stays idle without failures", async () =>
   const proposals = result.artifacts.filter((artifact) => artifact.type === "mark.proposals");
   assertEquals(proposals.length, 1);
   assertEquals(proposals[0].producedBy, "m.propose");
-  const marks = await readMarks(env, versionId);
+  const marks = await readMarks(fixture);
   assertEquals(
     marks.map((mark) => mark.selectedText),
     ["hello"],
@@ -281,7 +250,7 @@ test("review runners -- repair propose stays idle without failures", async () =>
 });
 
 test("review runners -- a repair round re-quotes failed spans", async () => {
-  const { env: baseEnv, versionId } = await setup("hello world");
+  const fixture = await setup("hello world");
   const { client, inputs } = createFakeClient([
     {
       text: '{"marks":[{"selectedText":"ghost span","comment":"not there","label":"grammar"}]}',
@@ -290,18 +259,17 @@ test("review runners -- a repair round re-quotes failed spans", async () => {
       text: '{"marks":[{"selectedText":"hello","comment":"found it","label":"grammar"}]}',
     },
   ]);
-  const env = Layer.merge(baseEnv, ModelClient.layerOf(client));
+  const env = Layer.merge(fixture.env, ModelClient.layerOf(client));
   const runners = reviewRunners;
-  const provenance = { runId: "r", unitId: "m" };
   const flow = new FlowRunner<ReviewTypes, ReviewServices>({ runners });
 
-  const result = await runFlow(env, flow, {
+  const result = await runFlow(fixture, env, flow, {
     nodes: [
       {
         id: "content",
         kind: "source",
         dependsOn: [],
-        payload: { path: "essay.txt", versionId },
+        payload: fixture.source,
       },
       {
         id: "m.propose",
@@ -313,12 +281,7 @@ test("review runners -- a repair round re-quotes failed spans", async () => {
         id: "m.apply",
         kind: "mark.apply",
         dependsOn: ["m.propose"],
-        payload: {
-          path: "essay.txt",
-          versionId,
-          allowedLabels: ["grammar"],
-          provenance,
-        },
+        payload: fixture.apply,
       },
       {
         id: "m.repair1.gate",
@@ -336,12 +299,7 @@ test("review runners -- a repair round re-quotes failed spans", async () => {
         id: "m.repair1.apply",
         kind: "mark.apply",
         dependsOn: ["m.repair1.propose"],
-        payload: {
-          path: "essay.txt",
-          versionId,
-          allowedLabels: ["grammar"],
-          provenance,
-        },
+        payload: fixture.apply,
       },
     ],
   });
@@ -366,7 +324,7 @@ test("review runners -- a repair round re-quotes failed spans", async () => {
   assertEquals(placed[1][0].marked, true);
   assertEquals(inputs[1].includes('Attempted span: "ghost span"'), true);
 
-  const marks = await readMarks(env, versionId);
+  const marks = await readMarks(fixture);
   assertEquals(
     marks.map((mark) => mark.selectedText),
     ["hello"],

@@ -1,13 +1,12 @@
-// The demo essay content and its seed: one copy, shared by web's boot seed and workspace-create
-// endpoint, and by kvctl's seed-demo command. Seeding is an Effect against the files and marks
-// services under the caller's WorkspaceId scope.
+// The demo essay and its seed, shared by the workspace-create endpoint and kvctl's seed-demo
+// command. The seed runs under the WorkspaceId of the caller.
 
 import { Effect } from "effect";
 
-import { Files } from "#/files/service.ts";
-import type { FileMissingError } from "#/files/types.ts";
-import { Marks } from "#/marks/service.ts";
-import type { ConcurrentModificationError, PersistenceError } from "#/persistence/mod.ts";
+import { Files } from "#/files/d1/service.ts";
+import type { FileExistsError, FileTooLargeError } from "#/files/d1/types.ts";
+import { Marks } from "#/marks/d1/service.ts";
+import { ReviewRuns } from "#/reviews/service.ts";
 import type { WorkspaceId } from "#/workspace/WorkspaceId.ts";
 
 /** The demo essay content, keyed by workspace path. Paragraphs are
@@ -46,62 +45,69 @@ The comma deserves special mention, because it is the smallest tool in the kit a
 An ending has to be earned twice -- once by the argument, and once by the reader's patience. The best endings rarely summarize. They return to the opening question carrying an answer the middle of the piece has made credible, and then they stop. A draft that knows where it is going can afford to walk; a revision knows the way, and can run.`,
 };
 
-/** Write the demo essay and seed marks exercising every label; the
- * workspace scope comes from the caller. Idempotence (skip when the essay already exists) is the
- * caller's job, since a write appends a new version and marks would duplicate. */
-export function seedDemoFiles(): Effect.Effect<
-  void,
-  PersistenceError | ConcurrentModificationError | FileMissingError,
-  Files | Marks | WorkspaceId
-> {
-  return Effect.gen(function* () {
-    const files = yield* Files;
-    const marks = yield* Marks;
-    for (const [path, content] of Object.entries(demoFiles)) {
-      yield* files.write(path, content);
-    }
-
-    yield* marks.mark(
-      "essay.md",
+/** The comments of the demo review; the category ids match the categories of kvctl seed-config. */
+const demoMarks: ReadonlyArray<{ selectedText: string; comment: string; categoryId?: string }> = [
+  {
+    categoryId: "thesis",
+    selectedText:
       "The blank page promises nothing, so the first draft exists to give the second draft something to argue with.",
-      "The claim the whole piece defends. Keep it early and unqualified.",
-      { label: "thesis" },
-    );
-
-    // Long mark spanning two paragraphs; fully contains the evidence mark below, exercising
-    // nested/overlapping mark rendering and band stacking.
-    yield* marks.mark(
-      "essay.md",
-      `The useful fiction about first drafts is that they are private. Nobody reads them, so they can be honest. A first draft can admit that a section does not work yet, or lean on a stock phrase while it waits for the right one. That freedom is temporary -- revision is the process of paying for it -- but while it lasts, it lets a writer find out what the piece is actually about.
+    comment: "The claim the whole piece defends. Keep it early and unqualified.",
+  },
+  // spans two paragraphs and contains the evidence mark below, for nested and overlapping marks
+  {
+    categoryId: "structure",
+    selectedText: `The useful fiction about first drafts is that they are private. Nobody reads them, so they can be honest. A first draft can admit that a section does not work yet, or lean on a stock phrase while it waits for the right one. That freedom is temporary -- revision is the process of paying for it -- but while it lasts, it lets a writer find out what the piece is actually about.
 
 What surprises most new writers is how much of the work happens after the draft exists. The psychologist Ronald Kellogg described composing as three activities that share one mind: planning what to say, translating intention into sentences, and reviewing what appears on the page. Expert writers spend more of their time reviewing than beginners do, not less. The draft is not the end of writing; it is the switch that turns writing into editing.`,
+    comment:
       "The section carries the main argument. Consider a sharper topic sentence for the second paragraph.",
-      { label: "structure" },
-    );
-    yield* marks.mark(
-      "essay.md",
-      "Expert writers spend more of their time reviewing than beginners do, not less.",
-      "Kellogg's model earns this generalization; name the book or study when you cite it.",
-      { label: "evidence" },
-    );
-
-    // No label: exercises the ink fallback alongside categorized marks.
-    yield* marks.mark(
-      "essay.md",
-      "Setting a draft aside for a day is the cheapest revision tool there is",
-      "The distance point repeats; consider cutting one of the two.",
-    );
-    yield* marks.mark(
-      "essay.md",
-      "Neither flaw is fatal, and both are cheap to fix once someone points at them.",
+  },
+  {
+    categoryId: "evidence",
+    selectedText: "Expert writers spend more of their time reviewing than beginners do, not less.",
+    comment: "Kellogg's model earns this generalization; name the book or study when you cite it.",
+  },
+  // no category, for the ink fallback
+  {
+    selectedText: "Setting a draft aside for a day is the cheapest revision tool there is",
+    comment: "The distance point repeats; consider cutting one of the two.",
+  },
+  {
+    categoryId: "tone",
+    selectedText: "Neither flaw is fatal, and both are cheap to fix once someone points at them.",
+    comment:
       "The dry, even register here is the voice of the piece; hold it through the mechanics section.",
-      { label: "tone" },
+  },
+  {
+    categoryId: "grammar",
+    selectedText: "A comma splice joins two independent clauses with nothing but a comma",
+    comment: "Concrete usage note; the piece could use one or two more like this.",
+  },
+];
+
+/**
+ * Create the demo essay with a completed review of its first version. Fails with FileExistsError
+ * when the essay is already there, so seeding twice changes nothing.
+ */
+export function seedDemoFiles(): Effect.Effect<
+  void,
+  FileExistsError | FileTooLargeError,
+  Files | Marks | ReviewRuns | WorkspaceId
+> {
+  return Effect.gen(function* () {
+    const { file, version } = yield* Files.use((files) =>
+      files.createAt("essay.md", demoFiles["essay.md"]),
     );
-    yield* marks.mark(
-      "essay.md",
-      "A comma splice joins two independent clauses with nothing but a comma",
-      "Concrete usage note; the piece could use one or two more like this.",
-      { label: "grammar" },
+    const runs = yield* ReviewRuns;
+    const run = yield* Effect.orDie(
+      runs.createRun({ fileId: file.id, versionId: version.id, reviewPassId: "essay-review" }),
     );
+    const marks = yield* Marks;
+    for (const mark of demoMarks) {
+      yield* Effect.orDie(
+        marks.mark({ ...mark, fileId: file.id, versionId: version.id, runId: run.id }),
+      );
+    }
+    yield* Effect.orDie(runs.completeRun(run.id, "A demo review of the essay."));
   });
 }

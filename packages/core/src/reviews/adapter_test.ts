@@ -5,6 +5,7 @@ import type { ResolvedReviewPass, ReviewUnit } from "#/config/types.ts";
 import type { ForwardSpec } from "#/flow/helpers.ts";
 import { buildReviewGraph } from "#/reviews/adapter.ts";
 import type { ReviewTypes } from "#/reviews/graph.ts";
+import type { MarkContext } from "#/reviews/steps/mark.ts";
 
 const PROMPTS = {
   system: "You are an editor.",
@@ -13,11 +14,11 @@ const PROMPTS = {
   categories: "",
 };
 
-const APPLY_PAYLOAD = {
-  path: "essay.txt",
+const APPLY_PAYLOAD: MarkContext = {
+  fileId: "f",
   versionId: "v1",
-  allowedLabels: ["grammar"],
-  provenance: { runId: "r", unitId: "mechanics" },
+  runId: "r",
+  categories: [{ id: "grammar", label: "grammar" }],
 };
 
 const COLLECT_PAYLOAD: ForwardSpec<ReviewTypes> = { types: ["mark.placed"] };
@@ -63,7 +64,7 @@ test("buildReviewGraph -- decomposes a pass into nodes", () => {
   ]);
   const graph = buildReviewGraph(pass, {
     runId: "r",
-    path: "essay.txt",
+    fileId: "f",
     versionId: "v1",
   });
 
@@ -95,7 +96,7 @@ test("buildReviewGraph -- unrolls two repair rounds in a chain", () => {
         attempt: { allowedCategoryIds: ["grammar"], repairRounds: 2 },
       }),
     ]),
-    { runId: "r", path: "essay.txt", versionId: "v1" },
+    { runId: "r", fileId: "f", versionId: "v1" },
   );
 
   assertEquals(
@@ -127,7 +128,7 @@ test("buildReviewGraph -- a zero budget has no repair nodes", () => {
         attempt: { allowedCategoryIds: ["grammar"], repairRounds: 0 },
       }),
     ]),
-    { runId: "r", path: "essay.txt", versionId: "v1" },
+    { runId: "r", fileId: "f", versionId: "v1" },
   );
 
   assertEquals(
@@ -145,7 +146,7 @@ test("buildReviewGraph -- a unit input resolves to the unit's collect node", () 
       }),
       unitFixture({ id: "summary", summary: true, inputs: ["mechanics"] }),
     ]),
-    { runId: "r", path: "essay.txt", versionId: "v1" },
+    { runId: "r", fileId: "f", versionId: "v1" },
   );
 
   const summary = graph.nodes.find((node) => node.id === "summary");
@@ -161,7 +162,7 @@ test("buildReviewGraph -- artifact references pass through as deps", () => {
         inputs: ["analyze", "ghost"],
       }),
     ]),
-    { runId: "r", path: "essay.txt", versionId: "v1" },
+    { runId: "r", fileId: "f", versionId: "v1" },
   );
 
   assertEquals(

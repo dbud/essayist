@@ -3,7 +3,7 @@ import { Schema, Tuple } from "effect";
 import { ReviewNodeEvent } from "#/reviews/graph.ts";
 import { AnalysisSchema } from "#/reviews/steps/analyze.ts";
 import { MarkProposalSchema } from "#/reviews/steps/mark.ts";
-import { MarkAttempt } from "#/reviews/types.ts";
+import { FailedMarkAttempt, PlacedMarkAttempt } from "#/reviews/types.ts";
 
 const Artifact = Schema.Union([
   Schema.Struct({
@@ -23,12 +23,12 @@ const Artifact = Schema.Union([
   }),
   Schema.Struct({
     type: Schema.Literal("mark.placed"),
-    data: Schema.mutable(Schema.Array(MarkAttempt)),
+    data: Schema.mutable(Schema.Array(PlacedMarkAttempt)),
     producedBy: Schema.String,
   }),
   Schema.Struct({
     type: Schema.Literal("mark.failed"),
-    data: Schema.mutable(Schema.Array(MarkAttempt)),
+    data: Schema.mutable(Schema.Array(FailedMarkAttempt)),
     producedBy: Schema.String,
   }),
   Schema.Struct({

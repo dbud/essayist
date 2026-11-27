@@ -3,6 +3,7 @@ import {
   Clock,
   type Context,
   Effect,
+  Exit,
   Fiber,
   Option,
   Queue,
@@ -11,15 +12,13 @@ import {
 } from "effect";
 
 import type { ResolvedReviewPass } from "#/config/types.ts";
-import { Files } from "#/files/service.ts";
+import type { Files } from "#/files/d1/service.ts";
 import { FlowRunner } from "#/flow/runner.ts";
 import type { FlowEvent } from "#/flow/types.ts";
 import { view } from "#/flow/view.ts";
 import { Ids } from "#/idsRef.ts";
-import type { Marks } from "#/marks/service.ts";
+import type { Marks } from "#/marks/d1/service.ts";
 import type { ModelClient } from "#/model/service.ts";
-import type { MissingChunksError } from "#/persistence/chunked_values.ts";
-import type { ConcurrentModificationError, PersistenceError } from "#/persistence/mod.ts";
 import { buildReviewGraph } from "#/reviews/adapter.ts";
 import { type ReviewServices, type ReviewTypes, reviewRunners } from "#/reviews/graph.ts";
 import { tolerate } from "#/reviews/observer/tolerate.ts";
@@ -53,12 +52,7 @@ export class ReviewLeaseTakenError extends Schema.TaggedError<ReviewLeaseTakenEr
   }
 }
 
-export type RunnerError =
-  | ReviewLeaseTakenError
-  | ReviewRunMissingError
-  | PersistenceError
-  | ConcurrentModificationError
-  | MissingChunksError;
+export type RunnerError = ReviewLeaseTakenError | ReviewRunMissingError;
 
 /** Continue a run that did not finish, over the version it started on. */
 export function resumeReviewRun(
@@ -86,15 +80,11 @@ function claim(
   runs: Context.Service.Shape<typeof ReviewRuns>,
   runId: string,
   staleMs: number,
-): Effect.Effect<string, ReviewLeaseTakenError | PersistenceError, WorkspaceId> {
+): Effect.Effect<string, ReviewLeaseTakenError, WorkspaceId> {
   return Effect.gen(function* () {
     const ids = yield* Ids;
     const owner = ids.next();
-    const now = yield* Clock.currentTimeMillis;
-    const claimed = yield* runs.claimRun(runId, {
-      owner,
-      heartbeatAtLeast: now - staleMs,
-    });
+    const claimed = yield* runs.claimRun(runId, { owner, staleMs });
     if (Option.isNone(claimed)) {
       return yield* Effect.fail(new ReviewLeaseTakenError({ runId }));
     }
@@ -114,18 +104,14 @@ function heartbeatLoop(
     while (true) {
       // The write completes before the loop sleeps, so heartbeats never overlap; it is also
       // uninterruptible, so the drive's teardown only interrupts between heartbeats.
-      const held = yield* Effect.result(
+      const held = yield* Effect.exit(
         Effect.uninterruptible(
-          Effect.provideService(runs.heartbeatRun(runId, owner), WorkspaceId, {
-            wsId,
-          }),
+          Effect.provideService(runs.heartbeatRun(runId, owner), WorkspaceId, { wsId }),
         ),
       );
-      if (Result.isFailure(held)) {
-        yield* Effect.logError("review run heartbeat failed", {
-          error: asMessage(held.failure),
-        });
-      } else if (!held.success && !warnedLeaseLost) {
+      if (Exit.isFailure(held)) {
+        yield* Effect.logError("review run heartbeat failed", held.cause);
+      } else if (!held.value && !warnedLeaseLost) {
         warnedLeaseLost = true;
         yield* Effect.logWarning("review run lease lost", { runId });
       }
@@ -150,13 +136,13 @@ function execute(
     const completed = foldCompleted(priorTrace);
     const graph = buildReviewGraph(pass, {
       runId: run.id,
-      path: run.path,
+      fileId: run.fileId,
       versionId: run.versionId,
     });
 
     const settled = (
       done: ReviewRun,
-    ): Effect.Effect<ReviewRun, PersistenceError | ReviewRunMissingError, WorkspaceId> =>
+    ): Effect.Effect<ReviewRun, ReviewRunMissingError, WorkspaceId> =>
       Effect.gen(function* () {
         yield* observer.onSettled(done);
         return done;
@@ -229,8 +215,6 @@ function execute(
           try: () => view<ReviewTypes>(result.artifacts).one("summary"),
           catch: () => new SummaryMissingError(),
         });
-        const files = yield* Files;
-        yield* files.migrateMarks(run.path, run.versionId);
         const done = yield* runs.completeRun(run.id, summary);
         return { summary, done };
       }),

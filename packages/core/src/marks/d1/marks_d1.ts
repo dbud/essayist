@@ -38,9 +38,11 @@ export function layerMarksD1(client: D1Client.D1Client): Layer.Layer<Marks, neve
     Request: Schema.Struct({ wsId: Schema.String, runId: Schema.String }),
     Result: Mark,
     execute: ({ wsId, runId }) =>
-      client`SELECT m.* FROM marks m JOIN review_runs r ON r.id = m.runId
-        WHERE m.runId = ${runId} AND r.wsId = ${wsId}
-        ORDER BY m.createdAt, m.id`,
+      client`SELECT m.* FROM marks m
+        JOIN review_runs r ON r.id = m.runId
+        JOIN files f ON f.id = r.fileId
+        WHERE m.runId = ${runId} AND f.wsId = ${wsId}
+        ORDER BY m.createdAt, m.rowid`,
   });
 
   return Layer.effect(

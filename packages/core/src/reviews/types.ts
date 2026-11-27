@@ -4,35 +4,44 @@ import { Model } from "effect/schema";
 export const ReviewRunStatus = Schema.Literals(["running", "completed", "failed"]);
 export type ReviewRunStatus = Schema.Schema.Type<typeof ReviewRunStatus>;
 
-/** A review pass run over a file in a workspace. The nullable fields are select-only: the storage
- * layer writes them in its claim, heartbeat, and settle statements.
- */
+/** A review pass run over a version of a file. A running run may hold a lease for its driver. */
 export class ReviewRun extends Model.Class<ReviewRun>("ReviewRun")({
-  id: Schema.String,
-  wsId: Schema.String,
-  path: Schema.String,
-  reviewPassId: Schema.String,
+  id: Model.GeneratedByApp(Schema.String),
+  fileId: Schema.String,
   versionId: Schema.String,
+  reviewPassId: Schema.String,
   status: ReviewRunStatus,
-  startedAt: Schema.Number,
-  completedAt: Model.FieldOnly(["select"])(Schema.OptionFromNullOr(Schema.Number)),
-  error: Model.FieldOnly(["select"])(Schema.OptionFromNullOr(Schema.String)),
-  summary: Model.FieldOnly(["select"])(Schema.OptionFromNullOr(Schema.String)),
-  leaseOwner: Model.FieldOnly(["select"])(Schema.OptionFromNullOr(Schema.String)),
-  heartbeatAt: Model.FieldOnly(["select"])(Schema.OptionFromNullOr(Schema.Number)),
+  startedAt: Model.DateTimeInsert,
+  completedAt: Model.FieldOption(Schema.DateTimeUtcFromString),
+  error: Model.FieldOption(Schema.String),
+  summary: Model.FieldOption(Schema.String),
+  leaseOwner: Model.FieldOption(Schema.String),
+  heartbeatAt: Model.FieldOption(Schema.DateTimeUtcFromString),
 }) {}
 
 export const ReviewRunList = Schema.Array(ReviewRun);
 
-/** A proposed mark and its application result. */
-export const MarkAttempt = Schema.Struct({
+const ProposedMark = {
   selectedText: Schema.String,
   comment: Schema.String,
   label: Schema.optionalKey(Schema.String),
   lineHint: Schema.optionalKey(Schema.Int),
-  marked: Schema.Boolean,
-  markId: Schema.optionalKey(Schema.String),
-  threadId: Schema.optionalKey(Schema.String),
-  error: Schema.optionalKey(Schema.String),
+};
+
+export const PlacedMarkAttempt = Schema.Struct({
+  ...ProposedMark,
+  marked: Schema.Literal(true),
+  markId: Schema.String,
 });
+export type PlacedMarkAttempt = Schema.Schema.Type<typeof PlacedMarkAttempt>;
+
+export const FailedMarkAttempt = Schema.Struct({
+  ...ProposedMark,
+  marked: Schema.Literal(false),
+  error: Schema.String,
+});
+export type FailedMarkAttempt = Schema.Schema.Type<typeof FailedMarkAttempt>;
+
+/** A proposed mark with its outcome: the id of the placed mark, or why it was not placed. */
+export const MarkAttempt = Schema.Union([PlacedMarkAttempt, FailedMarkAttempt]);
 export type MarkAttempt = Schema.Schema.Type<typeof MarkAttempt>;

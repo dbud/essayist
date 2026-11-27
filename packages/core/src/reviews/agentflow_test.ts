@@ -50,7 +50,7 @@ end`;
 test("agentflowDefinition -- an empty pass is just the source", () => {
   const graph = buildReviewGraph(passFixture([]), {
     runId: "r",
-    path: "essay.txt",
+    fileId: "f",
     versionId: "v1",
   });
 
@@ -67,7 +67,7 @@ test("agentflowDefinition -- renders a pass with a mark unit", () => {
       }),
       unitFixture({ id: "synthesize", summary: true }),
     ]),
-    { runId: "r", path: "essay.txt", versionId: "v1" },
+    { runId: "r", fileId: "f", versionId: "v1" },
   );
 
   assertEquals(

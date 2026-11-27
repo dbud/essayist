@@ -3,13 +3,14 @@ import type { ForwardSpec, PassWhenSpec } from "#/flow/helpers.ts";
 import type { FlowGraph, FlowNodeOf } from "#/flow/types.ts";
 import type { ReviewTypes } from "#/reviews/graph.ts";
 import type { ReviewPlan } from "#/reviews/progress.ts";
+import type { MarkContext } from "#/reviews/steps/mark.ts";
 
 const CONTENT = "content";
 
 /** Binds a graph to a run over one file version. */
 export interface ReviewPin {
   runId: string;
-  path: string;
+  fileId: string;
   versionId: string;
 }
 
@@ -28,7 +29,7 @@ export function buildReviewGraph(
       kind: "source",
       dependsOn: [],
       payload: {
-        path: pin?.path ?? "",
+        fileId: pin?.fileId ?? "",
         versionId: pin?.versionId ?? "",
       },
     },
@@ -81,11 +82,11 @@ function markNodes(
   attempt: { categories: Category[]; repairRounds: number },
   pin?: ReviewPin,
 ): { nodes: FlowNodeOf<ReviewTypes>[]; terminalId: string } {
-  const applyPayload = {
-    path: pin?.path ?? "",
+  const applyPayload: MarkContext = {
+    fileId: pin?.fileId ?? "",
     versionId: pin?.versionId ?? "",
-    allowedLabels: attempt.categories.map((category) => category.label),
-    provenance: { runId: pin?.runId ?? "", unitId: unit.id },
+    runId: pin?.runId ?? "",
+    categories: attempt.categories,
   };
   const gatePayload: PassWhenSpec<ReviewTypes> = {
     when: (inputs) => inputs.of("mark.failed").length > 0,

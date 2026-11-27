@@ -1,102 +1,64 @@
-import * as D1Client from "@effect/sql-d1/D1Client";
 import { assertEquals } from "@std/assert";
-import { Effect, Layer, Option } from "effect";
-import * as Reactivity from "effect/reactivity/Reactivity";
+import { Effect } from "effect";
 import { test } from "vitest";
 
 import { ReviewConfig } from "#/config/service.ts";
-import { d1SqliteShim } from "#/persistence/kv_d1_sqlite.ts";
-import { migratedDatabase } from "#/persistence/testing/d1.ts";
 import { testLayer } from "#/persistence/testing/kv.ts";
-import { WorkspaceId } from "#/workspace/WorkspaceId.ts";
 
 import { loadProgressFeed } from "./progress_feed.ts";
+import { reviewedFile, runInWorkspace } from "./testing.ts";
 import { TraceEvents } from "./trace/service.ts";
-import { layerTraceEventsD1 } from "./trace/trace_d1.ts";
-import { ReviewRun } from "./types.ts";
 
-const run = <A>(program: Effect.Effect<A, unknown, ReviewConfig | TraceEvents>): Promise<A> => {
-  const db = migratedDatabase();
-  return Effect.runPromise(
-    Effect.gen(function* () {
-      const client = yield* D1Client.make({ db: d1SqliteShim(db) });
-      const layers = Layer.mergeAll(
-        layerTraceEventsD1(client),
-        testLayer(ReviewConfig.layerNoDeps),
-      );
-      return yield* Effect.provide(program, layers);
-    }).pipe(Effect.scoped, Effect.provide(Reactivity.layer)),
-  ).finally(() => {
-    db.close();
-  });
-};
-
-const reviewRun = (reviewPassId: string) =>
-  new ReviewRun({
-    id: "run",
-    wsId: "ws",
-    path: "essay.md",
-    reviewPassId,
-    versionId: "v1",
-    status: "running",
-    startedAt: 0,
-    completedAt: Option.none(),
-    error: Option.none(),
-    summary: Option.none(),
-    leaseOwner: Option.none(),
-    heartbeatAt: Option.none(),
-  });
-
-const storeTrace = Effect.gen(function* () {
+/** A running review with a trace of a started unit and a placed mark. */
+const tracedRun = Effect.gen(function* () {
+  const { run } = yield* reviewedFile();
   const traces = yield* TraceEvents;
-  yield* Effect.provideService(
-    Effect.gen(function* () {
-      yield* traces.append("run", { seq: 0, at: 0, type: "node_start", nodeId: "analyze" });
-      yield* traces.append("run", {
-        seq: 1,
-        at: 1,
-        type: "custom",
-        nodeId: "mechanics.apply",
-        event: { type: "applied", attempts: [{ selectedText: "a", comment: "c", marked: true }] },
-      });
-    }),
-    WorkspaceId,
-    { wsId: "ws" },
-  );
+  yield* traces.append(run.id, { seq: 0, at: 0, type: "node_start", nodeId: "analyze" });
+  yield* traces.append(run.id, {
+    seq: 1,
+    at: 1,
+    type: "custom",
+    nodeId: "mechanics.apply",
+    event: {
+      type: "applied",
+      attempts: [{ selectedText: "a", comment: "c", marked: true, markId: "m" }],
+    },
+  });
+  return run;
 });
 
-test("loadProgressFeed -- folds the stored trace over the units of the run's own pass", async () => {
-  await run(
+test("loadProgressFeed -- folds the stored trace over the units of its pass", async () => {
+  await runInWorkspace(() =>
     Effect.gen(function* () {
       const config = yield* ReviewConfig;
       yield* config.saveModelPool({ id: "pool", name: "Pool", models: ["m/a"] });
       yield* config.savePrompt({ key: "system", body: "You are an editor." });
       yield* config.savePrompt({ key: "analyze", body: "Read it." });
       yield* config.saveReviewPass({
-        id: "pass",
+        id: "essay-review",
         name: "Pass",
         systemPromptKey: "system",
         modelPoolId: "pool",
         units: [{ id: "analyze", promptKey: "analyze" }],
       });
-      yield* storeTrace;
+      const run = yield* tracedRun;
 
-      const feed = yield* loadProgressFeed(reviewRun("pass"));
+      const feed = yield* loadProgressFeed(run);
       assertEquals(feed.seq, 1);
       assertEquals(feed.progress, {
         units: [{ id: "analyze", state: "running" }],
         marksPlaced: 1,
       });
-    }),
+    }).pipe(Effect.provide(testLayer(ReviewConfig.layerNoDeps))),
   );
 });
 
-test("loadProgressFeed -- a pass that doesn't exist leaves no units, marks still count", async () => {
-  await run(
+test("loadProgressFeed -- a missing pass leaves no units, marks still count", async () => {
+  await runInWorkspace(() =>
     Effect.gen(function* () {
-      yield* storeTrace;
-      const feed = yield* loadProgressFeed(reviewRun("gone"));
+      const run = yield* tracedRun;
+      const feed = yield* loadProgressFeed({ id: run.id, reviewPassId: "gone" });
       assertEquals(feed.progress, { units: [], marksPlaced: 1 });
-    }),
+    }).pipe(Effect.provide(testLayer(ReviewConfig.layerNoDeps))),
   );
 });

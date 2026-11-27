@@ -1,42 +1,14 @@
-/**
- * The TraceEvents D1 layer: events store as rows keyed (wsId, runId, seq), one event per round
- * trip.
- */
-
-import * as D1Client from "@effect/sql-d1/D1Client";
 import { assertEquals } from "@std/assert";
 import { Effect } from "effect";
-import * as Reactivity from "effect/reactivity/Reactivity";
 import { test } from "vitest";
 
-import { d1SqliteShim } from "#/persistence/kv_d1_sqlite.ts";
-import type { PersistenceError } from "#/persistence/service.ts";
-import { migratedDatabase } from "#/persistence/testing/d1.ts";
-import { WorkspaceId } from "#/workspace/WorkspaceId.ts";
+import { reviewedFile, runInWorkspace } from "#/reviews/testing.ts";
 
 import { TraceEvents } from "./service.ts";
-import { layerTraceEventsD1 } from "./trace_d1.ts";
 import type { TraceEvent } from "./types.ts";
 
-const run = <A>(
-  program: Effect.Effect<A, PersistenceError, TraceEvents | WorkspaceId>,
-): Promise<A> => {
-  const db = migratedDatabase();
-  return Effect.runPromise(
-    Effect.gen(function* () {
-      const client = yield* D1Client.make({ db: d1SqliteShim(db) });
-      return yield* Effect.provide(
-        Effect.provideService(program, WorkspaceId, { wsId: "ws" }),
-        layerTraceEventsD1(client),
-      );
-    }).pipe(Effect.scoped, Effect.provide(Reactivity.layer)),
-  ).finally(() => {
-    db.close();
-  });
-};
-
 test("TraceEvents -- an unknown run reads as an empty trace", async () => {
-  await run(
+  await runInWorkspace(() =>
     Effect.gen(function* () {
       const traces = yield* TraceEvents;
       assertEquals(yield* traces.get("ghost"), []);
@@ -45,11 +17,12 @@ test("TraceEvents -- an unknown run reads as an empty trace", async () => {
 });
 
 test("TraceEvents -- get orders by seq", async () => {
-  await run(
+  await runInWorkspace(() =>
     Effect.gen(function* () {
       const traces = yield* TraceEvents;
+      const { run } = yield* reviewedFile();
       for (const seq of [999999, 1000000, 8]) {
-        yield* traces.append("run", {
+        yield* traces.append(run.id, {
           seq,
           at: seq,
           type: "node_start",
@@ -57,7 +30,7 @@ test("TraceEvents -- get orders by seq", async () => {
         });
       }
 
-      const trace = yield* traces.get("run");
+      const trace = yield* traces.get(run.id);
 
       assertEquals(
         trace?.map((event) => event.seq),
@@ -68,11 +41,12 @@ test("TraceEvents -- get orders by seq", async () => {
 });
 
 test("TraceEvents -- get reads the events past a seq", async () => {
-  await run(
+  await runInWorkspace(() =>
     Effect.gen(function* () {
       const traces = yield* TraceEvents;
+      const { run } = yield* reviewedFile();
       for (const seq of [1, 2, 3, 4]) {
-        yield* traces.append("run", {
+        yield* traces.append(run.id, {
           seq,
           at: seq,
           type: "node_start",
@@ -80,13 +54,13 @@ test("TraceEvents -- get reads the events past a seq", async () => {
         });
       }
 
-      const since2 = yield* traces.get("run", 2);
+      const since2 = yield* traces.get(run.id, 2);
       assertEquals(
         since2.map((event) => event.seq),
         [3, 4],
       );
 
-      const since4 = yield* traces.get("run", 4);
+      const since4 = yield* traces.get(run.id, 4);
       assertEquals(since4, []);
 
       assertEquals(yield* traces.get("ghost", 0), []);
@@ -95,9 +69,10 @@ test("TraceEvents -- get reads the events past a seq", async () => {
 });
 
 test("TraceEvents -- traces are workspace-scoped", async () => {
-  await run(
+  await runInWorkspace((other) =>
     Effect.gen(function* () {
       const traces = yield* TraceEvents;
+      const { run } = yield* reviewedFile();
       const event: TraceEvent = {
         seq: 0,
         at: 1,
@@ -105,27 +80,21 @@ test("TraceEvents -- traces are workspace-scoped", async () => {
         nodeId: "analyze",
       };
 
-      yield* traces.append("run", event);
+      yield* traces.append(run.id, event);
 
-      const same = yield* traces.get("run");
+      const same = yield* traces.get(run.id);
       assertEquals(same?.length, 1);
-      yield* Effect.provideService(
-        Effect.gen(function* () {
-          const tracesOther = yield* TraceEvents;
-          // the other workspace has no rows: an empty trace, not an absent one
-          assertEquals(yield* tracesOther.get("run"), []);
-        }),
-        WorkspaceId,
-        { wsId: "other" },
-      );
+      // another workspace reads an empty trace, not an absent one
+      assertEquals(yield* other(traces.get(run.id)), []);
     }),
   );
 });
 
 test("TraceEvents -- an oversized event comes back whole", async () => {
-  await run(
+  await runInWorkspace(() =>
     Effect.gen(function* () {
       const traces = yield* TraceEvents;
+      const { run } = yield* reviewedFile();
       const output = { text: "x".repeat(200_000) };
       const event: TraceEvent = {
         seq: 0,
@@ -135,9 +104,9 @@ test("TraceEvents -- an oversized event comes back whole", async () => {
         event: { type: "output", output },
       };
 
-      yield* traces.append("run", event);
+      yield* traces.append(run.id, event);
 
-      const [entry] = (yield* traces.get("run")) ?? [];
+      const [entry] = (yield* traces.get(run.id)) ?? [];
       if (entry?.type !== "custom" || entry.event.type !== "output") {
         throw new Error("expected a custom output event");
       }
@@ -147,9 +116,10 @@ test("TraceEvents -- an oversized event comes back whole", async () => {
 });
 
 test("TraceEvents -- escape-heavy content comes back whole", async () => {
-  await run(
+  await runInWorkspace(() =>
     Effect.gen(function* () {
       const traces = yield* TraceEvents;
+      const { run } = yield* reviewedFile();
       const text = '\n"'.repeat(70_000);
       const event: TraceEvent = {
         seq: 0,
@@ -159,9 +129,9 @@ test("TraceEvents -- escape-heavy content comes back whole", async () => {
         event: { type: "prompt", text },
       };
 
-      yield* traces.append("run", event);
+      yield* traces.append(run.id, event);
 
-      const [entry] = (yield* traces.get("run")) ?? [];
+      const [entry] = (yield* traces.get(run.id)) ?? [];
       if (entry?.type !== "custom" || entry.event.type !== "prompt") {
         throw new Error("expected a custom prompt event");
       }
@@ -171,9 +141,10 @@ test("TraceEvents -- escape-heavy content comes back whole", async () => {
 });
 
 test("TraceEvents -- appending the same seq again replaces the event", async () => {
-  await run(
+  await runInWorkspace(() =>
     Effect.gen(function* () {
       const traces = yield* TraceEvents;
+      const { run } = yield* reviewedFile();
       const mk = (nodeId: string): TraceEvent => ({
         seq: 4,
         at: 1,
@@ -181,10 +152,10 @@ test("TraceEvents -- appending the same seq again replaces the event", async () 
         nodeId,
       });
 
-      yield* traces.append("run", mk("first"));
-      yield* traces.append("run", mk("second"));
+      yield* traces.append(run.id, mk("first"));
+      yield* traces.append(run.id, mk("second"));
 
-      const trace = yield* traces.get("run");
+      const trace = yield* traces.get(run.id);
       assertEquals(trace?.length, 1);
       assertEquals(trace?.[0], mk("second"));
     }),
