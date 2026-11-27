@@ -65,7 +65,6 @@ CREATE TABLE file_drafts (
 CREATE TABLE marks (
   id TEXT PRIMARY KEY NOT NULL,
   runId TEXT NOT NULL REFERENCES review_runs (id) ON DELETE CASCADE,
-  unitId TEXT NOT NULL,
   selectedText TEXT NOT NULL,
   beforeContext TEXT NOT NULL,
   afterContext TEXT NOT NULL,

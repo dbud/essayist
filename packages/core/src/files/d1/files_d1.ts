@@ -268,8 +268,7 @@ export function layerFilesD1(client: D1Client.D1Client): Layer.Layer<Files> {
   const versions = (fileId: string) =>
     Effect.gen(function* () {
       yield* fileById(fileId);
-      const rows = yield* Effect.mapError(findVersions({ fileId }), backendFault);
-      return [...rows];
+      return yield* Effect.mapError(findVersions({ fileId }), backendFault);
     });
 
   const writeDraft = (fileId: string, baseVersionId: string, content: string) =>

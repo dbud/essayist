@@ -50,7 +50,7 @@ export interface Interface {
   /** The versions of a file, oldest first. */
   versions(
     fileId: string,
-  ): Effect.Effect<FileVersion[], PersistenceError | FileMissingError, WorkspaceId>;
+  ): Effect.Effect<ReadonlyArray<FileVersion>, PersistenceError | FileMissingError, WorkspaceId>;
   /** Save the draft, edited from `baseVersionId`; refused when that is no longer the latest. */
   writeDraft(
     fileId: string,
