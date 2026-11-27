@@ -5,7 +5,6 @@ import {
   ReviewRuns,
   TraceEvents,
   WorkspaceId,
-  type PersistenceError,
   type ProgressFeed,
   type ReviewConfig,
   type ReviewObserver,
@@ -28,8 +27,8 @@ const CLOSE_FRAME = "\u0000";
 interface Sink {
   readonly detail: ReviewStreamDetail;
   readonly queue: Queue.Queue<string>;
-  readonly drainFiber: Fiber.Fiber<void, PersistenceError>;
-  readonly pingFiber: Fiber.Fiber<void, PersistenceError>;
+  readonly drainFiber: Fiber.Fiber<void>;
+  readonly pingFiber: Fiber.Fiber<void>;
 }
 
 export class StreamHub {
@@ -53,8 +52,8 @@ export class StreamHub {
       start: (controller) =>
         this.rt.runPromise(
           this.#attach(sinkId, controller, ref, lastSeq, detail).pipe(
-            // A storage fault during attach leaves the stream hanging; drop the sink and close it.
-            Effect.catchTag("PersistenceError", () =>
+            // a defect during attach would leave the stream hanging; drop the sink and close it
+            Effect.catchCause(() =>
               Effect.sync(() => {
                 this.#sinks.delete(sinkId);
                 controller.enqueue(frameEncoder.encode(CLOSE_FRAME));
@@ -87,7 +86,7 @@ export class StreamHub {
   }
 
   #doneFrame(run: ReviewRun): string {
-    const encoded = Schema.encodeSync(ReviewRun)(run);
+    const encoded = Schema.encodeSync(ReviewRun.json)(run);
     return `event: done\ndata: ${JSON.stringify(encoded)}\n\n`;
   }
 
@@ -124,7 +123,7 @@ export class StreamHub {
     { wsId, runId }: RunRef,
     lastSeq: number,
     detail: ReviewStreamDetail,
-  ): Effect.Effect<void, PersistenceError, TraceEvents | ReviewRuns | ReviewConfig> {
+  ): Effect.Effect<void, never, TraceEvents | ReviewRuns | ReviewConfig> {
     return this.#mutex.withPermits(1)(
       Effect.gen({ self: this }, function* () {
         const queue = yield* Queue.unbounded<string>();
@@ -136,9 +135,7 @@ export class StreamHub {
 
         if (detail === "trace") {
           const traces = yield* TraceEvents;
-          const events = yield* Effect.provideService(traces.get(runId, lastSeq), WorkspaceId, {
-            wsId,
-          });
+          const events = yield* traces.get(runId, lastSeq);
           for (const event of events) {
             yield* Queue.offer(sink.queue, this.#traceFrame(event));
           }
@@ -146,7 +143,6 @@ export class StreamHub {
 
         const runs = yield* ReviewRuns;
         const run = yield* runs.getRun(runId).pipe(
-          Effect.provideService(WorkspaceId, { wsId }),
           Effect.map(Option.some),
           Effect.catchTag("ReviewRunMissingError", () => Effect.succeed(Option.none<ReviewRun>())),
         );
@@ -161,7 +157,7 @@ export class StreamHub {
           yield* Queue.offer(sink.queue, this.#doneFrame(run.value));
           yield* Queue.offer(sink.queue, CLOSE_FRAME);
         }
-      }),
+      }).pipe(Effect.provideService(WorkspaceId, { wsId })),
     );
   }
 

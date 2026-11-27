@@ -146,7 +146,8 @@ const getPassGraph = HttpApiEndpoint.get("getPassGraph", "/admin/review-passes/:
   error: [HttpApiError.NotFound, ApiBadRequest],
 });
 
-const CleanupResult = Schema.Struct({ runs: Schema.Number, marks: Schema.Number });
+// how many runs were deleted, with their traces and marks
+const CleanupResult = Schema.Struct({ runs: Schema.Number });
 
 const deleteReviewRun = HttpApiEndpoint.delete("deleteReviewRun", "/admin/review-runs/:id", {
   params: IdParam,
@@ -163,7 +164,7 @@ const clearReviewRuns = HttpApiEndpoint.delete("clearReviewRuns", "/admin/review
     versionId: Schema.optional(Schema.NonEmptyString),
   }),
   success: CleanupResult,
-  error: [HttpApiError.Forbidden, ApiConflict],
+  error: [HttpApiError.Forbidden, HttpApiError.NotFound, ApiConflict],
 });
 
 export const adminGroup = HttpApiGroup.make("admin")

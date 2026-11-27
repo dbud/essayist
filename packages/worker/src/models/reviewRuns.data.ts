@@ -1,9 +1,9 @@
 import { ReviewRun } from "@essayist/core";
 import { Schema } from "effect";
 
-export type ReviewRunData = typeof ReviewRun.Encoded;
+export type ReviewRunData = typeof ReviewRun.json.Encoded;
 
-export const ReviewRunsData = Schema.Array(ReviewRun);
+export const ReviewRunsData = Schema.Array(ReviewRun.json);
 export type ReviewRunsData = typeof ReviewRunsData.Encoded;
 
 /**

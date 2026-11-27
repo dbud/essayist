@@ -19,8 +19,6 @@ export class ReviewRun extends Model.Class<ReviewRun>("ReviewRun")({
   heartbeatAt: Model.FieldOption(Schema.DateTimeUtcFromString),
 }) {}
 
-export const ReviewRunList = Schema.Array(ReviewRun);
-
 const ProposedMark = {
   selectedText: Schema.String,
   comment: Schema.String,

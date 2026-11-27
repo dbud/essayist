@@ -2,6 +2,8 @@
 import {
   type AuthStore,
   agentflowDefinition,
+  type ConfigInvalidError,
+  type ConfigMissingError,
   buildReviewGraph,
   type DraftStaleError,
   type FileExistsError,
@@ -13,7 +15,6 @@ import {
   resolveActiveReviewPass,
   type Role,
   resolveReviewPass,
-  ReviewCleanup,
   ReviewConfig,
   ReviewPacing,
   ReviewRuns,
@@ -22,7 +23,7 @@ import {
   WorkspaceId,
   Workspaces,
 } from "@essayist/core";
-import { Effect, Layer } from "effect";
+import { Effect, Layer, Option } from "effect";
 import { HttpApi, HttpApiBuilder, HttpApiError } from "effect/http-api";
 
 import { importGoogleDocFile } from "#/api/googleDocs.ts";
@@ -32,6 +33,8 @@ import { adminConfigLoader } from "#/models/admin.loader.ts";
 import { fileContentLoader } from "#/models/fileContent.loader.ts";
 import { fileTreeLoader } from "#/models/fileTree.loader.ts";
 import { fileVersionsLoader } from "#/models/fileVersions.loader.ts";
+import { latestReviewLoader } from "#/models/latestReview.loader.ts";
+import { reviewRunsLoader } from "#/models/reviewRuns.loader.ts";
 import { workspacesLoader } from "#/models/workspaces.loader.ts";
 import { RunDrivers } from "#/reviews/runDrivers.ts";
 
@@ -90,6 +93,8 @@ const workspaceHandlers = HttpApiBuilder.group(
       Effect.fail(new ApiTooLarge({ message: error.message }));
     const conflict = (error: DraftStaleError | FileExistsError) =>
       Effect.fail(new ApiConflict({ message: error.message }));
+    const unresolved = (error: ConfigMissingError | ConfigInvalidError) =>
+      Effect.fail(new ApiFailure({ message: error.message }));
 
     return handlers.handleAll({
       getWorkspaces: (req) =>
@@ -219,11 +224,19 @@ const workspaceHandlers = HttpApiBuilder.group(
           const { user } = yield* UserSession;
           const { wsId, path } = req.query;
           yield* requireAccess(wsId, user.id);
-          return yield* Effect.orDie(
-            ReviewRuns.use((store) => store.listRuns(path)).pipe(
-              Effect.provideService(WorkspaceId, { wsId }),
-              Effect.provide(stores),
-            ),
+          return yield* reviewRunsLoader(wsId, path).pipe(
+            Effect.provide(stores),
+            Effect.catchTag("FileMissingError", notFound),
+          );
+        }),
+      getLatestReview: (req) =>
+        Effect.gen(function* () {
+          const { user } = yield* UserSession;
+          const { wsId, path } = req.query;
+          yield* requireAccess(wsId, user.id);
+          return yield* latestReviewLoader(wsId, path).pipe(
+            Effect.provide(stores),
+            Effect.catchTag("FileMissingError", notFound),
           );
         }),
       startReview: (req) =>
@@ -231,48 +244,39 @@ const workspaceHandlers = HttpApiBuilder.group(
           const { user } = yield* UserSession;
           const { wsId, path } = req.payload;
           yield* requireAccess(wsId, user.id);
-          // Refuse before promoting the draft, so a refused request writes no version. createRun
-          // still guards against a concurrent start.
-          const runs = yield* Effect.orDie(
-            ReviewRuns.use((store) => store.listRuns(path)).pipe(
-              Effect.provideService(WorkspaceId, { wsId }),
-              Effect.provide(stores),
-            ),
+          const runs = yield* ReviewRuns;
+          const file = yield* files.fileAt(path);
+          // checked before the draft is saved, so a refused request saves no version; createRun
+          // catches a concurrent start
+          const running = (yield* runs.listRuns(file.id)).some((run) => run.status === "running");
+          if (running) return yield* Effect.fail(new ApiConflict({ message: ALREADY_REVIEWING }));
+          const pass = yield* resolveActiveReviewPass.pipe(
+            Effect.catchTags({ ConfigMissingError: unresolved, ConfigInvalidError: unresolved }),
           );
-          if (runs.some((run) => run.status === "running")) {
-            return yield* Effect.fail(new ApiConflict({ message: ALREADY_REVIEWING }));
-          }
-          // Promote the pending draft first: the review reads the latest checkpoint.
-          const { version } = yield* files
-            .promoteDraft(path)
-            .pipe(Effect.provideService(WorkspaceId, { wsId }), dieWriteErrors);
-          const pass = yield* Effect.orDie(resolveActiveReviewPass.pipe(Effect.provide(stores)));
-          if (pass === undefined) {
+          if (Option.isNone(pass)) {
             return yield* Effect.fail(
               new ApiFailure({ message: "No active review pass configured." }),
             );
           }
-          const run = yield* ReviewRuns.use((store) =>
-            store.createRun({
-              path,
-              reviewPassId: pass.pass.id,
-              versionId: version.versionId,
-            }),
-          ).pipe(
-            Effect.provideService(WorkspaceId, { wsId }),
-            Effect.provide(stores),
-            Effect.catchTags({
-              PersistenceError: Effect.die,
-              ReviewRunActiveError: () =>
-                Effect.fail(new ApiConflict({ message: ALREADY_REVIEWING })),
-            }),
-          );
-          yield* Effect.gen(function* () {
-            const runDrivers = yield* RunDrivers;
-            yield* runDrivers.wake({ runId: run.id, wsId: run.wsId });
-          }).pipe(Effect.provide(stores));
+          // the review reads the latest text, so the draft is saved as a version first
+          const { version } = yield* files.promoteDraft(file.id);
+          const run = yield* runs
+            .createRun({ fileId: file.id, versionId: version.id, reviewPassId: pass.value.pass.id })
+            .pipe(
+              Effect.catchTags({
+                // the version was just saved
+                FileMissingError: Effect.die,
+                ReviewRunActiveError: () =>
+                  Effect.fail(new ApiConflict({ message: ALREADY_REVIEWING })),
+              }),
+            );
+          yield* RunDrivers.use((drivers) => drivers.wake({ runId: run.id, wsId }));
           return run;
-        }),
+        }).pipe(
+          Effect.provideService(WorkspaceId, { wsId: req.payload.wsId }),
+          Effect.provide(stores),
+          Effect.catchTag("FileMissingError", notFound),
+        ),
     });
   }),
 );
@@ -282,7 +286,7 @@ const adminHandlers = HttpApiBuilder.group(
   "admin",
   Effect.fn(function* (handlers) {
     const config = yield* ReviewConfig;
-    const cleanup = yield* ReviewCleanup;
+    const runs = yield* ReviewRuns;
     const workspacesStore = yield* Workspaces;
     const OK = { ok: true as const };
     const requireAccess = (wsId: string) =>
@@ -349,32 +353,30 @@ const adminHandlers = HttpApiBuilder.group(
         Effect.gen(function* () {
           const { wsId } = req.query;
           yield* requireAccess(wsId);
-          return yield* cleanup.deleteRun(req.params.id).pipe(
+          yield* runs.deleteRun(req.params.id).pipe(
             Effect.provideService(WorkspaceId, { wsId }),
             Effect.catchTags({
-              PersistenceError: Effect.die,
-              ConcurrentModificationError: Effect.die,
               ReviewRunMissingError: () => Effect.fail(new HttpApiError.NotFound()),
               ReviewRunActiveError: (err) => Effect.fail(new ApiConflict({ message: err.message })),
             }),
           );
+          return { runs: 1 };
         }),
       clearReviewRuns: (req) =>
         Effect.gen(function* () {
           const { wsId, path, versionId } = req.query;
           yield* requireAccess(wsId);
-          const cleared =
-            versionId === undefined
-              ? cleanup.clearFile(path)
-              : cleanup.clearVersion(path, versionId);
-          return yield* cleared.pipe(
+          const deleted = yield* Effect.gen(function* () {
+            const file = yield* Files.use((files) => files.fileAt(path));
+            return yield* runs.deleteRuns(file.id, versionId);
+          }).pipe(
             Effect.provideService(WorkspaceId, { wsId }),
             Effect.catchTags({
-              PersistenceError: Effect.die,
-              ConcurrentModificationError: Effect.die,
+              FileMissingError: () => Effect.fail(new HttpApiError.NotFound()),
               ReviewRunActiveError: (err) => Effect.fail(new ApiConflict({ message: err.message })),
             }),
           );
+          return { runs: deleted };
         }),
       getPassGraph: (req) =>
         Effect.gen(function* () {

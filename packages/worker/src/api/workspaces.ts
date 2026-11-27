@@ -1,10 +1,12 @@
-import { FileDraft, FileVersion, ReviewRun, ReviewRunList, Workspace } from "@essayist/core";
+import { FileDraft, FileVersion, ReviewRun, Workspace } from "@essayist/core";
 import { Schema } from "effect";
 import { HttpApiEndpoint, HttpApiError, HttpApiGroup, HttpApiSchema } from "effect/http-api";
 
 import { FileContentData, FileWriteData } from "#/models/fileContent.data.ts";
 import { FileTreeData } from "#/models/fileTree.data.ts";
 import { FileVersionsData } from "#/models/fileVersions.data.ts";
+import { LatestReviewData } from "#/models/marks.data.ts";
+import { ReviewRunsData } from "#/models/reviewRuns.data.ts";
 import { WorkspacesData } from "#/models/workspaces.data.ts";
 
 import { ApiConflict, ApiFailure, ApiTooLarge } from "./errors";
@@ -62,7 +64,7 @@ const ContentQuery = Schema.Struct({
   versionId: Schema.optional(Schema.String),
 });
 
-const VersionsQuery = Schema.Struct({
+const FileQuery = Schema.Struct({
   wsId: Schema.NonEmptyString,
   path: Schema.NonEmptyString,
 });
@@ -98,7 +100,7 @@ const promoteFileDraft = HttpApiEndpoint.post("promoteFileDraft", "/workspaces/f
 });
 
 const getFileVersions = HttpApiEndpoint.get("getFileVersions", "/workspaces/files/versions", {
-  query: VersionsQuery,
+  query: FileQuery,
   success: FileVersionsData,
   error: [HttpApiError.Forbidden, HttpApiError.NotFound],
 });
@@ -145,8 +147,8 @@ const RunsQuery = Schema.Struct({
 
 const getReviewRuns = HttpApiEndpoint.get("getReviewRuns", "/workspaces/review-runs", {
   query: RunsQuery,
-  success: ReviewRunList,
-  error: HttpApiError.Forbidden,
+  success: ReviewRunsData,
+  error: [HttpApiError.Forbidden, HttpApiError.NotFound],
 });
 
 const StartReviewPayload = Schema.Struct({
@@ -156,9 +158,15 @@ const StartReviewPayload = Schema.Struct({
 
 const accepted = <S extends Schema.Top>(schema: S) => HttpApiSchema.status(202)(schema);
 
+const getLatestReview = HttpApiEndpoint.get("getLatestReview", "/workspaces/files/review", {
+  query: FileQuery,
+  success: LatestReviewData,
+  error: [HttpApiError.Forbidden, HttpApiError.NotFound],
+});
+
 const startReview = HttpApiEndpoint.post("startReview", "/workspaces/files/review", {
   payload: StartReviewPayload,
-  success: accepted(ReviewRun),
+  success: accepted(ReviewRun.json),
   error: [HttpApiError.Forbidden, HttpApiError.NotFound, ApiFailure, ApiConflict],
 });
 
@@ -177,5 +185,6 @@ export const workspaceGroup = HttpApiGroup.make("workspaces")
   .add(upsertFile)
   .add(importGoogleDoc)
   .add(getReviewRuns)
+  .add(getLatestReview)
   .add(startReview)
   .middleware(SessionMiddleware);

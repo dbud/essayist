@@ -72,7 +72,7 @@ export {
 } from "#/reviews/trace/view.ts";
 export { TraceEvents } from "#/reviews/trace/service.ts";
 export { layerTraceEventsD1 } from "#/reviews/trace/trace_d1.ts";
-export { ReviewRun, ReviewRunList, ReviewRunStatus, type RunRef } from "#/reviews/types.ts";
+export { ReviewRun, ReviewRunStatus, type RunRef } from "#/reviews/types.ts";
 export type { FailedMarkAttempt, MarkAttempt, PlacedMarkAttempt } from "#/reviews/types.ts";
 export { UserState } from "#/user_state/service.ts";
 export { layerUserStateD1 } from "#/user_state/user_state_d1.ts";
