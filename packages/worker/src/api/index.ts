@@ -5,18 +5,22 @@ import {
   type ConfigInvalidError,
   type ConfigMissingError,
   buildReviewGraph,
+  Category,
   type DraftStaleError,
   type FileExistsError,
   Files,
   type FileTooLargeError,
   Marks,
   type ModelClient,
+  ModelPool,
+  Prompt,
   randomId,
   resolveActiveReviewPass,
   type Role,
   resolveReviewPass,
   ReviewConfig,
   ReviewPacing,
+  ReviewPass,
   ReviewRuns,
   TraceEvents,
   UserState,
@@ -286,6 +290,7 @@ const adminHandlers = HttpApiBuilder.group(
   "admin",
   Effect.fn(function* (handlers) {
     const config = yield* ReviewConfig;
+    const files = yield* Files;
     const runs = yield* ReviewRuns;
     const workspacesStore = yield* Workspaces;
     const OK = { ok: true as const };
@@ -299,54 +304,46 @@ const adminHandlers = HttpApiBuilder.group(
       });
 
     return handlers.handleAll({
-      getAdminConfig: () =>
-        adminConfigLoader().pipe(
-          Effect.provideService(ReviewConfig, config),
-          Effect.catchTag("PersistenceError", Effect.die),
-        ),
+      getAdminConfig: () => adminConfigLoader().pipe(Effect.provideService(ReviewConfig, config)),
       createCategory: (req) => {
-        const category = { ...req.payload, id: randomId() };
+        const category = new Category({ ...req.payload, id: randomId() });
         return config.saveCategory(category).pipe(Effect.as(category));
       },
       updateCategory: (req) => {
-        const category = { ...req.payload, id: req.params.id };
+        const category = new Category({ ...req.payload, id: req.params.id });
         return config.saveCategory(category).pipe(Effect.as(category));
       },
       deleteCategory: (req) => config.deleteCategory(req.params.id).pipe(Effect.as(OK)),
       createModelPool: (req) => {
-        const pool = { ...req.payload, id: randomId() };
+        const pool = new ModelPool({ ...req.payload, id: randomId() });
         return config.saveModelPool(pool).pipe(Effect.as(pool));
       },
       updateModelPool: (req) => {
-        const pool = { ...req.payload, id: req.params.id };
+        const pool = new ModelPool({ ...req.payload, id: req.params.id });
         return config.saveModelPool(pool).pipe(Effect.as(pool));
       },
       deleteModelPool: (req) => config.deleteModelPool(req.params.id).pipe(Effect.as(OK)),
       createPrompt: (req) => config.savePrompt(req.payload).pipe(Effect.as(req.payload)),
       updatePrompt: (req) => {
-        const prompt = { ...req.payload, key: req.params.key };
+        const prompt = new Prompt({ body: req.payload.body, key: req.params.key });
         return config.savePrompt(prompt).pipe(Effect.as(prompt));
       },
       deletePrompt: (req) => config.deletePrompt(req.params.key).pipe(Effect.as(OK)),
       createReviewPass: (req) => {
-        const pass = { ...req.payload, id: randomId() };
+        const pass = new ReviewPass({ ...req.payload, id: randomId() });
         return config.saveReviewPass(pass).pipe(Effect.as(pass));
       },
       updateReviewPass: (req) => {
-        const pass = { ...req.payload, id: req.params.id };
+        const pass = new ReviewPass({ ...req.payload, id: req.params.id });
         return config.saveReviewPass(pass).pipe(Effect.as(pass));
       },
       deleteReviewPass: (req) => config.deleteReviewPass(req.params.id).pipe(Effect.as(OK)),
       setActiveReviewPass: (req) =>
         Effect.gen(function* () {
-          const reviewPassId = req.payload.reviewPassId;
-          const pass = yield* config
-            .getReviewPass(reviewPassId)
-            .pipe(Effect.catchTag("PersistenceError", Effect.die));
-          if (pass === undefined) {
+          const { reviewPassId } = req.payload;
+          if (!(yield* config.setActiveReviewPass(reviewPassId))) {
             return yield* Effect.fail(new HttpApiError.NotFound());
           }
-          yield* config.setActiveReviewPass(reviewPassId);
           return { activeReviewPassId: reviewPassId };
         }),
       deleteReviewRun: (req) =>
@@ -367,7 +364,7 @@ const adminHandlers = HttpApiBuilder.group(
           const { wsId, path, versionId } = req.query;
           yield* requireAccess(wsId);
           const deleted = yield* Effect.gen(function* () {
-            const file = yield* Files.use((files) => files.fileAt(path));
+            const file = yield* files.fileAt(path);
             return yield* runs.deleteRuns(file.id, versionId);
           }).pipe(
             Effect.provideService(WorkspaceId, { wsId }),
@@ -382,19 +379,15 @@ const adminHandlers = HttpApiBuilder.group(
         Effect.gen(function* () {
           const pass = yield* config
             .getReviewPass(req.params.id)
-            .pipe(Effect.catchTag("PersistenceError", Effect.die));
-          if (pass === undefined) {
-            return yield* Effect.fail(new HttpApiError.NotFound());
-          }
+            .pipe(
+              Effect.catchTag("ConfigMissingError", () => Effect.fail(new HttpApiError.NotFound())),
+            );
           const resolved = yield* resolveReviewPass(pass).pipe(
             Effect.provideService(ReviewConfig, config),
-            Effect.catchTag("ConfigMissingError", (err) =>
-              Effect.fail(new ApiBadRequest({ message: err.message })),
-            ),
-            Effect.catchTag("ConfigInvalidError", (err) =>
-              Effect.fail(new ApiBadRequest({ message: err.message })),
-            ),
-            Effect.catchTag("PersistenceError", Effect.die),
+            Effect.catchTags({
+              ConfigMissingError: (err) => Effect.fail(new ApiBadRequest({ message: err.message })),
+              ConfigInvalidError: (err) => Effect.fail(new ApiBadRequest({ message: err.message })),
+            }),
           );
           const graph = buildReviewGraph(resolved);
           return {

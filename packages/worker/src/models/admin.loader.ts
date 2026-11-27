@@ -1,27 +1,21 @@
-import { type PersistenceError, ReviewConfig } from "@essayist/core";
+import { ReviewConfig } from "@essayist/core";
 import { Effect } from "effect";
 
 import type { AdminConfigData } from "./admin.data.ts";
 
 export function adminConfigLoader(): Effect.Effect<
   typeof AdminConfigData.Type,
-  PersistenceError,
+  never,
   ReviewConfig
 > {
-  return Effect.map(
-    Effect.all([
-      ReviewConfig.use((store) => store.listModelPools()),
-      ReviewConfig.use((store) => store.listPrompts()),
-      ReviewConfig.use((store) => store.listCategories()),
-      ReviewConfig.use((store) => store.listReviewPasses()),
-      ReviewConfig.use((store) => store.getActiveReviewPassId()),
-    ]),
-    ([modelPools, prompts, categories, reviewPasses, activeReviewPassId]) => ({
-      modelPools,
-      prompts,
-      categories,
-      reviewPasses,
-      activeReviewPassId,
-    }),
-  );
+  return Effect.gen(function* () {
+    const config = yield* ReviewConfig;
+    return {
+      modelPools: yield* config.listModelPools(),
+      prompts: yield* config.listPrompts(),
+      categories: yield* config.listCategories(),
+      reviewPasses: yield* config.listReviewPasses(),
+      activeReviewPassId: yield* config.getActiveReviewPassId(),
+    };
+  });
 }

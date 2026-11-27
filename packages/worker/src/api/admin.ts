@@ -1,47 +1,18 @@
 // The admin api: config entities for the control panel. Every endpoint requires the admin role,
 // enforced by the admin session middleware.
-import {
-  CategorySchema,
-  ModelPoolSchema,
-  PromptSchema,
-  ReviewPassSchema,
-  ReviewUnitSchema,
-} from "@essayist/core";
-import { Schema } from "effect";
+import { Category, ModelPool, Prompt, ReviewPass } from "@essayist/core";
+import { Schema, Struct } from "effect";
 import { HttpApiEndpoint, HttpApiError, HttpApiGroup, HttpApiSchema } from "effect/http-api";
+
+import { AdminConfigData } from "#/models/admin.data.ts";
 
 import { ApiBadRequest, ApiConflict } from "./errors";
 import { AdminMiddleware } from "./sessionMiddleware";
 
-const AdminConfigData = Schema.Struct({
-  modelPools: Schema.Array(ModelPoolSchema),
-  prompts: Schema.Array(PromptSchema),
-  categories: Schema.Array(CategorySchema),
-  reviewPasses: Schema.Array(ReviewPassSchema),
-  activeReviewPassId: Schema.optional(Schema.String),
-});
-
-// Create and update payloads are the entity schemas without the id; the server derives ids.
-
-const CategoryInput = Schema.Struct({
-  label: Schema.String,
-  description: Schema.optionalKey(Schema.String),
-  severity: Schema.optionalKey(Schema.String),
-  color: Schema.optionalKey(Schema.String),
-});
-
-const ModelPoolInput = Schema.Struct({
-  name: Schema.String,
-  models: Schema.Array(Schema.String),
-});
-
-const ReviewPassInput = Schema.Struct({
-  name: Schema.String,
-  systemPromptKey: Schema.String,
-  modelPoolId: Schema.String,
-  units: Schema.Array(ReviewUnitSchema),
-  variables: Schema.optionalKey(Schema.Record(Schema.String, Schema.String)),
-});
+// create and update payloads are the entities without their id, which the server sets
+const CategoryInput = Schema.Struct(Struct.omit(Category.json.fields, ["id"]));
+const ModelPoolInput = Schema.Struct(Struct.omit(ModelPool.json.fields, ["id"]));
+const ReviewPassInput = Schema.Struct(Struct.omit(ReviewPass.json.fields, ["id"]));
 
 const IdParam = { id: Schema.NonEmptyString };
 const KeyParam = { key: Schema.NonEmptyString };
@@ -56,13 +27,13 @@ const getAdminConfig = HttpApiEndpoint.get("getAdminConfig", "/admin/config", {
 
 const createCategory = HttpApiEndpoint.post("createCategory", "/admin/categories", {
   payload: CategoryInput,
-  success: created(CategorySchema),
+  success: created(Category.json),
 });
 
 const updateCategory = HttpApiEndpoint.put("updateCategory", "/admin/categories/:id", {
   params: IdParam,
   payload: CategoryInput,
-  success: CategorySchema,
+  success: Category.json,
 });
 
 const deleteCategory = HttpApiEndpoint.delete("deleteCategory", "/admin/categories/:id", {
@@ -72,13 +43,13 @@ const deleteCategory = HttpApiEndpoint.delete("deleteCategory", "/admin/categori
 
 const createModelPool = HttpApiEndpoint.post("createModelPool", "/admin/model-pools", {
   payload: ModelPoolInput,
-  success: created(ModelPoolSchema),
+  success: created(ModelPool.json),
 });
 
 const updateModelPool = HttpApiEndpoint.put("updateModelPool", "/admin/model-pools/:id", {
   params: IdParam,
   payload: ModelPoolInput,
-  success: ModelPoolSchema,
+  success: ModelPool.json,
 });
 
 const deleteModelPool = HttpApiEndpoint.delete("deleteModelPool", "/admin/model-pools/:id", {
@@ -87,14 +58,14 @@ const deleteModelPool = HttpApiEndpoint.delete("deleteModelPool", "/admin/model-
 });
 
 const createPrompt = HttpApiEndpoint.post("createPrompt", "/admin/prompts", {
-  payload: PromptSchema,
-  success: created(PromptSchema),
+  payload: Prompt.json,
+  success: created(Prompt.json),
 });
 
 const updatePrompt = HttpApiEndpoint.put("updatePrompt", "/admin/prompts/:key", {
   params: KeyParam,
-  payload: PromptSchema,
-  success: PromptSchema,
+  payload: Prompt.json,
+  success: Prompt.json,
 });
 
 const deletePrompt = HttpApiEndpoint.delete("deletePrompt", "/admin/prompts/:key", {
@@ -104,13 +75,13 @@ const deletePrompt = HttpApiEndpoint.delete("deletePrompt", "/admin/prompts/:key
 
 const createReviewPass = HttpApiEndpoint.post("createReviewPass", "/admin/review-passes", {
   payload: ReviewPassInput,
-  success: created(ReviewPassSchema),
+  success: created(ReviewPass.json),
 });
 
 const updateReviewPass = HttpApiEndpoint.put("updateReviewPass", "/admin/review-passes/:id", {
   params: IdParam,
   payload: ReviewPassInput,
-  success: ReviewPassSchema,
+  success: ReviewPass.json,
 });
 
 const deleteReviewPass = HttpApiEndpoint.delete("deleteReviewPass", "/admin/review-passes/:id", {
