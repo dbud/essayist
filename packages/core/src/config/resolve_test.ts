@@ -1,20 +1,19 @@
 import { assert, assertEquals, assertInstanceOf } from "@std/assert";
-import { Effect, Result } from "effect";
+import { Effect, Option, Result } from "effect";
 import { test } from "vitest";
 
-import type { ConcurrentModificationError, PersistenceError } from "#/persistence/mod.ts";
-import { testLayer } from "#/persistence/testing/kv.ts";
+import { layerReviewConfigD1 } from "#/config/config_d1.ts";
+import { category, reviewPass } from "#/config/testing.ts";
+import { testLayerD1 } from "#/persistence/testing/d1.ts";
 
-import { ConfigInvalidError, ConfigMissingError, resolveActiveReviewPass } from "./resolve.ts";
+import { ConfigInvalidError, resolveActiveReviewPass } from "./resolve.ts";
 import { ReviewConfig } from "./service.ts";
-import type { ResolvedReviewPass } from "./types.ts";
+import { ConfigMissingError, type ResolvedReviewPass } from "./types.ts";
 
 /** Run a resolution against a seeded or empty ephemeral store; returns the
  * program's exit for failure assertions. */
 function run(
-  seed: (
-    config: ReviewConfig["Service"],
-  ) => Effect.Effect<void, PersistenceError | ConcurrentModificationError> = () => Effect.void,
+  seed: (config: ReviewConfig["Service"]) => Effect.Effect<unknown> = () => Effect.void,
 ) {
   return Effect.gen(function* () {
     const config = yield* ReviewConfig;
@@ -24,7 +23,7 @@ function run(
 }
 
 function assertFailsWith(
-  outcome: Result.Result<ResolvedReviewPass | undefined, unknown>,
+  outcome: Result.Result<Option.Option<ResolvedReviewPass>, unknown>,
   errorClass: abstract new (...args: never) => { message: string },
   substring?: string,
 ): void {
@@ -78,52 +77,60 @@ function seedFullConfig(config: ReviewConfig["Service"]) {
       key: "instructions.marks",
       body: "Quote exact spans with {{file}} context.",
     });
-    yield* config.saveCategory({
-      id: "thesis",
-      label: "thesis",
-      description: "Thesis clarity",
-    });
-    yield* config.saveCategory({
-      id: "evidence",
-      label: "evidence",
-      description: "Evidence quality",
-    });
-    yield* config.saveCategory({
-      id: "grammar",
-      label: "grammar",
-      description: "Grammar and mechanics",
-    });
-    yield* config.saveReviewPass({
-      id: "essay-review",
-      name: "Essay review",
-      systemPromptKey: "system.reviewer",
-      modelPoolId: "free-pool",
-      variables: { role: "an editor" },
-      units: [
-        {
-          id: "analyze",
-          promptKey: "directive.analyze",
-        },
-        {
-          id: "mechanics",
-          promptKey: "directive.mechanics",
-          instructionsPromptKey: "instructions.marks",
-          attempt: { allowedCategoryIds: ["grammar"] },
-        },
-        {
-          id: "argument",
-          promptKey: "directive.argument",
-          modelPoolId: "strong-pool",
-          attempt: { allowedCategoryIds: ["thesis", "evidence"] },
-          inputs: ["analyze"],
-        },
-        {
-          id: "synthesize",
-          promptKey: "directive.synthesize",
-          summary: true,
-        },
-      ],
-    });
+    yield* config.saveCategory(
+      category({
+        id: "thesis",
+        label: "thesis",
+        description: "Thesis clarity",
+      }),
+    );
+    yield* config.saveCategory(
+      category({
+        id: "evidence",
+        label: "evidence",
+        description: "Evidence quality",
+      }),
+    );
+    yield* config.saveCategory(
+      category({
+        id: "grammar",
+        label: "grammar",
+        description: "Grammar and mechanics",
+      }),
+    );
+    yield* config.saveReviewPass(
+      reviewPass({
+        id: "essay-review",
+        name: "Essay review",
+        systemPromptKey: "system.reviewer",
+        modelPoolId: "free-pool",
+        variables: { role: "an editor" },
+        units: [
+          {
+            id: "analyze",
+            promptKey: "directive.analyze",
+          },
+          {
+            id: "mechanics",
+            promptKey: "directive.mechanics",
+            instructionsPromptKey: "instructions.marks",
+            attempt: { allowedCategoryIds: ["grammar"] },
+          },
+          {
+            id: "argument",
+            promptKey: "directive.argument",
+            modelPoolId: "strong-pool",
+            attempt: { allowedCategoryIds: ["thesis", "evidence"] },
+            inputs: ["analyze"],
+          },
+          {
+            id: "synthesize",
+            promptKey: "directive.synthesize",
+            summary: true,
+          },
+        ],
+      }),
+    );
     yield* config.setActiveReviewPass("essay-review");
   });
 }
@@ -136,8 +143,7 @@ test("resolveActiveReviewPass -- resolves the active pass unit by unit", async (
     if (Result.isFailure(outcome)) {
       throw new Error(`resolution failed: ${outcome.failure.message}`);
     }
-    const resolved = outcome.success;
-    if (!resolved) throw new Error("expected resolved review pass");
+    const resolved = Option.getOrThrow(outcome.success);
     assertEquals(resolved.pass.id, "essay-review");
     assertEquals(resolved.units.length, 4);
 
@@ -152,11 +158,11 @@ test("resolveActiveReviewPass -- resolves the active pass unit by unit", async (
 
     assertEquals(mechanics.attempt, {
       categories: [
-        {
+        category({
           id: "grammar",
           label: "grammar",
           description: "Grammar and mechanics",
-        },
+        }),
       ],
       repairRounds: 1,
     });
@@ -165,12 +171,12 @@ test("resolveActiveReviewPass -- resolves the active pass unit by unit", async (
     assertEquals(argument.pool.models, ["openai/gpt-5.2"]);
     assertEquals(argument.attempt, {
       categories: [
-        { id: "thesis", label: "thesis", description: "Thesis clarity" },
-        {
+        category({ id: "thesis", label: "thesis", description: "Thesis clarity" }),
+        category({
           id: "evidence",
           label: "evidence",
           description: "Evidence quality",
-        },
+        }),
       ],
       repairRounds: 1,
     });
@@ -179,55 +185,49 @@ test("resolveActiveReviewPass -- resolves the active pass unit by unit", async (
     assertEquals(synthesize.summary, true);
     assertEquals(synthesize.attempt, undefined);
   });
-  await Effect.runPromise(Effect.provide(program, testLayer(ReviewConfig.layerNoDeps)));
+  await Effect.runPromise(Effect.provide(program, testLayerD1(layerReviewConfigD1)));
 });
 
-test("resolveActiveReviewPass -- undefined when no pin", async () => {
+test("resolveActiveReviewPass -- none when no pass is active", async () => {
   const program = Effect.gen(function* () {
     const outcome = yield* run();
     if (Result.isFailure(outcome)) {
       throw new Error(`resolution failed: ${outcome.failure.message}`);
     }
-    assertEquals(outcome.success, undefined);
+    assertEquals(outcome.success, Option.none());
   });
-  await Effect.runPromise(Effect.provide(program, testLayer(ReviewConfig.layerNoDeps)));
+  await Effect.runPromise(Effect.provide(program, testLayerD1(layerReviewConfigD1)));
 });
 
 // missing entities
-
-test("resolveActiveReviewPass -- fails on a missing review pass", async () => {
-  const program = Effect.gen(function* () {
-    const outcome = yield* run((config) => config.setActiveReviewPass("nope"));
-    assertFailsWith(outcome, ConfigMissingError, 'review pass "nope"');
-  });
-  await Effect.runPromise(Effect.provide(program, testLayer(ReviewConfig.layerNoDeps)));
-});
 
 test("resolveActiveReviewPass -- fails on a missing unit pool", async () => {
   const program = Effect.gen(function* () {
     const outcome = yield* run((config) =>
       Effect.gen(function* () {
         yield* config.savePrompt({ key: "sys", body: "hi" });
-        yield* config.saveCategory({ id: "c", label: "c", description: "d" });
-        yield* config.saveReviewPass({
-          id: "r",
-          name: "R",
-          systemPromptKey: "sys",
-          modelPoolId: "missing-pool",
-          units: [
-            {
-              id: "mark",
-              promptKey: "sys",
-              attempt: { allowedCategoryIds: ["c"] },
-            },
-          ],
-        });
+        yield* config.saveCategory(category({ id: "c", label: "c", description: "d" }));
+        yield* config.saveReviewPass(
+          reviewPass({
+            id: "r",
+            name: "R",
+            systemPromptKey: "sys",
+            modelPoolId: "missing-pool",
+            units: [
+              {
+                id: "mark",
+                promptKey: "sys",
+                attempt: { allowedCategoryIds: ["c"] },
+              },
+            ],
+          }),
+        );
         yield* config.setActiveReviewPass("r");
       }),
     );
     assertFailsWith(outcome, ConfigMissingError, 'model pool "missing-pool"');
   });
-  await Effect.runPromise(Effect.provide(program, testLayer(ReviewConfig.layerNoDeps)));
+  await Effect.runPromise(Effect.provide(program, testLayerD1(layerReviewConfigD1)));
 });
 
 test("resolveActiveReviewPass -- fails on an empty unit pool", async () => {
@@ -236,26 +236,28 @@ test("resolveActiveReviewPass -- fails on an empty unit pool", async () => {
       Effect.gen(function* () {
         yield* config.saveModelPool({ id: "empty", name: "Empty", models: [] });
         yield* config.savePrompt({ key: "sys", body: "hi" });
-        yield* config.saveCategory({ id: "c", label: "c", description: "d" });
-        yield* config.saveReviewPass({
-          id: "r",
-          name: "R",
-          systemPromptKey: "sys",
-          modelPoolId: "empty",
-          units: [
-            {
-              id: "mark",
-              promptKey: "sys",
-              attempt: { allowedCategoryIds: ["c"] },
-            },
-          ],
-        });
+        yield* config.saveCategory(category({ id: "c", label: "c", description: "d" }));
+        yield* config.saveReviewPass(
+          reviewPass({
+            id: "r",
+            name: "R",
+            systemPromptKey: "sys",
+            modelPoolId: "empty",
+            units: [
+              {
+                id: "mark",
+                promptKey: "sys",
+                attempt: { allowedCategoryIds: ["c"] },
+              },
+            ],
+          }),
+        );
         yield* config.setActiveReviewPass("r");
       }),
     );
-    assertFailsWith(outcome, ConfigMissingError, 'model pool "empty" has no models');
+    assertFailsWith(outcome, ConfigInvalidError, 'model pool "empty" has no models');
   });
-  await Effect.runPromise(Effect.provide(program, testLayer(ReviewConfig.layerNoDeps)));
+  await Effect.runPromise(Effect.provide(program, testLayerD1(layerReviewConfigD1)));
 });
 
 test("resolveActiveReviewPass -- fails on a missing unit prompt", async () => {
@@ -268,26 +270,28 @@ test("resolveActiveReviewPass -- fails on a missing unit prompt", async () => {
           models: ["m/ref"],
         });
         yield* config.savePrompt({ key: "sys", body: "hi" });
-        yield* config.saveCategory({ id: "c", label: "c", description: "d" });
-        yield* config.saveReviewPass({
-          id: "r",
-          name: "R",
-          systemPromptKey: "sys",
-          modelPoolId: "pool",
-          units: [
-            {
-              id: "mark",
-              promptKey: "missing.prompt",
-              attempt: { allowedCategoryIds: ["c"] },
-            },
-          ],
-        });
+        yield* config.saveCategory(category({ id: "c", label: "c", description: "d" }));
+        yield* config.saveReviewPass(
+          reviewPass({
+            id: "r",
+            name: "R",
+            systemPromptKey: "sys",
+            modelPoolId: "pool",
+            units: [
+              {
+                id: "mark",
+                promptKey: "missing.prompt",
+                attempt: { allowedCategoryIds: ["c"] },
+              },
+            ],
+          }),
+        );
         yield* config.setActiveReviewPass("r");
       }),
     );
     assertFailsWith(outcome, ConfigMissingError, 'prompt "missing.prompt" for unit "mark"');
   });
-  await Effect.runPromise(Effect.provide(program, testLayer(ReviewConfig.layerNoDeps)));
+  await Effect.runPromise(Effect.provide(program, testLayerD1(layerReviewConfigD1)));
 });
 
 test("resolveActiveReviewPass -- fails on a missing pass system prompt", async () => {
@@ -299,26 +303,28 @@ test("resolveActiveReviewPass -- fails on a missing pass system prompt", async (
           name: "Pool",
           models: ["m/ref"],
         });
-        yield* config.saveCategory({ id: "c", label: "c", description: "d" });
-        yield* config.saveReviewPass({
-          id: "r",
-          name: "R",
-          systemPromptKey: "missing.system",
-          modelPoolId: "pool",
-          units: [
-            {
-              id: "mark",
-              promptKey: "sys",
-              attempt: { allowedCategoryIds: ["c"] },
-            },
-          ],
-        });
+        yield* config.saveCategory(category({ id: "c", label: "c", description: "d" }));
+        yield* config.saveReviewPass(
+          reviewPass({
+            id: "r",
+            name: "R",
+            systemPromptKey: "missing.system",
+            modelPoolId: "pool",
+            units: [
+              {
+                id: "mark",
+                promptKey: "sys",
+                attempt: { allowedCategoryIds: ["c"] },
+              },
+            ],
+          }),
+        );
         yield* config.setActiveReviewPass("r");
       }),
     );
     assertFailsWith(outcome, ConfigMissingError, 'prompt "missing.system" for pass "r"');
   });
-  await Effect.runPromise(Effect.provide(program, testLayer(ReviewConfig.layerNoDeps)));
+  await Effect.runPromise(Effect.provide(program, testLayerD1(layerReviewConfigD1)));
 });
 
 test("resolveActiveReviewPass -- fails on missing referenced categories", async () => {
@@ -331,27 +337,29 @@ test("resolveActiveReviewPass -- fails on missing referenced categories", async 
           models: ["m/ref"],
         });
         yield* config.savePrompt({ key: "sys", body: "hi" });
-        yield* config.saveReviewPass({
-          id: "r",
-          name: "R",
-          systemPromptKey: "sys",
-          modelPoolId: "pool",
-          units: [
-            {
-              id: "mark",
-              promptKey: "sys",
-              attempt: {
-                allowedCategoryIds: ["gone", "also-gone"],
+        yield* config.saveReviewPass(
+          reviewPass({
+            id: "r",
+            name: "R",
+            systemPromptKey: "sys",
+            modelPoolId: "pool",
+            units: [
+              {
+                id: "mark",
+                promptKey: "sys",
+                attempt: {
+                  allowedCategoryIds: ["gone", "also-gone"],
+                },
               },
-            },
-          ],
-        });
+            ],
+          }),
+        );
         yield* config.setActiveReviewPass("r");
       }),
     );
     assertFailsWith(outcome, ConfigMissingError, '"gone", "also-gone"');
   });
-  await Effect.runPromise(Effect.provide(program, testLayer(ReviewConfig.layerNoDeps)));
+  await Effect.runPromise(Effect.provide(program, testLayerD1(layerReviewConfigD1)));
 });
 
 // invalid passes
@@ -366,19 +374,21 @@ test("resolveActiveReviewPass -- fails on attempt units without categories", asy
           models: ["m/ref"],
         });
         yield* config.savePrompt({ key: "sys", body: "hi" });
-        yield* config.saveReviewPass({
-          id: "r",
-          name: "R",
-          systemPromptKey: "sys",
-          modelPoolId: "pool",
-          units: [
-            {
-              id: "mark",
-              promptKey: "sys",
-              attempt: { allowedCategoryIds: [] },
-            },
-          ],
-        });
+        yield* config.saveReviewPass(
+          reviewPass({
+            id: "r",
+            name: "R",
+            systemPromptKey: "sys",
+            modelPoolId: "pool",
+            units: [
+              {
+                id: "mark",
+                promptKey: "sys",
+                attempt: { allowedCategoryIds: [] },
+              },
+            ],
+          }),
+        );
         yield* config.setActiveReviewPass("r");
       }),
     );
@@ -388,7 +398,7 @@ test("resolveActiveReviewPass -- fails on attempt units without categories", asy
       'attempt unit "mark" in pass "r" has no allowed categories',
     );
   });
-  await Effect.runPromise(Effect.provide(program, testLayer(ReviewConfig.layerNoDeps)));
+  await Effect.runPromise(Effect.provide(program, testLayerD1(layerReviewConfigD1)));
 });
 
 test("resolveActiveReviewPass -- fails on duplicate unit ids", async () => {
@@ -401,31 +411,33 @@ test("resolveActiveReviewPass -- fails on duplicate unit ids", async () => {
           models: ["m/ref"],
         });
         yield* config.savePrompt({ key: "sys", body: "hi" });
-        yield* config.saveCategory({ id: "c", label: "c", description: "d" });
-        yield* config.saveReviewPass({
-          id: "r",
-          name: "R",
-          systemPromptKey: "sys",
-          modelPoolId: "pool",
-          units: [
-            {
-              id: "mark",
-              promptKey: "sys",
-              attempt: { allowedCategoryIds: ["c"] },
-            },
-            {
-              id: "mark",
-              promptKey: "sys",
-              attempt: { allowedCategoryIds: ["c"] },
-            },
-          ],
-        });
+        yield* config.saveCategory(category({ id: "c", label: "c", description: "d" }));
+        yield* config.saveReviewPass(
+          reviewPass({
+            id: "r",
+            name: "R",
+            systemPromptKey: "sys",
+            modelPoolId: "pool",
+            units: [
+              {
+                id: "mark",
+                promptKey: "sys",
+                attempt: { allowedCategoryIds: ["c"] },
+              },
+              {
+                id: "mark",
+                promptKey: "sys",
+                attempt: { allowedCategoryIds: ["c"] },
+              },
+            ],
+          }),
+        );
         yield* config.setActiveReviewPass("r");
       }),
     );
     assertFailsWith(outcome, ConfigInvalidError, 'unit id "mark" is used more than once');
   });
-  await Effect.runPromise(Effect.provide(program, testLayer(ReviewConfig.layerNoDeps)));
+  await Effect.runPromise(Effect.provide(program, testLayerD1(layerReviewConfigD1)));
 });
 
 test("resolveActiveReviewPass -- fails on dotted unit ids", async () => {
@@ -438,19 +450,21 @@ test("resolveActiveReviewPass -- fails on dotted unit ids", async () => {
           models: ["m/ref"],
         });
         yield* config.savePrompt({ key: "sys", body: "hi" });
-        yield* config.saveReviewPass({
-          id: "r",
-          name: "R",
-          systemPromptKey: "sys",
-          modelPoolId: "pool",
-          units: [{ id: "mechanics.propose", promptKey: "sys" }],
-        });
+        yield* config.saveReviewPass(
+          reviewPass({
+            id: "r",
+            name: "R",
+            systemPromptKey: "sys",
+            modelPoolId: "pool",
+            units: [{ id: "mechanics.propose", promptKey: "sys" }],
+          }),
+        );
         yield* config.setActiveReviewPass("r");
       }),
     );
     assertFailsWith(outcome, ConfigInvalidError, 'must not contain "."');
   });
-  await Effect.runPromise(Effect.provide(program, testLayer(ReviewConfig.layerNoDeps)));
+  await Effect.runPromise(Effect.provide(program, testLayerD1(layerReviewConfigD1)));
 });
 
 test("resolveActiveReviewPass -- fails on forward unit inputs", async () => {
@@ -463,22 +477,24 @@ test("resolveActiveReviewPass -- fails on forward unit inputs", async () => {
           models: ["m/ref"],
         });
         yield* config.savePrompt({ key: "sys", body: "hi" });
-        yield* config.saveReviewPass({
-          id: "r",
-          name: "R",
-          systemPromptKey: "sys",
-          modelPoolId: "pool",
-          units: [
-            { id: "first", promptKey: "sys", inputs: ["second"] },
-            { id: "second", promptKey: "sys" },
-          ],
-        });
+        yield* config.saveReviewPass(
+          reviewPass({
+            id: "r",
+            name: "R",
+            systemPromptKey: "sys",
+            modelPoolId: "pool",
+            units: [
+              { id: "first", promptKey: "sys", inputs: ["second"] },
+              { id: "second", promptKey: "sys" },
+            ],
+          }),
+        );
         yield* config.setActiveReviewPass("r");
       }),
     );
     assertFailsWith(outcome, ConfigInvalidError, 'references unknown or later unit "second"');
   });
-  await Effect.runPromise(Effect.provide(program, testLayer(ReviewConfig.layerNoDeps)));
+  await Effect.runPromise(Effect.provide(program, testLayerD1(layerReviewConfigD1)));
 });
 
 test("resolveActiveReviewPass -- fails on unknown unit inputs", async () => {
@@ -491,19 +507,21 @@ test("resolveActiveReviewPass -- fails on unknown unit inputs", async () => {
           models: ["m/ref"],
         });
         yield* config.savePrompt({ key: "sys", body: "hi" });
-        yield* config.saveReviewPass({
-          id: "r",
-          name: "R",
-          systemPromptKey: "sys",
-          modelPoolId: "pool",
-          units: [{ id: "early", promptKey: "sys", inputs: ["ghost"] }],
-        });
+        yield* config.saveReviewPass(
+          reviewPass({
+            id: "r",
+            name: "R",
+            systemPromptKey: "sys",
+            modelPoolId: "pool",
+            units: [{ id: "early", promptKey: "sys", inputs: ["ghost"] }],
+          }),
+        );
         yield* config.setActiveReviewPass("r");
       }),
     );
     assertFailsWith(outcome, ConfigInvalidError, 'references unknown or later unit "ghost"');
   });
-  await Effect.runPromise(Effect.provide(program, testLayer(ReviewConfig.layerNoDeps)));
+  await Effect.runPromise(Effect.provide(program, testLayerD1(layerReviewConfigD1)));
 });
 
 test("resolveActiveReviewPass -- fails on attempt and summary together", async () => {
@@ -516,21 +534,23 @@ test("resolveActiveReviewPass -- fails on attempt and summary together", async (
           models: ["m/ref"],
         });
         yield* config.savePrompt({ key: "sys", body: "hi" });
-        yield* config.saveCategory({ id: "c", label: "c", description: "d" });
-        yield* config.saveReviewPass({
-          id: "r",
-          name: "R",
-          systemPromptKey: "sys",
-          modelPoolId: "pool",
-          units: [
-            {
-              id: "both",
-              promptKey: "sys",
-              summary: true,
-              attempt: { allowedCategoryIds: ["c"] },
-            },
-          ],
-        });
+        yield* config.saveCategory(category({ id: "c", label: "c", description: "d" }));
+        yield* config.saveReviewPass(
+          reviewPass({
+            id: "r",
+            name: "R",
+            systemPromptKey: "sys",
+            modelPoolId: "pool",
+            units: [
+              {
+                id: "both",
+                promptKey: "sys",
+                summary: true,
+                attempt: { allowedCategoryIds: ["c"] },
+              },
+            ],
+          }),
+        );
         yield* config.setActiveReviewPass("r");
       }),
     );
@@ -540,5 +560,5 @@ test("resolveActiveReviewPass -- fails on attempt and summary together", async (
       'unit "both" in pass "r" sets both attempt and summary',
     );
   });
-  await Effect.runPromise(Effect.provide(program, testLayer(ReviewConfig.layerNoDeps)));
+  await Effect.runPromise(Effect.provide(program, testLayerD1(layerReviewConfigD1)));
 });

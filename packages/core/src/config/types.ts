@@ -1,38 +1,44 @@
 import { Schema } from "effect";
+import { Model } from "effect/schema";
 
-// Config entities stored in KV under the ["cfg", ...] prefix.
+/** A config item that was looked up, or that a pass names, does not exist. */
+export class ConfigMissingError extends Schema.TaggedError<ConfigMissingError>()(
+  "ConfigMissingError",
+  { what: Schema.String },
+) {
+  override get message() {
+    return `Config missing: ${this.what}`;
+  }
+}
 
 // model pools
 /** An ordered pool of model ids. */
-export const ModelPoolSchema = Schema.Struct({
+export class ModelPool extends Model.Class<ModelPool>("ModelPool")({
   id: Schema.String,
   name: Schema.String,
   /** Model ids in order. */
-  models: Schema.Array(Schema.String),
-});
-export type ModelPool = typeof ModelPoolSchema.Type;
+  models: Model.JsonFromString(Schema.Array(Schema.String)),
+}) {}
 
 // prompts
 /** A named prompt template with {{var}} placeholders. */
-export const PromptSchema = Schema.Struct({
+export class Prompt extends Model.Class<Prompt>("Prompt")({
   /** Stable name. */
   key: Schema.String,
   body: Schema.String,
-});
-export type Prompt = typeof PromptSchema.Type;
+}) {}
 
 // categories (mark labels)
 /** An allowed mark label. */
-export const CategorySchema = Schema.Struct({
+export class Category extends Model.Class<Category>("Category")({
   id: Schema.String,
   /** Short label. */
   label: Schema.String,
-  description: Schema.optionalKey(Schema.String),
+  description: Model.FieldOption(Schema.String),
   /** Severity hint. */
-  severity: Schema.optionalKey(Schema.String),
-  color: Schema.optionalKey(Schema.String),
-});
-export type Category = typeof CategorySchema.Type;
+  severity: Model.FieldOption(Schema.String),
+  color: Model.FieldOption(Schema.String),
+}) {}
 
 // review passes
 export const ReviewUnitSchema = Schema.Struct({
@@ -60,17 +66,16 @@ export const ReviewUnitSchema = Schema.Struct({
 export type ReviewUnit = typeof ReviewUnitSchema.Type;
 
 /** A review pass: an ordered pipeline of units over a pinned file version. */
-export const ReviewPassSchema = Schema.Struct({
+export class ReviewPass extends Model.Class<ReviewPass>("ReviewPass")({
   id: Schema.String,
   name: Schema.String,
   /** The shared system prompt, rendered once for all units. */
   systemPromptKey: Schema.String,
   modelPoolId: Schema.String,
-  units: Schema.Array(ReviewUnitSchema),
+  units: Model.JsonFromString(Schema.Array(ReviewUnitSchema)),
   /** Static variable values for prompt rendering. */
-  variables: Schema.optionalKey(Schema.Record(Schema.String, Schema.String)),
-});
-export type ReviewPass = typeof ReviewPassSchema.Type;
+  variables: Model.FieldOption(Model.JsonFromString(Schema.Record(Schema.String, Schema.String))),
+}) {}
 
 // resolved bundles (computed, not stored)
 /** Rendered prompts for a unit: pass system prompt plus unit task. */
@@ -91,7 +96,7 @@ export interface ResolvedReviewUnit {
   /** Unit ids whose artifacts this unit receives as context. */
   inputs: readonly string[];
   /** Mark attempt config; present only on attempt units. */
-  attempt?: { categories: Category[]; repairRounds: number };
+  attempt?: { categories: ReadonlyArray<Category>; repairRounds: number };
   /** The unit's artifact is the run summary. */
   summary?: boolean;
 }

@@ -3,27 +3,20 @@ export { AuthStore } from "#/auth/service.ts";
 export { SessionTokens } from "#/auth/types.ts";
 export {
   ConfigInvalidError,
-  ConfigMissingError,
   resolveActiveReviewPass,
   resolveReviewPass,
   resolveReviewPassById,
 } from "#/config/resolve.ts";
 export { ReviewConfig } from "#/config/service.ts";
 export { extractVariables } from "#/config/template.ts";
-export type {
+export { layerReviewConfigD1 } from "#/config/config_d1.ts";
+export type { ResolvedReviewPass, ResolvedReviewUnit, ReviewUnit } from "#/config/types.ts";
+export {
   Category,
+  ConfigMissingError,
   ModelPool,
   Prompt,
-  ResolvedReviewPass,
-  ResolvedReviewUnit,
   ReviewPass,
-  ReviewUnit,
-} from "#/config/types.ts";
-export {
-  CategorySchema,
-  ModelPoolSchema,
-  PromptSchema,
-  ReviewPassSchema,
   ReviewUnitSchema,
 } from "#/config/types.ts";
 export { demoFiles, seedDemoFiles } from "#/demo.ts";
@@ -79,12 +72,7 @@ export type { ReviewObserver } from "#/reviews/observer/types.ts";
 export { noopObserver } from "#/reviews/observer/noop.ts";
 export type { RunnerError } from "#/reviews/runner.ts";
 export { ReviewLeaseTakenError, resumeReviewRun } from "#/reviews/runner.ts";
-export {
-  driveReviewRun,
-  type DriveError,
-  type DriveServices,
-  type RunRef,
-} from "#/reviews/drive.ts";
+export { driveReviewRun, type DriveServices, type RunRef } from "#/reviews/drive.ts";
 export { ReviewJanitor } from "#/reviews/janitor.ts";
 export { layerReviewJanitorD1 } from "#/reviews/janitor_d1.ts";
 export { ReviewPacing } from "#/reviews/pacing.ts";

@@ -79,7 +79,7 @@ function unitNodes(
  * configured budget, and a collect node re-emitting all placed marks. */
 function markNodes(
   unit: ResolvedReviewUnit,
-  attempt: { categories: Category[]; repairRounds: number },
+  attempt: { categories: ReadonlyArray<Category>; repairRounds: number },
   pin?: ReviewPin,
 ): { nodes: FlowNodeOf<ReviewTypes>[]; terminalId: string } {
   const applyPayload: MarkContext = {

@@ -3,6 +3,7 @@
 
 import { Effect } from "effect";
 
+import { ReviewConfig } from "#/config/service.ts";
 import { Files } from "#/files/service.ts";
 import type { FileExistsError, FileTooLargeError } from "#/files/types.ts";
 import { Marks } from "#/marks/service.ts";
@@ -87,12 +88,13 @@ What surprises most new writers is how much of the work happens after the draft 
 
 /**
  * Create the demo essay with a completed review of its first version. Fails with FileExistsError
- * when the essay is already there, so seeding twice changes nothing.
+ * when the essay is already there, so seeding twice changes nothing. A mark keeps its category only
+ * when the config has it.
  */
 export function seedDemoFiles(): Effect.Effect<
   void,
   FileExistsError | FileTooLargeError,
-  Files | Marks | ReviewRuns | WorkspaceId
+  Files | Marks | ReviewConfig | ReviewRuns | WorkspaceId
 > {
   return Effect.gen(function* () {
     const { file, version } = yield* Files.use((files) =>
@@ -102,10 +104,18 @@ export function seedDemoFiles(): Effect.Effect<
     const run = yield* Effect.orDie(
       runs.createRun({ fileId: file.id, versionId: version.id, reviewPassId: "essay-review" }),
     );
+    const categories = yield* ReviewConfig.use((config) => config.listCategories());
+    const knownIds = new Set(categories.map((category) => category.id));
     const marks = yield* Marks;
-    for (const mark of demoMarks) {
+    for (const { categoryId, ...mark } of demoMarks) {
       yield* Effect.orDie(
-        marks.mark({ ...mark, fileId: file.id, versionId: version.id, runId: run.id }),
+        marks.mark({
+          ...mark,
+          categoryId: categoryId !== undefined && knownIds.has(categoryId) ? categoryId : undefined,
+          fileId: file.id,
+          versionId: version.id,
+          runId: run.id,
+        }),
       );
     }
     yield* Effect.orDie(runs.completeRun(run.id, "A demo review of the essay."));

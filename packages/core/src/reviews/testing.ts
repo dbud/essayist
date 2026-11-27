@@ -1,9 +1,12 @@
 /** Fixtures for tests of the review layers: a database, a workspace, and files under review. */
 
 import * as D1Client from "@effect/sql-d1/D1Client";
-import { Effect, Layer } from "effect";
+import { Effect, Layer, Option } from "effect";
 import * as Reactivity from "effect/reactivity/Reactivity";
 
+import { layerReviewConfigD1 } from "#/config/config_d1.ts";
+import { ReviewConfig } from "#/config/service.ts";
+import { Category } from "#/config/types.ts";
 import { layerFilesD1 } from "#/files/files_d1.ts";
 import { Files } from "#/files/service.ts";
 import { layerMarksD1 } from "#/marks/marks_d1.ts";
@@ -22,6 +25,7 @@ import type { TraceEvents } from "./trace/service.ts";
 import { layerTraceEventsD1 } from "./trace/trace_d1.ts";
 
 export type ReviewTestServices =
+  | ReviewConfig
   | Files
   | Marks
   | ReviewRuns
@@ -32,6 +36,7 @@ export type ReviewTestServices =
 export function reviewServicesD1(client: D1Client.D1Client): Layer.Layer<ReviewTestServices> {
   const files = layerFilesD1(client);
   return Layer.mergeAll(
+    layerReviewConfigD1(client),
     files,
     Layer.provide(layerMarksD1(client), files),
     layerReviewRunsD1(client),
@@ -40,6 +45,17 @@ export function reviewServicesD1(client: D1Client.D1Client): Layer.Layer<ReviewT
     layerWorkspacesD1(client),
   );
 }
+
+/** Every test database has this category, for the marks that name one. */
+export const GRAMMAR = new Category({
+  id: "grammar",
+  label: "grammar",
+  description: Option.none(),
+  severity: Option.none(),
+  color: Option.none(),
+});
+
+const seedCategory = ReviewConfig.use((config) => config.saveCategory(GRAMMAR));
 
 /** Create a workspace with an owner, and return its id. */
 export const newWorkspace = (name = "Essays") =>
@@ -63,6 +79,7 @@ export function runInWorkspace<A, E>(
 ): Promise<A> {
   return Effect.runPromise(
     Effect.gen(function* () {
+      yield* seedCategory;
       const home = yield* newWorkspace("Essays");
       const second = yield* newWorkspace("Other");
       const other: InOther = (effect) =>
@@ -96,6 +113,8 @@ export async function openReviewDatabase() {
     D1Client.make({ db: d1SqliteShim(db) }).pipe(Effect.scoped, Effect.provide(Reactivity.layer)),
   );
   const env = reviewServicesD1(client);
-  const wsId = await Effect.runPromise(Effect.provide(newWorkspace(), env));
+  const wsId = await Effect.runPromise(
+    Effect.provide(Effect.andThen(seedCategory, newWorkspace()), env),
+  );
   return { db, client, env, wsId };
 }

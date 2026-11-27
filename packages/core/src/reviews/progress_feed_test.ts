@@ -3,7 +3,7 @@ import { Effect } from "effect";
 import { test } from "vitest";
 
 import { ReviewConfig } from "#/config/service.ts";
-import { testLayer } from "#/persistence/testing/kv.ts";
+import { reviewPass } from "#/config/testing.ts";
 
 import { loadProgressFeed } from "./progress_feed.ts";
 import { reviewedFile, runInWorkspace } from "./testing.ts";
@@ -34,13 +34,15 @@ test("loadProgressFeed -- folds the stored trace over the units of its pass", as
       yield* config.saveModelPool({ id: "pool", name: "Pool", models: ["m/a"] });
       yield* config.savePrompt({ key: "system", body: "You are an editor." });
       yield* config.savePrompt({ key: "analyze", body: "Read it." });
-      yield* config.saveReviewPass({
-        id: "essay-review",
-        name: "Pass",
-        systemPromptKey: "system",
-        modelPoolId: "pool",
-        units: [{ id: "analyze", promptKey: "analyze" }],
-      });
+      yield* config.saveReviewPass(
+        reviewPass({
+          id: "essay-review",
+          name: "Pass",
+          systemPromptKey: "system",
+          modelPoolId: "pool",
+          units: [{ id: "analyze", promptKey: "analyze" }],
+        }),
+      );
       const run = yield* tracedRun;
 
       const feed = yield* loadProgressFeed(run);
@@ -49,7 +51,7 @@ test("loadProgressFeed -- folds the stored trace over the units of its pass", as
         units: [{ id: "analyze", state: "running" }],
         marksPlaced: 1,
       });
-    }).pipe(Effect.provide(testLayer(ReviewConfig.layerNoDeps))),
+    }),
   );
 });
 
@@ -59,6 +61,6 @@ test("loadProgressFeed -- a missing pass leaves no units, marks still count", as
       const run = yield* tracedRun;
       const feed = yield* loadProgressFeed({ id: run.id, reviewPassId: "gone" });
       assertEquals(feed.progress, { units: [], marksPlaced: 1 });
-    }).pipe(Effect.provide(testLayer(ReviewConfig.layerNoDeps))),
+    }),
   );
 });

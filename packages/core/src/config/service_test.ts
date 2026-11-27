@@ -1,99 +1,161 @@
 import { assertEquals } from "@std/assert";
-import { Effect } from "effect";
+import { Effect, Option } from "effect";
 import { test } from "vitest";
 
-import { testLayer } from "#/persistence/testing/kv.ts";
+import { Marks } from "#/marks/service.ts";
+import { testLayerD1 } from "#/persistence/testing/d1.ts";
+import { reviewedFile, runInWorkspace } from "#/reviews/testing.ts";
 
+import { layerReviewConfigD1 } from "./config_d1.ts";
 import { ReviewConfig } from "./service.ts";
+import { category, reviewPass } from "./testing.ts";
+import { ConfigMissingError } from "./types.ts";
 
-test("ReviewConfig -- CRUD round-trips", async () => {
-  const program = Effect.gen(function* () {
-    const store = yield* ReviewConfig;
-    yield* store.saveModelPool({ id: "p", name: "P", models: ["m/a"] });
-    assertEquals((yield* store.getModelPool("p"))?.name, "P");
-    yield* store.deleteModelPool("p");
-    assertEquals(yield* store.getModelPool("p"), undefined);
+const run = <A, E>(program: Effect.Effect<A, E, ReviewConfig>) =>
+  Effect.runPromise(Effect.provide(program, testLayerD1(layerReviewConfigD1)));
 
-    yield* store.savePrompt({ key: "k", body: "b" });
-    assertEquals((yield* store.getPrompt("k"))?.body, "b");
-    yield* store.deletePrompt("k");
-    assertEquals(yield* store.getPrompt("k"), undefined);
+/** The `what` of the ConfigMissingError a lookup fails with. */
+const missing = <A, R>(lookup: Effect.Effect<A, ConfigMissingError, R>) =>
+  Effect.map(Effect.flip(lookup), (error) => error.what);
 
-    yield* store.saveCategory({ id: "c", label: "C" });
-    assertEquals((yield* store.getCategory("c"))?.label, "C");
-    yield* store.deleteCategory("c");
-    assertEquals(yield* store.getCategory("c"), undefined);
-
-    const pass = {
-      id: "r",
-      name: "R",
-      systemPromptKey: "sys",
-      modelPoolId: "p",
-      units: [{ id: "analyze", promptKey: "sys" }],
-    };
-    yield* store.saveReviewPass(pass);
-    assertEquals((yield* store.getReviewPass("r"))?.name, "R");
-    yield* store.deleteReviewPass("r");
-    assertEquals(yield* store.getReviewPass("r"), undefined);
+const pass = (id: string, name = "Pass", variables?: Record<string, string>) =>
+  reviewPass({
+    id,
+    name,
+    variables,
+    systemPromptKey: "sys",
+    modelPoolId: "pool",
+    units: [{ id: "analyze", promptKey: "sys" }],
   });
-  await Effect.runPromise(Effect.provide(program, testLayer(ReviewConfig.layerNoDeps)));
+
+test("ReviewConfig -- saves, reads back, replaces and deletes each kind", async () => {
+  await run(
+    Effect.gen(function* () {
+      const config = yield* ReviewConfig;
+      yield* config.saveModelPool({ id: "p", name: "P", models: ["m/a", "m/b"] });
+      yield* config.savePrompt({ key: "k", body: "Hello {{name}}" });
+      yield* config.saveCategory(category({ id: "c", label: "C", color: "teal" }));
+      yield* config.saveReviewPass(pass("r", "Pass", { name: "Ada" }));
+
+      assertEquals((yield* config.getModelPool("p")).models, ["m/a", "m/b"]);
+      assertEquals((yield* config.getPrompt("k")).body, "Hello {{name}}");
+      const saved = yield* config.getCategory("c");
+      assertEquals([saved.color, saved.description], [Option.some("teal"), Option.none()]);
+      const savedPass = yield* config.getReviewPass("r");
+      assertEquals(savedPass.units, [{ id: "analyze", promptKey: "sys" }]);
+      assertEquals(savedPass.variables, Option.some({ name: "Ada" }));
+
+      yield* config.saveCategory(category({ id: "c", label: "Renamed" }));
+      assertEquals((yield* config.getCategory("c")).label, "Renamed");
+
+      yield* config.deleteModelPool("p");
+      yield* config.deletePrompt("k");
+      yield* config.deleteCategory("c");
+      yield* config.deleteReviewPass("r");
+      assertEquals(
+        [
+          yield* missing(config.getModelPool("p")),
+          yield* missing(config.getPrompt("k")),
+          yield* missing(config.getCategory("c")),
+          yield* missing(config.getReviewPass("r")),
+        ],
+        ['model pool "p"', 'prompt "k"', 'category "c"', 'review pass "r"'],
+      );
+    }),
+  );
 });
 
-test("ReviewConfig -- getCategories splits found and missing ids", async () => {
-  const program = Effect.gen(function* () {
-    const store = yield* ReviewConfig;
-    yield* store.saveCategory({ id: "a", label: "A" });
-    yield* store.saveCategory({ id: "b", label: "B" });
-
-    const [found, missing] = yield* store.getCategories(["a", "ghost", "b"]);
-
-    assertEquals(found, [
-      { id: "a", label: "A" },
-      { id: "b", label: "B" },
-    ]);
-    assertEquals(missing, ["ghost"]);
-  });
-  await Effect.runPromise(Effect.provide(program, testLayer(ReviewConfig.layerNoDeps)));
+test("ReviewConfig -- lists are ordered by id", async () => {
+  await run(
+    Effect.gen(function* () {
+      const config = yield* ReviewConfig;
+      yield* config.saveCategory(category({ id: "b", label: "B" }));
+      yield* config.saveCategory(category({ id: "a", label: "A" }));
+      yield* config.saveReviewPass(pass("z"));
+      yield* config.saveReviewPass(pass("y"));
+      assertEquals(
+        (yield* config.listCategories()).map((found) => found.id),
+        ["a", "b"],
+      );
+      assertEquals(
+        (yield* config.listReviewPasses()).map((found) => found.id),
+        ["y", "z"],
+      );
+    }),
+  );
 });
 
-test("ReviewConfig -- active pin set and clear", async () => {
-  const program = Effect.gen(function* () {
-    const store = yield* ReviewConfig;
-    yield* store.saveReviewPass({
-      id: "essay-review",
-      name: "Essay review",
-      systemPromptKey: "sys",
-      modelPoolId: "pool",
-      units: [{ id: "analyze", promptKey: "sys" }],
-    });
-
-    yield* store.setActiveReviewPass("essay-review");
-    assertEquals(yield* store.getActiveReviewPassId(), "essay-review");
-
-    yield* store.clearActiveReviewPass();
-    assertEquals(yield* store.getActiveReviewPassId(), undefined);
-  });
-  await Effect.runPromise(Effect.provide(program, testLayer(ReviewConfig.layerNoDeps)));
+test("ReviewConfig -- getCategories keeps the order, and names every missing id", async () => {
+  await run(
+    Effect.gen(function* () {
+      const config = yield* ReviewConfig;
+      yield* config.saveCategory(category({ id: "a", label: "A" }));
+      yield* config.saveCategory(category({ id: "b", label: "B" }));
+      assertEquals(
+        (yield* config.getCategories(["b", "a"])).map((found) => found.id),
+        ["b", "a"],
+      );
+      assertEquals(
+        yield* missing(config.getCategories(["b", "ghost", "a", "gone"])),
+        'categories "ghost", "gone"',
+      );
+      assertEquals(yield* config.getCategories([]), []);
+    }),
+  );
 });
 
-test("ReviewConfig -- list helpers", async () => {
-  const program = Effect.gen(function* () {
-    const store = yield* ReviewConfig;
-    yield* store.saveModelPool({ id: "p", name: "P", models: ["m/a"] });
-    yield* store.savePrompt({ key: "k", body: "b" });
-    yield* store.saveCategory({ id: "c", label: "C" });
-    yield* store.saveReviewPass({
-      id: "r",
-      name: "R",
-      systemPromptKey: "k",
-      modelPoolId: "p",
-      units: [{ id: "analyze", promptKey: "k" }],
-    });
+test("ReviewConfig -- a single pass is active at a time", async () => {
+  await run(
+    Effect.gen(function* () {
+      const config = yield* ReviewConfig;
+      yield* config.saveReviewPass(pass("a"));
+      yield* config.saveReviewPass(pass("b"));
+      assertEquals(yield* config.getActiveReviewPassId(), Option.none());
 
-    assertEquals((yield* store.listModelPools()).length, 1);
-    assertEquals((yield* store.listPrompts()).length, 1);
-    assertEquals((yield* store.listCategories()).length, 1);
-    assertEquals((yield* store.listReviewPasses()).length, 1);
-  });
-  await Effect.runPromise(Effect.provide(program, testLayer(ReviewConfig.layerNoDeps)));
+      assertEquals(yield* config.setActiveReviewPass("a"), true);
+      assertEquals(yield* config.setActiveReviewPass("b"), true);
+      assertEquals(yield* config.getActiveReviewPassId(), Option.some("b"));
+
+      // a missing pass leaves the active one as it is
+      assertEquals(yield* config.setActiveReviewPass("ghost"), false);
+      assertEquals(yield* config.getActiveReviewPassId(), Option.some("b"));
+
+      yield* config.clearActiveReviewPass();
+      assertEquals(yield* config.getActiveReviewPassId(), Option.none());
+    }),
+  );
+});
+
+test("ReviewConfig -- saving the active pass keeps it; deleting it leaves none", async () => {
+  await run(
+    Effect.gen(function* () {
+      const config = yield* ReviewConfig;
+      yield* config.saveReviewPass(pass("a"));
+      yield* config.setActiveReviewPass("a");
+      yield* config.saveReviewPass(pass("a", "Renamed"));
+      assertEquals(yield* config.getActiveReviewPassId(), Option.some("a"));
+      yield* config.deleteReviewPass("a");
+      assertEquals(yield* config.getActiveReviewPassId(), Option.none());
+    }),
+  );
+});
+
+test("ReviewConfig -- deleting a category leaves its marks uncategorised", async () => {
+  await runInWorkspace(() =>
+    Effect.gen(function* () {
+      const { file, version, run: reviewRun } = yield* reviewedFile();
+      const marks = yield* Marks;
+      yield* marks.mark({
+        fileId: file.id,
+        versionId: version.id,
+        runId: reviewRun.id,
+        selectedText: "hello",
+        comment: "a note",
+        categoryId: "grammar",
+      });
+      yield* ReviewConfig.use((config) => config.deleteCategory("grammar"));
+      const [mark] = yield* marks.ofRun(reviewRun.id);
+      assertEquals(mark.categoryId, Option.none());
+    }),
+  );
 });

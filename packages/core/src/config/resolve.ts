@@ -1,33 +1,20 @@
-/**
- * Resolve the active review pass (and any given pass) into a ResolvedReviewPass bundle. Requires
- * the ReviewConfig service.
- */
+/** Resolve a review pass into the prompts, model pools and categories its units run with. */
 
-import { Effect, Schema } from "effect";
+import { Effect, Option, Schema } from "effect";
 
-import type { PersistenceError } from "#/persistence/mod.ts";
 import { renderCategories } from "#/reviews/steps/input.ts";
 
 import { ReviewConfig } from "./service.ts";
 import { renderTemplate } from "./template.ts";
-import type {
-  Category,
-  ModelPool,
-  ResolvedReviewPass,
-  ResolvedReviewUnit,
-  ReviewPass,
-  ReviewUnit,
+import {
+  type Category,
+  ConfigMissingError,
+  type ModelPool,
+  type ResolvedReviewPass,
+  type ResolvedReviewUnit,
+  type ReviewPass,
+  type ReviewUnit,
 } from "./types.ts";
-
-/** Resolution fails on config entities the pass references but that are missing. */
-export class ConfigMissingError extends Schema.TaggedError<ConfigMissingError>()(
-  "ConfigMissingError",
-  { what: Schema.String },
-) {
-  override get message() {
-    return `Config missing: ${this.what}`;
-  }
-}
 
 /** Resolution fails on a structurally invalid pass. */
 export class ConfigInvalidError extends Schema.TaggedError<ConfigInvalidError>()(
@@ -39,37 +26,26 @@ export class ConfigInvalidError extends Schema.TaggedError<ConfigInvalidError>()
   }
 }
 
-type ResolveError = ConfigMissingError | ConfigInvalidError | PersistenceError;
+type ResolveError = ConfigMissingError | ConfigInvalidError;
 
-/**
- * Resolve the active review pass into a ResolvedReviewPass bundle. Runs as an effect: `undefined`
- * if none is pinned.
- */
+export const resolveReviewPassById = (
+  id: string,
+): Effect.Effect<ResolvedReviewPass, ResolveError, ReviewConfig> =>
+  Effect.flatMap(
+    ReviewConfig.use((config) => config.getReviewPass(id)),
+    resolveReviewPass,
+  );
+
+/** Resolve the active review pass; none when no pass is active. */
 export const resolveActiveReviewPass: Effect.Effect<
-  ResolvedReviewPass | undefined,
+  Option.Option<ResolvedReviewPass>,
   ResolveError,
   ReviewConfig
 > = Effect.gen(function* () {
-  const config = yield* ReviewConfig;
-  const activeId = yield* config.getActiveReviewPassId();
-  if (!activeId) return undefined;
-
-  const pass = yield* resolveReviewPassById(activeId);
-  if (!pass) {
-    return yield* Effect.fail(new ConfigMissingError({ what: `review pass "${activeId}"` }));
-  }
-  return pass;
+  const activeId = yield* ReviewConfig.use((config) => config.getActiveReviewPassId());
+  if (Option.isNone(activeId)) return Option.none();
+  return Option.some(yield* resolveReviewPassById(activeId.value));
 });
-
-/** Resolve a stored review pass by id; `undefined` when no pass has that id. */
-export const resolveReviewPassById = (
-  id: string,
-): Effect.Effect<ResolvedReviewPass | undefined, ResolveError, ReviewConfig> =>
-  Effect.gen(function* () {
-    const config = yield* ReviewConfig;
-    const pass = yield* config.getReviewPass(id);
-    return pass === undefined ? undefined : yield* resolveReviewPass(pass);
-  });
 
 /**
  * Resolve a pass's units in order: render the shared system prompt and each unit's prompts with
@@ -81,7 +57,7 @@ export const resolveReviewPass = (
 ): Effect.Effect<ResolvedReviewPass, ResolveError, ReviewConfig> =>
   Effect.gen(function* () {
     yield* assertUnitOrder(pass);
-    const vars = pass.variables ?? {};
+    const vars = Option.getOrElse(pass.variables, () => ({}));
     const system = yield* renderPrompt(`pass "${pass.id}"`, pass.systemPromptKey, vars);
     const units = yield* Effect.all(
       pass.units.map((unit) => resolveUnit(pass.id, pass.modelPoolId, unit, system, vars)),
@@ -173,11 +149,9 @@ const renderPrompt = (
   vars: Readonly<Record<string, string>>,
 ): Effect.Effect<string, ResolveError, ReviewConfig> =>
   Effect.gen(function* () {
-    const config = yield* ReviewConfig;
-    const prompt = yield* config.getPrompt(key);
-    if (!prompt) {
-      return yield* Effect.fail(new ConfigMissingError({ what: `prompt "${key}" for ${where}` }));
-    }
+    const prompt = yield* ReviewConfig.use((config) => config.getPrompt(key)).pipe(
+      Effect.mapError((error) => new ConfigMissingError({ what: `${error.what} for ${where}` })),
+    );
     return renderTemplate(prompt.body, vars);
   });
 
@@ -186,17 +160,12 @@ const resolveUnitPool = (
   unit: ReviewUnit,
 ): Effect.Effect<ModelPool, ResolveError, ReviewConfig> =>
   Effect.gen(function* () {
-    const config = yield* ReviewConfig;
-    const poolId = unit.modelPoolId ?? passPoolId;
-    const pool = yield* config.getModelPool(poolId);
-    if (!pool) {
-      return yield* Effect.fail(new ConfigMissingError({ what: `model pool "${poolId}"` }));
-    }
+    const pool = yield* ReviewConfig.use((config) =>
+      config.getModelPool(unit.modelPoolId ?? passPoolId),
+    );
     if (pool.models.length === 0) {
       return yield* Effect.fail(
-        new ConfigMissingError({
-          what: `model pool "${pool.id}" has no models`,
-        }),
+        new ConfigInvalidError({ what: `model pool "${pool.id}" has no models` }),
       );
     }
     return pool;
@@ -207,7 +176,7 @@ const resolveUnitAttempt = (
   passId: string,
   unit: ReviewUnit,
 ): Effect.Effect<
-  { categories: Category[]; repairRounds: number } | undefined,
+  { categories: ReadonlyArray<Category>; repairRounds: number } | undefined,
   ResolveError,
   ReviewConfig
 > =>
@@ -221,14 +190,15 @@ const resolveUnitAttempt = (
         }),
       );
     }
-    const config = yield* ReviewConfig;
-    const [categories, missing] = yield* config.getCategories(attempt.allowedCategoryIds);
-    if (missing.length > 0) {
-      return yield* Effect.fail(
-        new ConfigMissingError({
-          what: `categories ${missing.map((id) => `"${id}"`).join(", ")} for unit "${unit.id}" in pass "${passId}"`,
-        }),
-      );
-    }
+    const categories = yield* ReviewConfig.use((config) =>
+      config.getCategories(attempt.allowedCategoryIds),
+    ).pipe(
+      Effect.mapError(
+        (error) =>
+          new ConfigMissingError({
+            what: `${error.what} for unit "${unit.id}" in pass "${passId}"`,
+          }),
+      ),
+    );
     return { categories, repairRounds: attempt.repairRounds ?? 1 };
   });

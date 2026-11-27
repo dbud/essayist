@@ -1,3 +1,5 @@
+import { Option } from "effect";
+
 import { renderTemplate } from "#/config/template.ts";
 import type { Category, ResolvedPrompts } from "#/config/types.ts";
 import type { Artifact, Artifacts, ArtifactType } from "#/flow/types.ts";
@@ -23,7 +25,10 @@ export function renderCategories(categories: readonly Category[]): string | unde
     section("Allowed labels"),
     bulletList(
       categories.map((category) =>
-        category.description ? `${category.label}: ${category.description}` : category.label,
+        Option.match(category.description, {
+          onNone: () => category.label,
+          onSome: (description) => `${category.label}: ${description}`,
+        }),
       ),
     ),
   );

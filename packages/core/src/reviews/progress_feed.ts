@@ -2,7 +2,6 @@ import { Effect } from "effect";
 
 import { resolveReviewPassById } from "#/config/resolve.ts";
 import type { ReviewConfig } from "#/config/service.ts";
-import type { PersistenceError } from "#/persistence/mod.ts";
 import type { WorkspaceId } from "#/workspace/WorkspaceId.ts";
 
 import { reviewPlan } from "./adapter.ts";
@@ -16,7 +15,7 @@ import type { ReviewRun } from "./types.ts";
  */
 export function loadProgressFeed(
   run: Pick<ReviewRun, "id" | "reviewPassId">,
-): Effect.Effect<ProgressFeed, PersistenceError, ReviewConfig | TraceEvents | WorkspaceId> {
+): Effect.Effect<ProgressFeed, never, ReviewConfig | TraceEvents | WorkspaceId> {
   return Effect.gen(function* () {
     const pass = yield* resolveReviewPassById(run.reviewPassId).pipe(
       Effect.catchTags({

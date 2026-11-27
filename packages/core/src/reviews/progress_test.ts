@@ -1,6 +1,7 @@
 import { assertEquals, assertStrictEquals } from "@std/assert";
 import { test } from "vitest";
 
+import { category, reviewPass } from "#/config/testing.ts";
 import type { ResolvedReviewPass, ResolvedReviewUnit } from "#/config/types.ts";
 
 import { reviewPlan } from "./adapter.ts";
@@ -23,11 +24,17 @@ function unit(partial: Partial<ResolvedReviewUnit> & Pick<ResolvedReviewUnit, "i
 }
 
 const pass: ResolvedReviewPass = {
-  pass: { id: "pass", name: "Pass", systemPromptKey: "sys", modelPoolId: "pool", units: [] },
+  pass: reviewPass({
+    id: "pass",
+    name: "Pass",
+    systemPromptKey: "sys",
+    modelPoolId: "pool",
+    units: [],
+  }),
   units: [
     unit({
       id: "mechanics",
-      attempt: { categories: [{ id: "grammar", label: "grammar" }], repairRounds: 1 },
+      attempt: { categories: [category({ id: "grammar", label: "grammar" })], repairRounds: 1 },
     }),
     unit({ id: "summary", inputs: ["mechanics"], summary: true }),
   ],

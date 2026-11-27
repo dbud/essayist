@@ -1,6 +1,7 @@
 import { assertEquals } from "@std/assert";
 import { test } from "vitest";
 
+import { category, reviewPass } from "#/config/testing.ts";
 import type { ResolvedReviewPass, ReviewUnit } from "#/config/types.ts";
 import { buildReviewGraph } from "#/reviews/adapter.ts";
 import { agentflowDefinition } from "#/reviews/agentflow.ts";
@@ -18,13 +19,13 @@ function unitFixture(partial: Partial<ReviewUnit> & Pick<ReviewUnit, "id">): Rev
 
 function passFixture(units: ReviewUnit[]): ResolvedReviewPass {
   return {
-    pass: {
+    pass: reviewPass({
       id: "essay-review",
       name: "Essay review",
       systemPromptKey: "sys",
       modelPoolId: "pool",
       units,
-    },
+    }),
     units: units.map((unit) => ({
       id: unit.id,
       prompts: PROMPTS,
@@ -32,7 +33,7 @@ function passFixture(units: ReviewUnit[]): ResolvedReviewPass {
       inputs: unit.inputs ?? [],
       ...(unit.attempt && {
         attempt: {
-          categories: [{ id: "grammar", label: "grammar" }],
+          categories: [category({ id: "grammar", label: "grammar" })],
           repairRounds: unit.attempt.repairRounds ?? 1,
         },
       }),

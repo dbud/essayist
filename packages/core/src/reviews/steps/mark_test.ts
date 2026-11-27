@@ -5,11 +5,9 @@ import { test } from "vitest";
 import { Files } from "#/files/service.ts";
 import { FileMissingError } from "#/files/types.ts";
 import { Marks } from "#/marks/service.ts";
-import { reviewedFile, runInWorkspace } from "#/reviews/testing.ts";
+import { GRAMMAR, reviewedFile, runInWorkspace } from "#/reviews/testing.ts";
 
 import { applyProposedMarks, type MarkContext, ProposedMarksSchema } from "./mark.ts";
-
-const GRAMMAR = { id: "cat-grammar", label: "grammar" };
 
 /** The mark context of a file under review. */
 const contextOn = (content: string, categories: MarkContext["categories"] = [GRAMMAR]) =>
@@ -43,7 +41,7 @@ test("applyProposedMarks -- places marks on the reviewed version, in their categ
           markId: mark.id,
         },
       ]);
-      assertEquals([mark.offset, mark.categoryId], [6, Option.some("cat-grammar")]);
+      assertEquals([mark.offset, mark.categoryId], [6, Option.some(GRAMMAR.id)]);
     }),
   );
 });

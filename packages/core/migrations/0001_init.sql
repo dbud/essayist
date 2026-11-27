@@ -61,6 +61,42 @@ CREATE TABLE file_drafts (
   updatedAt TEXT NOT NULL CHECK (updatedAt IS strftime('%FT%R:%fZ', updatedAt))
 ) STRICT;
 
+-- the review config: global, edited by admins, each item saved whole
+CREATE TABLE model_pools (
+  id TEXT PRIMARY KEY NOT NULL,
+  name TEXT NOT NULL,
+  -- model ids in order
+  models TEXT NOT NULL CHECK (json_valid(models) AND json_type(models) = 'array')
+) STRICT;
+
+CREATE TABLE prompts (
+  key TEXT PRIMARY KEY NOT NULL,
+  body TEXT NOT NULL
+) STRICT;
+
+CREATE TABLE categories (
+  id TEXT PRIMARY KEY NOT NULL,
+  label TEXT NOT NULL,
+  description TEXT,
+  severity TEXT,
+  color TEXT
+) STRICT;
+
+-- the units and variables are JSON, and the prompts, pools and categories they name are checked
+-- when the pass is resolved
+CREATE TABLE review_passes (
+  id TEXT PRIMARY KEY NOT NULL,
+  name TEXT NOT NULL,
+  systemPromptKey TEXT NOT NULL,
+  modelPoolId TEXT NOT NULL,
+  units TEXT NOT NULL CHECK (json_valid(units) AND json_type(units) = 'array'),
+  variables TEXT CHECK (json_valid(variables) AND json_type(variables) = 'object'),
+  active INTEGER NOT NULL DEFAULT 0 CHECK (active IN (0, 1))
+) STRICT;
+
+-- at most one pass is active
+CREATE UNIQUE INDEX review_passes_active ON review_passes (active) WHERE active = 1;
+
 -- a review pass run over a version of a file; at most one runs on a file at a time
 CREATE TABLE review_runs (
   id TEXT PRIMARY KEY NOT NULL,
@@ -105,7 +141,7 @@ CREATE TABLE marks (
   afterContext TEXT NOT NULL,
   comment TEXT NOT NULL,
   -- NULL for an uncategorised mark
-  categoryId TEXT,
+  categoryId TEXT REFERENCES categories (id) ON DELETE SET NULL,
   createdAt TEXT NOT NULL CHECK (createdAt IS strftime('%FT%R:%fZ', createdAt)),
   offset INTEGER NOT NULL CHECK (offset >= 0),
   length INTEGER NOT NULL CHECK (length >= 0)
