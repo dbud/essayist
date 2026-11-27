@@ -1,51 +1,30 @@
-import { assertEquals, assertNotEquals } from "@std/assert";
+import { assertEquals } from "@std/assert";
 import { assertObjectMatch } from "@std/assert/object-match";
 import { test } from "vitest";
 
-import type { Mark } from "#/marks/types.ts";
+import { type MarkAnchor, type ResolveOptions, resolveMarks } from "./resolver.ts";
 
-import { type ResolveOptions, resolveMarks } from "./resolver.ts";
+type TestMark = MarkAnchor & { id: string; comment: string };
 
-function createMark(overrides: Partial<Mark> & { selectedText: string }): Mark {
+function createMark(overrides: Partial<TestMark> & { selectedText: string }): TestMark {
   const {
     id = `mark_${Math.random().toString(36).slice(2)}`,
-    threadId,
-    path = "test.txt",
-    versionId = "v1",
     selectedText,
     beforeContext = "",
     afterContext = "",
     comment = "test comment",
-    label,
-    createdAt = 1000,
     offset = 0,
     length = selectedText.length,
-    status = "resolved",
   } = overrides;
-
-  return {
-    id,
-    threadId: threadId ?? `thread_${id}`,
-    path,
-    versionId,
-    selectedText,
-    beforeContext,
-    afterContext,
-    comment,
-    label,
-    createdAt,
-    offset,
-    length,
-    status,
-  };
+  return { id, selectedText, beforeContext, afterContext, comment, offset, length };
 }
 
 function resolve(
-  marks: Mark[],
+  marks: TestMark[],
   oldContent: string,
   newContent: string,
   options?: ResolveOptions,
-): Mark[] {
+) {
   return resolveMarks({ marks, oldContent, newContent }, options);
 }
 
@@ -1058,70 +1037,19 @@ test("resolveMarks -- resolved selectedText excludes surrounding whitespace", ()
   });
 });
 
-// Id handling: re-derived marks keep their ids; a new version writes new rows with new ids.
-test("resolveMarks -- preserveIds keeps the input ids on unchanged content", () => {
-  const marks = [createMark({ id: "m1", selectedText: "quick", offset: 4 })];
-
-  const result = resolve(marks, "The quick brown fox", "The quick brown fox", {
-    preserveIds: true,
-  });
-
-  assertEquals(result[0].id, "m1");
-  assertEquals(result[0].threadId, "thread_m1");
-});
-
-test("resolveMarks -- preserveIds keeps the input ids through exact mapping", () => {
-  const marks = [createMark({ id: "m1", selectedText: "quick", offset: 4 })];
-
-  const result = resolve(marks, "The quick brown fox", "The quick brown fox jumps", {
-    preserveIds: true,
-  });
-
-  assertEquals(result[0].id, "m1");
-});
-
-test("resolveMarks -- preserveIds keeps the input ids through fuzzy resolution", () => {
+test("resolveMarks -- every mark keeps its id and other fields, resolved or stale", () => {
   const oldContent = "The quick brown fox";
-  const newContent = "The qwick brown fox";
-  const marks = [
-    createMark({
-      id: "m1",
-      selectedText: "quick",
-      offset: 4,
-      beforeContext: "The ",
-      afterContext: " brown",
-    }),
-  ];
-
-  const result = resolve(marks, oldContent, newContent, { preserveIds: true });
-
-  assertEquals(result[0].id, "m1");
-});
-
-test("resolveMarks -- preserveIds keeps the input ids on stale marks", () => {
-  const marks = [createMark({ id: "m1", selectedText: "world", offset: 6 })];
-
-  const result = resolve(marks, "hello world", "goodbye", { preserveIds: true });
-
-  assertEquals(result[0].id, "m1");
-  assertEquals(result[0].status, "stale");
-});
-
-test("resolveMarks -- preserveIds keeps the input ids on already-stale marks", () => {
-  const marks = [createMark({ id: "m1", selectedText: "gone", offset: 0, status: "stale" })];
-
-  const result = resolve(marks, "The quick brown fox", "The quick brown fox jumps", {
-    preserveIds: true,
+  const mark = createMark({
+    id: "m1",
+    comment: "a note",
+    selectedText: "quick",
+    offset: 4,
+    beforeContext: "The ",
+    afterContext: " brown",
   });
-
-  assertEquals(result[0].id, "m1");
-});
-
-test("resolveMarks -- default resolves mint fresh ids and keep threads", () => {
-  const marks = [createMark({ id: "m1", selectedText: "quick", offset: 4 })];
-
-  const result = resolve(marks, "The quick brown fox", "The quick brown fox jumps");
-
-  assertEquals(result[0].threadId, "thread_m1");
-  assertNotEquals(result[0].id, "m1");
+  for (const newContent of [oldContent, `${oldContent} jumps`, "The qwick brown fox", "gone"]) {
+    const [result] = resolve([mark], oldContent, newContent);
+    assertObjectMatch(result, { id: "m1", comment: "a note" });
+  }
+  assertEquals(resolve([mark], oldContent, "gone")[0].status, "stale");
 });

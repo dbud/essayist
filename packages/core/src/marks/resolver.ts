@@ -1,9 +1,8 @@
 import { computeDiff, type DiffHunk } from "#/diff/diff.ts";
-import { randomId } from "#/ids.ts";
 
 import { trimContextSeparators, wordEdges } from "./context.ts";
+import type { Mark } from "./d1/types.ts";
 import { TokenizedText, wordTokens } from "./tokenized.ts";
-import type { Mark } from "./types.ts";
 
 /** Default fuzzy threshold for matching context (Phase 2). */
 export const DEFAULT_CONTEXT_FUZZY_THRESHOLD = 0.8;
@@ -17,8 +16,13 @@ export const DEFAULT_MIN_SEARCH_RADIUS = 60;
 /** The fields the resolver reads to anchor a mark to a span; it copies every other field as is. */
 export type MarkAnchor = Pick<
   Mark,
-  "id" | "selectedText" | "beforeContext" | "afterContext" | "offset" | "length" | "status"
+  "selectedText" | "beforeContext" | "afterContext" | "offset" | "length"
 >;
+
+/** A resolved mark sits on its text in the new content; a stale one lost its text. */
+export type MarkStatus = "resolved" | "stale";
+
+export type ResolvedMark<M extends MarkAnchor> = M & { status: MarkStatus };
 
 export interface ResolveInput<M extends MarkAnchor = MarkAnchor> {
   marks: readonly M[];
@@ -30,11 +34,6 @@ export interface ResolveOptions {
   contextFuzzyThreshold?: number;
   searchRadiusMultiplier?: number;
   minSearchRadius?: number;
-  /** The replacement id source for resolved marks. */
-  newId?: () => string;
-  /** Keep each mark's id (takes precedence over newId): for re-derivations of the same rows. Rows
-   * written for a new file version get their own ids. */
-  preserveIds?: boolean;
 }
 
 /**
@@ -44,20 +43,14 @@ export interface ResolveOptions {
  * if it falls in an unchanged region. - If yes: map its offset arithmetically. - If no: search for
  * the mark's text using fuzzy matching. 3. Marks whose text cannot be found are returned as stale.
  *
- * Marks that were already stale in the previous version are preserved as stale (they are not re-
- * searched).
- *
  * The results are plain copies of the input marks, not instances of their class.
  */
 export function resolveMarks<M extends MarkAnchor>(
   { marks, newContent, oldContent }: ResolveInput<M>,
   options?: ResolveOptions,
-): M[] {
-  const stampId: (mark: M) => string = options?.preserveIds
-    ? (mark) => mark.id
-    : () => (options?.newId ?? randomId)();
+): ResolvedMark<M>[] {
   if (oldContent === "" || oldContent === newContent) {
-    return marks.map((mark) => ({ ...mark, id: stampId(mark) }));
+    return marks.map((mark) => ({ ...mark, status: "resolved" }));
   }
   if (marks.length === 0) return [];
 
@@ -65,22 +58,18 @@ export function resolveMarks<M extends MarkAnchor>(
   const tokenizedText = new TokenizedText(newContent);
 
   return marks.map((mark) => {
-    if (mark.status === "stale") {
-      return { ...mark, id: stampId(mark) };
-    }
-
     const [exact, newOffset, newLength] = mapOffset(mark, hunks);
     if (exact) {
       return {
         ...mark,
-        id: stampId(mark),
+        status: "resolved",
         offset: newOffset,
         length: newLength,
         selectedText: newContent.slice(newOffset, newOffset + newLength),
       };
     }
 
-    return fuzzyResolveMark(mark, tokenizedText, newOffset, stampId, options);
+    return fuzzyResolveMark(mark, tokenizedText, newOffset, options);
   });
 }
 
@@ -137,9 +126,8 @@ function fuzzyResolveMark<M extends MarkAnchor>(
   mark: M,
   tt: TokenizedText,
   expectedNewOffset: number,
-  stampId: (mark: M) => string,
   options?: ResolveOptions,
-): M {
+): ResolvedMark<M> {
   const {
     contextFuzzyThreshold = DEFAULT_CONTEXT_FUZZY_THRESHOLD,
     searchRadiusMultiplier = DEFAULT_SEARCH_RADIUS_MULTIPLIER,
@@ -161,7 +149,6 @@ function fuzzyResolveMark<M extends MarkAnchor>(
   if (selectedOffset !== null) {
     return {
       ...mark,
-      id: stampId(mark),
       offset: selectedOffset,
       length: mark.selectedText.length,
       selectedText: mark.selectedText,
@@ -209,7 +196,6 @@ function fuzzyResolveMark<M extends MarkAnchor>(
   ) {
     return {
       ...mark,
-      id: stampId(mark),
       status: "stale",
       offset: beforeResult?.nextOffset ?? afterResult?.startOffset ?? expectedNewOffset,
       length: 0,
@@ -224,7 +210,6 @@ function fuzzyResolveMark<M extends MarkAnchor>(
   if (beforeEnd != null && afterStart != null && afterStart < beforeEnd) {
     return {
       ...mark,
-      id: stampId(mark),
       status: "stale",
       offset: beforeEnd,
       length: 0,
@@ -238,14 +223,13 @@ function fuzzyResolveMark<M extends MarkAnchor>(
   const nearestOffset = tt.findExactNear(mark.selectedText, expectedNewOffset);
   // Nothing found anywhere -- stale.
   if (!beforeResult && !afterResult && nearestOffset === null) {
-    return { ...mark, id: stampId(mark), status: "stale", length: 0 };
+    return { ...mark, status: "stale", length: 0 };
   }
 
   // Full-content scan found the text elsewhere -- resolve at nearest occurrence.
   if (nearestOffset !== null) {
     return {
       ...mark,
-      id: stampId(mark),
       offset: nearestOffset,
       length: mark.selectedText.length,
       status: "resolved",
@@ -265,7 +249,6 @@ function fuzzyResolveMark<M extends MarkAnchor>(
   if (trimmed.text.length === 0 && !(beforeResult && afterResult)) {
     return {
       ...mark,
-      id: stampId(mark),
       status: "stale",
       offset: start + trimmed.leading,
       length: 0,
@@ -273,7 +256,6 @@ function fuzzyResolveMark<M extends MarkAnchor>(
   }
   return {
     ...mark,
-    id: stampId(mark),
     offset: start + trimmed.leading,
     length: trimmed.text.length,
     selectedText: trimmed.text,

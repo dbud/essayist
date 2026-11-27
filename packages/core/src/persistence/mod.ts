@@ -1,4 +1,4 @@
-/** Persistence layer for the VFS: a key/value adapter with tuple keys. */
+/** The key/value persistence layer, with tuple keys, for the services still on KV. */
 
 import { Schema } from "effect";
 

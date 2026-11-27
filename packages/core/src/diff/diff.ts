@@ -78,7 +78,7 @@ export function computeDiffWith(oldText: string, newText: string, fn: MyersFn): 
   return buildHunks(ops, oldTokens, newTokens, oldText, newText);
 }
 
-export interface DiffOp {
+interface DiffOp {
   type: "equal" | "insert" | "delete";
   oldIdx?: number;
   newIdx?: number;
@@ -140,11 +140,8 @@ function decodeOps(flat: Int32Array): DiffOp[] {
   return ops;
 }
 
-/**
- * Ops for two sequences compared by text identity, at a granularity of the caller's choosing:
- * tokens here, whole lines in a unified diff. Indices refer to the given arrays.
- */
-export function myersDiff(
+/** Ops for two token sequences compared by text identity; indices refer to the given arrays. */
+function myersDiff(
   oldTexts: readonly string[],
   newTexts: readonly string[],
   fn: MyersFn = myersFn,

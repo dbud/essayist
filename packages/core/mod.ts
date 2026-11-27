@@ -28,32 +28,35 @@ export {
 } from "#/config/types.ts";
 export { demoFiles, seedDemoFiles } from "#/demo.ts";
 export { setMyers } from "#/diff/diff.ts";
-export { Files } from "#/files/service.ts";
+export { layerFilesD1 } from "#/files/d1/files_d1.ts";
+export { Files } from "#/files/d1/service.ts";
 export {
-  type DiffResult,
-  DraftSnapshot,
-  FileEntry,
+  DraftStaleError,
+  File,
+  FileDraft,
+  FileExistsError,
   FileMissingError,
   FileSnapshot,
+  FileTooLargeError,
   FileVersion,
-  type WriteResult,
-} from "#/files/types.ts";
+  MAX_DOCUMENT_BYTES,
+} from "#/files/d1/types.ts";
 export { pluralize } from "#/format.ts";
 export type { IdGenerator } from "#/ids.ts";
 export { Ids } from "#/idsRef.ts";
 export { nextId } from "#/ids.ts";
 export { jsonLogger, jsonLogLayer } from "#/log.ts";
-export type { ResolveInput, ResolveOptions } from "#/marks/resolver.ts";
-export { resolveMarks } from "#/marks/resolver.ts";
-export { Marks } from "#/marks/service.ts";
-export {
-  Mark,
-  type MarkOptions,
-  MarkProvenance,
-  type MarkResult,
+export { layerMarksD1 } from "#/marks/d1/marks_d1.ts";
+export { type MarkInput, Marks } from "#/marks/d1/service.ts";
+export { Mark, MarkTextNotFoundError } from "#/marks/d1/types.ts";
+export type {
+  MarkAnchor,
   MarkStatus,
-  type MigrateMarksResult,
-} from "#/marks/types.ts";
+  ResolvedMark,
+  ResolveInput,
+  ResolveOptions,
+} from "#/marks/resolver.ts";
+export { resolveMarks } from "#/marks/resolver.ts";
 export type { ModelCallRecord } from "#/model/service.ts";
 export { ModelClient, StructuredParseError } from "#/model/service.ts";
 export { createStubModelClient, type StubModelOptions } from "#/model/stub.ts";
@@ -96,8 +99,6 @@ export { TraceEvents } from "#/reviews/trace/service.ts";
 export { layerTraceEventsD1 } from "#/reviews/trace/trace_d1.ts";
 export { ReviewRun, ReviewRunList, ReviewRunStatus } from "#/reviews/types.ts";
 export type { FailedMarkAttempt, MarkAttempt, PlacedMarkAttempt } from "#/reviews/types.ts";
-export { Search } from "#/search/service.ts";
-export type { GrepMatch, GrepOptions, GrepResult } from "#/search/types.ts";
 export { UserState } from "#/user_state/service.ts";
 export { Workspaces } from "#/workspace/service.ts";
 export { layerWorkspacesD1 } from "#/workspace/workspaces_d1.ts";
