@@ -4,7 +4,7 @@ import { resolveReviewPassById } from "#/config/resolve.ts";
 import type { ReviewConfig } from "#/config/service.ts";
 import type { WorkspaceId } from "#/workspace/WorkspaceId.ts";
 
-import { reviewPlan } from "./adapter.ts";
+import { reviewPlan } from "./build_graph.ts";
 import { type ProgressFeed, progressFeed, type ReviewPlan } from "./progress.ts";
 import { TraceEvents } from "./trace/service.ts";
 import type { ReviewRun } from "./types.ts";

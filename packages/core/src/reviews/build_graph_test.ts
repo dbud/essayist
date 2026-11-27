@@ -4,7 +4,7 @@ import { test } from "vitest";
 import { category, reviewPass } from "#/config/testing.ts";
 import type { ResolvedReviewPass, ReviewUnit } from "#/config/types.ts";
 import type { ForwardSpec } from "#/flow/helpers.ts";
-import { buildReviewGraph } from "#/reviews/adapter.ts";
+import { buildReviewGraph } from "#/reviews/build_graph.ts";
 import type { ReviewTypes } from "#/reviews/graph.ts";
 import type { MarkContext } from "#/reviews/steps/mark.ts";
 

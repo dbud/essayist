@@ -2,8 +2,6 @@
 
 import { Logger } from "effect";
 
-/** A `Logger` rendering one JSON object per log entry, on console.log. */
-export const jsonLogger = Logger.consoleJson;
-
-/** The app's log layer: JSON entries, filtered by `References.MinimumLogLevel`. */
-export const jsonLogLayer = Logger.layer([jsonLogger]);
+/** The app's log layer: a JSON object per entry on console.log, filtered by
+ * `References.MinimumLogLevel`. */
+export const jsonLogLayer = Logger.layer([Logger.consoleJson]);

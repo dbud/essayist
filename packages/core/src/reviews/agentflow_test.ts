@@ -3,8 +3,8 @@ import { test } from "vitest";
 
 import { category, reviewPass } from "#/config/testing.ts";
 import type { ResolvedReviewPass, ReviewUnit } from "#/config/types.ts";
-import { buildReviewGraph } from "#/reviews/adapter.ts";
 import { agentflowDefinition } from "#/reviews/agentflow.ts";
+import { buildReviewGraph } from "#/reviews/build_graph.ts";
 
 const PROMPTS = {
   system: "You are an editor.",

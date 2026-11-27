@@ -4,7 +4,7 @@ import { test } from "vitest";
 import { category, reviewPass } from "#/config/testing.ts";
 import type { ResolvedReviewPass, ResolvedReviewUnit } from "#/config/types.ts";
 
-import { reviewPlan } from "./adapter.ts";
+import { reviewPlan } from "./build_graph.ts";
 import {
   applyTraceEvent,
   feedTraceEvent,

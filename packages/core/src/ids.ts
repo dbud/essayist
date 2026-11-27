@@ -9,6 +9,3 @@ export const randomId = (): string => crypto.randomUUID();
 export interface IdGenerator {
   next(): string;
 }
-
-/** The default generator, for callers outside an Effect. */
-export const nextId = (): string => randomId();

@@ -21,7 +21,6 @@ export {
 } from "#/config/types.ts";
 export { type CoreServices, layerCoreD1 } from "#/d1/layer.ts";
 export { demoFiles, seedDemoFiles } from "#/demo.ts";
-export { setMyers } from "#/diff/diff.ts";
 export { layerFilesD1 } from "#/files/files_d1.ts";
 export { Files } from "#/files/service.ts";
 export {
@@ -36,10 +35,9 @@ export {
   MAX_DOCUMENT_BYTES,
 } from "#/files/types.ts";
 export { pluralize } from "#/format.ts";
-export type { IdGenerator } from "#/ids.ts";
 export { Ids } from "#/idsRef.ts";
-export { nextId } from "#/ids.ts";
-export { jsonLogger, jsonLogLayer } from "#/log.ts";
+export { randomId } from "#/ids.ts";
+export { jsonLogLayer } from "#/log.ts";
 export { layerMarksD1 } from "#/marks/marks_d1.ts";
 export { type MarkInput, Marks } from "#/marks/service.ts";
 export { Mark, MarkTextNotFoundError } from "#/marks/types.ts";
@@ -54,11 +52,9 @@ export { resolveMarks } from "#/marks/resolver.ts";
 export type { ModelCallRecord } from "#/model/service.ts";
 export { ModelClient, StructuredParseError } from "#/model/service.ts";
 export { createStubModelClient, type StubModelOptions } from "#/model/stub.ts";
-export { buildReviewGraph } from "#/reviews/adapter.ts";
+export { buildReviewGraph } from "#/reviews/build_graph.ts";
 export { agentflowDefinition } from "#/reviews/agentflow.ts";
 export type { ReviewObserver } from "#/reviews/observer/types.ts";
-export { noopObserver } from "#/reviews/observer/noop.ts";
-export type { RunnerError } from "#/reviews/runner.ts";
 export { ReviewLeaseTakenError, resumeReviewRun } from "#/reviews/runner.ts";
 export { driveReviewRun, type DriveServices } from "#/reviews/drive.ts";
 export { ReviewPacing } from "#/reviews/pacing.ts";
@@ -67,8 +63,13 @@ export { feedTraceEvent, ReviewProgress } from "#/reviews/progress.ts";
 export { loadProgressFeed } from "#/reviews/progress_feed.ts";
 export { layerReviewRunsD1 } from "#/reviews/runs_d1.ts";
 export { ReviewRunActiveError, ReviewRunMissingError, ReviewRuns } from "#/reviews/service.ts";
-export type { TraceEvent, TraceNodeView, TraceTotals, TraceView } from "#/reviews/trace/mod.ts";
-export { groupTraceNodes } from "#/reviews/trace/mod.ts";
+export type { TraceEvent } from "#/reviews/trace/types.ts";
+export {
+  groupTraceNodes,
+  type TraceNodeView,
+  type TraceTotals,
+  type TraceView,
+} from "#/reviews/trace/view.ts";
 export { TraceEvents } from "#/reviews/trace/service.ts";
 export { layerTraceEventsD1 } from "#/reviews/trace/trace_d1.ts";
 export { ReviewRun, ReviewRunList, ReviewRunStatus, type RunRef } from "#/reviews/types.ts";

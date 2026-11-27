@@ -113,9 +113,8 @@ function renderAttemptList(
   );
 }
 
-/** Build the input of a model call: the unit's prompts followed by the
- * rendered dependency artifacts in dependsOn order. The adapter wires the essay last, so it anchors
- * the prompt. */
+/** Build the input of a model call: the prompts of the unit followed by the rendered dependency
+ * artifacts in dependsOn order. buildReviewGraph wires the essay last, so it anchors the prompt. */
 export function composeCallInput(prompts: ResolvedPrompts, inputs: Artifacts<ReviewTypes>): string {
   return joinBlocks(
     prompts.system,
