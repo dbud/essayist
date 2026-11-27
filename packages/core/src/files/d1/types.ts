@@ -27,37 +27,11 @@ export class FileSnapshot extends Model.Class<FileSnapshot>("FileSnapshot")({
   content: Schema.String,
 }) {}
 
-/** The unsaved edits of a file, on top of the version they started from. */
+/** The unsaved edits of a file, on top of its latest version. */
 export class FileDraft extends Model.Class<FileDraft>("FileDraft")({
   fileId: Schema.String,
-  baseVersionId: Schema.String,
   content: Schema.String,
   updatedAt: Schema.DateTimeUtcFromString,
-}) {}
-
-export const MarkStatus = Schema.Literals(["resolved", "stale"]);
-export type MarkStatus = typeof MarkStatus.Type;
-
-/**
- * A review comment on a text span of a version. A new version gets a copy of each mark, anchored
- * again onto the new content: `resolved` when the text is found, `stale` when it is not. The copies
- * share `threadId`.
- */
-export class Mark extends Model.Class<Mark>("Mark")({
-  id: Model.GeneratedByApp(Schema.String),
-  versionId: Schema.String,
-  runId: Schema.String,
-  unitId: Schema.String,
-  threadId: Schema.String,
-  categoryId: Model.FieldOption(Schema.String),
-  selectedText: Schema.String,
-  beforeContext: Schema.String,
-  afterContext: Schema.String,
-  comment: Schema.String,
-  createdAt: Model.DateTimeInsert,
-  offset: Schema.Int,
-  length: Schema.Int,
-  status: MarkStatus,
 }) {}
 
 /** A file, version or path that does not exist, or a deleted file. */
@@ -92,5 +66,15 @@ export class FileTooLargeError extends Schema.TaggedError<FileTooLargeError>()(
 ) {
   override get message() {
     return `the document is ${this.bytes} bytes; the limit is ${MAX_DOCUMENT_BYTES}`;
+  }
+}
+
+/** Saving a draft edited from a version that is no longer the latest. */
+export class DraftStaleError extends Schema.TaggedError<DraftStaleError>()("DraftStaleError", {
+  fileId: Schema.String,
+  baseVersionId: Schema.String,
+}) {
+  override get message() {
+    return "a newer version of this file was saved; reload to continue";
   }
 }

@@ -1,10 +1,8 @@
 import { assertEquals, assertInstanceOf } from "@std/assert";
-import { DateTime, Effect, Layer, Option, Result, Struct } from "effect";
+import { Effect, Layer, Option, Result } from "effect";
 import { test } from "vitest";
 
 import { testLayerD1 } from "#/persistence/testing/d1.ts";
-import { layerReviewRunsD1 } from "#/reviews/runs_d1.ts";
-import { ReviewRuns } from "#/reviews/service.ts";
 import { Workspaces } from "#/workspace/service.ts";
 import { WorkspaceId } from "#/workspace/WorkspaceId.ts";
 import { layerWorkspacesD1 } from "#/workspace/workspaces_d1.ts";
@@ -12,22 +10,22 @@ import { layerWorkspacesD1 } from "#/workspace/workspaces_d1.ts";
 import { layerFilesD1 } from "./files_d1.ts";
 import { Files } from "./service.ts";
 import {
+  DraftStaleError,
   FileExistsError,
   FileMissingError,
   FileTooLargeError,
-  Mark,
   MAX_DOCUMENT_BYTES,
 } from "./types.ts";
 
 const layer = testLayerD1((client) =>
-  Layer.mergeAll(layerFilesD1(client), layerWorkspacesD1(client), layerReviewRunsD1(client)),
+  Layer.mergeAll(layerFilesD1(client), layerWorkspacesD1(client)),
 );
 
 /** Run a test program in a fresh workspace; `other` runs a program in a second one. */
 const run = <A, E>(
   program: (
     other: <B, F>(effect: Effect.Effect<B, F, Files | WorkspaceId>) => Effect.Effect<B, F, Files>,
-  ) => Effect.Effect<A, E, Files | ReviewRuns | WorkspaceId>,
+  ) => Effect.Effect<A, E, Files | WorkspaceId>,
 ) =>
   Effect.runPromise(
     Effect.gen(function* () {
@@ -46,53 +44,19 @@ const failure = <A, E, R>(effect: Effect.Effect<A, E, R>) =>
     Effect.map((outcome) => (Result.isFailure(outcome) ? outcome.failure : undefined)),
   );
 
-/** Every mark needs a review run; a test makes one and uses it for all its marks. */
-const reviewRun = (versionId: string) =>
-  Effect.gen(function* () {
-    const runs = yield* ReviewRuns;
-    return (yield* runs.createRun({ path: "essay.md", versionId, reviewPassId: "pass" })).id;
-  });
-
-/** A mark on `text` within `content`. */
-const markOn = (runId: string, versionId: string, content: string, text: string) =>
-  Effect.gen(function* () {
-    const threadId = text;
-    const offset = content.indexOf(text);
-    return new Mark({
-      id: `mark-${threadId}`,
-      versionId,
-      runId,
-      unitId: "unit",
-      threadId,
-      categoryId: Option.none(),
-      selectedText: text,
-      beforeContext: content.slice(Math.max(0, offset - 10), offset),
-      afterContext: content.slice(offset + text.length, offset + text.length + 10),
-      comment: `about ${text}`,
-      createdAt: yield* DateTime.now,
-      offset,
-      length: text.length,
-      status: "resolved",
-    });
-  });
-
-test("Files -- create, resolve, list and read", async () => {
+test("Files -- create, find by path, list and read", async () => {
   await run(() =>
     Effect.gen(function* () {
       const files = yield* Files;
-      const { file, version } = yield* files.create("essay.md", "first draft");
+      const { file, version } = yield* files.createAt("essay.md", "first draft");
       assertEquals(version.seq, 1);
-      assertEquals((yield* files.resolve("essay.md")).id, file.id);
+      assertEquals((yield* files.fileAt("essay.md")).id, file.id);
 
-      yield* files.create("notes/a.md", "a");
+      yield* files.createAt("notes/a.md", "a");
       const listed = yield* files.list();
       assertEquals(
         listed.map((entry) => entry.file.path),
         ["essay.md", "notes/a.md"],
-      );
-      assertEquals(
-        (yield* files.list("notes/")).map((entry) => entry.file.path),
-        ["notes/a.md"],
       );
 
       const snapshot = yield* files.read(file.id);
@@ -106,8 +70,8 @@ test("Files -- a taken path cannot be created again", async () => {
   await run(() =>
     Effect.gen(function* () {
       const files = yield* Files;
-      yield* files.create("essay.md", "one");
-      assertInstanceOf(yield* failure(files.create("essay.md", "two")), FileExistsError);
+      yield* files.createAt("essay.md", "one");
+      assertInstanceOf(yield* failure(files.createAt("essay.md", "two")), FileExistsError);
     }),
   );
 });
@@ -116,21 +80,21 @@ test("Files -- missing files and versions", async () => {
   await run(() =>
     Effect.gen(function* () {
       const files = yield* Files;
-      assertInstanceOf(yield* failure(files.resolve("nope.md")), FileMissingError);
+      assertInstanceOf(yield* failure(files.fileAt("nope.md")), FileMissingError);
       assertInstanceOf(yield* failure(files.read("nope")), FileMissingError);
-      const { file } = yield* files.create("essay.md", "one");
+      const { file } = yield* files.createAt("essay.md", "one");
       assertInstanceOf(yield* failure(files.read(file.id, "nope")), FileMissingError);
     }),
   );
 });
 
-test("Files -- write adds numbered versions", async () => {
+test("Files -- writeAt adds numbered versions to an existing file", async () => {
   await run(() =>
     Effect.gen(function* () {
       const files = yield* Files;
-      const { file, version: first } = yield* files.create("essay.md", "one");
-      const second = yield* files.write(file.id, "two");
-      const third = yield* files.write(file.id, "three");
+      const { file, version: first } = yield* files.createAt("essay.md", "one");
+      const { version: second } = yield* files.writeAt("essay.md", "two");
+      const { version: third } = yield* files.writeAt("essay.md", "three");
       assertEquals([second.seq, third.seq], [2, 3]);
       assertEquals(
         (yield* files.versions(file.id)).map((version) => version.id),
@@ -146,17 +110,17 @@ test("Files -- write adds numbered versions", async () => {
   );
 });
 
-test("Files -- concurrent writes all land, one version each", async () => {
+test("Files -- concurrent writeAt to an existing file gets consecutive versions", async () => {
   await run(() =>
     Effect.gen(function* () {
       const files = yield* Files;
-      const { file } = yield* files.create("essay.md", "zero");
+      yield* files.createAt("essay.md", "zero");
       const written = yield* Effect.all(
-        ["a", "b", "c"].map((content) => files.write(file.id, content)),
+        ["a", "b", "c"].map((content) => files.writeAt("essay.md", content)),
         { concurrency: "unbounded" },
       );
       assertEquals(
-        written.map((version) => version.seq).toSorted((a, b) => a - b),
+        written.map(({ version }) => version.seq).toSorted((a, b) => a - b),
         [2, 3, 4],
       );
     }),
@@ -168,10 +132,13 @@ test("Files -- content over the cap is refused", async () => {
     Effect.gen(function* () {
       const files = yield* Files;
       const big = "x".repeat(MAX_DOCUMENT_BYTES + 1);
-      assertInstanceOf(yield* failure(files.create("big.md", big)), FileTooLargeError);
-      const { file } = yield* files.create("essay.md", "small");
-      assertInstanceOf(yield* failure(files.write(file.id, big)), FileTooLargeError);
-      assertInstanceOf(yield* failure(files.writeDraft(file.id, big)), FileTooLargeError);
+      assertInstanceOf(yield* failure(files.createAt("big.md", big)), FileTooLargeError);
+      const { file, version } = yield* files.createAt("essay.md", "small");
+      assertInstanceOf(yield* failure(files.writeAt("essay.md", big)), FileTooLargeError);
+      assertInstanceOf(
+        yield* failure(files.writeDraft(file.id, version.id, big)),
+        FileTooLargeError,
+      );
     }),
   );
 });
@@ -180,10 +147,10 @@ test("Files -- a draft is promoted into a version and cleared", async () => {
   await run(() =>
     Effect.gen(function* () {
       const files = yield* Files;
-      const { file, version } = yield* files.create("essay.md", "one");
+      const { file, version } = yield* files.createAt("essay.md", "one");
       assertEquals(yield* files.promoteDraft(file.id), { version, promoted: false });
 
-      yield* files.writeDraft(file.id, "one, edited");
+      yield* files.writeDraft(file.id, version.id, "one, edited");
       const draft = yield* files.readDraft(file.id);
       assertEquals(
         Option.map(draft, (d) => d.content),
@@ -199,74 +166,14 @@ test("Files -- a draft is promoted into a version and cleared", async () => {
   );
 });
 
-test("Files -- a draft on an older version reads as none", async () => {
+test("Files -- saving a version clears the draft", async () => {
   await run(() =>
     Effect.gen(function* () {
       const files = yield* Files;
-      const { file } = yield* files.create("essay.md", "one");
-      yield* files.writeDraft(file.id, "draft");
-      yield* files.write(file.id, "two");
+      const { file, version } = yield* files.createAt("essay.md", "one");
+      yield* files.writeDraft(file.id, version.id, "draft");
+      yield* files.writeAt("essay.md", "two");
       assertEquals(yield* files.readDraft(file.id), Option.none());
-    }),
-  );
-});
-
-test("Files -- write migrates marks onto the new version", async () => {
-  await run(() =>
-    Effect.gen(function* () {
-      const files = yield* Files;
-      const content = "The quick brown fox jumps over the lazy dog.";
-      const { file, version } = yield* files.create("essay.md", content);
-      const runId = yield* reviewRun(version.id);
-      yield* files.addMark(yield* markOn(runId, version.id, content, "quick brown"));
-      yield* files.addMark(yield* markOn(runId, version.id, content, "lazy dog"));
-
-      const next = yield* files.write(file.id, "The quick brown fox sleeps.");
-      const migrated = yield* files.marks(next.id);
-      const byThread = new Map(migrated.map((mark) => [mark.threadId, mark]));
-      assertEquals(byThread.get("quick brown")?.status, "resolved");
-      assertEquals(byThread.get("lazy dog")?.status, "stale");
-      assertEquals(
-        migrated.every((mark) => mark.versionId === next.id && !mark.id.startsWith("mark-")),
-        true,
-      );
-      assertEquals((yield* files.marks(version.id)).length, 2);
-    }),
-  );
-});
-
-test("Files -- many marks are migrated in several statements", async () => {
-  await run(() =>
-    Effect.gen(function* () {
-      const files = yield* Files;
-      const words = Array.from({ length: 20 }, (_, i) => `word${i}`);
-      const content = words.join(" ");
-      const { file, version } = yield* files.create("essay.md", content);
-      const runId = yield* reviewRun(version.id);
-      for (const word of words)
-        yield* files.addMark(yield* markOn(runId, version.id, content, word));
-      const next = yield* files.write(file.id, `${content} end`);
-      assertEquals((yield* files.marks(next.id)).length, words.length);
-    }),
-  );
-});
-
-test("Files -- migrateMarks copies new threads of an older version onto the latest", async () => {
-  await run(() =>
-    Effect.gen(function* () {
-      const files = yield* Files;
-      const content = "alpha beta gamma";
-      const { file, version: first } = yield* files.create("essay.md", content);
-      yield* files.write(file.id, content);
-      // a review of the first version lands after the second was saved
-      const runId = yield* reviewRun(first.id);
-      yield* files.addMark(yield* markOn(runId, first.id, content, "beta"));
-
-      assertEquals(yield* files.migrateMarks(file.id, first.id), { migrated: 1, stale: 0 });
-      // the thread is on the latest now, so a second migration skips it
-      assertEquals(yield* files.migrateMarks(file.id, first.id), { migrated: 0, stale: 0 });
-      const latest = yield* files.read(file.id);
-      assertEquals(yield* files.migrateMarks(file.id, latest.id), { migrated: 0, stale: 0 });
     }),
   );
 });
@@ -275,47 +182,101 @@ test("Files -- a file of another workspace reads as missing", async () => {
   await run((other) =>
     Effect.gen(function* () {
       const files = yield* Files;
-      const content = "alpha beta";
-      const { file, version } = yield* files.create("essay.md", content);
-      const runId = yield* reviewRun(version.id);
-      yield* files.addMark(yield* markOn(runId, version.id, content, "beta"));
-
+      const { file } = yield* files.createAt("essay.md", "alpha beta");
       assertInstanceOf(yield* other(failure(files.read(file.id))), FileMissingError);
-      assertInstanceOf(yield* other(failure(files.write(file.id, "x"))), FileMissingError);
-      assertEquals(yield* other(files.marks(version.id)), []);
-      assertEquals((yield* files.marks(version.id)).length, 1);
+      assertInstanceOf(yield* other(failure(files.versions(file.id))), FileMissingError);
+      assertInstanceOf(yield* other(failure(files.fileAt("essay.md"))), FileMissingError);
     }),
   );
 });
 
-test("Files -- a mark on a missing version is refused", async () => {
+test("Files -- after a save there is no draft left to promote", async () => {
   await run(() =>
     Effect.gen(function* () {
       const files = yield* Files;
-      const content = "alpha beta";
-      const { version } = yield* files.create("essay.md", content);
-      const runId = yield* reviewRun(version.id);
-      const mark = yield* markOn(runId, version.id, content, "beta");
-      assertInstanceOf(
-        yield* failure(
-          files.addMark(new Mark({ ...Struct.omit(mark, ["versionId"]), versionId: "nope" })),
-        ),
-        FileMissingError,
+      const { file, version } = yield* files.createAt("essay.md", "one");
+      yield* files.writeDraft(file.id, version.id, "draft on one");
+      const { version: saved } = yield* files.writeAt("essay.md", "two, from another tab");
+      const promoted = yield* files.promoteDraft(file.id);
+      assertEquals(promoted, { version: saved, promoted: false });
+      assertEquals((yield* files.read(file.id)).content, "two, from another tab");
+    }),
+  );
+});
+
+test("Files -- writeAt creates a file, then saves versions of it", async () => {
+  await run(() =>
+    Effect.gen(function* () {
+      const files = yield* Files;
+      const first = yield* files.writeAt("essay.md", "one");
+      yield* files.writeDraft(first.file.id, first.version.id, "a draft");
+      const second = yield* files.writeAt("essay.md", "two");
+      assertEquals([first.created, second.created], [true, false]);
+      assertEquals(second.file.id, first.file.id);
+      assertEquals([first.version.seq, second.version.seq], [1, 2]);
+      assertEquals(yield* files.readDraft(first.file.id), Option.none());
+    }),
+  );
+});
+
+test("Files -- concurrent writeAt to a new path lands on a single file", async () => {
+  await run(() =>
+    Effect.gen(function* () {
+      const files = yield* Files;
+      const results = yield* Effect.all(
+        ["a", "b", "c"].map((content) => files.writeAt("essay.md", content)),
+        { concurrency: "unbounded" },
+      );
+      assertEquals(new Set(results.map((result) => result.file.id)).size, 1);
+      assertEquals(results.filter((result) => result.created).length, 1);
+      assertEquals(
+        results.map((result) => result.version.seq).toSorted((a, b) => a - b),
+        [1, 2, 3],
       );
     }),
   );
 });
 
-test("Files -- promoting a draft a save made stale writes nothing", async () => {
+test("Files -- promoting clears the draft", async () => {
   await run(() =>
     Effect.gen(function* () {
       const files = yield* Files;
-      const { file } = yield* files.create("essay.md", "one");
-      yield* files.writeDraft(file.id, "draft on one");
-      const saved = yield* files.write(file.id, "two, from another tab");
+      const { file, version } = yield* files.createAt("essay.md", "one");
+      yield* files.writeDraft(file.id, version.id, "two");
       const promoted = yield* files.promoteDraft(file.id);
-      assertEquals(promoted, { version: saved, promoted: false });
-      assertEquals((yield* files.read(file.id)).content, "two, from another tab");
+      assertEquals(promoted.promoted, true);
+      assertEquals(yield* files.readDraft(file.id), Option.none());
+    }),
+  );
+});
+
+test("Files -- a draft edited from an older version is refused", async () => {
+  await run(() =>
+    Effect.gen(function* () {
+      const files = yield* Files;
+      const { file, version: first } = yield* files.createAt("essay.md", "one");
+      const { version: second } = yield* files.writeAt("essay.md", "two, from another tab");
+      assertInstanceOf(
+        yield* failure(files.writeDraft(file.id, first.id, "edited from one")),
+        DraftStaleError,
+      );
+      assertEquals(yield* files.readDraft(file.id), Option.none());
+      const saved = yield* files.writeDraft(file.id, second.id, "edited from two");
+      assertEquals(saved.content, "edited from two");
+    }),
+  );
+});
+
+test("Files -- a draft of a missing file is refused as missing", async () => {
+  await run((other) =>
+    Effect.gen(function* () {
+      const files = yield* Files;
+      assertInstanceOf(yield* failure(files.writeDraft("nope", "nope", "x")), FileMissingError);
+      const { file, version } = yield* files.createAt("essay.md", "one");
+      assertInstanceOf(
+        yield* other(failure(files.writeDraft(file.id, version.id, "x"))),
+        FileMissingError,
+      );
     }),
   );
 });

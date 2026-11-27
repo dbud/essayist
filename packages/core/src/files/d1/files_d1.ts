@@ -1,22 +1,23 @@
 /**
- * The Files D1 layer over the files, file_versions, file_drafts and marks tables.
+ * The Files D1 layer over the files, file_versions and file_drafts tables.
  *
- * A write reads the latest version and its marks, then adds version seq + 1 with the marks moved
- * onto it. Its batch opens with a guard that fails, rolling back the whole batch, when another
- * write moved the latest version or changed its marks; the write then runs again.
+ * A version computes its seq inside its insert, and D1 runs statements one at a time, so concurrent
+ * saves of a file get consecutive versions with no conflict to retry. A draft is saved only on the
+ * latest version and cleared in the same batch as every new version, so a draft is always on the
+ * latest version.
  */
 
 import type * as D1Client from "@effect/sql-d1/D1Client";
-import { Array, Data, DateTime, Effect, Layer, Option, Schema } from "effect";
-import { SqlSchema } from "effect/sql";
+import { DateTime, Effect, Layer, Option, Schema } from "effect";
+import { SqlSchema, type Statement } from "effect/sql";
 
 import { Ids } from "#/idsRef.ts";
-import { resolveMarks } from "#/marks/resolver.ts";
 import { PersistenceError } from "#/persistence/service.ts";
 import { WorkspaceId } from "#/workspace/WorkspaceId.ts";
 
 import { Files } from "./service.ts";
 import {
+  DraftStaleError,
   File,
   FileDraft,
   FileExistsError,
@@ -24,23 +25,10 @@ import {
   FileSnapshot,
   FileTooLargeError,
   FileVersion,
-  Mark,
   MAX_DOCUMENT_BYTES,
 } from "./types.ts";
 
 const backendFault = (cause: unknown) => new PersistenceError({ cause });
-
-// D1 binds at most this many parameters in a statement.
-const MAX_PARAMS = 100;
-
-const MAX_ATTEMPTS = 10;
-
-/** Another write moved the latest version, or changed its marks, while an attempt ran. */
-class LatestMoved extends Data.TaggedError("LatestMoved") {}
-
-/** The latest version of a file and the count of its marks; `seq` is null without versions. */
-const LatestState = Schema.Struct({ seq: Schema.NullOr(Schema.Int), marks: Schema.Int });
-type LatestState = typeof LatestState.Type;
 
 const checkSize = (content: string) => {
   const bytes = new TextEncoder().encode(content).length;
@@ -48,64 +36,39 @@ const checkSize = (content: string) => {
 };
 
 export function layerFilesD1(client: D1Client.D1Client): Layer.Layer<Files> {
-  const findFile = SqlSchema.findOneOption({
-    Request: Schema.Struct({ wsId: Schema.String, id: Schema.String }),
+  const findFile = SqlSchema.findOne({
+    Request: Schema.Struct({ wsId: Schema.String, fileId: Schema.String }),
     Result: File,
-    execute: ({ wsId, id }) =>
-      client`SELECT * FROM files WHERE id = ${id} AND wsId = ${wsId} AND deletedAt IS NULL`,
+    execute: ({ wsId, fileId }) =>
+      client`SELECT * FROM files WHERE id = ${fileId} AND wsId = ${wsId} AND deletedAt IS NULL`,
   });
 
-  // the version of a file in the workspace that is not deleted
-  const findVersionInWorkspace = SqlSchema.findOneOption({
-    Request: Schema.Struct({ wsId: Schema.String, id: Schema.String }),
-    Result: FileVersion,
-    execute: ({ wsId, id }) =>
-      client`SELECT v.id, v.fileId, v.seq, v.createdAt
-        FROM file_versions v JOIN files f ON f.id = v.fileId
-        WHERE v.id = ${id} AND f.wsId = ${wsId} AND f.deletedAt IS NULL`,
-  });
-
-  const findFileByPath = SqlSchema.findOneOption({
+  const findFileByPath = SqlSchema.findOne({
     Request: Schema.Struct({ wsId: Schema.String, path: Schema.String }),
     Result: File,
     execute: ({ wsId, path }) =>
       client`SELECT * FROM files WHERE wsId = ${wsId} AND path = ${path} AND deletedAt IS NULL`,
   });
 
-  const decodeFiles = Schema.decodeUnknownEffect(Schema.Array(File));
-  const decodeVersions = Schema.decodeUnknownEffect(Schema.Array(FileVersion));
-
-  const findLatest = SqlSchema.findOneOption({
+  const findLatestSnapshot = SqlSchema.findOne({
     Request: Schema.Struct({ fileId: Schema.String }),
     Result: FileSnapshot,
     execute: ({ fileId }) =>
       client`SELECT * FROM file_versions WHERE fileId = ${fileId} ORDER BY seq DESC LIMIT 1`,
   });
 
-  const latestSeqOf = (fileId: string) =>
-    client`(SELECT max(seq) FROM file_versions WHERE fileId = ${fileId})`;
-  const latestMarkCountOf = (fileId: string) =>
-    client`(SELECT count(*) FROM marks m JOIN file_versions v ON v.id = m.versionId
-      WHERE v.fileId = ${fileId} AND v.seq = ${latestSeqOf(fileId)})`;
-
-  const findLatestState = SqlSchema.findOne({
-    Request: Schema.Struct({ fileId: Schema.String }),
-    Result: LatestState,
-    execute: ({ fileId }) =>
-      client`SELECT ${latestSeqOf(fileId)} AS seq, ${latestMarkCountOf(fileId)} AS marks`,
+  const findSnapshot = SqlSchema.findOne({
+    Request: Schema.Struct({ fileId: Schema.String, versionId: Schema.String }),
+    Result: FileSnapshot,
+    execute: ({ fileId, versionId }) =>
+      client`SELECT * FROM file_versions WHERE id = ${versionId} AND fileId = ${fileId}`,
   });
 
-  // fails on purpose, rolling back the batch, when the latest version or its marks changed
-  const guardLatest = (fileId: string, state: LatestState) =>
-    client`INSERT INTO file_versions (id) SELECT NULL
-      WHERE ${latestSeqOf(fileId)} IS NOT ${state.seq}
-        OR ${latestMarkCountOf(fileId)} IS NOT ${state.marks}`;
-
-  const findVersion = SqlSchema.findOneOption({
-    Request: Schema.Struct({ fileId: Schema.String, id: Schema.String }),
-    Result: FileSnapshot,
-    execute: ({ fileId, id }) =>
-      client`SELECT * FROM file_versions WHERE id = ${id} AND fileId = ${fileId}`,
+  const findVersion = SqlSchema.findOne({
+    Request: Schema.Struct({ versionId: Schema.String }),
+    Result: FileVersion,
+    execute: ({ versionId }) =>
+      client`SELECT id, fileId, seq, createdAt FROM file_versions WHERE id = ${versionId}`,
   });
 
   const findVersions = SqlSchema.findAll({
@@ -116,174 +79,131 @@ export function layerFilesD1(client: D1Client.D1Client): Layer.Layer<Files> {
         WHERE fileId = ${fileId} ORDER BY seq`,
   });
 
+  const latestVersionIdOf = (fileId: string) =>
+    client`(SELECT id FROM file_versions WHERE fileId = ${fileId} ORDER BY seq DESC LIMIT 1)`;
+
+  // runs on every autosave, so the checks are part of the statement: a file of the workspace that
+  // is not deleted, and a base that is still the latest version
   const upsertDraft = SqlSchema.findOne({
-    Request: FileDraft,
+    Request: Schema.Struct({
+      wsId: Schema.String,
+      baseVersionId: Schema.String,
+      ...FileDraft.fields,
+    }),
     Result: FileDraft,
-    execute: (row) =>
-      client`INSERT INTO file_drafts ${client.insert([row])}
+    execute: ({ wsId, fileId, baseVersionId, content, updatedAt }) =>
+      client`INSERT INTO file_drafts (fileId, content, updatedAt)
+        SELECT ${fileId}, ${content}, ${updatedAt}
+        WHERE EXISTS (
+            SELECT 1 FROM files WHERE id = ${fileId} AND wsId = ${wsId} AND deletedAt IS NULL
+          )
+          AND ${latestVersionIdOf(fileId)} = ${baseVersionId}
         ON CONFLICT (fileId) DO UPDATE SET
-          baseVersionId = excluded.baseVersionId,
           content = excluded.content,
           updatedAt = excluded.updatedAt
         RETURNING *`,
   });
 
-  // a draft written on an older version reads as none
   const findDraft = SqlSchema.findOneOption({
     Request: Schema.Struct({ fileId: Schema.String }),
     Result: FileDraft,
-    execute: ({ fileId }) =>
-      client`SELECT d.* FROM file_drafts d
-        WHERE d.fileId = ${fileId} AND d.baseVersionId = (
-          SELECT id FROM file_versions WHERE fileId = d.fileId ORDER BY seq DESC LIMIT 1
-        )`,
+    execute: ({ fileId }) => client`SELECT * FROM file_drafts WHERE fileId = ${fileId}`,
   });
 
-  const findMarks = SqlSchema.findAll({
-    Request: Schema.Struct({ versionId: Schema.String }),
-    Result: Mark,
-    execute: ({ versionId }) =>
-      client`SELECT * FROM marks WHERE versionId = ${versionId} ORDER BY createdAt, id`,
-  });
-
-  const findMarksInWorkspace = SqlSchema.findAll({
-    Request: Schema.Struct({ wsId: Schema.String, versionId: Schema.String }),
-    Result: Mark,
-    execute: ({ wsId, versionId }) =>
-      client`SELECT m.* FROM marks m
-        JOIN file_versions v ON v.id = m.versionId JOIN files f ON f.id = v.fileId
-        WHERE m.versionId = ${versionId} AND f.wsId = ${wsId} AND f.deletedAt IS NULL
-        ORDER BY m.createdAt, m.id`,
-  });
-
-  const insertMark = SqlSchema.void({
-    Request: Mark,
-    execute: (row) => client`INSERT INTO marks ${client.insert([row])}`,
-  });
-
-  const encodeVersion = (version: FileVersion, content: string) =>
-    Schema.encodeEffect(FileVersion)(version).pipe(Effect.map((row) => ({ ...row, content })));
-
-  /** Insert statements for marks, split to stay within the bound parameter limit. */
-  const markInserts = (marks: readonly Mark[]) =>
-    Effect.gen(function* () {
-      const rows = yield* Effect.forEach(marks, (mark) => Schema.encodeEffect(Mark)(mark));
-      if (!Array.isArrayNonEmpty(rows)) return [];
-      const perStatement = Math.floor(MAX_PARAMS / Object.keys(rows[0]).length);
-      return Array.chunksOf(rows, perStatement).map(
-        (chunk) => client`INSERT INTO marks ${client.insert(chunk)}`,
-      );
-    });
-
-  /** New copies of marks for a version, anchored again from the old content onto the new. */
-  const migrateMarksOnto = (
-    marks: readonly Mark[],
-    versionId: string,
-    oldContent: string,
-    newContent: string,
-  ) =>
-    Effect.gen(function* () {
-      const ids = yield* Ids;
-      return resolveMarks({ marks, oldContent, newContent }, { newId: () => ids.next() }).map(
-        // oxlint-disable-next-line typescript/no-misused-spread -- the resolver returns copies
-        (resolved) => new Mark({ ...resolved, versionId }),
-      );
-    });
+  /** The next version seq; `fileId` is a bound id, or a column of the enclosing statement. */
+  const nextSeqOf = (fileId: string | Statement.Fragment) =>
+    client`COALESCE((SELECT max(seq) FROM file_versions WHERE fileId = ${fileId}), 0) + 1`;
 
   // a deleted file keeps its rows, so every operation by id checks the file first
-  const requireFile = (fileId: string) =>
+  const fileById = (fileId: string) =>
     Effect.gen(function* () {
       const { wsId } = yield* WorkspaceId;
-      const file = yield* Effect.mapError(findFile({ wsId, id: fileId }), backendFault);
-      if (Option.isNone(file)) return yield* Effect.fail(new FileMissingError({ fileId }));
-      return file.value;
+      return yield* Effect.catchTags(
+        findFile({ wsId, fileId }),
+        { NoSuchElementError: () => Effect.fail(new FileMissingError({ fileId })) },
+        (e) => Effect.fail(backendFault(e)),
+      );
     });
 
   // a file always has a version, so none means the file is missing
   const latestSnapshot = (fileId: string) =>
-    findLatest({ fileId }).pipe(
-      Effect.mapError(backendFault),
-      Effect.flatMap(
-        Option.match({
-          onNone: () => Effect.fail(new FileMissingError({ fileId })),
-          onSome: Effect.succeed,
-        }),
-      ),
+    Effect.catchTags(
+      findLatestSnapshot({ fileId }),
+      { NoSuchElementError: () => Effect.fail(new FileMissingError({ fileId })) },
+      (e) => Effect.fail(backendFault(e)),
     );
 
-  /** A failed batch is a conflict when the latest state changed since it was read. */
-  const conflictOr = (
-    cause: unknown,
-    fileId: string,
-    state: LatestState,
-  ): Effect.Effect<never, LatestMoved | PersistenceError> =>
-    Effect.gen(function* () {
-      const now = yield* Effect.mapError(findLatestState({ fileId }), backendFault);
-      if (now.seq !== state.seq || now.marks !== state.marks) {
-        return yield* Effect.fail(new LatestMoved());
-      }
-      return yield* Effect.fail(backendFault(cause));
-    });
-
-  const retryWhileMoved = <A, E, R>(attempt: Effect.Effect<A, E | LatestMoved, R>) =>
-    attempt.pipe(
-      Effect.retry({ times: MAX_ATTEMPTS - 1, while: (e) => e instanceof LatestMoved }),
-      Effect.catchTag("LatestMoved", (e) => Effect.fail(backendFault(e))),
-    );
-
-  const list = (prefix?: string) =>
+  const list = () =>
     Effect.gen(function* () {
       const { wsId } = yield* WorkspaceId;
-      const under = prefix ?? null;
       // a single batch reads both at once, so every listed file has its latest version
       const [fileRows, versionRows] = yield* Effect.mapError(
         client.batch([
           client`SELECT * FROM files
-            WHERE wsId = ${wsId} AND deletedAt IS NULL
-              AND (${under} IS NULL OR substr(path, 1, length(${under})) = ${under})
-            ORDER BY path`,
+            WHERE wsId = ${wsId} AND deletedAt IS NULL ORDER BY path`,
           client`SELECT v.id, v.fileId, v.seq, v.createdAt
             FROM file_versions v JOIN files f ON f.id = v.fileId
             WHERE f.wsId = ${wsId} AND f.deletedAt IS NULL
-              AND (${under} IS NULL OR substr(f.path, 1, length(${under})) = ${under})
               AND v.seq = (SELECT max(seq) FROM file_versions WHERE fileId = f.id)`,
         ]),
         backendFault,
       );
-      const listed = yield* Effect.mapError(decodeFiles(fileRows), backendFault);
-      const latest = yield* Effect.mapError(decodeVersions(versionRows), backendFault);
-      const latestByFile = new Map(latest.map((version) => [version.fileId, version]));
-      return listed.flatMap((file) => {
+      const [files, latestVersions] = yield* Effect.mapError(
+        Effect.all([
+          Schema.decodeUnknownEffect(Schema.Array(File))(fileRows),
+          Schema.decodeUnknownEffect(Schema.Array(FileVersion))(versionRows),
+        ]),
+        backendFault,
+      );
+      const latestByFile = new Map(latestVersions.map((version) => [version.fileId, version]));
+      return files.flatMap((file) => {
         const version = latestByFile.get(file.id);
         return version === undefined ? [] : [{ file, latest: version }];
       });
     });
 
-  const resolve = (path: string) =>
+  const fileAt = (path: string) =>
     Effect.gen(function* () {
       const { wsId } = yield* WorkspaceId;
-      const file = yield* Effect.mapError(findFileByPath({ wsId, path }), backendFault);
-      if (Option.isNone(file)) return yield* Effect.fail(new FileMissingError({ path }));
-      return file.value;
+      return yield* Effect.catchTags(
+        findFileByPath({ wsId, path }),
+        { NoSuchElementError: () => Effect.fail(new FileMissingError({ path })) },
+        (e) => Effect.fail(backendFault(e)),
+      );
     });
 
-  const create = (path: string, content: string) =>
+  const newFile = (path: string) =>
     Effect.gen(function* () {
-      yield* checkSize(content);
       const { wsId } = yield* WorkspaceId;
       const ids = yield* Ids;
-      const createdAt = yield* DateTime.now;
-      const file = new File({
+      return new File({
         id: ids.next(),
         wsId,
         path,
-        createdAt,
+        createdAt: yield* DateTime.now,
         deletedAt: Option.none(),
         deletedBy: Option.none(),
       });
-      const version = new FileVersion({ id: ids.next(), fileId: file.id, seq: 1, createdAt });
+    });
+
+  const createAt = (path: string, content: string) =>
+    Effect.gen(function* () {
+      yield* checkSize(content);
+      const ids = yield* Ids;
+      const file = yield* newFile(path);
+      const snapshot = new FileSnapshot({
+        id: ids.next(),
+        fileId: file.id,
+        seq: 1,
+        createdAt: file.createdAt,
+        content,
+      });
       const fileRow = yield* Effect.mapError(Schema.encodeEffect(File)(file), backendFault);
-      const versionRow = yield* Effect.mapError(encodeVersion(version, content), backendFault);
+      const versionRow = yield* Effect.mapError(
+        Schema.encodeEffect(FileSnapshot)(snapshot),
+        backendFault,
+      );
+      // a single batch, so a file never exists without its first version
       yield* client
         .batch([
           client`INSERT INTO files ${client.insert([fileRow])}`,
@@ -291,194 +211,133 @@ export function layerFilesD1(client: D1Client.D1Client): Layer.Layer<Files> {
         ])
         .pipe(
           // another file holds the path, or the backend failed
-          Effect.catch((cause): Effect.Effect<never, FileExistsError | PersistenceError> =>
-            Effect.gen(function* () {
-              const taken = yield* Effect.mapError(findFileByPath({ wsId, path }), backendFault);
-              if (Option.isSome(taken)) return yield* Effect.fail(new FileExistsError({ path }));
-              return yield* Effect.fail(backendFault(cause));
-            }),
+          Effect.catch((cause) =>
+            fileAt(path).pipe(
+              Effect.flatMap(() => Effect.fail(new FileExistsError({ path }))),
+              Effect.catchTag("FileMissingError", () => Effect.fail(backendFault(cause))),
+            ),
           ),
         );
-      return { file, version };
+      return { file, version: new FileVersion(snapshot) };
+    });
+
+  const writeAt = (path: string, content: string) =>
+    Effect.gen(function* () {
+      yield* checkSize(content);
+      const { wsId } = yield* WorkspaceId;
+      const ids = yield* Ids;
+      const candidate = yield* newFile(path);
+      const fileRow = yield* Effect.mapError(Schema.encodeEffect(File)(candidate), backendFault);
+      const versionId = ids.next();
+      // a single batch, so a new file never exists without its first version: the file row goes in
+      // only when no file holds the path, and the version goes to whichever file does
+      yield* Effect.mapError(
+        client.batch([
+          client`INSERT INTO files ${client.insert([fileRow])}
+            ON CONFLICT (wsId, path) WHERE deletedAt IS NULL DO NOTHING`,
+          client`INSERT INTO file_versions (id, fileId, seq, createdAt, content)
+            SELECT ${versionId}, f.id, ${nextSeqOf(client`f.id`)}, ${fileRow.createdAt}, ${content}
+            FROM files f WHERE f.wsId = ${wsId} AND f.path = ${path} AND f.deletedAt IS NULL`,
+          client`DELETE FROM file_drafts WHERE fileId = (
+            SELECT id FROM files WHERE wsId = ${wsId} AND path = ${path} AND deletedAt IS NULL
+          )`,
+        ]),
+        backendFault,
+      );
+      // the batch wrote both rows, so a missing one is a defect
+      const file = yield* Effect.catchTag(fileAt(path), "FileMissingError", Effect.die);
+      const version = yield* Effect.catchTags(
+        findVersion({ versionId }),
+        { NoSuchElementError: Effect.die },
+        (e) => Effect.fail(backendFault(e)),
+      );
+      return { file, version, created: file.id === candidate.id };
     });
 
   const read = (fileId: string, versionId?: string) =>
     Effect.gen(function* () {
-      yield* requireFile(fileId);
+      yield* fileById(fileId);
       if (versionId === undefined) return yield* latestSnapshot(fileId);
-      const row = yield* Effect.mapError(findVersion({ fileId, id: versionId }), backendFault);
-      if (Option.isNone(row))
-        return yield* Effect.fail(new FileMissingError({ fileId, versionId }));
-      return row.value;
+      return yield* Effect.catchTags(
+        findSnapshot({ fileId, versionId }),
+        { NoSuchElementError: () => Effect.fail(new FileMissingError({ fileId, versionId })) },
+        (e) => Effect.fail(backendFault(e)),
+      );
     });
 
   const versions = (fileId: string) =>
     Effect.gen(function* () {
-      yield* requireFile(fileId);
+      yield* fileById(fileId);
       const rows = yield* Effect.mapError(findVersions({ fileId }), backendFault);
       return [...rows];
     });
 
-  /** Save a version; with `draft`, only while the draft is on the latest version. */
-  const writeAttempt = (fileId: string, content: string, draft?: FileDraft) =>
+  const writeDraft = (fileId: string, baseVersionId: string, content: string) =>
     Effect.gen(function* () {
-      const state = yield* Effect.mapError(findLatestState({ fileId }), backendFault);
-      const latest = yield* latestSnapshot(fileId);
-      if (latest.seq !== state.seq) return yield* Effect.fail(new LatestMoved());
-      if (draft !== undefined && draft.baseVersionId !== latest.id) {
-        return yield* Effect.fail(new LatestMoved());
-      }
-      const ids = yield* Ids;
-      const version = new FileVersion({
-        id: ids.next(),
-        fileId,
-        seq: latest.seq + 1,
-        createdAt: yield* DateTime.now,
-      });
-      const previousMarks = yield* Effect.mapError(
-        findMarks({ versionId: latest.id }),
-        backendFault,
+      yield* checkSize(content);
+      const { wsId } = yield* WorkspaceId;
+      return yield* Effect.catchTags(
+        upsertDraft({ wsId, fileId, baseVersionId, content, updatedAt: yield* DateTime.now }),
+        {
+          // nothing saved: the file is missing, or a newer version was saved
+          NoSuchElementError: () =>
+            Effect.andThen(
+              fileById(fileId),
+              Effect.fail(new DraftStaleError({ fileId, baseVersionId })),
+            ),
+        },
+        (e) => Effect.fail(backendFault(e)),
       );
-      const marks = yield* migrateMarksOnto(previousMarks, version.id, latest.content, content);
-      const versionRow = yield* Effect.mapError(encodeVersion(version, content), backendFault);
-      const inserts = yield* Effect.mapError(markInserts(marks), backendFault);
-      // promoting clears only the draft it read; a newer one stays
-      const clearDraft =
-        draft === undefined
-          ? client`DELETE FROM file_drafts WHERE fileId = ${fileId}`
-          : client`DELETE FROM file_drafts
-              WHERE fileId = ${fileId} AND updatedAt = ${DateTime.formatIso(draft.updatedAt)}`;
-      yield* client
-        .batch([
-          guardLatest(fileId, state),
-          client`INSERT INTO file_versions ${client.insert([versionRow])}`,
-          ...inserts,
-          clearDraft,
-        ])
-        .pipe(Effect.catch((cause) => conflictOr(cause, fileId, state)));
-      return version;
-    });
-
-  const write = (fileId: string, content: string) =>
-    Effect.gen(function* () {
-      yield* checkSize(content);
-      yield* requireFile(fileId);
-      return yield* retryWhileMoved(writeAttempt(fileId, content));
-    });
-
-  const writeDraft = (fileId: string, content: string) =>
-    Effect.gen(function* () {
-      yield* checkSize(content);
-      yield* requireFile(fileId);
-      const latest = yield* latestSnapshot(fileId);
-      const draft = new FileDraft({
-        fileId,
-        baseVersionId: latest.id,
-        content,
-        updatedAt: yield* DateTime.now,
-      });
-      return yield* Effect.mapError(upsertDraft(draft), backendFault);
     });
 
   const readDraft = (fileId: string) =>
     Effect.gen(function* () {
-      yield* requireFile(fileId);
+      yield* fileById(fileId);
       return yield* Effect.mapError(findDraft({ fileId }), backendFault);
-    });
-
-  // a save that lands first makes the draft stale, and the next attempt finds no draft
-  const promoteAttempt = (fileId: string) =>
-    Effect.gen(function* () {
-      const draft = yield* Effect.mapError(findDraft({ fileId }), backendFault);
-      if (Option.isNone(draft)) {
-        const latest = yield* latestSnapshot(fileId);
-        return { version: new FileVersion(latest), promoted: false };
-      }
-      yield* checkSize(draft.value.content);
-      const version = yield* writeAttempt(fileId, draft.value.content, draft.value);
-      return { version, promoted: true };
     });
 
   const promoteDraft = (fileId: string) =>
     Effect.gen(function* () {
-      yield* requireFile(fileId);
-      return yield* retryWhileMoved(promoteAttempt(fileId));
-    });
-
-  const marks = (versionId: string) =>
-    Effect.gen(function* () {
-      const { wsId } = yield* WorkspaceId;
-      const rows = yield* Effect.mapError(findMarksInWorkspace({ wsId, versionId }), backendFault);
-      return [...rows];
-    });
-
-  const addMark = (mark: Mark) =>
-    Effect.gen(function* () {
-      const { wsId } = yield* WorkspaceId;
-      const version = yield* Effect.mapError(
-        findVersionInWorkspace({ wsId, id: mark.versionId }),
+      yield* fileById(fileId);
+      const ids = yield* Ids;
+      const versionId = ids.next();
+      const createdAt = DateTime.formatIso(yield* DateTime.now);
+      // a single batch, so the draft never outlives its promotion
+      yield* Effect.mapError(
+        client.batch([
+          client`INSERT INTO file_versions (id, fileId, seq, createdAt, content)
+            SELECT ${versionId}, fileId, ${nextSeqOf(fileId)}, ${createdAt}, content
+            FROM file_drafts WHERE fileId = ${fileId}`,
+          client`DELETE FROM file_drafts WHERE fileId = ${fileId}`,
+        ]),
         backendFault,
       );
-      if (Option.isNone(version)) {
-        return yield* Effect.fail(new FileMissingError({ versionId: mark.versionId }));
-      }
-      yield* Effect.mapError(insertMark(mark), backendFault);
-    });
-
-  const migrateAttempt = (fileId: string, fromVersionId: string) =>
-    Effect.gen(function* () {
-      const state = yield* Effect.mapError(findLatestState({ fileId }), backendFault);
-      const latest = yield* latestSnapshot(fileId);
-      if (latest.seq !== state.seq) return yield* Effect.fail(new LatestMoved());
-      if (latest.id === fromVersionId) return { migrated: 0, stale: 0 };
-      const from = yield* Effect.mapError(findVersion({ fileId, id: fromVersionId }), backendFault);
-      if (Option.isNone(from)) {
-        return yield* Effect.fail(new FileMissingError({ fileId, versionId: fromVersionId }));
-      }
-      const [fromMarks, latestMarks] = yield* Effect.mapError(
-        Effect.all([findMarks({ versionId: fromVersionId }), findMarks({ versionId: latest.id })]),
-        backendFault,
+      return yield* Effect.catchTags(
+        Effect.map(findVersion({ versionId }), (version) => ({ version, promoted: true })),
+        {
+          // there was no draft, so no version was written
+          NoSuchElementError: () =>
+            Effect.map(latestSnapshot(fileId), (latest) => ({
+              version: new FileVersion(latest),
+              promoted: false,
+            })),
+        },
+        (e) => Effect.fail(backendFault(e)),
       );
-      const onLatest = new Set(latestMarks.map((mark) => mark.threadId));
-      const pending = fromMarks.filter((mark) => !onLatest.has(mark.threadId));
-      if (pending.length === 0) return { migrated: 0, stale: 0 };
-      const copies = yield* migrateMarksOnto(
-        pending,
-        latest.id,
-        from.value.content,
-        latest.content,
-      );
-      const inserts = yield* Effect.mapError(markInserts(copies), backendFault);
-      yield* client
-        .batch([guardLatest(fileId, state), ...inserts])
-        .pipe(Effect.catch((cause) => conflictOr(cause, fileId, state)));
-      return {
-        migrated: copies.length,
-        stale: copies.filter((mark) => mark.status === "stale").length,
-      };
-    });
-
-  const migrateMarks = (fileId: string, fromVersionId: string) =>
-    Effect.gen(function* () {
-      yield* requireFile(fileId);
-      return yield* retryWhileMoved(migrateAttempt(fileId, fromVersionId));
     });
 
   return Layer.succeed(
     Files,
     Files.of({
       list,
-      resolve,
-      create,
+      fileAt,
+      createAt,
+      writeAt,
       read,
       versions,
-      write,
       writeDraft,
       readDraft,
       promoteDraft,
-      marks,
-      addMark,
-      migrateMarks,
     }),
   );
 }
