@@ -2,12 +2,12 @@ import { Command, EnumType } from "@cliffy/command";
 import { USER_ROLES, Workspaces } from "@essayist/core";
 import { Effect, Option } from "effect";
 
-import type { KvctlGlobals } from "#/globals.ts";
-import { withStore } from "#/kv.ts";
+import { withStore } from "#/db.ts";
+import type { DbctlGlobals } from "#/globals.ts";
 
 const ROLE = new EnumType([...USER_ROLES]);
 
-export const grantRole = new Command<KvctlGlobals>()
+export const grantRole = new Command<DbctlGlobals>()
   .description("Set a user's site-wide role.")
   .type("role", ROLE)
   .arguments("<emailOrId:string> <role:role>")

@@ -1,4 +1,4 @@
-// The database the kvctl commands work on, through the D1 binding wrangler gives a node script: the
+// The database the dbctl commands work on, through the D1 binding wrangler gives a node script: the
 // deployed database by default, or with --local the database of the vite dev server.
 
 import { fileURLToPath } from "node:url";
@@ -10,15 +10,15 @@ import { Effect, Layer, ManagedRuntime } from "effect";
 import * as Reactivity from "effect/reactivity/Reactivity";
 import { getPlatformProxy } from "wrangler";
 
-import type { KvctlGlobals } from "#/globals.ts";
+import type { DbctlGlobals } from "#/globals.ts";
 
 const path = (relative: string) => fileURLToPath(new URL(relative, import.meta.url));
 
-export type KvRuntime = ManagedRuntime.ManagedRuntime<CoreServices, never>;
+export type DbRuntime = ManagedRuntime.ManagedRuntime<CoreServices, never>;
 
 /** Run a command on the D1 binding, closed when the command finishes. */
 export async function withDatabase<T>(
-  globals: KvctlGlobals,
+  globals: DbctlGlobals,
   fn: (db: D1Database) => Promise<T>,
 ): Promise<T> {
   // locally the same binding is kept off the network, and its file is found by the database id in
@@ -38,8 +38,8 @@ export async function withDatabase<T>(
 
 /** Run a command with the core services over the database. */
 export function withStore<T>(
-  globals: KvctlGlobals,
-  fn: (ctx: { runtime: KvRuntime }) => Promise<T>,
+  globals: DbctlGlobals,
+  fn: (ctx: { runtime: DbRuntime }) => Promise<T>,
 ): Promise<T> {
   return withDatabase(globals, async (db) => {
     const layer = Layer.unwrap(Effect.map(D1.make({ db }), layerCoreD1)).pipe(

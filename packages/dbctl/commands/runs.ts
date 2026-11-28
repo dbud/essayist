@@ -2,13 +2,13 @@ import { Command } from "@cliffy/command";
 import { Files, pluralize, ReviewRun, ReviewRuns, WorkspaceId } from "@essayist/core";
 import { Effect, Schema } from "effect";
 
-import type { KvctlGlobals } from "#/globals.ts";
-import { withStore } from "#/kv.ts";
+import { withStore } from "#/db.ts";
+import type { DbctlGlobals } from "#/globals.ts";
 import { pprint } from "#/utils/pprint.ts";
 
 const encodeRun = Schema.encodeSync(ReviewRun.json);
 
-export const runs = new Command<KvctlGlobals>()
+export const runs = new Command<DbctlGlobals>()
   .description("List review runs for a workspace, newest first.")
   .arguments("<wsId:string>")
   .option("--path <path:string>", "Only the runs of the file at this path.")

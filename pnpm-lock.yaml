@@ -273,7 +273,7 @@ importers:
         specifier: 'catalog:'
         version: 8.3.8(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1)
 
-  packages/kvctl:
+  packages/dbctl:
     dependencies:
       '@cliffy/command':
         specifier: npm:@jsr/cliffy__command@^1.3.1

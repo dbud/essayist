@@ -9,8 +9,8 @@ import {
 } from "@essayist/core";
 import { Effect, Option } from "effect";
 
-import type { KvctlGlobals } from "#/globals.ts";
-import { withStore } from "#/kv.ts";
+import { withStore } from "#/db.ts";
+import type { DbctlGlobals } from "#/globals.ts";
 
 // A per-workspace companion file: its name and content derive from the workspace, so content on
 // screen identifies the workspace it came from.
@@ -36,7 +36,7 @@ navigation sent you somewhere else than you asked for.
 
 const DEMO_EMAIL = "demo@example.com";
 
-export const seed = new Command<KvctlGlobals>()
+export const seed = new Command<DbctlGlobals>()
   .description(
     "Seed the default review config into an empty store, and a demo workspace for a user.",
   )

@@ -2,14 +2,14 @@ import { Command } from "@cliffy/command";
 import { type TraceEvent, TraceEvents, WorkspaceId } from "@essayist/core";
 import { Effect } from "effect";
 
-import type { KvctlGlobals } from "#/globals.ts";
-import { withStore } from "#/kv.ts";
+import { withStore } from "#/db.ts";
+import type { DbctlGlobals } from "#/globals.ts";
 import { pprint } from "#/utils/pprint.ts";
 
 /**
  * Print a run's trace, one JSON event per document, so the events can be piped to jq.
  */
-export const trace = new Command<KvctlGlobals>()
+export const trace = new Command<DbctlGlobals>()
   .description("Print a run's trace, one JSON event per document.")
   .arguments("<wsId:string> <runId:string>")
   .option("--summary", "Print one line per event instead of full JSON.")

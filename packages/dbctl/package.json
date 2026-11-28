@@ -1,5 +1,5 @@
 {
-  "name": "@essayist/kvctl",
+  "name": "@essayist/dbctl",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -9,7 +9,7 @@
   "scripts": {
     "check": "tsc --noEmit",
     "fmt": "oxfmt . && pnpm -w fmt:comments",
-    "kvctl": "node --env-file=../../.env kvctl.ts",
+    "dbctl": "node --env-file=../../.env dbctl.ts",
     "lint": "oxlint ."
   },
   "dependencies": {

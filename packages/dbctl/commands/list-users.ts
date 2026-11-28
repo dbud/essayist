@@ -1,9 +1,9 @@
 import { Command } from "@cliffy/command";
 
-import type { KvctlGlobals } from "#/globals.ts";
-import { withDatabase } from "#/kv.ts";
+import { withDatabase } from "#/db.ts";
+import type { DbctlGlobals } from "#/globals.ts";
 
-export const listUsers = new Command<KvctlGlobals>()
+export const listUsers = new Command<DbctlGlobals>()
   .description("List users.")
   .action(({ local }) =>
     withDatabase({ local }, async (db) => {

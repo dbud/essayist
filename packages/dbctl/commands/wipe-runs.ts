@@ -2,10 +2,10 @@ import { Command } from "@cliffy/command";
 import { Files, pluralize, ReviewRuns, WorkspaceId } from "@essayist/core";
 import { Effect, Result } from "effect";
 
-import type { KvctlGlobals } from "#/globals.ts";
-import { withStore } from "#/kv.ts";
+import { withStore } from "#/db.ts";
+import type { DbctlGlobals } from "#/globals.ts";
 
-export const wipeRuns = new Command<KvctlGlobals>()
+export const wipeRuns = new Command<DbctlGlobals>()
   .description("Delete the review runs of a file, with their traces and marks.")
   .arguments("<wsId:string> <path:string>")
   .option("--version <versionId:string>", "Only the runs on this version.")

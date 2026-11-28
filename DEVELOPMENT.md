@@ -2,7 +2,7 @@
 
 Essayist is a monorepo. `packages/core` (Effect services), `packages/worker` (Hono on Workers, Vite
 
-- TypeScript 7), and `packages/kvctl` form a pnpm workspace; shared dev tooling (oxlint, oxfmt,
+- TypeScript 7), and `packages/dbctl` form a pnpm workspace; shared dev tooling (oxlint, oxfmt,
   TypeScript, vitest) lives at the workspace root. `crates/wasm` holds the Rust diff core; its wasm-
   pack build runs from the pre-commit hook.
 
@@ -19,7 +19,7 @@ pnpm build          # vite build of the worker package
 ```
 
 Per-package form: `pnpm -C packages/core <script>` and `pnpm -C packages/worker <script>`. Scripts
-on core: check, fmt, lint, test. Scripts on kvctl: check, fmt, kvctl, lint. Scripts on worker:
+on core: check, fmt, lint, test. Scripts on dbctl: check, fmt, dbctl, lint. Scripts on worker:
 build, check, deploy, dev, favicon, favicon:check, preview, typegen, fmt, lint.
 
 pnpm-workspace.yaml lists `packages/*`, carries the catalog (shared version ranges for effect,

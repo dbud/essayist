@@ -1,10 +1,10 @@
 import { Command } from "@cliffy/command";
 
-import type { KvctlGlobals } from "#/globals.ts";
-import { withDatabase } from "#/kv.ts";
+import { withDatabase } from "#/db.ts";
+import type { DbctlGlobals } from "#/globals.ts";
 import { pprint } from "#/utils/pprint.ts";
 
-export const sql = new Command<KvctlGlobals>()
+export const sql = new Command<DbctlGlobals>()
   .description("Run one raw SQL statement against the review D1 database.")
   .arguments("<statement:string>")
   .action(({ local }, statement: string) =>
