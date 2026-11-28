@@ -12,8 +12,8 @@ export const runs = new Command<DbctlGlobals>()
   .description("List review runs for a workspace, newest first.")
   .arguments("<wsId:string>")
   .option("--path <path:string>", "Only the runs of the file at this path.")
-  .action(({ local, path }, wsId: string) =>
-    withStore({ local }, async ({ runtime }) => {
+  .action(({ remote, path }, wsId: string) =>
+    withStore({ remote }, async ({ runtime }) => {
       const list = await runtime.runPromise(
         Effect.gen(function* () {
           const store = yield* ReviewRuns;

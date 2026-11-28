@@ -11,8 +11,8 @@ export const grantRole = new Command<DbctlGlobals>()
   .description("Set a user's site-wide role.")
   .type("role", ROLE)
   .arguments("<emailOrId:string> <role:role>")
-  .action(({ local }, emailOrId: string, role: "admin" | "writer") =>
-    withStore({ local }, async ({ runtime }) => {
+  .action(({ remote }, emailOrId: string, role: "admin" | "writer") =>
+    withStore({ remote }, async ({ runtime }) => {
       const updated = await runtime.runPromise(
         Effect.gen(function* () {
           const workspaces = yield* Workspaces;

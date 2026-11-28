@@ -47,8 +47,8 @@ export const seed = new Command<DbctlGlobals>()
   .option("--ws-name <name:string>", "Demo workspace name.", {
     default: "Demo",
   })
-  .action(({ email, name, wsName, local }) =>
-    withStore({ local }, async ({ runtime }) => {
+  .action(({ email, name, wsName, remote }) =>
+    withStore({ remote }, async ({ runtime }) => {
       const report = await runtime.runPromise(
         Effect.gen(function* () {
           const config = (yield* seedDefaultConfig) ? "the default review config" : null;

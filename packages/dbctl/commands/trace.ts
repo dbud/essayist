@@ -13,8 +13,8 @@ export const trace = new Command<DbctlGlobals>()
   .description("Print a run's trace, one JSON event per document.")
   .arguments("<wsId:string> <runId:string>")
   .option("--summary", "Print one line per event instead of full JSON.")
-  .action(({ local, summary }, wsId: string, runId: string) =>
-    withStore({ local }, async ({ runtime }) => {
+  .action(({ remote, summary }, wsId: string, runId: string) =>
+    withStore({ remote }, async ({ runtime }) => {
       const events = await runtime.runPromise(
         TraceEvents.use((traces) => traces.get(runId)).pipe(
           Effect.provideService(WorkspaceId, { wsId }),

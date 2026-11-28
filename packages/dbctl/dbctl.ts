@@ -1,10 +1,10 @@
 // Database management CLI for the Essayist web app.
 //
-// Usage: pnpm --filter @essayist/dbctl dbctl <command> [args...] [--local]
+// Usage: pnpm --filter @essayist/dbctl dbctl <command> [args...] [--remote]
 //
-// The deployed database is reached with CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_API_TOKEN from .env
-// (loaded via --env-file=../../.env by the dbctl script); --local instead uses the D1 state of the
-// vite dev server. Run the script with --help for usage.
+// The commands work on the D1 state of the vite dev server. --remote instead reaches the deployed
+// database with CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_API_TOKEN from .env (loaded via --env-
+// file=../../.env by the dbctl script). Run the script with --help for usage.
 
 import { Command } from "@cliffy/command";
 
@@ -19,7 +19,7 @@ import { wipeRuns } from "#/commands/wipe-runs.ts";
 await new Command()
   .name("dbctl")
   .description("Database management CLI for the Essayist web app.")
-  .option("--local", "Use the vite dev server's D1 state instead of the remote database.", {
+  .option("--remote", "Use the deployed database instead of the D1 state of the vite dev server.", {
     global: true,
   })
   .command("wipe-runs", wipeRuns)

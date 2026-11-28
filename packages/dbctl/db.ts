@@ -1,5 +1,5 @@
 // The database the dbctl commands work on, through the D1 binding wrangler gives a node script: the
-// deployed database by default, or with --local the database of the vite dev server.
+// database of the vite dev server by default, or with --remote the deployed database.
 
 import { fileURLToPath } from "node:url";
 
@@ -25,9 +25,9 @@ export async function withDatabase<T>(
   // the dev state of the worker; the default state path is relative to the working directory
   const proxy = await getPlatformProxy<{ DB: D1Database }>({
     configPath: path("./wrangler.jsonc"),
-    ...(globals.local === true
-      ? { remoteBindings: false, persist: { path: path("../worker/.wrangler/state/v3") } }
-      : { persist: false }),
+    ...(globals.remote === true
+      ? { persist: false }
+      : { remoteBindings: false, persist: { path: path("../worker/.wrangler/state/v3") } }),
   });
   try {
     return await fn(proxy.env.DB);

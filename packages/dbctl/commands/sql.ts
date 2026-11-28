@@ -7,8 +7,8 @@ import { pprint } from "#/utils/pprint.ts";
 export const sql = new Command<DbctlGlobals>()
   .description("Run one raw SQL statement against the review D1 database.")
   .arguments("<statement:string>")
-  .action(({ local }, statement: string) =>
-    withDatabase({ local }, async (db) => {
+  .action(({ remote }, statement: string) =>
+    withDatabase({ remote }, async (db) => {
       const { results: rows } = await db.prepare(statement).all();
       for (const row of rows) {
         pprint(row);

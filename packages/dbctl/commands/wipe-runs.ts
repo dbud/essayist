@@ -9,8 +9,8 @@ export const wipeRuns = new Command<DbctlGlobals>()
   .description("Delete the review runs of a file, with their traces and marks.")
   .arguments("<wsId:string> <path:string>")
   .option("--version <versionId:string>", "Only the runs on this version.")
-  .action(({ local, version }, wsId: string, path: string) =>
-    withStore({ local }, async ({ runtime }) => {
+  .action(({ remote, version }, wsId: string, path: string) =>
+    withStore({ remote }, async ({ runtime }) => {
       const deleted = await runtime.runPromise(
         Effect.gen(function* () {
           const file = yield* Files.use((files) => files.fileAt(path));

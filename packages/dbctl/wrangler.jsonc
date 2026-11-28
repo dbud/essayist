@@ -1,4 +1,4 @@
-// The D1 binding of this tool: the deployed database, or with --local the dev state of the worker,
+// The D1 binding of this tool: the dev state of the worker, or with --remote the deployed database,
 // found by the same database id. The id is the one in packages/worker/wrangler.jsonc.
 {
   "$schema": "../worker/node_modules/wrangler/config-schema.json",
