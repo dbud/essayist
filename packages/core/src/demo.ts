@@ -1,8 +1,8 @@
-// The demo essay and its seed, shared by the workspace-create endpoint and kvctl's seed-demo
-// command. The seed runs under the WorkspaceId of the caller.
+// The demo essay and its seed: the essay with a review of it, under the WorkspaceId of the caller.
 
 import { Effect } from "effect";
 
+import { DEFAULT_REVIEW_PASS_ID } from "#/config/defaults.ts";
 import { ReviewConfig } from "#/config/service.ts";
 import { Files } from "#/files/service.ts";
 import type { FileExistsError, FileTooLargeError } from "#/files/types.ts";
@@ -46,7 +46,7 @@ The comma deserves special mention, because it is the smallest tool in the kit a
 An ending has to be earned twice -- once by the argument, and once by the reader's patience. The best endings rarely summarize. They return to the opening question carrying an answer the middle of the piece has made credible, and then they stop. A draft that knows where it is going can afford to walk; a revision knows the way, and can run.`,
 };
 
-/** The comments of the demo review; the category ids match the categories of kvctl seed-config. */
+/** The comments of the demo review, in the categories of the default config. */
 const demoMarks: ReadonlyArray<{ selectedText: string; comment: string; categoryId?: string }> = [
   {
     categoryId: "thesis",
@@ -102,7 +102,11 @@ export function seedDemoFiles(): Effect.Effect<
     );
     const runs = yield* ReviewRuns;
     const run = yield* Effect.orDie(
-      runs.createRun({ fileId: file.id, versionId: version.id, reviewPassId: "essay-review" }),
+      runs.createRun({
+        fileId: file.id,
+        versionId: version.id,
+        reviewPassId: DEFAULT_REVIEW_PASS_ID,
+      }),
     );
     const categories = yield* ReviewConfig.use((config) => config.listCategories());
     const knownIds = new Set(categories.map((category) => category.id));

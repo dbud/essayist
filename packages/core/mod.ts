@@ -7,6 +7,7 @@ export {
   resolveReviewPass,
   resolveReviewPassById,
 } from "#/config/resolve.ts";
+export { DEFAULT_REVIEW_PASS_ID, seedDefaultConfig } from "#/config/defaults.ts";
 export { ReviewConfig } from "#/config/service.ts";
 export { extractVariables } from "#/config/template.ts";
 export { layerReviewConfigD1 } from "#/config/config_d1.ts";

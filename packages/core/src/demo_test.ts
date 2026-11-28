@@ -2,8 +2,8 @@ import { assertEquals, assertInstanceOf } from "@std/assert";
 import { Effect, Option } from "effect";
 import { test } from "vitest";
 
+import { seedDefaultConfig } from "#/config/defaults.ts";
 import { ReviewConfig } from "#/config/service.ts";
-import { category } from "#/config/testing.ts";
 import { seedDemoFiles } from "#/demo.ts";
 import { FileExistsError } from "#/files/types.ts";
 import { Marks } from "#/marks/service.ts";
@@ -17,15 +17,13 @@ const categoriesOf = Effect.gen(function* () {
   return placed.map((mark) => Option.getOrUndefined(mark.categoryId));
 });
 
-test("seedDemoFiles -- creates the essay with a completed review of every demo mark", async () => {
+test("seedDemoFiles -- every demo mark is in a category of the default config", async () => {
   await runInWorkspace(() =>
     Effect.gen(function* () {
-      const config = yield* ReviewConfig;
-      for (const id of ["thesis", "structure", "evidence", "tone"]) {
-        yield* config.saveCategory(category({ id, label: id }));
-      }
+      // the default config seeds only an empty store, so the category of the harness goes first
+      yield* ReviewConfig.use((config) => config.deleteCategory("grammar"));
+      assertEquals(yield* seedDefaultConfig, true);
       yield* seedDemoFiles();
-      // grammar is the category every test database has
       assertEquals(yield* categoriesOf, [
         "thesis",
         "structure",
