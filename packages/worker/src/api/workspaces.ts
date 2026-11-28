@@ -159,7 +159,7 @@ const StartReviewPayload = Schema.Struct({
 const accepted = <S extends Schema.Top>(schema: S) => HttpApiSchema.status(202)(schema);
 
 const getLatestReview = HttpApiEndpoint.get("getLatestReview", "/workspaces/files/review", {
-  query: FileQuery,
+  query: ContentQuery,
   success: LatestReviewData,
   error: [HttpApiError.Forbidden, HttpApiError.NotFound],
 });

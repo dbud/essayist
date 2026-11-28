@@ -12,7 +12,7 @@ interface SidenoteProps {
 
 export default function Sidenote({ view, editor, hidden, color }: SidenoteProps) {
   const { entry, top } = view;
-  const { mark, ordinal, active } = entry;
+  const { mark, label, ordinal, active } = entry;
   return (
     <button
       type="button"
@@ -26,7 +26,7 @@ export default function Sidenote({ view, editor, hidden, color }: SidenoteProps)
         <span class="sidenote-ordinal">{ordinal}</span>
         <div class="min-w-0 flex flex-col gap-1">
           <div class="text-ink">
-            {mark.label && <span class="badge">{mark.label}</span>}
+            {label && <span class="badge">{label}</span>}
             <span class="min-w-0 flex-1">{mark.comment}</span>
           </div>
           {mark.status === "stale" && mark.selectedText && (

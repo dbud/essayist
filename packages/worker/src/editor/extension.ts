@@ -1,4 +1,3 @@
-import type { Mark } from "@essayist/core";
 import { CodeExtension } from "@lexical/code";
 import { AutoFocusExtension, HorizontalRuleExtension } from "@lexical/extension";
 import { HistoryExtension } from "@lexical/history";
@@ -11,6 +10,7 @@ import { configExtension, defineExtension, type NodeKey } from "lexical";
 
 import { PartialUpdateExtension } from "#/editor/partialUpdateExtension.ts";
 import type { MeasuredMarks, Spacer } from "#/geometry/layout.ts";
+import type { Mark } from "#/models/resolvedMarks.ts";
 import type { MarkFragmentBadge, MarkFragmentRect, MarkOrdinals } from "#/models/sidenotes.ts";
 import type { EditorSelection } from "#/signals/editorSelection.ts";
 

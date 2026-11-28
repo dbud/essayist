@@ -1,27 +1,27 @@
 import { computed, createModel, effect, type ReadonlySignal, signal } from "@preact/signals";
 
 import { PENDING_VERSION_ID } from "./fileContent.ts";
-import { type FileMarks, FileMarksModel } from "./fileMarks.ts";
+import { type FileReview, FileReviewModel } from "./fileReview.ts";
 import { FileKey, type FileSelection } from "./fileSelection.ts";
-import type { MarksData } from "./marks.data.ts";
+import type { LatestReviewData } from "./marks.data.ts";
 import type { ReviewRuns } from "./reviewRuns.ts";
 
-export const FileMarksByPathModel = createModel(
+export const FileReviewByPathModel = createModel(
   (
     selected: ReadonlySignal<FileSelection | null>,
     reviewRuns: ReadonlySignal<Pick<ReviewRuns, "active"> | null>,
-    data?: MarksData,
+    data?: LatestReviewData,
   ) => {
-    // file key -> version id -> marks
-    const marks = signal(new Map<string, Map<string, FileMarks>>());
+    // file key -> version id -> review
+    const reviews = signal(new Map<string, Map<string, FileReview>>());
 
     {
       const selection = selected.value;
       if (data !== undefined && selection !== null && selection.path !== null) {
-        marks.value = new Map([
+        reviews.value = new Map([
           [
             FileKey.fileCacheKey(selection),
-            new Map([[selection.versionId, new FileMarksModel(selection, data)]]),
+            new Map([[selection.versionId, new FileReviewModel(selection, data)]]),
           ],
         ]);
       }
@@ -36,16 +36,16 @@ export const FileMarksByPathModel = createModel(
       ) {
         return null;
       }
-      return marks.value
+      return reviews.value
         .getOrInsertComputed(FileKey.fileCacheKey(selection), () => new Map())
-        .getOrInsertComputed(selection.versionId, () => new FileMarksModel(selection));
+        .getOrInsertComputed(selection.versionId, () => new FileReviewModel(selection));
     });
 
-    /** Drop the cached marks of every version of a file; the current version reloads. */
+    /** Drop the cached reviews of every version of a file; the displayed version reloads. */
     function invalidate(file: Pick<FileKey, "wsId" | "path">): void {
-      const next = new Map(marks.peek());
+      const next = new Map(reviews.peek());
       next.delete(FileKey.fileCacheKey(file));
-      marks.value = next;
+      reviews.value = next;
     }
 
     // Marks reload as the review of the selected file places them. The last placed marks reach the
@@ -65,4 +65,4 @@ export const FileMarksByPathModel = createModel(
   },
 );
 
-export type FileMarksByPath = InstanceType<typeof FileMarksByPathModel>;
+export type FileReviewByPath = InstanceType<typeof FileReviewByPathModel>;

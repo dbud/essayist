@@ -23,7 +23,7 @@ export default function GhostSidenote({
   color,
 }: GhostSidenoteProps) {
   const { entry, ghost, trueTop } = view;
-  const { mark, ordinal } = entry;
+  const { mark, label, ordinal } = entry;
   const Icon = ghost === "bottom" ? MoveDown : MoveUp;
   const reducedMotion = useMediaQuery("(prefers-reduced-motion: reduce)");
   return (
@@ -59,7 +59,7 @@ export default function GhostSidenote({
           <span class="sidenote-ordinal">{ordinal}</span>
           <div class="min-w-0 flex flex-col gap-1">
             <div class="text-ink">
-              {mark.label && <span class="badge">{mark.label}</span>}
+              {label && <span class="badge">{label}</span>}
               <span class="min-w-0 flex-1">{mark.comment}</span>
             </div>
           </div>

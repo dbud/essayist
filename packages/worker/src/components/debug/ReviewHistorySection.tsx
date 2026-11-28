@@ -54,7 +54,7 @@ function RunItem({ run, onDelete }: { run: ReviewRunData; onDelete?: () => void 
 
 export default function ReviewHistorySection() {
   const { user } = useAppState();
-  const { selected, reviewRuns, marks } = useEditorModels();
+  const { selected, reviewRuns, reviews } = useEditorModels();
   const review = reviewRuns.current.value;
   const selection = selected.value;
   if (review === null || selection === null || selection.path === null) return null;
@@ -65,7 +65,7 @@ export default function ReviewHistorySection() {
   const cleanup = async (task: () => Promise<CleanupResult>) => {
     try {
       const result = await task();
-      marks.invalidate(selection);
+      reviews.invalidate(selection);
       showToast(
         `Deleted ${formatCount(result.runs, "run")} and ${formatCount(result.marks, "mark")}`,
         "success",

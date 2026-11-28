@@ -1,4 +1,4 @@
-import type { Mark } from "@essayist/core";
+import type { Mark } from "#/models/resolvedMarks.ts";
 
 /** The span of a mark in markdown offset space, with its mark id. */
 export type MarkSpan = Pick<Mark, "offset" | "length" | "id">;

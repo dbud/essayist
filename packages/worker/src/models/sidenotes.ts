@@ -1,4 +1,3 @@
-import type { Mark } from "@essayist/core";
 import { type Signal, computed, createModel, signal } from "@preact/signals";
 import type { NodeKey } from "lexical";
 
@@ -12,7 +11,7 @@ import {
 } from "#/geometry/layout.ts";
 import type { Categories } from "#/models/categories.ts";
 import { FileKey } from "#/models/fileSelection.ts";
-import type { ResolvedMarks } from "#/models/resolvedMarks.ts";
+import type { Mark, ResolvedMarks } from "#/models/resolvedMarks.ts";
 import { getEditorSelection } from "#/signals/editorSelection.ts";
 
 import { deepComputed } from "./utils/deepComputed.ts";
@@ -44,6 +43,7 @@ export interface MarkFragmentRect {
 
 export interface SidenoteEntry {
   mark: Mark;
+  label?: string;
   ordinal: number;
   markTop: number; // raw mark position, before stacking
   active: boolean;
@@ -134,6 +134,7 @@ export const SidenotesModel = createModel((key: FileKey, deps: SidenotesDeps) =>
           ordinal: markOrdinals.value.get(id) ?? 0,
           active: activeMarkIds.value.has(id),
           color: colorById.value.get(id) ?? FALLBACK_COLOR,
+          label: categories.categoryOf(mark)?.label,
         },
       ];
     });

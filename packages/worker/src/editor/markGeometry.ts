@@ -1,9 +1,9 @@
-import type { Mark } from "@essayist/core";
 import { $isMarkNode } from "@lexical/mark";
 import type { LexicalEditor, NodeKey } from "lexical";
 import { $getNodeByKey, $getRoot } from "lexical";
 
 import type { MeasuredBlock } from "#/geometry/layout.ts";
+import type { Mark } from "#/models/resolvedMarks.ts";
 import { editorStateToMarkdown } from "#/utils/markdown.ts";
 
 import { $badgeBlockOf, $marginBlockOf } from "./blocks.ts";

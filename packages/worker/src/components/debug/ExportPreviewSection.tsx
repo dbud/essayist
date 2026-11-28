@@ -1,9 +1,9 @@
-import type { Mark } from "@essayist/core";
 import { assertExists } from "@std/assert";
 import { mapNotNullish } from "@std/collections";
 
 import Section from "#/components/debug/Section.tsx";
 import { segmentMarks } from "#/editor/markSegments.ts";
+import type { Mark } from "#/models/resolvedMarks.ts";
 import { useEditorModels } from "#/pages/editor/models.ts";
 
 export default function ExportPreviewSection() {
@@ -40,9 +40,10 @@ function visualizeWhitespace(text: string): string {
 }
 
 function MarkdownPreview() {
-  const { fileContents, resolvedMarks } = useEditorModels();
+  const { fileContents, resolvedMarks, categories } = useEditorModels();
   const file = fileContents.current.value;
   assertExists(file, "ExportPreviewSection guards the file before this renders");
+  const labelOf = (mark: Mark) => categories.categoryOf(mark)?.label;
   const resolved = resolvedMarks.resolved.value;
   const md = file.markdown.value;
 
@@ -60,7 +61,10 @@ function MarkdownPreview() {
             return <span key={i}>{visualizeWhitespace(seg.text)}</span>;
           }
           const title = seg.marks
-            .map((m) => (m.label ? `${m.label}: ${m.comment}` : m.comment))
+            .map((m) => {
+              const label = labelOf(m);
+              return label ? `${label}: ${m.comment}` : m.comment;
+            })
             .join(" | ");
           const cls = AMBER_BY_COUNT[Math.min(seg.marks.length, 8)] ?? "";
           return (
@@ -76,7 +80,7 @@ function MarkdownPreview() {
           <ul class="flex flex-col gap-1">
             {stale.map((mark) => (
               <li key={mark.id} class="text-current/60">
-                <span class="font-medium">{mark.label || "Mark"}</span>
+                <span class="font-medium">{labelOf(mark) ?? "Mark"}</span>
                 <span class="ml-2">offset: {mark.offset}</span>
                 <span class="ml-1">length: {mark.length}</span>
                 <span class="ml-1 italic">"{mark.selectedText}"</span>

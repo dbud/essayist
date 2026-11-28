@@ -1,4 +1,3 @@
-import type { Mark } from "@essayist/core";
 import { defineExtension } from "@lexical/extension";
 import { MarkNode } from "@lexical/mark";
 import type { ReadonlySignal, Signal } from "@preact/signals";
@@ -6,6 +5,7 @@ import type { LexicalEditor } from "lexical";
 import { mergeRegister } from "lexical";
 
 import type { MeasuredMarks } from "#/geometry/layout.ts";
+import type { Mark } from "#/models/resolvedMarks.ts";
 import type { MarkFragmentBadge, MarkOrdinals, MarkFragmentRect } from "#/models/sidenotes.ts";
 
 import { getMeasureContext } from "./domMeasure.ts";

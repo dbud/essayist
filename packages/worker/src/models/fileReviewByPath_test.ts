@@ -2,7 +2,7 @@ import type { ReviewProgress } from "@essayist/core";
 import { signal } from "@preact/signals";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 
-import { FileMarksByPathModel } from "./fileMarksByPath.ts";
+import { FileReviewByPathModel } from "./fileReviewByPath.ts";
 import type { FileSelection } from "./fileSelection.ts";
 import type { ReviewRunData } from "./reviewRuns.data.ts";
 
@@ -10,17 +10,11 @@ const selection: FileSelection = { wsId: "ws", path: "essay.md", versionId: "v1"
 
 const run = (fields: Partial<ReviewRunData> = {}): ReviewRunData => ({
   id: "run-1",
-  wsId: "ws",
-  path: "essay.md",
-  reviewPassId: "pass",
+  fileId: "f1",
   versionId: "v1",
+  reviewPassId: "pass",
   status: "running",
-  startedAt: 0,
-  completedAt: null,
-  error: null,
-  summary: null,
-  leaseOwner: null,
-  heartbeatAt: null,
+  startedAt: "2026-01-01T00:00:00.000Z",
   ...fields,
 });
 
@@ -30,7 +24,7 @@ let fetchMock: ReturnType<typeof vi.fn>;
 
 beforeEach(() => {
   vi.stubEnv("SSR", false);
-  fetchMock = vi.fn(async () => new Response("[]", { status: 200 }));
+  fetchMock = vi.fn(async () => new Response("null", { status: 200 }));
   vi.stubGlobal("fetch", fetchMock);
 });
 
@@ -42,8 +36,8 @@ afterEach(() => {
 function setup() {
   const active = signal<{ run: ReviewRunData; progress: ReviewProgress | null } | null>(null);
   const reviewRuns = signal({ active });
-  const model = new FileMarksByPathModel(signal(selection), reviewRuns, []);
-  // Reading current rebuilds a dropped version, as the editor does through resolved marks.
+  const model = new FileReviewByPathModel(signal(selection), reviewRuns, null);
+  // reading current rebuilds a dropped review, as the editor does through resolved marks
   const reloads = () => {
     void model.current.value;
     return fetchMock.mock.calls.length;
@@ -51,7 +45,7 @@ function setup() {
   return { active, reloads };
 }
 
-test("reloads the marks as the running review places them", () => {
+test("reloads the review as it places marks", () => {
   const { active, reloads } = setup();
   expect(reloads()).toBe(0);
 

@@ -1,4 +1,3 @@
-import type { Mark } from "@essayist/core";
 import { defineExtension } from "@lexical/extension";
 import {
   $createMarkNode,
@@ -20,6 +19,8 @@ import {
   mergeRegister,
   type NodeKey,
 } from "lexical";
+
+import type { Mark } from "#/models/resolvedMarks.ts";
 
 import { type MarkSpan, segmentMarks } from "./markSegments.ts";
 import { $createSelection, $restoreSelection, $saveSelection } from "./selection.ts";

@@ -236,9 +236,9 @@ const workspaceHandlers = HttpApiBuilder.group(
       getLatestReview: (req) =>
         Effect.gen(function* () {
           const { user } = yield* UserSession;
-          const { wsId, path } = req.query;
+          const { wsId, path, versionId } = req.query;
           yield* requireAccess(wsId, user.id);
-          return yield* latestReviewLoader(wsId, path).pipe(
+          return yield* latestReviewLoader(wsId, path, versionId).pipe(
             Effect.provide(stores),
             Effect.catchTag("FileMissingError", notFound),
           );

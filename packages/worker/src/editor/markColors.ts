@@ -1,11 +1,9 @@
-import type { Mark } from "@essayist/core";
-
 import type { Categories } from "#/models/categories.ts";
+import type { MarkData } from "#/models/marks.data.ts";
 
 export const FALLBACK_COLOR = "var(--color-ink)";
 
-// The category color for a mark's label; ink when the label has no category.
-export function colorForMark(mark: Mark, categories: Categories): string {
-  const category = categories.byLabel.value.get(mark.label ?? "");
-  return category?.color ?? FALLBACK_COLOR;
+// The color of the category of a mark; ink for a mark without one.
+export function colorForMark(mark: Pick<MarkData, "categoryId">, categories: Categories): string {
+  return categories.categoryOf(mark)?.color ?? FALLBACK_COLOR;
 }

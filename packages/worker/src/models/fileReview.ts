@@ -1,30 +1,30 @@
-import type { Mark } from "@essayist/core";
 import { createModel, signal } from "@preact/signals";
 
 import createAsyncState from "#/models/utils/asyncState.ts";
 import { getJson } from "#/models/utils/http.ts";
 
 import type { FileKey } from "./fileSelection.ts";
-import type { MarksData } from "./marks.data.ts";
+import type { LatestReviewData } from "./marks.data.ts";
 
-export const FileMarksModel = createModel(
-  ({ wsId, path, versionId }: FileKey, data?: MarksData) => {
-    const marks = signal<readonly Mark[]>(data ?? []);
+/** The review a version of a file shows, with its marks; null before the first review. */
+export const FileReviewModel = createModel(
+  ({ wsId, path, versionId }: FileKey, data?: LatestReviewData) => {
+    const latest = signal<LatestReviewData>(data ?? null);
 
     const [runLoad, { loading, error }] = createAsyncState();
 
     async function load(): Promise<void> {
       const params = new URLSearchParams({ wsId, path, versionId });
       const fresh = await runLoad(async () =>
-        getJson<MarksData>(`/api/workspaces/files/marks?${params}`),
+        getJson<LatestReviewData>(`/api/workspaces/files/review?${params}`),
       );
-      if (fresh) marks.value = fresh;
+      if (fresh !== undefined) latest.value = fresh;
     }
 
     if (data === undefined && !import.meta.env.SSR) void load();
 
-    return { marks, load, loading, error };
+    return { latest, load, loading, error };
   },
 );
 
-export type FileMarks = InstanceType<typeof FileMarksModel>;
+export type FileReview = InstanceType<typeof FileReviewModel>;

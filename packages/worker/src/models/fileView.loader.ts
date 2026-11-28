@@ -14,7 +14,7 @@ export function fileViewLoader(
   return Effect.gen(function* () {
     const content = yield* fileContentLoader(wsId, path, versionId ?? undefined);
     const versions = yield* fileVersionsLoader(wsId, path);
-    const review = yield* latestReviewLoader(wsId, path);
+    const review = yield* latestReviewLoader(wsId, path, content.version.id);
     return { content, versions, review };
   });
 }

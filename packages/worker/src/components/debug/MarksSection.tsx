@@ -1,8 +1,9 @@
-import type { Category, Mark } from "@essayist/core";
 import type { LexicalEditor } from "lexical";
 
 import Section from "#/components/debug/Section.tsx";
 import { SELECT_MARK_COMMAND } from "#/editor/markExtension.ts";
+import type { CategoryData } from "#/models/categories.data.ts";
+import type { Mark } from "#/models/resolvedMarks.ts";
 import { useEditorModels } from "#/pages/editor/models.ts";
 import { activeEditor } from "#/signals/activeEditor.ts";
 import { getEditorSelection } from "#/signals/editorSelection.ts";
@@ -14,7 +15,7 @@ function MarkDetail({
   editor,
 }: {
   mark: Mark;
-  category: Category | undefined;
+  category: CategoryData | undefined;
   active: boolean;
   editor: LexicalEditor | null;
 }) {
@@ -29,13 +30,13 @@ function MarkDetail({
       >
         <span class="flex flex-col items-start gap-1 min-w-0 whitespace-normal text-start">
           <span class="flex items-center gap-2">
-            {category?.color !== undefined && (
+            {category?.color != null && (
               <span
                 class="size-3 shrink-0 rounded-xs"
                 style={{ backgroundColor: category.color }}
               />
             )}
-            <span>{mark.label || "Mark"}</span>
+            <span>{category?.label ?? "Mark"}</span>
             <span class={mark.status === "resolved" ? "badge" : "badge badge--warning"}>
               {mark.status}
             </span>
@@ -46,7 +47,7 @@ function MarkDetail({
             <span>offset: {mark.offset}</span>
             <span>length: {mark.length}</span>
             <span class="break-all">id: {mark.id}</span>
-            <span class="break-all">threadId: {mark.threadId}</span>
+            <span class="break-all">runId: {mark.runId}</span>
           </span>
         </span>
       </button>
@@ -55,28 +56,21 @@ function MarkDetail({
 }
 
 export default function MarksSection() {
-  const { selected, marks, categories } = useEditorModels();
+  const { selected, resolvedMarks, categories } = useEditorModels();
   const selection = selected.value;
-  const current = marks.current.value;
-  if (selection === null || selection.path === null || current === null) {
-    return null;
-  }
-  const byLabel = categories.byLabel.value;
+  const shown = resolvedMarks.resolved.value;
+  if (selection === null || selection.path === null || shown.length === 0) return null;
   const markIds = getEditorSelection(selection).markIds.value;
   const editor = activeEditor.value;
-
-  if (current.loading.value || current.marks.value.length === 0) {
-    return null;
-  }
 
   return (
     <Section title="Marks">
       <ul class="menu-rows">
-        {current.marks.value.map((mark) => (
+        {shown.map((mark) => (
           <MarkDetail
             key={mark.id}
             mark={mark}
-            category={byLabel.get(mark.label ?? "")}
+            category={categories.categoryOf(mark)}
             active={markIds.has(mark.id)}
             editor={editor}
           />

@@ -1,13 +1,15 @@
 import { Mark } from "@essayist/core";
 import { Schema } from "effect";
 
-export const MarksData = Schema.Array(Mark.json);
+export const MarkData = Mark.json;
+export type MarkData = typeof MarkData.Encoded;
 
+export const MarksData = Schema.Array(MarkData);
 export type MarksData = typeof MarksData.Encoded;
 
 /**
- * The latest completed review of a file: its marks, and the content of the version it read, for
- * anchoring the marks again onto newer text. Null before the first review completes.
+ * The review a version shows: its marks, and the content of the version it read, for anchoring the
+ * marks onto other text. Null before the first review.
  */
 export const LatestReviewData = Schema.NullOr(
   Schema.Struct({

@@ -1,6 +1,6 @@
 import { CategoriesModel } from "#/models/categories.ts";
 import { FileContentsModel } from "#/models/fileContents.ts";
-import { FileMarksByPathModel } from "#/models/fileMarksByPath.ts";
+import { FileReviewByPathModel } from "#/models/fileReviewByPath.ts";
 import { createFileSelection } from "#/models/fileSelection.ts";
 import { FileTreesModel } from "#/models/fileTrees.ts";
 import { FileVersionsByPathModel } from "#/models/fileVersionsByPath.ts";
@@ -26,10 +26,10 @@ export default function createModels(data: EditorData, user: UserData | undefine
     streamDetail,
     data.reviewRuns ?? undefined,
   );
-  const marks = new FileMarksByPathModel(selected, reviewRuns.current, data.fileView?.marks);
+  const reviews = new FileReviewByPathModel(selected, reviewRuns.current, data.fileView?.review);
   const categories = new CategoriesModel(data.categories);
   const writable = createFileWritability(selected, fileVersions);
-  const resolvedMarks = createResolvedMarks(fileContents, marks);
+  const resolvedMarks = createResolvedMarks(fileContents, reviews);
   const sidenotes = new SidenotesByPathModel(selected, resolvedMarks, categories);
   return {
     workspaces,
@@ -38,7 +38,7 @@ export default function createModels(data: EditorData, user: UserData | undefine
     writable,
     fileContents,
     fileVersions,
-    marks,
+    reviews,
     reviewRuns,
     resolvedMarks,
     sidenotes,
