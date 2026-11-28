@@ -6,7 +6,7 @@ export type FileEntryData = typeof FileEntryData.Encoded;
 
 export const FileTreeData = Schema.Struct({
   files: Schema.Array(FileEntryData),
-  selectedPath: Schema.NullOr(Schema.String),
+  selectedFileId: Schema.NullOr(Schema.String),
   selectedVersionId: Schema.NullOr(Schema.String),
 });
 

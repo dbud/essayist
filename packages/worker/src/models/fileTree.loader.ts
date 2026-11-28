@@ -20,16 +20,17 @@ export function fileTreeLoader(
       files.find((entry) => entry.file.path === pathIntent) ??
       files.find((entry) => Option.contains(persisted, entry.file.id)) ??
       files[0];
-    if (selected === undefined) return { files, selectedPath: null, selectedVersionId: null };
+    if (selected === undefined) return { files, selectedFileId: null, selectedVersionId: null };
 
+    const selectedFileId = selected.file.id;
     let selectedVersionId = selected.latest.id;
     if (versionIntent !== undefined && versionIntent !== selected.latest.id) {
       // the file was just listed, so it exists
-      const versions = yield* Effect.orDie(Files.use((store) => store.versions(selected.file.id)));
+      const versions = yield* Effect.orDie(Files.use((store) => store.versions(selectedFileId)));
       if (versions.some((version) => version.id === versionIntent)) {
         selectedVersionId = versionIntent;
       }
     }
-    return { files, selectedPath: selected.file.path, selectedVersionId };
+    return { files, selectedFileId, selectedVersionId };
   }).pipe(Effect.provideService(WorkspaceId, { wsId }));
 }

@@ -139,21 +139,16 @@ const workspaceHandlers = HttpApiBuilder.group(
       selectFile: (req) =>
         Effect.gen(function* () {
           const { user } = yield* UserSession;
-          const { wsId, path } = req.payload;
+          const { wsId, fileId } = req.payload;
           yield* requireAccess(wsId, user.id);
-          // a path with no file selects nothing
-          yield* files.fileAt(path).pipe(
-            Effect.flatMap((file) => userState.setSelectedFile(user.id, wsId, file.id)),
-            Effect.catchTag("FileMissingError", () => Effect.void),
-            Effect.provideService(WorkspaceId, { wsId }),
-          );
+          yield* userState.setSelectedFile(user.id, wsId, fileId);
         }),
       getFileContent: (req) =>
         Effect.gen(function* () {
           const { user } = yield* UserSession;
-          const { wsId, path, versionId } = req.query;
+          const { wsId, fileId, versionId } = req.query;
           yield* requireAccess(wsId, user.id);
-          return yield* fileContentLoader(wsId, path, versionId).pipe(
+          return yield* fileContentLoader(wsId, fileId, versionId).pipe(
             Effect.provide(stores),
             Effect.catchTag("FileMissingError", notFound),
           );
@@ -161,9 +156,9 @@ const workspaceHandlers = HttpApiBuilder.group(
       getFileVersions: (req) =>
         Effect.gen(function* () {
           const { user } = yield* UserSession;
-          const { wsId, path } = req.query;
+          const { wsId, fileId } = req.query;
           yield* requireAccess(wsId, user.id);
-          return yield* fileVersionsLoader(wsId, path).pipe(
+          return yield* fileVersionsLoader(wsId, fileId).pipe(
             Effect.provide(stores),
             Effect.catchTag("FileMissingError", notFound),
           );
@@ -171,10 +166,9 @@ const workspaceHandlers = HttpApiBuilder.group(
       saveFileDraft: (req) =>
         Effect.gen(function* () {
           const { user } = yield* UserSession;
-          const { wsId, path, baseVersionId, content } = req.payload;
+          const { wsId, fileId, baseVersionId, content } = req.payload;
           yield* requireAccess(wsId, user.id);
-          const file = yield* files.fileAt(path);
-          return yield* files.writeDraft(file.id, baseVersionId, content);
+          return yield* files.writeDraft(fileId, baseVersionId, content);
         }).pipe(
           Effect.provideService(WorkspaceId, { wsId: req.payload.wsId }),
           Effect.catchTags({
@@ -186,10 +180,9 @@ const workspaceHandlers = HttpApiBuilder.group(
       promoteFileDraft: (req) =>
         Effect.gen(function* () {
           const { user } = yield* UserSession;
-          const { wsId, path } = req.payload;
+          const { wsId, fileId } = req.payload;
           yield* requireAccess(wsId, user.id);
-          const file = yield* files.fileAt(path);
-          const { version } = yield* files.promoteDraft(file.id);
+          const { version } = yield* files.promoteDraft(fileId);
           return version;
         }).pipe(
           Effect.provideService(WorkspaceId, { wsId: req.payload.wsId }),
@@ -231,19 +224,16 @@ const workspaceHandlers = HttpApiBuilder.group(
       getReviewRuns: (req) =>
         Effect.gen(function* () {
           const { user } = yield* UserSession;
-          const { wsId, path } = req.query;
+          const { wsId, fileId } = req.query;
           yield* requireAccess(wsId, user.id);
-          return yield* reviewRunsLoader(wsId, path).pipe(
-            Effect.provide(stores),
-            Effect.catchTag("FileMissingError", notFound),
-          );
+          return yield* reviewRunsLoader(wsId, fileId).pipe(Effect.provide(stores));
         }),
       getLatestReview: (req) =>
         Effect.gen(function* () {
           const { user } = yield* UserSession;
-          const { wsId, path, versionId } = req.query;
+          const { wsId, fileId, versionId } = req.query;
           yield* requireAccess(wsId, user.id);
-          return yield* latestReviewLoader(wsId, path, versionId).pipe(
+          return yield* latestReviewLoader(wsId, fileId, versionId).pipe(
             Effect.provide(stores),
             Effect.catchTag("FileMissingError", notFound),
           );
@@ -251,13 +241,12 @@ const workspaceHandlers = HttpApiBuilder.group(
       startReview: (req) =>
         Effect.gen(function* () {
           const { user } = yield* UserSession;
-          const { wsId, path } = req.payload;
+          const { wsId, fileId } = req.payload;
           yield* requireAccess(wsId, user.id);
           const runs = yield* ReviewRuns;
-          const file = yield* files.fileAt(path);
           // checked before the draft is saved, so a refused request saves no version; createRun
           // catches a concurrent start
-          const running = (yield* runs.listRuns(file.id)).some((run) => run.status === "running");
+          const running = (yield* runs.listRuns(fileId)).some((run) => run.status === "running");
           if (running) return yield* Effect.fail(new ApiConflict({ message: ALREADY_REVIEWING }));
           const pass = yield* resolveActiveReviewPass.pipe(
             Effect.catchTags({ ConfigMissingError: unresolved, ConfigInvalidError: unresolved }),
@@ -268,9 +257,9 @@ const workspaceHandlers = HttpApiBuilder.group(
             );
           }
           // the review reads the latest text, so the draft is saved as a version first
-          const { version } = yield* files.promoteDraft(file.id);
+          const { version } = yield* files.promoteDraft(fileId);
           const run = yield* runs
-            .createRun({ fileId: file.id, versionId: version.id, reviewPassId: pass.value.pass.id })
+            .createRun({ fileId, versionId: version.id, reviewPassId: pass.value.pass.id })
             .pipe(
               Effect.catchTags({
                 // the version was just saved
@@ -295,7 +284,6 @@ const adminHandlers = HttpApiBuilder.group(
   "admin",
   Effect.fn(function* (handlers) {
     const config = yield* ReviewConfig;
-    const files = yield* Files;
     const runs = yield* ReviewRuns;
     const workspacesStore = yield* Workspaces;
     const OK = { ok: true as const };
@@ -366,17 +354,13 @@ const adminHandlers = HttpApiBuilder.group(
         }),
       clearReviewRuns: (req) =>
         Effect.gen(function* () {
-          const { wsId, path, versionId } = req.query;
+          const { wsId, fileId, versionId } = req.query;
           yield* requireAccess(wsId);
-          const deleted = yield* Effect.gen(function* () {
-            const file = yield* files.fileAt(path);
-            return yield* runs.deleteRuns(file.id, versionId);
-          }).pipe(
+          const deleted = yield* runs.deleteRuns(fileId, versionId).pipe(
             Effect.provideService(WorkspaceId, { wsId }),
-            Effect.catchTags({
-              FileMissingError: () => Effect.fail(new HttpApiError.NotFound()),
-              ReviewRunActiveError: (err) => Effect.fail(new ApiConflict({ message: err.message })),
-            }),
+            Effect.catchTag("ReviewRunActiveError", (err) =>
+              Effect.fail(new ApiConflict({ message: err.message })),
+            ),
           );
           return { runs: deleted };
         }),

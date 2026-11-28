@@ -8,13 +8,13 @@ import { latestReviewLoader } from "./latestReview.loader.ts";
 
 export function fileViewLoader(
   wsId: string,
-  path: string,
+  fileId: string,
   versionId: string | null,
 ): Effect.Effect<typeof FileViewData.Type, FileMissingError, Files | Marks | ReviewRuns> {
   return Effect.gen(function* () {
-    const content = yield* fileContentLoader(wsId, path, versionId ?? undefined);
-    const versions = yield* fileVersionsLoader(wsId, path);
-    const review = yield* latestReviewLoader(wsId, path, content.version.id);
+    const content = yield* fileContentLoader(wsId, fileId, versionId ?? undefined);
+    const versions = yield* fileVersionsLoader(wsId, fileId);
+    const review = yield* latestReviewLoader(wsId, fileId, content.version.id);
     return { content, versions, review };
   });
 }

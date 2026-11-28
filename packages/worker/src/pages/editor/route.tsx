@@ -27,17 +27,17 @@ export default new Hono<{ Bindings: Cloudflare.Env }>().get("/", async (c) => {
       c.req.query("versionId"),
     );
     const fileView =
-      fileTrees.wsId === null || fileTrees.tree?.selectedPath == null
+      fileTrees.wsId === null || fileTrees.tree?.selectedFileId == null
         ? null
         : yield* fileViewLoader(
             fileTrees.wsId,
-            fileTrees.tree.selectedPath,
+            fileTrees.tree.selectedFileId,
             fileTrees.tree.selectedVersionId,
           );
     const reviewRuns =
-      fileTrees.wsId === null || fileTrees.tree?.selectedPath == null
+      fileTrees.wsId === null || fileTrees.tree?.selectedFileId == null
         ? null
-        : yield* reviewRunsLoader(fileTrees.wsId, fileTrees.tree.selectedPath);
+        : yield* reviewRunsLoader(fileTrees.wsId, fileTrees.tree.selectedFileId);
     const categories = yield* categoriesLoader();
     return {
       workspaces,

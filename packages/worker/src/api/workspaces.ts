@@ -19,9 +19,9 @@ const FilesQuery = Schema.Struct({
   wsId: Schema.NonEmptyString,
   path: Schema.optional(Schema.String),
 });
-const SelectFilePayload = Schema.Struct({
+const FileRef = Schema.Struct({
   wsId: Schema.NonEmptyString,
-  path: Schema.NonEmptyString,
+  fileId: Schema.NonEmptyString,
 });
 
 const getWorkspaces = HttpApiEndpoint.get("getWorkspaces", "/workspaces", {
@@ -54,24 +54,17 @@ const getFiles = HttpApiEndpoint.get("getFiles", "/workspaces/files", {
 });
 
 const selectFile = HttpApiEndpoint.patch("selectFile", "/workspaces/files", {
-  payload: SelectFilePayload,
+  payload: FileRef,
   error: HttpApiError.Forbidden,
 });
 
 const ContentQuery = Schema.Struct({
-  wsId: Schema.NonEmptyString,
-  path: Schema.NonEmptyString,
+  ...FileRef.fields,
   versionId: Schema.optional(Schema.String),
 });
 
-const FileQuery = Schema.Struct({
-  wsId: Schema.NonEmptyString,
-  path: Schema.NonEmptyString,
-});
-
 const DraftPayload = Schema.Struct({
-  wsId: Schema.NonEmptyString,
-  path: Schema.NonEmptyString,
+  ...FileRef.fields,
   baseVersionId: Schema.NonEmptyString,
   content: Schema.String,
 });
@@ -88,19 +81,14 @@ const saveFileDraft = HttpApiEndpoint.put("saveFileDraft", "/workspaces/files/dr
   error: [HttpApiError.Forbidden, HttpApiError.NotFound, ApiConflict, ApiTooLarge],
 });
 
-const PromotePayload = Schema.Struct({
-  wsId: Schema.NonEmptyString,
-  path: Schema.NonEmptyString,
-});
-
 const promoteFileDraft = HttpApiEndpoint.post("promoteFileDraft", "/workspaces/files/promote", {
-  payload: PromotePayload,
+  payload: FileRef,
   success: FileVersion.json,
   error: [HttpApiError.Forbidden, HttpApiError.NotFound],
 });
 
 const getFileVersions = HttpApiEndpoint.get("getFileVersions", "/workspaces/files/versions", {
-  query: FileQuery,
+  query: FileRef,
   success: FileVersionsData,
   error: [HttpApiError.Forbidden, HttpApiError.NotFound],
 });
@@ -140,20 +128,16 @@ const importGoogleDoc = HttpApiEndpoint.post("importGoogleDoc", "/workspaces/imp
   error: [HttpApiError.Forbidden, HttpApiError.Unauthorized, ApiFailure, ApiTooLarge],
 });
 
+// the runs of a file, or of the whole workspace without a file
 const RunsQuery = Schema.Struct({
   wsId: Schema.NonEmptyString,
-  path: Schema.optional(Schema.String),
+  fileId: Schema.optional(Schema.NonEmptyString),
 });
 
 const getReviewRuns = HttpApiEndpoint.get("getReviewRuns", "/workspaces/review-runs", {
   query: RunsQuery,
   success: ReviewRunsData,
-  error: [HttpApiError.Forbidden, HttpApiError.NotFound],
-});
-
-const StartReviewPayload = Schema.Struct({
-  wsId: Schema.NonEmptyString,
-  path: Schema.NonEmptyString,
+  error: HttpApiError.Forbidden,
 });
 
 const accepted = <S extends Schema.Top>(schema: S) => HttpApiSchema.status(202)(schema);
@@ -165,7 +149,7 @@ const getLatestReview = HttpApiEndpoint.get("getLatestReview", "/workspaces/file
 });
 
 const startReview = HttpApiEndpoint.post("startReview", "/workspaces/files/review", {
-  payload: StartReviewPayload,
+  payload: FileRef,
   success: accepted(ReviewRun.json),
   error: [HttpApiError.Forbidden, HttpApiError.NotFound, ApiFailure, ApiConflict],
 });

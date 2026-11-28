@@ -5,11 +5,9 @@ import type { FileVersionsData } from "./fileVersions.data.ts";
 
 export function fileVersionsLoader(
   wsId: string,
-  path: string,
+  fileId: string,
 ): Effect.Effect<typeof FileVersionsData.Type, FileMissingError, Files> {
-  return Effect.gen(function* () {
-    const files = yield* Files;
-    const file = yield* files.fileAt(path);
-    return yield* files.versions(file.id);
-  }).pipe(Effect.provideService(WorkspaceId, { wsId }));
+  return Files.use((files) => files.versions(fileId)).pipe(
+    Effect.provideService(WorkspaceId, { wsId }),
+  );
 }

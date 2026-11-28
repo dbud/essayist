@@ -129,11 +129,11 @@ const deleteReviewRun = HttpApiEndpoint.delete("deleteReviewRun", "/admin/review
 const clearReviewRuns = HttpApiEndpoint.delete("clearReviewRuns", "/admin/review-runs", {
   query: Schema.Struct({
     wsId: Schema.NonEmptyString,
-    path: Schema.NonEmptyString,
+    fileId: Schema.NonEmptyString,
     versionId: Schema.optional(Schema.NonEmptyString),
   }),
   success: CleanupData,
-  error: [HttpApiError.Forbidden, HttpApiError.NotFound, ApiConflict],
+  error: [HttpApiError.Forbidden, ApiConflict],
 });
 
 export const adminGroup = HttpApiGroup.make("admin")
