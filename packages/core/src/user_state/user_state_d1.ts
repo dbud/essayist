@@ -29,9 +29,9 @@ export function layerUserStateD1(client: D1Client.D1Client): Layer.Layer<UserSta
 
   const findSelectedFile = SqlSchema.findOneOption({
     Request: Schema.Struct({ userId: Schema.String, wsId: Schema.String }),
-    Result: Schema.Struct({ path: Schema.String }),
+    Result: Schema.Struct({ fileId: Schema.String }),
     execute: ({ userId, wsId }) =>
-      client`SELECT f.path FROM user_workspace_state s JOIN files f ON f.id = s.selectedFileId
+      client`SELECT f.id AS fileId FROM user_workspace_state s JOIN files f ON f.id = s.selectedFileId
         WHERE s.userId = ${userId} AND s.wsId = ${wsId} AND f.deletedAt IS NULL`,
   });
 
@@ -40,13 +40,13 @@ export function layerUserStateD1(client: D1Client.D1Client): Layer.Layer<UserSta
     Request: Schema.Struct({
       userId: Schema.String,
       wsId: Schema.String,
-      path: Schema.String,
+      fileId: Schema.String,
       at: Schema.DateTimeUtcFromString,
     }),
-    execute: ({ userId, wsId, path, at }) =>
+    execute: ({ userId, wsId, fileId, at }) =>
       client`INSERT INTO user_workspace_state (userId, wsId, selectedFileId, openedAt)
         SELECT ${userId}, ${wsId}, id, ${at} FROM files
-        WHERE wsId = ${wsId} AND path = ${path} AND deletedAt IS NULL
+        WHERE wsId = ${wsId} AND id = ${fileId} AND deletedAt IS NULL
         ON CONFLICT (userId, wsId) DO UPDATE SET selectedFileId = excluded.selectedFileId`,
   });
 
@@ -64,12 +64,12 @@ export function layerUserStateD1(client: D1Client.D1Client): Layer.Layer<UserSta
   const getSelectedFile = (userId: string, wsId: string) =>
     Effect.map(
       Effect.orDie(findSelectedFile({ userId, wsId })),
-      Option.map(({ path }) => path),
+      Option.map(({ fileId }) => fileId),
     );
 
-  const setSelectedFile = (userId: string, wsId: string, path: string) =>
+  const setSelectedFile = (userId: string, wsId: string, fileId: string) =>
     Effect.gen(function* () {
-      yield* Effect.orDie(upsertSelectedFile({ userId, wsId, path, at: yield* DateTime.now }));
+      yield* Effect.orDie(upsertSelectedFile({ userId, wsId, fileId, at: yield* DateTime.now }));
     });
 
   return Layer.succeed(

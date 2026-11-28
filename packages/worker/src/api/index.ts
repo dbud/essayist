@@ -141,7 +141,12 @@ const workspaceHandlers = HttpApiBuilder.group(
           const { user } = yield* UserSession;
           const { wsId, path } = req.payload;
           yield* requireAccess(wsId, user.id);
-          yield* userState.setSelectedFile(user.id, wsId, path);
+          // a path with no file selects nothing
+          yield* files.fileAt(path).pipe(
+            Effect.flatMap((file) => userState.setSelectedFile(user.id, wsId, file.id)),
+            Effect.catchTag("FileMissingError", () => Effect.void),
+            Effect.provideService(WorkspaceId, { wsId }),
+          );
         }),
       getFileContent: (req) =>
         Effect.gen(function* () {

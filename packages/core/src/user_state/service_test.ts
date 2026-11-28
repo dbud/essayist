@@ -37,8 +37,10 @@ const open = (userId: string, wsId: string) =>
     UserState.use((state) => state.setSelectedWorkspace(userId, wsId)),
   );
 
+/** The id of a new file. */
 const createFile = (wsId: string, path: string) =>
   Files.use((files) => files.createAt(path, "text")).pipe(
+    Effect.map(({ file }) => file.id),
     Effect.provideService(WorkspaceId, { wsId }),
     Effect.orDie,
   );
@@ -96,30 +98,32 @@ test("UserState -- the selected file is kept per workspace", async () => {
     Effect.gen(function* () {
       const state = yield* UserState;
       const { userId, ids } = yield* userWith("a@example.com", "One", "Two");
-      yield* createFile(ids[0], "a.md");
-      yield* createFile(ids[0], "c.md");
-      yield* createFile(ids[1], "b.md");
+      const a = yield* createFile(ids[0], "a.md");
+      const c = yield* createFile(ids[0], "c.md");
+      const b = yield* createFile(ids[1], "b.md");
       assertEquals(yield* state.getSelectedFile(userId, ids[0]), Option.none());
 
-      yield* state.setSelectedFile(userId, ids[0], "a.md");
-      yield* state.setSelectedFile(userId, ids[1], "b.md");
-      assertEquals(yield* state.getSelectedFile(userId, ids[0]), Option.some("a.md"));
-      assertEquals(yield* state.getSelectedFile(userId, ids[1]), Option.some("b.md"));
-      yield* state.setSelectedFile(userId, ids[0], "c.md");
-      assertEquals(yield* state.getSelectedFile(userId, ids[0]), Option.some("c.md"));
+      yield* state.setSelectedFile(userId, ids[0], a);
+      yield* state.setSelectedFile(userId, ids[1], b);
+      assertEquals(yield* state.getSelectedFile(userId, ids[0]), Option.some(a));
+      assertEquals(yield* state.getSelectedFile(userId, ids[1]), Option.some(b));
+      yield* state.setSelectedFile(userId, ids[0], c);
+      assertEquals(yield* state.getSelectedFile(userId, ids[0]), Option.some(c));
     }),
   );
 });
 
-test("UserState -- a path with no file selects nothing", async () => {
+test("UserState -- an id with no file in the workspace selects nothing", async () => {
   await run(
     Effect.gen(function* () {
       const state = yield* UserState;
-      const { userId, ids } = yield* userWith("a@example.com", "One");
-      yield* createFile(ids[0], "a.md");
-      yield* state.setSelectedFile(userId, ids[0], "a.md");
-      yield* state.setSelectedFile(userId, ids[0], "missing.md");
-      assertEquals(yield* state.getSelectedFile(userId, ids[0]), Option.some("a.md"));
+      const { userId, ids } = yield* userWith("a@example.com", "One", "Two");
+      const a = yield* createFile(ids[0], "a.md");
+      const other = yield* createFile(ids[1], "b.md");
+      yield* state.setSelectedFile(userId, ids[0], a);
+      yield* state.setSelectedFile(userId, ids[0], "missing");
+      yield* state.setSelectedFile(userId, ids[0], other);
+      assertEquals(yield* state.getSelectedFile(userId, ids[0]), Option.some(a));
     }),
   );
 });
@@ -132,9 +136,9 @@ test("UserState -- users are isolated", async () => {
       const { userId: first, ids } = yield* userWith("a@example.com", "Shared");
       const { userId: second } = yield* userWith("b@example.com");
       yield* Effect.orDie(workspaces.addMember(ids[0], second, "editor"));
-      yield* createFile(ids[0], "a.md");
+      const a = yield* createFile(ids[0], "a.md");
       yield* open(first, ids[0]);
-      yield* state.setSelectedFile(first, ids[0], "a.md");
+      yield* state.setSelectedFile(first, ids[0], a);
       assertEquals(yield* state.getSelectedWorkspace(second), Option.none());
       assertEquals(yield* state.getSelectedFile(second, ids[0]), Option.none());
     }),

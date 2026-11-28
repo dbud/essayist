@@ -7,10 +7,10 @@ export interface Interface {
   getSelectedWorkspace(userId: string): Effect.Effect<Option.Option<string>>;
   /** Record that a member opened a workspace. */
   setSelectedWorkspace(userId: string, wsId: string): Effect.Effect<void>;
-  /** The path of the file the member last selected in a workspace, while the file exists. */
+  /** The id of the file the member last selected in a workspace, while the file exists. */
   getSelectedFile(userId: string, wsId: string): Effect.Effect<Option.Option<string>>;
-  /** Record the file a member selected; a path with no file selects nothing. */
-  setSelectedFile(userId: string, wsId: string, path: string): Effect.Effect<void>;
+  /** Record the file a member selected; an id with no file in the workspace selects nothing. */
+  setSelectedFile(userId: string, wsId: string, fileId: string): Effect.Effect<void>;
 }
 
 export class UserState extends Context.Service<UserState, Interface>()(

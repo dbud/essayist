@@ -16,8 +16,10 @@ export function fileTreeLoader(
   return Effect.gen(function* () {
     const files = yield* Files.use((store) => store.list());
     const persisted = yield* UserState.use((store) => store.getSelectedFile(userId, wsId));
-    const at = (path: string | undefined) => files.find((entry) => entry.file.path === path);
-    const selected = at(pathIntent) ?? at(Option.getOrUndefined(persisted)) ?? files[0];
+    const selected =
+      files.find((entry) => entry.file.path === pathIntent) ??
+      files.find((entry) => Option.contains(persisted, entry.file.id)) ??
+      files[0];
     if (selected === undefined) return { files, selectedPath: null, selectedVersionId: null };
 
     let selectedVersionId = selected.latest.id;
