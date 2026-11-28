@@ -99,8 +99,14 @@ const WritePayload = Schema.Struct({
   content: Schema.String,
 });
 
+// the client picks the id of a new file, so it can address the file before it exists
+const CreateFilePayload = Schema.Struct({
+  ...WritePayload.fields,
+  fileId: Schema.String.check(Schema.isUUID()),
+});
+
 const createFile = HttpApiEndpoint.post("createFile", "/workspaces/files/create", {
-  payload: WritePayload,
+  payload: CreateFilePayload,
   success: FileWriteData,
   error: [HttpApiError.Forbidden, ApiConflict, ApiTooLarge],
 });

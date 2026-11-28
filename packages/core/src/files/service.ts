@@ -24,9 +24,11 @@ export interface Interface {
   list(): Effect.Effect<Array<{ file: File; latest: FileVersion }>, never, WorkspaceId>;
   fileAt(path: string): Effect.Effect<File, FileMissingError, WorkspaceId>;
   file(fileId: string): Effect.Effect<File, FileMissingError, WorkspaceId>;
+  /** Create a file at a path, with the given id or a new one. */
   createAt(
     path: string,
     content: string,
+    fileId?: string,
   ): Effect.Effect<
     { file: File; version: FileVersion },
     FileExistsError | FileTooLargeError,

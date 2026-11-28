@@ -191,9 +191,9 @@ const workspaceHandlers = HttpApiBuilder.group(
       createFile: (req) =>
         Effect.gen(function* () {
           const { user } = yield* UserSession;
-          const { wsId, path, content } = req.payload;
+          const { wsId, path, content, fileId } = req.payload;
           yield* requireAccess(wsId, user.id);
-          const created = yield* files.createAt(path, content);
+          const created = yield* files.createAt(path, content, fileId);
           return { ...created, created: true };
         }).pipe(
           Effect.provideService(WorkspaceId, { wsId: req.payload.wsId }),

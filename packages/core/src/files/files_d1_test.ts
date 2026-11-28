@@ -77,6 +77,22 @@ test("Files -- a taken path cannot be created again", async () => {
   );
 });
 
+test("Files -- a file created with an id keeps it", async () => {
+  await run(() =>
+    Effect.gen(function* () {
+      const files = yield* Files;
+      const { file } = yield* files.createAt("essay.md", "one", "chosen-id");
+      assertEquals(file.id, "chosen-id");
+      assertEquals((yield* files.file("chosen-id")).path, "essay.md");
+      // a repeated create, such as a retried request, finds the path taken
+      assertInstanceOf(
+        yield* failure(files.createAt("essay.md", "one", "chosen-id")),
+        FileExistsError,
+      );
+    }),
+  );
+});
+
 test("Files -- missing files and versions", async () => {
   await run(() =>
     Effect.gen(function* () {

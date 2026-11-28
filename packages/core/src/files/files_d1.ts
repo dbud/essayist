@@ -165,12 +165,12 @@ export function layerFilesD1(client: D1Client.D1Client): Layer.Layer<Files> {
       );
     });
 
-  const newFile = (path: string) =>
+  const newFile = (path: string, fileId?: string) =>
     Effect.gen(function* () {
       const { wsId } = yield* WorkspaceId;
       const ids = yield* Ids;
       return new File({
-        id: ids.next(),
+        id: fileId ?? ids.next(),
         wsId,
         path,
         createdAt: yield* DateTime.now,
@@ -179,11 +179,11 @@ export function layerFilesD1(client: D1Client.D1Client): Layer.Layer<Files> {
       });
     });
 
-  const createAt = (path: string, content: string) =>
+  const createAt = (path: string, content: string, fileId?: string) =>
     Effect.gen(function* () {
       yield* checkSize(content);
       const ids = yield* Ids;
-      const file = yield* newFile(path);
+      const file = yield* newFile(path, fileId);
       const snapshot = new FileSnapshot({
         id: ids.next(),
         fileId: file.id,
@@ -200,7 +200,7 @@ export function layerFilesD1(client: D1Client.D1Client): Layer.Layer<Files> {
           client`INSERT INTO file_versions ${client.insert([versionRow])}`,
         ])
         .pipe(
-          // another file holds the path, or the backend failed
+          // another file holds the path, or the backend failed; a taken id is a defect
           Effect.catch((cause) =>
             fileAt(path).pipe(
               Effect.flatMap(() => Effect.fail(new FileExistsError({ path }))),
