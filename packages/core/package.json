@@ -9,8 +9,6 @@
   },
   "exports": {
     ".": "./mod.ts",
-    "./d1/rest": "./src/d1/rest.ts",
-    "./d1/sqlite": "./src/d1/sqlite.ts",
     "./migrations": "./migrations/mod.ts"
   },
   "scripts": {

@@ -56,8 +56,7 @@ core runs vitest (`pnpm test`; config in `packages/core/vitest.config.ts`). The 
 `@std/assert` (via the JSR npm alias). Tests of the D1 layers run on an in-memory SQLite database
 with the migrations applied: `testLayerD1` in `src/d1/testing.ts` builds a layer over a fresh
 database, and `src/d1/sqlite.ts` is the `node:sqlite` stand-in for D1 it runs on. The review tests
-share fixtures in `src/reviews/testing.ts`. kvctl reaches the remote database through the REST
-adapter in `src/d1/rest.ts`.
+share fixtures in `src/reviews/testing.ts`.
 
 The diff wasm convergence tests (`diff_wasm_test.ts`) are dormant until the WASM worker returns
 (ESS-90).
