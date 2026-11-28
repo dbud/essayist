@@ -4,6 +4,7 @@ import { Hono } from "hono";
 import { encodeUser } from "#/auth/user.ts";
 import { env } from "#/env.ts";
 import { categoriesLoader } from "#/models/categories.loader.ts";
+import { parseEditorPath } from "#/models/editorPath.ts";
 import { fileTreesLoader } from "#/models/fileTrees.loader.ts";
 import { fileViewLoader } from "#/models/fileView.loader.ts";
 import { reviewRunsLoader } from "#/models/reviewRuns.loader.ts";
@@ -14,20 +15,21 @@ import { EditorData } from "./data.ts";
 import createModels, { EditorModelsProvider } from "./models";
 import Page from "./page";
 
-// the URL names the workspace, the file by its path and the version by its seq; an unknown one
+// the URL names the workspace and the file in its path, and the version by its seq; an unknown one
 // falls back to the last opened workspace and file, and to the latest version
-export default new Hono<{ Bindings: Cloudflare.Env }>().get("/", async (c) => {
+export default new Hono<{ Bindings: Cloudflare.Env }>().get("/*", async (c) => {
   const user = c.get("auth-user");
   if (user === undefined) return c.redirect("/", 303);
+  const { ws, path } = parseEditorPath(new URL(c.req.url).pathname);
   const version = c.req.query("version");
   const seq = version !== undefined && /^[1-9]\d*$/.test(version) ? Number(version) : undefined;
 
   const seed = Effect.gen(function* () {
-    const workspaces = yield* workspacesLoader(user.id, c.req.query("ws"));
+    const workspaces = yield* workspacesLoader(user.id, ws ?? undefined);
     const fileTrees = yield* fileTreesLoader(
       user.id,
       workspaces.selectedId,
-      c.req.query("path"),
+      path ?? undefined,
       seq,
     );
     const fileView =
