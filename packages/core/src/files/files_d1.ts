@@ -318,6 +318,7 @@ export function layerFilesD1(client: D1Client.D1Client): Layer.Layer<Files> {
     Files.of({
       list,
       fileAt,
+      file: fileById,
       createAt,
       writeAt,
       read,

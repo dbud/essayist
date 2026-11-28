@@ -44,13 +44,14 @@ const failure = <A, E, R>(effect: Effect.Effect<A, E, R>) =>
     Effect.map((outcome) => (Result.isFailure(outcome) ? outcome.failure : undefined)),
   );
 
-test("Files -- create, find by path, list and read", async () => {
+test("Files -- create, find by path and id, list and read", async () => {
   await run(() =>
     Effect.gen(function* () {
       const files = yield* Files;
       const { file, version } = yield* files.createAt("essay.md", "first draft");
       assertEquals(version.seq, 1);
       assertEquals((yield* files.fileAt("essay.md")).id, file.id);
+      assertEquals((yield* files.file(file.id)).path, "essay.md");
 
       yield* files.createAt("notes/a.md", "a");
       const listed = yield* files.list();
@@ -81,6 +82,7 @@ test("Files -- missing files and versions", async () => {
     Effect.gen(function* () {
       const files = yield* Files;
       assertInstanceOf(yield* failure(files.fileAt("nope.md")), FileMissingError);
+      assertInstanceOf(yield* failure(files.file("nope")), FileMissingError);
       assertInstanceOf(yield* failure(files.read("nope")), FileMissingError);
       const { file } = yield* files.createAt("essay.md", "one");
       assertInstanceOf(yield* failure(files.read(file.id, "nope")), FileMissingError);
@@ -186,6 +188,7 @@ test("Files -- a file of another workspace reads as missing", async () => {
       assertInstanceOf(yield* other(failure(files.read(file.id))), FileMissingError);
       assertInstanceOf(yield* other(failure(files.versions(file.id))), FileMissingError);
       assertInstanceOf(yield* other(failure(files.fileAt("essay.md"))), FileMissingError);
+      assertInstanceOf(yield* other(failure(files.file(file.id))), FileMissingError);
     }),
   );
 });

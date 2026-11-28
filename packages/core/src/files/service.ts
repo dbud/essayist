@@ -23,6 +23,7 @@ export interface Interface {
   /** The files of the workspace and their latest versions, by path. */
   list(): Effect.Effect<Array<{ file: File; latest: FileVersion }>, never, WorkspaceId>;
   fileAt(path: string): Effect.Effect<File, FileMissingError, WorkspaceId>;
+  file(fileId: string): Effect.Effect<File, FileMissingError, WorkspaceId>;
   createAt(
     path: string,
     content: string,
