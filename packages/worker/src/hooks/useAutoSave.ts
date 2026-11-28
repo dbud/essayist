@@ -1,6 +1,5 @@
 import { useEffect } from "preact/hooks";
 
-import { useSaveFile } from "#/hooks/useSaveFile.ts";
 import type { FileContent } from "#/models/fileContent.ts";
 import { usePreferences } from "#/models/preferences.ts";
 import { debouncedEffect } from "#/utils/debouncedEffect.ts";
@@ -11,22 +10,21 @@ import { debouncedEffect } from "#/utils/debouncedEffect.ts";
  */
 export function useAutoSave(file: FileContent | null): void {
   const { autoSave, autoSaveInterval } = usePreferences();
-  const save = useSaveFile(file);
   useEffect(() => {
     if (!file) return;
     const dispose = debouncedEffect(
       file.markdown,
       () => {
-        if (autoSave.value) void save();
+        if (autoSave.value) void file.save();
       },
       {
         delay: () => autoSaveInterval.value * 1000,
-        onHide: () => void save({ keepalive: true }),
+        onHide: () => void file.save({ keepalive: true }),
       },
     );
     return () => {
       dispose();
-      void save();
+      void file.save();
     };
   }, [file]);
 }

@@ -1,6 +1,6 @@
 import { computed, createModel, type Signal, signal } from "@preact/signals";
 
-import { FileTreeModel } from "./fileTree.ts";
+import { type FileTree, FileTreeModel } from "./fileTree.ts";
 import type { FileTreesData } from "./fileTrees.data.ts";
 
 export const FileTreesModel = createModel(
@@ -13,14 +13,16 @@ export const FileTreesModel = createModel(
       ),
     );
 
+    function get(wsId: string): FileTree {
+      return trees.value.getOrInsertComputed(wsId, () => new FileTreeModel(wsId));
+    }
+
     const current = computed(() => {
       const wsId = selectedWorkspaceId.value;
-      return wsId === null
-        ? null
-        : trees.value.getOrInsertComputed(wsId, () => new FileTreeModel(wsId));
+      return wsId === null ? null : get(wsId);
     });
 
-    return { current };
+    return { current, get };
   },
 );
 

@@ -1,4 +1,5 @@
 import { batch, computed, createModel, signal } from "@preact/signals";
+import { assertExists } from "@std/assert";
 import { toKebabCase } from "@std/text/to-kebab-case";
 
 import createAsyncState from "#/models/utils/asyncState.ts";
@@ -6,6 +7,7 @@ import { BatchAuthError, type BatchResult, runBatch } from "#/models/utils/batch
 import { getJson, requestJson } from "#/models/utils/http.ts";
 import type { UploadedFile } from "#/utils/fileUpload.ts";
 
+import type { FileWriteData } from "./fileContent.data.ts";
 import { PENDING_VERSION_ID } from "./fileContent.ts";
 import type { FileEntryData, FileTreeData } from "./fileTree.data";
 
@@ -79,6 +81,36 @@ export const FileTreeModel = createModel((wsId: string, data?: FileTreeData) => 
       pending.value = [...pending.value, { id, path }];
       select(id, PENDING_VERSION_ID);
     });
+  }
+
+  /** Create a pending file with its first content, which makes it a saved file. */
+  async function create(
+    fileId: string,
+    content: string,
+    options?: { readonly keepalive?: boolean },
+  ): Promise<FileWriteData> {
+    const entry = pending.peek().find(({ id }) => id === fileId);
+    assertExists(entry, "only a new file is created");
+    const { path } = entry;
+    const res = await requestJson<FileWriteData>(
+      "POST",
+      "/api/workspaces/files/create",
+      { wsId, fileId, path, content },
+      options,
+    );
+    if (!res.ok || res.data === undefined) {
+      throw new Error(
+        res.message ?? (res.status === 409 ? `${path}: already exists` : `failed (${res.status})`),
+      );
+    }
+    const created = res.data;
+    batch(() => {
+      files.value = [...files.peek(), { file: created.file, latest: created.version }];
+      pending.value = pending.peek().filter(({ id }) => id !== fileId);
+      // the save of a file left behind keeps the selection where it is
+      if (selectedFileId.peek() === fileId) selectedVersionId.value = created.version.id;
+    });
+    return created;
   }
 
   function selectVersion(versionId: string): void {
@@ -181,6 +213,7 @@ export const FileTreeModel = createModel((wsId: string, data?: FileTreeData) => 
     importDocs,
     uploadFiles,
     startPending,
+    create,
   };
 });
 

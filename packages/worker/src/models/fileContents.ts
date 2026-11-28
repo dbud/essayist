@@ -1,22 +1,23 @@
 import { computed, createModel, effect, type ReadonlySignal, signal } from "@preact/signals";
 
 import type { FileContentData } from "./fileContent.data.ts";
-import { type FileContent, FileContentModel, PENDING_VERSION_ID } from "./fileContent.ts";
+import {
+  type CreateFile,
+  type FileContent,
+  FileContentModel,
+  PENDING_VERSION_ID,
+} from "./fileContent.ts";
 import { type FileSelection, VersionKey } from "./fileSelection.ts";
 
 export const FileContentsModel = createModel(
-  (
-    selected: ReadonlySignal<FileSelection | null>,
-    pathOf: (fileId: string) => string | null,
-    data?: FileContentData,
-  ) => {
+  (selected: ReadonlySignal<FileSelection | null>, create: CreateFile, data?: FileContentData) => {
     const files = signal(new Map<string, FileContent>());
 
     {
       const selection = selected.value;
       if (data !== undefined && selection !== null && selection.fileId !== null) {
         files.value = new Map([
-          [VersionKey.cacheKey(selection), new FileContentModel(selection, pathOf, data)],
+          [VersionKey.cacheKey(selection), new FileContentModel(selection, create, data)],
         ]);
       }
     }
@@ -26,7 +27,7 @@ export const FileContentsModel = createModel(
       if (selection === null || selection.fileId === null) return null;
       return files.value.getOrInsertComputed(
         VersionKey.cacheKey(selection),
-        () => new FileContentModel(selection, pathOf),
+        () => new FileContentModel(selection, create),
       );
     });
 

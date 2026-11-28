@@ -17,7 +17,6 @@ import Melt from "#/components/ui/Melt.tsx";
 import Overlay from "#/components/ui/Overlay.tsx";
 import { useAutoSave } from "#/hooks/useAutoSave.ts";
 import { useKeydown } from "#/hooks/useKeydown.ts";
-import { useSaveFile } from "#/hooks/useSaveFile.ts";
 import { useScrollViewport, type ScrollContainerRef } from "#/hooks/useScrollViewport.ts";
 import type { VersionKey } from "#/models/fileSelection.ts";
 import { useEditorModels } from "#/pages/editor/models.ts";
@@ -98,14 +97,13 @@ function FileSurface({
 }: VersionKey & { scrollContainerRef: ScrollContainerRef }) {
   const { fileContents, resolvedMarks, sidenotes, writable } = useEditorModels();
   const file = fileContents.current.value;
-  const save = useSaveFile(file);
   const selection = getEditorSelection({ wsId, fileId, versionId });
   const { markFragmentRects, markFragmentBadges, colorById } = sidenotes.current.value;
 
   useKeydown((e) => {
     if ((e.metaKey || e.ctrlKey) && e.key === "s") {
       e.preventDefault();
-      void save();
+      void file?.save();
     }
   });
 

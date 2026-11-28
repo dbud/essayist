@@ -2,7 +2,7 @@ import { computed, createModel, signal } from "@preact/signals";
 import type { EditorState } from "lexical";
 
 import createAsyncState from "#/models/utils/asyncState.ts";
-import { getJson, postJson, putJson, requestJson } from "#/models/utils/http.ts";
+import { getJson, postJson, putJson } from "#/models/utils/http.ts";
 import { editorStateToMarkdown, markdownToEditorState } from "#/utils/markdown.ts";
 
 import type {
@@ -11,17 +11,20 @@ import type {
   FileSnapshotData,
   FileWriteData,
 } from "./fileContent.data.ts";
-import type { VersionKey } from "./fileSelection.ts";
+import type { FileKey, VersionKey } from "./fileSelection.ts";
 import type { FileVersionData } from "./fileVersions.data.ts";
 
 export const PENDING_VERSION_ID = "pending";
 
+/** Create a new file with its first content; the file tree owns new files. */
+export type CreateFile = (
+  key: FileKey,
+  content: string,
+  options?: { readonly keepalive?: boolean },
+) => Promise<FileWriteData>;
+
 export const FileContentModel = createModel(
-  (
-    { wsId, fileId, versionId }: VersionKey,
-    pathOf: (fileId: string) => string | null,
-    data?: FileContentData,
-  ) => {
+  ({ wsId, fileId, versionId }: VersionKey, create: CreateFile, data?: FileContentData) => {
     const version = signal<FileSnapshotData | null>(data?.version ?? null);
     const draft = signal<FileDraftData | null>(data?.draft ?? null);
     // a file started here and not created yet; its first save creates it
@@ -64,30 +67,16 @@ export const FileContentModel = createModel(
 
     const [runSave, { loading: saving, error: saveError }] = createAsyncState();
 
-    async function save(options?: {
-      readonly keepalive?: boolean;
-    }): Promise<"created" | "saved" | undefined> {
+    async function save(options?: { readonly keepalive?: boolean }): Promise<void> {
       const content = markdown.value;
       if (!dirty.value) return;
       if (pending.value) {
-        const path = pathOf(fileId);
-        if (content === "" || path === null) return;
-        return await runSave(async () => {
-          const res = await requestJson<FileWriteData>(
-            "POST",
-            "/api/workspaces/files/create",
-            { wsId, fileId, path, content },
-            options,
-          );
-          if (!res.ok || res.data === undefined) {
-            throw new Error(
-              res.message ??
-                (res.status === 409 ? `${path}: already exists` : `failed (${res.status})`),
-            );
-          }
-          version.value = { ...res.data.version, content };
-          return "created" as const;
+        if (content === "") return;
+        await runSave(async () => {
+          const created = await create({ wsId, fileId }, content, options);
+          version.value = { ...created.version, content };
         });
+        return;
       }
       const base = version.value;
       if (base === null) return;
@@ -99,10 +88,7 @@ export const FileContentModel = createModel(
           options,
         ),
       );
-      if (result) {
-        draft.value = result;
-        return "saved";
-      }
+      if (result) draft.value = result;
     }
 
     const [runPromote, { loading: promoting, error: promoteError }] = createAsyncState();
