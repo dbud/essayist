@@ -20,7 +20,8 @@ export const wipeRuns = new Command<DbctlGlobals>()
       // a missing file, or a run still running on it
       if (Result.isFailure(deleted)) {
         console.error(deleted.failure.message);
-        process.exit(1);
+        process.exitCode = 1;
+        return;
       }
       console.log(`deleted ${deleted.success} ${pluralize(deleted.success, "run", "runs")}`);
     }),

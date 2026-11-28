@@ -25,7 +25,8 @@ export const grantRole = new Command<DbctlGlobals>()
       );
       if (Option.isNone(updated)) {
         console.error(`no user matching "${emailOrId}"`);
-        process.exit(1);
+        process.exitCode = 1;
+        return;
       }
       console.log(`granted ${role} to ${updated.value.email} (${updated.value.id})`);
     }),

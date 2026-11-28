@@ -22,7 +22,8 @@ export const trace = new Command<DbctlGlobals>()
       );
       if (events.length === 0) {
         console.error(`No trace for run ${runId} in workspace ${wsId}`);
-        process.exit(1);
+        process.exitCode = 1;
+        return;
       }
       for (const event of events) {
         if (summary) {
