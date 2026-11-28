@@ -1,10 +1,10 @@
-import type { ReviewPass } from "@essayist/core";
 import type { Signal } from "@preact/signals";
 import { useState } from "preact/hooks";
 
 import { FormShell } from "#/components/admin/ui/forms/FormShell.tsx";
 import { TextRow } from "#/components/admin/ui/forms/TextRow.tsx";
 import { type Option, OptionsRow } from "#/components/ui/forms/OptionsRow.tsx";
+import type { ReviewPassData } from "#/models/admin.data.ts";
 import { type ReviewPassInput } from "#/models/admin.ts";
 import { useAdminModels } from "#/pages/admin/models.ts";
 
@@ -13,7 +13,13 @@ function PromptPreview({ text }: { text?: string }) {
   return <div class="swiss-cell--data col-span-2 min-w-0">{text}</div>;
 }
 
-export function ReviewPassForm({ entity, open }: { entity?: ReviewPass; open: Signal<boolean> }) {
+export function ReviewPassForm({
+  entity,
+  open,
+}: {
+  entity?: ReviewPassData;
+  open: Signal<boolean>;
+}) {
   const { admin } = useAdminModels();
   const [name, setName] = useState(entity?.name ?? "");
   const [poolId, setPoolId] = useState(entity?.modelPoolId ?? admin.modelPools.value[0]?.id ?? "");

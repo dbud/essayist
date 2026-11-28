@@ -1,11 +1,11 @@
-import type { Prompt, ReviewPass } from "@essayist/core";
 import { CircleCheck, Pencil, Plus, Trash2 } from "lucide-preact";
 import { Fragment } from "preact";
 
 import { ActionBtn, EntityCard } from "#/components/admin/ui/EntityCard.tsx";
 import { Field, List } from "#/components/admin/ui/EntityRows.tsx";
+import type { PromptData, ReviewPassData } from "#/models/admin.data.ts";
 
-function PromptField({ label, prompt }: { label: string; prompt?: Prompt }) {
+function PromptField({ label, prompt }: { label: string; prompt?: PromptData }) {
   return (
     <>
       <div class={`swiss-cell--data text-ink/60 ${prompt ? "row-span-2" : ""}`}>{label}</div>
@@ -28,8 +28,8 @@ export function ReviewPassRow({
   onAddUnit,
   onEditUnit,
 }: {
-  pass: ReviewPass;
-  prompts: readonly Prompt[];
+  pass: ReviewPassData;
+  prompts: readonly PromptData[];
   active: boolean;
   busy: boolean;
   showActivate: boolean;

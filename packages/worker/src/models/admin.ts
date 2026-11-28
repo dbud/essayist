@@ -1,20 +1,21 @@
 // The control panel model: seeded from page data, CRUD mutations through the admin api. The
 // categories palette preview derives here from the model's categories and the open category form.
-import type { Category, ModelPool, Prompt, ReviewPass } from "@essayist/core";
 import { computed, createModel, signal } from "@preact/signals";
 
 import { FALLBACK_COLOR } from "#/editor/markColors.ts";
+import type { ModelPoolData, PromptData, ReviewPassData } from "#/models/admin.data.ts";
 import type { AdminConfigData } from "#/models/admin.data.ts";
+import type { CategoryData } from "#/models/categories.data.ts";
 import createAsyncState from "#/models/utils/asyncState.ts";
 import { getJson, requestJson } from "#/models/utils/http.ts";
 import { showToast } from "#/models/utils/toast.ts";
 
-export type ModelPoolInput = Omit<ModelPool, "id">;
-export type CategoryInput = Omit<Category, "id">;
-export type ReviewPassInput = Omit<ReviewPass, "id">;
+export type ModelPoolInput = Omit<ModelPoolData, "id">;
+export type CategoryInput = Omit<CategoryData, "id">;
+export type ReviewPassInput = Omit<ReviewPassData, "id">;
 
 export interface CategoryPreview {
-  /** Category id when editing, null while creating. */
+  /** CategoryData id when editing, null while creating. */
   id: string | null;
   label: string;
   color: string;
@@ -30,10 +31,10 @@ export interface SwatchEntry {
 }
 
 export const AdminConfigModel = createModel((data: AdminConfigData) => {
-  const modelPools = signal<readonly ModelPool[]>(data.modelPools);
-  const prompts = signal<readonly Prompt[]>(data.prompts);
-  const categories = signal<readonly Category[]>(data.categories);
-  const reviewPasses = signal<readonly ReviewPass[]>(data.reviewPasses);
+  const modelPools = signal<readonly ModelPoolData[]>(data.modelPools);
+  const prompts = signal<readonly PromptData[]>(data.prompts);
+  const categories = signal<readonly CategoryData[]>(data.categories);
+  const reviewPasses = signal<readonly ReviewPassData[]>(data.reviewPasses);
   const activeReviewPassId = signal<string | undefined>(data.activeReviewPassId);
   const [run, { loading, error }] = createAsyncState();
 
@@ -105,9 +106,9 @@ export const AdminConfigModel = createModel((data: AdminConfigData) => {
 
   const deleteModelPool = (id: string) => del(`/api/admin/model-pools/${encodeURIComponent(id)}`);
 
-  const createPrompt = (prompt: Prompt) => post("/api/admin/prompts", prompt);
+  const createPrompt = (prompt: PromptData) => post("/api/admin/prompts", prompt);
 
-  const updatePrompt = (key: string, prompt: Prompt) =>
+  const updatePrompt = (key: string, prompt: PromptData) =>
     put(`/api/admin/prompts/${encodeURIComponent(key)}`, prompt);
 
   const deletePrompt = (key: string) => del(`/api/admin/prompts/${encodeURIComponent(key)}`);

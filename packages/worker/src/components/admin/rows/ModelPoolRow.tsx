@@ -1,8 +1,8 @@
-import type { ModelPool } from "@essayist/core";
 import { Pencil, Trash2 } from "lucide-preact";
 
 import { ActionBtn, EntityCard } from "#/components/admin/ui/EntityCard.tsx";
 import { List } from "#/components/admin/ui/EntityRows.tsx";
+import type { ModelPoolData } from "#/models/admin.data.ts";
 
 export function ModelPoolRow({
   pool,
@@ -10,7 +10,7 @@ export function ModelPoolRow({
   onEdit,
   onDelete,
 }: {
-  pool: ModelPool;
+  pool: ModelPoolData;
   busy: boolean;
   onEdit: () => void;
   onDelete: () => void;

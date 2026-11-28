@@ -1,4 +1,4 @@
-import type { ReviewPass, ReviewUnit } from "@essayist/core";
+import type { ReviewUnit } from "@essayist/core";
 import type { Signal } from "@preact/signals";
 import { useState } from "preact/hooks";
 
@@ -6,6 +6,7 @@ import { FormShell } from "#/components/admin/ui/forms/FormShell.tsx";
 import { TextRow } from "#/components/admin/ui/forms/TextRow.tsx";
 import { type Option, OptionsRow } from "#/components/ui/forms/OptionsRow.tsx";
 import Slider from "#/components/ui/Slider.tsx";
+import type { ReviewPassData } from "#/models/admin.data.ts";
 import { useAdminModels } from "#/pages/admin/models.ts";
 
 const NONE: Option = { value: "", label: "none" };
@@ -20,7 +21,7 @@ export function ReviewUnitForm({
   unitId,
   open,
 }: {
-  pass: ReviewPass;
+  pass: ReviewPassData;
   unitId?: string;
   open: Signal<boolean>;
 }) {

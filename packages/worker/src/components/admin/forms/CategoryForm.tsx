@@ -1,4 +1,3 @@
-import type { Category } from "@essayist/core";
 import type { Signal } from "@preact/signals";
 import { useEffect, useState } from "preact/hooks";
 
@@ -10,23 +9,24 @@ import { CheckboxIcon } from "#/components/ui/icons.tsx";
 import Slider from "#/components/ui/Slider.tsx";
 import { FALLBACK_COLOR } from "#/editor/markColors.ts";
 import { type CategoryInput, categoryPreview } from "#/models/admin.ts";
+import type { CategoryData } from "#/models/categories.data.ts";
 import { useAdminModels } from "#/pages/admin/models.ts";
 
 // Canonical stored form: oklch(<L>% <C> <H>).
 const OKLCH_RE = /^oklch\(([\d.]+)%\s+([\d.]+)\s+([\d.]+)\)$/;
 const DEFAULTS = { l: 65, c: 0.4, h: 90 };
 
-function parseOklch(color: string | undefined) {
+function parseOklch(color: string | null | undefined) {
   const m = color?.match(OKLCH_RE);
   return m ? { l: Number(m[1]), c: Number(m[2]), h: Number(m[3]) } : { ...DEFAULTS };
 }
 
-export function CategoryForm({ entity, open }: { entity?: Category; open: Signal<boolean> }) {
+export function CategoryForm({ entity, open }: { entity?: CategoryData; open: Signal<boolean> }) {
   const { admin } = useAdminModels();
   const initial = parseOklch(entity?.color);
   const [label, setLabel] = useState(entity?.label ?? "");
   const [severity, setSeverity] = useState(entity?.severity ?? "");
-  const [colorEnabled, setColorEnabled] = useState(entity?.color !== undefined);
+  const [colorEnabled, setColorEnabled] = useState(entity?.color != null);
   const [l, setL] = useState(initial.l);
   const [c, setC] = useState(initial.c);
   const [h, setH] = useState(initial.h);

@@ -1,6 +1,6 @@
-import type { Category } from "@essayist/core";
+import type { CategoryData } from "#/models/categories.data.ts";
 
-export function CategoriesExport({ categories }: { categories: readonly Category[] }) {
+export function CategoriesExport({ categories }: { categories: readonly CategoryData[] }) {
   const json = JSON.stringify(categories, null, 2);
   return (
     <div class="flex flex-col swiss-stack swiss-stack--col shadow-md">

@@ -1,8 +1,8 @@
-import type { Category } from "@essayist/core";
 import { Pencil, Trash2 } from "lucide-preact";
 
 import { ActionBtn, EntityCard } from "#/components/admin/ui/EntityCard.tsx";
 import { Field } from "#/components/admin/ui/EntityRows.tsx";
+import type { CategoryData } from "#/models/categories.data.ts";
 
 export function CategoryRow({
   category,
@@ -10,7 +10,7 @@ export function CategoryRow({
   onEdit,
   onDelete,
 }: {
-  category: Category;
+  category: CategoryData;
   busy: boolean;
   onEdit: () => void;
   onDelete: () => void;

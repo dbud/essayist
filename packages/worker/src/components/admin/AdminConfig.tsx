@@ -1,4 +1,3 @@
-import type { Category, ModelPool, Prompt, ReviewPass } from "@essayist/core";
 import { useSignal } from "@preact/signals";
 import type { ComponentChildren } from "preact";
 
@@ -14,6 +13,8 @@ import type { DialogRequest } from "#/components/admin/types.ts";
 import { NewButton } from "#/components/admin/ui/EntityCard.tsx";
 import Tabs, { type TabItem } from "#/components/admin/ui/Tabs.tsx";
 import WaveBars from "#/components/ui/WaveBars.tsx";
+import type { ModelPoolData, PromptData, ReviewPassData } from "#/models/admin.data.ts";
+import type { CategoryData } from "#/models/categories.data.ts";
 import { type AdminTab, usePreferences } from "#/models/preferences.ts";
 import { useAdminModels } from "#/pages/admin/models.ts";
 
@@ -57,31 +58,31 @@ export default function AdminConfig() {
     dialogOpen.value = true;
   }
 
-  function removeModelPool(pool: ModelPool) {
+  function removeModelPool(pool: ModelPoolData) {
     if (!confirm(`Delete model pool "${pool.name}"?`)) return;
     void deleteModelPool(pool.id);
   }
 
-  function removePrompt(prompt: Prompt) {
+  function removePrompt(prompt: PromptData) {
     if (!confirm(`Delete prompt "${prompt.key}"?`)) return;
     void deletePrompt(prompt.key);
   }
 
-  function removeCategory(category: Category) {
+  function removeCategory(category: CategoryData) {
     if (!confirm(`Delete category "${category.label}"?`)) return;
     void deleteCategory(category.id);
   }
 
-  function removeReviewPass(pass: ReviewPass) {
+  function removeReviewPass(pass: ReviewPassData) {
     if (!confirm(`Delete review pass "${pass.name}"?`)) return;
     void deleteReviewPass(pass.id);
   }
 
-  function activateReviewPass(pass: ReviewPass) {
+  function activateReviewPass(pass: ReviewPassData) {
     void setActiveReviewPass(pass.id);
   }
 
-  function removeUnit(pass: ReviewPass, unitId: string) {
+  function removeUnit(pass: ReviewPassData, unitId: string) {
     const referring = pass.units.filter((u) => u.inputs?.includes(unitId)).map((u) => u.id);
     const warning =
       referring.length > 0 ? ` It is referenced as input by: ${referring.join(", ")}.` : "";

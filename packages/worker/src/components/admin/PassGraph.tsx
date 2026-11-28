@@ -1,9 +1,9 @@
-import type { ReviewPass } from "@essayist/core";
 import { signal } from "@preact/signals";
 import { useEffect, useState } from "preact/hooks";
 
 import { type Option, OptionsRow } from "#/components/ui/forms/OptionsRow.tsx";
 import WaveBars from "#/components/ui/WaveBars.tsx";
+import type { ReviewPassData } from "#/models/admin.data.ts";
 import { showToast } from "#/models/utils/toast.ts";
 import { useAdminModels } from "#/pages/admin/models.ts";
 
@@ -98,7 +98,7 @@ export default function PassGraph() {
   if (passes.length === 0) {
     return <p class="text-sm">No review passes configured.</p>;
   }
-  const options: Option[] = passes.map((p: ReviewPass) => ({
+  const options: Option[] = passes.map((p: ReviewPassData) => ({
     value: p.id,
     label: p.name,
   }));
