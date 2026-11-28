@@ -1,10 +1,9 @@
 # Development Guide
 
 Essayist is a monorepo. `packages/core` (Effect services), `packages/worker` (Hono on Workers, Vite
-
-- TypeScript 7), and `packages/dbctl` form a pnpm workspace; shared dev tooling (oxlint, oxfmt,
-  TypeScript, vitest) lives at the workspace root. `crates/wasm` holds the Rust diff core; its wasm-
-  pack build runs from the pre-commit hook.
+and TypeScript 7) and `packages/dbctl` form a pnpm workspace; shared dev tooling (oxlint, oxfmt,
+TypeScript, vitest) lives at the workspace root. `crates/wasm` holds the Rust diff core, built with
+wasm-pack by the pre-commit hook.
 
 ## Uniform pnpm loop (core and worker)
 
