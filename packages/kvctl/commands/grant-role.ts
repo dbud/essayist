@@ -1,5 +1,6 @@
 import { Command, EnumType } from "@cliffy/command";
 import { USER_ROLES, Workspaces } from "@essayist/core";
+import { Effect, Option } from "effect";
 
 import type { KvctlGlobals } from "#/globals.ts";
 import { withStore } from "#/kv.ts";
@@ -10,23 +11,22 @@ export const grantRole = new Command<KvctlGlobals>()
   .description("Set a user's site-wide role.")
   .type("role", ROLE)
   .arguments("<emailOrId:string> <role:role>")
-  .action(({ target, local }, emailOrId: string, role: "admin" | "writer") =>
-    withStore({ target, local }, async ({ runtime }) => {
-      let user = await runtime.runPromise(
-        Workspaces.use((store) => store.getUserByEmail(emailOrId)),
+  .action(({ local }, emailOrId: string, role: "admin" | "writer") =>
+    withStore({ local }, async ({ runtime }) => {
+      const updated = await runtime.runPromise(
+        Effect.gen(function* () {
+          const workspaces = yield* Workspaces;
+          const byEmail = yield* workspaces.getUserByEmail(emailOrId);
+          const user = Option.isSome(byEmail) ? byEmail : yield* workspaces.getUser(emailOrId);
+          if (Option.isNone(user)) return Option.none();
+          // the user was just found
+          return Option.some(yield* Effect.orDie(workspaces.setUserRole(user.value.id, role)));
+        }),
       );
-      if (!user && /^[0-9a-f-]{36}$/i.test(emailOrId)) {
-        user = await runtime.runPromise(Workspaces.use((store) => store.getUser(emailOrId)));
-      }
-      if (!user) {
+      if (Option.isNone(updated)) {
         console.error(`no user matching "${emailOrId}"`);
         process.exit(1);
       }
-      // A const alias keeps the narrowing inside the use() callback.
-      const current = user;
-      const updated = await runtime.runPromise(
-        Workspaces.use((store) => store.setUserRole(current.id, role)),
-      );
-      console.log(`granted ${role} to ${updated?.email} (${updated?.id})`);
+      console.log(`granted ${role} to ${updated.value.email} (${updated.value.id})`);
     }),
   );

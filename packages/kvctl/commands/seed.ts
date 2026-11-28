@@ -1,14 +1,16 @@
 import { Command } from "@cliffy/command";
-import { demoFiles, Files, seedDemoFiles, WorkspaceId, Workspaces } from "@essayist/core";
-import { Effect } from "effect";
+import {
+  demoFiles,
+  Files,
+  seedDefaultConfig,
+  seedDemoFiles,
+  WorkspaceId,
+  Workspaces,
+} from "@essayist/core";
+import { Effect, Option } from "effect";
 
 import type { KvctlGlobals } from "#/globals.ts";
 import { withStore } from "#/kv.ts";
-
-const scoped = <A, E, R>(
-  effect: Effect.Effect<A, E, R | WorkspaceId>,
-  wsId: string,
-): Effect.Effect<A, E, R> => Effect.provideService(effect, WorkspaceId, { wsId });
 
 // A per-workspace companion file: its name and content derive from the workspace, so content on
 // screen identifies the workspace it came from.
@@ -34,8 +36,10 @@ navigation sent you somewhere else than you asked for.
 
 const DEMO_EMAIL = "demo@example.com";
 
-export const seedDemo = new Command<KvctlGlobals>()
-  .description("Seed a user, workspace, and sample essay.")
+export const seed = new Command<KvctlGlobals>()
+  .description(
+    "Seed the default review config into an empty store, and a demo workspace for a user.",
+  )
   .option("--email <email:string>", "User email; DEV_USER_EMAIL from .env, else the demo user.", {
     default: process.env.DEV_USER_EMAIL ?? DEMO_EMAIL,
   })
@@ -43,72 +47,53 @@ export const seedDemo = new Command<KvctlGlobals>()
   .option("--ws-name <name:string>", "Demo workspace name.", {
     default: "Demo",
   })
-  .action(({ email, name, wsName, target, local }) =>
-    withStore({ target, local }, async ({ runtime }) => {
-      // Create or reuse the user; new users get site admin
-      let user = await runtime.runPromise(
-        Effect.orDie(Workspaces.use((store) => store.getUserByEmail(email))),
-      );
-      if (!user) {
-        const created = await runtime.runPromise(
-          Effect.orDie(
-            Workspaces.use((store) =>
-              store.createUser({
-                email,
-                name: name ?? (email === DEMO_EMAIL ? "Demo User" : undefined),
-              }),
-            ),
-          ),
-        );
-        user =
-          (await runtime.runPromise(
-            Effect.orDie(Workspaces.use((store) => store.setUserRole(created.id, "admin"))),
-          )) ?? created;
-      }
+  .action(({ email, name, wsName, local }) =>
+    withStore({ local }, async ({ runtime }) => {
+      const report = await runtime.runPromise(
+        Effect.gen(function* () {
+          const config = (yield* seedDefaultConfig) ? "the default review config" : null;
 
-      // Create or reuse the workspace by name.
-      const workspaces = await runtime.runPromise(
-        Effect.orDie(Workspaces.use((store) => store.listWorkspacesForUser(user.id))),
-      );
-      let workspace = workspaces.find((entry) => entry.workspace.name === wsName)?.workspace;
-      if (!workspace) {
-        workspace = await runtime.runPromise(
-          Effect.orDie(Workspaces.use((store) => store.createWorkspace(wsName, user.id))),
-        );
-      }
+          // a new user is a site admin, so the demo can also show the admin pages
+          const workspaces = yield* Workspaces;
+          const found = yield* workspaces.getUserByEmail(email);
+          const user = Option.isSome(found)
+            ? found.value
+            : yield* Effect.orDie(
+                Effect.flatMap(
+                  workspaces.createUser({
+                    email,
+                    name: name ?? (email === DEMO_EMAIL ? "Demo User" : undefined),
+                  }),
+                  (created) => workspaces.setUserRole(created.id, "admin"),
+                ),
+              );
 
-      // Seed files only for a workspace that lacks them: the essay (with marks, fresh essay only)
-      // plus the per-workspace notes file.
-      const files = await runtime.runPromise(
-        Effect.orDie(
-          scoped(
-            Files.use((store) => store.list()),
-            workspace.id,
-          ),
-        ),
-      );
-      const essayFresh = !files.some((file) => file.path in demoFiles);
-      if (essayFresh) {
-        await runtime.runPromise(Effect.orDie(scoped(seedDemoFiles(), workspace.id)));
-      }
-      const notes = notesPath(wsName);
-      const notesFresh = !files.some((file) => file.path === notes);
-      if (notesFresh) {
-        await runtime.runPromise(
-          Effect.orDie(
-            scoped(
-              Files.use((store) => store.write(notes, notesContent(wsName))),
-              workspace.id,
-            ),
-          ),
-        );
-      }
+          const owned = yield* workspaces.listWorkspacesForUser(user.id);
+          const workspace =
+            owned.find((entry) => entry.workspace.name === wsName)?.workspace ??
+            (yield* workspaces.createWorkspace(wsName, user.id));
 
-      const seeded = [essayFresh ? "essay and marks" : null, notesFresh ? notes : null].filter(
-        (s) => s !== null,
+          // files only for a workspace that lacks them, the essay with its review first
+          const seeded = yield* Effect.gen(function* () {
+            const files = yield* Files;
+            const paths = new Set((yield* files.list()).map(({ file }) => file.path));
+            const essay = Object.keys(demoFiles).some((path) => paths.has(path))
+              ? null
+              : "the essay and its review";
+            if (essay !== null) yield* Effect.orDie(seedDemoFiles());
+            const notesFile = notesPath(wsName);
+            const notes = paths.has(notesFile) ? null : notesFile;
+            if (notes !== null) yield* Effect.orDie(files.createAt(notes, notesContent(wsName)));
+            return [essay, notes];
+          }).pipe(Effect.provideService(WorkspaceId, { wsId: workspace.id }));
+
+          return { user, workspace, seeded: [config, ...seeded].filter((item) => item !== null) };
+        }),
       );
+      const { user, workspace, seeded } = report;
       console.log(
-        `seeded: user '${user.id}' (${user.email}), workspace '${workspace.id}' (${workspace.name})${seeded.length ? `, ${seeded.join(", ")}` : ""}`,
+        `user '${user.id}' (${user.email}), workspace '${workspace.id}' (${workspace.name})` +
+          (seeded.length > 0 ? `; seeded ${seeded.join(", ")}` : "; nothing to seed"),
       );
     }),
   );

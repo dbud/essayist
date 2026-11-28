@@ -8,16 +8,13 @@
 
 import { Command } from "@cliffy/command";
 
-import { explore } from "#/commands/explore.ts";
 import { grantRole } from "#/commands/grant-role.ts";
 import { listUsers } from "#/commands/list-users.ts";
 import { runs } from "#/commands/runs.ts";
-import { seedConfig } from "#/commands/seed-config.ts";
-import { seedDemo } from "#/commands/seed-demo.ts";
+import { seed } from "#/commands/seed.ts";
 import { sql } from "#/commands/sql.ts";
 import { trace } from "#/commands/trace.ts";
 import { wipeRuns } from "#/commands/wipe-runs.ts";
-import { wipe } from "#/commands/wipe.ts";
 
 await new Command()
   .name("kvctl")
@@ -25,14 +22,11 @@ await new Command()
   .option("--local", "Use the vite dev server's D1 state instead of the remote database.", {
     global: true,
   })
-  .command("wipe", wipe)
   .command("wipe-runs", wipeRuns)
   .command("runs", runs)
   .command("sql", sql)
-  .command("explore", explore)
   .command("trace", trace)
   .command("grant-role", grantRole)
   .command("list-users", listUsers)
-  .command("seed-config", seedConfig)
-  .command("seed-demo", seedDemo)
+  .command("seed", seed)
   .parse(process.argv.slice(2));

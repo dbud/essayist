@@ -16,16 +16,11 @@ export const trace = new Command<KvctlGlobals>()
   .action(({ local, summary }, wsId: string, runId: string) =>
     withStore({ local }, async ({ runtime }) => {
       const events = await runtime.runPromise(
-        Effect.provideService(
-          Effect.gen(function* () {
-            const traces = yield* TraceEvents;
-            return yield* traces.get(runId);
-          }),
-          WorkspaceId,
-          { wsId },
+        TraceEvents.use((traces) => traces.get(runId)).pipe(
+          Effect.provideService(WorkspaceId, { wsId }),
         ),
       );
-      if (!events) {
+      if (events.length === 0) {
         console.error(`No trace for run ${runId} in workspace ${wsId}`);
         process.exit(1);
       }
