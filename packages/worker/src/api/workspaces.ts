@@ -13,12 +13,8 @@ import { ApiConflict, ApiFailure, ApiTooLarge } from "./errors";
 import { SessionMiddleware } from "./sessionMiddleware";
 
 const ListQuery = Schema.Struct({ wsId: Schema.optional(Schema.String) });
-const SelectPayload = Schema.Struct({ wsId: Schema.NonEmptyString });
+const WorkspaceRef = Schema.Struct({ wsId: Schema.NonEmptyString });
 
-const FilesQuery = Schema.Struct({
-  wsId: Schema.NonEmptyString,
-  path: Schema.optional(Schema.String),
-});
 const FileRef = Schema.Struct({
   wsId: Schema.NonEmptyString,
   fileId: Schema.NonEmptyString,
@@ -30,7 +26,7 @@ const getWorkspaces = HttpApiEndpoint.get("getWorkspaces", "/workspaces", {
 });
 
 const selectWorkspace = HttpApiEndpoint.patch("selectWorkspace", "/workspaces", {
-  payload: SelectPayload,
+  payload: WorkspaceRef,
   error: HttpApiError.Forbidden,
 });
 
@@ -43,12 +39,12 @@ const createWorkspace = HttpApiEndpoint.post("createWorkspace", "/workspaces", {
 
 // Soft delete, owner only.
 const deleteWorkspace = HttpApiEndpoint.delete("deleteWorkspace", "/workspaces", {
-  query: SelectPayload,
+  query: WorkspaceRef,
   error: [HttpApiError.Forbidden, HttpApiError.NotFound],
 });
 
 const getFiles = HttpApiEndpoint.get("getFiles", "/workspaces/files", {
-  query: FilesQuery,
+  query: WorkspaceRef,
   success: FileTreeData,
   error: HttpApiError.Forbidden,
 });

@@ -10,23 +10,34 @@ import { setupSelectionPersist, setupUnloadGuard } from "./editor/persist.ts";
 
 void boot<EditorData>(({ data, preferences, state }) => {
   const models = createModels(data, state.user);
-  const { selected, workspaces, fileTrees, fileContents } = models;
+  const { selected, workspaces, fileTrees, fileVersions, fileContents } = models;
 
   setupSelectionPersist(selected);
   setupUnloadGuard(fileContents, preferences.autoSave);
 
-  // the URL names the file by its path, which the tree turns into the id
+  // the URL names the file by its path and the version by its seq, left out for the latest
   setupUrlQuerySync(
-    computed(() => ({
-      wsId: selected.value?.wsId ?? null,
-      path: fileTrees.current.value?.pathOf(selected.value?.fileId ?? null) ?? null,
-      versionId: selected.value?.versionId ?? null,
-    })),
+    computed(() => {
+      const selection = selected.value;
+      const versions = fileVersions.current.value;
+      const version = versions?.byId(selection?.versionId ?? null) ?? null;
+      const latest = versions?.versions.value.at(-1) ?? null;
+      return {
+        ws: selection?.wsId ?? null,
+        path: fileTrees.current.value?.pathOf(selection?.fileId ?? null) ?? null,
+        version: version && version.id !== latest?.id ? String(version.seq) : null,
+      };
+    }),
     (params) => {
-      const wsId = params.get("wsId");
+      const wsId = params.get("ws");
       if (wsId) workspaces.select(wsId);
-      const tree = fileTrees.current.value;
-      tree?.select(tree.fileIdAt(params.get("path")), params.get("versionId"));
+      const tree = fileTrees.current.peek();
+      if (tree === null) return;
+      tree.select(tree.fileIdAt(params.get("path")));
+      // the file is selected first, so its versions are the current ones
+      const seq = params.get("version");
+      const version = seq === null ? null : fileVersions.current.peek()?.bySeq(Number(seq));
+      if (version) tree.selectVersion(version.id);
     },
   );
 

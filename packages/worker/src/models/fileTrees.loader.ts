@@ -8,11 +8,10 @@ export function fileTreesLoader(
   userId: string,
   wsId: string | null,
   pathIntent: string | undefined,
-  versionIntent: string | undefined,
+  seqIntent: number | undefined,
 ): Effect.Effect<typeof FileTreesData.Type, never, Files | UserState> {
   return Effect.gen(function* () {
-    const tree =
-      wsId === null ? null : yield* fileTreeLoader(userId, wsId, pathIntent, versionIntent);
+    const tree = wsId === null ? null : yield* fileTreeLoader(userId, wsId, pathIntent, seqIntent);
     return { wsId, tree };
   });
 }

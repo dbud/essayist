@@ -132,9 +132,7 @@ const workspaceHandlers = HttpApiBuilder.group(
         Effect.gen(function* () {
           const { user } = yield* UserSession;
           yield* requireAccess(req.query.wsId, user.id);
-          return yield* fileTreeLoader(user.id, req.query.wsId, req.query.path).pipe(
-            Effect.provide(stores),
-          );
+          return yield* fileTreeLoader(user.id, req.query.wsId).pipe(Effect.provide(stores));
         }),
       selectFile: (req) =>
         Effect.gen(function* () {

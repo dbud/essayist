@@ -14,17 +14,21 @@ import { EditorData } from "./data.ts";
 import createModels, { EditorModelsProvider } from "./models";
 import Page from "./page";
 
+// the URL names the workspace, the file by its path and the version by its seq; an unknown one
+// falls back to the last opened workspace and file, and to the latest version
 export default new Hono<{ Bindings: Cloudflare.Env }>().get("/", async (c) => {
   const user = c.get("auth-user");
   if (user === undefined) return c.redirect("/", 303);
+  const version = c.req.query("version");
+  const seq = version !== undefined && /^[1-9]\d*$/.test(version) ? Number(version) : undefined;
 
   const seed = Effect.gen(function* () {
-    const workspaces = yield* workspacesLoader(user.id, c.req.query("wsId"));
+    const workspaces = yield* workspacesLoader(user.id, c.req.query("ws"));
     const fileTrees = yield* fileTreesLoader(
       user.id,
       workspaces.selectedId,
       c.req.query("path"),
-      c.req.query("versionId"),
+      seq,
     );
     const fileView =
       fileTrees.wsId === null || fileTrees.tree?.selectedFileId == null

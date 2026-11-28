@@ -28,7 +28,11 @@ export const FileVersionsModel = createModel(
         : (versions.value.find((version) => version.id === versionId) ?? null);
     }
 
-    return { versions, byId, load, loading, error };
+    function bySeq(seq: number): FileVersionData | null {
+      return versions.value.find((version) => version.seq === seq) ?? null;
+    }
+
+    return { versions, byId, bySeq, load, loading, error };
   },
 );
 

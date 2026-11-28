@@ -10,8 +10,8 @@ import type { FileTreeData } from "#/models/fileTree.data.ts";
 export function fileTreeLoader(
   userId: string,
   wsId: string,
-  pathIntent: string | undefined,
-  versionIntent?: string,
+  pathIntent?: string,
+  seqIntent?: number,
 ): Effect.Effect<typeof FileTreeData.Type, never, Files | UserState> {
   return Effect.gen(function* () {
     const files = yield* Files.use((store) => store.list());
@@ -24,12 +24,10 @@ export function fileTreeLoader(
 
     const selectedFileId = selected.file.id;
     let selectedVersionId = selected.latest.id;
-    if (versionIntent !== undefined && versionIntent !== selected.latest.id) {
+    if (seqIntent !== undefined && seqIntent !== selected.latest.seq) {
       // the file was just listed, so it exists
       const versions = yield* Effect.orDie(Files.use((store) => store.versions(selectedFileId)));
-      if (versions.some((version) => version.id === versionIntent)) {
-        selectedVersionId = versionIntent;
-      }
+      selectedVersionId = versions.find(({ seq }) => seq === seqIntent)?.id ?? selectedVersionId;
     }
     return { files, selectedFileId, selectedVersionId };
   }).pipe(Effect.provideService(WorkspaceId, { wsId }));
