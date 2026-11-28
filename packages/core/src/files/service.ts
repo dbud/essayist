@@ -14,6 +14,7 @@ import type {
   FileDraft,
   FileExistsError,
   FileMissingError,
+  FilePathError,
   FileSnapshot,
   FileTooLargeError,
   FileVersion,
@@ -31,7 +32,7 @@ export interface Interface {
     fileId?: string,
   ): Effect.Effect<
     { file: File; version: FileVersion },
-    FileExistsError | FileTooLargeError,
+    FileExistsError | FilePathError | FileTooLargeError,
     WorkspaceId
   >;
   /** Save a version of the file at a path, creating the file there when there is none. */
@@ -40,7 +41,7 @@ export interface Interface {
     content: string,
   ): Effect.Effect<
     { file: File; version: FileVersion; created: boolean },
-    FileTooLargeError,
+    FilePathError | FileTooLargeError,
     WorkspaceId
   >;
 

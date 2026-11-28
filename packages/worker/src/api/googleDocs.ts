@@ -68,9 +68,11 @@ export function importGoogleDocFile({
     const targetPath = `google-docs/${sanitizeDocTitle(name ?? "untitled")}`;
     const { created } = yield* files.writeAt(targetPath, markdown).pipe(
       Effect.provideService(WorkspaceId, { wsId }),
-      Effect.catchTag("FileTooLargeError", (error) =>
-        Effect.fail(new ApiTooLarge({ message: error.message })),
-      ),
+      Effect.catchTags({
+        FileTooLargeError: (error) => Effect.fail(new ApiTooLarge({ message: error.message })),
+        // the cleaned title always makes a valid name
+        FilePathError: Effect.die,
+      }),
     );
     return { path: targetPath, created };
   });

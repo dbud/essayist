@@ -30,6 +30,7 @@ export {
   FileDraft,
   FileExistsError,
   FileMissingError,
+  FilePathError,
   FileSnapshot,
   FileTooLargeError,
   FileVersion,

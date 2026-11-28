@@ -9,7 +9,7 @@ import { LatestReviewData } from "#/models/marks.data.ts";
 import { ReviewRunsData } from "#/models/reviewRuns.data.ts";
 import { WorkspacesData } from "#/models/workspaces.data.ts";
 
-import { ApiConflict, ApiFailure, ApiTooLarge } from "./errors";
+import { ApiBadRequest, ApiConflict, ApiFailure, ApiTooLarge } from "./errors";
 import { SessionMiddleware } from "./sessionMiddleware";
 
 const WorkspaceRef = Schema.Struct({ wsId: Schema.NonEmptyString });
@@ -102,13 +102,13 @@ const CreateFilePayload = Schema.Struct({
 const createFile = HttpApiEndpoint.post("createFile", "/workspaces/files/create", {
   payload: CreateFilePayload,
   success: FileWriteData,
-  error: [HttpApiError.Forbidden, ApiConflict, ApiTooLarge],
+  error: [HttpApiError.Forbidden, ApiBadRequest, ApiConflict, ApiTooLarge],
 });
 
 const upsertFile = HttpApiEndpoint.put("upsertFile", "/workspaces/files/upsert", {
   payload: WritePayload,
   success: FileWriteData,
-  error: [HttpApiError.Forbidden, ApiTooLarge],
+  error: [HttpApiError.Forbidden, ApiBadRequest, ApiTooLarge],
 });
 
 const ImportPayload = Schema.Struct({

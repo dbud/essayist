@@ -8,6 +8,7 @@ import {
   Category,
   type DraftStaleError,
   type FileExistsError,
+  type FilePathError,
   Files,
   type FileTooLargeError,
   Marks,
@@ -95,6 +96,8 @@ const workspaceHandlers = HttpApiBuilder.group(
     const notFound = () => Effect.fail(new HttpApiError.NotFound());
     const tooLarge = (error: FileTooLargeError) =>
       Effect.fail(new ApiTooLarge({ message: error.message }));
+    const badPath = (error: FilePathError) =>
+      Effect.fail(new ApiBadRequest({ message: error.message }));
     const conflict = (error: DraftStaleError | FileExistsError) =>
       Effect.fail(new ApiConflict({ message: error.message }));
     const unresolved = (error: ConfigMissingError | ConfigInvalidError) =>
@@ -195,7 +198,11 @@ const workspaceHandlers = HttpApiBuilder.group(
           return { ...created, created: true };
         }).pipe(
           Effect.provideService(WorkspaceId, { wsId: req.payload.wsId }),
-          Effect.catchTags({ FileExistsError: conflict, FileTooLargeError: tooLarge }),
+          Effect.catchTags({
+            FileExistsError: conflict,
+            FilePathError: badPath,
+            FileTooLargeError: tooLarge,
+          }),
         ),
       upsertFile: (req) =>
         Effect.gen(function* () {
@@ -205,7 +212,7 @@ const workspaceHandlers = HttpApiBuilder.group(
           return yield* files.writeAt(path, content);
         }).pipe(
           Effect.provideService(WorkspaceId, { wsId: req.payload.wsId }),
-          Effect.catchTag("FileTooLargeError", tooLarge),
+          Effect.catchTags({ FilePathError: badPath, FileTooLargeError: tooLarge }),
         ),
       importGoogleDoc: (req) =>
         Effect.gen(function* () {

@@ -13,6 +13,7 @@ import {
   DraftStaleError,
   FileExistsError,
   FileMissingError,
+  FilePathError,
   FileTooLargeError,
   MAX_DOCUMENT_BYTES,
 } from "./types.ts";
@@ -73,6 +74,21 @@ test("Files -- a taken path cannot be created again", async () => {
       const files = yield* Files;
       yield* files.createAt("essay.md", "one");
       assertInstanceOf(yield* failure(files.createAt("essay.md", "two")), FileExistsError);
+    }),
+  );
+});
+
+test("Files -- a path with an empty, . or .. segment is refused", async () => {
+  await run(() =>
+    Effect.gen(function* () {
+      const files = yield* Files;
+      for (const path of ["", "/essay.md", "notes/", "a//b.md", "./a.md", "notes/../a.md", ".."]) {
+        assertInstanceOf(yield* failure(files.createAt(path, "text")), FilePathError);
+        assertInstanceOf(yield* failure(files.writeAt(path, "text")), FilePathError);
+      }
+      // a dot inside a name is fine
+      yield* files.createAt("notes/.hidden.md", "text");
+      yield* files.writeAt("a..b.md", "text");
     }),
   );
 });

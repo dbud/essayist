@@ -59,6 +59,15 @@ export class FileExistsError extends Schema.TaggedError<FileExistsError>()("File
   }
 }
 
+/** A path with an empty, `.` or `..` segment, which a browser would rewrite in a URL. */
+export class FilePathError extends Schema.TaggedError<FilePathError>()("FilePathError", {
+  path: Schema.String,
+}) {
+  override get message() {
+    return `${this.path} is not a valid file path`;
+  }
+}
+
 /** Content over {@linkcode MAX_DOCUMENT_BYTES}. */
 export class FileTooLargeError extends Schema.TaggedError<FileTooLargeError>()(
   "FileTooLargeError",

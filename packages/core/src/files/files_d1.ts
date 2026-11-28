@@ -19,11 +19,17 @@ import {
   FileDraft,
   FileExistsError,
   FileMissingError,
+  FilePathError,
   FileSnapshot,
   FileTooLargeError,
   FileVersion,
   MAX_DOCUMENT_BYTES,
 } from "./types.ts";
+
+const checkPath = (path: string) =>
+  path.split("/").some((segment) => segment === "" || segment === "." || segment === "..")
+    ? Effect.fail(new FilePathError({ path }))
+    : Effect.void;
 
 const checkSize = (content: string) => {
   const bytes = new TextEncoder().encode(content).length;
@@ -181,6 +187,7 @@ export function layerFilesD1(client: D1Client.D1Client): Layer.Layer<Files> {
 
   const createAt = (path: string, content: string, fileId?: string) =>
     Effect.gen(function* () {
+      yield* checkPath(path);
       yield* checkSize(content);
       const ids = yield* Ids;
       const file = yield* newFile(path, fileId);
@@ -213,6 +220,7 @@ export function layerFilesD1(client: D1Client.D1Client): Layer.Layer<Files> {
 
   const writeAt = (path: string, content: string) =>
     Effect.gen(function* () {
+      yield* checkPath(path);
       yield* checkSize(content);
       const { wsId } = yield* WorkspaceId;
       const ids = yield* Ids;

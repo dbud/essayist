@@ -5,7 +5,7 @@ import { Effect } from "effect";
 import { DEFAULT_REVIEW_PASS_ID } from "#/config/defaults.ts";
 import { ReviewConfig } from "#/config/service.ts";
 import { Files } from "#/files/service.ts";
-import type { FileExistsError, FileTooLargeError } from "#/files/types.ts";
+import type { FileExistsError, FilePathError, FileTooLargeError } from "#/files/types.ts";
 import { Marks } from "#/marks/service.ts";
 import { ReviewRuns } from "#/reviews/service.ts";
 import type { WorkspaceId } from "#/workspace/WorkspaceId.ts";
@@ -93,7 +93,7 @@ What surprises most new writers is how much of the work happens after the draft 
  */
 export function seedDemoFiles(): Effect.Effect<
   void,
-  FileExistsError | FileTooLargeError,
+  FileExistsError | FilePathError | FileTooLargeError,
   Files | Marks | ReviewConfig | ReviewRuns | WorkspaceId
 > {
   return Effect.gen(function* () {
