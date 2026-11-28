@@ -1,5 +1,14 @@
 import { useLucideContext } from "lucide-preact";
 
+// the Lucide provider may give its size as a string; ours is a number of pixels
+const pixels = (size: number | string): number => Number(size);
+
+/** An icon's own size, else the one the Lucide provider sets. */
+function useIconSize(size: number | undefined): number {
+  const context = useLucideContext().size;
+  return size ?? pixels(context ?? 24);
+}
+
 interface ChoiceIconProps {
   size?: number;
   selected?: boolean;
@@ -13,7 +22,7 @@ interface IconProps {
 /** Circle outline with an oversized checkmark; matches the CircleDashed
     outline weight of lucide for pairing in status cells. */
 export function CircleCheckIcon({ size, class: className }: IconProps) {
-  const width = size ?? useLucideContext().size ?? 24;
+  const width = useIconSize(size);
   return (
     <svg
       class={className}
@@ -35,7 +44,7 @@ export function CircleCheckIcon({ size, class: className }: IconProps) {
 
 /** Circle outline; filled disc inside when selected. */
 export function RadioIcon({ selected, size }: ChoiceIconProps) {
-  const width = size ?? useLucideContext().size ?? 24;
+  const width = useIconSize(size);
   return (
     <svg
       width={width}
@@ -61,7 +70,7 @@ interface CountdownRingProps extends IconProps {
 /** Countdown ring: stroke track with an accent arc spanning `fraction` of the circle,
     draining clockwise from 12 o'clock. */
 export function CountdownRingIcon({ fraction, class: className, size }: CountdownRingProps) {
-  const width = size ?? useLucideContext().size ?? 24;
+  const width = useIconSize(size);
   const length = 2 * Math.PI * 10;
   return (
     <svg
@@ -105,7 +114,7 @@ const RING_GAP_DEG = 10;
 /** A ring with a segment per step, clockwise from 12 o'clock. An active segment slowly fills
     toward three quarters while it pulses; a segment that ends fills the rest of the way. */
 export function SegmentedRingIcon({ segments, class: className, size }: SegmentedRingProps) {
-  const width = size ?? useLucideContext().size ?? 24;
+  const width = useIconSize(size);
   const step = 360 / segments.length;
   const length = ((step - RING_GAP_DEG) / 360) * RING_LENGTH;
   return (
@@ -153,7 +162,7 @@ const LINE_HEIGHT = 1.1;
 
 /** Pill track; empty knob at the left end (off), filled at the right (on). */
 export function CheckboxIcon({ selected, size }: ChoiceIconProps) {
-  const width = size ?? useLucideContext().size ?? 24;
+  const width = useIconSize(size);
   return (
     <svg
       class={`swiss-checkbox-icon${selected ? " is-selected" : ""}`}
