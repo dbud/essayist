@@ -1,4 +1,4 @@
-import { ReviewRuns, TraceEvents, WorkspaceId, Workspaces } from "@essayist/core";
+import { Files, ReviewRuns, TraceEvents, WorkspaceId, Workspaces } from "@essayist/core";
 import { Effect } from "effect";
 import { Hono } from "hono";
 
@@ -18,20 +18,26 @@ export default new Hono<{ Bindings: Cloudflare.Env }>().get("/:wsId/:runId", asy
   const found = await rt.runPromise(
     Effect.provideService(
       Effect.gen(function* () {
-        const runs = yield* ReviewRuns;
-        const traces = yield* TraceEvents;
-        return {
-          run: yield* runs.getRun(runId),
-          trace: yield* traces.get(runId),
-        };
+        const run = yield* ReviewRuns.use((runs) => runs.getRun(runId));
+        const { path } = yield* Files.use((files) => files.file(run.fileId));
+        const trace = yield* TraceEvents.use((traces) => traces.get(runId));
+        return { run, path, trace };
       }),
       WorkspaceId,
       { wsId },
-    ).pipe(Effect.catchTag("ReviewRunMissingError", () => Effect.succeed(undefined))),
+    ).pipe(
+      Effect.catchTags({
+        ReviewRunMissingError: () => Effect.succeed(undefined),
+        FileMissingError: () => Effect.succeed(undefined),
+      }),
+    ),
   );
   if (found === undefined) return c.text("Review run not found", 404);
-  const { run, trace } = found;
-  return c.render(<Page run={run} trace={trace} user={encodeUser(user)} />, {
-    title: "review trace",
-  });
+  const { run, path, trace } = found;
+  return c.render(
+    <Page wsId={wsId} path={path} run={run} trace={trace} user={encodeUser(user)} />,
+    {
+      title: "review trace",
+    },
+  );
 });

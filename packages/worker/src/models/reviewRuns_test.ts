@@ -28,17 +28,11 @@ class FakeEventSource {
 
 const run = (fields: Partial<ReviewRunData> = {}): ReviewRunData => ({
   id: "run-1",
-  wsId: "ws",
-  path: "essay.md",
-  reviewPassId: "pass",
+  fileId: "f1",
   versionId: "v1",
+  reviewPassId: "pass",
   status: "running",
-  startedAt: 0,
-  completedAt: null,
-  error: null,
-  summary: null,
-  leaseOwner: null,
-  heartbeatAt: null,
+  startedAt: "2026-01-01T00:00:00.000Z",
   ...fields,
 });
 
@@ -68,11 +62,15 @@ test("follows the running run and exposes its progress", () => {
 });
 
 test("a settled run replaces its running entry and its stream closes", () => {
-  const older = run({ id: "run-0", status: "completed", completedAt: 1 });
+  const older = run({ id: "run-0", status: "completed", completedAt: "2026-01-01T00:00:01.000Z" });
   const model = new ReviewRunsModel("ws", "essay.md", "progress", [run(), older]);
   const source = FakeEventSource.opened[0];
 
-  const settled = run({ status: "completed", completedAt: 5, summary: "All good." });
+  const settled = run({
+    status: "completed",
+    completedAt: "2026-01-01T00:00:05.000Z",
+    summary: "All good.",
+  });
   source.emit("done", settled);
 
   expect(model.active.value).toBeNull();
@@ -90,7 +88,7 @@ test("whenSettled resolves with the run and the marks it placed", async () => {
   const waiting = model.whenSettled("run-1");
 
   source.emit("progress", { units: [], marksPlaced: 4 });
-  const settled = run({ status: "completed", completedAt: 5 });
+  const settled = run({ status: "completed", completedAt: "2026-01-01T00:00:05.000Z" });
   source.emit("done", settled);
 
   expect(await waiting).toEqual({ run: settled, marksPlaced: 4 });
@@ -113,7 +111,7 @@ test("a running run is active on the server, where no stream opens", () => {
 
 test("opens no stream without a running run", () => {
   const model = new ReviewRunsModel("ws", "essay.md", "progress", [
-    run({ status: "completed", completedAt: 1 }),
+    run({ status: "completed", completedAt: "2026-01-01T00:00:01.000Z" }),
   ]);
   expect(FakeEventSource.opened).toEqual([]);
   expect(model.active.value).toBeNull();

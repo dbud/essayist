@@ -1,10 +1,15 @@
-import type { CleanupResult, ReviewProgress } from "@essayist/core";
+import type { ReviewProgress } from "@essayist/core";
 import { computed, createModel, effect, signal } from "@preact/signals";
 
 import createAsyncState from "#/models/utils/asyncState.ts";
 import { deleteJson, getJson, postJson } from "#/models/utils/http.ts";
 
-import type { ReviewRunData, ReviewRunsData, ReviewStreamDetail } from "./reviewRuns.data.ts";
+import type {
+  CleanupData,
+  ReviewRunData,
+  ReviewRunsData,
+  ReviewStreamDetail,
+} from "./reviewRuns.data.ts";
 import { type ReviewRunStream, ReviewRunStreamModel } from "./reviewRunStream.ts";
 
 export interface SettledReview {
@@ -92,19 +97,19 @@ export const ReviewRunsModel = createModel(
     }
 
     // Admin-only development cleanup.
-    async function cleanup(url: string): Promise<CleanupResult> {
-      const result = await deleteJson<CleanupResult>(url);
+    async function cleanup(url: string): Promise<CleanupData> {
+      const result = await deleteJson<CleanupData>(url);
       void load();
       return result;
     }
 
-    function deleteRun(runId: string): Promise<CleanupResult> {
+    function deleteRun(runId: string): Promise<CleanupData> {
       const params = new URLSearchParams({ wsId });
       return cleanup(`/api/admin/review-runs/${encodeURIComponent(runId)}?${params}`);
     }
 
     /** Clear a version, or the whole file without a versionId. */
-    function clear(versionId?: string): Promise<CleanupResult> {
+    function clear(versionId?: string): Promise<CleanupData> {
       const params = new URLSearchParams({ wsId, path });
       if (versionId !== undefined) params.set("versionId", versionId);
       return cleanup(`/api/admin/review-runs?${params}`);

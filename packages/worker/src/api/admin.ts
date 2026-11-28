@@ -5,6 +5,7 @@ import { Schema, Struct } from "effect";
 import { HttpApiEndpoint, HttpApiError, HttpApiGroup, HttpApiSchema } from "effect/http-api";
 
 import { AdminConfigData } from "#/models/admin.data.ts";
+import { CleanupData } from "#/models/reviewRuns.data.ts";
 
 import { ApiBadRequest, ApiConflict } from "./errors";
 import { AdminMiddleware } from "./sessionMiddleware";
@@ -117,13 +118,10 @@ const getPassGraph = HttpApiEndpoint.get("getPassGraph", "/admin/review-passes/:
   error: [HttpApiError.NotFound, ApiBadRequest],
 });
 
-// how many runs were deleted, with their traces and marks
-const CleanupResult = Schema.Struct({ runs: Schema.Number });
-
 const deleteReviewRun = HttpApiEndpoint.delete("deleteReviewRun", "/admin/review-runs/:id", {
   params: IdParam,
   query: Schema.Struct({ wsId: Schema.NonEmptyString }),
-  success: CleanupResult,
+  success: CleanupData,
   error: [HttpApiError.Forbidden, HttpApiError.NotFound, ApiConflict],
 });
 
@@ -134,7 +132,7 @@ const clearReviewRuns = HttpApiEndpoint.delete("clearReviewRuns", "/admin/review
     path: Schema.NonEmptyString,
     versionId: Schema.optional(Schema.NonEmptyString),
   }),
-  success: CleanupResult,
+  success: CleanupData,
   error: [HttpApiError.Forbidden, HttpApiError.NotFound, ApiConflict],
 });
 

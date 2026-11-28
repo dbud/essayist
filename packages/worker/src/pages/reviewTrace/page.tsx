@@ -7,7 +7,7 @@ import {
   type TraceEvent,
   type TraceNodeView,
 } from "@essayist/core";
-import { Option } from "effect";
+import { DateTime, Option } from "effect";
 import {
   AlertTriangle,
   ArrowDown,
@@ -37,13 +37,9 @@ function statusBadge(status: ReviewRunStatus) {
   return <span class={classes}>{status}</span>;
 }
 
-/** Editor URL that opens this run's file. */
-function editorHref(run: ReviewRun): string {
-  const params = new URLSearchParams({
-    wsId: run.wsId,
-    path: run.path,
-  });
-  return `/editor?${params.toString()}`;
+/** Editor URL that opens the file of the run. */
+function editorHref(wsId: string, path: string): string {
+  return `/editor?${new URLSearchParams({ wsId, path }).toString()}`;
 }
 
 function duration(ms: number): string {
@@ -174,7 +170,7 @@ function AttemptRow({ attempt }: { attempt: MarkAttempt }) {
       </div>
       <div class="whitespace-pre-wrap break-words font-serif italic">{attempt.selectedText}</div>
       <div class="whitespace-pre-wrap">{attempt.comment}</div>
-      {attempt.error && <div class="text-[0.75rem] text-error">{attempt.error}</div>}
+      {!attempt.marked && <div class="text-[0.75rem] text-error">{attempt.error}</div>}
     </div>
   );
 }
@@ -188,7 +184,10 @@ function AppliedRow({ attempts }: { attempts: MarkAttempt[] }) {
       </div>
       <div class="col-span-2 min-w-0 flex flex-col swiss-stack">
         {attempts.map((attempt) => (
-          <AttemptRow key={attempt.markId ?? attempt.selectedText} attempt={attempt} />
+          <AttemptRow
+            key={attempt.marked ? attempt.markId : attempt.selectedText}
+            attempt={attempt}
+          />
         ))}
       </div>
     </>
@@ -316,23 +315,28 @@ function groupUnits(nodes: TraceNodeView[]) {
 }
 
 export default function ReviewTracePage({
+  wsId,
+  path,
   run,
   trace,
   user,
 }: {
+  wsId: string;
+  path: string;
   run: ReviewRun;
   trace: TraceEvent[];
   user: UserData;
 }) {
   const view = groupTraceNodes(trace);
-  const completedAt = Option.getOrUndefined(run.completedAt);
+  const startedAt = DateTime.toEpochMillis(run.startedAt);
+  const completedAt = Option.getOrUndefined(Option.map(run.completedAt, DateTime.toEpochMillis));
   const units = groupUnits(view.nodes);
   return (
     <div class="flex flex-1 min-h-0">
       <main class="flex flex-1 flex-col swiss-stack swiss-stack--col min-h-0 @container">
         <Navigation user={user}>
           <div class="flex swiss-stack swiss-stack--row">
-            <a href={editorHref(run)} class="swiss-btn">
+            <a href={editorHref(wsId, path)} class="swiss-btn">
               <MoveLeft size={16} />
             </a>
             <div class="swiss-cell">Review trace</div>
@@ -345,10 +349,10 @@ export default function ReviewTracePage({
                 <div class="swiss-cell shrink-0">
                   <span class="self-start">{statusBadge(run.status)}</span>
                 </div>
-                <div class="swiss-cell min-w-0 flex-1 truncate">{run.path}</div>
+                <div class="swiss-cell min-w-0 flex-1 truncate">{path}</div>
                 <div class="swiss-cell shrink-0">
-                  {new Date(run.startedAt).toLocaleString()}
-                  {completedAt && ` (${duration(completedAt - run.startedAt)})`}
+                  {new Date(startedAt).toLocaleString()}
+                  {completedAt !== undefined && ` (${duration(completedAt - startedAt)})`}
                 </div>
                 <div class="swiss-cell shrink-0">
                   <TokenUsage
