@@ -1,10 +1,10 @@
 // KV management CLI for the Essayist web app, over a D1 database.
 //
-// Usage: pnpm --filter @essayist/kvctl kvctl <command> [args...] [--target <id>]
+// Usage: pnpm --filter @essayist/kvctl kvctl <command> [args...] [--local]
 //
-// The remote target reads CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_D1_DATABASE_ID and CLOUDFLARE_API_TOKEN
-// in .env (loaded via --env-file=../../.env by the kvctl script); --target overrides the database
-// id. --local instead uses the vite dev server's D1 state. Run the script with --help for usage.
+// The deployed database is reached with CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_API_TOKEN from .env
+// (loaded via --env-file=../../.env by the kvctl script); --local instead uses the D1 state of the
+// vite dev server. Run the script with --help for usage.
 
 import { Command } from "@cliffy/command";
 
@@ -22,11 +22,6 @@ import { wipe } from "#/commands/wipe.ts";
 await new Command()
   .name("kvctl")
   .description("KV management CLI for the Essayist web app.")
-  .option(
-    "-t, --target <target:string>",
-    "Override the D1 database id; defaults to CLOUDFLARE_D1_DATABASE_ID from .env.",
-    { global: true },
-  )
   .option("--local", "Use the vite dev server's D1 state instead of the remote database.", {
     global: true,
   })

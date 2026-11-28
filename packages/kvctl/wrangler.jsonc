@@ -1,0 +1,15 @@
+// The D1 binding of this tool: the deployed database, or with --local the dev state of the worker,
+// found by the same database id. The id is the one in packages/worker/wrangler.jsonc.
+{
+  "$schema": "../worker/node_modules/wrangler/config-schema.json",
+  "name": "essayist-dbctl",
+  "compatibility_date": "2026-10-06",
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_id": "553b3689-f25b-4848-a1f4-98da845f6caf",
+      "database_name": "essayist-db",
+      "remote": true,
+    },
+  ],
+}
