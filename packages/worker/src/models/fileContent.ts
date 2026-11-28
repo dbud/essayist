@@ -5,26 +5,20 @@ import createAsyncState from "#/models/utils/asyncState.ts";
 import { getJson, postJson, putJson } from "#/models/utils/http.ts";
 import { editorStateToMarkdown, markdownToEditorState } from "#/utils/markdown.ts";
 
-import type {
-  FileContentData,
-  FileDraftData,
-  FileSnapshotData,
-  FileWriteData,
-} from "./fileContent.data.ts";
-import type { FileKey, VersionKey } from "./fileSelection.ts";
+import type { FileContentData, FileDraftData, FileSnapshotData } from "./fileContent.data.ts";
+import type { VersionKey } from "./fileSelection.ts";
+import type { FileTree } from "./fileTree.ts";
 import type { FileVersionData } from "./fileVersions.data.ts";
 
 export const PENDING_VERSION_ID = "pending";
 
-/** Create a new file with its first content; the file tree owns new files. */
-export type CreateFile = (
-  key: FileKey,
-  content: string,
-  options?: { readonly keepalive?: boolean },
-) => Promise<FileWriteData>;
-
 export const FileContentModel = createModel(
-  ({ wsId, fileId, versionId }: VersionKey, create: CreateFile, data?: FileContentData) => {
+  (
+    { wsId, fileId, versionId }: VersionKey,
+    // the tree of the file, which creates a new file on its first save
+    tree: Pick<FileTree, "create">,
+    data?: FileContentData,
+  ) => {
     const version = signal<FileSnapshotData | null>(data?.version ?? null);
     const draft = signal<FileDraftData | null>(data?.draft ?? null);
     // a file started here and not created yet; its first save creates it
@@ -73,7 +67,7 @@ export const FileContentModel = createModel(
       if (pending.value) {
         if (content === "") return;
         await runSave(async () => {
-          const created = await create({ wsId, fileId }, content, options);
+          const created = await tree.create(fileId, content, options);
           version.value = { ...created.version, content };
         });
         return;

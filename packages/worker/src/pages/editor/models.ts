@@ -18,11 +18,7 @@ export default function createModels(data: EditorData, user: UserData | undefine
   const workspaces = new WorkspacesModel(data.workspaces);
   const fileTrees = new FileTreesModel(workspaces.selectedId, data.fileTrees);
   const selected = createFileSelection(workspaces, fileTrees);
-  const fileContents = new FileContentsModel(
-    selected,
-    ({ wsId, fileId }, content, options) => fileTrees.get(wsId).create(fileId, content, options),
-    data.fileView?.content,
-  );
+  const fileContents = new FileContentsModel(selected, fileTrees, data.fileView?.content);
   const fileVersions = new FileVersionsByKeyModel(selected, data.fileView?.versions);
   const streamDetail = user?.role === "admin" ? "trace" : "progress";
   const reviewRuns = new ReviewRunsByKeyModel(selected, streamDetail, data.reviewRuns ?? undefined);
