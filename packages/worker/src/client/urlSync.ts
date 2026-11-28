@@ -3,6 +3,12 @@ import { batch, effect, type ReadonlySignal } from "@preact/signals";
 export type QueryValue = string | null | undefined;
 export type QueryRecord = Record<string, QueryValue>;
 
+/** The part of the URL the app owns: the path when given, and the keys of the query record. */
+export interface UrlState {
+  readonly path?: string;
+  readonly query: QueryRecord;
+}
+
 export interface UrlTarget {
   get href(): string;
   push(url: string): void;
@@ -26,10 +32,11 @@ export function urlTarget(host: Window = window): UrlTarget {
 
 const browserTarget = urlTarget();
 
-function compose(href: string, record: QueryRecord): string {
+function compose(href: string, { path, query }: UrlState): string {
   const url = new URL(href);
+  if (path !== undefined) url.pathname = path;
   const params = new URLSearchParams(url.search);
-  for (const [key, value] of Object.entries(record)) {
+  for (const [key, value] of Object.entries(query)) {
     if (value === null || value === undefined || value === "") {
       params.delete(key);
     } else {
@@ -41,14 +48,14 @@ function compose(href: string, record: QueryRecord): string {
 }
 
 /**
- * Keeps the record and the url query synchronized: record changes push a history entry (the very
- * first divergence replaces, covering an SSR-boot correction); pops hand the parsed query back to
- * onPop, which decides how it lands in the domain. Returns a teardown. Browser only; construct it
- * from the client boot.
+ * Keeps the state and the URL synchronized: state changes push a history entry (the very first
+ * divergence replaces, covering an SSR-boot correction); pops hand the URL back to onPop, which
+ * decides how it lands in the domain. Returns a teardown. Browser only; construct it from the
+ * client boot.
  */
-export function setupUrlQuerySync(
-  record: ReadonlySignal<QueryRecord>,
-  onPop: (params: URLSearchParams) => void,
+export function setupUrlSync(
+  state: ReadonlySignal<UrlState>,
+  onPop: (url: URL) => void,
   target: UrlTarget = browserTarget,
 ): () => void {
   let first = true;
@@ -57,15 +64,15 @@ export function setupUrlQuerySync(
     const replace = first;
     first = false;
     const current = target.href;
-    const next = compose(current, record.value);
+    const next = compose(current, state.value);
     if (next === current) return;
     if (replace) target.replace(next);
     else target.push(next);
   });
 
   const disposePop = target.onPop(() => {
-    const params = new URLSearchParams(new URL(target.href).search);
-    batch(() => onPop(params));
+    const url = new URL(target.href);
+    batch(() => onPop(url));
   });
 
   return () => {

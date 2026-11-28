@@ -1,7 +1,7 @@
 import { computed } from "@preact/signals";
 
 import { boot } from "#/client/boot.tsx";
-import { setupUrlQuerySync } from "#/client/urlQuery.ts";
+import { setupUrlSync } from "#/client/urlSync.ts";
 import { workspaceIdOf, workspaceParam } from "#/models/workspaceParam.ts";
 import type { EditorData } from "#/pages/editor/data.ts";
 import createModels, { EditorModelsProvider } from "#/pages/editor/models.ts";
@@ -18,7 +18,7 @@ void boot<EditorData>(({ data, preferences, state }) => {
 
   // the URL names the workspace by its name and the start of its id, the file by its path, and the
   // version by its seq, left out for the latest
-  setupUrlQuerySync(
+  setupUrlSync(
     computed(() => {
       const selection = selected.value;
       const workspace = workspaces.current.value;
@@ -26,12 +26,14 @@ void boot<EditorData>(({ data, preferences, state }) => {
       const version = versions?.byId(selection?.versionId ?? null) ?? null;
       const latest = versions?.versions.value.at(-1) ?? null;
       return {
-        ws: workspace === undefined ? null : workspaceParam(workspace.id, workspace.name),
-        path: fileTrees.current.value?.pathOf(selection?.fileId ?? null) ?? null,
-        version: version && version.id !== latest?.id ? String(version.seq) : null,
+        query: {
+          ws: workspace === undefined ? null : workspaceParam(workspace.id, workspace.name),
+          path: fileTrees.current.value?.pathOf(selection?.fileId ?? null) ?? null,
+          version: version && version.id !== latest?.id ? String(version.seq) : null,
+        },
       };
     }),
-    (params) => {
+    ({ searchParams: params }) => {
       const ids = workspaces.list.peek().map(({ workspace }) => workspace.id);
       const wsId = workspaceIdOf(params.get("ws"), ids);
       if (wsId !== null) workspaces.select(wsId);
