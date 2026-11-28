@@ -59,7 +59,7 @@ export default function MarksSection() {
   const { selected, resolvedMarks, categories } = useEditorModels();
   const selection = selected.value;
   const shown = resolvedMarks.resolved.value;
-  if (selection === null || selection.path === null || shown.length === 0) return null;
+  if (selection === null || selection.fileId === null || shown.length === 0) return null;
   const markIds = getEditorSelection(selection).markIds.value;
   const editor = activeEditor.value;
 

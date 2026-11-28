@@ -10,7 +10,7 @@ import {
   type Spacer,
 } from "#/geometry/layout.ts";
 import type { Categories } from "#/models/categories.ts";
-import { FileKey } from "#/models/fileSelection.ts";
+import type { VersionKey } from "#/models/fileSelection.ts";
 import type { Mark, ResolvedMarks } from "#/models/resolvedMarks.ts";
 import { getEditorSelection } from "#/signals/editorSelection.ts";
 
@@ -76,10 +76,10 @@ interface SidenotesDeps {
 /**
  * Sidenote presentation for a file. The editor extension writes the measured mark data, the
  * badges, and the rects; the Sidenotes column writes the heights; everything else derives here.
- * Per (workspace, path, version) so each file and view keeps its own measured state. `entries` only
+ * Per (workspace, file, version) so each file and view keeps its own measured state. `entries` only
  * includes measured marks.
  */
-export const SidenotesModel = createModel((key: FileKey, deps: SidenotesDeps) => {
+export const SidenotesModel = createModel((key: VersionKey, deps: SidenotesDeps) => {
   const { resolvedMarks, categories, scrollTop, viewportHeight } = deps;
   const measuredMarks = signal<MeasuredMarks>({ blocks: [] });
   const heights = signal<SidenoteHeights>(new Map());

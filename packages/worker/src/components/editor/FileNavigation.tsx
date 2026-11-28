@@ -24,16 +24,17 @@ interface FileEntry {
   parts: PathPart[];
   name: string;
   path: string;
+  fileId: string;
   selected: boolean;
 }
 
-function buildFileEntries(nodes: TreeNode[], selectedPath: string | null): FileEntry[] {
+function buildFileEntries(nodes: TreeNode[], selectedFileId: string | null): FileEntry[] {
   const result: FileEntry[] = [];
   let prevSegments: string[] = [];
 
   function walk(subtree: TreeNode[], segments: string[]) {
-    for (const { name, path, isFile, children } of subtree) {
-      if (isFile) {
+    for (const { name, path, fileId, children } of subtree) {
+      if (fileId !== null) {
         const parts: PathPart[] = segments.map((segment, i) => ({
           segment,
           redundant: prevSegments.length > i && prevSegments[i] === segment,
@@ -43,7 +44,8 @@ function buildFileEntries(nodes: TreeNode[], selectedPath: string | null): FileE
           parts,
           name,
           path,
-          selected: path === selectedPath,
+          fileId,
+          selected: fileId === selectedFileId,
         });
       } else {
         walk(children, [...segments, name]);
@@ -77,9 +79,10 @@ export default function FileNavigation({ open }: FileNavigationProps) {
 
   const { workspaces, fileTrees, selected } = useEditorModels();
   const files = fileTrees.current.value;
-  const selectedPath = selected.value?.path ?? null;
+  const selectedFileId = selected.value?.fileId ?? null;
+  const selectedPath = files?.pathOf(selectedFileId) ?? null;
   const selectedWorkspace = workspaces.current.value?.name ?? null;
-  const fileEntries = buildFileEntries(files?.tree.value.children ?? [], selectedPath);
+  const fileEntries = buildFileEntries(files?.tree.value.children ?? [], selectedFileId);
   const showNav =
     open.value &&
     !creatingFile.value &&
@@ -152,13 +155,13 @@ export default function FileNavigation({ open }: FileNavigationProps) {
       {fileEntries.length > 0 && (
         <div class="menu menu--wrap">
           <ul class="menu-rows" data-stagger>
-            {fileEntries.map(({ path, parts, selected: fileSelected, name: fileName }) => (
-              <li key={path} class="flex gap-2">
+            {fileEntries.map(({ path, fileId, parts, selected: fileSelected, name: fileName }) => (
+              <li key={fileId} class="flex gap-2">
                 <button
                   type="button"
                   class={`menu-btn group ${fileSelected ? "is-selected" : ""}`}
                   onClick={() => {
-                    files?.select(path);
+                    files?.select(fileId);
                     close();
                   }}
                 >

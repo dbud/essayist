@@ -11,13 +11,17 @@ import type {
   FileSnapshotData,
   FileWriteData,
 } from "./fileContent.data.ts";
-import type { FileKey } from "./fileSelection.ts";
+import type { VersionKey } from "./fileSelection.ts";
 import type { FileVersionData } from "./fileVersions.data.ts";
 
 export const PENDING_VERSION_ID = "pending";
 
 export const FileContentModel = createModel(
-  ({ wsId, path, versionId }: FileKey, data?: FileContentData) => {
+  (
+    { wsId, fileId, versionId }: VersionKey,
+    pathOf: (fileId: string) => string | null,
+    data?: FileContentData,
+  ) => {
     const version = signal<FileSnapshotData | null>(data?.version ?? null);
     const draft = signal<FileDraftData | null>(data?.draft ?? null);
     // a file started here and not created yet; its first save creates it
@@ -46,7 +50,7 @@ export const FileContentModel = createModel(
     const [runLoad, { loading, error }] = createAsyncState();
 
     async function load(): Promise<void> {
-      const params = new URLSearchParams({ wsId, path, versionId });
+      const params = new URLSearchParams({ wsId, fileId, versionId });
       const fresh = await runLoad(async () =>
         getJson<FileContentData>(`/api/workspaces/files/content?${params}`),
       );
@@ -66,12 +70,13 @@ export const FileContentModel = createModel(
       const content = markdown.value;
       if (!dirty.value) return;
       if (pending.value) {
-        if (content === "") return;
+        const path = pathOf(fileId);
+        if (content === "" || path === null) return;
         return await runSave(async () => {
           const res = await requestJson<FileWriteData>(
             "POST",
             "/api/workspaces/files/create",
-            { wsId, path, content },
+            { wsId, fileId, path, content },
             options,
           );
           if (!res.ok || res.data === undefined) {
@@ -90,7 +95,7 @@ export const FileContentModel = createModel(
       const result = await runSave(async () =>
         putJson<FileDraftData>(
           "/api/workspaces/files/draft",
-          { wsId, path, baseVersionId: base.id, content },
+          { wsId, fileId, baseVersionId: base.id, content },
           options,
         ),
       );
@@ -111,7 +116,7 @@ export const FileContentModel = createModel(
         }
         const res = await postJson<FileVersionData>("/api/workspaces/files/promote", {
           wsId,
-          path,
+          fileId,
         });
         version.value = { ...res, content: markdown.value };
         draft.value = null;

@@ -1,12 +1,12 @@
 import { computed, createModel, type ReadonlySignal, signal } from "@preact/signals";
 
-import { FileKey, type FileSelection } from "#/models/fileSelection.ts";
+import { type FileSelection, VersionKey } from "#/models/fileSelection.ts";
 import { type Sidenotes, SidenotesModel } from "#/models/sidenotes.ts";
 
 import type { Categories } from "./categories.ts";
 import type { ResolvedMarks } from "./resolvedMarks.ts";
 
-export const SidenotesByPathModel = createModel(
+export const SidenotesByKeyModel = createModel(
   (
     selected: ReadonlySignal<FileSelection | null>,
     resolvedMarks: ResolvedMarks,
@@ -20,7 +20,7 @@ export const SidenotesByPathModel = createModel(
     // Inert stand-in while no file is selected: no editor exists to measure, so its positions stay
     // empty and nothing writes to it.
     const inert = new SidenotesModel(
-      { wsId: "", path: "", versionId: "" },
+      { wsId: "", fileId: "", versionId: "" },
       {
         resolvedMarks,
         categories,
@@ -31,9 +31,9 @@ export const SidenotesByPathModel = createModel(
 
     const current = computed((): Sidenotes => {
       const selection = selected.value;
-      if (selection === null || selection.path === null) return inert;
+      if (selection === null || selection.fileId === null) return inert;
       return sidenotes.value.getOrInsertComputed(
-        FileKey.cacheKey(selection),
+        VersionKey.cacheKey(selection),
         () =>
           new SidenotesModel(selection, { resolvedMarks, categories, scrollTop, viewportHeight }),
       );
@@ -43,4 +43,4 @@ export const SidenotesByPathModel = createModel(
   },
 );
 
-export type SidenotesByPath = InstanceType<typeof SidenotesByPathModel>;
+export type SidenotesByKey = InstanceType<typeof SidenotesByKeyModel>;

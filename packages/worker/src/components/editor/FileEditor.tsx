@@ -19,7 +19,7 @@ import { useAutoSave } from "#/hooks/useAutoSave.ts";
 import { useKeydown } from "#/hooks/useKeydown.ts";
 import { useSaveFile } from "#/hooks/useSaveFile.ts";
 import { useScrollViewport, type ScrollContainerRef } from "#/hooks/useScrollViewport.ts";
-import type { FileKey } from "#/models/fileSelection.ts";
+import type { VersionKey } from "#/models/fileSelection.ts";
 import { useEditorModels } from "#/pages/editor/models.ts";
 import { getEditorSelection } from "#/signals/editorSelection.ts";
 
@@ -31,7 +31,8 @@ export default function FileEditor() {
   const scrollRef = useScrollViewport(sidenotes.scrollTop, sidenotes.viewportHeight);
   const navigationOpen = useSignal(false);
 
-  const selection = selected.value !== null && selected.value.path !== null ? selected.value : null;
+  const selection =
+    selected.value !== null && selected.value.fileId !== null ? selected.value : null;
   const file =
     fileContents.current.value !== null && !fileContents.current.value.error.value
       ? fileContents.current.value
@@ -42,7 +43,7 @@ export default function FileEditor() {
       <div class="relative flex-1 min-h-0 overflow-y-auto bg-paper striped/2" ref={scrollRef}>
         {selection !== null && (
           <FileSurface
-            key={`${selection.path}:${selection.versionId}`}
+            key={`${selection.fileId}:${selection.versionId}`}
             scrollContainerRef={scrollRef}
             {...selection}
           />
@@ -56,7 +57,7 @@ export default function FileEditor() {
       >
         <div class="content-main flex justify-end pb-4">
           {selection !== null && file !== null && (
-            <FileStats key={`${selection.path}:${selection.versionId}`} />
+            <FileStats key={`${selection.fileId}:${selection.versionId}`} />
           )}
         </div>
       </div>
@@ -91,14 +92,14 @@ export default function FileEditor() {
 
 function FileSurface({
   wsId,
-  path,
+  fileId,
   versionId,
   scrollContainerRef,
-}: FileKey & { scrollContainerRef: ScrollContainerRef }) {
+}: VersionKey & { scrollContainerRef: ScrollContainerRef }) {
   const { fileContents, resolvedMarks, sidenotes, writable } = useEditorModels();
   const file = fileContents.current.value;
   const save = useSaveFile(file);
-  const selection = getEditorSelection({ wsId, path, versionId });
+  const selection = getEditorSelection({ wsId, fileId, versionId });
   const { markFragmentRects, markFragmentBadges, colorById } = sidenotes.current.value;
 
   useKeydown((e) => {
@@ -138,7 +139,7 @@ function FileSurface({
           <>
             <Editor
               wsId={wsId}
-              path={path}
+              fileId={fileId}
               versionId={versionId}
               initialState={file.state.value}
               onChange={file.setModifiedState}
@@ -162,7 +163,7 @@ function FileSurface({
       <div class="content-side">
         <Sidenotes scrollContainerRef={scrollContainerRef} />
       </div>
-      <EditorToolbar wsId={wsId} path={path} versionId={versionId} disabled={!writable.value} />
+      <EditorToolbar wsId={wsId} fileId={fileId} versionId={versionId} disabled={!writable.value} />
     </div>
   );
 }

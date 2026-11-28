@@ -3,18 +3,18 @@ import { createModel, signal } from "@preact/signals";
 import createAsyncState from "#/models/utils/asyncState.ts";
 import { getJson } from "#/models/utils/http.ts";
 
-import type { FileKey } from "./fileSelection.ts";
+import type { VersionKey } from "./fileSelection.ts";
 import type { LatestReviewData } from "./marks.data.ts";
 
 /** The review a version of a file shows, with its marks; null before the first review. */
 export const FileReviewModel = createModel(
-  ({ wsId, path, versionId }: FileKey, data?: LatestReviewData) => {
+  ({ wsId, fileId, versionId }: VersionKey, data?: LatestReviewData) => {
     const latest = signal<LatestReviewData>(data ?? null);
 
     const [runLoad, { loading, error }] = createAsyncState();
 
     async function load(): Promise<void> {
-      const params = new URLSearchParams({ wsId, path, versionId });
+      const params = new URLSearchParams({ wsId, fileId, versionId });
       const fresh = await runLoad(async () =>
         getJson<LatestReviewData>(`/api/workspaces/files/review?${params}`),
       );

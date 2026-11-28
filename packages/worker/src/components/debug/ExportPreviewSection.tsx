@@ -9,7 +9,7 @@ import { useEditorModels } from "#/pages/editor/models.ts";
 export default function ExportPreviewSection() {
   const { fileContents, selected } = useEditorModels();
   const selection = selected.value;
-  if (selection === null || selection.path === null) return null;
+  if (selection === null || selection.fileId === null) return null;
   const file = fileContents.current.value;
   if (file === null) return null;
   return (

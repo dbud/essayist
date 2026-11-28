@@ -2,11 +2,11 @@ import type { ReviewProgress } from "@essayist/core";
 import { signal } from "@preact/signals";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 
-import { FileReviewByPathModel } from "./fileReviewByPath.ts";
+import { FileReviewByKeyModel } from "./fileReviewByKey.ts";
 import type { FileSelection } from "./fileSelection.ts";
 import type { ReviewRunData } from "./reviewRuns.data.ts";
 
-const selection: FileSelection = { wsId: "ws", path: "essay.md", versionId: "v1" };
+const selection: FileSelection = { wsId: "ws", fileId: "f1", versionId: "v1" };
 
 const run = (fields: Partial<ReviewRunData> = {}): ReviewRunData => ({
   id: "run-1",
@@ -36,7 +36,7 @@ afterEach(() => {
 function setup() {
   const active = signal<{ run: ReviewRunData; progress: ReviewProgress | null } | null>(null);
   const reviewRuns = signal({ active });
-  const model = new FileReviewByPathModel(signal(selection), reviewRuns, null);
+  const model = new FileReviewByKeyModel(signal(selection), reviewRuns, null);
   // reading current rebuilds a dropped review, as the editor does through resolved marks
   const reloads = () => {
     void model.current.value;

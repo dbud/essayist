@@ -2,27 +2,31 @@ import { computed, createModel, effect, type ReadonlySignal, signal } from "@pre
 
 import type { FileContentData } from "./fileContent.data.ts";
 import { type FileContent, FileContentModel, PENDING_VERSION_ID } from "./fileContent.ts";
-import { FileKey, type FileSelection } from "./fileSelection.ts";
+import { type FileSelection, VersionKey } from "./fileSelection.ts";
 
 export const FileContentsModel = createModel(
-  (selected: ReadonlySignal<FileSelection | null>, data?: FileContentData) => {
+  (
+    selected: ReadonlySignal<FileSelection | null>,
+    pathOf: (fileId: string) => string | null,
+    data?: FileContentData,
+  ) => {
     const files = signal(new Map<string, FileContent>());
 
     {
       const selection = selected.value;
-      if (data !== undefined && selection !== null && selection.path !== null) {
+      if (data !== undefined && selection !== null && selection.fileId !== null) {
         files.value = new Map([
-          [FileKey.cacheKey(selection), new FileContentModel(selection, data)],
+          [VersionKey.cacheKey(selection), new FileContentModel(selection, pathOf, data)],
         ]);
       }
     }
 
     const current = computed(() => {
       const selection = selected.value;
-      if (selection === null || selection.path === null) return null;
+      if (selection === null || selection.fileId === null) return null;
       return files.value.getOrInsertComputed(
-        FileKey.cacheKey(selection),
-        () => new FileContentModel(selection),
+        VersionKey.cacheKey(selection),
+        () => new FileContentModel(selection, pathOf),
       );
     });
 
@@ -34,14 +38,13 @@ export const FileContentsModel = createModel(
         const selection = selected.value;
         if (
           selection === null ||
-          selection.path === null ||
+          selection.fileId === null ||
           selection.versionId === PENDING_VERSION_ID
         ) {
           return;
         }
-        const pending = files
-          .peek()
-          .get(FileKey.cacheKey({ ...selection, versionId: PENDING_VERSION_ID }));
+        const pendingKey = VersionKey.cacheKey({ ...selection, versionId: PENDING_VERSION_ID });
+        const pending = files.peek().get(pendingKey);
         if (pending === undefined) return;
         const model = current.value;
         if (model === null) return;
@@ -49,7 +52,7 @@ export const FileContentsModel = createModel(
         if (editorState !== null) {
           model.setModifiedState(editorState);
         }
-        files.peek().delete(FileKey.cacheKey({ ...selection, versionId: PENDING_VERSION_ID }));
+        files.peek().delete(pendingKey);
       });
     }
 

@@ -50,7 +50,7 @@ afterEach(() => {
 });
 
 test("follows the running run and exposes its progress", () => {
-  const model = new ReviewRunsModel("ws", "essay.md", "progress", [run()]);
+  const model = new ReviewRunsModel({ wsId: "ws", fileId: "f1" }, "progress", [run()]);
   expect(FakeEventSource.opened.map((source) => source.url)).toEqual([
     "/api/streams/review-runs/ws/run-1",
   ]);
@@ -63,7 +63,7 @@ test("follows the running run and exposes its progress", () => {
 
 test("a settled run replaces its running entry and its stream closes", () => {
   const older = run({ id: "run-0", status: "completed", completedAt: "2026-01-01T00:00:01.000Z" });
-  const model = new ReviewRunsModel("ws", "essay.md", "progress", [run(), older]);
+  const model = new ReviewRunsModel({ wsId: "ws", fileId: "f1" }, "progress", [run(), older]);
   const source = FakeEventSource.opened[0];
 
   const settled = run({
@@ -83,7 +83,7 @@ test("a settled run replaces its running entry and its stream closes", () => {
 });
 
 test("whenSettled resolves with the run and the marks it placed", async () => {
-  const model = new ReviewRunsModel("ws", "essay.md", "progress", [run()]);
+  const model = new ReviewRunsModel({ wsId: "ws", fileId: "f1" }, "progress", [run()]);
   const source = FakeEventSource.opened[0];
   const waiting = model.whenSettled("run-1");
 
@@ -97,20 +97,20 @@ test("whenSettled resolves with the run and the marks it placed", async () => {
 });
 
 test("asks for the trace stream with the trace detail", () => {
-  const model = new ReviewRunsModel("ws", "essay.md", "trace", [run()]);
+  const model = new ReviewRunsModel({ wsId: "ws", fileId: "f1" }, "trace", [run()]);
   expect(model.active.value?.run.id).toBe("run-1");
   expect(FakeEventSource.opened[0].url).toBe("/api/streams/review-runs/ws/run-1?detail=trace");
 });
 
 test("a running run is active on the server, where no stream opens", () => {
   vi.stubEnv("SSR", true);
-  const model = new ReviewRunsModel("ws", "essay.md", "progress", [run()]);
+  const model = new ReviewRunsModel({ wsId: "ws", fileId: "f1" }, "progress", [run()]);
   expect(FakeEventSource.opened).toEqual([]);
   expect(model.active.value).toEqual({ run: run(), progress: null });
 });
 
 test("opens no stream without a running run", () => {
-  const model = new ReviewRunsModel("ws", "essay.md", "progress", [
+  const model = new ReviewRunsModel({ wsId: "ws", fileId: "f1" }, "progress", [
     run({ status: "completed", completedAt: "2026-01-01T00:00:01.000Z" }),
   ]);
   expect(FakeEventSource.opened).toEqual([]);

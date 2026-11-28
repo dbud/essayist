@@ -1,7 +1,7 @@
 import { createModel, signal } from "@preact/signals";
 
 import type { BlockType } from "#/editor/blockFormat.ts";
-import { FileKey } from "#/models/fileSelection.ts";
+import { VersionKey } from "#/models/fileSelection.ts";
 
 export interface CaretRect {
   left: number;
@@ -13,10 +13,10 @@ export interface CaretRect {
 /**
  * Per-file editor-selection state, written by the editor extensions (`ToolbarStateExtension`
  * for block/format flags, `MarksAtCursorExtension` for mark ids) and read by toolbar/sidebar
- * components. Cached per (workspace, path, version) so the same path in different workspaces and
- * views keeps separate toolbar state.
+ * components. Cached per (workspace, file, version) so each file and view keeps separate toolbar
+ * state.
  */
-export const EditorSelectionModel = createModel((_key: FileKey) => {
+export const EditorSelectionModel = createModel((_key: VersionKey) => {
   const block = signal<BlockType>("normal");
   const bold = signal(false);
   const italic = signal(false);
@@ -48,12 +48,12 @@ export type EditorSelection = InstanceType<typeof EditorSelectionModel>;
 /** Sink used as the default config for extensions when no model is injected. */
 export const defaultEditorSelection: EditorSelection = new EditorSelectionModel({
   wsId: "",
-  path: "",
+  fileId: "",
   versionId: "",
 });
 
 const cache = new Map<string, EditorSelection>();
 
-export function getEditorSelection(key: FileKey): EditorSelection {
-  return cache.getOrInsertComputed(FileKey.cacheKey(key), () => new EditorSelectionModel(key));
+export function getEditorSelection(key: VersionKey): EditorSelection {
+  return cache.getOrInsertComputed(VersionKey.cacheKey(key), () => new EditorSelectionModel(key));
 }

@@ -1,24 +1,23 @@
 import { computed, createModel, type ReadonlySignal, signal } from "@preact/signals";
 
 import { PENDING_VERSION_ID } from "./fileContent.ts";
-import type { FileSelection } from "./fileSelection.ts";
+import { FileKey, type FileSelection } from "./fileSelection.ts";
 import type { ReviewRunsData, ReviewStreamDetail } from "./reviewRuns.data.ts";
 import { type ReviewRuns, ReviewRunsModel } from "./reviewRuns.ts";
 
-export const ReviewRunsByPathModel = createModel(
+export const ReviewRunsByKeyModel = createModel(
   (
     selected: ReadonlySignal<FileSelection | null>,
     detail: ReviewStreamDetail,
     data?: ReviewRunsData | null,
   ) => {
-    const models = signal(new Map<string, Map<string, ReviewRuns>>());
+    const models = signal(new Map<string, ReviewRuns>());
 
     {
       const selection = selected.value;
-      if (data != null && selection?.path) {
-        const { wsId, path } = selection;
+      if (data != null && selection !== null && selection.fileId !== null) {
         models.value = new Map([
-          [wsId, new Map([[path, new ReviewRunsModel(wsId, path, detail, data)]])],
+          [FileKey.cacheKey(selection), new ReviewRunsModel(selection, detail, data)],
         ]);
       }
     }
@@ -27,19 +26,19 @@ export const ReviewRunsByPathModel = createModel(
       const selection = selected.value;
       if (
         selection === null ||
-        selection.path === null ||
+        selection.fileId === null ||
         selection.versionId === PENDING_VERSION_ID
       ) {
         return null;
       }
-      const { wsId, path } = selection;
-      return models.value
-        .getOrInsertComputed(wsId, () => new Map())
-        .getOrInsertComputed(path, () => new ReviewRunsModel(wsId, path, detail));
+      return models.value.getOrInsertComputed(
+        FileKey.cacheKey(selection),
+        () => new ReviewRunsModel(selection, detail),
+      );
     });
 
     return { current };
   },
 );
 
-export type ReviewRunsByPath = InstanceType<typeof ReviewRunsByPathModel>;
+export type ReviewRunsByKey = InstanceType<typeof ReviewRunsByKeyModel>;

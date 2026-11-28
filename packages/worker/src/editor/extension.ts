@@ -36,7 +36,7 @@ interface EditorDeps {
 }
 
 export function createEditorExtension(
-  path: string,
+  fileId: string,
   {
     resolved,
     markdown,
@@ -71,7 +71,7 @@ export function createEditorExtension(
       HorizontalRuleExtension,
       PastePolicyExtension,
       configExtension(MarksExtension, {
-        path,
+        fileId,
         resolved,
         markdown,
       }),

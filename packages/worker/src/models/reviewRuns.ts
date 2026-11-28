@@ -4,6 +4,7 @@ import { computed, createModel, effect, signal } from "@preact/signals";
 import createAsyncState from "#/models/utils/asyncState.ts";
 import { deleteJson, getJson, postJson } from "#/models/utils/http.ts";
 
+import type { FileKey } from "./fileSelection.ts";
 import type {
   CleanupData,
   ReviewRunData,
@@ -18,7 +19,7 @@ export interface SettledReview {
 }
 
 export const ReviewRunsModel = createModel(
-  (wsId: string, path: string, detail: ReviewStreamDetail, data?: ReviewRunsData) => {
+  ({ wsId, fileId }: FileKey, detail: ReviewStreamDetail, data?: ReviewRunsData) => {
     const runs = signal<readonly ReviewRunData[]>(data ?? []);
 
     const [runLoad, { loading: historyLoading, error: historyError }] = createAsyncState();
@@ -68,7 +69,7 @@ export const ReviewRunsModel = createModel(
     }
 
     async function load(): Promise<void> {
-      const params = new URLSearchParams({ wsId, path });
+      const params = new URLSearchParams({ wsId, fileId });
       const fresh = await runLoad(async () =>
         getJson<ReviewRunsData>(`/api/workspaces/review-runs?${params}`),
       );
@@ -87,7 +88,7 @@ export const ReviewRunsModel = createModel(
 
     async function submit(): Promise<ReviewRunData | undefined> {
       const result = await runSubmit(async () =>
-        postJson<ReviewRunData>("/api/workspaces/files/review", { wsId, path }),
+        postJson<ReviewRunData>("/api/workspaces/files/review", { wsId, fileId }),
       );
       if (result !== undefined) {
         follow(result);
@@ -110,7 +111,7 @@ export const ReviewRunsModel = createModel(
 
     /** Clear a version, or the whole file without a versionId. */
     function clear(versionId?: string): Promise<CleanupData> {
-      const params = new URLSearchParams({ wsId, path });
+      const params = new URLSearchParams({ wsId, fileId });
       if (versionId !== undefined) params.set("versionId", versionId);
       return cleanup(`/api/admin/review-runs?${params}`);
     }

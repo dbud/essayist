@@ -20,7 +20,7 @@ import { MarksAtCursorExtension } from "./marksAtCursorExtension.ts";
 
 const selection: EditorSelection = new EditorSelectionModel({
   wsId: "",
-  path: "",
+  fileId: "",
   versionId: "",
 });
 

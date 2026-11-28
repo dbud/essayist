@@ -3,28 +3,30 @@ import { computed, type ReadonlySignal } from "@preact/signals";
 import type { FileTrees } from "./fileTrees.ts";
 import type { Workspaces } from "./workspaces.ts";
 
-/**
- * A file open at a concrete version: the key for every per-view model, signal cache and component
- * props. Per-view caches use the string form.
- */
+/** A file of a workspace: the key of the per-file models, such as its versions and runs. */
 export interface FileKey {
   wsId: string;
-  path: string;
-  versionId: string;
+  fileId: string;
 }
 
 export namespace FileKey {
-  export function cacheKey(key: FileKey): string {
-    return `${key.wsId}:${key.path}:${key.versionId}`;
-  }
-
-  /** Shared by every version of a file. */
-  export function fileCacheKey(key: Pick<FileKey, "wsId" | "path">): string {
-    return `${key.wsId}:${key.path}`;
+  export function cacheKey({ wsId, fileId }: FileKey): string {
+    return `${wsId}:${fileId}`;
   }
 }
 
-export type FileSelection = { wsId: string; path: null; versionId: null } | FileKey;
+/** A file open at a concrete version: the key of the per-view models, such as its content. */
+export interface VersionKey extends FileKey {
+  versionId: string;
+}
+
+export namespace VersionKey {
+  export function cacheKey({ wsId, fileId, versionId }: VersionKey): string {
+    return `${wsId}:${fileId}:${versionId}`;
+  }
+}
+
+export type FileSelection = { wsId: string; fileId: null; versionId: null } | VersionKey;
 
 export function createFileSelection(
   workspaces: Workspaces,
@@ -34,11 +36,11 @@ export function createFileSelection(
     const wsId = workspaces.selectedId.value;
     const fileTree = fileTrees.current.value;
     if (wsId === null || fileTree === null) return null;
-    const path = fileTree.selectedPath.value;
+    const fileId = fileTree.selectedFileId.value;
     const versionId = fileTree.selectedVersionId.value;
-    if (path === null || versionId === null) {
-      return { wsId, path: null, versionId: null };
+    if (fileId === null || versionId === null) {
+      return { wsId, fileId: null, versionId: null };
     }
-    return { wsId, path, versionId };
+    return { wsId, fileId, versionId };
   });
 }

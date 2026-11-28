@@ -12,13 +12,13 @@ import ActiveEditorRef from "#/components/editor/ActiveEditorRef.tsx";
 import { createEditorExtension } from "#/editor/extension.ts";
 import { MARK_RANGE_TAG } from "#/editor/markExtension.ts";
 import { withDOM } from "#/editor/withDOM.ts";
-import type { FileKey } from "#/models/fileSelection.ts";
+import type { VersionKey } from "#/models/fileSelection.ts";
 import { usePreferences } from "#/models/preferences.ts";
 import { useEditorModels } from "#/pages/editor/models.ts";
 import { activeEditor } from "#/signals/activeEditor.ts";
 import { getEditorSelection } from "#/signals/editorSelection.ts";
 
-interface EditorProps extends FileKey {
+interface EditorProps extends VersionKey {
   initialState: EditorState;
   onChange?: (state: EditorState) => void;
   className?: string;
@@ -26,7 +26,7 @@ interface EditorProps extends FileKey {
 
 export default function Editor({
   wsId,
-  path,
+  fileId,
   versionId,
   initialState,
   onChange,
@@ -37,14 +37,14 @@ export default function Editor({
   const file = fileContents.current.value;
   assertExists(file, "Editor mounts only with a file");
   const markdown = file.markdown;
-  const selection = getEditorSelection({ wsId, path, versionId });
+  const selection = getEditorSelection({ wsId, fileId, versionId });
   const resolved = resolvedMarks.resolved;
   const { measuredMarks, margins, markOrdinals, markFragmentBadges, markFragmentRects } =
     sidenotes.current.value;
 
   const extension = useMemo(
     () => ({
-      ...createEditorExtension(path, {
+      ...createEditorExtension(fileId, {
         resolved,
         markdown,
         selection,
@@ -59,7 +59,7 @@ export default function Editor({
       $initialEditorState: initialState,
     }),
     [
-      path,
+      fileId,
       versionId,
       measuredMarks,
       margins,

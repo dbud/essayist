@@ -2,7 +2,7 @@ import { type ResolvedMark, resolveMarks } from "@essayist/core";
 import { computed, type ReadonlySignal } from "@preact/signals";
 
 import type { FileContents } from "./fileContents.ts";
-import type { FileReviewByPath } from "./fileReviewByPath.ts";
+import type { FileReviewByKey } from "./fileReviewByKey.ts";
 import type { MarkData } from "./marks.data.ts";
 import { asyncComputed } from "./utils/asyncComputed.ts";
 import { deepComputed } from "./utils/deepComputed.ts";
@@ -34,7 +34,7 @@ const asResolved = (marks: readonly MarkData[]): readonly Mark[] =>
 
 export function createResolvedMarks(
   fileContents: FileContents,
-  reviews: FileReviewByPath,
+  reviews: FileReviewByKey,
 ): ResolvedMarks {
   const view = computed<View>((): View => {
     const file = fileContents.current.value;

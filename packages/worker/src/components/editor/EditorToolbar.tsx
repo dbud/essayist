@@ -12,7 +12,7 @@ import { useLayoutEffect } from "preact/hooks";
 import BlockTypeSelect from "#/components/BlockTypeSelect.tsx";
 import Melt from "#/components/ui/Melt.tsx";
 import { $setBlocksType, type BlockType } from "#/editor/blockFormat.ts";
-import type { FileKey } from "#/models/fileSelection.ts";
+import type { VersionKey } from "#/models/fileSelection.ts";
 import { type ToolbarDisplay, ToolbarModel } from "#/models/toolbarModel.ts";
 import { activeEditor } from "#/signals/activeEditor.ts";
 import { getEditorSelection } from "#/signals/editorSelection.ts";
@@ -34,13 +34,13 @@ const INLINE_BUTTONS: InlineButton[] = [
 
 const CARET_GAP_PX = 6;
 
-interface EditorToolbarProps extends FileKey {
+interface EditorToolbarProps extends VersionKey {
   disabled?: boolean;
 }
 
-export default function EditorToolbar({ wsId, path, versionId, disabled }: EditorToolbarProps) {
+export default function EditorToolbar({ wsId, fileId, versionId, disabled }: EditorToolbarProps) {
   const editor = activeEditor.value;
-  const sel = getEditorSelection({ wsId, path, versionId });
+  const sel = getEditorSelection({ wsId, fileId, versionId });
   const toolbar = useModel(() => new ToolbarModel(sel));
   const current = toolbar.display.value;
   const held = useSignal<ToolbarDisplay | null>(null);

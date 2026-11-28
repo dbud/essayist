@@ -2,11 +2,11 @@ import { computed, type ReadonlySignal } from "@preact/signals";
 
 import { PENDING_VERSION_ID } from "./fileContent.ts";
 import type { FileSelection } from "./fileSelection.ts";
-import type { FileVersionsByPath } from "./fileVersionsByPath.ts";
+import type { FileVersionsByKey } from "./fileVersionsByKey.ts";
 
 export function createFileWritability(
   selected: ReadonlySignal<FileSelection | null>,
-  fileVersions: FileVersionsByPath,
+  fileVersions: FileVersionsByKey,
 ): ReadonlySignal<boolean> {
   return computed(() => {
     const selection = selected.value;

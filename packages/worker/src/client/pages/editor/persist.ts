@@ -7,7 +7,7 @@ import { patchJson } from "#/models/utils/http.ts";
 
 let timer: ReturnType<typeof setTimeout> | undefined;
 let pendingWsId: string | null = null;
-let pendingPath: { wsId: string; path: string } | null = null;
+let pendingFile: { wsId: string; fileId: string } | null = null;
 let lastWsId: string | null = null;
 
 const DEBOUNCE_MS = 500;
@@ -17,9 +17,9 @@ function flush(keepalive: boolean): void {
     patchJson("/api/workspaces", { wsId: pendingWsId }, { keepalive }).catch(() => {});
     pendingWsId = null;
   }
-  if (pendingPath) {
-    patchJson("/api/workspaces/files", pendingPath, { keepalive }).catch(() => {});
-    pendingPath = null;
+  if (pendingFile) {
+    patchJson("/api/workspaces/files", pendingFile, { keepalive }).catch(() => {});
+    pendingFile = null;
   }
 }
 
@@ -37,8 +37,8 @@ export function setupSelectionPersist(selected: ReadonlySignal<FileSelection | n
       lastWsId = selection.wsId;
       pendingWsId = selection.wsId;
     }
-    if (selection.path !== null) {
-      pendingPath = { wsId: selection.wsId, path: selection.path };
+    if (selection.fileId !== null) {
+      pendingFile = { wsId: selection.wsId, fileId: selection.fileId };
     }
     schedule();
   });

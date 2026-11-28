@@ -69,7 +69,7 @@ export default function ReviewHistorySection() {
   const { selected, reviewRuns, reviews } = useEditorModels();
   const review = reviewRuns.current.value;
   const selection = selected.value;
-  if (review === null || selection === null || selection.path === null) return null;
+  if (review === null || selection === null || selection.fileId === null) return null;
   const { runs, historyLoading } = review;
   const isAdmin = user?.role === "admin";
   if (historyLoading.value || (runs.value.length === 0 && !isAdmin)) return null;

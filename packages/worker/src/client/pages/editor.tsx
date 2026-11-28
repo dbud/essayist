@@ -15,16 +15,18 @@ void boot<EditorData>(({ data, preferences, state }) => {
   setupSelectionPersist(selected);
   setupUnloadGuard(fileContents, preferences.autoSave);
 
+  // the URL names the file by its path, which the tree turns into the id
   setupUrlQuerySync(
     computed(() => ({
       wsId: selected.value?.wsId ?? null,
-      path: selected.value?.path ?? null,
+      path: fileTrees.current.value?.pathOf(selected.value?.fileId ?? null) ?? null,
       versionId: selected.value?.versionId ?? null,
     })),
     (params) => {
       const wsId = params.get("wsId");
       if (wsId) workspaces.select(wsId);
-      fileTrees.current.value?.select(params.get("path"), params.get("versionId"));
+      const tree = fileTrees.current.value;
+      tree?.select(tree.fileIdAt(params.get("path")), params.get("versionId"));
     },
   );
 

@@ -33,7 +33,7 @@ export const MARK_RANGE_TAG = "mark-range";
 export const SELECT_MARK_COMMAND: LexicalCommand<string> = createCommand();
 
 export interface MarksExtensionConfig {
-  path: string;
+  fileId: string;
   resolved: ReadonlySignal<readonly Mark[]>;
   markdown: Signal<string>;
 }
@@ -45,7 +45,7 @@ export const MarksExtension = defineExtension({
   // synchronous, so register() would run it against an empty tree.
   afterRegistration: (
     editor: LexicalEditor,
-    { path, resolved, markdown }: MarksExtensionConfig,
+    { fileId, resolved, markdown }: MarksExtensionConfig,
   ) => {
     const [nodeKeys, disposeTrackNodeKeys] = trackNodeKeys(editor, MarkNode);
 
@@ -81,7 +81,7 @@ export const MarksExtension = defineExtension({
       ),
 
       effect(() => {
-        if (!path) return;
+        if (!fileId) return;
         const marks = resolved.value;
         // Skip only when there's nothing to do: no marks to wrap and no existing MarkNodes to
         // unwrap.

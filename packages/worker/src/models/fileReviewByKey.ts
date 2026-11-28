@@ -6,7 +6,7 @@ import { FileKey, type FileSelection } from "./fileSelection.ts";
 import type { LatestReviewData } from "./marks.data.ts";
 import type { ReviewRuns } from "./reviewRuns.ts";
 
-export const FileReviewByPathModel = createModel(
+export const FileReviewByKeyModel = createModel(
   (
     selected: ReadonlySignal<FileSelection | null>,
     reviewRuns: ReadonlySignal<Pick<ReviewRuns, "active"> | null>,
@@ -17,10 +17,10 @@ export const FileReviewByPathModel = createModel(
 
     {
       const selection = selected.value;
-      if (data !== undefined && selection !== null && selection.path !== null) {
+      if (data !== undefined && selection !== null && selection.fileId !== null) {
         reviews.value = new Map([
           [
-            FileKey.fileCacheKey(selection),
+            FileKey.cacheKey(selection),
             new Map([[selection.versionId, new FileReviewModel(selection, data)]]),
           ],
         ]);
@@ -31,20 +31,20 @@ export const FileReviewByPathModel = createModel(
       const selection = selected.value;
       if (
         selection === null ||
-        selection.path === null ||
+        selection.fileId === null ||
         selection.versionId === PENDING_VERSION_ID
       ) {
         return null;
       }
       return reviews.value
-        .getOrInsertComputed(FileKey.fileCacheKey(selection), () => new Map())
+        .getOrInsertComputed(FileKey.cacheKey(selection), () => new Map())
         .getOrInsertComputed(selection.versionId, () => new FileReviewModel(selection));
     });
 
     /** Drop the cached reviews of every version of a file; the displayed version reloads. */
-    function invalidate(file: Pick<FileKey, "wsId" | "path">): void {
+    function invalidate(file: FileKey): void {
       const next = new Map(reviews.peek());
-      next.delete(FileKey.fileCacheKey(file));
+      next.delete(FileKey.cacheKey(file));
       reviews.value = next;
     }
 
@@ -55,7 +55,7 @@ export const FileReviewByPathModel = createModel(
     const marksPlaced = computed(() => reviewRuns.value?.active.value?.progress?.marksPlaced ?? 0);
     const reloadSelected = () => {
       const selection = selected.peek();
-      if (selection !== null && selection.path !== null) invalidate(selection);
+      if (selection !== null && selection.fileId !== null) invalidate(selection);
     };
     effect(() => {
       if (marksPlaced.value > 0) reloadSelected();
@@ -65,4 +65,4 @@ export const FileReviewByPathModel = createModel(
   },
 );
 
-export type FileReviewByPath = InstanceType<typeof FileReviewByPathModel>;
+export type FileReviewByKey = InstanceType<typeof FileReviewByKeyModel>;
