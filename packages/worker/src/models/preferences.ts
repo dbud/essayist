@@ -1,4 +1,4 @@
-import { computed, effect, type Signal, signal } from "@preact/signals";
+import { computed, effect, type ReadonlySignal, type Signal, signal } from "@preact/signals";
 
 import { createModelContext } from "#/models/utils/context.ts";
 import { readPreferencesCookie, writePreferencesCookie } from "#/utils/preferencesCookie.ts";
@@ -98,7 +98,7 @@ function readValues(raw: Record<string, unknown>): PreferenceValues {
 export interface Preferences {
   readonly debugSidebarOpened: Signal<boolean>;
   readonly themeOverride: Signal<Theme | null>;
-  readonly theme: Signal<Theme>;
+  readonly theme: ReadonlySignal<Theme>;
   readonly viewerFont: Signal<string>;
   readonly sansFont: Signal<SansFont>;
   readonly serifFont: Signal<SerifFont>;

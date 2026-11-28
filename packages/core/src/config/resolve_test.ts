@@ -8,7 +8,7 @@ import { testLayerD1 } from "#/d1/testing.ts";
 
 import { ConfigInvalidError, resolveActiveReviewPass } from "./resolve.ts";
 import { ReviewConfig } from "./service.ts";
-import { ConfigMissingError, type ResolvedReviewPass } from "./types.ts";
+import { ConfigMissingError, ModelPool, Prompt, type ResolvedReviewPass } from "./types.ts";
 
 /** Run a resolution against a seeded or empty ephemeral store; returns the
  * program's exit for failure assertions. */
@@ -43,40 +43,56 @@ const FREE_MODELS = ["poolside/laguna-s-2.1:free", "nvidia/nemotron-3.5-lightnin
 
 function seedFullConfig(config: ReviewConfig["Service"]) {
   return Effect.gen(function* () {
-    yield* config.saveModelPool({
-      id: "free-pool",
-      name: "Free pool",
-      models: FREE_MODELS,
-    });
-    yield* config.saveModelPool({
-      id: "strong-pool",
-      name: "Strong pool",
-      models: ["openai/gpt-5.2"],
-    });
-    yield* config.savePrompt({
-      key: "system.reviewer",
-      body: "You are {{role}}.",
-    });
-    yield* config.savePrompt({
-      key: "directive.analyze",
-      body: "Describe the piece as {{role}} would read it.",
-    });
-    yield* config.savePrompt({
-      key: "directive.mechanics",
-      body: "Scan for grammar faults.",
-    });
-    yield* config.savePrompt({
-      key: "directive.argument",
-      body: "Find where a skeptical reader resists.",
-    });
-    yield* config.savePrompt({
-      key: "directive.synthesize",
-      body: "Summarize the marks for the writer.",
-    });
-    yield* config.savePrompt({
-      key: "instructions.marks",
-      body: "Quote exact spans with {{file}} context.",
-    });
+    yield* config.saveModelPool(
+      new ModelPool({
+        id: "free-pool",
+        name: "Free pool",
+        models: FREE_MODELS,
+      }),
+    );
+    yield* config.saveModelPool(
+      new ModelPool({
+        id: "strong-pool",
+        name: "Strong pool",
+        models: ["openai/gpt-5.2"],
+      }),
+    );
+    yield* config.savePrompt(
+      new Prompt({
+        key: "system.reviewer",
+        body: "You are {{role}}.",
+      }),
+    );
+    yield* config.savePrompt(
+      new Prompt({
+        key: "directive.analyze",
+        body: "Describe the piece as {{role}} would read it.",
+      }),
+    );
+    yield* config.savePrompt(
+      new Prompt({
+        key: "directive.mechanics",
+        body: "Scan for grammar faults.",
+      }),
+    );
+    yield* config.savePrompt(
+      new Prompt({
+        key: "directive.argument",
+        body: "Find where a skeptical reader resists.",
+      }),
+    );
+    yield* config.savePrompt(
+      new Prompt({
+        key: "directive.synthesize",
+        body: "Summarize the marks for the writer.",
+      }),
+    );
+    yield* config.savePrompt(
+      new Prompt({
+        key: "instructions.marks",
+        body: "Quote exact spans with {{file}} context.",
+      }),
+    );
     yield* config.saveCategory(
       category({
         id: "thesis",
@@ -205,7 +221,7 @@ test("resolveActiveReviewPass -- fails on a missing unit pool", async () => {
   const program = Effect.gen(function* () {
     const outcome = yield* run((config) =>
       Effect.gen(function* () {
-        yield* config.savePrompt({ key: "sys", body: "hi" });
+        yield* config.savePrompt(new Prompt({ key: "sys", body: "hi" }));
         yield* config.saveCategory(category({ id: "c", label: "c", description: "d" }));
         yield* config.saveReviewPass(
           reviewPass({
@@ -234,8 +250,8 @@ test("resolveActiveReviewPass -- fails on an empty unit pool", async () => {
   const program = Effect.gen(function* () {
     const outcome = yield* run((config) =>
       Effect.gen(function* () {
-        yield* config.saveModelPool({ id: "empty", name: "Empty", models: [] });
-        yield* config.savePrompt({ key: "sys", body: "hi" });
+        yield* config.saveModelPool(new ModelPool({ id: "empty", name: "Empty", models: [] }));
+        yield* config.savePrompt(new Prompt({ key: "sys", body: "hi" }));
         yield* config.saveCategory(category({ id: "c", label: "c", description: "d" }));
         yield* config.saveReviewPass(
           reviewPass({
@@ -264,12 +280,14 @@ test("resolveActiveReviewPass -- fails on a missing unit prompt", async () => {
   const program = Effect.gen(function* () {
     const outcome = yield* run((config) =>
       Effect.gen(function* () {
-        yield* config.saveModelPool({
-          id: "pool",
-          name: "Pool",
-          models: ["m/ref"],
-        });
-        yield* config.savePrompt({ key: "sys", body: "hi" });
+        yield* config.saveModelPool(
+          new ModelPool({
+            id: "pool",
+            name: "Pool",
+            models: ["m/ref"],
+          }),
+        );
+        yield* config.savePrompt(new Prompt({ key: "sys", body: "hi" }));
         yield* config.saveCategory(category({ id: "c", label: "c", description: "d" }));
         yield* config.saveReviewPass(
           reviewPass({
@@ -298,11 +316,13 @@ test("resolveActiveReviewPass -- fails on a missing pass system prompt", async (
   const program = Effect.gen(function* () {
     const outcome = yield* run((config) =>
       Effect.gen(function* () {
-        yield* config.saveModelPool({
-          id: "pool",
-          name: "Pool",
-          models: ["m/ref"],
-        });
+        yield* config.saveModelPool(
+          new ModelPool({
+            id: "pool",
+            name: "Pool",
+            models: ["m/ref"],
+          }),
+        );
         yield* config.saveCategory(category({ id: "c", label: "c", description: "d" }));
         yield* config.saveReviewPass(
           reviewPass({
@@ -331,12 +351,14 @@ test("resolveActiveReviewPass -- fails on missing referenced categories", async 
   const program = Effect.gen(function* () {
     const outcome = yield* run((config) =>
       Effect.gen(function* () {
-        yield* config.saveModelPool({
-          id: "pool",
-          name: "Pool",
-          models: ["m/ref"],
-        });
-        yield* config.savePrompt({ key: "sys", body: "hi" });
+        yield* config.saveModelPool(
+          new ModelPool({
+            id: "pool",
+            name: "Pool",
+            models: ["m/ref"],
+          }),
+        );
+        yield* config.savePrompt(new Prompt({ key: "sys", body: "hi" }));
         yield* config.saveReviewPass(
           reviewPass({
             id: "r",
@@ -368,12 +390,14 @@ test("resolveActiveReviewPass -- fails on attempt units without categories", asy
   const program = Effect.gen(function* () {
     const outcome = yield* run((config) =>
       Effect.gen(function* () {
-        yield* config.saveModelPool({
-          id: "pool",
-          name: "Pool",
-          models: ["m/ref"],
-        });
-        yield* config.savePrompt({ key: "sys", body: "hi" });
+        yield* config.saveModelPool(
+          new ModelPool({
+            id: "pool",
+            name: "Pool",
+            models: ["m/ref"],
+          }),
+        );
+        yield* config.savePrompt(new Prompt({ key: "sys", body: "hi" }));
         yield* config.saveReviewPass(
           reviewPass({
             id: "r",
@@ -405,12 +429,14 @@ test("resolveActiveReviewPass -- fails on duplicate unit ids", async () => {
   const program = Effect.gen(function* () {
     const outcome = yield* run((config) =>
       Effect.gen(function* () {
-        yield* config.saveModelPool({
-          id: "pool",
-          name: "Pool",
-          models: ["m/ref"],
-        });
-        yield* config.savePrompt({ key: "sys", body: "hi" });
+        yield* config.saveModelPool(
+          new ModelPool({
+            id: "pool",
+            name: "Pool",
+            models: ["m/ref"],
+          }),
+        );
+        yield* config.savePrompt(new Prompt({ key: "sys", body: "hi" }));
         yield* config.saveCategory(category({ id: "c", label: "c", description: "d" }));
         yield* config.saveReviewPass(
           reviewPass({
@@ -444,12 +470,14 @@ test("resolveActiveReviewPass -- fails on dotted unit ids", async () => {
   const program = Effect.gen(function* () {
     const outcome = yield* run((config) =>
       Effect.gen(function* () {
-        yield* config.saveModelPool({
-          id: "pool",
-          name: "Pool",
-          models: ["m/ref"],
-        });
-        yield* config.savePrompt({ key: "sys", body: "hi" });
+        yield* config.saveModelPool(
+          new ModelPool({
+            id: "pool",
+            name: "Pool",
+            models: ["m/ref"],
+          }),
+        );
+        yield* config.savePrompt(new Prompt({ key: "sys", body: "hi" }));
         yield* config.saveReviewPass(
           reviewPass({
             id: "r",
@@ -471,12 +499,14 @@ test("resolveActiveReviewPass -- fails on forward unit inputs", async () => {
   const program = Effect.gen(function* () {
     const outcome = yield* run((config) =>
       Effect.gen(function* () {
-        yield* config.saveModelPool({
-          id: "pool",
-          name: "Pool",
-          models: ["m/ref"],
-        });
-        yield* config.savePrompt({ key: "sys", body: "hi" });
+        yield* config.saveModelPool(
+          new ModelPool({
+            id: "pool",
+            name: "Pool",
+            models: ["m/ref"],
+          }),
+        );
+        yield* config.savePrompt(new Prompt({ key: "sys", body: "hi" }));
         yield* config.saveReviewPass(
           reviewPass({
             id: "r",
@@ -501,12 +531,14 @@ test("resolveActiveReviewPass -- fails on unknown unit inputs", async () => {
   const program = Effect.gen(function* () {
     const outcome = yield* run((config) =>
       Effect.gen(function* () {
-        yield* config.saveModelPool({
-          id: "pool",
-          name: "Pool",
-          models: ["m/ref"],
-        });
-        yield* config.savePrompt({ key: "sys", body: "hi" });
+        yield* config.saveModelPool(
+          new ModelPool({
+            id: "pool",
+            name: "Pool",
+            models: ["m/ref"],
+          }),
+        );
+        yield* config.savePrompt(new Prompt({ key: "sys", body: "hi" }));
         yield* config.saveReviewPass(
           reviewPass({
             id: "r",
@@ -528,12 +560,14 @@ test("resolveActiveReviewPass -- fails on attempt and summary together", async (
   const program = Effect.gen(function* () {
     const outcome = yield* run((config) =>
       Effect.gen(function* () {
-        yield* config.saveModelPool({
-          id: "pool",
-          name: "Pool",
-          models: ["m/ref"],
-        });
-        yield* config.savePrompt({ key: "sys", body: "hi" });
+        yield* config.saveModelPool(
+          new ModelPool({
+            id: "pool",
+            name: "Pool",
+            models: ["m/ref"],
+          }),
+        );
+        yield* config.savePrompt(new Prompt({ key: "sys", body: "hi" }));
         yield* config.saveCategory(category({ id: "c", label: "c", description: "d" }));
         yield* config.saveReviewPass(
           reviewPass({

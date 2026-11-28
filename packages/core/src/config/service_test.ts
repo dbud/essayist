@@ -9,7 +9,7 @@ import { reviewedFile, runInWorkspace } from "#/reviews/testing.ts";
 import { layerReviewConfigD1 } from "./config_d1.ts";
 import { ReviewConfig } from "./service.ts";
 import { category, reviewPass } from "./testing.ts";
-import { ConfigMissingError } from "./types.ts";
+import { ConfigMissingError, ModelPool, Prompt } from "./types.ts";
 
 const run = <A, E>(program: Effect.Effect<A, E, ReviewConfig>) =>
   Effect.runPromise(Effect.provide(program, testLayerD1(layerReviewConfigD1)));
@@ -32,8 +32,8 @@ test("ReviewConfig -- saves, reads back, replaces and deletes each kind", async 
   await run(
     Effect.gen(function* () {
       const config = yield* ReviewConfig;
-      yield* config.saveModelPool({ id: "p", name: "P", models: ["m/a", "m/b"] });
-      yield* config.savePrompt({ key: "k", body: "Hello {{name}}" });
+      yield* config.saveModelPool(new ModelPool({ id: "p", name: "P", models: ["m/a", "m/b"] }));
+      yield* config.savePrompt(new Prompt({ key: "k", body: "Hello {{name}}" }));
       yield* config.saveCategory(category({ id: "c", label: "C", color: "teal" }));
       yield* config.saveReviewPass(pass("r", "Pass", { name: "Ada" }));
 

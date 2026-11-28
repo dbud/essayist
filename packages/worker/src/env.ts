@@ -73,7 +73,9 @@ let cached: WorkerEnv | undefined;
 export function env(bindings: Cloudflare.Env): WorkerEnv {
   if (cached !== undefined) return cached;
 
-  const db = bindings.DB;
+  // the generated binding types and @cloudflare/workers-types each declare D1Database
+  // oxlint-disable-next-line typescript/no-unsafe-class-instance-assignment
+  const db: D1Database | undefined = bindings.DB;
   assert(db !== undefined, "the D1 binding DB is missing");
 
   const runDriver = bindings.RUN_DRIVER;

@@ -1,4 +1,4 @@
-import { extractVariables, type Prompt } from "@essayist/core";
+import { extractVariables } from "@essayist/core";
 import type { Signal } from "@preact/signals";
 import { useState } from "preact/hooks";
 
@@ -6,9 +6,10 @@ import { List } from "#/components/admin/ui/EntityRows.tsx";
 import { FormShell } from "#/components/admin/ui/forms/FormShell.tsx";
 import { TextareaRow } from "#/components/admin/ui/forms/TextareaRow.tsx";
 import { TextRow } from "#/components/admin/ui/forms/TextRow.tsx";
+import type { PromptData } from "#/models/admin.data.ts";
 import { useAdminModels } from "#/pages/admin/models.ts";
 
-export function PromptForm({ entity, open }: { entity?: Prompt; open: Signal<boolean> }) {
+export function PromptForm({ entity, open }: { entity?: PromptData; open: Signal<boolean> }) {
   const { admin } = useAdminModels();
   const [key, setKey] = useState(entity?.key ?? "");
   const [body, setBody] = useState(entity?.body ?? "");
@@ -19,7 +20,7 @@ export function PromptForm({ entity, open }: { entity?: Prompt; open: Signal<boo
     e.preventDefault();
     if (!key.trim()) return setError("Key is required.");
     if (!body.trim()) return setError("Body is required.");
-    const data: Prompt = {
+    const data: PromptData = {
       key: entity?.key ?? key.trim(),
       body,
     };

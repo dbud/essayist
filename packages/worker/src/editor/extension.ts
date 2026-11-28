@@ -24,7 +24,7 @@ import { ToolbarStateExtension } from "./toolbarStateExtension.ts";
 
 interface EditorDeps {
   resolved: ReadonlySignal<readonly Mark[]>;
-  markdown: Signal<string>;
+  markdown: ReadonlySignal<string>;
   selection: EditorSelection;
   measuredMarks: Signal<MeasuredMarks>;
   margins: ReadonlySignal<ReadonlyMap<NodeKey, Spacer>>;

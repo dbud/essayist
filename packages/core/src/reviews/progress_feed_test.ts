@@ -4,6 +4,7 @@ import { test } from "vitest";
 
 import { ReviewConfig } from "#/config/service.ts";
 import { reviewPass } from "#/config/testing.ts";
+import { ModelPool, Prompt } from "#/config/types.ts";
 
 import { loadProgressFeed } from "./progress_feed.ts";
 import { reviewedFile, runInWorkspace } from "./testing.ts";
@@ -31,9 +32,9 @@ test("loadProgressFeed -- folds the stored trace over the units of its pass", as
   await runInWorkspace(() =>
     Effect.gen(function* () {
       const config = yield* ReviewConfig;
-      yield* config.saveModelPool({ id: "pool", name: "Pool", models: ["m/a"] });
-      yield* config.savePrompt({ key: "system", body: "You are an editor." });
-      yield* config.savePrompt({ key: "analyze", body: "Read it." });
+      yield* config.saveModelPool(new ModelPool({ id: "pool", name: "Pool", models: ["m/a"] }));
+      yield* config.savePrompt(new Prompt({ key: "system", body: "You are an editor." }));
+      yield* config.savePrompt(new Prompt({ key: "analyze", body: "Read it." }));
       yield* config.saveReviewPass(
         reviewPass({
           id: "essay-review",

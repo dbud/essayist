@@ -6,7 +6,7 @@ import {
   $wrapSelectionInMarkNode,
   MarkNode,
 } from "@lexical/mark";
-import { effect, type ReadonlySignal, type Signal, untracked } from "@preact/signals";
+import { effect, type ReadonlySignal, untracked } from "@preact/signals";
 import { assert } from "@std/assert/assert";
 import {
   $getNodeByKey,
@@ -35,7 +35,7 @@ export const SELECT_MARK_COMMAND: LexicalCommand<string> = createCommand();
 export interface MarksExtensionConfig {
   fileId: string;
   resolved: ReadonlySignal<readonly Mark[]>;
-  markdown: Signal<string>;
+  markdown: ReadonlySignal<string>;
 }
 
 export const MarksExtension = defineExtension({

@@ -2,7 +2,7 @@ import { assertEquals } from "@std/assert";
 import { Effect, Layer } from "effect";
 import { test } from "vitest";
 
-import type { ResolvedReviewUnit } from "#/config/types.ts";
+import { ModelPool, type ResolvedReviewUnit } from "#/config/types.ts";
 import type { CoreServices } from "#/d1/layer.ts";
 import type { PassWhenSpec } from "#/flow/helpers.ts";
 import { FlowRunner } from "#/flow/runner.ts";
@@ -32,7 +32,7 @@ function unitPayload(id: string, directive: string): ResolvedReviewUnit {
       instructions: "",
       categories: "",
     },
-    pool: { id: "pool", name: "Pool", models: ["m/a"] },
+    pool: new ModelPool({ id: "pool", name: "Pool", models: ["m/a"] }),
     inputs: [],
   };
 }
