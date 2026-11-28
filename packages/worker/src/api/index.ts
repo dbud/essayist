@@ -101,10 +101,10 @@ const workspaceHandlers = HttpApiBuilder.group(
       Effect.fail(new ApiFailure({ message: error.message }));
 
     return handlers.handleAll({
-      getWorkspaces: (req) =>
+      getWorkspaces: () =>
         Effect.gen(function* () {
           const { user } = yield* UserSession;
-          return yield* workspacesLoader(user.id, req.query.wsId).pipe(Effect.provide(stores));
+          return yield* workspacesLoader(user.id).pipe(Effect.provide(stores));
         }),
       selectWorkspace: (req) =>
         Effect.gen(function* () {

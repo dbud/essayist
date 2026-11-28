@@ -25,6 +25,7 @@ import type { ComponentChildren } from "preact";
 
 import Navigation from "#/components/admin/Navigation.tsx";
 import MarkdownView from "#/components/MarkdownView.tsx";
+import { workspaceParam } from "#/models/workspaceParam.ts";
 import type { UserData } from "#/state.ts";
 
 function statusBadge(status: ReviewRunStatus) {
@@ -39,7 +40,7 @@ function statusBadge(status: ReviewRunStatus) {
 
 /** Editor URL that opens the file of the run. */
 function editorHref(wsId: string, path: string): string {
-  return `/editor?${new URLSearchParams({ ws: wsId, path }).toString()}`;
+  return `/editor?${new URLSearchParams({ ws: workspaceParam(wsId), path }).toString()}`;
 }
 
 function duration(ms: number): string {

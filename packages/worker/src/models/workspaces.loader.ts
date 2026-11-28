@@ -1,20 +1,22 @@
 import { UserState, Workspaces } from "@essayist/core";
 import { Effect, Option } from "effect";
 
+import { workspaceIdOf } from "./workspaceParam.ts";
 import type { WorkspacesData } from "./workspaces.data.ts";
 
+/** The workspaces of a user, with the one the URL names selected, else the one opened last. */
 export function workspacesLoader(
   userId: string,
-  wsIntent: string | undefined,
+  wsParam?: string,
 ): Effect.Effect<typeof WorkspacesData.Type, never, Workspaces | UserState> {
   return Effect.gen(function* () {
     const workspaces = yield* Workspaces.use((store) => store.listWorkspacesForUser(userId));
-    const persistedWs = yield* UserState.use((store) => store.getSelectedWorkspace(userId));
+    const ids = workspaces.map(({ workspace }) => workspace.id);
+    const persisted = yield* UserState.use((store) => store.getSelectedWorkspace(userId));
     const selectedId =
-      workspaces.find(({ workspace }) => workspace.id === wsIntent)?.workspace.id ??
-      workspaces.find(({ workspace }) => workspace.id === Option.getOrUndefined(persistedWs))
-        ?.workspace.id ??
-      workspaces[0]?.workspace.id ??
+      workspaceIdOf(wsParam, ids) ??
+      ids.find((id) => Option.contains(persisted, id)) ??
+      ids[0] ??
       null;
     return { workspaces, selectedId };
   });

@@ -12,7 +12,6 @@ import { WorkspacesData } from "#/models/workspaces.data.ts";
 import { ApiConflict, ApiFailure, ApiTooLarge } from "./errors";
 import { SessionMiddleware } from "./sessionMiddleware";
 
-const ListQuery = Schema.Struct({ wsId: Schema.optional(Schema.String) });
 const WorkspaceRef = Schema.Struct({ wsId: Schema.NonEmptyString });
 
 const FileRef = Schema.Struct({
@@ -21,7 +20,6 @@ const FileRef = Schema.Struct({
 });
 
 const getWorkspaces = HttpApiEndpoint.get("getWorkspaces", "/workspaces", {
-  query: ListQuery,
   success: WorkspacesData,
 });
 
