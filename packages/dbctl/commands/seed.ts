@@ -7,10 +7,9 @@ import {
   WorkspaceId,
   Workspaces,
 } from "@essayist/core";
-import { Effect, Option } from "effect";
+import { Console, Effect, Option } from "effect";
 
-import { withStore } from "#/db.ts";
-import type { DbctlGlobals } from "#/globals.ts";
+import { type DbctlGlobals, runStore } from "#/db.ts";
 
 // A per-workspace companion file: its name and content derive from the workspace, so content on
 // screen identifies the workspace it came from.
@@ -47,53 +46,49 @@ export const seed = new Command<DbctlGlobals>()
   .option("--ws-name <name:string>", "Demo workspace name.", {
     default: "Demo",
   })
-  .action(({ email, name, wsName, remote }) =>
-    withStore({ remote }, async ({ runtime }) => {
-      const report = await runtime.runPromise(
-        Effect.gen(function* () {
-          const config = (yield* seedDefaultConfig) ? "the default review config" : null;
+  .action(({ email, name, wsName, ...globals }) =>
+    runStore(
+      globals,
+      Effect.gen(function* () {
+        const config = (yield* seedDefaultConfig) ? "the default review config" : null;
 
-          // a new user is a site admin, so the demo can also show the admin pages
-          const workspaces = yield* Workspaces;
-          const found = yield* workspaces.getUserByEmail(email);
-          const user = Option.isSome(found)
-            ? found.value
-            : yield* Effect.orDie(
-                Effect.flatMap(
-                  workspaces.createUser({
-                    email,
-                    name: name ?? (email === DEMO_EMAIL ? "Demo User" : undefined),
-                  }),
-                  (created) => workspaces.setUserRole(created.id, "admin"),
-                ),
-              );
+        // a new user is a site admin, so the demo can also show the admin pages
+        const workspaces = yield* Workspaces;
+        const found = yield* workspaces.getUserByEmail(email);
+        const user = Option.isSome(found)
+          ? found.value
+          : yield* Effect.flatMap(
+              workspaces.createUser({
+                email,
+                name: name ?? (email === DEMO_EMAIL ? "Demo User" : undefined),
+              }),
+              (created) => workspaces.setUserRole(created.id, "admin"),
+            );
 
-          const owned = yield* workspaces.listWorkspacesForUser(user.id);
-          const workspace =
-            owned.find((entry) => entry.workspace.name === wsName)?.workspace ??
-            (yield* workspaces.createWorkspace(wsName, user.id));
+        const owned = yield* workspaces.listWorkspacesForUser(user.id);
+        const workspace =
+          owned.find((entry) => entry.workspace.name === wsName)?.workspace ??
+          (yield* workspaces.createWorkspace(wsName, user.id));
 
-          // files only for a workspace that lacks them, the essay with its review first
-          const seeded = yield* Effect.gen(function* () {
-            const files = yield* Files;
-            const paths = new Set((yield* files.list()).map(({ file }) => file.path));
-            const essay = Object.keys(demoFiles).some((path) => paths.has(path))
-              ? null
-              : "the essay and its review";
-            if (essay !== null) yield* Effect.orDie(seedDemoFiles());
-            const notesFile = notesPath(wsName);
-            const notes = paths.has(notesFile) ? null : notesFile;
-            if (notes !== null) yield* Effect.orDie(files.createAt(notes, notesContent(wsName)));
-            return [essay, notes];
-          }).pipe(Effect.provideService(WorkspaceId, { wsId: workspace.id }));
+        // files only for a workspace that lacks them, the essay with its review first
+        const files = yield* Effect.gen(function* () {
+          const store = yield* Files;
+          const paths = new Set((yield* store.list()).map(({ file }) => file.path));
+          const essay = Object.keys(demoFiles).some((path) => paths.has(path))
+            ? null
+            : "the essay and its review";
+          if (essay !== null) yield* seedDemoFiles();
+          const notesFile = notesPath(wsName);
+          const notes = paths.has(notesFile) ? null : notesFile;
+          if (notes !== null) yield* store.createAt(notes, notesContent(wsName));
+          return [essay, notes];
+        }).pipe(Effect.provideService(WorkspaceId, { wsId: workspace.id }));
 
-          return { user, workspace, seeded: [config, ...seeded].filter((item) => item !== null) };
-        }),
-      );
-      const { user, workspace, seeded } = report;
-      console.log(
-        `user '${user.id}' (${user.email}), workspace '${workspace.id}' (${workspace.name})` +
-          (seeded.length > 0 ? `; seeded ${seeded.join(", ")}` : "; nothing to seed"),
-      );
-    }),
+        const seeded = [config, ...files].filter((item) => item !== null);
+        yield* Console.log(
+          `user '${user.id}' (${user.email}), workspace '${workspace.id}' (${workspace.name})` +
+            (seeded.length > 0 ? `; seeded ${seeded.join(", ")}` : "; nothing to seed"),
+        );
+      }),
+    ),
   );

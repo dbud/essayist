@@ -6,15 +6,20 @@ import { fileURLToPath } from "node:url";
 import type { D1Database } from "@cloudflare/workers-types";
 import * as D1 from "@effect/sql-d1/D1Client";
 import { type CoreServices, layerCoreD1 } from "@essayist/core";
-import { Effect, Layer, ManagedRuntime } from "effect";
+import { Console, Data, Effect, Layer } from "effect";
 import * as Reactivity from "effect/reactivity/Reactivity";
 import { getPlatformProxy } from "wrangler";
 
-import type { DbctlGlobals } from "#/globals.ts";
+/** Options shared by all dbctl commands, declared on the root command. */
+export type DbctlGlobals = {
+  /** Only ever true or absent: --remote works on the deployed database. */
+  remote?: true;
+};
+
+/** A failure a command reports to the user, such as a missing user. */
+export class CommandError extends Data.TaggedError("CommandError")<{ readonly message: string }> {}
 
 const path = (relative: string) => fileURLToPath(new URL(relative, import.meta.url));
-
-export type DbRuntime = ManagedRuntime.ManagedRuntime<CoreServices, never>;
 
 /** Run a command on the D1 binding, closed when the command finishes. */
 export async function withDatabase<T>(
@@ -36,20 +41,30 @@ export async function withDatabase<T>(
   }
 }
 
-/** Run a command with the core services over the database. */
-export function withStore<T>(
+/**
+ * Run a command over the core services. A failure is printed with its message and sets a failing
+ * exit code.
+ */
+export function runStore<E extends { readonly message: string }>(
   globals: DbctlGlobals,
-  fn: (ctx: { runtime: DbRuntime }) => Promise<T>,
-): Promise<T> {
-  return withDatabase(globals, async (db) => {
-    const layer = Layer.unwrap(Effect.map(D1.make({ db }), layerCoreD1)).pipe(
-      Layer.provide(Reactivity.layer),
-    );
-    const runtime = ManagedRuntime.make(layer);
-    try {
-      return await fn({ runtime });
-    } finally {
-      await runtime.dispose();
-    }
-  });
+  command: Effect.Effect<void, E, CoreServices>,
+): Promise<void> {
+  return withDatabase(globals, (db) =>
+    command.pipe(
+      Effect.catch((error) =>
+        Effect.andThen(
+          Console.error(error.message),
+          Effect.sync(() => {
+            process.exitCode = 1;
+          }),
+        ),
+      ),
+      Effect.provide(
+        Layer.unwrap(Effect.map(D1.make({ db }), layerCoreD1)).pipe(
+          Layer.provide(Reactivity.layer),
+        ),
+      ),
+      Effect.runPromise,
+    ),
+  );
 }

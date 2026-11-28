@@ -1,40 +1,31 @@
 import { Command } from "@cliffy/command";
-import { type TraceEvent, TraceEvents, WorkspaceId } from "@essayist/core";
-import { Effect } from "effect";
+import { pluralize, type TraceEvent, TraceEvents, WorkspaceId } from "@essayist/core";
+import { Console, Effect } from "effect";
 
-import { withStore } from "#/db.ts";
-import type { DbctlGlobals } from "#/globals.ts";
-import { pprint } from "#/utils/pprint.ts";
+import { CommandError, type DbctlGlobals, runStore } from "#/db.ts";
+import { pretty } from "#/utils/pretty.ts";
 
-/**
- * Print a run's trace, one JSON event per document, so the events can be piped to jq.
- */
 export const trace = new Command<DbctlGlobals>()
-  .description("Print a run's trace, one JSON event per document.")
+  .description("Print the trace of a run, a JSON event per document, so it can be piped to jq.")
   .arguments("<wsId:string> <runId:string>")
   .option("--summary", "Print one line per event instead of full JSON.")
-  .action(({ remote, summary }, wsId: string, runId: string) =>
-    withStore({ remote }, async ({ runtime }) => {
-      const events = await runtime.runPromise(
-        TraceEvents.use((traces) => traces.get(runId)).pipe(
-          Effect.provideService(WorkspaceId, { wsId }),
-        ),
-      );
-      if (events.length === 0) {
-        console.error(`No trace for run ${runId} in workspace ${wsId}`);
-        process.exitCode = 1;
-        return;
-      }
-      for (const event of events) {
-        if (summary) {
-          console.log(summarise(event));
-        } else {
-          pprint(event);
+  .action((options, wsId: string, runId: string) =>
+    runStore(
+      options,
+      Effect.gen(function* () {
+        const events = yield* TraceEvents.use((traces) => traces.get(runId));
+        if (events.length === 0) {
+          return yield* new CommandError({
+            message: `No trace for run ${runId} in workspace ${wsId}`,
+          });
         }
-      }
-      // footer goes to stderr so piped stdout stays pure JSON
-      console.error(`(${events.length} events)`);
-    }),
+        for (const event of events) {
+          yield* Console.log(options.summary ? summarise(event) : pretty(event));
+        }
+        // footer goes to stderr so piped stdout stays pure JSON
+        yield* Console.error(`(${events.length} ${pluralize(events.length, "event", "events")})`);
+      }).pipe(Effect.provideService(WorkspaceId, { wsId })),
+    ),
   );
 
 /** One line describing an event, for reading a trace by eye. */

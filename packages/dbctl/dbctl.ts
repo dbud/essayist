@@ -22,11 +22,11 @@ await new Command()
   .option("--remote", "Use the deployed database instead of the D1 state of the vite dev server.", {
     global: true,
   })
-  .command("wipe-runs", wipeRuns)
-  .command("runs", runs)
-  .command("sql", sql)
-  .command("trace", trace)
-  .command("grant-role", grantRole)
-  .command("list-users", listUsers)
   .command("seed", seed)
+  .command("sql", sql)
+  .command("list-users", listUsers)
+  .command("grant-role", grantRole)
+  .command("runs", runs)
+  .command("trace", trace)
+  .command("wipe-runs", wipeRuns)
   .parse(process.argv.slice(2));

@@ -1,9 +1,10 @@
-// colored inspect on a TTY; plain JSON when stdout is piped, a single document per call, so jq can
-// parse the stream
+// coloured inspect on a TTY; plain JSON when stdout is piped, a single document per value, so jq
+// can parse the stream
 
 import { inspect } from "node:util";
 
-export function pprint(value: unknown): void {
+/** The text of a value for stdout, followed by a blank line. */
+export function pretty(value: unknown): string {
   const body = process.stdout.isTTY
     ? inspect(value, {
         colors: process.env.NO_COLOR === undefined,
@@ -12,5 +13,5 @@ export function pprint(value: unknown): void {
         depth: 12,
       })
     : JSON.stringify(value, null, 2);
-  console.log(`${body}\n`);
+  return `${body}\n`;
 }

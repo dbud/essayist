@@ -1,19 +1,17 @@
 import { Command } from "@cliffy/command";
+import { pluralize } from "@essayist/core";
 
-import { withDatabase } from "#/db.ts";
-import type { DbctlGlobals } from "#/globals.ts";
-import { pprint } from "#/utils/pprint.ts";
+import { type DbctlGlobals, withDatabase } from "#/db.ts";
+import { pretty } from "#/utils/pretty.ts";
 
 export const sql = new Command<DbctlGlobals>()
-  .description("Run one raw SQL statement against the review D1 database.")
+  .description("Run a single SQL statement.")
   .arguments("<statement:string>")
-  .action(({ remote }, statement: string) =>
-    withDatabase({ remote }, async (db) => {
+  .action((options, statement: string) =>
+    withDatabase(options, async (db) => {
       const { results: rows } = await db.prepare(statement).all();
-      for (const row of rows) {
-        pprint(row);
-      }
+      for (const row of rows) console.log(pretty(row));
       // footer goes to stderr so piped stdout stays pure JSON
-      console.error(`(${rows.length} ${rows.length === 1 ? "row" : "rows"})`);
+      console.error(`(${rows.length} ${pluralize(rows.length, "row", "rows")})`);
     }),
   );
